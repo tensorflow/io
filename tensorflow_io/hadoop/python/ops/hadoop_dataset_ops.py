@@ -17,13 +17,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.hadoop.python.ops import gen_dataset_ops
-from tensorflow.contrib.hadoop.python.ops import hadoop_op_loader  # pylint: disable=unused-import
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
+
+from tensorflow.python.framework import load_library
+hadoop_ops = load_library.load_op_library("tensorflow_io/hadoop/python/ops/_hadoop_ops.so")
 
 
 class SequenceFileDataset(dataset_ops.DatasetSource):
@@ -59,7 +60,7 @@ class SequenceFileDataset(dataset_ops.DatasetSource):
         filenames, dtype=dtypes.string, name="filenames")
 
   def _as_variant_tensor(self):
-    return gen_dataset_ops.sequence_file_dataset(
+    return hadoop_ops.sequence_file_dataset(
         self._filenames, nest.flatten(self.output_types))
 
   @property
