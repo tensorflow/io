@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.hadoop.python.ops.hadoop_dataset_ops import SequenceFileDataset
+from tensorflow_io.hadoop.python.ops.hadoop_dataset_ops import SequenceFileDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
