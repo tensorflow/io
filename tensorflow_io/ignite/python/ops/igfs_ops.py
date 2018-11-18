@@ -31,10 +31,8 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.contrib.ignite.python.ops import ignite_op_loader  # pylint: disable=unused-import
 from tensorflow.python.framework import load_library
 from tensorflow.python.platform import resource_loader
 
-file_system_library = os.path.join(resource_loader.get_data_files_path(),
-                                   "../../_ignite_ops.so")
+file_system_library = os.path.join("tensorflow_io/ignite/python/ops/_ignite_ops.so")
 load_library.load_file_system_library(file_system_library)

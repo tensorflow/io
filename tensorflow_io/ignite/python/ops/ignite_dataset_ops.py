@@ -24,13 +24,12 @@ import struct
 
 import six
 
-from tensorflow.contrib.ignite.python.ops import gen_dataset_ops
-from tensorflow.contrib.ignite.python.ops import ignite_op_loader  # pylint: disable=unused-import
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
-
+from tensorflow.python.framework import load_library
+ignite_ops = load_library.load_op_library("tensorflow_io/ignite/python/ops/_ignite_ops.so")
 
 @six.add_metaclass(abc.ABCMeta)
 class Readable(object):
@@ -758,7 +757,7 @@ class IgniteDataset(dataset_ops.DatasetSource):
         name="permutation")
 
   def _as_variant_tensor(self):
-    return gen_dataset_ops.ignite_dataset(self.cache_name, self.host, self.port,
+    return ignite_ops.ignite_dataset(self.cache_name, self.host, self.port,
                                           self.local, self.part, self.page_size,
                                           self.schema, self.permutation)
 
