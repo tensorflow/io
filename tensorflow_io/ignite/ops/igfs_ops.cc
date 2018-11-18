@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/platform/env.h"
 
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs.h"
 
 namespace tensorflow {
 
