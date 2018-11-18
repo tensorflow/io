@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_ITERATOR_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_ITERATOR_H_
 
-#include "tensorflow/contrib/ignite/kernels/client/ignite_client.h"
-#include "tensorflow/contrib/ignite/kernels/dataset/ignite_binary_object_parser.h"
-#include "tensorflow/contrib/ignite/kernels/dataset/ignite_dataset.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_client.h"
+#include "tensorflow_io/ignite/kernels/dataset/ignite_binary_object_parser.h"
+#include "tensorflow_io/ignite/kernels/dataset/ignite_dataset.h"
 #include "tensorflow/core/platform/mutex.h"
 
 namespace tensorflow {

@@ -17,7 +17,7 @@ limitations under the License.
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_BINARY_OBJECT_PARSER_H_
 
 #include <vector>
-#include "tensorflow/contrib/ignite/kernels/client/ignite_byte_swapper.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_byte_swapper.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/core/status.h"
 
