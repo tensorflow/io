@@ -76,9 +76,20 @@ py_test(
     name = "ignite_py_test",
     srcs = [
         "python/tests/ignite_dataset_test.py",
-        "python/tests/igfs_test.py",
     ],
     main = "python/tests/ignite_dataset_test.py",
+    deps = [
+        ":ignite_py",
+    ],
+    srcs_version = "PY2AND3",
+)
+
+py_test(
+    name = "igfs_py_test",
+    srcs = [
+        "python/tests/igfs_test.py",
+    ],
+    main = "python/tests/igfs_test.py",
     deps = [
         ":ignite_py",
     ],
