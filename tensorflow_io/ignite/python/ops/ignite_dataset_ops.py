@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
+import os
 import socket
 import ssl
 import struct
@@ -29,7 +30,8 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import load_library
-ignite_ops = load_library.load_op_library("tensorflow_io/ignite/python/ops/_ignite_ops.so")
+ignite_ops = load_library.load_op_library(os.path.join(
+    "tensorflow_io", "ignite", "python", "ops", "_ignite_ops.so"))
 
 @six.add_metaclass(abc.ABCMeta)
 class Readable(object):
@@ -758,8 +760,8 @@ class IgniteDataset(dataset_ops.DatasetSource):
 
   def _as_variant_tensor(self):
     return ignite_ops.ignite_dataset(self.cache_name, self.host, self.port,
-                                          self.local, self.part, self.page_size,
-                                          self.schema, self.permutation)
+                                     self.local, self.part, self.page_size,
+                                     self.schema, self.permutation)
 
   @property
   def output_classes(self):
