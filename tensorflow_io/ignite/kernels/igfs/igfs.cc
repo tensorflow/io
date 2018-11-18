@@ -18,10 +18,10 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 #include "tensorflow/core/platform/file_system_helper.h"
 
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs.h"
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_client.h"
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_random_access_file.h"
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_writable_file.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_client.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_random_access_file.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_writable_file.h"
 
 namespace tensorflow {
 

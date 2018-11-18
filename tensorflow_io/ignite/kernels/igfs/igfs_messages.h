@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_MESSAGES_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_MESSAGES_H_
 
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_extended_tcp_client.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_extended_tcp_client.h"
 
 namespace tensorflow {
 

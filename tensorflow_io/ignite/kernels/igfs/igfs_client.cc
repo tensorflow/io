@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_client.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_client.h"
 
 namespace tensorflow {
 

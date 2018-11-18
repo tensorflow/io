@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_writable_file.h"
-#include "tensorflow/contrib/ignite/kernels/igfs/igfs_messages.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_writable_file.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_messages.h"
 
 namespace tensorflow {
 

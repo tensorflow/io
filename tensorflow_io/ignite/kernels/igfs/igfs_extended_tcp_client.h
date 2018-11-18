@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_EXTENDED_TCP_CLIENT_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_EXTENDED_TCP_CLIENT_H_
 
-#include "tensorflow/contrib/ignite/kernels/client/ignite_plain_client.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 
 namespace tensorflow {
 
