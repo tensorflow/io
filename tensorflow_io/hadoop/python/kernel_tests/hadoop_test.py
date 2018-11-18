@@ -20,12 +20,13 @@ from __future__ import print_function
 
 import os
 
+from tensorflow.python.platform import test
+
 from tensorflow_io.hadoop.python.ops import hadoop_dataset_ops
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
 from tensorflow.python.platform import resource_loader
-from tensorflow.python.platform import test
 
 
 class SequenceFileDatasetTest(test.TestCase):

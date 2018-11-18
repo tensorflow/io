@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.framework import dtypes
@@ -24,7 +26,8 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
 from tensorflow.python.framework import load_library
-hadoop_ops = load_library.load_op_library("tensorflow_io/hadoop/python/ops/_hadoop_ops.so")
+hadoop_ops = load_library.load_op_library(
+    os.path.join("tensorflow_io", "hadoop", "python", "ops", "_hadoop_ops.so"))
 
 
 class SequenceFileDataset(dataset_ops.DatasetSource):
