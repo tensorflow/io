@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow.contrib.ignite.python.ops.igfs_ops  # pylint: disable=unused-import
+import tensorflow_io.ignite.python.ops.igfs_ops  # pylint: disable=unused-import
 from tensorflow.python.platform import gfile
 from tensorflow.python.platform import test
 
