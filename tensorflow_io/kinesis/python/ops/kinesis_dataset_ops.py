@@ -17,13 +17,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
 from tensorflow.python.framework import load_library
-kinesis_ops = load_library.load_op_library("tensorflow_io/kinesis/python/ops/_kinesis_ops.so")
+kinesis_ops = load_library.load_op_library(os.path.join(
+    "tensorflow_io", "kinesis", "python", "ops", "_kinesis_ops.so"))
 
 class KinesisDataset(dataset_ops.DatasetSource):
   """A Kinesis Dataset that consumes the message.

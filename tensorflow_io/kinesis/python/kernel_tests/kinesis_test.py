@@ -26,6 +26,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.platform import test
+
 import boto3
 
 from tensorflow_io.kinesis.python.ops import kinesis_dataset_ops
@@ -33,12 +35,13 @@ from tensorflow.python.data.ops import iterator_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
 from tensorflow.python.ops import array_ops
-from tensorflow.python.platform import test
 
 
 class KinesisDatasetTest(test.TestCase):
+  """Tests for KinesisDataset."""
 
-  def testKinesisDatasetOneShard(self):
+  def test_kinesis_dataset_one_shard(self):
+    """Tests for KinesisDataset."""
     client = boto3.client('kinesis', region_name='us-east-1')
 
     # Setup the Kinesis with 1 shard.
@@ -61,7 +64,6 @@ class KinesisDatasetTest(test.TestCase):
 
     iterator = iterator_ops.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
-    init_batch_op = iterator.make_initializer(batch_dataset)
     get_next = iterator.get_next()
 
     with self.cached_session() as sess:
@@ -76,7 +78,8 @@ class KinesisDatasetTest(test.TestCase):
     # Wait until stream deleted, default is 10 * 18 seconds.
     client.get_waiter('stream_not_exists').wait(StreamName=stream_name)
 
-  def testKinesisDatasetTwoShards(self):
+  def test_kinesis_dataset_two_shards(self):
+    """Tests for KinesisDataset."""
     client = boto3.client('kinesis', region_name='us-east-1')
 
     # Setup the Kinesis with 2 shards.
@@ -104,7 +107,6 @@ class KinesisDatasetTest(test.TestCase):
 
     iterator = iterator_ops.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
-    init_batch_op = iterator.make_initializer(batch_dataset)
     get_next = iterator.get_next()
 
     data = list()
