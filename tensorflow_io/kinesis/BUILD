@@ -15,7 +15,7 @@ cc_binary(
         "@curl//:curl",
         "@aws//:aws",
     ],
-    copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0"]
+    copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0", "-DNDEBUG"]
 )
 
 py_library(
