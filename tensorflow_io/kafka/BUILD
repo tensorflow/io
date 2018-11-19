@@ -14,7 +14,7 @@ cc_binary(
         "@local_config_tf//:tf_header_lib",
         "@kafka//:kafka",
     ],
-    copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0"]
+    copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0", "-DNDEBUG"]
 )
 
 py_library(
