@@ -1,4 +1,5 @@
 load("//tf:tf_configure.bzl", "tf_configure")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 tf_configure(
     name = "local_config_tf",
@@ -12,4 +13,15 @@ http_archive(
         "https://mirror.bazel.build/github.com/google/boringssl/archive/7f634429a04abc48e2eb041c81c5235816c96514.tar.gz",
         "https://github.com/google/boringssl/archive/7f634429a04abc48e2eb041c81c5235816c96514.tar.gz",
     ],
+)
+
+http_archive(
+    name = "zlib",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
+        "https://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+    build_file = "//third_party:zlib.BUILD",
 )
