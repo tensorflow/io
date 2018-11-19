@@ -28,7 +28,7 @@ from __future__ import print_function
 
 import boto3
 
-from tensorflow.contrib.kinesis.python.ops import kinesis_dataset_ops
+from tensorflow_io.kinesis.python.ops import kinesis_dataset_ops
 from tensorflow.python.data.ops import iterator_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
