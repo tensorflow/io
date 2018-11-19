@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.kinesis.python.ops.kinesis_dataset_ops import KinesisDataset
+from tensorflow_io.kinesis.python.ops.kinesis_dataset_ops import KinesisDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
