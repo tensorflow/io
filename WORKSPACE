@@ -27,6 +27,17 @@ http_archive(
 )
 
 http_archive(
+    name = "curl",
+    sha256 = "e9c37986337743f37fd14fe8737f246e97aec94b39d1b71e8a5973f72a9fc4f5",
+    strip_prefix = "curl-7.60.0",
+    urls = [
+        "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
+        "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
+    ],
+    build_file = "//third_party:curl.BUILD",
+)
+
+http_archive(
     name = "kafka",
     sha256 = "cc6ebbcd0a826eec1b8ce1f625ffe71b53ef3290f8192b6cae38412a958f4fd3",
     strip_prefix = "librdkafka-0.11.5",
