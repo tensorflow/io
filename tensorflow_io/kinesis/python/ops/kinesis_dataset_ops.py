@@ -17,13 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.kinesis.python.ops import gen_dataset_ops
-from tensorflow.contrib.kinesis.python.ops import kinesis_op_loader  # pylint: disable=unused-import
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
+from tensorflow.python.framework import load_library
+kinesis_ops = load_library.load_op_library("tensorflow_io/kinesis/python/ops/_kinesis_ops.so")
 
 class KinesisDataset(dataset_ops.DatasetSource):
   """A Kinesis Dataset that consumes the message.
@@ -80,7 +80,7 @@ class KinesisDataset(dataset_ops.DatasetSource):
         interval, dtype=dtypes.int64, name="interval")
 
   def _as_variant_tensor(self):
-    return gen_dataset_ops.kinesis_dataset(
+    return kinesis_ops.kinesis_dataset(
         self._stream, self._shard, self._read_indefinitely, self._interval)
 
   @property
