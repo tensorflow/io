@@ -18,29 +18,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.platform import test
+
 from tensorflow_io.kafka.python.ops import kafka_dataset_ops
 from tensorflow.python.data.ops import iterator_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
 from tensorflow.python.ops import array_ops
-from tensorflow.python.platform import test
 
 
 class KafkaDatasetTest(test.TestCase):
+  """Tests for KafkaDataset."""
 
-  def setUp(self):
-    # The Kafka server has to be setup before the test
-    # and tear down after the test manually.
-    # The docker engine has to be installed.
-    #
-    # To setup the Kafka server:
-    # $ bash kafka_test.sh start kafka
-    #
-    # To team down the Kafka server:
-    # $ bash kafka_test.sh stop kafka
-    pass
+  # The Kafka server has to be setup before the test
+  # and tear down after the test manually.
+  # The docker engine has to be installed.
+  #
+  # To setup the Kafka server:
+  # $ bash kafka_test.sh start kafka
+  #
+  # To team down the Kafka server:
+  # $ bash kafka_test.sh stop kafka
 
-  def testKafkaDataset(self):
+  def test_kafka_dataset(self):
+    """Tests for KafkaDataset."""
     topics = array_ops.placeholder(dtypes.string, shape=[None])
     num_epochs = array_ops.placeholder(dtypes.int64, shape=[])
     batch_size = array_ops.placeholder(dtypes.int64, shape=[])

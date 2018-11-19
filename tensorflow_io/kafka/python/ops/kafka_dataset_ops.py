@@ -63,7 +63,7 @@ class KafkaDataset(dataset_ops.DatasetSource):
 
   def _as_variant_tensor(self):
     return kafka_ops.kafka_dataset(self._topics, self._servers,
-                                         self._group, self._eof, self._timeout)
+                                   self._group, self._eof, self._timeout)
 
   @property
   def output_classes(self):
