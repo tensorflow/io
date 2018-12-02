@@ -26,8 +26,9 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
 from tensorflow.python.framework import load_library
+from tensorflow.python.platform import resource_loader
 hadoop_ops = load_library.load_op_library(
-    os.path.join("tensorflow_io", "hadoop", "python", "ops", "_hadoop_ops.so"))
+    resource_loader.get_path_to_datafile('_hadoop_ops.so'))
 
 
 class SequenceFileDataset(dataset_ops.DatasetSource):

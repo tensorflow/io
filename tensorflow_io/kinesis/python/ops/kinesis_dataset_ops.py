@@ -25,8 +25,9 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
 from tensorflow.python.framework import load_library
-kinesis_ops = load_library.load_op_library(os.path.join(
-    "tensorflow_io", "kinesis", "python", "ops", "_kinesis_ops.so"))
+from tensorflow.python.platform import resource_loader
+kinesis_ops = load_library.load_op_library(
+    resource_loader.get_path_to_datafile('_kinesis_ops.so'))
 
 class KinesisDataset(dataset_ops.DatasetSource):
   """A Kinesis Dataset that consumes the message.

@@ -30,8 +30,9 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import load_library
-ignite_ops = load_library.load_op_library(os.path.join(
-    "tensorflow_io", "ignite", "python", "ops", "_ignite_ops.so"))
+from tensorflow.python.platform import resource_loader
+ignite_ops = load_library.load_op_library(
+    resource_loader.get_path_to_datafile("_ignite_ops.so"))
 
 @six.add_metaclass(abc.ABCMeta)
 class Readable(object):

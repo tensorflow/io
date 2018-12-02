@@ -32,7 +32,7 @@ from __future__ import print_function
 import os
 
 from tensorflow.python.framework import load_library
+from tensorflow.python.platform import resource_loader
 
-file_system_library = os.path.join(
-    "tensorflow_io", "ignite", "python", "ops", "_ignite_ops.so")
+file_system_library = resource_loader.get_path_to_datafile("_ignite_ops.so")
 load_library.load_file_system_library(file_system_library)

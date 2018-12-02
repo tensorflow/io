@@ -25,8 +25,9 @@ from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
 from tensorflow.python.framework import load_library
+from tensorflow.python.platform import resource_loader
 kafka_ops = load_library.load_op_library(
-    os.path.join("tensorflow_io", "kafka", "python", "ops", "_kafka_ops.so"))
+    resource_loader.get_path_to_datafile('_kafka_ops.so'))
 
 class KafkaDataset(dataset_ops.DatasetSource):
   """A Kafka Dataset that consumes the message.
