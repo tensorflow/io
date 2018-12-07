@@ -7,11 +7,11 @@ available in TensorFlow's built-in support.
 
 The TensorFlow I/O package (`tensorflow-io`) could be built from source:
 ```sh
-$ docker run -it tensorflow/tensorflow:custom-op /bin/bash
+$ docker run -it -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op
 $ # In docker
 $ ./configure.sh
-$  bazel build build_pip_pkg
-$  bazel-bin/build_pip_pkg artifacts
+$ bazel build build_pip_pkg
+$ bazel-bin/build_pip_pkg artifacts
 ```
 
 ## License
