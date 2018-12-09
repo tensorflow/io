@@ -38,7 +38,7 @@ class KinesisDataset(dataset_ops.DatasetSource):
 
   For example, we can construct and use the KinesisDataset as follows:
   ```python
-  dataset = tf.contrib.kinesis.KinesisDataset(
+  dataset = KinesisDataset(
       "kinesis_stream_name", read_indefinitely=False)
   next = dataset.make_one_shot_iterator().get_next()
   with tf.Session() as sess:
