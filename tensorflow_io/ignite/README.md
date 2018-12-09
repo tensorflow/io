@@ -53,7 +53,7 @@ jdbc:ignite:thin://localhost/> INSERT INTO KITTEN_CACHE VALUES (3, 'LITTLE BALL 
 
 ```python
 >>> import tensorflow as tf
->>> from tensorflow.contrib.ignite import IgniteDataset
+>>> from tensorflow_io.ignite import IgniteDataset
 >>> 
 >>> dataset = IgniteDataset(cache_name="SQL_PUBLIC_KITTEN_CACHE")
 >>> iterator = dataset.make_one_shot_iterator()
@@ -73,7 +73,7 @@ jdbc:ignite:thin://localhost/> INSERT INTO KITTEN_CACHE VALUES (3, 'LITTLE BALL 
 
 ```python
 >>> import tensorflow as tf
->>> from tensorflow.contrib.ignite import IgniteDataset
+>>> from tensorflow_io.ignite import IgniteDataset
 >>> 
 >>> dataset = IgniteDataset(cache_name="IMAGES")
 >>> iterator = dataset.make_one_shot_iterator()
@@ -99,7 +99,7 @@ jdbc:ignite:thin://localhost/> INSERT INTO KITTEN_CACHE VALUES (3, 'LITTLE BALL 
 
 ```python
 >>> import tensorflow as tf
->>> from tensorflow.contrib.ignite import IgniteDataset
+>>> from tensorflow_io.ignite import IgniteDataset
 >>> 
 >>> dataset = IgniteDataset(cache_name="IMAGES").map(lambda obj: obj['val']['pixels'])
 >>> iterator = dataset.make_one_shot_iterator()
@@ -125,7 +125,7 @@ Ignite Dataset allows using these two aspects of distributed neural network trai
 
 ```python
 >>> import tensorflow as tf
->>> from tensorflow.contrib.ignite import IgniteDataset
+>>> from tensorflow_io.ignite import IgniteDataset
 >>> 
 >>> dataset = IgniteDataset("IMAGES")
 >>>
@@ -170,7 +170,7 @@ Apache Ignite allows to protect data transfer channels by [SSL](https://en.wikip
 
 ```python
 >>> import tensorflow as tf
->>> from tensorflow.contrib.ignite import IgniteDataset
+>>> from tensorflow_io.ignite import IgniteDataset
 >>>
 >>> dataset = IgniteDataset(cache_name="IMAGES",
                             certfile="client.pem",
@@ -222,7 +222,7 @@ After that you will be able to work with it following way:
 
 ```python
 >>> import tensorflow as tf
->>> import tensorflow.contrib.ignite.python.ops.igfs_ops
+>>> import tensorflow_io.ignite.python.ops.igfs_ops
 >>>
 >>> with tf.gfile.Open("igfs:///hello.txt", mode='w') as w:
 >>>   w.write("Hello, world!")
