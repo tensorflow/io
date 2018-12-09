@@ -10,6 +10,11 @@ skip_if_no_tensorflow <- function(required_version = NULL) {
   }
 }
 
+skip_if_no_tensorflow_io <- function(required_version = NULL) {
+  if (!reticulate::py_module_available("tensorflow_io"))
+    skip("TensorFlow not available for testing")
+}
+
 test_succeeds <- function(desc, expr, required_version = NULL) {
   test_that(desc, {
     skip_if_no_tensorflow(required_version)
