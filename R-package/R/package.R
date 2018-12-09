@@ -11,6 +11,7 @@ NULL
 #' @importFrom reticulate py_last_error tuple py_str py_has_attr import
 #' @import tidyselect
 #' @import rlang
+#' @import tfdatasets
 NULL
 
 tfio_lib <- NULL

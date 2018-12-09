@@ -23,6 +23,7 @@ Depends:
 Imports:
     reticulate (>= 1.10), 
     tensorflow (>= 1.9),
+    tfdatasets (>= 1.9),
     magrittr,
     rlang,
     tidyselect,
