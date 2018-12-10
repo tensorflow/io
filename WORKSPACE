@@ -83,3 +83,14 @@ http_archive(
     strip_prefix = "arrow-apache-arrow-0.9.0",
     build_file = "//third_party:arrow.BUILD",
 )
+
+http_archive(
+    name = "boost",
+    urls = [
+        "https://mirror.bazel.build/dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
+        "https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz"
+    ],
+    sha256 = "8aa4e330c870ef50a896634c931adf468b21f8a69b77007e45c444151229f665",
+    strip_prefix = "boost_1_67_0",
+    build_file = "//third_party:boost.BUILD",
+)
