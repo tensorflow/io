@@ -64,12 +64,3 @@ genrule(
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
 )
-
-#template_rule(
-#    name = "SDKConfig_h",
-#    src = "aws-cpp-sdk-core/include/aws/core/SDKConfig.h.in",
-#    out = "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
-#    substitutions = {
-#        "cmakedefine": "define",
-#    },
-#)
