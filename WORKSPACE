@@ -61,3 +61,14 @@ http_archive(
     strip_prefix = "aws-sdk-cpp-1.3.15",
     build_file = "//third_party:aws.BUILD",
 )
+
+http_archive(
+    name = "snappy",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.7.tar.gz",
+        "https://github.com/google/snappy/archive/1.1.7.tar.gz",
+    ],
+    sha256 = "3dfa02e873ff51a11ee02b9ca391807f0c8ea0529a4924afa645fbf97163f9d4",
+    strip_prefix = "snappy-1.1.7",
+    build_file = "//third_party:snappy.BUILD",
+)
