@@ -72,3 +72,14 @@ http_archive(
     strip_prefix = "snappy-1.1.7",
     build_file = "//third_party:snappy.BUILD",
 )
+
+http_archive(
+    name = "arrow",
+    urls = [
+        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.9.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-0.9.0.tar.gz",
+    ],
+    sha256 = "65f89a3910b6df02ac71e4d4283db9b02c5b3f1e627346c7b6a5982ae994af91",
+    strip_prefix = "arrow-apache-arrow-0.9.0",
+    build_file = "//third_party:arrow.BUILD",
+)
