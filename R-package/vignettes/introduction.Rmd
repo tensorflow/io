@@ -1,0 +1,27 @@
+---
+title: "R interface to TensorFlow IO API"
+output: 
+  rmarkdown::html_vignette: default
+vignette: >
+  %\VignetteIndexEntry{Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+type: docs
+repo: https://github.com/tensorflow/io
+menu:
+  main:
+    name: "Using TensorFlow IO"
+    identifier: "tools-tfio-using"
+    parent: "tfio-top"
+    weight: 10
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
+## Overview
+
+This is the R interface to datasets and filesystem extensions maintained by SIG-IO.
+
+(TBA)

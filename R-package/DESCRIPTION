@@ -1,0 +1,38 @@
+Package: tfio
+Type: Package
+Title: Interface to 'TensorFlow IO'
+Version: 0.0.9000
+Authors@R: c(
+  person("Yuan", "Tang", role = c("aut", "cre"),
+         email = "terrytangyuan@gmail.com",
+         comment = c(ORCID = "0000-0001-5243-233X")),
+  person("TensorFlow IO SIG", role = c("aut", "cph"),
+         email = "io@tensorflow.org"),
+  person("RStudio", role = c("cph")),
+  person(family = "TensorFlow Authors", role = c("cph"))
+  )
+Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by SIG-IO.
+License: Apache License 2.0
+URL: https://github.com/tensorflow/io
+BugReports: https://github.com/tensorflow/io/issues
+SystemRequirements: TensorFlow >= 1.4 (https://www.tensorflow.org/)
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 3.1)
+Imports:
+    reticulate (>= 1.10), 
+    tensorflow (>= 1.9),
+    tfdatasets (>= 1.9),
+    magrittr,
+    rlang,
+    tidyselect,
+    stats
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 6.1.0
+Suggests:
+    testthat,
+    knitr,
+    tfestimators,
+    keras
+VignetteBuilder: knitr
