@@ -1,0 +1,43 @@
+dist: trusty
+sudo: required
+
+env:
+  - BAZEL_OS=linux
+    BAZEL_VERSION=0.17.2
+
+services:
+  - docker
+
+before_script:
+  - bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+  - bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/ignite/python/tests/start_ignite.sh
+
+matrix:
+  include:
+    - language: python
+      python:
+        - 2.7
+      before_install:
+        - |
+          URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh"
+          wget -O install.sh "${URL}"
+          chmod +x install.sh
+          ./install.sh --user
+          rm -f install.sh
+          ./configure.sh
+
+      script:
+        - gcc -v
+        - python --version
+        - bazel test -s --verbose_failures //tensorflow_io/hadoop:hadoop_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/kafka:kafka_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:ignite_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:igfs_py_test
+    - language: r
+      before_install:
+        - cd R-package
+      script:
+        - R -e "devtools::test()"
+
+notifications:
+  email: false
