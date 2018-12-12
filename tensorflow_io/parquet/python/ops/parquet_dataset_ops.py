@@ -17,16 +17,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.parquet.python.ops import parquet_op_loader  # pylint: disable=unused-import
-from tensorflow.contrib.parquet.python.ops import gen_dataset_ops
-from tensorflow.python.data.ops.dataset_ops import Dataset
+from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
+from tensorflow.python.framework import load_library
+from tensorflow.python.platform import resource_loader
+parquet_ops = load_library.load_op_library(
+    resource_loader.get_path_to_datafile('_parquet_ops.so'))
 
-class ParquetDataset(Dataset):
+class ParquetDataset(dataset_ops.DatasetSource):
   """A Parquet Dataset that reads the parquet file."""
 
   def __init__(self, filenames, columns, output_types):
@@ -63,7 +65,7 @@ class ParquetDataset(Dataset):
     self._output_types = output_types
 
   def _as_variant_tensor(self):
-    return gen_dataset_ops.parquet_dataset(self._filenames, self._columns,
+    return parquet_ops.parquet_dataset(self._filenames, self._columns,
                                            nest.flatten(self.output_types),
                                            nest.flatten(self.output_shapes))
 
