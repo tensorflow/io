@@ -1,5 +1,7 @@
 # TensorFlow I/O
 
+[![Travis-CI Build Status](https://travis-ci.org/tensorflow/io.svg?branch=master)](https://travis-ci.org/tensorflow/io) 
+
 TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support.
 
