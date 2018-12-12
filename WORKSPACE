@@ -105,3 +105,17 @@ http_archive(
     strip_prefix = "thrift-0.11.0",
     build_file = "//third_party:thrift.BUILD",
 )
+
+http_archive(
+    name = "parquet",
+    urls = [
+        "https://mirror.bazel.build/github.com/apache/parquet-cpp/archive/apache-parquet-cpp-1.4.0.tar.gz",
+        "https://github.com/apache/parquet-cpp/archive/apache-parquet-cpp-1.4.0.tar.gz",
+    ],
+    sha256 = "52899be6c9dc49a14976d4ad84597243696c3fa2882e5c802b56e912bfbcc7ce",
+    strip_prefix = "parquet-cpp-apache-parquet-cpp-1.4.0",
+    build_file = "//third_party:parquet.BUILD",
+    patches = [
+        "//third_party:parquet.patch",
+    ],
+)

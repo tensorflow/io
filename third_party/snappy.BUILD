@@ -20,7 +20,7 @@ cc_library(
     hdrs = ["snappy.h"],
     includes = ["."],
     copts = [
-        "-DHAVE_CONFIG_H"
+        "-DHAVE_CONFIG_H",
         "-fno-exceptions",
         "-Wno-sign-compare",
         "-Wno-shift-negative-value",

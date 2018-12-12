@@ -60,18 +60,18 @@ genrule(
     ],
 )
 
-template_rule(
+genrule(
     name = "config_h",
-    src = "build/cmake/config.h.in",
-    out = "lib/cpp/src/thrift/config.h",
-    substitutions = {
-        "#cmakedefine": "#define",
-        "${PACKAGE}": "thrift",
-        "${PACKAGE_BUGREPORT}": "",
-        "${PACKAGE_NAME}": "thrift",
-        "${PACKAGE_TARNAME}": "thrift",
-        "${PACKAGE_URL}": "",
-        "${PACKAGE_VERSION}": "0.11.0",
-        "${PACKAGE_STRING}": "thrift 0.11.0",
-    },
+    srcs = ["build/cmake/config.h.in"],
+    outs = ["lib/cpp/src/thrift/config.h"],
+    cmd = ("sed " +
+           "-e 's/cmakedefine/define/g' " +
+           "-e 's/$${PACKAGE}/thrift/g' " +
+           "-e 's/$${PACKAGE_BUGREPORT}//g' " +
+           "-e 's/$${PACKAGE_NAME}/thrift/g' " +
+           "-e 's/$${PACKAGE_TARNAME}/thrift/g' " +
+           "-e 's/$${PACKAGE_URL}//g' " +
+           "-e 's/$${PACKAGE_VERSION}/0.11.0/g' " +
+           "-e 's/$${PACKAGE_STRING}/thrift 0.11.0/g' " +
+           "$< >$@"),
 )
