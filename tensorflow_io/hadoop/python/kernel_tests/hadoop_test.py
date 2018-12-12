@@ -56,8 +56,8 @@ class SequenceFileDatasetTest(test.TestCase):
       sess.run(init_op)
       for _ in range(num_repeats):  # Dataset is repeated.
         for i in range(25):  # 25 records.
-          v0 = b"%03d" % (i + 1)
-          v1 = b"VALUE%03d" % (i + 1)
+          v0 = ("%03d" % (i + 1)).encode()
+          v1 = ("VALUE%03d" % (i + 1)).encode()
           self.assertEqual((v0, v1), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
