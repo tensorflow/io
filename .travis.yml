@@ -33,6 +33,63 @@ matrix:
         - bazel test -s --verbose_failures //tensorflow_io/kafka:kafka_py_test
         - bazel test -s --verbose_failures //tensorflow_io/ignite:ignite_py_test
         - bazel test -s --verbose_failures //tensorflow_io/ignite:igfs_py_test
+    - language: python
+      python:
+        - 3.4
+      before_install:
+        - |
+          URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh"
+          wget -O install.sh "${URL}"
+          chmod +x install.sh
+          ./install.sh --user
+          rm -f install.sh
+          ./configure.sh
+
+      script:
+        - gcc -v
+        - python --version
+        - bazel test -s --verbose_failures //tensorflow_io/hadoop:hadoop_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/kafka:kafka_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:ignite_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:igfs_py_test
+    - language: python
+      python:
+        - 3.5
+      before_install:
+        - |
+          URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh"
+          wget -O install.sh "${URL}"
+          chmod +x install.sh
+          ./install.sh --user
+          rm -f install.sh
+          ./configure.sh
+
+      script:
+        - gcc -v
+        - python --version
+        - bazel test -s --verbose_failures //tensorflow_io/hadoop:hadoop_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/kafka:kafka_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:ignite_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:igfs_py_test
+    - language: python
+      python:
+        - 3.6
+      before_install:
+        - |
+          URL="https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh"
+          wget -O install.sh "${URL}"
+          chmod +x install.sh
+          ./install.sh --user
+          rm -f install.sh
+          ./configure.sh
+
+      script:
+        - gcc -v
+        - python --version
+        - bazel test -s --verbose_failures //tensorflow_io/hadoop:hadoop_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/kafka:kafka_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:ignite_py_test
+        - bazel test -s --verbose_failures //tensorflow_io/ignite:igfs_py_test
     - language: r
       before_install:
         - cd R-package
