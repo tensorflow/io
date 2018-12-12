@@ -59,14 +59,14 @@ class KafkaDatasetTest(test.TestCase):
       # Basic test: read from topic 0.
       sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
       for i in range(5):
-        self.assertEqual("D" + str(i), sess.run(get_next))
+        self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
       # Basic test: read from topic 1.
       sess.run(init_op, feed_dict={topics: ["test:0:5:-1"], num_epochs: 1})
       for i in range(5):
-        self.assertEqual("D" + str(i + 5), sess.run(get_next))
+        self.assertEqual(("D" + str(i + 5)).encode(), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -79,7 +79,7 @@ class KafkaDatasetTest(test.TestCase):
           })
       for j in range(2):
         for i in range(5):
-          self.assertEqual("D" + str(i + j * 5), sess.run(get_next))
+          self.assertEqual(("D" + str(i + j * 5)).encode(), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -93,7 +93,7 @@ class KafkaDatasetTest(test.TestCase):
       for _ in range(10):
         for j in range(2):
           for i in range(5):
-            self.assertEqual("D" + str(i + j * 5), sess.run(get_next))
+            self.assertEqual(("D" + str(i + j * 5)).encode(), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -106,9 +106,9 @@ class KafkaDatasetTest(test.TestCase):
               batch_size: 5
           })
       for _ in range(10):
-        self.assertAllEqual(["D" + str(i) for i in range(5)],
+        self.assertAllEqual([("D" + str(i)).encode() for i in range(5)],
                             sess.run(get_next))
-        self.assertAllEqual(["D" + str(i + 5) for i in range(5)],
+        self.assertAllEqual([("D" + str(i + 5)).encode() for i in range(5)],
                             sess.run(get_next))
 
 
