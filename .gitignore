@@ -6,3 +6,10 @@
 __pycache__
 *.swp
 *.whl
+
+# IDE specific
+.vscode/
+.idea/
+*.pbxproj
+*.xcworkspacedata
+.ipynb_checkpoints
