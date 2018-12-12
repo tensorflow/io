@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.contrib.parquet.python.ops import parquet_dataset_ops
+from tensorflow_io.parquet.python.ops import parquet_dataset_ops
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
