@@ -59,7 +59,7 @@ function main() {
   
   python setup.py bdist_wheel
 
-  cp dist/*.whl "${DEST}"
+  auditwheel repair -w "${DEST}" dist/*.whl
   popd
   rm -rf ${TMPDIR}
   echo $(date) : "=== Output wheel file is in: ${DEST}"
