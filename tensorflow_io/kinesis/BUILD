@@ -29,6 +29,19 @@ py_library(
     srcs_version = "PY2AND3",
 )
 
+# Stub test to make sure kinesis ops is loaded.
+py_test(
+    name = "kinesis_stub_test",
+    srcs = [
+        "python/kernel_tests/kinesis_stub_test.py"
+    ],
+    main = "python/kernel_tests/kinesis_stub_test.py",
+    deps = [
+        ":kinesis_ops_py",
+    ],
+    srcs_version = "PY2AND3",
+)
+
 py_test(
     name = "kinesis_py_test",
     srcs = [
@@ -39,6 +52,7 @@ py_test(
         ":kinesis_ops_py",
     ],
     srcs_version = "PY2AND3",
+    tags = ["manual"],
 )
 
 py_library(
