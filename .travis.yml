@@ -20,28 +20,28 @@ matrix:
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.test.sh
+        - bazel test -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test
     - language: python
       python:
         - 3.4
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.test.sh
+        - bazel test -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test
     - language: python
       python:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.test.sh
+        - bazel test -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test
     - language: python
       python:
         - 3.6
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.test.sh
+        - bazel test -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test
     - language: r
       before_install:
         - cd R-package
