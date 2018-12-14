@@ -36,6 +36,11 @@ function main() {
     exit 1
   fi
 
+  if [[ "$(auditwheel --version || true)" != *"installed"* ]]; then
+    echo "No auditwheel installed"
+    exit 1
+  fi
+
   # Create the directory, then do dirname on a non-existent file inside it to
   # give us an absolute paths with tilde characters resolved to the destination
   # directory.
