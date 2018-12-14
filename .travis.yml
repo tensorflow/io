@@ -43,6 +43,15 @@ matrix:
       script:
         - bazel test -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test
     - language: r
+      r:
+        - 3.2
+      before_install:
+        - cd R-package
+      script:
+        - R -e "devtools::test()"
+    - language: r
+      r:
+        - 3.5
       before_install:
         - cd R-package
       script:
