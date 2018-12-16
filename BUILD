@@ -13,5 +13,6 @@ sh_binary(
         "//tensorflow_io/parquet:parquet_py",
         "//tensorflow_io/libsvm:libsvm_py",
         "//tensorflow_io/image:image_py",
+        "//tensorflow_io/video:video_py",
     ],
 )
