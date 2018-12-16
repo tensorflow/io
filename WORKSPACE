@@ -144,3 +144,14 @@ http_archive(
     sha256 = "12a13686cab7ffaf8ea01711b8f55e1dbd3bf059b7c46a25fefa1250bdd9dd23",
     strip_prefix = "flatbuffers-b99332efd732e6faf60bb7ce1ce5902ed65d5ba3",
 )
+
+http_archive(
+    name = "ffmpeg",
+    urls = [
+        "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
+    ],
+    sha256 = "bbccc87cd031498728bcc2dba5596a47e6fd92b2cec060a71feef65617a261fe",
+    strip_prefix = "FFmpeg-n3.4.4",
+    build_file = "//third_party:ffmpeg.BUILD",
+)
