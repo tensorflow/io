@@ -21,14 +21,14 @@ matrix:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
     - language: python
       python:
         - 3.4
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
     - language: python
       python:
         - 3.5
@@ -36,7 +36,7 @@ matrix:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
     - language: python
       python:
         - 3.6
@@ -44,7 +44,7 @@ matrix:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
     - language: r
       r:
         - 3.2
