@@ -50,9 +50,15 @@ matrix:
       script:
         - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
     - name: "Ubuntu 18.04 Python 2.7"
+      language: python
+      python:
+        - 2.7
       script:
         - docker run -i -t -e PYTHON_VERSION= -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --spawn_strategy standalone -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test"
     - name: "Ubuntu 18.04 Python 3.6"
+      language: python
+      python:
+        - 3.6
       script:
         - docker run -i -t -e PYTHON_VERSION=3 -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --spawn_strategy standalone -s --verbose_failures -- //tensorflow_io/... -//tensorflow_io/ignite:ignite_py_test"
     - name: "Ubuntu 14.04 R 3.2"
