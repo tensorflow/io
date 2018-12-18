@@ -19,36 +19,44 @@ matrix:
       python:
         - 2.7
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
+        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - name: "Ubuntu 14.04 Python 3.4"
       language: python
       python:
         - 3.4
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
       script:
-        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
+        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - name: "Ubuntu 14.04 Python 3.5"
       language: python
       python:
         - 3.5
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
+        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - name: "Ubuntu 14.04 Python 3.6"
       language: python
       python:
         - 3.6
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install pyarrow==0.11.1
       script:
-        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/... -//tensorflow_io/video:video_py_test
+        - bazel test --show_progress=no --spawn_strategy standalone -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - name: "Ubuntu 18.04 Python 2.7 (Video Only)"
       language: python
       python:
@@ -66,6 +74,8 @@ matrix:
       r:
         - 3.2
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - cd R-package
       script:
         - R -e "devtools::test()"
@@ -74,6 +84,8 @@ matrix:
       r:
         - 3.5
       before_install:
+        - sudo apt-get update -y
+        - sudo apt-get install -y -qq libav-tools
         - cd R-package
       script:
         - R -e "devtools::test()"
