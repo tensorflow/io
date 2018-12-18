@@ -15,6 +15,7 @@ cc_library(
         "libavformat/version.h",
         "libavcodec/version.h",
         "libavcodec/avcodec.h",
+        "libavcodec/old_codec_ids.h",
         "libavutil/avconfig.h",
         "libavutil/samplefmt.h",
         "libavutil/avutil.h",
@@ -29,6 +30,7 @@ cc_library(
         "libavutil/intfloat.h",
         "libavutil/log.h",
         "libavutil/pixfmt.h",
+        "libavutil/old_pix_fmts.h",
         "libavutil/buffer.h",
         "libavutil/cpu.h",
         "libavutil/channel_layout.h",
@@ -43,19 +45,19 @@ cc_library(
     defines = [],
     includes = [],
     linkopts = [
-        "-L$(GENDIR)/external/ffmpeg",
-        "-l:libavformat.so.57",
-        "-l:libavcodec.so.57",
-        "-l:libavutil.so.55",
-        "-l:libswscale.so.4",
+        "-L$(GENDIR)/external/ffmpeg_2_8",
+        "-l:libavformat-ffmpeg.so.56",
+        "-l:libavcodec-ffmpeg.so.56",
+        "-l:libavutil-ffmpeg.so.54",
+        "-l:libswscale-ffmpeg.so.3",
     ],
     visibility = ["//visibility:public"],
     deps = [],
     data = [
-        "libavformat.so.57",
-        "libavcodec.so.57",
-        "libavutil.so.55",
-        "libswscale.so.4",
+        "libavformat-ffmpeg.so.56",
+        "libavcodec-ffmpeg.so.56",
+        "libavutil-ffmpeg.so.54",
+        "libswscale-ffmpeg.so.3",
     ],
 )
 
@@ -63,26 +65,26 @@ cc_library(
 # even when those files are not installed (e.g., Ubuntu 14.04)
 # In runtime (e.g., Ubuntu 18.04) system files will be used.
 genrule(
-    name = "libavformat_so_57",
-    outs = ["libavformat.so.57"],
+    name = "libavformat-ffmpeg_so_56",
+    outs = ["libavformat-ffmpeg.so.56"],
     cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 
 genrule(
-    name = "libavcodec_so_57",
-    outs = ["libavcodec.so.57"],
+    name = "libavcodec-ffmpeg_so_56",
+    outs = ["libavcodec-ffmpeg.so.56"],
     cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 
 genrule(
-    name = "libavutil_so_55",
-    outs = ["libavutil.so.55"],
+    name = "libavutil-ffmpeg_so_54",
+    outs = ["libavutil-ffmpeg.so.54"],
     cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 
 genrule(
-    name = "libswscale_so_4",
-    outs = ["libswscale.so.4"],
+    name = "libswscale-ffmpeg_so_3",
+    outs = ["libswscale-ffmpeg.so.3"],
     cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 

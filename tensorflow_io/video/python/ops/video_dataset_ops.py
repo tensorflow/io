@@ -25,10 +25,21 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
+from tensorflow.python.framework import errors_impl
 from tensorflow.python.framework import load_library
 from tensorflow.python.platform import resource_loader
-video_ops = load_library.load_op_library(
-    resource_loader.get_path_to_datafile('_video_ops.so'))
+video_ops = None
+try:
+  video_ops = load_library.load_op_library(
+    resource_loader.get_path_to_datafile('_video_ops_ffmpeg_3.4.so'))
+except errors_impl.NotFoundError as e:
+  print(e)
+if video_ops is None:
+  try:
+    video_ops = load_library.load_op_library(
+      resource_loader.get_path_to_datafile('_video_ops_ffmpeg_2.8.so'))
+  except errors_impl.NotFoundError as e:
+    print(e)
 
 
 class VideoDataset(dataset_ops.DatasetSource):

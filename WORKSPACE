@@ -146,12 +146,23 @@ http_archive(
 )
 
 http_archive(
-    name = "ffmpeg",
+    name = "ffmpeg_2_8",
+    urls = [
+        "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n2.8.15.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n2.8.15.tar.gz",
+    ],
+    sha256 = "8ba1b91a14431fe37091936c3a34469d7473965ab9edde0343c88f2d920bd918",
+    strip_prefix = "FFmpeg-n2.8.15",
+    build_file = "//third_party:ffmpeg_2_8.BUILD",
+)
+
+http_archive(
+    name = "ffmpeg_3_4",
     urls = [
         "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
         "https://github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
     ],
     sha256 = "bbccc87cd031498728bcc2dba5596a47e6fd92b2cec060a71feef65617a261fe",
     strip_prefix = "FFmpeg-n3.4.4",
-    build_file = "//third_party:ffmpeg.BUILD",
+    build_file = "//third_party:ffmpeg_3_4.BUILD",
 )
