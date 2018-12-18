@@ -29,15 +29,10 @@ from tensorflow.python.framework import errors_impl
 from tensorflow.python.framework import load_library
 from tensorflow.python.platform import resource_loader
 video_ops = None
-try:
-  video_ops = load_library.load_op_library(
-    resource_loader.get_path_to_datafile('_video_ops_ffmpeg_3.4.so'))
-except errors_impl.NotFoundError as e:
-  print(e)
-if video_ops is None:
+for f in ['_video_ops_ffmpeg_3.4.so', '_video_ops_ffmpeg_2.8.so', '_video_ops_libav_9.20.so']:
   try:
-    video_ops = load_library.load_op_library(
-      resource_loader.get_path_to_datafile('_video_ops_ffmpeg_2.8.so'))
+    video_ops = load_library.load_op_library(resource_loader.get_path_to_datafile(f))
+    break;
   except errors_impl.NotFoundError as e:
     print(e)
 
