@@ -166,3 +166,14 @@ http_archive(
     strip_prefix = "FFmpeg-n3.4.4",
     build_file = "//third_party:ffmpeg_3_4.BUILD",
 )
+
+http_archive(
+    name = "libav_9_20",
+    urls = [
+        "https://mirror.bazel.build/github.com/libav/libav/archive/v9.20.tar.gz",
+        "https://github.com/libav/libav/archive/v9.20.tar.gz",
+    ],
+    sha256 = "ecc2389bc857602450196c9240e1ebc59066980f5d42e977efe0f498145775d4",
+    strip_prefix = "libav-9.20",
+    build_file = "//third_party:libav_9_20.BUILD",
+)
