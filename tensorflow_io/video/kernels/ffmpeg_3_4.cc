@@ -111,6 +111,12 @@ bool VideoReader::ReadAhead(bool first)
 	if (packet_.stream_index == stream_index_) {
           int got_frame = 0;
           int decoded = avcodec_decode_video2(codec_context_, frame_, &got_frame, &packet_);
+          if (!frame_more_ && got_frame) {
+            // This is the cached packet.
+            sws_scale(sws_context_, frame_->data, frame_->linesize, 0, codec_context_->height, frame_rgb_->data, frame_rgb_->linesize);
+            packet_more_ = true;
+            return true;
+          }
           if (decoded >= 0 && got_frame) {
 	    sws_scale(sws_context_, frame_->data, frame_->linesize, 0, codec_context_->height, frame_rgb_->data, frame_rgb_->linesize);
 	    if (packet_.data) {
