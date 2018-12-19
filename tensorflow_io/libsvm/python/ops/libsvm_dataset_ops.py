@@ -8,14 +8,28 @@ from functools import partial
 from tensorflow.python.data.ops import readers as core_readers
 from tensorflow.python.data.experimental.ops import batching
 
-from tensorflow.python.framework import load_library
+from tensorflow.python.framework import load_library, sparse_tensor
 from tensorflow.python.platform import resource_loader
 
-libsvm_ops = load_library.load_op_library(
+gen_libsvm_ops = load_library.load_op_library(
     resource_loader.get_path_to_datafile('_libsvm_ops.so'))
 
 
-decode_libsvm = libsvm_ops.decode_libsvm
+def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
+  """Convert Libsvm records to a tensor of label and a tensor of feature.
+  Args:
+    content: A `Tensor` of type `string`. Each string is a record/row in
+      the Libsvm format.
+    num_features: The number of features.
+    dtype: The type of the output feature tensor. Default to tf.float32.
+    label_dtype: The type of the output label tensor. Default to tf.int64.
+  Returns:
+    features: A `SparseTensor` of the shape `[input_shape, num_features]`.
+    labels: A `Tensor` of the same shape as content.
+  """
+  labels, indices, values, shape = gen_libsvm_ops.decode_libsvm(
+      content, num_features, dtype=dtype, label_dtype=label_dtype)
+  return sparse_tensor.SparseTensor(indices, values, shape), labels
 
 
 def make_libsvm_dataset(file_names,
@@ -28,7 +42,7 @@ def make_libsvm_dataset(file_names,
                         num_parallel_parser_calls=None,
                         drop_final_batch=False,
                         prefetch_buffer_size=0):
-    """Reads LibSVM files into a dataset.
+  """Reads LibSVM files into a dataset.
 
   Args:
     file_names: A `tf.string` tensor containing one or more filenames.
@@ -51,19 +65,18 @@ def make_libsvm_dataset(file_names,
       feature batches to prefetch for performance improvement.
       Defaults to auto-tune. Set to 0 to disable prefetching.
   """
-  dataset = core_readers.TextLineDataset(file_names, 
+  dataset = core_readers.TextLineDataset(file_names,
                                          compression_type=compression_type, 
                                          buffer_size=buffer_size)
-  parsing_func = partial(decode_libsvm,
-            num_features=num_features, 
-            dtype=dtype, 
-            label_type=label_type)
+  def parsing_func(content):
+    return decode_libsvm(content, num_features, dtype, label_type)
+
   dataset = dataset.apply(batching.map_and_batch(
                                         parsing_func, 
                                         batch_size, 
                                         num_parallel_calls=num_parallel_parser_calls,
                                         drop_remainder=drop_final_batch))
-    if prefetch_buffer_size == 0:
-        return dataset
-    else:
-        return dataset.prefetch(buffer_size=prefetch_buffer_size)
+  if prefetch_buffer_size == 0:
+    return dataset
+  else:
+    return dataset.prefetch(buffer_size=prefetch_buffer_size)

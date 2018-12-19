@@ -33,7 +33,7 @@ py_test(
     srcs = [
 	"python/kernel_tests/decode_libsvm_op_test.py"
     ],
-    main = "python/kernel_tests/decode_libsvm_ops_test.py",
+    main = "python/kernel_tests/decode_libsvm_op_test.py",
     deps = [
         ":libsvm_ops_py",
     ],
