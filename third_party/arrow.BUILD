@@ -7,48 +7,47 @@ licenses(["notice"])  # Apache 2.0
 
 exports_files(["LICENSE.txt"])
 
+load("@com_github_google_flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
+
+flatbuffer_cc_library(
+    name = "arrow_format",
+    srcs = [
+        "format/File.fbs",
+        "format/Message.fbs",
+        "format/Schema.fbs",
+        "format/Tensor.fbs",
+        "cpp/src/arrow/ipc/feather.fbs",
+    ],
+    out_prefix = "cpp/src/arrow/ipc/",
+    flatc_args = [
+        "--no-union-value-namespacing",
+        "--gen-object-api",
+    ],
+)
+
 cc_library(
     name = "arrow",
-    srcs = [
-        "cpp/src/arrow/status.h",
-        "cpp/src/arrow/status.cc",
-        "cpp/src/arrow/buffer.h",
-        "cpp/src/arrow/buffer.cc",
-        "cpp/src/arrow/memory_pool.h",
-        "cpp/src/arrow/memory_pool.cc",
-        "cpp/src/arrow/io/file.h",
-        "cpp/src/arrow/io/file.cc",
-        "cpp/src/arrow/io/interfaces.h",
-        "cpp/src/arrow/io/interfaces.cc",
-        "cpp/src/arrow/util/compression.h",
-        "cpp/src/arrow/util/compression.cc",
-        "cpp/src/arrow/util/compression_snappy.h",
-        "cpp/src/arrow/util/compression_snappy.cc",
-        "cpp/src/arrow/util/key_value_metadata.h",
-        "cpp/src/arrow/util/key_value_metadata.cc",
-        "cpp/src/arrow/util/visibility.h",
-        "cpp/src/arrow/util/macros.h",
-        "cpp/src/arrow/util/bit-util.h",
-        "cpp/src/arrow/util/type_traits.h",
-        "cpp/src/arrow/io/memory.h",
-        "cpp/src/arrow/builder.h",
-        "cpp/src/arrow/type.h",
-        "cpp/src/arrow/type_fwd.h",
-        "cpp/src/arrow/visitor.h",
-        "cpp/src/arrow/type_traits.h",
-        "cpp/src/arrow/util/hash.h",
-        "cpp/src/arrow/util/bit-stream-utils.h",
-        "cpp/src/arrow/util/bpacking.h",
-        "cpp/src/arrow/util/cpu-info.h",
-        "cpp/src/arrow/util/checked_cast.h",
-        "cpp/src/arrow/util/hash-util.h",
-        "cpp/src/arrow/util/sse-util.h",
-        "cpp/src/arrow/util/rle-encoding.h",
-        "cpp/src/arrow/util/logging.h",
-        "cpp/src/arrow/util/logging.cc",
-        "cpp/src/arrow/util/io-util.h",
-        "cpp/src/arrow/util/io-util.cc",
-        "cpp/src/arrow/util/windows_compatibility.h",
+    srcs = glob([
+        "cpp/src/arrow/*.cc",
+        "cpp/src/arrow/*.h",
+        "cpp/src/arrow/io/*.cc",
+        "cpp/src/arrow/io/*.h",
+        "cpp/src/arrow/ipc/*.cc",
+        "cpp/src/arrow/ipc/*.h",
+        "cpp/src/arrow/util/*.cc",
+        "cpp/src/arrow/util/*.h",
+    ],
+    exclude=[
+        "cpp/src/arrow/**/*-test.cc",
+        "cpp/src/arrow/**/*benchmark*.cc",
+        "cpp/src/arrow/**/*hdfs*.cc",
+        "cpp/src/arrow/util/compression_zstd.*",
+        "cpp/src/arrow/util/compression_lz4.*",
+        "cpp/src/arrow/util/compression_brotli.*",
+        "cpp/src/arrow/ipc/json*.cc",
+        "cpp/src/arrow/ipc/stream-to-file.cc",
+        "cpp/src/arrow/ipc/file-to-stream.cc",
+    ]) + [
         "cpp/src/parquet/api/io.h",
         "cpp/src/parquet/api/reader.h",
         "cpp/src/parquet/api/schema.h",
@@ -97,6 +96,7 @@ cc_library(
     copts = [
     ],
     deps = [
+        ":arrow_format",
         "@snappy",
         "@thrift",
     ],
