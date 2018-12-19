@@ -30,6 +30,7 @@ cc_library(
     srcs = glob([
         "cpp/src/arrow/*.cc",
         "cpp/src/arrow/*.h",
+        "cpp/src/arrow/adapters/tensorflow/convert.h",
         "cpp/src/arrow/io/*.cc",
         "cpp/src/arrow/io/*.h",
         "cpp/src/arrow/ipc/*.cc",
@@ -97,6 +98,7 @@ cc_library(
     ],
     deps = [
         ":arrow_format",
+        "@boost",
         "@snappy",
         "@thrift",
     ],
