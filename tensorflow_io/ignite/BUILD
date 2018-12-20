@@ -98,7 +98,11 @@ py_test(
 
 py_library(
     name = "ignite_py",
-    srcs = ["__init__.py"],
+    srcs = [
+        "__init__.py",
+        "python/__init__.py",
+        "python/ops/__init__.py",
+    ],
     deps = [
         ":dataset_ops_py",
         ":igfs_ops_py",
