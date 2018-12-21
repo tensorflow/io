@@ -106,6 +106,18 @@ http_archive(
     build_file = "//third_party:thrift.BUILD",
 )
 
+# Parquet needs generated parquet_types.h and parquet_types.cpp which are generated
+# from src/parquet/parquet.thrift in apache-parquet-cpp-1.4.0.tar.gz.
+#
+# Generating parquet_types.h and parquet_types.cpp, however, needs both bison and flex
+# installed, which is really an unnecessary step.
+#
+# We use the following step to generate the parquet_types.h and parquet_types.cpp files:
+#  - In third_party directory, run `docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.type`
+#  - Once complete, a parquet.patch file will be generated which could be used as a patch in bazel
+# 
+# $ cd third_party
+# $ docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.type
 http_archive(
     name = "parquet",
     urls = [
@@ -118,4 +130,5 @@ http_archive(
     patches = [
         "//third_party:parquet.patch",
     ],
+    patch_args = ["-p1"],
 )
