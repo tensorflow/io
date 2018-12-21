@@ -15,6 +15,6 @@
 # ==============================================================================
 
 nohup apache-ignite-fabric/bin/ignite.sh /data/config/ignite-config-igfs.xml &
-sleep 5 # Wait Apache Ignite to be started
+sleep 10 # Wait Apache Ignite to be started
 
 tail -f nohup.out
