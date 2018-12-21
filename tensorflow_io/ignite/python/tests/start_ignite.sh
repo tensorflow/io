@@ -24,3 +24,6 @@ docker run -itd --name ignite-plain -p 42300:10800 \
 # Start Apache Ignite with IGFS.
 docker run -itd --name ignite-igfs -p 10500:10500 \
 -v ${SCRIPT_PATH}:/data apacheignite/ignite:${IGNITE_VERSION} /data/bin/start-igfs.sh
+
+# Wait Apache Ignite to be started
+sleep 10
