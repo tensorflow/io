@@ -121,7 +121,8 @@ class ParquetDatasetOp : public DatasetOpKernel {
         mutex_lock l(mu_);
 
         // Loop until we find a row to read or there are no more files left to
-        // read
+        // read. The levels of iteration follow the hierarchical order:
+        // current_file_index_ -> current_row_group_ -> current_row_.
         while (true) {
           if (parquet_reader_) {
             // We are currently processing a file, so try to read the next row
@@ -174,6 +175,56 @@ class ParquetDatasetOp : public DatasetOpKernel {
 
           TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
         }
+      }
+
+     protected:
+      Status SaveInternal(IteratorStateWriter* writer) override {
+        return errors::Unimplemented("SaveInternal is currently not supported");
+      }
+
+      Status RestoreInternal(IteratorContext* ctx,
+                             IteratorStateReader* reader) override {
+        return errors::Unimplemented(
+            "RestoreInternal is currently not supported");
+      }
+
+     private:
+      // Sets up Parquet streams to read from the topic at
+      // `current_file_index_`.
+      Status SetupStreamsLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        DCHECK_LT(current_file_index_, dataset()->filenames_.size());
+
+        // Actually move on to next file.
+        const string& next_filename =
+            dataset()->filenames_[current_file_index_];
+        // TODO (yongtang): Switch to the Open() interface and use
+        // RandomAccessFile.
+        parquet_reader_ =
+            parquet::ParquetFileReader::OpenFile(next_filename, false);
+        file_metadata_ = parquet_reader_->metadata();
+        current_row_group_ = 0;
+        if (current_row_group_ < file_metadata_->num_row_groups()) {
+          row_group_reader_ = parquet_reader_->RowGroup(current_row_group_);
+          column_readers_.clear();
+          for (int64 i = 0; i < dataset()->columns_.size(); i++) {
+            int64 column = dataset()->columns_[i];
+            std::shared_ptr<parquet::ColumnReader> column_reader =
+                row_group_reader_->Column(column);
+            column_readers_.emplace_back(column_reader);
+          }
+        }
+        current_row_ = 0;
+        return Status::OK();
+      }
+
+      // Resets all Parquet streams.
+      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        current_row_ = 0;
+        column_readers_.clear();
+        row_group_reader_.reset();
+        current_row_group_ = 0;
+        file_metadata_.reset();
+        parquet_reader_.reset();
       }
 
       template <typename DType>
@@ -251,56 +302,6 @@ class ParquetDatasetOp : public DatasetOpKernel {
                 " is currently not supported in ParquetDataset");
         }
         return Status::OK();
-      }
-
-     protected:
-      Status SaveInternal(IteratorStateWriter* writer) override {
-        return errors::Unimplemented("SaveInternal is currently not supported");
-      }
-
-      Status RestoreInternal(IteratorContext* ctx,
-                             IteratorStateReader* reader) override {
-        return errors::Unimplemented(
-            "RestoreInternal is currently not supported");
-      }
-
-     private:
-      // Sets up Parquet streams to read from the topic at
-      // `current_file_index_`.
-      Status SetupStreamsLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        DCHECK_LT(current_file_index_, dataset()->filenames_.size());
-
-        // Actually move on to next file.
-        const string& next_filename =
-            dataset()->filenames_[current_file_index_];
-        // TODO (yongtang): Switch to the Open() interface and use
-        // RandomAccessFile.
-        parquet_reader_ =
-            parquet::ParquetFileReader::OpenFile(next_filename, false);
-        file_metadata_ = parquet_reader_->metadata();
-        current_row_group_ = 0;
-        if (current_row_group_ < file_metadata_->num_row_groups()) {
-          row_group_reader_ = parquet_reader_->RowGroup(current_row_group_);
-          column_readers_.clear();
-          for (int64 i = 0; i < dataset()->columns_.size(); i++) {
-            int64 column = dataset()->columns_[i];
-            std::shared_ptr<parquet::ColumnReader> column_reader =
-                row_group_reader_->Column(column);
-            column_readers_.emplace_back(column_reader);
-          }
-        }
-        current_row_ = 0;
-        return Status::OK();
-      }
-
-      // Resets all Parquet streams.
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        current_row_ = 0;
-        column_readers_.clear();
-        row_group_reader_.reset();
-        current_row_group_ = 0;
-        file_metadata_.reset();
-        parquet_reader_.reset();
       }
 
       mutex mu_;
