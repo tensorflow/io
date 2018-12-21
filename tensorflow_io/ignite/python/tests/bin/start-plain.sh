@@ -15,7 +15,7 @@
 # ==============================================================================
 
 nohup apache-ignite-fabric/bin/ignite.sh /data/config/ignite-config-plain.xml & 
-sleep 5 # Wait Apache Ignite to be started
+sleep 10 # Wait Apache Ignite to be started
 
 ./apache-ignite-fabric/bin/sqlline.sh \
 -u "jdbc:ignite:thin://127.0.0.1/" \
