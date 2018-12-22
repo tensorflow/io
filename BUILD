@@ -11,5 +11,6 @@ sh_binary(
         "//tensorflow_io/kafka:kafka_py",
         "//tensorflow_io/kinesis:kinesis_py",
         "//tensorflow_io/parquet:parquet_py",
+        "//tensorflow_io/libsvm:libsvm_py",
     ],
 )
