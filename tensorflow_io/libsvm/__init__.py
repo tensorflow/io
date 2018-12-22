@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.libsvm.python.ops.libsvm_dataset_ops import make_libsvm_dataset
+from tensorflow_io.libsvm.python.ops.libsvm_dataset_ops import make_libsvm_dataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
