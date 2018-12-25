@@ -152,3 +152,6 @@ process_int_param_fn <- function(param, docs) {
   }
   param
 }
+
+# Function to append "tf_dataset" class label to the returned python object
+tf_dataset_postprocess_fn <- function() { "as_tf_dataset(python_function_result)" }
