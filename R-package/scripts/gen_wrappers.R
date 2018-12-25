@@ -1,4 +1,4 @@
-# Instruction:
+# Instructions:
 # * Ensure you have the following R libraries installed via the following:
 #   `devtools::install_github("rstudio/reticulate"); install.packages(c("stringr", "roxygen2))`
 # * Change variable `pkg_location` below to point to your R package directory
@@ -6,13 +6,12 @@
 #   environment with tensorflow-io installed. 
 #   e.g. use_condaenv("tensorflow-io", conda = "~/miniconda3/envs/py36/bin/conda")
 #   Note that you should insert this line right after loading reticulate package.
+
 library(reticulate)
 library(stringr)
 library(roxygen2)
 pkg_location <- "~/repos/io/R-package"
 
-
-# Note: Code below should not be changed unless necessary
 setwd(pkg_location)
 tfio_lib <- import("tensorflow_io")
 
@@ -32,7 +31,28 @@ py_function_custom_scaffold(
   "tfio_lib$kafka$KafkaDataset",
   r_function = "kafka_dataset",
   process_param_fn = process_int_param_fn,
-  postprocess_fn = function() { "as_tf_dataset(python_function_result)" },
+  postprocess_fn = tf_dataset_postprocess_fn,
+  file_name = generated_wrappers_file_name)
+
+py_function_custom_scaffold(
+  "tfio_lib$ignite$IgniteDataset",
+  r_function = "ignite_dataset",
+  process_param_fn = process_int_param_fn,
+  postprocess_fn = tf_dataset_postprocess_fn,
+  file_name = generated_wrappers_file_name)
+
+py_function_custom_scaffold(
+  "tfio_lib$kinesis$KinesisDataset",
+  r_function = "kinesis_dataset",
+  process_param_fn = process_int_param_fn,
+  postprocess_fn = tf_dataset_postprocess_fn,
+  file_name = generated_wrappers_file_name)
+
+py_function_custom_scaffold(
+  "tfio_lib$hadoop$SequenceFileDataset",
+  r_function = "sequence_file_dataset",
+  process_param_fn = process_int_param_fn,
+  postprocess_fn = tf_dataset_postprocess_fn,
   file_name = generated_wrappers_file_name)
 
 # Regenerate NAMESPACE and .Rd files
