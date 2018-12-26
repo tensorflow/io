@@ -1,4 +1,4 @@
-#' Create a IgniteDataset.
+#' Create a `IgniteDataset`.
 #'
 #' Apache Ignite is a memory-centric distributed database, caching, and
 #' processing platform for transactional, analytical, and streaming workloads,

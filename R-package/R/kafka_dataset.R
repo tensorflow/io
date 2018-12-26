@@ -1,4 +1,4 @@
-#' Creates a Kafka dataset that consumes Kafka messages.
+#' Creates a `KafkaDataset`.
 #'
 #' @param topics A `tf.string` tensor containing one or more subscriptions, in
 #'   the format of `[topic:partition:offset:length]`, by default length is -1
