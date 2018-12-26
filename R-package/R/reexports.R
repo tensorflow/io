@@ -21,3 +21,7 @@ tensorflow::install_tensorflow
 #' @importFrom tensorflow tf_config
 #' @export
 tensorflow::tf_config
+
+#' @importFrom tensorflow tf_version
+#' @export
+tensorflow::tf_version

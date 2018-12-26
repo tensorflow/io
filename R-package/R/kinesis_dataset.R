@@ -21,8 +21,8 @@ kinesis_dataset <- function(
   dataset <- tfio_lib$kinesis$KinesisDataset(
     stream = stream,
     shard = shard,
-    read_indefinitely = read_indefinitely,
-    interval = as.integer(interval)
+    read_indefinitely = cast_logical(read_indefinitely),
+    interval = cast_scalar_integer(interval)
   )
   as_tf_dataset(dataset)
 }

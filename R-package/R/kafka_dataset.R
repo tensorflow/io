@@ -20,8 +20,8 @@ kafka_dataset <- function(
     topics = topics,
     servers = servers,
     group = group,
-    eof = eof,
-    timeout = as.integer(timeout)
+    eof = cast_logical(eof),
+    timeout = cast_scalar_integer(timeout)
   )
   as_tf_dataset(dataset)
 }
