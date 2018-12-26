@@ -42,15 +42,15 @@ ignite_dataset <- function(
   dataset <- tfio_lib$ignite$IgniteDataset(
     cache_name = cache_name,
     host = host,
-    port = as.integer(port),
-    local = local,
-    part = as.integer(part),
-    page_size = as.integer(page_size),
-    username = username,
-    password = password,
-    certfile = certfile,
-    keyfile = keyfile,
-    cert_password = cert_password
+    port = cast_scalar_integer(port),
+    local = cast_logical(local),
+    part = cast_scalar_integer(part),
+    page_size = cast_scalar_integer(page_size),
+    username = cast_nullable_string(username),
+    password = cast_nullable_string(password),
+    certfile = cast_nullable_string(certfile),
+    keyfile = cast_nullable_string(keyfile),
+    cert_password = cast_nullable_string(cert_password)
   )
   as_tf_dataset(dataset)
 }

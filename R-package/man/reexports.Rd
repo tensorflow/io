@@ -6,6 +6,7 @@
 \alias{tf}
 \alias{install_tensorflow}
 \alias{tf_config}
+\alias{tf_version}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -13,6 +14,6 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{tensorflow}{\code{\link[tensorflow]{tf}}, \code{\link[tensorflow]{install_tensorflow}}, \code{\link[tensorflow]{tf_config}}}
+  \item{tensorflow}{\code{\link[tensorflow]{tf}}, \code{\link[tensorflow]{install_tensorflow}}, \code{\link[tensorflow]{tf_config}}, \code{\link[tensorflow]{tf_version}}}
 }}
 
