@@ -7,6 +7,27 @@
 \alias{install_tensorflow}
 \alias{tf_config}
 \alias{tf_version}
+\alias{next_batch}
+\alias{with_dataset}
+\alias{until_out_of_range}
+\alias{dataset_repeat}
+\alias{dataset_shuffle}
+\alias{dataset_shuffle_and_repeat}
+\alias{dataset_batch}
+\alias{dataset_cache}
+\alias{dataset_concatenate}
+\alias{dataset_take}
+\alias{dataset_map}
+\alias{dataset_map_and_batch}
+\alias{dataset_flat_map}
+\alias{dataset_prefetch}
+\alias{dataset_prefetch_to_device}
+\alias{dataset_filter}
+\alias{dataset_skip}
+\alias{dataset_interleave}
+\alias{dataset_shard}
+\alias{dataset_padded_batch}
+\alias{dataset_prepare}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -15,5 +36,7 @@ below to see their documentation.
 
 \describe{
   \item{tensorflow}{\code{\link[tensorflow]{tf}}, \code{\link[tensorflow]{install_tensorflow}}, \code{\link[tensorflow]{tf_config}}, \code{\link[tensorflow]{tf_version}}}
+
+  \item{tfdatasets}{\code{\link[tfdatasets]{next_batch}}, \code{\link[tfdatasets]{with_dataset}}, \code{\link[tfdatasets]{until_out_of_range}}, \code{\link[tfdatasets]{dataset_repeat}}, \code{\link[tfdatasets]{dataset_shuffle}}, \code{\link[tfdatasets]{dataset_shuffle_and_repeat}}, \code{\link[tfdatasets]{dataset_batch}}, \code{\link[tfdatasets]{dataset_cache}}, \code{\link[tfdatasets]{dataset_concatenate}}, \code{\link[tfdatasets]{dataset_take}}, \code{\link[tfdatasets]{dataset_map}}, \code{\link[tfdatasets]{dataset_map_and_batch}}, \code{\link[tfdatasets]{dataset_flat_map}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_prefetch_to_device}}, \code{\link[tfdatasets]{dataset_filter}}, \code{\link[tfdatasets]{dataset_skip}}, \code{\link[tfdatasets]{dataset_interleave}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_shard}}, \code{\link[tfdatasets]{dataset_padded_batch}}, \code{\link[tfdatasets]{dataset_prepare}}}
 }}
 
