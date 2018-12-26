@@ -13,3 +13,8 @@ __pycache__
 *.pbxproj
 *.xcworkspacedata
 .ipynb_checkpoints
+
+# Auto-generated files by `R CMD check`
+tfio.Rcheck/
+tfio_*.tar.gz
+
