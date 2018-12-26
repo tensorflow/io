@@ -17,4 +17,5 @@ __pycache__
 # Auto-generated files by `R CMD check`
 tfio.Rcheck/
 tfio_*.tar.gz
+.Rproj.user
 
