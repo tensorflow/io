@@ -22,7 +22,7 @@ kinesis_dataset <- function(
     stream = stream,
     shard = shard,
     read_indefinitely = read_indefinitely,
-    interval = interval
+    interval = as.integer(interval)
   )
   as_tf_dataset(dataset)
 }

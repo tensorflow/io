@@ -21,7 +21,7 @@ kafka_dataset <- function(
     servers = servers,
     group = group,
     eof = eof,
-    timeout = timeout
+    timeout = as.integer(timeout)
   )
   as_tf_dataset(dataset)
 }
