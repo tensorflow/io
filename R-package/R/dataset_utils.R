@@ -11,5 +11,5 @@ is_dataset <- function (x) {
 }
 
 is_tfio_dataset <- function(x) {
-  "tensorflow_io" %in% class(x)
+  grepl("tensorflow_io", class(x))
 }
