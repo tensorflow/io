@@ -5,24 +5,20 @@
 # installed, which is really an unnecessary step.
 #
 # We use the following step to generate the parquet_types.h and parquet_types.cpp files:
-#  - In third_party directory, run `docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.type`
+#  - In third_party directory, run `docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header`
 #  - Once complete, a parquet.patch file will be generated which could be used as a patch in bazel
 #
-# docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.type
+# docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header
 apt-get -y -qq update && apt-get -y -qq install libtool automake curl g++ pkg-config make bison flex libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-system-dev libboost-test-dev libssl-dev libtool bison flex pkg-config cmake
 curl -OL https://github.com/apache/thrift/archive/0.11.0.tar.gz
 tar -xzf 0.11.0.tar.gz
-cd thrift-0.11.0
-./bootstrap.sh
-./configure --prefix=/usr
-make install
-cd ..
-curl -OL https://github.com/apache/parquet-cpp/archive/apache-parquet-cpp-1.4.0.tar.gz
-tar -xzf apache-parquet-cpp-1.4.0.tar.gz
-cd parquet-cpp-apache-parquet-cpp-1.4.0
-cmake .
-make
-cd ..
-cp parquet-cpp-apache-parquet-cpp-1.4.0/src/parquet/parquet_types.h b/src/parquet/
-cp parquet-cpp-apache-parquet-cpp-1.4.0/src/parquet/parquet_types.cpp b/src/parquet/
+(cd thrift-0.11.0 && ./bootstrap.sh && ./configure --prefix=/usr && make install)
+curl -OL https://github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz
+tar -xzf apache-arrow-0.11.1.tar.gz
+cp -r arrow-apache-arrow-0.11.1 a
+cp -r arrow-apache-arrow-0.11.1 b
+mkdir arrow-apache-arrow-0.11.1/cpp/release
+(cd arrow-apache-arrow-0.11.1/cpp/release && cmake .. -DARROW_PARQUET=ON && make parquet)
+cp arrow-apache-arrow-0.11.1/cpp/release/src/parquet/*.h b/cpp/src/parquet
+cp arrow-apache-arrow-0.11.1/cpp/release/src/parquet/*.cpp b/cpp/src/parquet
 diff -Naur a b > parquet.patch
