@@ -5,10 +5,10 @@ licenses(["notice"])  # LGPL v2.1+ license
 
 exports_files(["LICENSE.md"])
 
-cc_library(
+load("@org_tensorflow//third_party:repo.bzl", "cc_import_library")
+
+cc_import_library(
     name = "libav",
-    srcs = [
-    ],
     hdrs = [
         "libavformat/avformat.h",
         "libavformat/avio.h",
@@ -39,51 +39,12 @@ cc_library(
         "libswscale/swscale.h",
         "libswscale/version.h",
     ],
-    copts = [],
-    defines = [],
-    includes = [],
-    linkopts = [
-        "-L$(GENDIR)/external/libav_9_20",
-        "-l:libavformat.so.54",
-        "-l:libavcodec.so.54",
-        "-l:libavutil.so.52",
-        "-l:libswscale.so.2",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [],
-    data = [
+    libraries = [
         "libavformat.so.54",
         "libavcodec.so.54",
         "libavutil.so.52",
         "libswscale.so.2",
     ],
-)
-
-# Stab library files for build to be successful
-# even when those files are not installed (e.g., Ubuntu 14.04)
-# In runtime (e.g., Ubuntu 18.04) system files will be used.
-genrule(
-    name = "libavformat_so_54",
-    outs = ["libavformat.so.54"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libavcodec_so_54",
-    outs = ["libavcodec.so.54"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libavutil_so_52",
-    outs = ["libavutil.so.52"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libswscale_so_2",
-    outs = ["libswscale.so.2"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 
 genrule(

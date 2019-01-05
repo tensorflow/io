@@ -5,10 +5,10 @@ licenses(["notice"])  # LGPL v2.1+ license
 
 exports_files(["LICENSE.md"])
 
-cc_library(
+load("@org_tensorflow//third_party:repo.bzl", "cc_import_library")
+
+cc_import_library(
     name = "ffmpeg",
-    srcs = [
-    ],
     hdrs = [
         "libavformat/avformat.h",
         "libavformat/avio.h",
@@ -41,51 +41,12 @@ cc_library(
         "libswscale/swscale.h",
         "libswscale/version.h",
     ],
-    copts = [],
-    defines = [],
-    includes = [],
-    linkopts = [
-        "-L$(GENDIR)/external/ffmpeg_2_8",
-        "-l:libavformat-ffmpeg.so.56",
-        "-l:libavcodec-ffmpeg.so.56",
-        "-l:libavutil-ffmpeg.so.54",
-        "-l:libswscale-ffmpeg.so.3",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [],
-    data = [
+    libraries = [
         "libavformat-ffmpeg.so.56",
         "libavcodec-ffmpeg.so.56",
         "libavutil-ffmpeg.so.54",
         "libswscale-ffmpeg.so.3",
     ],
-)
-
-# Stab library files for build to be successful
-# even when those files are not installed (e.g., Ubuntu 14.04)
-# In runtime (e.g., Ubuntu 18.04) system files will be used.
-genrule(
-    name = "libavformat-ffmpeg_so_56",
-    outs = ["libavformat-ffmpeg.so.56"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libavcodec-ffmpeg_so_56",
-    outs = ["libavcodec-ffmpeg.so.56"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libavutil-ffmpeg_so_54",
-    outs = ["libavutil-ffmpeg.so.54"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
-)
-
-genrule(
-    name = "libswscale-ffmpeg_so_3",
-    outs = ["libswscale-ffmpeg.so.3"],
-    cmd = "echo '' | g++ -shared -fPIC -x c++ - -o $@",
 )
 
 genrule(
