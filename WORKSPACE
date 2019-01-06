@@ -121,3 +121,14 @@ http_archive(
     strip_prefix = "thrift-0.11.0",
     build_file = "//third_party:thrift.BUILD",
 )
+
+http_archive(
+    name = "libwebp",
+    urls = [
+        "https://mirror.bazel.build/github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
+        "https://github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
+    ],
+    sha256 = "c2838544d4898a4bbb6c1d113e0aa50c4bdfc886df0dcfbfa5c42e788cb6f382",
+    strip_prefix = "libwebp-1.0.1",
+    build_file = "//third_party:libwebp.BUILD",
+)
