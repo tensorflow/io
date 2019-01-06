@@ -44,9 +44,11 @@ be able to find the correct path to the module.
 
 ## Developing
 
+### Python
+
 The TensorFlow I/O package (`tensorflow-io`) could be built from source:
 ```sh
-$ docker run -it -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op
+$ docker run -it -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op
 $ # In docker
 $ ./configure.sh
 $ bazel build build_pip_pkg
@@ -54,6 +56,27 @@ $ bazel-bin/build_pip_pkg artifacts
 ```
 
 A package file `artifacts/tensorflow_io-*.whl` will be generated after a build is successful.
+
+### R
+
+The docker image `tensorflow/tensorflow:custom-op` does not have R installation.
+Instead, the latest R package is available from
+[CRAN](https://cran.r-project.org/bin/linux/ubuntu/README.html).
+
+After the successful installation of `R`(`r-base`) from CRAN, the following installation steps
+are also needed:
+```
+$ # In docker
+$ apt-get -y -qq update
+$ apt-get -y -qq install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev
+$ R -e 'install.packages(c("devtools", "testthat", "tensorflow", "tfdatasets"), dependencies = TRUE)'
+```
+
+With all prerequisites packages installed, it is possible to run test with:
+```
+$ # In docker
+$ R -e "devtools::test()"
+```
 
 ## License
 
