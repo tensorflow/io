@@ -78,6 +78,22 @@ $ # In docker
 $ R -e "devtools::test()"
 ```
 
+Alternatively, we also provided a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
+so that you can use the R package directly for testing. You can build it via:
+```
+docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
+```
+
+Inside the container, you can start your R session, instantiate a `SequenceFileDataset`
+from an example [Hadoop SequenceFile](https://wiki.apache.org/hadoop/SequenceFile)
+[string.seq](R-package/tests/testthat/testdata/string.seq), and then use any [transformation functions](https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations) provided by [tfdatasets package](https://tensorflow.rstudio.com/tools/tfdatasets/) on the dataset like the following:
+
+```{R}
+library(tfio)
+dataset <- sequence_file_dataset("R-package/tests/testthat/testdata/string.seq") %>%
+    dataset_repeat(2)
+```
+
 ## License
 
 [Apache License 2.0](LICENSE)
