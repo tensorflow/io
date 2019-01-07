@@ -36,8 +36,7 @@ tfio_lib <- NULL
     }
   )
 
-  # TODO: This is commented out for now until we add the wrappers.
-  # tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
+  tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
 
 }
 
