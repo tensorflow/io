@@ -24,6 +24,7 @@ Imports:
     reticulate (>= 1.10), 
     tensorflow (>= 1.9),
     tfdatasets (>= 1.9),
+    forge,
     magrittr,
     rlang,
     tidyselect,
@@ -32,7 +33,5 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.0
 Suggests:
     testthat,
-    knitr,
-    tfestimators,
-    keras
+    knitr
 VignetteBuilder: knitr

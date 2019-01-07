@@ -12,6 +12,7 @@ NULL
 #' @import tidyselect
 #' @import rlang
 #' @import tfdatasets
+#' @import forge
 NULL
 
 tfio_lib <- NULL
@@ -35,8 +36,7 @@ tfio_lib <- NULL
     }
   )
 
-  # TODO: This is commented out for now until we add the wrappers.
-  # tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
+  tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
 
 }
 
@@ -63,25 +63,3 @@ check_tensorflow_version <- function(displayed_warning) {
 .onDetach <- function(libpath) {
 
 }
-
-# Reusable function for registering a set of methods with S3 manually. The
-# methods argument is a list of character vectors, each of which has the form
-# c(package, genname, class).
-registerMethods <- function(methods) {
-  lapply(methods, function(method) {
-    pkg <- method[[1]]
-    generic <- method[[2]]
-    class <- method[[3]]
-    func <- get(paste(generic, class, sep = "."))
-    if (pkg %in% loadedNamespaces()) {
-      registerS3method(generic, class, func, envir = asNamespace(pkg))
-    }
-    setHook(
-      packageEvent(pkg, "onLoad"),
-      function(...) {
-        registerS3method(generic, class, func, envir = asNamespace(pkg))
-      }
-    )
-  })
-}
-
