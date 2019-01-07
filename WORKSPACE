@@ -202,6 +202,17 @@ http_archive(
 )
 
 http_archive(
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    strip_prefix = "azure-storage-cpplite-54bb4cfb0444f65fd9b0f54792237be43a31788a",
+    sha256 = "57117f0231e0629d025d9803895186183942894d028b122b355c4d6a24f7c69b",
+    urls = [
+        "https://github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
+        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
+    ],
+)
+
+http_archive(
     name = "com_github_grpc_grpc",
     sha256 = "1d54cd95ed276c42c276e0a3df8ab33ee41968b73af14023c03a19db48f82e73",
     strip_prefix = "grpc-1.19.0",
