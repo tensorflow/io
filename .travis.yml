@@ -19,6 +19,7 @@ matrix:
         - 2.7
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
       script:
         - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - language: python
@@ -33,6 +34,7 @@ matrix:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
       script:
         - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - language: python
@@ -40,6 +42,7 @@ matrix:
         - 3.6
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
       script:
         - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
     - language: r

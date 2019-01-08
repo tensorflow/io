@@ -1,3 +1,5 @@
+workspace(name = "org_tensorflow")
+
 load("//tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -131,4 +133,14 @@ http_archive(
     sha256 = "c2838544d4898a4bbb6c1d113e0aa50c4bdfc886df0dcfbfa5c42e788cb6f382",
     strip_prefix = "libwebp-1.0.1",
     build_file = "//third_party:libwebp.BUILD",
+)
+
+http_archive(
+    name = "com_github_google_flatbuffers",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
+        "https://github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
+    ],
+    sha256 = "12a13686cab7ffaf8ea01711b8f55e1dbd3bf059b7c46a25fefa1250bdd9dd23",
+    strip_prefix = "flatbuffers-b99332efd732e6faf60bb7ce1ce5902ed65d5ba3",
 )
