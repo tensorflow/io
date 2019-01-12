@@ -50,6 +50,7 @@ matrix:
         - 3.2
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install --upgrade --ignore-installed --user travis pip
         - pip install pyarrow==0.11.1
         - cd R-package
       script:
@@ -59,6 +60,7 @@ matrix:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install --upgrade --ignore-installed --user travis pip
         - pip install pyarrow==0.11.1
         - cd R-package
       script:
