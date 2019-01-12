@@ -8,6 +8,7 @@ Authors@R: c(
          comment = c(ORCID = "0000-0001-5243-233X")),
   person("TensorFlow IO SIG", role = c("aut", "cph"),
          email = "io@tensorflow.org"),
+  person("Ant Financial", role = c("cph")),
   person("RStudio", role = c("cph")),
   person(family = "TensorFlow Authors", role = c("cph"))
   )
@@ -25,10 +26,7 @@ Imports:
     tensorflow (>= 1.9),
     tfdatasets (>= 1.9),
     forge,
-    magrittr,
-    rlang,
-    tidyselect,
-    stats
+    magrittr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.0
 Suggests:
