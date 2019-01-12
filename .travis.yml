@@ -14,54 +14,53 @@ before_script:
 
 matrix:
   include:
-    - language: python
-      python:
-        - 2.7
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
-      script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - language: python
-      python:
-        - 3.4
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-      script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - language: python
-      python:
+    # - language: python
+    #   python:
+    #     - 2.7
+    #   before_install:
+    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+    #     - pip install pyarrow==0.11.1
+    #   script:
+    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+    # - language: python
+    #   python:
+    #     - 3.4
+    #   before_install:
+    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+    #   script:
+    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+    # - language: python
+    #   python:
+    #     - 3.5
+    #   before_install:
+    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+    #     - pip install pyarrow==0.11.1
+    #   script:
+    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+    # - language: python
+    #   python:
+    #     - 3.6
+    #   before_install:
+    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+    #     - pip install pyarrow==0.11.1
+    #   script:
+    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
+    # - language: r
+    #   r:
+    #     - 3.2
+    #   before_install:
+    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+    #     - pip install --upgrade --ignore-installed --user travis pip
+    #     - pip install pyarrow==0.11.1
+    #     - cd R-package
+    #   script:
+    #     - R -e "devtools::test()"
+    - language: r
+      r:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
-      script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - language: python
-      python:
-        - 3.6
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
-      script:
-        - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - language: r
-      r:
-        - 3.2
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install --upgrade --ignore-installed --user travis pip
-        - pip install pyarrow==0.11.1
-        - cd R-package
-      script:
-        - R -e "devtools::test()"
-    - language: r
-      r:
-        - 3.5
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install --upgrade --ignore-installed --user travis pip
-        - pip install pyarrow==0.11.1
+        - pip install --upgrade --ignore-installed --user travis pyarrow==0.11.1
         - cd R-package
       script:
         - R -e "devtools::test()"
