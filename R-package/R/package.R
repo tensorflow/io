@@ -34,8 +34,12 @@ tfio_lib <- NULL
     }
   )
 
-  tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
-
+  if (!reticulate::py_module_available("tensorflow_io")) {
+    message(paste0("tensorflow_io Python module is not available. ",
+                   "Please install it and try load it via library(tfio) again."))
+  } else {
+    tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
+  }
 }
 
 check_tensorflow_version <- function(displayed_warning) {
