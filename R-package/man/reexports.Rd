@@ -28,6 +28,7 @@
 \alias{dataset_shard}
 \alias{dataset_padded_batch}
 \alias{dataset_prepare}
+\alias{output_types}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -37,6 +38,6 @@ below to see their documentation.
 \describe{
   \item{tensorflow}{\code{\link[tensorflow]{tf}}, \code{\link[tensorflow]{install_tensorflow}}, \code{\link[tensorflow]{tf_config}}, \code{\link[tensorflow]{tf_version}}}
 
-  \item{tfdatasets}{\code{\link[tfdatasets]{next_batch}}, \code{\link[tfdatasets]{with_dataset}}, \code{\link[tfdatasets]{until_out_of_range}}, \code{\link[tfdatasets]{dataset_repeat}}, \code{\link[tfdatasets]{dataset_shuffle}}, \code{\link[tfdatasets]{dataset_shuffle_and_repeat}}, \code{\link[tfdatasets]{dataset_batch}}, \code{\link[tfdatasets]{dataset_cache}}, \code{\link[tfdatasets]{dataset_concatenate}}, \code{\link[tfdatasets]{dataset_take}}, \code{\link[tfdatasets]{dataset_map}}, \code{\link[tfdatasets]{dataset_map_and_batch}}, \code{\link[tfdatasets]{dataset_flat_map}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_prefetch_to_device}}, \code{\link[tfdatasets]{dataset_filter}}, \code{\link[tfdatasets]{dataset_skip}}, \code{\link[tfdatasets]{dataset_interleave}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_shard}}, \code{\link[tfdatasets]{dataset_padded_batch}}, \code{\link[tfdatasets]{dataset_prepare}}}
+  \item{tfdatasets}{\code{\link[tfdatasets]{next_batch}}, \code{\link[tfdatasets]{with_dataset}}, \code{\link[tfdatasets]{until_out_of_range}}, \code{\link[tfdatasets]{dataset_repeat}}, \code{\link[tfdatasets]{dataset_shuffle}}, \code{\link[tfdatasets]{dataset_shuffle_and_repeat}}, \code{\link[tfdatasets]{dataset_batch}}, \code{\link[tfdatasets]{dataset_cache}}, \code{\link[tfdatasets]{dataset_concatenate}}, \code{\link[tfdatasets]{dataset_take}}, \code{\link[tfdatasets]{dataset_map}}, \code{\link[tfdatasets]{dataset_map_and_batch}}, \code{\link[tfdatasets]{dataset_flat_map}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_prefetch_to_device}}, \code{\link[tfdatasets]{dataset_filter}}, \code{\link[tfdatasets]{dataset_skip}}, \code{\link[tfdatasets]{dataset_interleave}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_shard}}, \code{\link[tfdatasets]{dataset_padded_batch}}, \code{\link[tfdatasets]{dataset_prepare}}, \code{\link[tfdatasets]{output_types}}, \code{\link[tfdatasets]{output_types}}}
 }}
 
