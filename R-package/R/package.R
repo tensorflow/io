@@ -35,11 +35,16 @@ tfio_lib <- NULL
   )
 
   if (!reticulate::py_module_available("tensorflow_io")) {
-    packageStartupMessage(paste0("tensorflow_io Python module is not available. ",
-                   "Please install it and try load it via library(tfio) again."))
+    tfio_module_not_available_message()
   } else {
     tfio_lib <<- import("tensorflow_io", delay_load = delay_load)
   }
+}
+
+tfio_module_not_available_message <- function() {
+  packageStartupMessage(
+    paste0("tensorflow_io Python module is not available. ",
+           "Please install it and try load it via library(tfio) again."))
 }
 
 check_tensorflow_version <- function(displayed_warning) {
@@ -47,8 +52,9 @@ check_tensorflow_version <- function(displayed_warning) {
   required_least_ver <- "1.12"
   if (current_tf_ver < required_least_ver) {
     if (!displayed_warning) {
-      packageStartupMessage("tfio requires TensorFlow version > ", required_least_ver, " ",
-              "(you are currently running version ", current_tf_ver, ").\n")
+      packageStartupMessage(
+        "tfio requires TensorFlow version > ", required_least_ver, " ",
+        "(you are currently running version ", current_tf_ver, ").\n")
       displayed_warning <<- TRUE
     }
   }

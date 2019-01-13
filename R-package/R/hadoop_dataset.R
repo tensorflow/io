@@ -8,8 +8,7 @@
 #' @param filenames A `tf.string` tensor containing one or more filenames.
 #'
 #' @examples \dontrun{
-#' dataset <- kafka_dataset(
-#'     topics = list("test:0:0:4"), group = "test", eof = TRUE) %>%
+#' dataset <- sequence_file_dataset("testdata/string.seq") %>%
 #'   dataset_repeat(1)
 #'
 #' sess <- tf$Session()

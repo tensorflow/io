@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^man-roxygen/
 scripts
+^cran-comments\.md$

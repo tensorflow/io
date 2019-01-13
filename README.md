@@ -59,26 +59,7 @@ A package file `artifacts/tensorflow_io-*.whl` will be generated after a build i
 
 ### R
 
-The docker image `tensorflow/tensorflow:custom-op` does not have R installation.
-Instead, the latest R package is available from
-[CRAN](https://cran.r-project.org/bin/linux/ubuntu/README.html).
-
-After the successful installation of `R`(`r-base`) from CRAN, the following installation steps
-are also needed:
-```
-$ # In docker
-$ apt-get -y -qq update
-$ apt-get -y -qq install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev
-$ R -e 'install.packages(c("devtools", "testthat", "tensorflow", "tfdatasets"), dependencies = TRUE)'
-```
-
-With all prerequisites packages installed, it is possible to run test with:
-```
-$ # In docker
-$ R -e "devtools::test()"
-```
-
-Alternatively, we also provided a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
+We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
 so that you can use the R package directly for testing. You can build it via:
 ```
 docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
