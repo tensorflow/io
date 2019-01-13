@@ -12,20 +12,21 @@ test_succeeds("kafka_dataset() works successfully", {
   array_ops <- tf$python$array_ops
 
   topics <- array_ops$placeholder(dtypes$string, shape = list(NULL))
-  num_epochs <- array_ops.placeholder(dtypes$int64, shape = list())
-  batch_size <- array_ops.placeholder(dtypes$int64, shape = list())
+  num_epochs <- array_ops$placeholder(dtypes$int64, shape = list())
+  batch_size <- array_ops$placeholder(dtypes$int64, shape = list())
 
-  repeat_dataset = kafka_dataset(
+  kafka_dataset(
       topics = topics, group = "test", eof = TRUE) %>%
     dataset_repeat(num_epochs)
 })
 
 test_succeeds("ignite_dataset() works successfully", {
-  repeat_dataset = ignite_dataset(
+  ignite_dataset(
       cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300)
 })
 
 test_succeeds("parquet_dataset() works successfully", {
+  skip_on_travis()
   dtypes <- tf$python$framework$dtypes
   constant_op <- tf$python$constant_op
   filenames <- constant_op$constant(
@@ -38,6 +39,7 @@ test_succeeds("parquet_dataset() works successfully", {
 })
 
 test_succeeds("webp_dataset() works successfully", {
+  skip_on_travis()
   dtypes <- tf$python$framework$dtypes
   constant_op <- tf$python$constant_op
   filenames <- constant_op$constant(
