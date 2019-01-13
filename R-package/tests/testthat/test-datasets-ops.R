@@ -21,6 +21,7 @@ test_succeeds("kafka_dataset() works successfully", {
 })
 
 test_succeeds("ignite_dataset() works successfully", {
+  skip_on_travis()
   ignite_dataset(
       cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300)
 })

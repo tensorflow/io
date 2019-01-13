@@ -119,3 +119,13 @@ tfdatasets::dataset_padded_batch
 #' @importFrom tfdatasets dataset_prepare
 #' @export
 tfdatasets::dataset_prepare
+
+# Re-exports from tfdatasets dataset_properties
+
+#' @importFrom tfdatasets output_types
+#' @export
+tfdatasets::output_types
+
+#' @importFrom tfdatasets output_types
+#' @export
+tfdatasets::output_types
