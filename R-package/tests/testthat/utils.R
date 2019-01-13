@@ -11,3 +11,13 @@ test_succeeds <- function(desc, expr) {
     expect_error(force(expr), NA)
   })
 }
+
+iterate_all_batches <- function(dataset) {
+  sess <- tf$Session()
+  iterator <- make_iterator_one_shot(dataset)
+  next_batch <- iterator_get_next(iterator)
+
+  until_out_of_range({
+    sess$run(next_batch)
+  })
+}
