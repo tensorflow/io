@@ -10,6 +10,15 @@
 \alias{next_batch}
 \alias{with_dataset}
 \alias{until_out_of_range}
+\alias{make_iterator_one_shot}
+\alias{make_iterator_initializable}
+\alias{make_iterator_from_structure}
+\alias{make_iterator_from_string_handle}
+\alias{iterator_get_next}
+\alias{iterator_initializer}
+\alias{iterator_string_handle}
+\alias{iterator_make_initializer}
+\alias{out_of_range_handler}
 \alias{dataset_repeat}
 \alias{dataset_shuffle}
 \alias{dataset_shuffle_and_repeat}
@@ -38,6 +47,6 @@ below to see their documentation.
 \describe{
   \item{tensorflow}{\code{\link[tensorflow]{tf}}, \code{\link[tensorflow]{install_tensorflow}}, \code{\link[tensorflow]{tf_config}}, \code{\link[tensorflow]{tf_version}}}
 
-  \item{tfdatasets}{\code{\link[tfdatasets]{next_batch}}, \code{\link[tfdatasets]{with_dataset}}, \code{\link[tfdatasets]{until_out_of_range}}, \code{\link[tfdatasets]{dataset_repeat}}, \code{\link[tfdatasets]{dataset_shuffle}}, \code{\link[tfdatasets]{dataset_shuffle_and_repeat}}, \code{\link[tfdatasets]{dataset_batch}}, \code{\link[tfdatasets]{dataset_cache}}, \code{\link[tfdatasets]{dataset_concatenate}}, \code{\link[tfdatasets]{dataset_take}}, \code{\link[tfdatasets]{dataset_map}}, \code{\link[tfdatasets]{dataset_map_and_batch}}, \code{\link[tfdatasets]{dataset_flat_map}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_prefetch_to_device}}, \code{\link[tfdatasets]{dataset_filter}}, \code{\link[tfdatasets]{dataset_skip}}, \code{\link[tfdatasets]{dataset_interleave}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_shard}}, \code{\link[tfdatasets]{dataset_padded_batch}}, \code{\link[tfdatasets]{dataset_prepare}}, \code{\link[tfdatasets]{output_types}}, \code{\link[tfdatasets]{output_types}}}
+  \item{tfdatasets}{\code{\link[tfdatasets]{next_batch}}, \code{\link[tfdatasets]{with_dataset}}, \code{\link[tfdatasets]{until_out_of_range}}, \code{\link[tfdatasets]{make_iterator_one_shot}}, \code{\link[tfdatasets]{make_iterator_initializable}}, \code{\link[tfdatasets]{make_iterator_from_structure}}, \code{\link[tfdatasets]{make_iterator_from_string_handle}}, \code{\link[tfdatasets]{iterator_get_next}}, \code{\link[tfdatasets]{iterator_initializer}}, \code{\link[tfdatasets]{iterator_string_handle}}, \code{\link[tfdatasets]{iterator_make_initializer}}, \code{\link[tfdatasets]{out_of_range_handler}}, \code{\link[tfdatasets]{dataset_repeat}}, \code{\link[tfdatasets]{dataset_shuffle}}, \code{\link[tfdatasets]{dataset_shuffle_and_repeat}}, \code{\link[tfdatasets]{dataset_batch}}, \code{\link[tfdatasets]{dataset_cache}}, \code{\link[tfdatasets]{dataset_concatenate}}, \code{\link[tfdatasets]{dataset_take}}, \code{\link[tfdatasets]{dataset_map}}, \code{\link[tfdatasets]{dataset_map_and_batch}}, \code{\link[tfdatasets]{dataset_flat_map}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_prefetch_to_device}}, \code{\link[tfdatasets]{dataset_filter}}, \code{\link[tfdatasets]{dataset_skip}}, \code{\link[tfdatasets]{dataset_interleave}}, \code{\link[tfdatasets]{dataset_prefetch}}, \code{\link[tfdatasets]{dataset_shard}}, \code{\link[tfdatasets]{dataset_padded_batch}}, \code{\link[tfdatasets]{dataset_prepare}}, \code{\link[tfdatasets]{output_types}}, \code{\link[tfdatasets]{output_types}}}
 }}
 
