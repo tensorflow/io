@@ -41,6 +41,44 @@ tfdatasets::with_dataset
 #' @export
 tfdatasets::until_out_of_range
 
+# Re-exports from tfdatasets iterators
+
+#' @importFrom tfdatasets make_iterator_one_shot
+#' @export
+tfdatasets::make_iterator_one_shot
+
+#' @importFrom tfdatasets make_iterator_initializable
+#' @export
+tfdatasets::make_iterator_initializable
+
+#' @importFrom tfdatasets make_iterator_from_structure
+#' @export
+tfdatasets::make_iterator_from_structure
+
+#' @importFrom tfdatasets make_iterator_from_string_handle
+#' @export
+tfdatasets::make_iterator_from_string_handle
+
+#' @importFrom tfdatasets iterator_get_next
+#' @export
+tfdatasets::iterator_get_next
+
+#' @importFrom tfdatasets iterator_initializer
+#' @export
+tfdatasets::iterator_initializer
+
+#' @importFrom tfdatasets iterator_string_handle
+#' @export
+tfdatasets::iterator_string_handle
+
+#' @importFrom tfdatasets iterator_make_initializer
+#' @export
+tfdatasets::iterator_make_initializer
+
+#' @importFrom tfdatasets out_of_range_handler
+#' @export
+tfdatasets::out_of_range_handler
+
 
 # Re-exports from tfdatasets dataset_methods
 
