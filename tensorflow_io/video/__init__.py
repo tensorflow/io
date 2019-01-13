@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-function write_to_bazelrc() {
-  echo "$1" >> .bazelrc
-}
+"""Video Dataset.
 
-function write_action_env_to_bazelrc() {
-  write_to_bazelrc "build --action_env $1=\"$2\""
-}
+@@VideoDataset
+"""
 
-rm -f .bazelrc
-if python -c "import tensorflow" &> /dev/null; then
-    echo 'using installed tensorflow'
-else
-    pip install tensorflow
-fi
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-TF_CFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
-TF_LFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
+from tensorflow_io.video.python.ops.video_dataset_ops import VideoDataset
 
-write_action_env_to_bazelrc "TF_HEADER_DIR" ${TF_CFLAGS:2}
-write_action_env_to_bazelrc "TF_SHARED_LIBRARY_DIR" ${TF_LFLAGS:2}
+from tensorflow.python.util.all_util import remove_undocumented
+
+_allowed_symbols = [
+    "VideoDataset",
+]
+
+remove_undocumented(__name__)

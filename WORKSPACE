@@ -144,3 +144,36 @@ http_archive(
     sha256 = "12a13686cab7ffaf8ea01711b8f55e1dbd3bf059b7c46a25fefa1250bdd9dd23",
     strip_prefix = "flatbuffers-b99332efd732e6faf60bb7ce1ce5902ed65d5ba3",
 )
+
+http_archive(
+    name = "ffmpeg_2_8",
+    urls = [
+        "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n2.8.15.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n2.8.15.tar.gz",
+    ],
+    sha256 = "8ba1b91a14431fe37091936c3a34469d7473965ab9edde0343c88f2d920bd918",
+    strip_prefix = "FFmpeg-n2.8.15",
+    build_file = "//third_party:ffmpeg_2_8.BUILD",
+)
+
+http_archive(
+    name = "ffmpeg_3_4",
+    urls = [
+        "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
+    ],
+    sha256 = "bbccc87cd031498728bcc2dba5596a47e6fd92b2cec060a71feef65617a261fe",
+    strip_prefix = "FFmpeg-n3.4.4",
+    build_file = "//third_party:ffmpeg_3_4.BUILD",
+)
+
+http_archive(
+    name = "libav_9_20",
+    urls = [
+        "https://mirror.bazel.build/github.com/libav/libav/archive/v9.20.tar.gz",
+        "https://github.com/libav/libav/archive/v9.20.tar.gz",
+    ],
+    sha256 = "ecc2389bc857602450196c9240e1ebc59066980f5d42e977efe0f498145775d4",
+    strip_prefix = "libav-9.20",
+    build_file = "//third_party:libav_9_20.BUILD",
+)
