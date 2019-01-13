@@ -12,3 +12,20 @@ webp_dataset(filenames)
 \description{
 A WebP Image File Dataset that reads the WebP file.
 }
+\examples{
+\dontrun{
+dataset <- webp_dataset(
+    filenames = list("testdata/sample.webp")) \%>\%
+  dataset_repeat(1)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+}
+
+}
