@@ -193,8 +193,16 @@ class PubSubDatasetOp : public DatasetOpKernel {
 
         // Actually move on to next subscription.
         string subscription = dataset()->subscriptions_[current_subscription_index_];
-        // auto creds = grpc::GoogleDefaultCredentials();
-        stub_ = Subscriber::NewStub(grpc::CreateChannel(dataset()->server_, grpc::InsecureChannelCredentials()));
+        string server = dataset()->server_;
+        auto creds = grpc::GoogleDefaultCredentials();
+        if (dataset()->server_.find("http://") == 0) {
+          server = dataset()->server_.substr(7);
+          creds = grpc::InsecureChannelCredentials();
+        } else if (dataset()->server_.find("https://") == 0) {
+          // https://pubsub.googleapis.com
+          server = dataset()->server_.substr(8);
+        }
+        stub_ = Subscriber::NewStub(grpc::CreateChannel(server, creds));
 
         return Status::OK();
       }
