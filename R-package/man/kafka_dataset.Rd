@@ -24,3 +24,20 @@ millisecond).}
 \description{
 Creates a \code{KafkaDataset}.
 }
+\examples{
+\dontrun{
+dataset <- kafka_dataset(
+    topics = list("test:0:0:4"), group = "test", eof = TRUE) \%>\%
+  dataset_repeat(1)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+}
+
+}

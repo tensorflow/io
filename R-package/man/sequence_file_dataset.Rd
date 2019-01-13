@@ -15,3 +15,20 @@ file. A sequence file consists of (key value) pairs sequentially. At
 the moment, \code{org.apache.hadoop.io.Text} is the only serialization type
 being supported, and there is no compression support.
 }
+\examples{
+\dontrun{
+dataset <- kafka_dataset(
+    topics = list("test:0:0:4"), group = "test", eof = TRUE) \%>\%
+  dataset_repeat(1)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+}
+
+}
