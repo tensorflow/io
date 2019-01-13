@@ -50,10 +50,7 @@ matrix:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install --upgrade --ignore-installed --user travis pyarrow==0.11.1
-        - bazel build build_pip_pkg
-        - bazel-bin/build_pip_pkg artifacts
-        - pip install --user travis artifacts/tensorflow_io-*.whl
+        - pip install --upgrade --ignore-installed --user travis tensorflow-io pyarrow==0.11.1
         - echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
         - cd R-package
       script:
