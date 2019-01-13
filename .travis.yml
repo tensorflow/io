@@ -1,5 +1,8 @@
-dist: trusty
 sudo: required
+
+addons:
+  apt:
+    update: true
 
 env:
   - BAZEL_OS=linux
@@ -14,38 +17,86 @@ before_script:
 
 matrix:
   include:
-    # - language: python
-    #   python:
-    #     - 2.7
-    #   before_install:
-    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-    #     - pip install pyarrow==0.11.1
-    #   script:
-    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    # - language: python
-    #   python:
-    #     - 3.4
-    #   before_install:
-    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-    #   script:
-    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    # - language: python
-    #   python:
-    #     - 3.5
-    #   before_install:
-    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-    #     - pip install pyarrow==0.11.1
-    #   script:
-    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    # - language: python
-    #   python:
-    #     - 3.6
-    #   before_install:
-    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-    #     - pip install pyarrow==0.11.1
-    #   script:
-    #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - language: r
+    - name: "Ubuntu 14.04 Python 2.7"
+      dist: trusty
+      language: python
+      python:
+        - 2.7
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+    - name: "Ubuntu 14.04 Python 3.4"
+      dist: trusty
+      language: python
+      python:
+        - 3.4
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+    - name: "Ubuntu 14.04 Python 3.5"
+      dist: trusty
+      language: python
+      python:
+        - 3.5
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+    - name: "Ubuntu 14.04 Python 3.6"
+      dist: trusty
+      language: python
+      python:
+        - 3.6
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install pyarrow==0.11.1
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+    - name: "Ubuntu 16.04 Python 2.7 (Video Only)"
+      dist: xenial
+      language: python
+      python:
+        - 2.7
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/video:video_py_test
+    - name: "Ubuntu 16.04 Python 3.5 (Video Only)"
+      dist: xenial
+      language: python
+      python:
+        - 3.5
+      before_install:
+        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+      script:
+        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/video:video_py_test
+    - name: "Ubuntu 18.04 Python 2.7 (Video Only)"
+      dist: trusty
+      language: python
+      python:
+        - 2.7
+      script:
+        - docker run -i -t -e PYTHON_VERSION= -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures -- //tensorflow_io/video:video_py_test"
+    - name: "Ubuntu 18.04 Python 3.6 (Video Only)"
+      dist: trusty
+      language: python
+      python:
+        - 3.6
+      script:
+        - docker run -i -t -e PYTHON_VERSION=3 -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures -- //tensorflow_io/video:video_py_test"
+    - name: "Ubuntu 14.04 R 3.5"
+      dist: trusty
+      language: r
       r:
         - 3.5
       cache:
