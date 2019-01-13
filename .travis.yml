@@ -45,22 +45,16 @@ matrix:
     #     - pip install pyarrow==0.11.1
     #   script:
     #     - bazel test --show_progress=no -s --verbose_failures --test_output=errors -- //tensorflow_io/...
-    # - language: r
-    #   r:
-    #     - 3.2
-    #   before_install:
-    #     - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-    #     - pip install --upgrade --ignore-installed --user travis pip
-    #     - pip install pyarrow==0.11.1
-    #     - cd R-package
-    #   script:
-    #     - R -e "devtools::test()"
     - language: r
       r:
         - 3.5
       before_install:
         - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
         - pip install --upgrade --ignore-installed --user travis pyarrow==0.11.1
+        - bazel build build_pip_pkg
+        - bazel-bin/build_pip_pkg artifacts
+        - pip install --user travis artifacts/tensorflow_io-*.whl
+        - echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
         - cd R-package
       script:
         - R -e "devtools::test()"
