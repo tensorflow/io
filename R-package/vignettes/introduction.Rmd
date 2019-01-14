@@ -25,9 +25,12 @@ knitr::opts_chunk$set(eval = FALSE)
 This is the R interface to datasets and filesystem extensions maintained by SIG-IO. Some example data sources that TensorFlow I/O supports are:
 
 * Data source for Apache Ignite and Ignite File System (IGFS).
-* Apache Kafka stream-processing support.
-* Amazon Kinesis data streams support.
-* Hadoop SequenceFile format support.
+* Apache Kafka stream-processing.
+* Amazon Kinesis data streams.
+* Hadoop SequenceFile format.
+* Video file format such as mp4.
+* Apache Parquet format.
+* Image file format such as WebP.
 
 We provide a reference Dockerfile [here](https://github.com/tensorflow/io/blob/master/R-package/scripts/Dockerfile) for you
 so that you can use the R package directly for testing. You can build it via:
