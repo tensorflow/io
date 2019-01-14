@@ -42,3 +42,11 @@ test_succeeds("webp_dataset() works successfully", {
     dataset_repeat(2)
   iterate_all_batches(dataset)
 })
+
+test_succeeds("video_dataset() works successfully", {
+  skip_on_travis()
+  dataset <- video_dataset(
+    filenames = list("testdata/small.mp4")) %>%
+    dataset_repeat(2)
+  iterate_all_batches(dataset)
+})
