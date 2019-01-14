@@ -50,6 +50,9 @@ The TensorFlow I/O package (`tensorflow-io`) could be built from source:
 ```sh
 $ docker run -it -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op
 $ # In docker
+$ curl -OL https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-installer-linux-x86_64.sh
+$ chmod +x bazel-0.20.0-installer-linux-x86_64.sh
+$ ./bazel-0.20.0-installer-linux-x86_64.sh
 $ ./configure.sh
 $ bazel build build_pip_pkg
 $ bazel-bin/build_pip_pkg artifacts
