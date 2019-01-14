@@ -12,7 +12,7 @@ Authors@R: c(
   person("RStudio", role = c("cph")),
   person(family = "TensorFlow Authors", role = c("cph"))
   )
-Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by SIG-IO.
+Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by `TensorFlow SIG-IO`.
 License: Apache License 2.0
 URL: https://github.com/tensorflow/io
 BugReports: https://github.com/tensorflow/io/issues
