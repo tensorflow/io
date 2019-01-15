@@ -3,14 +3,15 @@ Type: Package
 Title: Interface to 'TensorFlow IO'
 Version: 0.1.0
 Authors@R: c(
+  person("TensorFlow IO Contributors", role = c("aut", "cph"),
+         email = "io@tensorflow.org",
+         comment = "Full list of contributors can be found at https://github.com/tensorflow/io/graphs/contributors"),
   person("Yuan", "Tang", role = c("aut", "cre"),
          email = "terrytangyuan@gmail.com",
          comment = c(ORCID = "0000-0001-5243-233X")),
-  person("TensorFlow IO SIG", role = c("aut", "cph"),
-         email = "io@tensorflow.org"),
+  person(family = "TensorFlow Authors", role = c("cph")),
   person("Ant Financial", role = c("cph")),
-  person("RStudio", role = c("cph")),
-  person(family = "TensorFlow Authors", role = c("cph"))
+  person("RStudio", role = c("cph"))
   )
 Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by `TensorFlow SIG-IO`.
 License: Apache License 2.0
