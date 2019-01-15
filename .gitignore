@@ -18,4 +18,4 @@ __pycache__
 tfio.Rcheck/
 tfio_*.tar.gz
 .Rproj.user
-
+*.Rcheck

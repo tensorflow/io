@@ -94,26 +94,20 @@ matrix:
         - 3.6
       script:
         - docker run -i -t -e PYTHON_VERSION=3 -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures -- //tensorflow_io/video:video_py_test"
-    - name: "Ubuntu 14.04 R 3.2"
-      dist: trusty
-      language: r
-      r:
-        - 3.2
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - cd R-package
-      script:
-        - R -e "devtools::test()"
     - name: "Ubuntu 14.04 R 3.5"
       dist: trusty
       language: r
       r:
         - 3.5
+      cache:
+        packages: true
+        directories:
+          - $HOME/.cache/pip
       before_install:
-        - sudo apt-get install -y -qq libav-tools
+        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - pip install --upgrade --ignore-installed --user travis tensorflow-io pyarrow==0.11.1
+        - echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
         - cd R-package
-      script:
-        - R -e "devtools::test()"
 
 notifications:
   email: false

@@ -47,3 +47,20 @@ datasource for neural network training, inference and all other
 computations supported by TensorFlow. Ignite Dataset is based on Apache
 Ignite Binary Client Protocol.
 }
+\examples{
+\dontrun{
+dataset <- ignite_dataset(
+    cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300) \%>\%
+  dataset_repeat(1)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+}
+
+}
