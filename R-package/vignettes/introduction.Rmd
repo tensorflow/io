@@ -1,5 +1,5 @@
 ---
-title: "R interface to TensorFlow IO API"
+title: "R interface to TensorFlow IO"
 output: 
   rmarkdown::html_vignette: default
 vignette: >
@@ -22,6 +22,57 @@ knitr::opts_chunk$set(eval = FALSE)
 
 ## Overview
 
-This is the R interface to datasets and filesystem extensions maintained by SIG-IO.
+This is the R interface to datasets and filesystem extensions maintained by SIG-IO. Some example data sources that TensorFlow I/O supports are:
 
-(TBA)
+* Data source for Apache Ignite and Ignite File System (IGFS).
+* Apache Kafka stream-processing.
+* Amazon Kinesis data streams.
+* Hadoop SequenceFile format.
+* Video file format such as mp4.
+* Apache Parquet format.
+* Image file format such as WebP.
+
+We provide a reference Dockerfile [here](https://github.com/tensorflow/io/blob/master/R-package/scripts/Dockerfile) for you
+so that you can use the R package directly for testing. You can build it via:
+```
+docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
+```
+
+Inside the container, you can start your R session, instantiate a `SequenceFileDataset`
+from an example [Hadoop SequenceFile](https://wiki.apache.org/hadoop/SequenceFile)
+[string.seq](https://github.com/tensorflow/io/blob/master/R-package/tests/testthat/testdata/string.seq), and then use any [transformation functions](https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations) provided by [tfdatasets package](https://tensorflow.rstudio.com/tools/tfdatasets/) on the dataset like the following:
+
+```{r, eval=FALSE}
+library(tfio)
+dataset <- sequence_file_dataset("R-package/tests/testthat/testdata/string.seq") %>%
+    dataset_repeat(2)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+```
+
+You'll see the key-value pairs from `string.seq` file are printed as follows:
+
+```
+[1] "001"      "VALUE001"
+[1] "002"      "VALUE002"
+[1] "003"      "VALUE003"
+[1] "004"      "VALUE004"
+[1] "005"      "VALUE005"
+[1] "006"      "VALUE006"
+[1] "007"      "VALUE007"
+[1] "008"      "VALUE008"
+...
+[1] "020"      "VALUE020"
+[1] "021"      "VALUE021"
+[1] "022"      "VALUE022"
+[1] "023"      "VALUE023"
+[1] "024"      "VALUE024"
+[1] "025"      "VALUE025"
+```

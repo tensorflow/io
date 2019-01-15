@@ -26,6 +26,21 @@
 #' @param cert_password Password to be used if the private key is encrypted and
 #'   a password is necessary.
 #'
+#' @examples \dontrun{
+#' dataset <- ignite_dataset(
+#'     cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300) %>%
+#'   dataset_repeat(1)
+#'
+#' sess <- tf$Session()
+#' iterator <- make_iterator_one_shot(dataset)
+#' next_batch <- iterator_get_next(iterator)
+#'
+#' until_out_of_range({
+#'   batch <- sess$run(next_batch)
+#'   print(batch)
+#' })
+#' }
+#'
 #' @export
 ignite_dataset <- function(
   cache_name,
