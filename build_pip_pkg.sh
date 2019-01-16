@@ -18,7 +18,7 @@ set -x
 
 PLATFORM="$(uname -s | tr 'A-Z' 'a-z')"
 
-PIP_FILE_PREFIX="bazel-bin/build_pip_pkg.runfiles/__main__/"
+PIP_FILE_PREFIX="bazel-bin/build_pip_pkg.runfiles/org_tensorflow_io/"
 
 function main() {
   while [[ ! -z "${1}" ]]; do
