@@ -5,9 +5,7 @@ licenses(["notice"])  # LGPL v2.1+ license
 
 exports_files(["LICENSE.md"])
 
-load("@org_tensorflow//third_party:repo.bzl", "cc_import_library")
-
-cc_import_library(
+cc_import(
     name = "ffmpeg",
     hdrs = [
         "libavformat/avformat.h",
@@ -39,12 +37,7 @@ cc_import_library(
         "libswscale/swscale.h",
         "libswscale/version.h",
     ],
-    libraries = [
-        "libavformat.so.57",
-        "libavcodec.so.57",
-        "libavutil.so.55",
-        "libswscale.so.4",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 genrule(
