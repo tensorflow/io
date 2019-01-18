@@ -5,11 +5,12 @@
 TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support.
 
-At the moment TensorFlow I/O supports 4 data sources:
+At the moment TensorFlow I/O supports 5 data sources:
 - `tensorflow_io.ignite`: Data source for Apache Ignite and Ignite File System (IGFS).
 - `tensorflow_io.kafka`: Apache Kafka stream-processing support.
 - `tensorflow_io.kinesis`: Amazon Kinesis data streams support.
 - `tensorflow_io.hadoop`: Hadoop SequenceFile format support.
+- `tensorflow_io.arrow`: Apache Arrow data format support. Usage guide [here](tensorflow_io/arrow/README.md).
 
 ## Installation
 
