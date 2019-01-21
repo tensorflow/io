@@ -306,7 +306,7 @@ class ArrowOpKernelBase : public DatasetOpKernel {
 // memory in a Python process, or a Pandas DataFrame.
 class ArrowDatasetOp : public ArrowOpKernelBase {
  public:
-  using DatasetOpKernel::DatasetOpKernel;
+  //using DatasetOpKernel::DatasetOpKernel;
 
   explicit ArrowDatasetOp(OpKernelConstruction* ctx) : ArrowOpKernelBase(ctx) {}
 
@@ -399,7 +399,7 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
 // ideal for simple writing of Pandas DataFrames.
 class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
  public:
-  using DatasetOpKernel::DatasetOpKernel;
+  //using DatasetOpKernel::DatasetOpKernel;
 
   explicit ArrowFeatherDatasetOp(OpKernelConstruction* ctx)
       : ArrowOpKernelBase(ctx) {}
@@ -522,7 +522,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
 // host given as "<IP>:<PORT>", or from STDIN if host is "STDIN".
 class ArrowStreamDatasetOp : public ArrowOpKernelBase {
  public:
-  using DatasetOpKernel::DatasetOpKernel;
+  //using DatasetOpKernel::DatasetOpKernel;
 
   explicit ArrowStreamDatasetOp(OpKernelConstruction* ctx)
       : ArrowOpKernelBase(ctx) {}

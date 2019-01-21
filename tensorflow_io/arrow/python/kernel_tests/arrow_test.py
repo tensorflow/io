@@ -168,7 +168,7 @@ class ArrowDatasetTest(test.TestCase):
     # test all columns selected
     dataset = arrow_dataset_ops.ArrowDataset(
         batch,
-        range(len(test_data.output_types)),
+        list(range(len(test_data.output_types))),
         test_data.output_types,
         test_data.output_shapes)
     self.run_test_case(dataset, test_data)
@@ -205,7 +205,7 @@ class ArrowDatasetTest(test.TestCase):
     # test single file
     dataset = arrow_dataset_ops.ArrowFeatherDataset(
         f.name,
-        range(len(test_data.output_types)),
+        list(range(len(test_data.output_types))),
         test_data.output_types,
         test_data.output_shapes)
     self.run_test_case(dataset, test_data)
@@ -213,7 +213,7 @@ class ArrowDatasetTest(test.TestCase):
     # test multiple files
     dataset = arrow_dataset_ops.ArrowFeatherDataset(
         [f.name, f.name],
-        range(len(test_data.output_types)),
+        list(range(len(test_data.output_types))),
         test_data.output_types,
         test_data.output_shapes)
     test_data_doubled = TestData(
