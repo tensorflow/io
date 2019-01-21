@@ -95,11 +95,13 @@ cc_library(
         "cpp/src",
     ],
     copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
     ],
     deps = [
         ":arrow_format",
         "@boost",
         "@snappy",
         "@thrift",
+        "@zlib",
     ],
 )
