@@ -93,3 +93,37 @@ arrow_stream_dataset <- function(
   as_tf_dataset(dataset)
 }
 
+#' Create an Arrow Dataset for reading record batches from Arrow feather files,
+#' inferring output types and shapes from the given Arrow schema.
+#'
+#' @param filenames A `tf.string` tensor, list or scalar containing files in
+#'   Arrow Feather format.
+#' @param schema Arrow schema defining the record batch data in the stream.
+#' @param columns A list of column indices to be used in the Dataset.
+#' @export
+from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowFeatherDataset <- function(
+  object, filenames, schema, columns = NULL) {
+  object$from_schema(
+    filenames = filenames,
+    schema = schema,
+    columns = columns
+  )
+}
+
+#' Create an Arrow Dataset from an input stream, inferring output types and
+#' shapes from the given Arrow schema.
+#'
+#' @param host A `tf.string` tensor or string defining the input stream.
+#'   For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
+#' @param schema Arrow schema defining the record batch data in the stream.
+#' @param columns A list of column indices to be used in the Dataset.
+#'
+#' @export
+from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowStreamDataset <- function(
+  object, host, schema, columns = NULL) {
+  object$from_schema(
+    host = host,
+    schema = schema,
+    columns = columns
+  )
+}
