@@ -22,6 +22,7 @@ import os
 from tensorflow.python.platform import test
 
 from tensorflow_io.ignite import IgniteDataset
+from tensorflow.data import Dataset
 from tensorflow.python.client import session
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
@@ -45,6 +46,18 @@ class IgniteDatasetTest(test.TestCase):
     """
     self._clear_env()
     ds = IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=42300)
+    self._check_dataset(ds)
+
+  def test_ignite_dataset_with_plain_client_with_interleave(self):
+    """Test Ignite Dataset with plain client with interleave.
+
+    """
+    self._clear_env()
+    ds = Dataset.from_tensor_slices(["localhost"]).interleave(
+        lambda host: IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
+                                   schema_host="localhost", host=host,
+                                   port=42300), cycle_length=4, block_length=16
+    )
     self._check_dataset(ds)
 
   def _clear_env(self):
