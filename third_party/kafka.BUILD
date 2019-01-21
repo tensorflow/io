@@ -145,7 +145,9 @@ cc_library(
         "src/lz4.c",
         "src/snappy_compat.h",
     ],
-    copts = [],
+    copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+    ],
     defines = ["LIBRDKAFKA_STATICLIB"],
     includes = [
         "src",
