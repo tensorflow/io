@@ -6,4 +6,5 @@ apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB
 add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran35/"
 apt-get -y -qqq update
 DEBIAN_FRONTEND=nonexteractive apt-get -y -qqq install r-base
+echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
 R -e 'install.packages(c("Rcpp", "reticulate", "knitr", "tensorflow", "tfdatasets", "forge", "tidyselect", "testthat", "devtools"))'
