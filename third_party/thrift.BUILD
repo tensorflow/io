@@ -43,6 +43,7 @@ cc_library(
         "lib/cpp/src",
     ],
     copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
     ],
     deps = [
         "@boost",

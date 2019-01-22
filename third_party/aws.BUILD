@@ -49,6 +49,9 @@ cc_library(
         "aws-cpp-sdk-kinesis/include/",
         "aws-cpp-sdk-s3/include/",
     ],
+    copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+    ],
     deps = [
         "@curl",
     ],

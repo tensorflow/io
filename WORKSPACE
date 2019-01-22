@@ -1,6 +1,6 @@
 workspace(name = "org_tensorflow_io")
 
-load("//tf:tf_configure.bzl", "tf_configure")
+load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 tf_configure(
