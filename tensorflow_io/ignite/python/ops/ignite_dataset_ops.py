@@ -710,6 +710,8 @@ class IgniteDataset(dataset_ops.DatasetSource):
                cache_name,
                host="localhost",
                port=10800,
+               schema_host=None,
+               schema_port=None,
                local=False,
                part=-1,
                page_size=100,
@@ -724,6 +726,8 @@ class IgniteDataset(dataset_ops.DatasetSource):
       cache_name: Cache name to be used as datasource.
       host: Apache Ignite Thin Client host to be connected.
       port: Apache Ignite Thin Client port to be connected.
+      schema_host: Host to be connected to retrieve cache schema.
+      schema_port: Port to be connected to retrieve cache schema.
       local: Local flag that defines to query only local data.
       part: Number of partitions to be queried.
       page_size: Apache Ignite Thin Client page size.
@@ -739,8 +743,13 @@ class IgniteDataset(dataset_ops.DatasetSource):
     """
     super(IgniteDataset, self).__init__()
 
-    with IgniteClient(host, port, username, password, certfile, keyfile,
-                      cert_password) as client:
+    if not schema_host:
+        schema_host = host
+    if not schema_port:
+        schema_port = port
+
+    with IgniteClient(schema_host, schema_port, username, password, certfile,
+                      keyfile, cert_password) as client:
       client.handshake()
       self.cache_type = client.get_cache_type(cache_name)
 
