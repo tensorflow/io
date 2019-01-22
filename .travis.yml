@@ -79,13 +79,13 @@ matrix:
         - docker pull tensorflow/tensorflow:custom-op
         - docker pull ubuntu:16.04
         - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'devtools::test()'"
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
     - name: "Ubuntu 18.04 R 3.5 (Python 2.7) Build Tests"
       script:
         - docker pull tensorflow/tensorflow:custom-op
         - docker pull ubuntu:18.04
         - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'devtools::test()'"
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
 
 notifications:
   email: false
