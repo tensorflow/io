@@ -220,7 +220,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
       columns: A list of column indicies to use from the schema, None for all
     """
     if columns is None:
-      columns = range(len(schema))
+      columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
     return cls(filenames, columns, output_types, output_shapes)
 
@@ -272,6 +272,6 @@ class ArrowStreamDataset(ArrowBaseDataset):
       columns: A list of column indicies to use from the schema, None for all
     """
     if columns is None:
-      columns = range(len(schema))
+      columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
     return cls(host, columns, output_types, output_shapes)

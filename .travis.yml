@@ -1,12 +1,13 @@
+dist: xenial
 sudo: required
+language: minimal
 
 addons:
   apt:
     update: true
 
 env:
-  - BAZEL_OS=linux
-    BAZEL_VERSION=0.17.2
+  - BAZEL_VERSION=0.20.0
 
 services:
   - docker
@@ -17,97 +18,74 @@ before_script:
 
 matrix:
   include:
-    - name: "Ubuntu 14.04 Python 2.7"
-      dist: trusty
-      language: python
-      python:
-        - 2.7
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
+    - name: "Ubuntu 14.04 (Custom-op) Python 2.7 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - name: "Ubuntu 14.04 Python 3.4"
-      dist: trusty
-      language: python
-      python:
-        - 3.4
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 14.04 (Custom-op) Python 3.4 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - name: "Ubuntu 14.04 Python 3.5"
-      dist: trusty
-      language: python
-      python:
-        - 3.5
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.4 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 14.04 (Custom-op) Python 3.5 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - name: "Ubuntu 14.04 Python 3.6"
-      dist: trusty
-      language: python
-      python:
-        - 3.6
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install pyarrow==0.11.1
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.5 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 14.04 (Custom-op) Python 3.6 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-    - name: "Ubuntu 16.04 Python 2.7 (Video Only)"
-      dist: xenial
-      language: python
-      python:
-        - 2.7
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.6 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 16.04 Python 2.7 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/video:video_py_test
-    - name: "Ubuntu 16.04 Python 3.5 (Video Only)"
-      dist: xenial
-      language: python
-      python:
-        - 3.5
-      before_install:
-        - sudo apt-get install -y -qq libav-tools
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
+        - docker pull ubuntu:16.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python-pip ffmpeg" -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 16.04 Python 3.5 Tests"
       script:
-        - bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/video:video_py_test
-    - name: "Ubuntu 18.04 Python 2.7 (Video Only)"
-      dist: trusty
-      language: python
-      python:
-        - 2.7
+        - docker pull ubuntu:16.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python3-pip ffmpeg" -e PYTHON_VERSION=3.5 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 18.04 Python 2.7 Tests"
       script:
-        - docker run -i -t -e PYTHON_VERSION= -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures -- //tensorflow_io/video:video_py_test"
-    - name: "Ubuntu 18.04 Python 3.6 (Video Only)"
-      dist: trusty
-      language: python
-      python:
-        - 3.6
+        - docker pull ubuntu:18.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python-pip ffmpeg" -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 18.04 Python 3.6 Tests"
       script:
-        - docker run -i -t -e PYTHON_VERSION=3 -e BAZEL_VERSION=0.20.0 -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.ubuntu.18.04.sh && apt-get -y -qq install libavformat57 libavcodec57 libavutil55 libswscale4 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures -- //tensorflow_io/video:video_py_test"
-    - name: "Ubuntu 14.04 R 3.5"
-      dist: trusty
-      language: r
-      r:
-        - 3.5
-      cache:
-        packages: true
-        directories:
-          - $HOME/.cache/pip
-      before_install:
-        - bash -x ${TRAVIS_BUILD_DIR}/.travis/python.configure.sh
-        - pip install --upgrade --ignore-installed --user travis tensorflow-io pyarrow==0.11.1
-        - echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
-        - cd R-package
+        - docker pull ubuntu:18.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python3-pip ffmpeg" -e PYTHON_VERSION=3.6 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
+    - name: "Ubuntu 16.04 Python 2.7 Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:16.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl"
+    - name: "Ubuntu 16.04 Python 3.5 Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:16.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.5
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python3-pip && pip3 install artifacts/tensorflow_io-*-cp35-*.whl"
+    - name: "Ubuntu 18.04 Python 2.7 Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:18.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl"
+    - name: "Ubuntu 18.04 Python 3.6 Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:18.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.6
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python3-pip && pip3 install artifacts/tensorflow_io-*-cp36-*.whl"
+    - name: "Ubuntu 16.04 R 3.5 (Python 2.7) Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:16.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
+    - name: "Ubuntu 18.04 R 3.5 (Python 2.7) Build Tests"
+      script:
+        - docker pull tensorflow/tensorflow:custom-op
+        - docker pull ubuntu:18.04
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
+        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
 
 notifications:
   email: false
