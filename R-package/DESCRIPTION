@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: c(
   person("TensorFlow IO Contributors", role = c("aut", "cph"),
          email = "io@tensorflow.org",
-         comment = "Full list of contributors can be found at https://github.com/tensorflow/io/graphs/contributors"),
+         comment = "Full list of contributors can be found at <https://github.com/tensorflow/io/graphs/contributors>"),
   person("Yuan", "Tang", role = c("aut", "cre"),
          email = "terrytangyuan@gmail.com",
          comment = c(ORCID = "0000-0001-5243-233X")),
@@ -13,7 +13,7 @@ Authors@R: c(
   person("Ant Financial", role = c("cph")),
   person("RStudio", role = c("cph"))
   )
-Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by `TensorFlow SIG-IO`.
+Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions maintained by `TensorFlow SIG-IO` <https://github.com/tensorflow/community/blob/master/sigs/io/CHARTER.md>.
 License: Apache License 2.0
 URL: https://github.com/tensorflow/io
 BugReports: https://github.com/tensorflow/io/issues
