@@ -1,7 +1,7 @@
 Package: tfio
 Type: Package
 Title: Interface to 'TensorFlow IO'
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
   person("TensorFlow IO Contributors", role = c("aut", "cph"),
          email = "io@tensorflow.org",
