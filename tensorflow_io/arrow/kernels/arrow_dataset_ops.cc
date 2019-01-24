@@ -149,12 +149,6 @@ class ArrowDatasetBase : public DatasetBase {
   }
 
  protected:
-  Status AsGraphDefInternal(SerializationContext* ctx,
-                            DatasetGraphDefBuilder* b,
-                            Node** output) const override {
-    return Status::OK();
-  }
-
   // Abstract base class for iterating over rows of Arrow record
   // batches. Implementations will define how record batches are
   // initialized and consumed.
@@ -337,14 +331,25 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
         : ArrowDatasetBase(ctx, columns, output_types, output_shapes),
           batches_(serialized_batches) {}
 
+    string DebugString() const override { return "ArrowDatasetOp::Dataset"; }
+
    protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* batches = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(batches_, &batches));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      TF_RETURN_IF_ERROR(b->AddDataset(this, {batches, columns}, output));
+      return Status::OK();
+    }
+
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
       return std::unique_ptr<IteratorBase>(
           new Iterator({this, strings::StrCat(prefix, "::Arrow")}));
     }
-
-    string DebugString() const override { return "ArrowDatasetOp::Dataset"; }
 
    private:
     class Iterator : public ArrowBaseIterator<Dataset> {
@@ -434,15 +439,26 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         : ArrowDatasetBase(ctx, columns, output_types, output_shapes),
           filenames_(filenames) {}
 
+    string DebugString() const override {
+      return "ArrowFeatherDatasetOp::Dataset";
+    }
+
    protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* filenames = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(filenames_, &filenames));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      TF_RETURN_IF_ERROR(b->AddDataset(this, {filenames, columns}, output));
+      return Status::OK();
+    }
+
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
       return std::unique_ptr<IteratorBase>(
           new Iterator({this, strings::StrCat(prefix, "::ArrowFeather")}));
-    }
-
-    string DebugString() const override {
-      return "ArrowFeatherDatasetOp::Dataset";
     }
 
    private:
@@ -551,15 +567,26 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         : ArrowDatasetBase(ctx, columns, output_types, output_shapes),
           host_(host) {}
 
+    string DebugString() const override {
+      return "ArrowStreamDatasetOp::Dataset";
+    }
+
    protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* host = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(host_, &host));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      TF_RETURN_IF_ERROR(b->AddDataset(this, {host, columns}, output));
+      return Status::OK();
+    }
+
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
       return std::unique_ptr<IteratorBase>(
           new Iterator({this, strings::StrCat(prefix, "::ArrowStream")}));
-    }
-
-    string DebugString() const override {
-      return "ArrowStreamDatasetOp::Dataset";
     }
 
    private:
