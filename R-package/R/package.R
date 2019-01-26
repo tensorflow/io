@@ -49,11 +49,11 @@ tfio_module_not_available_message <- function() {
 
 check_tensorflow_version <- function(displayed_warning) {
   current_tf_ver <- tf_version()
-  required_least_ver <- "1.12"
-  if (current_tf_ver < required_least_ver) {
+  required_ver <- "1.12.0"
+  if (current_tf_ver != required_ver) {
     if (!displayed_warning) {
       packageStartupMessage(
-        "tfio requires TensorFlow version > ", required_least_ver, " ",
+        "tfio requires TensorFlow version == ", required_ver, " ",
         "(you are currently running version ", current_tf_ver, ").\n")
       displayed_warning <<- TRUE
     }

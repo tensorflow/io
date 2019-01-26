@@ -23,7 +23,7 @@ from setuptools.dist import Distribution
 
 __version__ = '0.1.0'
 REQUIRED_PACKAGES = [
-    'tensorflow >= 1.12.0',
+    'tensorflow == 1.12.0',
 ]
 project_name = 'tensorflow-io'
 
