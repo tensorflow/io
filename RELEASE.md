@@ -1,3 +1,21 @@
+# Release 0.2.0
+
+## Major Features
+* `tensorflow_io.arrow`: Apache Arrow Datasets.
+* `tensorflow_io.image`: WebP image Dataset.
+* `tensorflow_io.libsvm`: LIBSVM Dataset.
+* `tensorflow_io.parquet`: Apache Parquet Dataset.
+* `tensorflow_io.video`: Video Dataset (from FFmpeg).
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Anton Dmitriev, Bryan Cutler, Peng Yu, Yong Tang, Yuan (Terry) Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.1.0
 
 Initial release of TensorFlow I/O.
