@@ -18,3 +18,7 @@ Maintainer: 'Yuan Tang <terrytangyuan@gmail.com>'
 
 New submission
 ```
+
+## Comments
+
+The examples are wrapped in `\dontrun{}` block and most of the tests are skipped via `skip_on_cran()` since they can only be run when both Python and TensorFlow are installed but this is currently not viable on CRAN test machines.
