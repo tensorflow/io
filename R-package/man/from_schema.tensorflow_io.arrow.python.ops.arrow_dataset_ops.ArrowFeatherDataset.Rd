@@ -6,7 +6,7 @@
 inferring output types and shapes from the given Arrow schema.}
 \usage{
 
-  from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowFeatherDataset(object,
+  \method{from_schema}{tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowFeatherDataset}(object,
   filenames, schema, columns = NULL)
 }
 \arguments{
