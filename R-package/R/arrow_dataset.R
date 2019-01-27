@@ -93,6 +93,19 @@ arrow_stream_dataset <- function(
   as_tf_dataset(dataset)
 }
 
+#' Create an Arrow Dataset from the given Arrow schema.
+#'
+#' Infer output types and shapes from the given Arrow schema and create an Arrow
+#' Dataset.
+#'
+#' @param object An \R object.
+#' @param ... Optional arguments passed on to implementing methods.
+#'
+#' @export
+from_schema <- function(object, ...) {
+  UseMethod("from_schema")
+}
+
 #' Create an Arrow Dataset for reading record batches from Arrow feather files,
 #' inferring output types and shapes from the given Arrow schema.
 #'

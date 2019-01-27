@@ -6,7 +6,7 @@
 shapes from the given Arrow schema.}
 \usage{
 
-  from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowStreamDataset(object,
+  \method{from_schema}{tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowStreamDataset}(object,
   host, schema, columns = NULL)
 }
 \arguments{
