@@ -29,11 +29,11 @@ py_library(
 )
 
 py_test(
-    name = "lmdb_dataset_op_test",
+    name = "lmdb_dataset_ops_test",
     srcs = [
-        "python/kernel_tests/lmdb_dataset_op_test.py"
+        "python/kernel_tests/lmdb_dataset_ops_test.py"
     ],
-    main = "python/kernel_tests/lmdb_dataset_op_test.py",
+    main = "python/kernel_tests/lmdb_dataset_ops_test.py",
     deps = [
         ":lmdb_ops_py",
     ],
