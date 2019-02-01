@@ -23,7 +23,6 @@ import shutil
 
 from tensorflow_io.lmdb.python.ops import lmdb_dataset_ops
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import constant_op
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
@@ -49,7 +48,7 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
     num_repeats = 2
 
     dataset = lmdb_dataset_ops.LMDBDataset(filenames).repeat(num_repeats)
-    iterator = dataset_ops.make_initializable_iterator(dataset)
+    iterator = dataset.make_initializable_iterator(dataset)
     init_op = iterator.initializer
     get_next = iterator.get_next()
 
