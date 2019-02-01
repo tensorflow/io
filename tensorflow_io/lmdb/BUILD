@@ -2,6 +2,11 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "test_data",
+    srcs = glob(["python/kernel_tests/testdata/*"]),
+)
+
 cc_binary(
     name = 'python/ops/_lmdb_ops.so',
     srcs = [
@@ -34,6 +39,9 @@ py_test(
         "python/kernel_tests/lmdb_dataset_ops_test.py"
     ],
     main = "python/kernel_tests/lmdb_dataset_ops_test.py",
+    data = [
+        ":test_data",
+    ],
     deps = [
         ":lmdb_ops_py",
     ],
