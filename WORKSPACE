@@ -177,3 +177,14 @@ http_archive(
     strip_prefix = "libav-9.20",
     build_file = "//third_party:libav_9_20.BUILD",
 )
+
+http_archive(
+    name = "lmdb",
+    urls = [
+        "https://mirror.bazel.build/github.com/LMDB/lmdb/archive/LMDB_0.9.22.tar.gz",
+        "https://github.com/LMDB/lmdb/archive/LMDB_0.9.22.tar.gz",
+    ],
+    sha256 = "f3927859882eb608868c8c31586bb7eb84562a40a6bf5cc3e13b6b564641ea28",
+    strip_prefix = "lmdb-LMDB_0.9.22/libraries/liblmdb",
+    build_file = "//third_party:lmdb.BUILD",
+)
