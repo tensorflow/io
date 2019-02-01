@@ -31,12 +31,14 @@ class LMDBDataset(dataset_ops.DatasetSource):
 
   def __init__(self, filenames):
     """Create a `LMDBDataset`.
+
     `LMDBDataset` allows a user to read data from a mdb file as
     (key value) pairs sequentially.
+
     For example:
     ```python
     tf.enable_eager_execution()
-    dataset = tf.contrib.lmdb.LMDBDataset("/foo/bar.mdb")
+    dataset = LMDBDataset("/foo/bar.mdb")
     # Prints the (key, value) pairs inside a lmdb file.
     for key, value in dataset:
       print(key, value)
@@ -47,14 +49,18 @@ class LMDBDataset(dataset_ops.DatasetSource):
     super(LMDBDataset, self).__init__()
     self._filenames = ops.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
-    variant_tensor = gen_experimental_dataset_ops.experimental_lmdb_dataset(
-        self._filenames, **dataset_ops.flat_structure(self))
 
   def _as_variant_tensor(self):
     return lmdb_ops.lmdb_dataset( self._filenames)
 
   @property
-  def _element_structure(self):
-    return structure.NestedStructure(
-        (structure.TensorStructure(dtypes.string, []),
-         structure.TensorStructure(dtypes.string, [])))
+  def output_classes(self):
+    return ops.Tensor, ops.Tensor
+
+  @property
+  def output_shapes(self):
+    return (tensor_shape.TensorShape([]), tensor_shape.TensorShape([]))
+
+  @property
+  def output_types(self):
+    return dtypes.string, dtypes.string
