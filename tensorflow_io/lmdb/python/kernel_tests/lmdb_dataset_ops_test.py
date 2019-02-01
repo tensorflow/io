@@ -21,7 +21,7 @@ from __future__ import print_function
 import os
 import shutil
 
-from tensorflow.contrib.data.python.ops import readers
+from tensorflow_io.lmdb.python.ops import lmdb_dataset_ops
 from tensorflow.python.data.kernel_tests import test_base
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import constant_op
@@ -48,7 +48,7 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
     filenames = constant_op.constant([filename], dtypes.string)
     num_repeats = 2
 
-    dataset = readers.LMDBDataset(filenames).repeat(num_repeats)
+    dataset = lmdb_dataset_ops.LMDBDataset(filenames).repeat(num_repeats)
     iterator = dataset_ops.make_initializable_iterator(dataset)
     init_op = iterator.initializer
     get_next = iterator.get_next()
