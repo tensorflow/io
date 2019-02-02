@@ -189,6 +189,40 @@ class ArrowDatasetTest(test.TestCase):
     self.run_test_case(dataset, test_data)
 
   @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
+  def testFromPandasPreserveIndex(self):
+    data = [
+        [1.0, 2.0, 3.0],
+        [0.2, 0.4, 0.8],
+    ]
+
+    test_data = TestData(
+        data,
+        (dtypes.float32, dtypes.float32),
+        (tensor_shape.TensorShape([]), tensor_shape.TensorShape([])))
+
+    batch = self.make_record_batch(test_data)
+    df = batch.to_pandas()
+    dataset = arrow_dataset_ops.ArrowDataset.from_pandas(
+        df, preserve_index=True)
+
+    # Add index column to test data to check results
+    test_data_with_index = TestData(
+        test_data.data + [range(len(test_data.data[0]))],
+        test_data.output_types + (dtypes.int64,),
+        test_data.output_shapes + (tensor_shape.TensorShape([]),))
+    self.run_test_case(dataset, test_data_with_index)
+
+    # Test preserve_index again, selecting second column only
+    # NOTE: need to select TestData because `df` gets selected also
+    test_data_selected_with_index = TestData(
+        test_data_with_index.data[1:],
+        test_data_with_index.output_types[1:],
+        test_data_with_index.output_shapes[1:])
+    dataset = arrow_dataset_ops.ArrowDataset.from_pandas(
+        df, columns=(1,), preserve_index=True)
+    self.run_test_case(dataset, test_data_selected_with_index)
+
+  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testArrowFeatherDataset(self):
 
     # Feather files currently do not support columns of list types
