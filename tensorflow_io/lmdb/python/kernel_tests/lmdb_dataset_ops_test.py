@@ -48,7 +48,7 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
     num_repeats = 2
 
     dataset = lmdb_dataset_ops.LMDBDataset(filenames).repeat(num_repeats)
-    iterator = dataset.make_initializable_iterator(dataset)
+    iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()
 
