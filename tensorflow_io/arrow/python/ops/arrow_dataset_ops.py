@@ -154,18 +154,19 @@ class ArrowDataset(ArrowBaseDataset):
   def from_pandas(cls, df, columns=None, preserve_index=True):
     """Create an ArrowDataset from a given Pandas DataFrame. Output types
     and shapes are inferred from the Arrow schema after DataFrame conversion.
+    If preserve_index is True, the DataFrame index will be the last column.
     This method requires pyarrow to be installed.
 
     Args:
       df: a Pandas DataFrame
       columns: Optional column indices to use, if None all are used
-      preserve_index: Flag to include the DataFrame index as a column
+      preserve_index: Flag to include the DataFrame index as the last column
     """
     import pyarrow as pa
     if columns is not None:
-      df = df[columns]
+      df = df.iloc[:, list(columns)]
     batch = pa.RecordBatch.from_pandas(df, preserve_index=preserve_index)
-    columns = tuple(range(len(df.columns)))
+    columns = tuple(range(batch.num_columns))
     output_types, output_shapes = arrow_schema_to_tensor_types(batch.schema)
     return cls(batch, columns, output_types, output_shapes)
 
