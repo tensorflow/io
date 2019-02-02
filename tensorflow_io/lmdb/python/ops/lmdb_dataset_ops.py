@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.data.ops import dataset_ops
+from tensorflow.python.data.util import nest
 from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
@@ -52,7 +53,10 @@ class LMDBDataset(dataset_ops.DatasetSource):
         filenames, dtype=dtypes.string, name="filenames")
 
   def _as_variant_tensor(self):
-    return lmdb_ops.lmdb_dataset( self._filenames)
+    return lmdb_ops.lmdb_dataset(
+        self._filenames,
+        nest.flatten(self.output_types),
+        nest.flatten(self.output_shapes))
 
   @property
   def output_classes(self):
