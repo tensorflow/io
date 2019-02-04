@@ -49,6 +49,25 @@ class ArrowConvertTensor : public arrow::ArrayVisitor {
   }
 
  protected:
+  virtual arrow::Status Visit(const arrow::BooleanArray& array) {
+
+    // Create a Tensor of required size
+    // curr_array_values_ < 0 indicates scalar
+    Tensor tensor(curr_ctx_->allocator({}), curr_type_,
+                  curr_array_values_ < 0 ? TensorShape({})
+                                         : TensorShape({curr_array_values_}));
+    int num_values = curr_array_values_ < 0 ? 1 : curr_array_values_;
+
+    // Must copy one value at a time because Arrow stores values as bits
+    for (int i = 0; i < num_values; ++i) {
+      // NOTE: for Array ListArray, curr_row_idx_ is 0 for element array
+      tensor.flat<bool>()(i) = array.Value(i + curr_row_idx_);
+    }
+
+    out_tensors_->emplace_back(std::move(tensor));
+    return arrow::Status::OK();
+  }
+
   template <typename ArrayType>
   arrow::Status VisitFixedWidth(const ArrayType& array) {
 
