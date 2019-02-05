@@ -30,6 +30,47 @@ limitations under the License.
 
 namespace tensorflow {
 
+// Check the type of an Arrow column matches expected tensor type
+class ArrowColumnTypeChecker : public arrow::TypeVisitor {
+ public:
+  Status CheckColumnType(std::shared_ptr<arrow::DataType> type,
+                         DataType expected_type) {
+    expected_type_ = expected_type;
+
+    // First see if complex type handled by visitor
+    arrow::Status visit_status = type->Accept(this);
+    if (visit_status.ok()) {
+      return Status::OK();
+    }
+
+    // Check type as a scalar type
+    CHECK_ARROW(CheckScalarType(type));
+    return Status::OK();
+  }
+
+ protected:
+  virtual arrow::Status Visit(const arrow::ListType& type) {
+    return CheckScalarType(type.value_type());
+  }
+
+  // Check scalar types with arrow::adapters::tensorflow
+  arrow::Status CheckScalarType(std::shared_ptr<arrow::DataType> scalar_type) {
+    DataType converted_type;
+    ARROW_RETURN_NOT_OK(arrow::adapters::tensorflow::GetTensorFlowType(
+        scalar_type, &converted_type));
+    if (converted_type != expected_type_) {
+      return arrow::Status::TypeError(
+          "Arrow type mismatch: expected dtype=" +
+          std::to_string(expected_type_) + ", but got dtype=" +
+          std::to_string(converted_type));
+    }
+    return arrow::Status::OK();
+  }
+
+ private:
+  DataType expected_type_;
+};
+
 // Convert an element of an Arrow Array to a Tensor
 class ArrowConvertTensor : public arrow::ArrayVisitor {
  public:
@@ -70,18 +111,6 @@ class ArrowConvertTensor : public arrow::ArrayVisitor {
 
   template <typename ArrayType>
   arrow::Status VisitFixedWidth(const ArrayType& array) {
-
-    // TODO only need to check once per stream of batches
-    DataType converted_type;
-    ARROW_RETURN_NOT_OK(arrow::adapters::tensorflow::GetTensorFlowType(
-        array.type(), &converted_type));
-    if (curr_type_ != converted_type) {
-      return arrow::Status::TypeError(
-          "Type mismatch from Arrow batch for expected dtype=" +
-          std::to_string(curr_type_) + ", but got dtype=" +
-          std::to_string(converted_type));
-    }
-
     const auto& fw_type =
         static_cast<const arrow::FixedWidthType&>(*array.type());
     const int64_t type_width = fw_type.bit_width() / 8;
@@ -246,6 +275,18 @@ class ArrowDatasetBase : public DatasetBase {
       current_row_idx_ = 0;
     }
 
+    // Check columns of batch in stream are expected data type
+    Status CheckBatchColumnTypes(std::shared_ptr<arrow::RecordBatch> batch) {
+      ArrowColumnTypeChecker type_checker;
+      for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
+        int32 col = this->dataset()->columns_[i];
+        DataType dt = this->dataset()->output_types_[i];
+        std::shared_ptr<arrow::Array> arr = batch->column(col);
+        TF_RETURN_IF_ERROR(type_checker.CheckColumnType(arr->type(), dt));
+      }
+      return Status::OK();
+    }
+
     mutex mu_;
     std::shared_ptr<arrow::RecordBatch> current_batch_ GUARDED_BY(mu_) =
         nullptr;
@@ -388,6 +429,7 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
         if (num_batches_ > 0) {
           CHECK_ARROW(
               reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         }
         return Status::OK();
       }
@@ -514,6 +556,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         arrow::TableBatchReader tr(*table.get());
         std::shared_ptr<arrow::RecordBatch> batch;
         CHECK_ARROW(tr.ReadNext(&batch));
+        TF_RETURN_IF_ERROR(CheckBatchColumnTypes(batch));
         current_batch_ = batch;
         while (batch != nullptr) {
           record_batches_.push_back(batch);
@@ -629,6 +672,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         CHECK_ARROW(arrow::ipc::RecordBatchStreamReader::Open(in_stream_.get(),
                                                               &reader_));
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         return Status::OK();
       }
 

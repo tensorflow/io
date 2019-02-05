@@ -35,6 +35,7 @@ _have_pyarrow = _pyarrow_requirement_message is None
 
 from tensorflow_io.arrow.python.ops import arrow_dataset_ops
 from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import test
 
@@ -327,6 +328,20 @@ class ArrowDatasetTest(test.TestCase):
         test_data.output_types,
         test_data.output_shapes)
     self.run_test_case(dataset, test_data)
+
+  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
+  def testIncorrectColumnType(self):
+    test_data = TestData(self.scalar_data, self.scalar_dtypes,
+            self.scalar_shapes)
+    batch = self.make_record_batch(test_data)
+
+    dataset = arrow_dataset_ops.ArrowDataset(
+        batch,
+        list(range(len(test_data.output_types))),
+        tuple([dtypes.int32 for _ in test_data.output_types]),
+        test_data.output_shapes)
+    with self.assertRaisesRegexp(errors.OpError, 'Arrow type mismatch'):
+      self.run_test_case(dataset, test_data)
 
 
 if __name__ == "__main__":
