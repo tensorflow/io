@@ -35,6 +35,7 @@ _have_pyarrow = _pyarrow_requirement_message is None
 
 from tensorflow_io.arrow.python.ops import arrow_dataset_ops
 from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import test
 
@@ -48,6 +49,7 @@ class ArrowDatasetTest(test.TestCase):
   def setUpClass(cls):
 
     cls.scalar_data = [
+        [True, False, True, True],
         [1, 2, -3, 4],
         [1, 2, -3, 4],
         [1, 2, -3, 4],
@@ -60,6 +62,7 @@ class ArrowDatasetTest(test.TestCase):
         [1.1, 2.2, 3.3, 4.4],
     ]
     cls.scalar_dtypes = (
+        dtypes.bool,
         dtypes.int8,
         dtypes.int16,
         dtypes.int32,
@@ -304,6 +307,41 @@ class ArrowDatasetTest(test.TestCase):
     self.run_test_case(dataset, test_data_mult)
 
     server.join()
+
+  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
+  def testBoolArrayType(self):
+
+    # NOTE: need to test this seperately because to_pandas fails with
+    # ArrowNotImplementedError:
+    #   Not implemented type for list in DataFrameBlock: bool
+    # see https://issues.apache.org/jira/browse/ARROW-4370
+    test_data = TestData(
+        [[[False, False], [False, True], [True, False], [True, True]]],
+        (dtypes.bool,),
+        (tensor_shape.TensorShape([None]),))
+
+    batch = self.make_record_batch(test_data)
+
+    dataset = arrow_dataset_ops.ArrowDataset(
+        batch,
+        (0,),
+        test_data.output_types,
+        test_data.output_shapes)
+    self.run_test_case(dataset, test_data)
+
+  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
+  def testIncorrectColumnType(self):
+    test_data = TestData(self.scalar_data, self.scalar_dtypes,
+            self.scalar_shapes)
+    batch = self.make_record_batch(test_data)
+
+    dataset = arrow_dataset_ops.ArrowDataset(
+        batch,
+        list(range(len(test_data.output_types))),
+        tuple([dtypes.int32 for _ in test_data.output_types]),
+        test_data.output_shapes)
+    with self.assertRaisesRegexp(errors.OpError, 'Arrow type mismatch'):
+      self.run_test_case(dataset, test_data)
 
 
 if __name__ == "__main__":
