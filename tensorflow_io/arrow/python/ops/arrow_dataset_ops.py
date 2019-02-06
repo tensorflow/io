@@ -38,7 +38,9 @@ def arrow_to_tensor_type(pa_t):
   """
   import pyarrow as pa
   shape_dims = []  # initialize shape as scalar
-  if pa.types.is_int8(pa_t):
+  if pa.types.is_boolean(pa_t):
+    tf_t = dtypes.bool
+  elif pa.types.is_int8(pa_t):
     tf_t = dtypes.int8
   elif pa.types.is_int16(pa_t):
     tf_t = dtypes.int16
