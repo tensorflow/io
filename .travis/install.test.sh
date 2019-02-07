@@ -26,9 +26,10 @@ DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-projec
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq install r-base > /dev/null
 echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
-R -e 'install.packages(c("tensorflow", "tfdatasets"), quiet = TRUE)'
+R -e 'install.packages(c("tensorflow"), quiet = TRUE)'
 R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
 R -e 'install.packages(c("forge"), quiet = TRUE)'
+R -e 'library("devtools"); install_github("rstudio/tfdatasets", ref="c6fc59b", quiet = TRUE)'
 
 CPYTHON_VERSION=$(python3 -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
 python3 -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
