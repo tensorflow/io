@@ -13,8 +13,38 @@ steps:
     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
     sudo apt-get -y -qq update
     sudo apt-get -y -qq install docker-ce docker-ce-cli containerd.io
-    echo Success!
   displayName: 'Install Docker CE'
 - script: |
     pip install twine
   displayName: 'Install Twine'
+- script: |
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+    sudo bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
+    sudo docker run --rm -v ${PWD}:/working_dir -w /working_dir --net=host tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
+    sudo bash -x tensorflow_io/ignite/python/tests/stop_ignite.sh
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh stop kafka
+  displayName: 'Build TensorFlow IO (Python 2.7)'
+- script: |
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+    sudo bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
+    sudo docker run --rm -v ${PWD}:/working_dir -w /working_dir --net=host tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.4
+    sudo bash -x tensorflow_io/ignite/python/tests/stop_ignite.sh
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh stop kafka
+  displayName: 'Build TensorFlow IO (Python 3.4)'
+- script: |
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+    sudo bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
+    sudo docker run --rm -v ${PWD}:/working_dir -w /working_dir --net=host tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.5
+    sudo bash -x tensorflow_io/ignite/python/tests/stop_ignite.sh
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh stop kafka
+  displayName: 'Build TensorFlow IO (Python 3.5)'
+- script: |
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+    sudo bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
+    sudo docker run --rm -v ${PWD}:/working_dir -w /working_dir --net=host tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.6
+    sudo bash -x tensorflow_io/ignite/python/tests/stop_ignite.sh
+    sudo bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh stop kafka
+  displayName: 'Build TensorFlow IO (Python 3.6)'
+- task: TwineAuthenticate@0
+  inputs:
+    externalFeeds: 'tensorflow-io-nightly'
