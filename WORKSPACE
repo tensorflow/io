@@ -188,3 +188,13 @@ http_archive(
     strip_prefix = "lmdb-LMDB_0.9.22/libraries/liblmdb",
     build_file = "//third_party:lmdb.BUILD",
 )
+http_archive(
+    name = "libtiff",
+    urls = [
+        "https://mirror.bazel.build/download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
+        "https://download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
+    ],
+    sha256 = "2c52d11ccaf767457db0c46795d9c7d1a8d8f76f68b0b800a3dfe45786b996e4",
+    strip_prefix = "tiff-4.0.10",
+    build_file = "//third_party:libtiff.BUILD",
+)
