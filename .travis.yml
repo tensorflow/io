@@ -8,39 +8,62 @@ git:
 services:
 - docker
 
-before_script:
-- bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
-- bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/ignite/python/tests/start_ignite.sh
-
-matrix:
-  include:
-  - name: "Python 2.7 Build"
-    env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1604=true TEST_UBUNTU1804=true
-  - name: "Python 3.4 Build"
-    env: PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op
-  - name: "Python 3.5 Build"
-    env: PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1604=true
-  - name: "Python 3.6 Build"
-    env: PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1804=true
-  - name: "Python 2.7 Build R Ubuntu 16.04"
-    env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_R_UBUNTU1604=true
-  - name: "Python 2.7 Build R Ubuntu 18.04"
-    env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_R_UBUNTU1804=true
-  - name: "Python 2.7 Ubuntu 16.04 Build"
-    env: PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:16.04 TEST_UBUNTU1604=true
-  - name: "Python 2.7 Ubuntu 18.04 Build"
-    env: PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:18.04 TEST_UBUNTU1804=true
-  - name: "Python 3.5 Ubuntu 16.04 Build"
-    env: PYTHON_VERSION=3.5 BUILD_IMAGE=ubuntu:16.04 TEST_UBUNTU1604=true
-  - name: "Python 3.6 Ubuntu 18.04 Build"
-    env: PYTHON_VERSION=3.6 BUILD_IMAGE=ubuntu:18.04 TEST_UBUNTU1804=true
+stages:
+  - test
+  - release
 
 script:
-- docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION}
-- if [[ ! -z ${TEST_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
-- if [[ ! -z ${TEST_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
-- if [[ ! -z ${TEST_R_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
-- if [[ ! -z ${TEST_R_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
+- echo bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+- echo bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/ignite/python/tests/start_ignite.sh
+- echo docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION}
+- echo if [[ ! -z ${TEST_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
+- echo if [[ ! -z ${TEST_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
+- echo if [[ ! -z ${TEST_R_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
+- echo if [[ ! -z ${TEST_R_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
+- echo Test Success
+
+jobs:
+  include:
+    - stage: test
+      name: "Python 2.7 Build"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1604=true TEST_UBUNTU1804=true
+    - stage: test
+      name: "Python 3.4 Build"
+      env: PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op
+    - stage: test
+      name: "Python 3.5 Build"
+      env: PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1604=true
+    - stage: test
+      name: "Python 3.6 Build"
+      env: PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_UBUNTU1804=true
+    - stage: test
+      name: "Python 2.7 Build R Ubuntu 16.04"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_R_UBUNTU1604=true
+    - stage: test
+      name: "Python 2.7 Build R Ubuntu 18.04"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_R_UBUNTU1804=true
+    - stage: test
+      name: "Python 2.7 Ubuntu 16.04 Build"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:16.04 TEST_UBUNTU1604=true
+    - stage: test
+      name: "Python 2.7 Ubuntu 18.04 Build"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:18.04 TEST_UBUNTU1804=true
+    - stage: test
+      name: "Python 3.5 Ubuntu 16.04 Build"
+      env: PYTHON_VERSION=3.5 BUILD_IMAGE=ubuntu:16.04 TEST_UBUNTU1604=true
+    - stage: test
+      name: "Python 3.6 Ubuntu 18.04 Build"
+      env: PYTHON_VERSION=3.6 BUILD_IMAGE=ubuntu:18.04 TEST_UBUNTU1804=true
+    - stage: release
+      name: "Release Nightly"
+      if: branch = travis
+      script:
+      - export TENSORFLOW_IO_VERSION=0.3.0.dev$(date '+%Y%m%d%H%M%S')
+      - echo $TENSORFLOW_IO_VERSION
+      - echo docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
+      - echo docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.4 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
+      - echo docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.5 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
+      - echo docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.6 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
 
 notifications:
   email: false

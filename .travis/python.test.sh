@@ -17,7 +17,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     echo Python 2.7 Ubuntu 16.04
     apt-get -y -qq install ffmpeg python-pip > /dev/null
     pip install -q tensorflow==${TENSORFLOW_VERSION}
-    pip install -q artifacts/tensorflow_io-*-cp27-*.whl
+    pip install -q artifacts/tensorflow_io*-cp27-*.whl
     pip install -q pytest
     (cd tests && python -m pytest -s .)
     echo Success
@@ -26,7 +26,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     echo Python 3.5 Ubuntu 16.04
     apt-get -y -qq install ffmpeg python3-pip > /dev/null
     pip3 install -q tensorflow==${TENSORFLOW_VERSION}
-    pip3 install -q artifacts/tensorflow_io-*-cp35-*.whl
+    pip3 install -q artifacts/tensorflow_io*-cp35-*.whl
     pip3 install -q pytest
     (cd tests && python3 -m pytest -s .)
     echo Success
@@ -38,7 +38,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     echo Python 2.7 Ubuntu 18.04
     apt-get -y -qq install ffmpeg python-pip > /dev/null
     pip install -q tensorflow==${TENSORFLOW_VERSION}
-    pip install -q artifacts/tensorflow_io-*-cp27-*.whl
+    pip install -q artifacts/tensorflow_io*-cp27-*.whl
     pip install -q pytest
     (cd tests && python -m pytest -s .)
     echo Success
@@ -47,7 +47,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     echo Python 3.6 Ubuntu 18.04
     apt-get -y -qq install ffmpeg python3-pip > /dev/null
     pip3 install -q tensorflow==${TENSORFLOW_VERSION}
-    pip3 install -q artifacts/tensorflow_io-*-cp36-*.whl
+    pip3 install -q artifacts/tensorflow_io*-cp36-*.whl
     pip3 install -q pytest
     (cd tests && python3 -m pytest -s .)
     echo Success

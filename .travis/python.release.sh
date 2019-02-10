@@ -20,7 +20,7 @@ set -e -x
 # docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6>
 # Nightly:
 # export TENSORFLOW_IO_VERSION=0.3.0.dev$(date '+%Y%m%d%H%M%S')
-# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-version> <project-name> $TENSORFLOW_IO_VERSION
+# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-version> --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
 
 if [[ -z "${1}" ]]; then
   echo "usage:" $0 "<2.7|3.4|3.5|3.6>"
@@ -42,8 +42,10 @@ fi
 
 pip install -q tensorflow==${TENSORFLOW_VERSION}
 ./configure.sh
-bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+if [[ ${TENSORFLOW_IO_TEST} != "no" ]]; then
+  bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
+fi
 bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors build_pip_pkg
-bazel-bin/build_pip_pkg artifacts
+bazel-bin/build_pip_pkg artifacts "$@"
 
 exit 0
