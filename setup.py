@@ -17,15 +17,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 from setuptools import find_packages
 from setuptools import setup
 from setuptools.dist import Distribution
 
-__version__ = '0.2.0'
 REQUIRED_PACKAGES = [
     'tensorflow == 1.12.0',
 ]
+__version__ = '0.3.0'
+if '--project_version' in sys.argv:
+  project_version_idx = sys.argv.index('--project_version')
+  __version__ = sys.argv[project_version_idx + 1]
+  sys.argv.remove('--project_version')
+  sys.argv.pop(project_version_idx)
+
 project_name = 'tensorflow-io'
+if '--project_name' in sys.argv:
+  project_name_idx = sys.argv.index('--project_name')
+  project_name = sys.argv[project_name_idx + 1]
+  sys.argv.remove('--project_name')
+  sys.argv.pop(project_name_idx)
 
 class BinaryDistribution(Distribution):
   """This class is needed in order to create OS specific wheels."""
