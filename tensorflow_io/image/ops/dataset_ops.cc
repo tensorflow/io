@@ -28,4 +28,13 @@ REGISTER_OP("WebPDataset")
        return Status::OK();
      });
 
+REGISTER_OP("TIFFDataset")
+    .Input("filenames: string")
+    .Output("handle: variant")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+       return Status::OK();
+     });
+
 }  // namespace tensorflow

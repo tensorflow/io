@@ -11,6 +11,7 @@ cc_binary(
     name = 'python/ops/_image_ops.so',
     srcs = [
         "kernels/webp_dataset_ops.cc",
+        "kernels/tiff_dataset_ops.cc",
         "ops/dataset_ops.cc",
     ],
     linkshared = 1,
@@ -18,6 +19,7 @@ cc_binary(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
 	"@libwebp//:libwebp",
+	"@libtiff//:libtiff",
     ],
     copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0", "-DNDEBUG"]
 )
