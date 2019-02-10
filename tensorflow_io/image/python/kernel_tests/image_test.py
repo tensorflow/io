@@ -67,6 +67,39 @@ class ImageDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_tiff_file_dataset(self):
+    """Test case for TIFFDataset.
+    """
+    width = 560
+    height = 320
+    channel = 4
+
+    images = list()
+    for filename in ["small-00.png", "small-01.png", "small-02.png", "small-03.png", "small-04.png"]:
+      with open(os.path.join(resource_loader.get_data_files_path(), "testdata", filename), 'rb') as f:
+        png_contents = f.read()
+      with self.cached_session():
+        image_op = image_ops.decode_png(png_contents, channels=channel)
+        image = image_op.eval()
+        self.assertEqual(image.shape, (height, width, channel))
+        images.append(image)
+
+    filename = os.path.join(resource_loader.get_data_files_path(), "testdata", "small.tiff")
+
+    num_repeats = 2
+
+    dataset = image_dataset_ops.TIFFDataset([filename]).repeat(num_repeats)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):  # Dataset is repeated.
+        for i in range(5):
+          v = sess.run(get_next)
+          self.assertAllEqual(images[i], v)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
 
 if __name__ == "__main__":
   test.main()
