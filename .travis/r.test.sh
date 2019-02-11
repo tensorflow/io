@@ -18,7 +18,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     .travis/r.install.sh
     apt-get -y -qq install ffmpeg python-pip > /dev/null
     pip install -q tensorflow==${TENSORFLOW_VERSION}
-    pip install -q artifacts/tensorflow_io-*-cp27-*.whl
+    pip install -q artifacts/tensorflow_io*-cp27-*.whl
     (cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())$failed == 0L))')
     echo Success
     exit 0
@@ -29,7 +29,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     .travis/r.install.sh
     apt-get -y -qq install ffmpeg python-pip > /dev/null
     pip install -q tensorflow==${TENSORFLOW_VERSION}
-    pip install -q artifacts/tensorflow_io-*-cp27-*.whl
+    pip install -q artifacts/tensorflow_io*-cp27-*.whl
     (cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())$failed == 0L))')
     echo Success
     exit 0
