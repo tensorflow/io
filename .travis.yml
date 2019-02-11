@@ -13,14 +13,20 @@ stages:
   - release
 
 script:
-- bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
-- bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/ignite/python/tests/start_ignite.sh
-- docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION}
+- bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+- bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then curl -OL https://bootstrap.pypa.io/get-pip.py ; fi
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then sudo python3 get-pip.py ; fi
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then sudo python3 -m pip install twine ; fi
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then python3 -m twine --version ; fi
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then export NIGHTLY_RELEASE="1.12.0 --project_name tensorflow-io-nightly --project_version 0.3.0.dev${TRAVIS_BUILD_NUMBER}" ; fi
+- docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} ${NIGHTLY_RELEASE}
 - if [[ ! -z ${TEST_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
 - if [[ ! -z ${TEST_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION} ; fi
 - if [[ ! -z ${TEST_R_UBUNTU1604} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:16.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
 - if [[ ! -z ${TEST_R_UBUNTU1804} ]]; then docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ubuntu:18.04 bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION} ; fi
-- echo Test Success
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then ls -la artifacts/ ; fi
+- if [[ ! -z ${TEST_NIGHTLY} ]]; then python3 -m twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl ; fi
 
 jobs:
   include:
@@ -54,17 +60,33 @@ jobs:
     - stage: test
       name: "Python 3.6 Ubuntu 18.04 Build"
       env: PYTHON_VERSION=3.6 BUILD_IMAGE=ubuntu:18.04 TEST_UBUNTU1804=true
+    - stage: test
+      name: "Python 2.7 Nightly Build"
+      env: PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_NIGHTLY=true TEST_UBUNTU1604=true TEST_UBUNTU1804=true
+    - stage: test
+      name: "Python 3.4 Nightly Build"
+      env: PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_NIGHTLY=true
+    - stage: test
+      name: "Python 3.5 Nightly Build"
+      env: PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_NIGHTLY=true TEST_UBUNTU1604=true
+    - stage: test
+      name: "Python 3.6 Nightly Build"
+      env: PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op TEST_NIGHTLY=true TEST_UBUNTU1804=true
     - stage: release
       name: "Release Nightly"
       if: branch = travis
       script:
-      - export TENSORFLOW_IO_VERSION=0.3.0.dev$(date '+%Y%m%d%H%M%S')
-      - echo $TENSORFLOW_IO_VERSION
-      - docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
-      - docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.4 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
-      - docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.5 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
-      - docker run -i -t --rm -e TENSORFLOW_IO_TEST=no -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.6 1.12.0 --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
-      - twine upload artifacts/*
+      - curl -OL https://bootstrap.pypa.io/get-pip.py
+      - sudo python3 get-pip.py
+      - sudo python3 -m pip install twine
+      - python3 -m twine --version
+      - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+      - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+      - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip3 download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+      - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.5 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.6 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      - ls -la artifacts/
+      - python3 -m twine upload artifacts/*.whl
 
 notifications:
   email: false

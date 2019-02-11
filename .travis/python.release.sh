@@ -18,8 +18,8 @@ set -e -x
 
 # Release:
 # docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6>
-# Nightly:
-# export TENSORFLOW_IO_VERSION=0.3.0.dev$(date '+%Y%m%d%H%M%S')
+# Nightly on Travis CI
+# export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
 # docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-version> --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
 
 if [[ -z "${1}" ]]; then
@@ -42,9 +42,7 @@ fi
 
 pip install -q tensorflow==${TENSORFLOW_VERSION}
 ./configure.sh
-if [[ ${TENSORFLOW_IO_TEST} != "no" ]]; then
-  bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-fi
+bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
 bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors build_pip_pkg
 bazel-bin/build_pip_pkg artifacts "$@"
 
