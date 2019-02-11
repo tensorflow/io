@@ -19,8 +19,7 @@ set -e -x
 # Release:
 # docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6>
 # Nightly on Travis CI
-# export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-version> --project_name tensorflow-io-nightly --project_version $TENSORFLOW_IO_VERSION
+# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-install> --nightly ${TRAVIS_BUILD_NUMBER}
 
 if [[ -z "${1}" ]]; then
   echo "usage:" $0 "<2.7|3.4|3.5|3.6>"
@@ -30,9 +29,9 @@ fi
 BAZEL_VERSION=0.20.0
 PYTHON_VERSION=${1}
 shift
-TENSORFLOW_VERSION=1.12.0
+TENSORFLOW_INSTALL="tensorflow==1.12.0"
 if [[ ! -z ${1} ]]; then
-  TENSORFLOW_VERSION=${1}
+  TENSORFLOW_INSTALL=${1}
   shift
 fi
 
@@ -40,7 +39,7 @@ fi
 
 .travis/python.install.sh ${PYTHON_VERSION}
 
-pip install -q tensorflow==${TENSORFLOW_VERSION}
+pip install -q ${TENSORFLOW_INSTALL}
 ./configure.sh
 bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
 bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors build_pip_pkg
