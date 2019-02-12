@@ -43,7 +43,7 @@ class WebPDataset(dataset_ops.DatasetSource):
         filenames, dtype=dtypes.string, name="filenames")
 
   def _as_variant_tensor(self):
-    return image_ops.web_p_dataset( self._filenames)
+    return image_ops.web_p_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -83,3 +83,16 @@ class TIFFDataset(dataset_ops.DatasetSource):
   @property
   def output_types(self):
     return dtypes.uint8
+
+def decode_webp(contents, name=None):
+  """
+  Decode a WebP-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The WebP-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return image_ops.decode_web_p(contents, name=name)
