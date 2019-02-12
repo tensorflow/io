@@ -122,7 +122,7 @@ jobs:
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_R_IMAGE} bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION}
   - stage: nightly
     name: "Nightly Release"
-    if: branch = travis
+    if: branch = master
     script:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
