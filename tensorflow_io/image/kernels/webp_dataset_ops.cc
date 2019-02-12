@@ -157,8 +157,45 @@ class WebPDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
+class DecodeWebPOp : public OpKernel {
+ public:
+  explicit DecodeWebPOp(OpKernelConstruction* context) : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor& contents_tensor = context->input(0);
+    OP_REQUIRES(context, TensorShapeUtils::IsScalar(contents_tensor.shape()),
+                errors::InvalidArgument("contents must be scalar, got shape ",
+                                        contents_tensor.shape().DebugString()));
+    const auto contents = contents_tensor.scalar<string>()();
+
+    WebPDecoderConfig config;
+    WebPInitDecoderConfig(&config);
+    config.output.colorspace = MODE_RGBA;
+    int returned = DecodeWebP(reinterpret_cast<const uint8_t *>(contents.data()), contents.size(), &config);
+    OP_REQUIRES(context, returned == 0,
+                errors::InvalidArgument("contents could not be decoded as WebP: ", returned));
+    int height = config.output.height;
+    int width = config.output.width;
+    int num_bytes = height * width * channels_;
+    // Allocate tensor
+    Tensor* output_tensor = nullptr;
+    const auto status = context->allocate_output(0, TensorShape({height, width, channels_}), &output_tensor);
+    if (status.ok()) {
+      std::memcpy(reinterpret_cast<char*>(output_tensor->flat<uint8_t>().data()), config.output.u.RGBA.rgba, num_bytes * sizeof(uint8_t));
+    }
+    WebPFreeDecBuffer(&config.output);
+    OP_REQUIRES_OK(context, status);
+  }
+
+ private:
+  // TODO (yongtang): Set channels_ = 4 for now.
+  static const int channels_ = 4;
+};
 REGISTER_KERNEL_BUILDER(Name("WebPDataset").Device(DEVICE_CPU),
                         WebPDatasetOp);
+
+REGISTER_KERNEL_BUILDER(Name("DecodeWebP").Device(DEVICE_CPU),
+                        DecodeWebPOp);
 
 }  // namespace
 }  // namespace data
