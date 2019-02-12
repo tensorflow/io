@@ -19,6 +19,8 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     pip install -q tensorflow==${TENSORFLOW_VERSION}
     pip install -q artifacts/tensorflow_io*-cp27-*.whl
     pip install -q pytest
+    # Pin more-itertools==5.0.0 as otherwise pytest will fail
+    pip install -q more-itertools==5.0.0
     (cd tests && python -m pytest -s .)
     echo Success
     exit 0
@@ -28,6 +30,8 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     pip3 install -q tensorflow==${TENSORFLOW_VERSION}
     pip3 install -q artifacts/tensorflow_io*-cp35-*.whl
     pip3 install -q pytest
+    # Pin more-itertools==5.0.0 as otherwise pytest will fail
+    pip3 install -q more-itertools==5.0.0
     (cd tests && python3 -m pytest -s .)
     echo Success
     exit 0
@@ -40,6 +44,8 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     pip install -q tensorflow==${TENSORFLOW_VERSION}
     pip install -q artifacts/tensorflow_io*-cp27-*.whl
     pip install -q pytest
+    # Pin more-itertools==5.0.0 as otherwise pytest will fail
+    pip install -q more-itertools==5.0.0
     (cd tests && python -m pytest -s .)
     echo Success
     exit 0
@@ -49,6 +55,8 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     pip3 install -q tensorflow==${TENSORFLOW_VERSION}
     pip3 install -q artifacts/tensorflow_io*-cp36-*.whl
     pip3 install -q pytest
+    # Pin more-itertools==5.0.0 as otherwise pytest will fail
+    pip3 install -q more-itertools==5.0.0
     (cd tests && python3 -m pytest -s .)
     echo Success
     exit 0
