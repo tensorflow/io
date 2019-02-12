@@ -25,6 +25,9 @@ function main() {
     if [[ ${1} == "make" ]]; then
       echo "Using Makefile to build pip package."
       PIP_FILE_PREFIX=""
+    elif [[ ${1} == "--nightly" ]]; then
+      shift
+      NIGHTLY="--nightly ${1}"
     else
       DEST=${1}
     fi
@@ -62,7 +65,7 @@ function main() {
   pushd ${TMPDIR}
   echo $(date) : "=== Building wheel"
   
-  python setup.py bdist_wheel
+  python setup.py bdist_wheel ${NIGHTLY}
 
   auditwheel repair -w "${DEST}" dist/*.whl
   popd

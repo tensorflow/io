@@ -2,90 +2,135 @@ dist: xenial
 sudo: required
 language: minimal
 
+git:
+  quiet: true
+
 addons:
   apt:
     update: true
-
-env:
-  - BAZEL_VERSION=0.20.0
+    packages:
+    - python3-pip
 
 services:
-  - docker
+- docker
+
+stages:
+- build
+- python
+- r
+- nightly
+
+install:
+- pip3 install twine
+- twine --version
 
 before_script:
-  - bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
-  - bash -x ${TRAVIS_BUILD_DIR}/tensorflow_io/ignite/python/tests/start_ignite.sh
+- bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+- bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
 
-matrix:
+jobs:
   include:
-    - name: "Ubuntu 14.04 (Custom-op) Python 2.7 Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 14.04 (Custom-op) Python 3.4 Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.4 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 14.04 (Custom-op) Python 3.5 Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.5 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 14.04 (Custom-op) Python 3.6 Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="libav-tools" -e CUSTOM_OP=True -e PYTHON_VERSION=3.6 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host tensorflow/tensorflow:custom-op bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 16.04 Python 2.7 Tests"
-      script:
-        - docker pull ubuntu:16.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python-pip ffmpeg" -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 16.04 Python 3.5 Tests"
-      script:
-        - docker pull ubuntu:16.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python3-pip ffmpeg" -e PYTHON_VERSION=3.5 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 18.04 Python 2.7 Tests"
-      script:
-        - docker pull ubuntu:18.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python-pip ffmpeg" -e PYTHON_VERSION=2.7 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 18.04 Python 3.6 Tests"
-      script:
-        - docker pull ubuntu:18.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e INSTALL_PACKAGES="curl unzip python3-pip ffmpeg" -e PYTHON_VERSION=3.6 -e BAZEL_VERSION=$BAZEL_VERSION -e BAZEL_OS=linux --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/python.configure.sh && pip install pyarrow==0.11.1 && bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/..."
-    - name: "Ubuntu 16.04 Python 2.7 Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:16.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python-pip ffmpeg && pip install artifacts/tensorflow_io-*-cp27-*.whl && pip install pytest && (cd tests && python -m pytest .)"
-    - name: "Ubuntu 16.04 Python 3.5 Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:16.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.5
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python3-pip ffmpeg && pip3 install artifacts/tensorflow_io-*-cp35-*.whl && pip3 install pytest && (cd tests && python3 -m pytest .)"
-    - name: "Ubuntu 18.04 Python 2.7 Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:18.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python-pip ffmpeg && pip install artifacts/tensorflow_io-*-cp27-*.whl && pip install pytest && (cd tests && python -m pytest .)"
-    - name: "Ubuntu 18.04 Python 3.6 Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:18.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 3.6
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c "apt-get -y -qqq update && apt-get -y -qqq install python3-pip ffmpeg && pip3 install artifacts/tensorflow_io-*-cp36-*.whl && pip3 install pytest && (cd tests && python3 -m pytest .)"
-    - name: "Ubuntu 16.04 R 3.5 (Python 2.7) Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:16.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:16.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
-    - name: "Ubuntu 18.04 R 3.5 (Python 2.7) Build Tests"
-      script:
-        - docker pull tensorflow/tensorflow:custom-op
-        - docker pull ubuntu:18.04
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e BAZEL_VERSION=$BAZEL_VERSION --rm -v ${PWD}:/working_dir -w /working_dir  tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh 2.7
-        - docker run -i -t -v $HOME/.cache/pip:/root/.cache/pip -e --rm -v $PWD:/workspace -w /workspace --net=host ubuntu:18.04 bash -x -c ".travis/r.configure.sh &&  apt-get -y -qqq install ffmpeg python-pip && pip install artifacts/tensorflow_io-*-cp27-*.whl && cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())\$failed == 0L))'"
+  - stage: build
+    name: "Python 2.7 Build"
+    script:
+    - export PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+    - ls -la artifacts/
+    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+  - stage: build
+    name: "Python 3.4 Build"
+    script:
+    - export PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+    - ls -la artifacts/
+    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+  - stage: build
+    name: "Python 3.5 Build"
+    script:
+    - export PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+    - ls -la artifacts/
+    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+  - stage: build
+    name: "Python 3.6 Build"
+    script:
+    - export PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+    - ls -la artifacts/
+    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+  - stage: build
+    name: "Python 2.7 Build (Ubuntu 16.04)"
+    script:
+    - export PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:16.04
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+  - stage: build
+    name: "Python 3.5 Build (Ubuntu 16.04)"
+    script:
+    - export PYTHON_VERSION=3.5 BUILD_IMAGE=ubuntu:16.04
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+  - stage: build
+    name: "Python 2.7 Build (Ubuntu 18.04)"
+    script:
+    - export PYTHON_VERSION=2.7 BUILD_IMAGE=ubuntu:18.04
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+  - stage: build
+    name: "Python 3.6 Build (Ubuntu 18.04)"
+    script:
+    - export PYTHON_VERSION=3.6 BUILD_IMAGE=ubuntu:18.04
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+  - stage: python
+    name: "Python 2.7 Test (Ubuntu 16.04)"
+    script:
+    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:16.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
+  - stage: python
+    name: "Python 3.5 Test (Ubuntu 16.04)"
+    script:
+    - export PYTHON_VERSION=3.5 TEST_IMAGE=ubuntu:16.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
+  - stage: python
+    name: "Python 2.7 Test (Ubuntu 18.04)"
+    script:
+    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:18.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
+  - stage: python
+    name: "Python 3.6 Test (Ubuntu 18.04)"
+    script:
+    - export PYTHON_VERSION=3.6 TEST_IMAGE=ubuntu:18.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
+  - stage: r
+    name: "R Test (Ubuntu 16.04 Python 2.7)"
+    script:
+    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:16.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_R_IMAGE} bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION}
+  - stage: r
+    name: "R Test (Ubuntu 18.04 Python 2.7)"
+    script:
+    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:18.04
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_R_IMAGE} bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION}
+  - stage: nightly
+    name: "Nightly Release"
+    if: branch = travis
+    script:
+    - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip3 download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.5 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.6 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - ls -la artifacts/
+    - twine upload artifacts/*.whl
 
-notifications:
-  email: false
+-notifications:
+-  email: false
