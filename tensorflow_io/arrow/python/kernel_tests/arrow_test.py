@@ -20,18 +20,17 @@ from __future__ import print_function
 
 from collections import namedtuple
 import os
+import sys
 import socket
 import tempfile
 import threading
 import unittest
 
-_pyarrow_requirement_message = None
-try:
+_have_pyarrow = not (sys.version_info[0] == 3 and sys.version_info[1] == 4)
+if _have_pyarrow:
   import pyarrow as pa
   from pyarrow.feather import write_feather
-except ImportError as e:
-  _pyarrow_requirement_message = str(e)
-_have_pyarrow = _pyarrow_requirement_message is None
+_pyarrow_requirement_message = None if _have_pyarrow else "pyarrow is not supported with Python 3.4"
 
 from tensorflow_io.arrow.python.ops import arrow_dataset_ops
 from tensorflow.python.framework import dtypes
