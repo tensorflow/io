@@ -16,20 +16,22 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
-#include "tensorflow/core/platform/file_system.h"
+#include "tensorflow/core/lib/io/inputstream_interface.h"
+#include "tensorflow/core/lib/io/random_inputstream.h"
+#include "tensorflow/core/lib/io/zlib_compression_options.h"
+#include "tensorflow/core/lib/io/zlib_inputstream.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
 
 static const size_t kSyncMarkerSize = 16;
-static const size_t kNumpyFileBufferSize = 1024 * 1024;
+static const size_t kNumpyFileBufferSize = 128 * 1024;
 
 class NumpyFileReader {
  public:
-  explicit NumpyFileReader(RandomAccessFile* file)
-      : input_stream_(
-            new io::BufferedInputStream(file, kNumpyFileBufferSize)) {}
+  explicit NumpyFileReader(io::InputStreamInterface *input_stream)
+      : input_stream_(input_stream) {}
 
   const std::vector<int64>& Shape() const {
     return shape_;
@@ -178,7 +180,7 @@ class NumpyFileReader {
     s = s.substr(start, end - start + 1);
   }
 
-  std::unique_ptr<io::InputStreamInterface> input_stream_;
+  io::InputStreamInterface *input_stream_;
   string descr_;
   bool fortran_order_;
   std::vector<int64> shape_;
@@ -191,13 +193,19 @@ class NumpyFileDatasetOp : public DatasetOpKernel {
       : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
     // TODO (yongtang): remove restriction of output_types_?
-    OP_REQUIRES(ctx, output_types_.size() == 1, errors::InvalidArgument("The number of elements in `output_types_` must be one."));
+    OP_REQUIRES(ctx,
+                output_types_.size() == 1,
+                errors::InvalidArgument("The number of elements in `output_types_` must be one."));
     for (const DataType& dt : output_types_) {
       OP_REQUIRES(ctx, dt == DT_INT32 || dt == DT_INT64,
                   errors::InvalidArgument(
                       "Each element of `output_types_` must be one of: "
                       "DT_INT32, DT_INT64"));
     }
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("compression_type", &compression_type_));
+    OP_REQUIRES(ctx, compression_type_ == "" || compression_type_ == "ZLIB" || compression_type_ == "GZIP",
+                  errors::InvalidArgument(
+                      "Compression support can only be one of: NONE, ZLIB, GZIP"));
   }
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     const Tensor* filenames_tensor;
@@ -212,17 +220,19 @@ class NumpyFileDatasetOp : public DatasetOpKernel {
       filenames.push_back(filenames_tensor->flat<string>()(i));
     }
 
-    *output = new Dataset(ctx, filenames, output_types_);
+    *output = new Dataset(ctx, filenames, output_types_, compression_type_);
   }
 
  private:
   class Dataset : public DatasetBase {
    public:
     Dataset(OpKernelContext* ctx, const std::vector<string>& filenames,
-            const DataTypeVector& output_types)
+            const DataTypeVector& output_types,
+            const std::string& compression_type)
         : DatasetBase(DatasetContext(ctx)),
           filenames_(filenames),
-          output_types_(output_types) {}
+          output_types_(output_types),
+          compression_type_(compression_type) {}
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
@@ -270,12 +280,24 @@ class NumpyFileDatasetOp : public DatasetOpKernel {
 	if (current_file_index_ < dataset()->filenames_.size()) {
           const string& filename = dataset()->filenames_[current_file_index_];
           std::unique_ptr<RandomAccessFile> file_;
-          std::unique_ptr<NumpyFileReader> reader_;
           TF_RETURN_IF_ERROR(ctx->env()->NewRandomAccessFile(filename, &file_));
-          reader_.reset(new NumpyFileReader(file_.get()));
-          TF_RETURN_IF_ERROR(reader_->ReadHeader());
+
+          std::shared_ptr<io::RandomAccessInputStream> random_access_input_stream = std::make_shared<io::RandomAccessInputStream>(file_.get(), false);
+
+          std::shared_ptr<io::InputStreamInterface> input_stream;
+          if (dataset()->compression_type_ != "") {
+            io::ZlibCompressionOptions zlib_compression_options = dataset()->compression_type_ == "GZIP" ? io::ZlibCompressionOptions::GZIP() : io::ZlibCompressionOptions::DEFAULT();
+            input_stream = std::make_shared<io::ZlibInputStream>(random_access_input_stream.get(), kNumpyFileBufferSize, kNumpyFileBufferSize, zlib_compression_options);
+          } else {
+            input_stream = random_access_input_stream;
+          }
+
+          std::unique_ptr<NumpyFileReader> reader;
+
+          reader.reset(new NumpyFileReader(input_stream.get()));
+          TF_RETURN_IF_ERROR(reader->ReadHeader());
           TensorShape output_shape;
-	  TF_RETURN_IF_ERROR(TensorShapeUtils::MakeShape(reader_->Shape(), &output_shape));
+	  TF_RETURN_IF_ERROR(TensorShapeUtils::MakeShape(reader->Shape(), &output_shape));
 
 	  std::string buffer;
 	  auto output_type = dataset()->output_types_[0];
@@ -283,14 +305,14 @@ class NumpyFileDatasetOp : public DatasetOpKernel {
 	  switch (output_type)
 	  {
           case DT_INT32: {
-	      size_t length = reader_->Count() * sizeof(int32);
-	      TF_RETURN_IF_ERROR(reader_->ReadNBytes(length, &buffer));
+	      size_t length = reader->Count() * sizeof(int32);
+	      TF_RETURN_IF_ERROR(input_stream->ReadNBytes(length, &buffer));
 	      memcpy(value_tensor.flat<int32>().data(), buffer.data(), length);
 	      break;
             }
           case DT_INT64: {
-	      size_t length = reader_->Count() * sizeof(int64);
-	      TF_RETURN_IF_ERROR(reader_->ReadNBytes(length, &buffer));
+	      size_t length = reader->Count() * sizeof(int64);
+	      TF_RETURN_IF_ERROR(input_stream->ReadNBytes(length, &buffer));
 	      memcpy(value_tensor.flat<int64>().data(), buffer.data(), length);
 	      break;
             }
@@ -332,8 +354,10 @@ class NumpyFileDatasetOp : public DatasetOpKernel {
 
     const std::vector<string> filenames_;
     const DataTypeVector output_types_;
+    const std::string compression_type_;
   };
   DataTypeVector output_types_;
+  std::string compression_type_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("NumpyFileDataset").Device(DEVICE_CPU),

@@ -34,7 +34,10 @@ numpy_ops = load_library.load_op_library(
 class NumpyFileDataset(dataset_ops.DatasetSource):
   """A Numpy File Dataset that reads the npy file."""
 
-  def __init__(self, filenames, output_types=dtypes.string):
+  def __init__(self,
+               filenames,
+               output_types=dtypes.int32,
+               compression_type=None):
     """Create a `NumpyFileDataset`.
 
     `NumpyFileDataset` allows a user to read data from a numpy `npy` file.
@@ -46,10 +49,11 @@ class NumpyFileDataset(dataset_ops.DatasetSource):
     self._filenames = ops.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     self._output_types = output_types
+    self._compression_type = compression_type if compression_type is not None else ""
 
   def _as_variant_tensor(self):
     return numpy_ops.numpy_file_dataset(
-        self._filenames, nest.flatten(self.output_types))
+        self._filenames, nest.flatten(self.output_types), self._compression_type)
 
   @property
   def output_classes(self):

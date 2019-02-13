@@ -23,6 +23,7 @@ REGISTER_OP("NumpyFileDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
+    .Attr("compression_type: string = ''")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
