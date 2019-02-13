@@ -57,3 +57,30 @@ class WebPDataset(dataset_ops.DatasetSource):
   @property
   def output_types(self):
     return dtypes.uint8
+
+class TIFFDataset(dataset_ops.DatasetSource):
+  """A TIFF Image File Dataset that reads the TIFF file."""
+
+  def __init__(self, filenames):
+    """Create a `TIFFDataset`.
+
+      filenames: A `tf.string` tensor containing one or more filenames.
+    """
+    super(TIFFDataset, self).__init__()
+    self._filenames = ops.convert_to_tensor(
+        filenames, dtype=dtypes.string, name="filenames")
+
+  def _as_variant_tensor(self):
+    return image_ops.tiff_dataset(self._filenames)
+
+  @property
+  def output_classes(self):
+    return ops.Tensor
+
+  @property
+  def output_shapes(self):
+    return (tensor_shape.TensorShape([None, None, None]))
+
+  @property
+  def output_types(self):
+    return dtypes.uint8
