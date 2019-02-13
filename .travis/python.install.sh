@@ -7,6 +7,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "14.04" ]]; then
   apt-get -y -qq install libav-tools > /dev/null
   if [[ ${1} == "2.7" ]]; then
     echo "Python 2.7"
+    pip install pyarrow==0.11.1
   elif [[ ${1} == "3.4" ]]; then
     rm -f /usr/local/bin/pip
     ln -s /usr/local/bin/pip3.4 /usr/local/bin/pip
@@ -23,6 +24,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "14.04" ]]; then
     ln -s /usr/bin/python3.5 /usr/bin/python
     rm -f /usr/local/bin/pip
     ln -s /usr/local/bin/pip3.5 /usr/local/bin/pip
+    pip install pyarrow==0.11.1
   elif [[ ${1} == "3.6" ]]; then
     rm -f /usr/local/bin/pip3
     curl -sOL https://raw.githubusercontent.com/tensorflow/tensorflow/v1.12.0/tensorflow/tools/ci_build/install/install_python3.6_pip_packages.sh
@@ -41,6 +43,7 @@ if [[ $(lsb_release -r | awk '{ print $2 }') == "14.04" ]]; then
     ln -s /usr/local/bin/python3.6 /usr/bin/python
     rm -f /usr/local/bin/pip
     ln -s /usr/local/bin/pip3.6 /usr/local/bin/pip
+    pip install pyarrow==0.11.1
   else
     echo Python ${1} not supported!
     exit 1
@@ -53,6 +56,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     # Pin wheel==0.31.1 to work around issue
     # https://github.com/pypa/auditwheel/issues/102
     pip3 install -q wheel==0.31.1
+    pip install pyarrow==0.11.1 pandas==0.19.2
   elif [[ ${1} == "3.5" ]]; then
     echo "Python 3.5"
     apt-get -y -qq install ffmpeg python3-pip patchelf > /dev/null
@@ -64,6 +68,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "16.04" ]]; then
     ln -s /usr/bin/python3 /usr/bin/python
     rm -f /usr/bin/pip
     ln -s /usr/bin/pip3 /usr/bin/pip
+    pip install pyarrow==0.11.1 pandas==0.19.2
   else
     echo Platform $(lsb_release -r | awk '{ print $2 }') not supported!
     exit 1
@@ -76,6 +81,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     # Pin wheel==0.31.1 to work around issue
     # https://github.com/pypa/auditwheel/issues/102
     pip3 install wheel==0.31.1
+    pip install pyarrow==0.11.1 pandas==0.19.2
   elif [[ ${1} == "3.6" ]]; then
     echo "Python 3.6"
     apt-get -y -qq install ffmpeg python3-pip python3-wheel patchelf > /dev/null
@@ -87,6 +93,7 @@ elif [[ $(lsb_release -r | awk '{ print $2 }') == "18.04" ]]; then
     ln -s /usr/bin/python3 /usr/bin/python
     rm -f /usr/bin/pip
     ln -s /usr/bin/pip3 /usr/bin/pip
+    pip install pyarrow==0.11.1 pandas==0.19.2
   else
     echo Platform $(lsb_release -r | awk '{ print $2 }') not supported!
     exit 1
