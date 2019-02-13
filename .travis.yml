@@ -32,6 +32,7 @@ jobs:
   include:
   - stage: build
     name: "Python 2.7 Build"
+    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
@@ -39,6 +40,7 @@ jobs:
     - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
   - stage: build
     name: "Python 3.4 Build"
+    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
@@ -46,6 +48,7 @@ jobs:
     - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
   - stage: build
     name: "Python 3.5 Build"
+    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
@@ -53,6 +56,7 @@ jobs:
     - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
   - stage: build
     name: "Python 3.6 Build"
+    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
@@ -81,48 +85,78 @@ jobs:
   - stage: python
     name: "Python 2.7 Test (Ubuntu 16.04)"
     script:
-    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:16.04
+    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:16.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
   - stage: python
     name: "Python 3.5 Test (Ubuntu 16.04)"
     script:
-    - export PYTHON_VERSION=3.5 TEST_IMAGE=ubuntu:16.04
+    - export PYTHON_VERSION=3.5 TEST_IMAGE=ubuntu:16.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
   - stage: python
     name: "Python 2.7 Test (Ubuntu 18.04)"
     script:
-    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:18.04
+    - export PYTHON_VERSION=2.7 TEST_IMAGE=ubuntu:18.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
   - stage: python
     name: "Python 3.6 Test (Ubuntu 18.04)"
     script:
-    - export PYTHON_VERSION=3.6 TEST_IMAGE=ubuntu:18.04
+    - export PYTHON_VERSION=3.6 TEST_IMAGE=ubuntu:18.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_IMAGE} bash -x /working_dir/.travis/python.test.sh ${PYTHON_VERSION}
   - stage: r
     name: "R Test (Ubuntu 16.04 Python 2.7)"
     script:
-    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:16.04
+    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:16.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_R_IMAGE} bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION}
   - stage: r
     name: "R Test (Ubuntu 18.04 Python 2.7)"
     script:
-    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:18.04
+    - export PYTHON_VERSION=2.7 TEST_R_IMAGE=ubuntu:18.04 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+      else
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
+      fi
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${TEST_R_IMAGE} bash -x /working_dir/.travis/r.test.sh ${PYTHON_VERSION}
   - stage: nightly
     name: "Nightly Release"
-    if: branch = master
+    if: branch = master AND type != pull_request
     script:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
