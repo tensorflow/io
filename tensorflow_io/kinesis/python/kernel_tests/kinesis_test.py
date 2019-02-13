@@ -80,7 +80,7 @@ class KinesisDatasetTest(test.TestCase):
       # Basic test: read from shard 0 of stream 1.
       sess.run(init_op, feed_dict={stream: stream_name, num_epochs: 1})
       for i in range(10):
-        self.assertEqual("D" + str(i), sess.run(get_next))
+        self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -148,7 +148,7 @@ class KinesisDatasetTest(test.TestCase):
           data.append(sess.run(get_next))
 
     data.sort()
-    self.assertEqual(data, ["D" + str(i) for i in range(10)])
+    self.assertEqual(data, [("D" + str(i)).encode() for i in range(10)])
 
     client.delete_stream(StreamName=stream_name)
     # Wait until stream deleted, default is 10 * 18 seconds.
