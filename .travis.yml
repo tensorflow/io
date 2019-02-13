@@ -97,7 +97,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -109,7 +109,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -121,7 +121,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -133,7 +133,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -145,7 +145,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -157,7 +157,7 @@ jobs:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh ${PYTHON_VERSION} && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+        docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:${PYTHON_VERSION} pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
       else
         docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
       fi
@@ -167,10 +167,10 @@ jobs:
     if: branch = master AND type != pull_request
     script:
     - export TENSORFLOW_IO_VERSION=0.3.0.dev${TRAVIS_BUILD_NUMBER}
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op pip3 download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.5 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
-    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -c -x  "/working_dir/.travis/python.install.sh 3.6 && pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/"
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:2.7 pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:3.4 pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:3.5 pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
+    - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir python:3.6 pip download --index-url https://test.pypi.org/simple/ tensorflow-io-nightly==${TENSORFLOW_IO_VERSION} --no-deps -d artifacts/
     - ls -la artifacts/
     - twine upload artifacts/*.whl
 
