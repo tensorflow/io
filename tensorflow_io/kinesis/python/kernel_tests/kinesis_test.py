@@ -13,12 +13,13 @@
 # the License.
 # ==============================================================================
 """Tests for KinesisDataset.
-NOTE: boto3 is needed and the test has to be invoked manually:
+NOTE: boto3 is needed and the following has to run first:
 ```
-$ bazel test -s --verbose_failures --config=opt \
-    --action_env=AWS_ACCESS_KEY_ID=XXXXXX       \
-    --action_env=AWS_SECRET_ACCESS_KEY=XXXXXX   \
-    //tensorflow/contrib/kinesis:kinesis_test
+$ bash -x kinesis_test.sh start kinesis
+```
+After test has been completed, run:
+```
+$ bash -x kinesis_test.sh stop kinesis
 ```
 """
 
@@ -28,6 +29,7 @@ from __future__ import print_function
 
 from tensorflow.python.platform import test
 
+import os
 import boto3
 
 from tensorflow_io.kinesis.python.ops import kinesis_dataset_ops
@@ -42,7 +44,15 @@ class KinesisDatasetTest(test.TestCase):
 
   def test_kinesis_dataset_one_shard(self):
     """Tests for KinesisDataset."""
-    client = boto3.client('kinesis', region_name='us-east-1')
+    os.environ['AWS_ACCESS_KEY_ID'] = 'ACCESS_KEY'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'SECRET_KEY'
+    os.environ['KINESIS_USE_HTTPS'] = '0'
+    os.environ['KINESIS_ENDPOINT'] = 'localhost:4568'
+
+    client = boto3.client(
+        'kinesis',
+        region_name='us-east-1',
+        endpoint_url='http://localhost:4568')
 
     # Setup the Kinesis with 1 shard.
     stream_name = "tf_kinesis_test_1"
@@ -80,7 +90,15 @@ class KinesisDatasetTest(test.TestCase):
 
   def test_kinesis_dataset_two_shards(self):
     """Tests for KinesisDataset."""
-    client = boto3.client('kinesis', region_name='us-east-1')
+    os.environ['AWS_ACCESS_KEY_ID'] = 'ACCESS_KEY'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'SECRET_KEY'
+    os.environ['KINESIS_USE_HTTPS'] = '0'
+    os.environ['KINESIS_ENDPOINT'] = 'localhost:4568'
+
+    client = boto3.client(
+        'kinesis',
+        region_name='us-east-1',
+        endpoint_url='http://localhost:4568')
 
     # Setup the Kinesis with 2 shards.
     stream_name = "tf_kinesis_test_2"
