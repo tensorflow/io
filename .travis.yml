@@ -32,36 +32,44 @@ jobs:
   include:
   - stage: build
     name: "Python 2.7 Build"
-    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=2.7 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la artifacts/
-    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        ls -la artifacts/
+        twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+      fi
   - stage: build
     name: "Python 3.4 Build"
-    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.4 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la artifacts/
-    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        ls -la artifacts/
+        twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+      fi
   - stage: build
     name: "Python 3.5 Build"
-    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.5 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la artifacts/
-    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        ls -la artifacts/
+        twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+      fi
   - stage: build
     name: "Python 3.6 Build"
-    if: branch = master AND type != pull_request
     script:
     - export PYTHON_VERSION=3.6 BUILD_IMAGE=tensorflow/tensorflow:custom-op
     - docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir --net=host ${BUILD_IMAGE} bash -x /working_dir/.travis/python.release.sh ${PYTHON_VERSION} tensorflow==1.12.0 --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la artifacts/
-    - twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        ls -la artifacts/
+        twine upload --repository-url https://test.pypi.org/legacy/ artifacts/*.whl
+      fi
   - stage: build
     name: "Python 2.7 Build (Ubuntu 16.04)"
     script:
