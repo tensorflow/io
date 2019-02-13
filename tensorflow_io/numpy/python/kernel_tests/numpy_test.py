@@ -56,6 +56,33 @@ class NumpyFileDatasetTest(test.TestCase):
         with self.assertRaises(errors.OutOfRangeError):
           sess.run(get_next)
 
+  def test_gz_compressed_numpy_file_dataset(self):
+    """Test case for NumpyFileDataset, not the same as npz file."""
+    f = {np.int32: "v32.npy.gz", np.int64: "v64.npy.gz"}
+    for dtype in [np.int32, np.int64]:
+      filename = os.path.join(resource_loader.get_data_files_path(),
+                              "testdata", f[dtype])
+
+      filenames = constant_op.constant([filename], dtypes.string)
+      num_repeats = 2
+
+      dataset = numpy_dataset_ops.NumpyFileDataset(
+          filenames,
+          dtypes.as_dtype(dtype),
+          compression_type="GZIP").repeat(
+          num_repeats)
+      iterator = dataset.make_initializable_iterator()
+      init_op = iterator.initializer
+      get_next = iterator.get_next()
+
+      expected = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], dtype=dtype)
+      with self.cached_session() as sess:
+        sess.run(init_op)
+        for _ in range(num_repeats):
+          self.assertAllEqual(expected, sess.run(get_next))
+        with self.assertRaises(errors.OutOfRangeError):
+          sess.run(get_next)
+
 
 if __name__ == "__main__":
   test.main()
