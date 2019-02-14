@@ -15,6 +15,7 @@
 """Image Dataset.
 
 @@WebPDataset
+@@TIFFDataset
 """
 
 from __future__ import absolute_import
@@ -22,11 +23,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.image.python.ops.image_dataset_ops import WebPDataset
+from tensorflow_io.image.python.ops.image_dataset_ops import TIFFDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "WebPDataset",
+    "TIFFDataset",
 ]
 
 remove_undocumented(__name__)
