@@ -1,3 +1,18 @@
+# tfio 0.3.0
+
+## Major Features
+* Support TIFF image Dataset.
+* Support LMDB Dataset.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, Yong Tang, Yuan (Terry) Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # tfio 0.2.0
 
 ## Major Features
