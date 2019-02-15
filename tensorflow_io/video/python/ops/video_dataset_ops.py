@@ -19,21 +19,20 @@ from __future__ import print_function
 
 import os
 
+from tensorflow_io import _load_library
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 
-from tensorflow.python.framework import errors_impl
-from tensorflow.python.framework import load_library
-from tensorflow.python.platform import resource_loader
 video_ops = None
 for f in ['_video_ops_ffmpeg_3.4.so', '_video_ops_ffmpeg_2.8.so', '_video_ops_libav_9.20.so']:
   try:
-    video_ops = load_library.load_op_library(resource_loader.get_path_to_datafile(f))
+    video_ops = _load_library(f)
     break;
-  except errors_impl.NotFoundError as e:
+  except NotImplementedError as e:
     print(e)
 
 
