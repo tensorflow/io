@@ -26,6 +26,7 @@ install:
 
 before_script:
 - bash -x tensorflow_io/kafka/python/kernel_tests/kafka_test.sh start kafka
+- bash -x tensorflow_io/kinesis/python/kernel_tests/kinesis_test.sh start kinesis
 - bash -x tensorflow_io/ignite/python/tests/start_ignite.sh
 
 jobs:
