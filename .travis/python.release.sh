@@ -15,34 +15,63 @@
 # ==============================================================================
 set -e -x
 
-
 # Release:
-# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6>
-# Nightly on Travis CI
-# docker run -i -t --rm -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op bash -x /working_dir/.travis/python.release.sh <2.7|3.4|3.5|3.6> <tensorflow-install> --nightly ${TRAVIS_BUILD_NUMBER}
+# docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:14.04 /v/.travis/python.release.sh
 
-if [[ -z "${1}" ]]; then
-  echo "usage:" $0 "<2.7|3.4|3.5|3.6>"
-  exit 1
-fi
+export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
-BAZEL_VERSION=0.20.0
-PYTHON_VERSION=${1}
-shift
-TENSORFLOW_INSTALL="tensorflow==1.12.0"
-if [[ ! -z ${1} ]]; then
-  TENSORFLOW_INSTALL=${1}
-  shift
-fi
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
+  software-properties-common \
 
-.travis/bazel.install.sh linux ${BAZEL_VERSION}
+DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
 
-.travis/python.install.sh ${PYTHON_VERSION}
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
+  gcc g++ make patch \
+  python \
+  python3 \
+  python3.5 \
+  python3.6 \
+  unzip \
+  curl \
 
-pip install -q ${TENSORFLOW_INSTALL}
+curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+curl -OL https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2
+tar xfa patchelf-0.9.tar.bz2
+(cd patchelf-0.9 && ./configure --prefix=/usr && make && sudo make install)
+rm -rf patchelf-0.9*
+curl -sOL https://bootstrap.pypa.io/get-pip.py
+python3.6 get-pip.py
+python3.5 get-pip.py
+python3 get-pip.py
+python get-pip.py
+rm -rf get-pip.py
+python3 -m pip install auditwheel==1.5.0
+python3 -m pip install wheel==0.31.1
+
 ./configure.sh
-bazel test --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- //tensorflow_io/...
-bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors build_pip_pkg
-bazel-bin/build_pip_pkg artifacts "$@"
+bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- \
+  //tensorflow_io/arrow:python/ops/_arrow_ops.so \
+  //tensorflow_io/hadoop:python/ops/_hadoop_ops.so \
+  //tensorflow_io/ignite:python/ops/_ignite_ops.so \
+  //tensorflow_io/image:python/ops/_image_ops.so \
+  //tensorflow_io/kafka:python/ops/_kafka_ops.so \
+  //tensorflow_io/kinesis:python/ops/_kinesis_ops.so \
+  //tensorflow_io/libsvm:python/ops/_libsvm_ops.so \
+  //tensorflow_io/lmdb:python/ops/_lmdb_ops.so \
+  //tensorflow_io/parquet:python/ops/_parquet_ops.so \
+  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_3.4.so \
+  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_2.8.so \
+  //tensorflow_io/video:python/ops/_video_ops_libav_9.20.so
 
-exit 0
+python setup.py --data bazel-bin bdist_wheel "$@"
+python3 setup.py --data bazel-bin bdist_wheel "$@"
+python3.5 setup.py --data bazel-bin bdist_wheel "$@"
+python3.6 setup.py --data bazel-bin bdist_wheel "$@"
+for f in dist/*.whl; do
+  auditwheel repair $f
+done

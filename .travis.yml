@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 sudo: required
 language: minimal
 
@@ -8,42 +8,10 @@ git:
 services:
 - docker
 
-addons:
-  apt:
-    update: true
-    packages:
-    - libav-tools
-
-install:
-- export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
-- curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-- chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-- sudo -H ./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-- bazel version
-- gcc -v
-- python --version
-- curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-- sudo -H python get-pip.py
-- python -m pip --version
-- sudo -H python -m pip install pytest tensorflow==1.12.0 --ignore-installed six
-- ./configure.sh
-
 script:
-- |
-  bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- \
-  //tensorflow_io/arrow:python/ops/_arrow_ops.so \
-  //tensorflow_io/hadoop:python/ops/_hadoop_ops.so \
-  //tensorflow_io/ignite:python/ops/_ignite_ops.so \
-  //tensorflow_io/image:python/ops/_image_ops.so \
-  //tensorflow_io/kafka:python/ops/_kafka_ops.so \
-  //tensorflow_io/kinesis:python/ops/_kinesis_ops.so \
-  //tensorflow_io/libsvm:python/ops/_libsvm_ops.so \
-  //tensorflow_io/lmdb:python/ops/_lmdb_ops.so \
-  //tensorflow_io/parquet:python/ops/_parquet_ops.so \
-  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_3.4.so \
-  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_2.8.so \
-  //tensorflow_io/video:python/ops/_video_ops_libav_9.20.so
-- PYTHONPATH=$PYTHONPATH:bazel-bin python -m pytest -s tests
+- docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh
+- ls -la dist/*.whl
+- docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
 
--notifications:
--  email: false
+notifications:
+- email: false
