@@ -8,6 +8,11 @@ git:
 services:
 - docker
 
+before_script:
+- bash -x -e tests/test_ignite/start_ignite.sh
+- bash -x -e tests/test_kafka/kafka_test.sh start kafka
+- bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+
 script:
 - docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh
 - ls -la dist/*.whl
