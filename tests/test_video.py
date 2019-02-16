@@ -25,10 +25,7 @@ from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 from tensorflow_io.video import VideoDataset
 
-video_path = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)),
-    "..",
-    "tensorflow_io/video/python/kernel_tests/testdata/small.mp4"))
+video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 
 @pytest.mark.skip(reason="expect tensorflow > 1.12.0")
 def test_video_predict():

@@ -17,8 +17,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.platform import test
+import os
 
+from tensorflow.python.platform import test
+from tensorflow_io.ignite import IgniteDataset
+from tensorflow.data import Dataset
+from tensorflow.python.client import session
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
 import tensorflow_io.ignite.python.ops.igfs_ops  # pylint: disable=unused-import
 from tensorflow.python.platform import gfile
 
@@ -210,6 +216,70 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(src_dir_name))
     self.assertTrue(gfile.Exists(dst_dir_name))
     self.assertTrue(gfile.IsDirectory(dst_dir_name))
+
+
+class IgniteDatasetTest(test.TestCase):
+  """The Apache Ignite servers have to setup before the test and tear down
+
+     after the test manually. The docker engine has to be installed.
+
+     To setup Apache Ignite servers:
+     $ bash start_ignite.sh
+
+     To tear down Apache Ignite servers:
+     $ bash stop_ignite.sh
+  """
+
+  def test_ignite_dataset_with_plain_client(self):
+    """Test Ignite Dataset with plain client.
+
+    """
+    self._clear_env()
+    ds = IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=42300)
+    self._check_dataset(ds)
+
+  def test_ignite_dataset_with_plain_client_with_interleave(self):
+    """Test Ignite Dataset with plain client with interleave.
+
+    """
+    self._clear_env()
+    ds = Dataset.from_tensor_slices(["localhost"]).interleave(
+        lambda host: IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
+                                   schema_host="localhost", host=host,
+                                   port=42300), cycle_length=4, block_length=16
+    )
+    self._check_dataset(ds)
+
+  def _clear_env(self):
+    """Clears environment variables used by Ignite Dataset.
+
+    """
+    if "IGNITE_DATASET_USERNAME" in os.environ:
+      del os.environ["IGNITE_DATASET_USERNAME"]
+    if "IGNITE_DATASET_PASSWORD" in os.environ:
+      del os.environ["IGNITE_DATASET_PASSWORD"]
+    if "IGNITE_DATASET_CERTFILE" in os.environ:
+      del os.environ["IGNITE_DATASET_CERTFILE"]
+    if "IGNITE_DATASET_CERT_PASSWORD" in os.environ:
+      del os.environ["IGNITE_DATASET_CERT_PASSWORD"]
+
+  def _check_dataset(self, dataset):
+    """Checks that dataset provides correct data."""
+    self.assertEqual(dtypes.int64, dataset.output_types["key"])
+    self.assertEqual(dtypes.string, dataset.output_types["val"]["NAME"])
+    self.assertEqual(dtypes.int64, dataset.output_types["val"]["VAL"])
+
+    it = dataset.make_one_shot_iterator()
+    ne = it.get_next()
+
+    with session.Session() as sess:
+      rows = [sess.run(ne), sess.run(ne), sess.run(ne)]
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(ne)
+
+    self.assertEqual({"key": 1, "val": {"NAME": b"TEST1", "VAL": 42}}, rows[0])
+    self.assertEqual({"key": 2, "val": {"NAME": b"TEST2", "VAL": 43}}, rows[1])
+    self.assertEqual({"key": 3, "val": {"NAME": b"TEST3", "VAL": 44}}, rows[2])
 
 
 if __name__ == "__main__":

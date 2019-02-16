@@ -44,9 +44,7 @@ class ParquetDatasetTest(test.TestCase):
     Column 4 (float): Equal to row_index * 1.1.
     Column 5 (double): Equal to row_index * 1.1111111.
     """
-    filename = os.path.join(
-        resource_loader.get_data_files_path(),
-        'testdata/parquet_cpp_example.parquet')
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_parquet", "parquet_cpp_example.parquet")
 
     filenames = constant_op.constant([filename], dtypes.string)
     columns = [0, 1, 2, 4, 5]

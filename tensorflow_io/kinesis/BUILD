@@ -17,39 +17,3 @@ cc_binary(
     ],
     copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0", "-DNDEBUG"]
 )
-
-py_library(
-    name = "kinesis_ops_py",
-    srcs = ([
-        "python/ops/kinesis_dataset_ops.py",
-    ]),
-    data = [
-        ":python/ops/_kinesis_ops.so"
-    ],
-    srcs_version = "PY2AND3",
-)
-
-py_test(
-    name = "kinesis_py_test",
-    srcs = [
-        "python/kernel_tests/kinesis_test.py"
-    ],
-    main = "python/kernel_tests/kinesis_test.py",
-    deps = [
-        ":kinesis_ops_py",
-    ],
-    srcs_version = "PY2AND3",
-)
-
-py_library(
-    name = "kinesis_py",
-    srcs = ([
-        "__init__.py",
-        "python/__init__.py",
-        "python/ops/__init__.py",
-    ]),
-    deps = [
-        ":kinesis_ops_py"
-    ],
-    srcs_version = "PY2AND3",
-)
