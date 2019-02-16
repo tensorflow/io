@@ -17,6 +17,34 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+import sys
+import shutil
+import tempfile
+import fnmatch
+
+from setuptools import sandbox
+
+content = """
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+\"\"\"Setup for pip package.\"\"\"
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import sys
 
 from setuptools import find_packages
@@ -26,21 +54,14 @@ from setuptools.dist import Distribution
 REQUIRED_PACKAGES = [
     'tensorflow == 1.12.0',
 ]
-__version__ = '0.3.0'
-project_name = 'tensorflow-io'
-if '--nightly' in sys.argv:
-  nightly_idx = sys.argv.index('--nightly')
-  __version__ = __version__ + ".dev" + sys.argv[nightly_idx + 1]
-  project_name = 'tensorflow-io-nightly'
-  sys.argv.remove('--nightly')
-  sys.argv.pop(nightly_idx)
+__version__ = '{}'
+project_name = '{}'
 
 class BinaryDistribution(Distribution):
-  """This class is needed in order to create OS specific wheels."""
+  \"\"\"This class is needed in order to create OS specific wheels.\"\"\"
 
   def has_ext_modules(self):
     return True
-
 
 setup(
     name=project_name,
@@ -73,3 +94,51 @@ setup(
     license='Apache 2.0',
     keywords='tensorflow io machine learning',
 )
+"""
+
+version = '0.3.0'
+project = 'tensorflow-io'
+if '--nightly' in sys.argv:
+  nightly_idx = sys.argv.index('--nightly')
+  version = version + ".dev" + sys.argv[nightly_idx + 1]
+  project = 'tensorflow-io'
+  sys.argv.remove('--nightly')
+  sys.argv.pop(nightly_idx)
+
+
+rootpath = tempfile.mkdtemp()
+print("setup.py - create {} and copy tensorflow_io".format(rootpath))
+shutil.copytree("tensorflow_io", os.path.join(rootpath, "tensorflow_io"))
+
+print("setup.py - create {}/MANIFEST.in".format(rootpath))
+with open(os.path.join(rootpath, "MANIFEST.in"), "w") as f:
+  f.write("recursive-include tensorflow_io *.so")
+
+print("setup.py - create {}/setup.py with project_name = '{}' and __version__ = {}".format(rootpath, project, version))
+with open(os.path.join(rootpath, "setup.py"), "w") as f:
+  f.write(content.format(version, project))
+
+if '--data' in sys.argv:
+  data_idx = sys.argv.index('--data')
+  datapath = sys.argv[data_idx + 1]
+  sys.argv.remove('--data')
+  sys.argv.pop(data_idx)
+  for rootname, _, filenames in os.walk(os.path.join(datapath, "tensorflow_io")):
+    if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(rootname, "*runfiles*"):
+      for filename in fnmatch.filter(filenames, "*.so"):
+        src = os.path.join(rootname, filename)
+        dst = os.path.join(rootpath, os.path.relpath(os.path.join(rootname, filename), datapath))
+        print("setup.py - copy {} to {}".format(src, dst))
+        shutil.copyfile(src, dst)
+
+print("setup.py - run sandbox.run_setup {} {}".format(os.path.join(rootpath, "setup.py"), sys.argv[1:]))
+sandbox.run_setup(os.path.join(rootpath, "setup.py"), sys.argv[1:])
+
+if not os.path.exists("dist"):
+  os.makedirs("dist")
+for f in os.listdir(os.path.join(rootpath, "dist")):
+  print("setup.py - copy {} to {}".format(os.path.join(rootpath, "dist", f), os.path.join("dist", f)))
+  shutil.copyfile(os.path.join(rootpath, "dist", f), os.path.join("dist", f))
+print("setup.py - remove {}".format(rootpath))
+shutil.rmtree(rootpath)
+print("setup.py - complete")
