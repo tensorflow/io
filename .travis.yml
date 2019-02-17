@@ -41,14 +41,14 @@ jobs:
     name: "Python, R, Nightly"
     script:
     - docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la dist/*.whl
+    - ls -la wheelhouse/*.whl
     - |
       set -e
       docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/install.test.sh
       docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        ls dist/*.whl
-        twine upload dist/*.whl
+        ls wheelhouse/*.whl
+        twine upload wheelhouse/*.whl
       fi
 
 notifications:
