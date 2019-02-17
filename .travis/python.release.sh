@@ -18,8 +18,6 @@ set -e -x
 # Release:
 # docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:14.04 /v/.travis/python.release.sh
 
-export TENSORFLOW_VERSION=1.13.0rc2
-
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
@@ -55,7 +53,9 @@ rm -rf get-pip.py
 python3 -m pip install -q auditwheel==1.5.0
 python3 -m pip install -q wheel==0.31.1
 
-python -m pip install -q tensorflow==${TENSORFLOW_VERSION}
+if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
+  python -m pip install -q ${TENSORFLOW_INSTALL}
+fi
 
 ./configure.sh
 bazel build \
