@@ -27,7 +27,10 @@ DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-projec
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq install r-base > /dev/null
 echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
-R -e 'install.packages(c("Rcpp", "reticulate", "knitr", "tensorflow", "tfdatasets", "forge", "tidyselect", "testthat", "devtools"), quiet = TRUE)'
+R -e 'install.packages(c("Rcpp", "reticulate", "knitr", "tensorflow", "tfdatasets", "forge", "tidyselect"), quiet = TRUE)'
+R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
 python3 -m pip install dist/*36*.whl
+python3 -m pip install boto3 pyarrow==0.11.1 pandas==0.19.2
 python -m pip install dist/*27*.whl
+python -m pip install boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python -m pytest -s .)
