@@ -21,9 +21,9 @@ import os
 import sys
 import inspect
 
-from tensorflow.python.framework import errors_impl
-from tensorflow.python.framework import load_library
-from tensorflow.python.platform import resource_loader
+import tensorflow
+from tensorflow import errors
+from tensorflow.compat.v1 import resource_loader
 
 # NOTE: __datapath__ is a hidden value used by test,
 # in case .so files are on a different path.
@@ -37,16 +37,15 @@ def _load_library(filename, lib="op"):
   if __datapath__ is not None:
     f = os.path.join(__datapath__, __name__, os.path.relpath(f, os.path.dirname(__file__)))
     filenames.append(f);
-  fn = load_library.load_op_library if lib == "op" else load_library.load_file_system_library
   for f in filenames:
     try:
       if lib == "op":
-        l = load_library.load_op_library(f)
+        l = tensorflow.load_op_library(f)
       else:
-        load_library.load_file_system_library(f)
+        tensorflow.compat.v1.load_file_system_library(f)
         l = True
       if l is not None:
         return l
-    except errors_impl.NotFoundError as e:
+    except errors.NotFoundError as e:
       pass
   raise NotImplementedError("unable to open file: ", filename)

@@ -20,7 +20,12 @@ import os
 
 import pytest
 
-import tensorflow as tf
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow import image
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
 from tensorflow_io.video import VideoDataset
@@ -30,7 +35,7 @@ video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_vide
 @pytest.mark.skip(reason="expect tensorflow > 1.12.0")
 def test_video_predict():
   model = ResNet50(weights='imagenet')
-  x = VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(tf.image.resize_images(x, (224, 224))))
+  x = VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize_images(x, (224, 224))))
   y = model.predict(x)
   p = decode_predictions(y, top=3)
   assert len(p) == 166
@@ -43,11 +48,11 @@ def test_video_dataset():
   init_op = iterator.initializer
   get_next = iterator.get_next()
 
-  with tf.Session() as sess:
+  with tensorflow.compat.v1.Session() as sess:
     sess.run(init_op)
     for _ in range(num_repeats):
       for _ in range(166):
         v = sess.run(get_next)
         assert v.shape == (320, 560, 3)
-    with pytest.raises(tf.errors.OutOfRangeError):
+    with pytest.raises(errors.OutOfRangeError):
       sess.run(get_next)

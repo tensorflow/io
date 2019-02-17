@@ -20,15 +20,17 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.platform import test
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow import image
+from tensorflow.compat.v1 import resource_loader
 
 from tensorflow_io.image.python.ops import image_dataset_ops
-from tensorflow.python.framework import constant_op
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.ops import image_ops
-from tensorflow.python.platform import resource_loader
 
+from tensorflow import test
 
 class ImageDatasetTest(test.TestCase):
 
@@ -42,16 +44,15 @@ class ImageDatasetTest(test.TestCase):
     with open(png_file, 'rb') as f:
       png_contents = f.read()
     with self.cached_session():
-      image_op = image_ops.decode_png(png_contents, channels=channel)
-      image = image_op.eval()
-      self.assertEqual(image.shape, (height, width, channel))
+      image_p = image.decode_png(png_contents, channels=channel)
+      image_v = image_p.eval()
+      self.assertEqual(image_v.shape, (height, width, channel))
 
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
 
-    filenames = constant_op.constant([filename], dtypes.string)
     num_repeats = 2
 
-    dataset = image_dataset_ops.WebPDataset(filenames).repeat(
+    dataset = image_dataset_ops.WebPDataset([filename]).repeat(
         num_repeats)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
@@ -61,7 +62,7 @@ class ImageDatasetTest(test.TestCase):
       sess.run(init_op)
       for _ in range(num_repeats):  # Dataset is repeated.
         v = sess.run(get_next)
-        self.assertAllEqual(image, v)
+        self.assertAllEqual(image_v, v)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -77,10 +78,10 @@ class ImageDatasetTest(test.TestCase):
       with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", filename), 'rb') as f:
         png_contents = f.read()
       with self.cached_session():
-        image_op = image_ops.decode_png(png_contents, channels=channels)
-        image = image_op.eval()
-        self.assertEqual(image.shape, (height, width, channels))
-        images.append(image)
+        image_p = image.decode_png(png_contents, channels=channels)
+        image_v = image_p.eval()
+        self.assertEqual(image_v.shape, (height, width, channels))
+        images.append(image_v)
 
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
 

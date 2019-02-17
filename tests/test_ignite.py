@@ -19,15 +19,17 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.platform import test
-from tensorflow_io.ignite import IgniteDataset
-from tensorflow.data import Dataset
-from tensorflow.python.client import session
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-import tensorflow_io.ignite.python.ops.igfs_ops  # pylint: disable=unused-import
-from tensorflow.python.platform import gfile
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
 
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
+from tensorflow.compat.v1 import gfile
+
+from tensorflow_io.ignite import IgniteDataset
+
+from tensorflow import test
 
 class IGFSTest(test.TestCase):
   """The Apache Ignite servers have to setup before the test and tear down
@@ -269,7 +271,7 @@ class IgniteDatasetTest(test.TestCase):
 
     """
     self._clear_env()
-    ds = Dataset.from_tensor_slices(["localhost"]).interleave(
+    ds = data.Dataset.from_tensor_slices(["localhost"]).interleave(
         lambda host: IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
                                    schema_host="localhost", host=host,
                                    port=42300), cycle_length=4, block_length=16
@@ -298,7 +300,7 @@ class IgniteDatasetTest(test.TestCase):
     it = dataset.make_one_shot_iterator()
     ne = it.get_next()
 
-    with session.Session() as sess:
+    with tensorflow.compat.v1.Session() as sess:
       rows = [sess.run(ne), sess.run(ne), sess.run(ne)]
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(ne)
