@@ -15,7 +15,7 @@
 # ==============================================================================
 set -e -x
 
-export TENSORFLOW_VERSION=1.12.0
+export TENSORFLOW_VERSION=1.13.0rc2
 
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
