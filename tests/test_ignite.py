@@ -53,6 +53,10 @@ class IGFSTest(test.TestCase):
       w.write("")
     # Check that file was created.
     self.assertTrue(gfile.Exists(file_name))
+    # Remove file.
+    gfile.Remove(file_name)
+    # Check that file was removed.
+    self.assertFalse(gfile.Exists(file_name))
 
   def test_write_read_file(self):
     """Test write/read file.
@@ -73,6 +77,10 @@ class IGFSTest(test.TestCase):
     self.assertEqual(rows, len(lines))
     for i in range(rows):
       self.assertEqual("This is row\n", lines[i])
+    # Remove file.
+    gfile.Remove(file_name)
+    # Check that file was removed.
+    self.assertFalse(gfile.Exists(file_name))
 
   def test_delete_recursively(self):
     """Test delete recursively.
@@ -115,6 +123,12 @@ class IGFSTest(test.TestCase):
     with gfile.Open(dst_file_name, mode="r") as r:
       data = r.read()
     self.assertEqual("42", data)
+    # Remove file.
+    gfile.Remove(src_file_name)
+    gfile.Remove(dst_file_name)
+    # Check that file was removed.
+    self.assertFalse(gfile.Exists(src_file_name))
+    self.assertFalse(gfile.Exists(dst_file_name))
 
   def test_is_directory(self):
     """Test is directory.
@@ -167,6 +181,10 @@ class IGFSTest(test.TestCase):
     gfile.MkDir(dir_name)
     # Check that directory was created.
     self.assertTrue(gfile.Exists(dir_name))
+    # Remove directory.
+    gfile.Remove(dir_name)
+    # Check that directory was removed.
+    self.assertFalse(gfile.Exists(dir_name))
 
   def test_remove(self):
     """Test remove.
@@ -201,6 +219,10 @@ class IGFSTest(test.TestCase):
     with gfile.Open(dst_file_name, mode="r") as r:
       data = r.read()
     self.assertEqual("42", data)
+    # Remove file.
+    gfile.Remove(dst_file_name)
+    # Check that file was removed.
+    self.assertFalse(gfile.Exists(dst_file_name))
 
   def test_rename_dir(self):
     """Test rename dir.
@@ -216,6 +238,10 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(src_dir_name))
     self.assertTrue(gfile.Exists(dst_dir_name))
     self.assertTrue(gfile.IsDirectory(dst_dir_name))
+    # Remove directory.
+    gfile.Remove(dst_dir_name)
+    # Check that directory was removed.
+    self.assertFalse(gfile.Exists(dst_dir_name))
 
 
 class IgniteDatasetTest(test.TestCase):
