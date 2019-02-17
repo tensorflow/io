@@ -54,19 +54,13 @@ python3 -m pip install auditwheel==1.5.0
 python3 -m pip install wheel==0.31.1
 
 ./configure.sh
-bazel build --noshow_progress --noshow_loading_progress --spawn_strategy standalone --verbose_failures --test_output=errors -- \
-  //tensorflow_io/arrow:python/ops/_arrow_ops.so \
-  //tensorflow_io/hadoop:python/ops/_hadoop_ops.so \
-  //tensorflow_io/ignite:python/ops/_ignite_ops.so \
-  //tensorflow_io/image:python/ops/_image_ops.so \
-  //tensorflow_io/kafka:python/ops/_kafka_ops.so \
-  //tensorflow_io/kinesis:python/ops/_kinesis_ops.so \
-  //tensorflow_io/libsvm:python/ops/_libsvm_ops.so \
-  //tensorflow_io/lmdb:python/ops/_lmdb_ops.so \
-  //tensorflow_io/parquet:python/ops/_parquet_ops.so \
-  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_3.4.so \
-  //tensorflow_io/video:python/ops/_video_ops_ffmpeg_2.8.so \
-  //tensorflow_io/video:python/ops/_video_ops_libav_9.20.so
+bazel build \
+  --noshow_progress \
+  --noshow_loading_progress \
+  --spawn_strategy standalone \
+  --verbose_failures \
+  --test_output=errors -- \
+  //tensorflow_io/...
 
 python setup.py --data bazel-bin bdist_wheel "$@"
 python3 setup.py --data bazel-bin bdist_wheel "$@"
