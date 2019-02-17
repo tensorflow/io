@@ -17,16 +17,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow_io import _load_library
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import load_library
-from tensorflow.python.platform import resource_loader
-lmdb_ops = load_library.load_op_library(
-    resource_loader.get_path_to_datafile('_lmdb_ops.so'))
+lmdb_ops = _load_library('_lmdb_ops.so')
 
 class LMDBDataset(dataset_ops.DatasetSource):
   """A LMDB Dataset that reads the lmdb file."""
