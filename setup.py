@@ -52,7 +52,7 @@ from setuptools import setup
 from setuptools.dist import Distribution
 
 REQUIRED_PACKAGES = [
-    'tensorflow == 1.12.0',
+    'tensorflow == 1.13.0rc2',
 ]
 __version__ = '{}'
 project_name = '{}'
