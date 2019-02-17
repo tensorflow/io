@@ -3,15 +3,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io import _load_library
-
 from functools import partial
 
-from tensorflow.python.data.ops import readers as core_readers
-from tensorflow.python.data.experimental.ops import batching
-
-from tensorflow.python.framework import sparse_tensor
-
+import tensorflow
+from tensorflow import dtypes
+from tensorflow import sparse
+from tensorflow_io import _load_library
 gen_libsvm_ops = _load_library('_libsvm_ops.so')
 
 
@@ -29,7 +26,7 @@ def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
   """
   labels, indices, values, shape = gen_libsvm_ops.decode_libsvm(
       content, num_features, dtype=dtype, label_dtype=label_dtype)
-  return sparse_tensor.SparseTensor(indices, values, shape), labels
+  return sparse.SparseTensor(indices, values, shape), labels
 
 
 def make_libsvm_dataset(file_names,
@@ -71,7 +68,7 @@ def make_libsvm_dataset(file_names,
   def parsing_func(content):
     return decode_libsvm(content, num_features, dtype, label_type)
 
-  dataset = dataset.apply(batching.map_and_batch(
+  dataset = dataset.apply(data.experimental.map_and_batch(
                                         parsing_func, 
                                         batch_size, 
                                         num_parallel_calls=num_parallel_parser_calls,

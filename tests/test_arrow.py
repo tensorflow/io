@@ -32,12 +32,16 @@ if _have_pyarrow:
   from pyarrow.feather import write_feather
 _pyarrow_requirement_message = None if _have_pyarrow else "pyarrow is not supported with Python 3.4"
 
-from tensorflow_io.arrow.python.ops import arrow_dataset_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.platform import test
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
 
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
+
+from tensorflow_io.arrow.python.ops import arrow_dataset_ops
+
+from tensorflow import test
 
 TruthData = namedtuple("TruthData", ["data", "output_types", "output_shapes"])
 
@@ -74,7 +78,7 @@ class ArrowDatasetTest(test.TestCase):
         dtypes.float64
     )
     cls.scalar_shapes = tuple(
-        [tensor_shape.TensorShape([]) for _ in cls.scalar_dtypes])
+        [tensorflow.TensorShape([]) for _ in cls.scalar_dtypes])
 
     cls.list_data = [
         [[1, 1], [2, 2], [3, 3], [4, 4]],
@@ -93,10 +97,10 @@ class ArrowDatasetTest(test.TestCase):
         dtypes.float64
     )
     cls.list_shapes = tuple(
-        [tensor_shape.TensorShape([None]) for _ in cls.list_dtypes])
+        [tensorflow.TensorShape([None]) for _ in cls.list_dtypes])
 
   def run_test_case(self, dataset, truth_data):
-    iterator = dataset.make_one_shot_iterator()
+    iterator = data.make_one_shot_iterator(dataset)
     next_element = iterator.get_next()
 
     def is_float(dtype):
@@ -200,7 +204,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         data,
         (dtypes.float32, dtypes.float32),
-        (tensor_shape.TensorShape([]), tensor_shape.TensorShape([])))
+        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
 
     batch = self.make_record_batch(truth_data)
     df = batch.to_pandas()
@@ -211,7 +215,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data_with_index = TruthData(
         truth_data.data + [range(len(truth_data.data[0]))],
         truth_data.output_types + (dtypes.int64,),
-        truth_data.output_shapes + (tensor_shape.TensorShape([]),))
+        truth_data.output_shapes + (tensorflow.TensorShape([]),))
     self.run_test_case(dataset, truth_data_with_index)
 
     # Test preserve_index again, selecting second column only
@@ -317,7 +321,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         [[[False, False], [False, True], [True, False], [True, True]]],
         (dtypes.bool,),
-        (tensor_shape.TensorShape([None]),))
+        (tensorflow.TensorShape([None]),))
 
     batch = self.make_record_batch(truth_data)
 

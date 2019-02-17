@@ -20,14 +20,17 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.platform import test
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
+from tensorflow.compat.v1 import resource_loader
 
 from tensorflow_io.hadoop.python.ops import hadoop_dataset_ops
-from tensorflow.python.framework import constant_op
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.platform import resource_loader
 
+from tensorflow import test
 
 class SequenceFileDatasetTest(test.TestCase):
 
@@ -42,12 +45,11 @@ class SequenceFileDatasetTest(test.TestCase):
     """
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_hadoop", "string.seq")
 
-    filenames = constant_op.constant([filename], dtypes.string)
     num_repeats = 2
 
-    dataset = hadoop_dataset_ops.SequenceFileDataset(filenames).repeat(
+    dataset = hadoop_dataset_ops.SequenceFileDataset([filename]).repeat(
         num_repeats)
-    iterator = dataset.make_initializable_iterator()
+    iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer
     get_next = iterator.get_next()
 

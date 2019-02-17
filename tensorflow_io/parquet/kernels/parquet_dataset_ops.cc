@@ -61,7 +61,7 @@ class ParquetDatasetOp : public DatasetOpKernel {
     std::vector<int64> columns;
     columns.reserve(columns_tensor->NumElements());
     for (int i = 0; i < columns_tensor->NumElements(); ++i) {
-      columns.push_back(columns_tensor->flat<int32>()(i));
+      columns.push_back(columns_tensor->flat<int64>()(i));
     }
 
     *output =

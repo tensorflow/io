@@ -32,11 +32,14 @@ from tensorflow.python.platform import test
 import os
 import boto3
 
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
+
 from tensorflow_io.kinesis.python.ops import kinesis_dataset_ops
-from tensorflow.python.data.ops import iterator_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.ops import array_ops
 
 
 class KinesisDatasetTest(test.TestCase):
@@ -60,19 +63,19 @@ class KinesisDatasetTest(test.TestCase):
     # Wait until stream exists, default is 10 * 18 seconds.
     client.get_waiter('stream_exists').wait(StreamName=stream_name)
     for i in range(10):
-      data = "D" + str(i)
+      data_v = "D" + str(i)
       client.put_record(
-          StreamName=stream_name, Data=data, PartitionKey="TensorFlow" + str(i))
+          StreamName=stream_name, Data=data_v, PartitionKey="TensorFlow" + str(i))
 
-    stream = array_ops.placeholder(dtypes.string, shape=[])
-    num_epochs = array_ops.placeholder(dtypes.int64, shape=[])
-    batch_size = array_ops.placeholder(dtypes.int64, shape=[])
+    stream = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
+    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kinesis_dataset_ops.KinesisDataset(
         stream, read_indefinitely=False).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
-    iterator = iterator_ops.Iterator.from_structure(batch_dataset.output_types)
+    iterator = data.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
     get_next = iterator.get_next()
 
@@ -107,27 +110,27 @@ class KinesisDatasetTest(test.TestCase):
     client.get_waiter('stream_exists').wait(StreamName=stream_name)
 
     for i in range(10):
-      data = "D" + str(i)
+      data_v = "D" + str(i)
       client.put_record(
-          StreamName=stream_name, Data=data, PartitionKey="TensorFlow" + str(i))
+          StreamName=stream_name, Data=data_v, PartitionKey="TensorFlow" + str(i))
     response = client.describe_stream(StreamName=stream_name)
     shard_id_0 = response["StreamDescription"]["Shards"][0]["ShardId"]
     shard_id_1 = response["StreamDescription"]["Shards"][1]["ShardId"]
 
-    stream = array_ops.placeholder(dtypes.string, shape=[])
-    shard = array_ops.placeholder(dtypes.string, shape=[])
-    num_epochs = array_ops.placeholder(dtypes.int64, shape=[])
-    batch_size = array_ops.placeholder(dtypes.int64, shape=[])
+    stream = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
+    shard = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
+    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kinesis_dataset_ops.KinesisDataset(
         stream, shard, read_indefinitely=False).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
-    iterator = iterator_ops.Iterator.from_structure(batch_dataset.output_types)
+    iterator = data.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
     get_next = iterator.get_next()
 
-    data = list()
+    data_v = list()
     with self.cached_session() as sess:
       # Basic test: read from shard 0 of stream 2.
       sess.run(
@@ -136,7 +139,7 @@ class KinesisDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         # Use range(11) to guarantee the OutOfRangeError.
         for i in range(11):
-          data.append(sess.run(get_next))
+          data_v.append(sess.run(get_next))
 
       # Basic test: read from shard 1 of stream 2.
       sess.run(
@@ -145,10 +148,10 @@ class KinesisDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         # Use range(11) to guarantee the OutOfRangeError.
         for i in range(11):
-          data.append(sess.run(get_next))
+          data_v.append(sess.run(get_next))
 
-    data.sort()
-    self.assertEqual(data, [("D" + str(i)).encode() for i in range(10)])
+    data_v.sort()
+    self.assertEqual(data_v, [("D" + str(i)).encode() for i in range(10)])
 
     client.delete_stream(StreamName=stream_name)
     # Wait until stream deleted, default is 10 * 18 seconds.

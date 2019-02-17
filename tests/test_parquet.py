@@ -20,12 +20,17 @@ from __future__ import print_function
 
 import os
 
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
+from tensorflow.compat.v1 import resource_loader
+
 from tensorflow_io.parquet.python.ops import parquet_dataset_ops
-from tensorflow.python.framework import constant_op
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.platform import resource_loader
-from tensorflow.python.platform import test
+
+from tensorflow import test
 
 class ParquetDatasetTest(test.TestCase):
 
@@ -46,7 +51,7 @@ class ParquetDatasetTest(test.TestCase):
     """
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_parquet", "parquet_cpp_example.parquet")
 
-    filenames = constant_op.constant([filename], dtypes.string)
+    filenames = tensorflow.constant([filename], dtypes.string)
     columns = [0, 1, 2, 4, 5]
     output_types = (
         dtypes.bool, dtypes.int32, dtypes.int64, dtypes.float32, dtypes.float64)
@@ -54,7 +59,7 @@ class ParquetDatasetTest(test.TestCase):
 
     dataset = parquet_dataset_ops.ParquetDataset(
         filenames, columns, output_types).repeat(num_repeats)
-    iterator = dataset.make_initializable_iterator()
+    iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer
     get_next = iterator.get_next()
 

@@ -21,17 +21,18 @@ from __future__ import print_function
 import os
 import shutil
 
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow import dtypes
+from tensorflow import errors
+
 from tensorflow_io.lmdb.python.ops import lmdb_dataset_ops
-from tensorflow.python.data.kernel_tests import test_base
-from tensorflow.python.framework import constant_op
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.platform import test
-from tensorflow.python.util import compat
-from tensorflow.python.platform import resource_loader
+
+from tensorflow import test
 
 
-class LMDBDatasetTest(test_base.DatasetTestBase):
+class LMDBDatasetTest(test.TestCase):
 
   def setUp(self):
     super(LMDBDatasetTest, self).setUp()
@@ -43,10 +44,9 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
   def testReadFromFile(self):
     filename = self.db_path
 
-    filenames = constant_op.constant([filename], dtypes.string)
     num_repeats = 2
 
-    dataset = lmdb_dataset_ops.LMDBDataset(filenames).repeat(num_repeats)
+    dataset = lmdb_dataset_ops.LMDBDataset([filename]).repeat(num_repeats)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()
@@ -55,8 +55,8 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
       sess.run(init_op)
       for _ in range(num_repeats):
         for i in range(10):
-          k = compat.as_bytes(str(i))
-          v = compat.as_bytes(str(chr(ord("a") + i)))
+          k = str(i).encode()
+          v = str(chr(ord("a") + i)).encode()
           self.assertEqual((k, v), sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)

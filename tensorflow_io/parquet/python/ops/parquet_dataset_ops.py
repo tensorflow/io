@@ -17,17 +17,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import nest
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-
 parquet_ops = _load_library('_parquet_ops.so')
 
-class ParquetDataset(dataset_ops.DatasetSource):
+if hasattr(tensorflow, "nest"):
+  from tensorflow import nest
+else:
+  from tensorflow.python.data.util import nest
+
+class ParquetDataset(data.Dataset):
   """A Parquet Dataset that reads the parquet file."""
 
   def __init__(self, filenames, columns, output_types):
@@ -56,12 +57,15 @@ class ParquetDataset(dataset_ops.DatasetSource):
       output_types: A tuple of `tf.DType` objects representing the types of the
         columns returned.
     """
-    super(ParquetDataset, self).__init__()
-    self._filenames = ops.convert_to_tensor(
+    self._filenames = tensorflow.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
-    self._columns = ops.convert_to_tensor(
-        columns, dtype=dtypes.int32, name="columns")
+    self._columns = tensorflow.convert_to_tensor(
+        columns, dtype=dtypes.int64, name="columns")
     self._output_types = output_types
+    super(ParquetDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return parquet_ops.parquet_dataset(self._filenames, self._columns,
@@ -70,11 +74,11 @@ class ParquetDataset(dataset_ops.DatasetSource):
 
   @property
   def output_classes(self):
-    return nest.map_structure(lambda _: ops.Tensor, self._output_types)
+    return nest.map_structure(lambda _: tensorflow.Tensor, self._output_types)
 
   @property
   def output_shapes(self):
-    return nest.map_structure(lambda _: tensor_shape.TensorShape([]),
+    return nest.map_structure(lambda _: tensorflow.TensorShape([]),
                               self._output_types)
 
   @property
