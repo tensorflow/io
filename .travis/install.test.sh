@@ -30,13 +30,13 @@ R -e 'install.packages(c("tensorflow", "tfdatasets"), quiet = TRUE)'
 R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
 R -e 'install.packages(c("forge"), quiet = TRUE)'
 
-V=$(python3 -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
-python3 -m pip install wheelhouse/*-cp${V}-*.whl
+CPYTHON_VERSION=$(python3 -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
+python3 -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 python3 -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python3 -m pytest .)
 
-V=$(python -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
-python -m pip install wheelhouse/*-cp${V}-*.whl
+CPYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
+python -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python -m pytest .)
 
