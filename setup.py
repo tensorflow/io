@@ -101,7 +101,7 @@ project = 'tensorflow-io'
 if '--nightly' in sys.argv:
   nightly_idx = sys.argv.index('--nightly')
   version = version + ".dev" + sys.argv[nightly_idx + 1]
-  project = 'tensorflow-io'
+  project = 'tensorflow-io-nightly'
   sys.argv.remove('--nightly')
   sys.argv.pop(nightly_idx)
 
