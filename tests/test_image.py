@@ -38,8 +38,7 @@ class ImageDatasetTest(test.TestCase):
     width = 400
     height = 301
     channel = 4
-    png_file = os.path.join(resource_loader.get_data_files_path(),
-                            "testdata", "sample.png")
+    png_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
     with open(png_file, 'rb') as f:
       png_contents = f.read()
     with self.cached_session():
@@ -47,8 +46,7 @@ class ImageDatasetTest(test.TestCase):
       image = image_op.eval()
       self.assertEqual(image.shape, (height, width, channel))
 
-    filename = os.path.join(resource_loader.get_data_files_path(),
-                            "testdata", "sample.webp")
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
 
     filenames = constant_op.constant([filename], dtypes.string)
     num_repeats = 2
@@ -76,7 +74,7 @@ class ImageDatasetTest(test.TestCase):
 
     images = []
     for filename in ["small-00.png", "small-01.png", "small-02.png", "small-03.png", "small-04.png"]:
-      with open(os.path.join(resource_loader.get_data_files_path(), "testdata", filename), 'rb') as f:
+      with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", filename), 'rb') as f:
         png_contents = f.read()
       with self.cached_session():
         image_op = image_ops.decode_png(png_contents, channels=channels)
@@ -84,7 +82,7 @@ class ImageDatasetTest(test.TestCase):
         self.assertEqual(image.shape, (height, width, channels))
         images.append(image)
 
-    filename = os.path.join(resource_loader.get_data_files_path(), "testdata", "small.tiff")
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
 
     num_repeats = 2
 
