@@ -19,17 +19,15 @@ from __future__ import print_function
 
 import io
 
+from tensorflow_io import _load_library
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import nest
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import load_library
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.platform import resource_loader
 
-
-arrow_ops = load_library.load_op_library(
-    resource_loader.get_path_to_datafile('_arrow_ops.so'))
+arrow_ops = _load_library('_arrow_ops.so')
 
 
 def arrow_to_tensor_type(pa_t):

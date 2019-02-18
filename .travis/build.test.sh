@@ -15,46 +15,23 @@
 # ==============================================================================
 set -e -x
 
-# Release:
-# docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:14.04 /v/.travis/python.release.sh
-
 export TENSORFLOW_VERSION=1.12.0
 
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
+# Install needed repo
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
-  software-properties-common > /dev/null
-
-DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
-
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
-  gcc g++ make patch \
-  python \
-  python3 \
-  python3.5 \
-  python3.6 \
-  unzip \
-  curl > /dev/null
+    python-pip python3-pip \
+    unzip curl \
+    ffmpeg > /dev/null
 
 curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 ./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-curl -OL https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2
-tar xfa patchelf-0.9.tar.bz2
-(cd patchelf-0.9 && ./configure --prefix=/usr && make && make install)
-rm -rf patchelf-0.9*
-curl -sOL https://bootstrap.pypa.io/get-pip.py
-python3.6 get-pip.py
-python3.5 get-pip.py
-python3 get-pip.py
-python get-pip.py
-rm -rf get-pip.py
-python3 -m pip install -q auditwheel==1.5.0
-python3 -m pip install -q wheel==0.31.1
 
+python3 -m pip install -q tensorflow==${TENSORFLOW_VERSION}
 python -m pip install -q tensorflow==${TENSORFLOW_VERSION}
 
 ./configure.sh
@@ -66,10 +43,8 @@ bazel build \
   --test_output=errors -- \
   //tensorflow_io/...
 
-python setup.py --data bazel-bin -q bdist_wheel "$@"
-python3 setup.py --data bazel-bin -q bdist_wheel "$@"
-python3.5 setup.py --data bazel-bin -q bdist_wheel "$@"
-python3.6 setup.py --data bazel-bin -q bdist_wheel "$@"
-for f in dist/*.whl; do
-  auditwheel repair $f
-done
+python3 -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
+python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
+
+python3 -m pytest tests --binary bazel-bin
+python -m pytest tests --binary bazel-bin

@@ -36,8 +36,7 @@ class LMDBDatasetTest(test_base.DatasetTestBase):
   def setUp(self):
     super(LMDBDatasetTest, self).setUp()
     # Copy database out because we need the path to be writable to use locks.
-    path = os.path.join(resource_loader.get_data_files_path(),
-      "testdata", "data.mdb")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
     self.db_path = os.path.join(self.get_temp_dir(), "data.mdb")
     shutil.copy(path, self.db_path)
 
