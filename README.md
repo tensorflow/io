@@ -21,7 +21,9 @@ At the moment TensorFlow I/O supports the following data sources:
 
 ## Installation
 
-The `tensorflow-io` package could be installed with pip directly:
+### Python Package
+
+The `tensorflow-io` Python package could be installed with pip directly:
 ```
 $ pip install tensorflow-io
 ```
@@ -49,6 +51,21 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 Note that python has to run outside of repo directory itself, otherwise python may not
 be able to find the correct path to the module.
+
+### R Package
+
+Once the `tensorflow-io` Python package has beem successfully installed, you
+can then install the latest stable release of the R package via:
+
+```
+install.packages('tfio')
+```
+
+You can also install the development version from Github via:
+```
+if (!require("devtools")) install.packages("devtools")
+devtools::install_github("tensorflow/io", subdir = "R-package")
+```
 
 ## Developing
 
