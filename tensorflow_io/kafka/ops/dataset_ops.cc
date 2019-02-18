@@ -41,4 +41,18 @@ timeout: The timeout value for the Kafka Consumer to wait
   (in millisecond).
 )doc");
 
+REGISTER_OP("WriteKafka")
+    .Input("message: string")
+    .Input("topic: string")
+    .Input("servers: string")
+    .Output("content: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
 }  // namespace tensorflow
