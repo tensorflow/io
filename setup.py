@@ -118,11 +118,16 @@ print("setup.py - create {}/setup.py with project_name = '{}' and __version__ = 
 with open(os.path.join(rootpath, "setup.py"), "w") as f:
   f.write(content.format(version, project))
 
+datapath = None
 if '--data' in sys.argv:
   data_idx = sys.argv.index('--data')
   datapath = sys.argv[data_idx + 1]
   sys.argv.remove('--data')
   sys.argv.pop(data_idx)
+else:
+  datapath = os.environ.get('TFIO_DATAPATH')
+
+if datapath is not None:
   for rootname, _, filenames in os.walk(os.path.join(datapath, "tensorflow_io")):
     if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(rootname, "*runfiles*"):
       for filename in fnmatch.filter(filenames, "*.so"):

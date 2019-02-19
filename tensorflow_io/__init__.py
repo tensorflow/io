@@ -23,27 +23,30 @@ import inspect
 
 import tensorflow
 from tensorflow import errors
-from tensorflow.compat.v1 import resource_loader
-
-# NOTE: __datapath__ is a hidden value used by test,
-# in case .so files are on a different path.
-__datapath__ = None
 
 def _load_library(filename, lib="op"):
   f = inspect.getfile(sys._getframe(1))
+
   # Construct filename
   f = os.path.join(os.path.dirname(f), filename)
-  filenames = [f];
-  if __datapath__ is not None:
-    f = os.path.join(__datapath__, __name__, os.path.relpath(f, os.path.dirname(__file__)))
+  filenames = [f]
+
+  # Add datapath to load if en var is set, used for running tests where shared
+  # libraries are built in a different path
+  datapath = os.environ.get('TFIO_DATAPATH')
+  if datapath is not None:
+    # Build filename from `datapath` + `package_name` + `relpath_to_library`
+    f = os.path.join(datapath, __name__, os.path.relpath(f, os.path.dirname(__file__)))
     filenames.append(f);
+
+  # Function to load the library, return True if file system library is loaded
+  load_fn = tensorflow.load_op_library if lib == "op" \
+      else lambda f: tensorflow.compat.v1.load_file_system_library(f) == None
+
+  # Try to load all paths for file, fail if none succeed
   for f in filenames:
     try:
-      if lib == "op":
-        l = tensorflow.load_op_library(f)
-      else:
-        tensorflow.compat.v1.load_file_system_library(f)
-        l = True
+      l = load_fn(f)
       if l is not None:
         return l
     except errors.NotFoundError as e:
