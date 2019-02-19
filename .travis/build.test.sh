@@ -29,8 +29,11 @@ DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
 
 curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+
+# Install bazel, display log only if error
+./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh 2>&1 > bazel-install.log || (cat bazel-install.log && false)
 rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+rm -rf bazel-install.log
 
 if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
   python3 -m pip install -q ${TENSORFLOW_INSTALL}
