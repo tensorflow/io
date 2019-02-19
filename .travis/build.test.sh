@@ -17,6 +17,9 @@ set -e -x
 
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
+# Path to shared libraries for running pytest
+export TFIO_DATAPATH="bazel-bin"
+
 # Install needed repo
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
@@ -46,5 +49,5 @@ bazel build \
 python3 -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
 python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
 
-python3 -m pytest tests --binary bazel-bin
-python -m pytest tests --binary bazel-bin
+python3 -m pytest tests
+python -m pytest tests
