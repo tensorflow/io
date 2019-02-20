@@ -15,8 +15,6 @@
 # ==============================================================================
 set -e -x
 
-export TENSORFLOW_VERSION=1.12.0
-
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
 # Install needed repo
@@ -31,8 +29,10 @@ chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 ./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 
-python3 -m pip install -q tensorflow==${TENSORFLOW_VERSION}
-python -m pip install -q tensorflow==${TENSORFLOW_VERSION}
+if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
+  python3 -m pip install -q ${TENSORFLOW_INSTALL}
+  python -m pip install -q ${TENSORFLOW_INSTALL}
+fi
 
 ./configure.sh
 bazel build \

@@ -21,7 +21,7 @@ namespace tensorflow {
 
 REGISTER_OP("ParquetDataset")
     .Input("filenames: string")
-    .Input("columns: int32")
+    .Input("columns: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")

@@ -25,6 +25,7 @@ before_script:
 
 stages:
 - build
+- preview
 - install
 
 jobs:
@@ -32,20 +33,34 @@ jobs:
   - stage: build
     name: "Ubuntu 16.04 Build"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/build.test.sh
+    - |
+      set -e
+      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/build.test.sh
   - stage: build
     name: "Ubuntu 18.04 Build"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/build.test.sh
+    - |
+      set -e
+      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/build.test.sh
+  - stage: preview
+    name: "TensorFlow 2.0 Build"
+    script:
+    - |
+      set -e
+      export TENSORFLOW_INSTALL="tf-nightly-2.0-preview"
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/build.test.sh
   - stage: install
     name: "Python, R, Nightly"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - ls -la wheelhouse/*.whl
     - |
       set -e
-      docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/install.test.sh
-      docker run -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
+      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+      ls -la wheelhouse/*.whl
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/install.test.sh
+      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         ls wheelhouse/*.whl
         twine upload wheelhouse/*.whl

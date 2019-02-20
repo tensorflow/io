@@ -19,18 +19,14 @@ from __future__ import print_function
 
 import os
 
+import tensorflow
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import nest
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-
 hadoop_ops = _load_library('_hadoop_ops.so')
 
 
-class SequenceFileDataset(dataset_ops.DatasetSource):
+class SequenceFileDataset(data.Dataset):
   """A Sequence File Dataset that reads the sequence file."""
 
   def __init__(self, filenames):
@@ -58,21 +54,24 @@ class SequenceFileDataset(dataset_ops.DatasetSource):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    super(SequenceFileDataset, self).__init__()
-    self._filenames = ops.convert_to_tensor(
+    self._filenames = tensorflow.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
+    super(SequenceFileDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return hadoop_ops.sequence_file_dataset(
-        self._filenames, nest.flatten(self.output_types))
+        self._filenames, (dtypes.string, dtypes.string))
 
   @property
   def output_classes(self):
-    return ops.Tensor, ops.Tensor
+    return tensorflow.Tensor, tensorflow.Tensor
 
   @property
   def output_shapes(self):
-    return (tensor_shape.TensorShape([]), tensor_shape.TensorShape([]))
+    return (tensorflow.TensorShape([]), tensorflow.TensorShape([]))
 
   @property
   def output_types(self):
