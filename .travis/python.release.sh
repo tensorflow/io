@@ -38,8 +38,12 @@ DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
 
 curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+
+# Install bazel, display log only if error
+./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh 2>&1 > bazel-install.log || (cat bazel-install.log && false)
 rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+rm -rf bazel-install.log
+
 curl -OL https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2
 tar xfa patchelf-0.9.tar.bz2
 (cd patchelf-0.9 && ./configure --prefix=/usr && make && make install)
