@@ -19,14 +19,11 @@ from __future__ import print_function
 
 import os
 
+import tensorflow
+from tensorflow import dtypes
+from tensorflow import errors
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import nest
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-
 video_ops = None
 for f in ['_video_ops_ffmpeg_3.4.so', '_video_ops_ffmpeg_2.8.so', '_video_ops_libav_9.20.so']:
   try:
@@ -36,7 +33,7 @@ for f in ['_video_ops_ffmpeg_3.4.so', '_video_ops_ffmpeg_2.8.so', '_video_ops_li
     print(e)
 
 
-class VideoDataset(dataset_ops.DatasetSource):
+class VideoDataset(data.Dataset):
   """A Video File Dataset that reads the video file."""
 
   def __init__(self, filenames):
@@ -62,20 +59,23 @@ class VideoDataset(dataset_ops.DatasetSource):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    super(VideoDataset, self).__init__()
-    self._filenames = ops.convert_to_tensor(
+    self._filenames = tensorflow.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
+    super(VideoDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return video_ops.video_dataset(self._filenames)
 
   @property
   def output_classes(self):
-    return ops.Tensor
+    return tensorflow.Tensor
 
   @property
   def output_shapes(self):
-    return (tensor_shape.TensorShape([None, None, 3]))
+    return (tensorflow.TensorShape([None, None, 3]))
 
   @property
   def output_types(self):

@@ -25,14 +25,11 @@ import struct
 
 import six
 
-from tensorflow_io import _load_library
+import tensorflow
 
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import load_library
-from tensorflow.python.platform import resource_loader
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
+from tensorflow_io import _load_library
 ignite_ops = _load_library("_ignite_ops.so")
 
 @six.add_metaclass(abc.ABCMeta)
@@ -252,7 +249,7 @@ class TypeTreeNode(object):
   def to_output_classes(self):
     """Formats the tree object as required by `Dataset.output_classes`."""
     if self.fields is None:
-      return ops.Tensor
+      return tensorflow.Tensor
     output_classes = {}
     for field in self.fields:
       output_classes[field.name] = field.to_output_classes()
@@ -265,8 +262,8 @@ class TypeTreeNode(object):
         object_type = types[self.type_id]
         is_array = object_type[1]
         if is_array:
-          return tensor_shape.TensorShape([None])
-        return tensor_shape.TensorShape([])
+          return tensorflow.TensorShape([None])
+        return tensorflow.TensorShape([])
       raise ValueError("Unsupported type [type_id=%d]" % self.type_id)
     output_shapes = {}
     for field in self.fields:
@@ -694,7 +691,7 @@ class IgniteClient(TcpClient):
         "Unknown binary type when expected string [type_id=%d]" % header)
 
 
-class IgniteDataset(dataset_ops.DatasetSource):
+class IgniteDataset(data.Dataset):
   """Apache Ignite is a memory-centric distributed database, caching, and
 
      processing platform for transactional, analytical, and streaming workloads,
@@ -742,8 +739,6 @@ class IgniteDataset(dataset_ops.DatasetSource):
       cert_password: Password to be used if the private key is encrypted and a
         password is necessary.
     """
-    super(IgniteDataset, self).__init__()
-
     if not schema_host:
         schema_host = host
     if not schema_port:
@@ -754,20 +749,24 @@ class IgniteDataset(dataset_ops.DatasetSource):
       client.handshake()
       self.cache_type = client.get_cache_type(cache_name)
 
-    self.cache_name = ops.convert_to_tensor(
+    self.cache_name = tensorflow.convert_to_tensor(
         cache_name, dtype=dtypes.string, name="cache_name")
-    self.host = ops.convert_to_tensor(host, dtype=dtypes.string, name="host")
-    self.port = ops.convert_to_tensor(port, dtype=dtypes.int32, name="port")
-    self.local = ops.convert_to_tensor(local, dtype=dtypes.bool, name="local")
-    self.part = ops.convert_to_tensor(part, dtype=dtypes.int32, name="part")
-    self.page_size = ops.convert_to_tensor(
+    self.host = tensorflow.convert_to_tensor(host, dtype=dtypes.string, name="host")
+    self.port = tensorflow.convert_to_tensor(port, dtype=dtypes.int32, name="port")
+    self.local = tensorflow.convert_to_tensor(local, dtype=dtypes.bool, name="local")
+    self.part = tensorflow.convert_to_tensor(part, dtype=dtypes.int32, name="part")
+    self.page_size = tensorflow.convert_to_tensor(
         page_size, dtype=dtypes.int32, name="page_size")
-    self.schema = ops.convert_to_tensor(
+    self.schema = tensorflow.convert_to_tensor(
         self.cache_type.to_flat(), dtype=dtypes.int32, name="schema")
-    self.permutation = ops.convert_to_tensor(
+    self.permutation = tensorflow.convert_to_tensor(
         self.cache_type.to_permutation(),
         dtype=dtypes.int32,
         name="permutation")
+    super(IgniteDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return ignite_ops.ignite_dataset(self.cache_name, self.host, self.port,

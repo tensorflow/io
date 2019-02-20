@@ -20,11 +20,12 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow_io.libsvm.python.ops import libsvm_dataset_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.ops import sparse_ops
-from tensorflow.python.platform import test
+from tensorflow import dtypes
+from tensorflow import sparse
 
+from tensorflow_io.libsvm.python.ops import libsvm_dataset_ops
+
+from tensorflow import test
 
 class DecodeLibsvmOpTest(test.TestCase):
 
@@ -36,7 +37,7 @@ class DecodeLibsvmOpTest(test.TestCase):
       ]
       sparse_features, labels = libsvm_dataset_ops.decode_libsvm(
           content, num_features=6)
-      features = sparse_ops.sparse_tensor_to_dense(
+      features = sparse.to_dense(
           sparse_features, validate_indices=False)
 
       self.assertAllEqual(labels.get_shape().as_list(), [3])
@@ -54,7 +55,7 @@ class DecodeLibsvmOpTest(test.TestCase):
                  ["2 3:2.5 2:nan 1:0.105", "2 3:2.5 2:nan 1:0.105"]]
       sparse_features, labels = libsvm_dataset_ops.decode_libsvm(
           content, num_features=6, label_dtype=dtypes.float64)
-      features = sparse_ops.sparse_tensor_to_dense(
+      features = sparse.to_dense(
           sparse_features, validate_indices=False)
 
       self.assertAllEqual(labels.get_shape().as_list(), [3, 2])

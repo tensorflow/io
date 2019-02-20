@@ -17,17 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import nest
-from tensorflow.python.data.util import structure
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
 lmdb_ops = _load_library('_lmdb_ops.so')
 
-class LMDBDataset(dataset_ops.DatasetSource):
+class LMDBDataset(data.Dataset):
   """A LMDB Dataset that reads the lmdb file."""
 
   def __init__(self, filenames):
@@ -47,23 +43,26 @@ class LMDBDataset(dataset_ops.DatasetSource):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    super(LMDBDataset, self).__init__()
-    self._filenames = ops.convert_to_tensor(
+    self._filenames = tensorflow.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
+    super(LMDBDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return lmdb_ops.lmdb_dataset(
         self._filenames,
-        nest.flatten(self.output_types),
-        nest.flatten(self.output_shapes))
+        (dtypes.string, dtypes.string),
+        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
 
   @property
   def output_classes(self):
-    return ops.Tensor, ops.Tensor
+    return tensorflow.Tensor, tensorflow.Tensor
 
   @property
   def output_shapes(self):
-    return (tensor_shape.TensorShape([]), tensor_shape.TensorShape([]))
+    return (tensorflow.TensorShape([]), tensorflow.TensorShape([]))
 
   @property
   def output_types(self):

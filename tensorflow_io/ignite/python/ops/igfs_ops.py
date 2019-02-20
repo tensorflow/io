@@ -29,8 +29,5 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 from tensorflow_io import _load_library
-
 _load_library("_ignite_ops.so", "file_system")

@@ -18,13 +18,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.platform import test
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
+
+from tensorflow.compat.v1 import data
+from tensorflow import dtypes
+from tensorflow import errors
 
 from tensorflow_io.kafka.python.ops import kafka_dataset_ops
-from tensorflow.python.data.ops import iterator_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.ops import array_ops
+
+from tensorflow import test
 
 
 class KafkaDatasetTest(test.TestCase):
@@ -42,15 +45,15 @@ class KafkaDatasetTest(test.TestCase):
 
   def test_kafka_dataset(self):
     """Tests for KafkaDataset."""
-    topics = array_ops.placeholder(dtypes.string, shape=[None])
-    num_epochs = array_ops.placeholder(dtypes.int64, shape=[])
-    batch_size = array_ops.placeholder(dtypes.int64, shape=[])
+    topics = tensorflow.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kafka_dataset_ops.KafkaDataset(
         topics, group="test", eof=True).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
-    iterator = iterator_ops.Iterator.from_structure(batch_dataset.output_types)
+    iterator = data.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
     init_batch_op = iterator.make_initializer(batch_dataset)
     get_next = iterator.get_next()

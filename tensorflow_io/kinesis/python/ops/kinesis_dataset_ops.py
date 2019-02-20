@@ -19,16 +19,14 @@ from __future__ import print_function
 
 import os
 
+import tensorflow
+
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-
 kinesis_ops = _load_library('_kinesis_ops.so')
 
-class KinesisDataset(dataset_ops.DatasetSource):
+class KinesisDataset(data.Dataset):
   """A Kinesis Dataset that consumes the message.
 
   Kinesis is a managed service provided by AWS for data streaming.
@@ -72,15 +70,18 @@ class KinesisDataset(dataset_ops.DatasetSource):
       interval: The interval for the Kinesis Client to wait before
         it tries to get records again (in millisecond).
     """
-    super(KinesisDataset, self).__init__()
-    self._stream = ops.convert_to_tensor(
+    self._stream = tensorflow.convert_to_tensor(
         stream, dtype=dtypes.string, name="stream")
-    self._shard = ops.convert_to_tensor(
+    self._shard = tensorflow.convert_to_tensor(
         shard, dtype=dtypes.string, name="shard")
-    self._read_indefinitely = ops.convert_to_tensor(
+    self._read_indefinitely = tensorflow.convert_to_tensor(
         read_indefinitely, dtype=dtypes.bool, name="read_indefinitely")
-    self._interval = ops.convert_to_tensor(
+    self._interval = tensorflow.convert_to_tensor(
         interval, dtype=dtypes.int64, name="interval")
+    super(KinesisDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return kinesis_ops.kinesis_dataset(
@@ -88,11 +89,11 @@ class KinesisDataset(dataset_ops.DatasetSource):
 
   @property
   def output_classes(self):
-    return ops.Tensor
+    return tensorflow.Tensor
 
   @property
   def output_shapes(self):
-    return tensor_shape.scalar()
+    return tensorflow.TensorShape([])
 
   @property
   def output_types(self):

@@ -19,16 +19,13 @@ from __future__ import print_function
 
 import os
 
+import tensorflow
+from tensorflow import dtypes
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-
-from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-
 kafka_ops = _load_library('_kafka_ops.so')
 
-class KafkaDataset(dataset_ops.DatasetSource):
+class KafkaDataset(data.Dataset):
   """A Kafka Dataset that consumes the message.
   """
 
@@ -50,16 +47,19 @@ class KafkaDataset(dataset_ops.DatasetSource):
       timeout: The timeout value for the Kafka Consumer to wait
                (in millisecond).
     """
-    super(KafkaDataset, self).__init__()
-    self._topics = ops.convert_to_tensor(
+    self._topics = tensorflow.convert_to_tensor(
         topics, dtype=dtypes.string, name="topics")
-    self._servers = ops.convert_to_tensor(
+    self._servers = tensorflow.convert_to_tensor(
         servers, dtype=dtypes.string, name="servers")
-    self._group = ops.convert_to_tensor(
+    self._group = tensorflow.convert_to_tensor(
         group, dtype=dtypes.string, name="group")
-    self._eof = ops.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
-    self._timeout = ops.convert_to_tensor(
+    self._eof = tensorflow.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
+    self._timeout = tensorflow.convert_to_tensor(
         timeout, dtype=dtypes.int64, name="timeout")
+    super(KafkaDataset, self).__init__()
+
+  def _inputs(self):
+    return []
 
   def _as_variant_tensor(self):
     return kafka_ops.kafka_dataset(self._topics, self._servers,
@@ -67,11 +67,11 @@ class KafkaDataset(dataset_ops.DatasetSource):
 
   @property
   def output_classes(self):
-    return ops.Tensor
+    return tensorflow.Tensor
 
   @property
   def output_shapes(self):
-    return tensor_shape.scalar()
+    return tensorflow.TensorShape([])
 
   @property
   def output_types(self):
