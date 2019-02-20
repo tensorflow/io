@@ -39,7 +39,7 @@ else
   python3 -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 fi
 python3 -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
-(cd tests && python3 -m pytest .)
+(cd tests && python3 -m pytest --import-mode=append .)
 
 CPYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
 if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
@@ -49,6 +49,6 @@ else
   python -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 fi
 python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
-(cd tests && python -m pytest .)
+(cd tests && python -m pytest --import-mode=append .)
 
 (cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())$failed == 0L))')
