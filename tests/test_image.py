@@ -34,6 +34,31 @@ from tensorflow import test
 
 class ImageDatasetTest(test.TestCase):
 
+  def test_decode_webp(self):
+    """Test case for decode_webp.
+    """
+    width = 400
+    height = 301
+    channel = 4
+    png_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
+    with open(png_file, 'rb') as f:
+      png_contents = f.read()
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+    with open(filename, 'rb') as f:
+      webp_contents = f.read()
+
+    with self.cached_session():
+      png_op = image_ops.decode_png(png_contents, channels=channel)
+      png = png_op.eval()
+      self.assertEqual(png.shape, (height, width, channel))
+
+      webp_p = image_dataset_ops.decode_webp(webp_contents)
+      webp_v = webp_p.eval()
+      self.assertEqual(webp_v.shape, (height, width, channel))
+
+      self.assertAllEqual(webp_v, png)
+
+
   def test_webp_file_dataset(self):
     """Test case for WebPDataset.
     """
