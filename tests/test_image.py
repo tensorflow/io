@@ -48,7 +48,7 @@ class ImageDatasetTest(test.TestCase):
       webp_contents = f.read()
 
     with self.cached_session():
-      png_op = image_ops.decode_png(png_contents, channels=channel)
+      png_op = image.decode_png(png_contents, channels=channel)
       png = png_op.eval()
       self.assertEqual(png.shape, (height, width, channel))
 
