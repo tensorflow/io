@@ -85,3 +85,16 @@ class TIFFDataset(data.Dataset):
   @property
   def output_types(self):
     return dtypes.uint8
+
+def decode_webp(contents, name=None):
+  """
+  Decode a WebP-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The WebP-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return image_ops.decode_web_p(contents, name=name)
