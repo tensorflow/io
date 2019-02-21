@@ -317,4 +317,84 @@ class KafkaDatasetOp : public DatasetOpKernel {
 REGISTER_KERNEL_BUILDER(Name("KafkaDataset").Device(DEVICE_CPU),
                         KafkaDatasetOp);
 
+class WriteKafkaOp : public OpKernel {
+ public:
+  using OpKernel::OpKernel;
+  void Compute(OpKernelContext* context) override {
+    const Tensor* message_tensor;
+    const Tensor* topic_tensor;
+    const Tensor* servers_tensor;
+    OP_REQUIRES_OK(context, context->input("message", &message_tensor));
+    OP_REQUIRES(context, TensorShapeUtils::IsScalar(message_tensor->shape()),
+                errors::InvalidArgument(
+                    "Message tensor must be scalar, but had shape: ",
+                    message_tensor->shape().DebugString()));
+    OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
+    OP_REQUIRES(context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
+                errors::InvalidArgument(
+                    "Topic tensor must be scalar, but had shape: ",
+                    topic_tensor->shape().DebugString()));
+    OP_REQUIRES_OK(context, context->input("servers", &servers_tensor));
+    OP_REQUIRES(context, TensorShapeUtils::IsScalar(servers_tensor->shape()),
+                errors::InvalidArgument(
+                    "Servers tensor must be scalar, but had shape: ",
+                    servers_tensor->shape().DebugString()));
+
+    const string& message = message_tensor->scalar<string>()();
+    const string& topic_string = topic_tensor->scalar<string>()();
+    std::vector<string> parts = str_util::Split(topic_string, ":");
+    OP_REQUIRES(context, (parts.size() >= 1),
+        errors::InvalidArgument("Invalid parameters: ", topic_string));
+
+    const string& topic_str = parts[0];
+    int32 partition = 0;
+    if (parts.size() > 1) {
+      OP_REQUIRES(context, !strings::safe_strto32(parts[1], &partition),
+          errors::InvalidArgument("Invalid parameters: ", topic_string));
+    }
+
+    const string& servers = servers_tensor->scalar<string>()();
+
+    std::unique_ptr<RdKafka::Conf> conf(
+        RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
+    std::unique_ptr<RdKafka::Conf> topic_conf(
+        RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
+
+    std::string errstr;
+
+    RdKafka::Conf::ConfResult result =
+        conf->set("default_topic_conf", topic_conf.get(), errstr);
+    OP_REQUIRES(context,  (result == RdKafka::Conf::CONF_OK),
+        errors::Internal("Failed to set default_topic_conf:", errstr));
+
+    result = conf->set("bootstrap.servers", servers, errstr);
+    OP_REQUIRES(context, (result == RdKafka::Conf::CONF_OK),
+        errors::Internal("Failed to set bootstrap.servers ", servers, ":", errstr));
+
+    std::unique_ptr<RdKafka::Producer> producer(RdKafka::Producer::create(conf.get(), errstr));
+    OP_REQUIRES(context, producer.get() != nullptr,
+        errors::Internal("Failed to create producer:", errstr));
+
+    std::unique_ptr<RdKafka::Topic> topic(RdKafka::Topic::create(producer.get(), topic_str, topic_conf.get(), errstr));
+    OP_REQUIRES(context, topic.get() != nullptr,
+        errors::Internal("Failed to create topic ", topic_str, ":", errstr));
+
+    RdKafka::ErrorCode err = producer->produce(topic.get(), partition,
+                          RdKafka::Producer::RK_MSG_COPY,
+                          const_cast<char *>(message.c_str()), message.size(),
+                          NULL, NULL);
+    OP_REQUIRES(context, (err == RdKafka::ERR_NO_ERROR),
+        errors::Internal("Failed to produce message:", RdKafka::err2str(err)));
+
+    err = producer->flush(timeout_);
+    OP_REQUIRES(context, (err == RdKafka::ERR_NO_ERROR),
+        errors::Internal("Failed to flush message:", RdKafka::err2str(err)));
+    context->set_output(0, context->input(0));
+  }
+private:
+  static const int timeout_ = 5000;
+};
+
+REGISTER_KERNEL_BUILDER(Name("WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
+
 }  // namespace tensorflow

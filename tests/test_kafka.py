@@ -18,6 +18,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
+
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
@@ -114,6 +116,39 @@ class KafkaDatasetTest(test.TestCase):
         self.assertAllEqual([("D" + str(i + 5)).encode() for i in range(5)],
                             sess.run(get_next))
 
+  def test_write_kafka(self):
+    channel = "e{}e".format(time.time())
+
+    # Start with reading test topic, replace `D` with `e(time)e`,
+    # and write to test_e(time)e` topic.
+    dataset = kafka_dataset_ops.KafkaDataset(topics=["test:0:0:4"], group="test", eof=True)
+    dataset = dataset.map(
+        lambda x: kafka_dataset_ops.write_kafka(
+            tensorflow.strings.regex_replace(x, "D", channel), topic="test_"+channel))
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      # Basic test: read from topic 0.
+      sess.run(init_op)
+      for i in range(5):
+        self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+    # Reading from `test_e(time)e` we should get the same result
+    dataset = kafka_dataset_ops.KafkaDataset(topics=["test_"+channel], group="test", eof=True)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for i in range(5):
+        self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
 
 if __name__ == "__main__":
   test.main()

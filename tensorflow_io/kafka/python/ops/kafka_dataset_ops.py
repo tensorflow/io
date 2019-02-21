@@ -76,3 +76,19 @@ class KafkaDataset(data.Dataset):
   @property
   def output_types(self):
     return dtypes.string
+
+def write_kafka(message,
+                topic,
+                servers="localhost",
+                name=None):
+  """
+  Args:
+      message: A `Tensor` of type `string`. 0-D.
+      topic: A `tf.string` tensor containing one subscription,
+        in the format of topic:partition.
+      servers: A list of bootstrap servers.
+      name: A name for the operation (optional).
+  Returns:
+      A `Tensor` of type `string`. 0-D.
+  """
+  return kafka_ops.write_kafka(message=message, topic=topic, servers=servers, name=name)
