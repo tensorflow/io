@@ -111,7 +111,7 @@ if '--preview' in sys.argv:
   preview_idx = sys.argv.index('--preview')
   version = version + ".dev" + sys.argv[preview_idx + 1]
   package = 'tf-nightly-2.0-preview'
-  project = 'tensorflow-io-preview'
+  project = 'tensorflow-io-2.0-preview'
   sys.argv.remove('--preview')
   sys.argv.pop(preview_idx)
 
