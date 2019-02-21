@@ -17,19 +17,7 @@ set -e -x
 
 # Install needed repo
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev \
-    software-properties-common apt-transport-https \
-    python-pip python3-pip \
-    ffmpeg > /dev/null
-DEBIAN_FRONTEND=noninteractive apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran35/"
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install r-base > /dev/null
-echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
-R -e 'install.packages(c("tensorflow"), quiet = TRUE)'
-R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
-R -e 'install.packages(c("forge"), quiet = TRUE)'
-R -e 'library("devtools"); install_github("rstudio/tfdatasets", ref="c6fc59b", quiet = TRUE)'
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip python3-pip ffmpeg > /dev/null
 
 CPYTHON_VERSION=$(python3 -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
 if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
@@ -50,5 +38,22 @@ else
 fi
 python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python -m pytest --import-mode=append .)
+
+if [[ ${TENSORFLOW_INSTALL} == "tf-nightly-2.0-preview" ]]; then
+  exit 0
+fi
+
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
+    build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev \
+    software-properties-common apt-transport-https > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran35/"
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install r-base > /dev/null
+echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
+R -e 'install.packages(c("tensorflow"), quiet = TRUE)'
+R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
+R -e 'install.packages(c("forge"), quiet = TRUE)'
+R -e 'library("devtools"); install_github("rstudio/tfdatasets", ref="c6fc59b", quiet = TRUE)'
 
 (cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())$failed == 0L))')

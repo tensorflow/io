@@ -32,12 +32,12 @@ from tensorflow_io.video import VideoDataset
 
 video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 
-@pytest.mark.skip(reason="expect tensorflow > 1.12.0")
+@pytest.mark.skipif(not (hasattr(tensorflow, "version") and tensorflow.version.VERSION.startswith("2.0.")), reason=None)
 def test_video_predict():
   model = ResNet50(weights='imagenet')
-  x = VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize_images(x, (224, 224))))
+  x = VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize(x, (224, 224))))
   y = model.predict(x)
-  p = decode_predictions(y, top=3)
+  p = decode_predictions(y, top=1)
   assert len(p) == 166
 
 def test_video_dataset():

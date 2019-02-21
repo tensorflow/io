@@ -52,7 +52,7 @@ from setuptools import setup
 from setuptools.dist import Distribution
 
 REQUIRED_PACKAGES = [
-    'tensorflow == 1.13.0rc2',
+    '{}',
 ]
 __version__ = '{}'
 project_name = '{}'
@@ -96,7 +96,9 @@ setup(
 )
 """
 
-version = '0.3.0'
+# Note: Change to tensorflow == 1.13.0 once 1.13.0 is released
+package = 'tensorflow >= 1.13.0rc2'
+version = '0.4.0'
 project = 'tensorflow-io'
 if '--nightly' in sys.argv:
   nightly_idx = sys.argv.index('--nightly')
@@ -104,6 +106,14 @@ if '--nightly' in sys.argv:
   project = 'tensorflow-io-nightly'
   sys.argv.remove('--nightly')
   sys.argv.pop(nightly_idx)
+
+if '--preview' in sys.argv:
+  preview_idx = sys.argv.index('--preview')
+  version = version + ".dev" + sys.argv[preview_idx + 1]
+  package = 'tf-nightly-2.0-preview'
+  project = 'tensorflow-io-2.0-preview'
+  sys.argv.remove('--preview')
+  sys.argv.pop(preview_idx)
 
 
 rootpath = tempfile.mkdtemp()
@@ -114,9 +124,9 @@ print("setup.py - create {}/MANIFEST.in".format(rootpath))
 with open(os.path.join(rootpath, "MANIFEST.in"), "w") as f:
   f.write("recursive-include tensorflow_io *.so")
 
-print("setup.py - create {}/setup.py with project_name = '{}' and __version__ = {}".format(rootpath, project, version))
+print("setup.py - create {}/setup.py with required = '{}', project_name = '{}' and __version__ = {}".format(rootpath, package, project, version))
 with open(os.path.join(rootpath, "setup.py"), "w") as f:
-  f.write(content.format(version, project))
+  f.write(content.format(package, version, project))
 
 datapath = None
 if '--data' in sys.argv:
