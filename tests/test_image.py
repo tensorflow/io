@@ -109,6 +109,7 @@ class ImageDatasetTest(test.TestCase):
         images.append(image_v)
 
     filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
+    filename = "file://" + filename
 
     num_repeats = 2
 
