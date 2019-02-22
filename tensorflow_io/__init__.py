@@ -44,11 +44,13 @@ def _load_library(filename, lib="op"):
       else lambda f: tensorflow.compat.v1.load_file_system_library(f) == None
 
   # Try to load all paths for file, fail if none succeed
+  errs = []
   for f in filenames:
     try:
       l = load_fn(f)
       if l is not None:
         return l
     except errors.NotFoundError as e:
-      pass
-  raise NotImplementedError("unable to open file: ", filename)
+      errs.append(str(e))
+  raise NotImplementedError("unable to open file: " +
+      "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))
