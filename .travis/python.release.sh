@@ -16,44 +16,37 @@
 set -e -x
 
 # Release:
-# docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:14.04 /v/.travis/python.release.sh
+# docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e /v/.travis/python.release.sh
 
 export BAZEL_VERSION=0.20.0 BAZEL_OS=linux
 
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
-  software-properties-common > /dev/null
+# Install bazel, display log only if error
+curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh 2>&1 > bazel-install.log || (cat bazel-install.log && false)
+rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh bazel-install.log
 
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install software-properties-common > /dev/null
 DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa
 
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
-  gcc g++ make patch \
-  python \
-  python3 \
-  python3.5 \
-  python3.6 \
-  unzip \
-  curl > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python python3 python3.5 python3.6 > /dev/null
 
-curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-
-# Install bazel, display log only if error
-./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh 2>&1 > bazel-install.log || (cat bazel-install.log && false)
-rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-rm -rf bazel-install.log
-
+# Install patchelf
 curl -OL https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2
 tar xfa patchelf-0.9.tar.bz2
-(cd patchelf-0.9 && ./configure --prefix=/usr && make && make install)
+(cd patchelf-0.9 && ./configure -q --prefix=/usr && make -s && make -s install)
 rm -rf patchelf-0.9*
+
+# Install the latest version of pip (needed for google-cloud-pubsub)
 curl -sOL https://bootstrap.pypa.io/get-pip.py
 python3.6 get-pip.py
 python3.5 get-pip.py
 python3 get-pip.py
 python get-pip.py
 rm -rf get-pip.py
+
 python3 -m pip install -q auditwheel==1.5.0
 python3 -m pip install -q wheel==0.31.1
 

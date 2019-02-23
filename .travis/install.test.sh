@@ -17,7 +17,13 @@ set -e -x
 
 # Install needed repo
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip python3-pip ffmpeg > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python python3 ffmpeg > /dev/null
+
+# Install the latest version of pip (needed for google-cloud-pubsub)
+curl -sOL https://bootstrap.pypa.io/get-pip.py
+python3 get-pip.py
+python get-pip.py
+rm -rf get-pip.py
 
 CPYTHON_VERSION=$(python3 -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
 if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
@@ -26,7 +32,7 @@ if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
 else
   python3 -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 fi
-python3 -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
+python3 -m pip install -q pytest google-cloud-pubsub boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python3 -m pytest --import-mode=append .)
 
 CPYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
@@ -36,16 +42,14 @@ if [[ ! -z ${TENSORFLOW_INSTALL} ]]; then
 else
   python -m pip install wheelhouse/*-cp${CPYTHON_VERSION}-*.whl
 fi
-python -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
+python -m pip install -q pytest google-cloud-pubsub boto3 pyarrow==0.11.1 pandas==0.19.2
 (cd tests && python -m pytest --import-mode=append .)
 
 if [[ ${TENSORFLOW_INSTALL} == "tf-nightly-2.0-preview" ]]; then
   exit 0
 fi
 
-DEBIAN_FRONTEND=noninteractive apt-get -y -qq install \
-    build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev \
-    software-properties-common apt-transport-https > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install software-properties-common apt-transport-https > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran35/"
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
