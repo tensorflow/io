@@ -5,24 +5,24 @@ language: minimal
 git:
   quiet: true
 
-#services:
-#- docker
+services:
+- docker
 
-#cache:
-#  directories:
-#  - .cache/pip
+cache:
+  directories:
+  - .cache/pip
 
-#addons:
-#  apt:
-#    update: true
-#    packages:
-#    - python3-pip
+addons:
+  apt:
+    update: true
+    packages:
+    - python3-pip
 
 install:
 - python --version
-- easy_install pip
-- pip --version
-- [ "${TRAVIS_OS_NAME}" == "osx" ] && easy_install twine || pip3 install -q twine
+- pip2 --version
+- pip3 --version
+- bash -x -e '[ "${TRAVIS_OS_NAME}" == "osx" ] && easy_install twine || pip3 install -q twine'
 - twine --version
 
 before_script:
