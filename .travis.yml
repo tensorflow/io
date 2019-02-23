@@ -20,10 +20,22 @@ addons:
 
 install:
 - python --version
-- pip2 --version
-- pip3 --version
-- bash -x -e '[ "${TRAVIS_OS_NAME}" == "osx" ] && easy_install twine || pip3 install -q twine'
+- curl https://bootstrap.pypa.io/get-pip.py | sudo python
+- python -m pip --version
+- sudo python -m pip install -U twine
 - twine --version
+- sudo python -m pip install -U matplotlib numpy --ignore-installed six
+- sudo python -m pip install tensorflow==1.13.0rc2
+- python -c 'import tensorflow as tf; print(tf.version.VERSION)'
+- python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))'
+- python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))'
+- ./configure.sh
+- export BAZEL_VERSION=0.20.0 BAZEL_OS=darwin
+- curl -sOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+- chmod +x bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+- ./bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh 2>&1 > bazel-install.log || (cat bazel-install.log && false)
+- rm -rf bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh bazel-install.log
+- bazel build -s --verbose_failures //tensorflow_io/...
 
 before_script:
 - echo bash -x -e tests/test_ignite/start_ignite.sh
