@@ -8,6 +8,10 @@ git:
 services:
 - docker
 
+cache:
+  directories:
+  - .cache/pip
+
 addons:
   apt:
     update: true
@@ -15,18 +19,21 @@ addons:
     - python3-pip
 
 install:
-- pip3 install -q twine
+- python --version
+- [ "${TRAVIS_OS_NAME}" == "osx" ] && easy_install twine || pip3 install -q twine
 - twine --version
 
 before_script:
-- bash -x -e tests/test_ignite/start_ignite.sh
-- bash -x -e tests/test_kafka/kafka_test.sh start kafka
-- bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+- echo bash -x -e tests/test_ignite/start_ignite.sh
+- echo bash -x -e tests/test_kafka/kafka_test.sh start kafka
+- echo bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 
 stages:
+- macos
 - build
 - preview
 - install
+- release
 
 jobs:
   include:
@@ -34,45 +41,48 @@ jobs:
     name: "Ubuntu 16.04 Build"
     script:
     - |
-      set -e
+      set -e -x
       export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/build.test.sh
   - stage: build
     name: "Ubuntu 18.04 Build"
     script:
     - |
-      set -e
+      set -e -x
       export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/build.test.sh
   - stage: preview
     name: "TensorFlow 2.0 Build"
     script:
     - |
-      set -e
+      set -e -x
       export TENSORFLOW_INSTALL="tf-nightly-2.0-preview"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --preview ${TRAVIS_BUILD_NUMBER}
-      ls -la wheelhouse/*.whl
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
-      ls wheelhouse/*.whl
-      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*-cp27-*.whl
-        twine upload wheelhouse/*-cp36-*.whl
-      fi
+  - stage: macos
+    name: "TensorFlow 2.0 (macOS) Build"
+    os: osx
+    osx_image: xcode9
+    script:
+    - |
+      set -e -x
+      python --version
+      python -m pip --version
+      export TENSORFLOW_INSTALL="tf-nightly-2.0-preview"
   - stage: install
-    name: "Python, R, Nightly"
+    name: "Python/R Install on Ubuntu 16.04"
     script:
     - |
       set -e
       export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-      ls -la wheelhouse/*.whl
-      # Note token is for rate limit only. When regenerate should not grant any access.
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/install.test.sh
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
-      ls wheelhouse/*.whl
-      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
-      fi
+  - stage: install
+    name: "Python/R Install on Ubuntu 18.04"
+    script:
+    - |
+      set -e
+      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
+  - stage: release
+    name: "Nightly Release"
+    script:
+    - |
+      set -e
+      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
 
 notifications:
 - email: false
