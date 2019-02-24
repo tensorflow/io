@@ -19,6 +19,11 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+import sys
+import pytest
+
+if sys.platform == "darwin":
+  pytest.skip("kafka is not supported on macOS yet", allow_module_level=True)
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
@@ -30,7 +35,6 @@ from tensorflow import errors
 import tensorflow_io.kafka as kafka_io
 
 from tensorflow import test
-
 
 class KafkaDatasetTest(test.TestCase):
   """Tests for KafkaDataset."""

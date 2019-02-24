@@ -17,8 +17,11 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-
+import sys
 import pytest
+
+if sys.platform == "darwin":
+  pytest.skip("video is not supported on macOS yet", allow_module_level=True)
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()

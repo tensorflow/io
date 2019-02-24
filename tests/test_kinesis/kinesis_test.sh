@@ -29,8 +29,6 @@ if [ "$action" == "start" ]; then
     docker pull localstack/localstack:0.8.10
     echo pull localstack/localstack:0.8.10 successfully
     docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
-    echo Wait 20 secs until kinesis is up and running
-    sleep 20
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container
