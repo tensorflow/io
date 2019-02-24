@@ -23,8 +23,6 @@ import shutil
 import tempfile
 import fnmatch
 
-from setuptools import sandbox
-
 content = """
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
@@ -97,9 +95,16 @@ setup(
 """
 
 # Note: Change to tensorflow == 1.13.0 once 1.13.0 is released
-package = 'tensorflow >= 1.13.0rc2'
+package = 'tensorflow>=1.13.0rc2'
 version = '0.4.0'
 project = 'tensorflow-io'
+if '--package-version' in sys.argv:
+  print(package)
+  sys.exit(0)
+
+# Note: import setuptools later to avoid unnecessary dependency
+from setuptools import sandbox
+
 if '--nightly' in sys.argv:
   nightly_idx = sys.argv.index('--nightly')
   version = version + ".dev" + sys.argv[nightly_idx + 1]

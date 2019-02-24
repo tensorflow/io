@@ -8,71 +8,116 @@ git:
 services:
 - docker
 
-addons:
-  apt:
-    update: true
-    packages:
-    - python3-pip
-
 install:
-- pip3 install -q twine
+- curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
+- sudo -H python -m pip install -q -U twine --ignore-installed six
 - twine --version
-
-before_script:
-- bash -x -e tests/test_ignite/start_ignite.sh
-- bash -x -e tests/test_kafka/kafka_test.sh start kafka
-- bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+- export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
+- |
+  if [[ "$(uname)" == "Linux" ]]; then
+    bash -x -e tests/test_ignite/start_ignite.sh
+    bash -x -e tests/test_kafka/kafka_test.sh start kafka
+    bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+  fi
 
 stages:
-- build
 - preview
 - install
+- developer
+- nightly
 
 jobs:
   include:
-  - stage: build
-    name: "Ubuntu 16.04 Build"
-    script:
-    - |
-      set -e
-      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/build.test.sh
-  - stage: build
-    name: "Ubuntu 18.04 Build"
-    script:
-    - |
-      set -e
-      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/build.test.sh
-  - stage: preview
-    name: "TensorFlow 2.0 Build"
-    script:
-    - |
-      set -e
-      export TENSORFLOW_INSTALL="tf-nightly-2.0-preview"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --preview ${TRAVIS_BUILD_NUMBER}
-      ls -la wheelhouse/*.whl
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
-      ls wheelhouse/*.whl
-      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*-cp27-*.whl
-        twine upload wheelhouse/*-cp36-*.whl
-      fi
+  # Install Builds make sure the release of the repo could be
+  # install and run on commodity user environment (Ubuntu 16.04/18.04).
+  # Note the release of the repo build on Ubuntu 14.04.
   - stage: install
-    name: "Python, R, Nightly"
-    script:
+    name: "Install Build on Ubuntu 16.04"
+    before_script: &install_build
     - |
-      set -e
-      export TENSORFLOW_INSTALL="tensorflow==1.13.0rc2"
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:14.04 bash -x -e /v/.travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-      ls -la wheelhouse/*.whl
-      # Note token is for rate limit only. When regenerate should not grant any access.
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:16.04 bash -x -e /v/.travis/install.test.sh
-      docker run -e TENSORFLOW_INSTALL=${TENSORFLOW_INSTALL} -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 -i -t --rm -v $PWD:/v -w /v  --net=host ubuntu:18.04 bash -x -e /v/.travis/install.test.sh
-      ls wheelhouse/*.whl
-      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
-      fi
+      echo "bash -x -e .travis/bazel.configure.sh \"${TENSORFLOW_INSTALL}\"" > script.sh
+      echo "bash -x -e .travis/bazel.build.sh" >> script.sh
+      echo "bash -x -e .travis/wheel.configure.sh" >> script.sh
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh python python3.5" >> script.sh
+    - cat script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh
+  - stage: install
+    name: "Install Build on Ubuntu 18.04"
+    before_script: *install_build
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh python python3.6" >> script.sh
+    - cat script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
+  # Developer Builds make sure the source code of the repo could be
+  # build and run on commodity developer environment (Ubuntu 16.04/18.04).
+  - stage: developer
+    name: "Developer Build on Ubuntu 16.04"
+    before_script: &developer_build
+    - |
+      echo "bash -x -e .travis/bazel.configure.sh \"${TENSORFLOW_INSTALL}\"" > script.sh
+      echo "bash -x -e .travis/bazel.build.sh" >> script.sh
+      echo "bash -x -e .travis/build.test.sh \"${TENSORFLOW_INSTALL}\"" >> script.sh
+    - cat script.sh
+    script:
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:16.04 bash -x -e script.sh
+  - stage: developer
+    name: "Developer Build on Ubuntu 18.04"
+    before_script: *developer_build
+    script:
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e script.sh
+  # Preview Builds is for TensorFlow 2.0 Preview release.
+  # Note only Linux (Ubuntu 18.04) and macOS are supported.
+  - stage: preview
+    name: "TensorFlow 2.0 Preview Build on Linux"
+    before_script: &preview_build
+    - |
+      export TENSORFLOW_INSTALL="tf-nightly-2.0-preview"
+      echo "bash -x -e .travis/bazel.configure.sh \"${TENSORFLOW_INSTALL}\"" > script.sh
+      echo "bash -x -e .travis/bazel.build.sh" >> script.sh
+      echo "bash -x -e .travis/wheel.configure.sh" >> script.sh
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh --preview ${TRAVIS_BUILD_NUMBER} python python3.6" >> script.sh
+    - cat script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
+  - stage: preview
+    name: "TensorFlow 2.0 Preview Build on macOS"
+    os: osx
+    osx_image: xcode9
+    before_script: *preview_build
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh --preview ${TRAVIS_BUILD_NUMBER} python" >> script.sh
+    - cat script.sh
+    - sudo -H bash -x -e script.sh
+    - sudo -H bash -x -e .travis/wheel.test.sh
+  # Release Builds is for nightly release.
+  # Note Python 2.7, 3.4, 3.5, 3.6 are supported on Linux
+  # for Ubuntu 14.04/16.04/18.04, and Python 2.7 for macOS.
+  - stage: nightly
+    name: "Nightly Release Build on Linux"
+    before_script: &nightly_build
+    - |
+      echo "bash -x -e .travis/bazel.configure.sh \"${TENSORFLOW_INSTALL}\"" > script.sh
+      echo "bash -x -e .travis/bazel.build.sh" >> script.sh
+      echo "bash -x -e .travis/wheel.configure.sh" >> script.sh
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh --nightly ${TRAVIS_BUILD_NUMBER} python python3.6" >> script.sh
+    - cat script.sh
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e script.sh
+    - echo "Skip test for nightly build, as it has been covered in install build"
+  - stage: nightly
+    name: "Nightly Release Build on macOS"
+    os: osx
+    osx_image: xcode9
+    before_script: *preview_build
+    script:
+    - echo "bash -x -e .travis/wheel.build.sh --nightly ${TRAVIS_BUILD_NUMBER} python" >> script.sh
+    - cat script.sh
+    - sudo -H bash -x -e script.sh
+    - sudo -H bash -x -e .travis/wheel.test.sh
 
 notifications:
 - email: false
