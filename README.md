@@ -57,12 +57,12 @@ be able to find the correct path to the module.
 Once the `tensorflow-io` Python package has beem successfully installed, you
 can then install the latest stable release of the R package via:
 
-```
+```r
 install.packages('tfio')
 ```
 
 You can also install the development version from Github via:
-```
+```r
 if (!require("devtools")) install.packages("devtools")
 devtools::install_github("tensorflow/io", subdir = "R-package")
 ```
@@ -89,7 +89,7 @@ A package file `artifacts/tensorflow_io-*.whl` will be generated after a build i
 
 We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
 so that you can use the R package directly for testing. You can build it via:
-```
+```sh
 docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
 ```
 
@@ -97,7 +97,7 @@ Inside the container, you can start your R session, instantiate a `SequenceFileD
 from an example [Hadoop SequenceFile](https://wiki.apache.org/hadoop/SequenceFile)
 [string.seq](R-package/tests/testthat/testdata/string.seq), and then use any [transformation functions](https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations) provided by [tfdatasets package](https://tensorflow.rstudio.com/tools/tfdatasets/) on the dataset like the following:
 
-```{R}
+```r
 library(tfio)
 dataset <- sequence_file_dataset("R-package/tests/testthat/testdata/string.seq") %>%
     dataset_repeat(2)
