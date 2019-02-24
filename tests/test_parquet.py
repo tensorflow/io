@@ -28,7 +28,7 @@ from tensorflow import errors
 from tensorflow.compat.v1 import data
 from tensorflow.compat.v1 import resource_loader
 
-from tensorflow_io.parquet.python.ops import parquet_dataset_ops
+import tensorflow_io.parquet as parquet_io
 
 from tensorflow import test
 
@@ -57,7 +57,7 @@ class ParquetDatasetTest(test.TestCase):
         dtypes.bool, dtypes.int32, dtypes.int64, dtypes.float32, dtypes.float64)
     num_repeats = 2
 
-    dataset = parquet_dataset_ops.ParquetDataset(
+    dataset = parquet_io.ParquetDataset(
         filenames, columns, output_types).repeat(num_repeats)
     iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer

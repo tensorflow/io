@@ -28,14 +28,14 @@ from tensorflow import errors
 from tensorflow import image
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
-from tensorflow_io.video import VideoDataset
+import tensorflow_io.video as video_io
 
 video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 
 @pytest.mark.skipif(not (hasattr(tensorflow, "version") and tensorflow.version.VERSION.startswith("2.0.")), reason=None)
 def test_video_predict():
   model = ResNet50(weights='imagenet')
-  x = VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize(x, (224, 224))))
+  x = video_io.VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize(x, (224, 224))))
   y = model.predict(x)
   p = decode_predictions(y, top=1)
   assert len(p) == 166
@@ -43,7 +43,7 @@ def test_video_predict():
 def test_video_dataset():
   num_repeats = 2
 
-  dataset = VideoDataset([video_path]).repeat(num_repeats)
+  dataset = video_io.VideoDataset([video_path]).repeat(num_repeats)
   iterator = dataset.make_initializable_iterator()
   init_op = iterator.initializer
   get_next = iterator.get_next()

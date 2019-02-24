@@ -28,7 +28,7 @@ from tensorflow import errors
 from tensorflow.compat.v1 import data
 from tensorflow.compat.v1 import resource_loader
 
-from tensorflow_io.hadoop.python.ops import hadoop_dataset_ops
+import tensorflow_io.hadoop as hadoop_io
 
 from tensorflow import test
 
@@ -47,7 +47,7 @@ class SequenceFileDatasetTest(test.TestCase):
 
     num_repeats = 2
 
-    dataset = hadoop_dataset_ops.SequenceFileDataset([filename]).repeat(
+    dataset = hadoop_io.SequenceFileDataset([filename]).repeat(
         num_repeats)
     iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer
