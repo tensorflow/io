@@ -39,7 +39,7 @@ from tensorflow import dtypes
 from tensorflow import errors
 from tensorflow.compat.v1 import data
 
-from tensorflow_io.kinesis.python.ops import kinesis_dataset_ops
+import tensorflow_io.kinesis as kinesis_io
 
 
 class KinesisDatasetTest(test.TestCase):
@@ -71,7 +71,7 @@ class KinesisDatasetTest(test.TestCase):
     num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
     batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
-    repeat_dataset = kinesis_dataset_ops.KinesisDataset(
+    repeat_dataset = kinesis_io.KinesisDataset(
         stream, read_indefinitely=False).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
@@ -122,7 +122,7 @@ class KinesisDatasetTest(test.TestCase):
     num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
     batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
-    repeat_dataset = kinesis_dataset_ops.KinesisDataset(
+    repeat_dataset = kinesis_io.KinesisDataset(
         stream, shard, read_indefinitely=False).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 

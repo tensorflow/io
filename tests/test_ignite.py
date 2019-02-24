@@ -27,7 +27,7 @@ from tensorflow import errors
 from tensorflow.compat.v1 import data
 from tensorflow.compat.v1 import gfile
 
-from tensorflow_io.ignite import IgniteDataset
+import tensorflow_io.ignite as ignite_io
 
 from tensorflow import test
 
@@ -263,7 +263,7 @@ class IgniteDatasetTest(test.TestCase):
 
     """
     self._clear_env()
-    ds = IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=42300)
+    ds = ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=42300)
     self._check_dataset(ds)
 
   def test_ignite_dataset_with_plain_client_with_interleave(self):
@@ -272,7 +272,7 @@ class IgniteDatasetTest(test.TestCase):
     """
     self._clear_env()
     ds = data.Dataset.from_tensor_slices(["localhost"]).interleave(
-        lambda host: IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
+        lambda host: ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
                                    schema_host="localhost", host=host,
                                    port=42300), cycle_length=4, block_length=16
     )
