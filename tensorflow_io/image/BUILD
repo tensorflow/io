@@ -7,6 +7,7 @@ cc_binary(
     srcs = [
         "kernels/webp_dataset_ops.cc",
         "kernels/tiff_dataset_ops.cc",
+	"kernels/gif_dataset_ops.cc",
         "ops/dataset_ops.cc",
     ],
     linkshared = 1,
@@ -15,6 +16,7 @@ cc_binary(
         "@local_config_tf//:tf_header_lib",
 	"@libwebp//:libwebp",
 	"@libtiff//:libtiff",
+	"@giflib//:giflib",
     ],
     copts = ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0", "-DNDEBUG"]
 )
