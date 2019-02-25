@@ -39,7 +39,7 @@ from tensorflow import dtypes
 from tensorflow import errors
 from tensorflow.compat.v1 import data
 
-from tensorflow_io.arrow.python.ops import arrow_dataset_ops
+import tensorflow_io.arrow as arrow_io
 
 from tensorflow import test
 
@@ -172,7 +172,7 @@ class ArrowDatasetTest(test.TestCase):
     batch = self.make_record_batch(truth_data)
 
     # test all columns selected
-    dataset = arrow_dataset_ops.ArrowDataset(
+    dataset = arrow_io.ArrowDataset(
         batch,
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
@@ -181,7 +181,7 @@ class ArrowDatasetTest(test.TestCase):
 
     # test column selection
     columns = (1, 3, len(truth_data.output_types) - 1)
-    dataset = arrow_dataset_ops.ArrowDataset(
+    dataset = arrow_io.ArrowDataset(
         batch,
         columns,
         tuple([truth_data.output_types[c] for c in columns]),
@@ -190,7 +190,7 @@ class ArrowDatasetTest(test.TestCase):
 
     # test construction from pd.DataFrame
     df = batch.to_pandas()
-    dataset = arrow_dataset_ops.ArrowDataset.from_pandas(
+    dataset = arrow_io.ArrowDataset.from_pandas(
         df, preserve_index=False)
     self.run_test_case(dataset, truth_data)
 
@@ -208,7 +208,7 @@ class ArrowDatasetTest(test.TestCase):
 
     batch = self.make_record_batch(truth_data)
     df = batch.to_pandas()
-    dataset = arrow_dataset_ops.ArrowDataset.from_pandas(
+    dataset = arrow_io.ArrowDataset.from_pandas(
         df, preserve_index=True)
 
     # Add index column to test data to check results
@@ -224,7 +224,7 @@ class ArrowDatasetTest(test.TestCase):
         truth_data_with_index.data[1:],
         truth_data_with_index.output_types[1:],
         truth_data_with_index.output_shapes[1:])
-    dataset = arrow_dataset_ops.ArrowDataset.from_pandas(
+    dataset = arrow_io.ArrowDataset.from_pandas(
         df, columns=(1,), preserve_index=True)
     self.run_test_case(dataset, truth_data_selected_with_index)
 
@@ -243,7 +243,7 @@ class ArrowDatasetTest(test.TestCase):
       write_feather(df, f)
 
     # test single file
-    dataset = arrow_dataset_ops.ArrowFeatherDataset(
+    dataset = arrow_io.ArrowFeatherDataset(
         f.name,
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
@@ -251,7 +251,7 @@ class ArrowDatasetTest(test.TestCase):
     self.run_test_case(dataset, truth_data)
 
     # test multiple files
-    dataset = arrow_dataset_ops.ArrowFeatherDataset(
+    dataset = arrow_io.ArrowFeatherDataset(
         [f.name, f.name],
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
@@ -263,7 +263,7 @@ class ArrowDatasetTest(test.TestCase):
     self.run_test_case(dataset, truth_data_doubled)
 
     # test construction from schema
-    dataset = arrow_dataset_ops.ArrowFeatherDataset.from_schema(
+    dataset = arrow_io.ArrowFeatherDataset.from_schema(
         f.name, batch.schema)
     self.run_test_case(dataset, truth_data)
 
@@ -301,7 +301,7 @@ class ArrowDatasetTest(test.TestCase):
     server = threading.Thread(target=run_server, args=(num_batches,))
     server.start()
 
-    dataset = arrow_dataset_ops.ArrowStreamDataset.from_schema(
+    dataset = arrow_io.ArrowStreamDataset.from_schema(
         host, batch.schema)
     truth_data_mult = TruthData(
         [d * num_batches for d in truth_data.data],
@@ -325,7 +325,7 @@ class ArrowDatasetTest(test.TestCase):
 
     batch = self.make_record_batch(truth_data)
 
-    dataset = arrow_dataset_ops.ArrowDataset(
+    dataset = arrow_io.ArrowDataset(
         batch,
         (0,),
         truth_data.output_types,
@@ -338,7 +338,7 @@ class ArrowDatasetTest(test.TestCase):
         self.scalar_shapes)
     batch = self.make_record_batch(truth_data)
 
-    dataset = arrow_dataset_ops.ArrowDataset(
+    dataset = arrow_io.ArrowDataset(
         batch,
         list(range(len(truth_data.output_types))),
         tuple([dtypes.int32 for _ in truth_data.output_types]),

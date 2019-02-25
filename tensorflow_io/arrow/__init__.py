@@ -15,6 +15,8 @@
 """Arrow Dataset.
 
 @@ArrowDataset
+@@ArrowFeatherDataset
+@@ArrowStreamDataset
 """
 
 from __future__ import absolute_import
