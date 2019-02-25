@@ -44,7 +44,6 @@ fi
 bazel build \
   --noshow_progress \
   --noshow_loading_progress \
-  --spawn_strategy standalone \
   --verbose_failures \
   --test_output=errors -- \
   //tensorflow_io/...
