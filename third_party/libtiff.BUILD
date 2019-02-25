@@ -13,10 +13,11 @@ cc_library(
     exclude=[
         "libtiff/tif_win32.c",
     ]),
-    hdrs = [
-        "libtiff/tiff.h",
-        "libtiff/tiffconf.h",
+    hdrs = glob([
+        "libtiff/*.h",
+    ]) + [
         "libtiff/tif_config.h",
+        "libtiff/tiffconf.h",
     ],
     copts = [
         "-D_GLIBCXX_USE_CXX11_ABI=0",
