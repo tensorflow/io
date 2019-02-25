@@ -28,7 +28,7 @@ from tensorflow import errors
 from tensorflow import image
 from tensorflow.compat.v1 import resource_loader
 
-from tensorflow_io.image.python.ops import image_dataset_ops
+import tensorflow_io.image as image_io
 
 from tensorflow import test
 
@@ -52,7 +52,7 @@ class ImageDatasetTest(test.TestCase):
       png = png_op.eval()
       self.assertEqual(png.shape, (height, width, channel))
 
-      webp_p = image_dataset_ops.decode_webp(webp_contents)
+      webp_p = image_io.decode_webp(webp_contents)
       webp_v = webp_p.eval()
       self.assertEqual(webp_v.shape, (height, width, channel))
 
@@ -77,7 +77,7 @@ class ImageDatasetTest(test.TestCase):
 
     num_repeats = 2
 
-    dataset = image_dataset_ops.WebPDataset([filename]).repeat(
+    dataset = image_io.WebPDataset([filename]).repeat(
         num_repeats)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
@@ -113,7 +113,7 @@ class ImageDatasetTest(test.TestCase):
 
     num_repeats = 2
 
-    dataset = image_dataset_ops.TIFFDataset([filename]).repeat(num_repeats)
+    dataset = image_io.TIFFDataset([filename]).repeat(num_repeats)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()

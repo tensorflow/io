@@ -27,7 +27,7 @@ tensorflow.compat.v1.disable_eager_execution()
 from tensorflow import dtypes
 from tensorflow import errors
 
-from tensorflow_io.lmdb.python.ops import lmdb_dataset_ops
+import tensorflow_io.lmdb as lmdb_io
 
 from tensorflow import test
 
@@ -46,7 +46,7 @@ class LMDBDatasetTest(test.TestCase):
 
     num_repeats = 2
 
-    dataset = lmdb_dataset_ops.LMDBDataset([filename]).repeat(num_repeats)
+    dataset = lmdb_io.LMDBDataset([filename]).repeat(num_repeats)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()

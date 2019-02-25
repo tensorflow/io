@@ -15,6 +15,7 @@
 """LibSVM Dataset.
 
 @@make_libsvm_dataset
+@@decode_libsvm
 """
 
 from __future__ import absolute_import
@@ -22,11 +23,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.libsvm.python.ops.libsvm_dataset_ops import make_libsvm_dataset
+from tensorflow_io.libsvm.python.ops.libsvm_dataset_ops import decode_libsvm
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "make_libsvm_dataset",
+    "decode_libsvm",
 ]
 
 remove_undocumented(__name__)

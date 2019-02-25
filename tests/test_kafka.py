@@ -27,7 +27,7 @@ from tensorflow.compat.v1 import data
 from tensorflow import dtypes
 from tensorflow import errors
 
-from tensorflow_io.kafka.python.ops import kafka_dataset_ops
+import tensorflow_io.kafka as kafka_io
 
 from tensorflow import test
 
@@ -51,7 +51,7 @@ class KafkaDatasetTest(test.TestCase):
     num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
     batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
 
-    repeat_dataset = kafka_dataset_ops.KafkaDataset(
+    repeat_dataset = kafka_io.KafkaDataset(
         topics, group="test", eof=True).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
@@ -121,9 +121,9 @@ class KafkaDatasetTest(test.TestCase):
 
     # Start with reading test topic, replace `D` with `e(time)e`,
     # and write to test_e(time)e` topic.
-    dataset = kafka_dataset_ops.KafkaDataset(topics=["test:0:0:4"], group="test", eof=True)
+    dataset = kafka_io.KafkaDataset(topics=["test:0:0:4"], group="test", eof=True)
     dataset = dataset.map(
-        lambda x: kafka_dataset_ops.write_kafka(
+        lambda x: kafka_io.write_kafka(
             tensorflow.strings.regex_replace(x, "D", channel), topic="test_"+channel))
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
@@ -138,7 +138,7 @@ class KafkaDatasetTest(test.TestCase):
         sess.run(get_next)
 
     # Reading from `test_e(time)e` we should get the same result
-    dataset = kafka_dataset_ops.KafkaDataset(topics=["test_"+channel], group="test", eof=True)
+    dataset = kafka_io.KafkaDataset(topics=["test_"+channel], group="test", eof=True)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()
