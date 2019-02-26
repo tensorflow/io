@@ -77,20 +77,40 @@ devtools::install_github("tensorflow/io", subdir = "R-package")
 
 ### Python
 
-The TensorFlow I/O package (`tensorflow-io`) could be built from source:
+For Python development, a reference Dockerfile [here](dev/Dockerfile) can be
+used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
-$ docker run -it -v ${PWD}:/working_dir -w /working_dir tensorflow/tensorflow:custom-op
-$ # In docker
-$ curl -OL https://github.com/bazelbuild/bazel/releases/download/0.20.0/bazel-0.20.0-installer-linux-x86_64.sh
-$ chmod +x bazel-0.20.0-installer-linux-x86_64.sh
-$ ./bazel-0.20.0-installer-linux-x86_64.sh
-
+$ # Build and run the Docker image
+$ docker build -f dev/Dockerfile -t tfio-dev .
+$ docker run -it -rm --net=host -v ${PWD}:/v -w /v tfio-dev
+$ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
-$ bazel build //tensorflow_io/...
-$ python setup.py --data bazel-bin -q bdist_wheel
+$ # Build TensorFlow I/O C++
+$ bazel build -s --verbose_failures //tensorflow_io/...
+$ # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
+$ pytest tests/
+$ # Build the TensorFlow I/O package
+$ python setup.py bdist_wheel
 ```
 
 A package file `dist/tensorflow_io-*.whl` will be generated after a build is successful.
+
+NOTE: When working in the Python development container, an environment variable
+`TFIO_DATAPATH` is automatically set to point tensorflow-io to the shared C++
+libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
+`setup.py` can also accept `--data [path]` as an argument, for example
+`python setup.py --data bazel-bin bdist_wheel`.
+
+#### Starting Test Containers
+
+Some tests require launching a test container before running. In order
+to run all tests, execute the following commands:
+
+```
+$ bash -x -e tests/test_ignite/start_ignite.sh
+$ bash -x -e tests/test_kafka/kafka_test.sh start kafka
+$ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+```
 
 ### R
 
