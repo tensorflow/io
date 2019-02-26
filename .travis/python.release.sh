@@ -19,8 +19,14 @@ set -e -x
 # docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 /v/.travis/python.release.sh
 
 export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
+export PYTHON_VERSION="python python3 python3.5 python3.6"
+if [[ "$#" -gt 0 ]]; then
+    export TENSORFLOW_INSTALL="${1}"
+    shift
+    PYTHON_VERSION="$@"
+fi
 
 bash -x -e .travis/bazel.configure.sh "${TENSORFLOW_INSTALL}"
 bash -x -e .travis/bazel.build.sh
 bash -x -e .travis/wheel.configure.sh
-bash -x -e .travis/wheel.build.sh python python3 python3.5 python3.6
+bash -x -e .travis/wheel.build.sh ${PYTHON_VERSION}
