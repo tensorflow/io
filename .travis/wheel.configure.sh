@@ -7,10 +7,10 @@ if [[ $(uname) == "Darwin" ]]; then
   delocate-wheel --version
 else
   apt-get -y -qq update
-  apt-get -y -qq install software-properties-common apt-transport-https > /dev/null
+  apt-get -y -qq install software-properties-common apt-transport-https
   add-apt-repository -y ppa:deadsnakes/ppa
   apt-get -y -qq update
-  apt-get -y -qq install python3 python3.5 python3.6 > /dev/null
+  apt-get -y -qq install python3 python3.5 python3.6
 
   # Install patchelf
   curl -sSOL https://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.bz2

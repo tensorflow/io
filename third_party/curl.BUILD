@@ -237,9 +237,10 @@ cc_library(
     ],
     defines = ["CURL_STATICLIB"],
     includes = ["include"],
-    linkopts = [
-        "-lrt",
-    ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": ["-lrt"],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         "@zlib//:zlib",
