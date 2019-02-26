@@ -34,9 +34,6 @@ import sys
 import boto3
 import pytest
 
-if sys.platform == "darwin":
-  pytest.skip("kinesis is not supported on macOS yet", allow_module_level=True)
-
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
