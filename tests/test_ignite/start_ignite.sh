@@ -17,8 +17,20 @@
 IGNITE_VERSION=2.6.0
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
+if [[ "$(uname)" == "Darwin" ]]; then
+    set -e
+    curl -sSOL https://archive.apache.org/dist/ignite/${IGNITE_VERSION}/apache-ignite-fabric-${IGNITE_VERSION}-bin.zip
+    unzip -qq apache-ignite-fabric-${IGNITE_VERSION}-bin.zip
+    apache-ignite-fabric-${IGNITE_VERSION}-bin/bin/ignite.sh tests/test_ignite/config/ignite-config-plain.xml &
+    sleep 10 # Wait Apache Ignite to be started
+    apache-ignite-fabric-${IGNITE_VERSION}-bin/bin/sqlline.sh -u "jdbc:ignite:thin://127.0.0.1/" --run=tests/test_ignite/sql/init.sql
+    apache-ignite-fabric-${IGNITE_VERSION}-bin/bin/ignite.sh tests/test_ignite/config/ignite-config-igfs.xml &
+    sleep 10 # Wait Apache Ignite to be started
+    exit 0
+fi
+
 # Start Apache Ignite with plain client listener.
-docker run -itd --name ignite-plain -p 42300:10800 \
+docker run -itd --name ignite-plain -p 10800:10800 \
 -v ${SCRIPT_PATH}:/data apacheignite/ignite:${IGNITE_VERSION} /data/bin/start-plain.sh
 
 # Start Apache Ignite with IGFS.

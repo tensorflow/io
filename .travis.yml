@@ -10,15 +10,13 @@ services:
 
 install:
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
+- |
+  bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+  bash -x -e tests/test_kafka/kafka_test.sh start kafka
+  bash -x -e tests/test_ignite/start_ignite.sh
 - sudo -H python -m pip install -q -U twine --ignore-installed six
 - twine --version
 - export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
-- |
-  if [[ "$(uname)" == "Linux" ]]; then
-    bash -x -e tests/test_ignite/start_ignite.sh
-    bash -x -e tests/test_kafka/kafka_test.sh start kafka
-    bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-  fi
 
 stages:
 - build

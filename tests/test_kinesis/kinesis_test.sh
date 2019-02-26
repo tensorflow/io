@@ -22,6 +22,12 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
+if [[ $(uname) == "Darwin" ]]; then
+    pip install -q --user localstack
+    $HOME/Library/Python/2.7/bin/localstack start &
+    exit 0
+fi
+
 action=$1
 container=$2
 if [ "$action" == "start" ]; then

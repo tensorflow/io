@@ -18,7 +18,7 @@ test_succeeds("kafka_dataset() works successfully", {
 test_succeeds("ignite_dataset() works successfully", {
   skip_on_travis()
   dataset <- ignite_dataset(
-      cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300)
+      cache_name = "SQL_PUBLIC_TEST_CACHE", port = 10800)
   iterate_all_batches(dataset)
 })
 
