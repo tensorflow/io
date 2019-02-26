@@ -28,6 +28,12 @@ The `tensorflow-io` Python package could be installed with pip directly:
 $ pip install tensorflow-io
 ```
 
+People who are a little more adventurous can also try our nightly binaries:
+```
+$ pip install tensorflow-io-nightly
+```
+
+
 The related module such as Kafka could be imported with python:
 ```
 $  python
