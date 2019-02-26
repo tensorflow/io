@@ -7,7 +7,7 @@ export TFIO_DATAPATH="bazel-bin"
 
 if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq update
-  apt-get -y -qq install python python3 ffmpeg > /dev/null
+  apt-get -y -qq install python python3 ffmpeg
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   for entry in python3 python ; do
     $entry get-pip.py -q
