@@ -5,7 +5,6 @@ if [[ $(uname) == "Darwin" ]]; then
 fi
 
 bazel build \
-  --copt="-D_GLIBCXX_USE_CXX11_ABI=0" \
   --noshow_progress \
   --noshow_loading_progress \
   --verbose_failures \

@@ -19,3 +19,23 @@ if [[ $(uname) == "Linux" ]]; then
 fi
 
 run_test python
+
+if [[ ( $(uname) == "Darwin" ) || ( $(python -c 'import tensorflow as tf; print(tf.version.VERSION)') == "2.0"* ) ]]; then
+  # Skip macOS or preview build
+  exit 0
+fi
+
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install software-properties-common apt-transport-https > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+DEBIAN_FRONTEND=noninteractive add-apt-repository -y "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran35/"
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq update
+# Note: libpython-dev libpython3-dev are needed to for reticulate to see python binding
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install libpython-dev libpython3-dev > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get -y -qq install r-base > /dev/null
+echo "options(repos = c(CRAN='http://cran.rstudio.com'))" >> ~/.Rprofile
+R -e 'install.packages(c("tensorflow"), quiet = TRUE)'
+R -e 'install.packages(c("testthat", "devtools"), quiet = TRUE)'
+R -e 'install.packages(c("forge"), quiet = TRUE)'
+R -e 'library("devtools"); install_github("rstudio/tfdatasets", ref="c6fc59b", quiet = TRUE)'
+
+(cd R-package && R -e 'stopifnot(all(data.frame(devtools::test())$failed == 0L))')
