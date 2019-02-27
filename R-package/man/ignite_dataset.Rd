@@ -50,7 +50,7 @@ Ignite Binary Client Protocol.
 \examples{
 \dontrun{
 dataset <- ignite_dataset(
-    cache_name = "SQL_PUBLIC_TEST_CACHE", port = 42300) \%>\%
+    cache_name = "SQL_PUBLIC_TEST_CACHE", port = 10800) \%>\%
   dataset_repeat(1)
 
 sess <- tf$Session()
