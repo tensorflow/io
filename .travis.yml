@@ -11,9 +11,12 @@ services:
 install:
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
 - |
-  bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-  bash -x -e tests/test_kafka/kafka_test.sh start kafka
+  # Ignite probably takes more resource so start it first,
+  # otherwise it may run into issues competing with other services.
   bash -x -e tests/test_ignite/start_ignite.sh
+  bash -x -e tests/test_kafka/kafka_test.sh start kafka
+  bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+  bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
 - sudo -H python -m pip install -q -U twine --ignore-installed six
 - twine --version
 - export TENSORFLOW_INSTALL="$(python setup.py --package-version)"

@@ -19,8 +19,14 @@ from __future__ import print_function
 
 import os
 import time
+import sys
 
 import pytest
+
+if sys.platform == "darwin":
+  pytest.skip("pubsub is not supported on macOS yet", allow_module_level=True)
+
+
 from google.cloud import pubsub_v1
 
 import tensorflow

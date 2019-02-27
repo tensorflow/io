@@ -23,6 +23,16 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
+if [[ $(uname) == "Darwin" ]]; then
+    curl -sSOL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-236.0.0-darwin-x86_64.tar.gz
+    tar -xzf google-cloud-sdk-236.0.0-darwin-x86_64.tar.gz
+    google-cloud-sdk/install.sh -q
+    google-cloud-sdk/bin/gcloud -q components install beta
+    google-cloud-sdk/bin/gcloud -q components install pubsub-emulator
+    google-cloud-sdk/bin/gcloud -q beta emulators pubsub start &
+    exit 0
+fi
+
 script=$(readlink -f "$0")
 base=$(dirname "$script")
 echo running from "$base"
@@ -34,8 +44,8 @@ if [ "$action" == "start" ]; then
     docker pull google/cloud-sdk
     echo pull google/cloud-sdk successfully
     docker run -d --rm --net=host --name=$container -v $base:/v -w /v google/cloud-sdk bash -x -c 'gcloud beta emulators pubsub start'
-    echo wait 10 secs until pubsub is up and running
-    sleep 10
+    #echo wait 10 secs until pubsub is up and running
+    #sleep 10
 elif [ "$action" == "stop" ]; then
     docker rm -f $container
     echo container $container removed successfully
