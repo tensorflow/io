@@ -62,6 +62,7 @@ jobs:
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python python3.6
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
+    after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
@@ -73,6 +74,7 @@ jobs:
     script:
     - sudo -H bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python
     - sudo -H bash -x -e .travis/wheel.test.sh
+    after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
@@ -85,6 +87,7 @@ jobs:
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
     - echo "Skip test for nightly build, as it has been covered in install build"
+    after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
@@ -96,6 +99,7 @@ jobs:
     script:
     - sudo -H bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python
     - sudo -H bash -x -e .travis/wheel.test.sh
+    after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
