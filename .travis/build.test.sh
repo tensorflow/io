@@ -13,7 +13,7 @@ if [[ $(uname) == "Linux" ]]; then
     $entry get-pip.py -q
     $entry -m pip --version
     $entry -m pip install -q "${TENSORFLOW_INSTALL}"
-    $entry -m pip install -q pytest boto3 pyarrow==0.11.1 pandas==0.19.2
+    $entry -m pip install -q pytest boto3 google-cloud-pubsub pyarrow==0.11.1 pandas==0.19.2
     $entry -m pytest tests
   done
 fi
