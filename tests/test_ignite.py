@@ -18,6 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
@@ -263,7 +265,7 @@ class IgniteDatasetTest(test.TestCase):
 
     """
     self._clear_env()
-    ds = ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=42300)
+    ds = ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE", port=10800)
     self._check_dataset(ds)
 
   def test_ignite_dataset_with_plain_client_with_interleave(self):
@@ -274,7 +276,7 @@ class IgniteDatasetTest(test.TestCase):
     ds = data.Dataset.from_tensor_slices(["localhost"]).interleave(
         lambda host: ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
                                    schema_host="localhost", host=host,
-                                   port=42300), cycle_length=4, block_length=16
+                                   port=10800), cycle_length=4, block_length=16
     )
     self._check_dataset(ds)
 

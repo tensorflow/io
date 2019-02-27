@@ -25,12 +25,13 @@ import socket
 import tempfile
 import threading
 import unittest
+import pytest
 
-_have_pyarrow = not (sys.version_info[0] == 3 and sys.version_info[1] == 4)
-if _have_pyarrow:
-  import pyarrow as pa
-  from pyarrow.feather import write_feather
-_pyarrow_requirement_message = None if _have_pyarrow else "pyarrow is not supported with Python 3.4"
+if sys.version_info == (3,4):
+  pytest.skip("pyarrow is not supported with python 3.4", allow_module_level=True)
+
+import pyarrow as pa
+from pyarrow.feather import write_feather
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
@@ -161,7 +162,6 @@ class ArrowDatasetTest(test.TestCase):
     names = ["%s_[%s]" % (i, a.type) for i, a in enumerate(arrays)]
     return pa.RecordBatch.from_arrays(arrays, names)
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testArrowDataset(self):
 
     truth_data = TruthData(
@@ -194,7 +194,6 @@ class ArrowDatasetTest(test.TestCase):
         df, preserve_index=False)
     self.run_test_case(dataset, truth_data)
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testFromPandasPreserveIndex(self):
     data = [
         [1.0, 2.0, 3.0],
@@ -228,7 +227,6 @@ class ArrowDatasetTest(test.TestCase):
         df, columns=(1,), preserve_index=True)
     self.run_test_case(dataset, truth_data_selected_with_index)
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testArrowFeatherDataset(self):
 
     # Feather files currently do not support columns of list types
@@ -269,7 +267,6 @@ class ArrowDatasetTest(test.TestCase):
 
     os.unlink(f.name)
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testArrowSocketDataset(self):
 
     truth_data = TruthData(
@@ -311,7 +308,6 @@ class ArrowDatasetTest(test.TestCase):
 
     server.join()
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testBoolArrayType(self):
 
     # NOTE: need to test this seperately because to_pandas fails with
@@ -332,7 +328,6 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data)
 
-  @unittest.skipIf(not _have_pyarrow, _pyarrow_requirement_message)
   def testIncorrectColumnType(self):
     truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
         self.scalar_shapes)

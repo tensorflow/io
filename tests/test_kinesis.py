@@ -30,7 +30,9 @@ from __future__ import print_function
 from tensorflow.python.platform import test
 
 import os
+import sys
 import boto3
+import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
@@ -40,7 +42,6 @@ from tensorflow import errors
 from tensorflow.compat.v1 import data
 
 import tensorflow_io.kinesis as kinesis_io
-
 
 class KinesisDatasetTest(test.TestCase):
   """Tests for KinesisDataset."""

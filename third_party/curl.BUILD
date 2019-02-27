@@ -211,8 +211,14 @@ cc_library(
         "lib/wildcard.c",
         "lib/wildcard.h",
         "lib/x509asn1.h",
-        "lib/vtls/openssl.c",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [
+            "lib/vtls/darwinssl.c",
+        ],
+        "//conditions:default": [
+            "lib/vtls/openssl.c",
+        ],
+    }),
     hdrs = [
         "include/curl/curl.h",
         "include/curl/curlver.h",
@@ -237,9 +243,15 @@ cc_library(
     ],
     defines = ["CURL_STATICLIB"],
     includes = ["include"],
-    linkopts = [
-        "-lrt",
-    ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "-Wl,-framework",
+            "-Wl,CoreFoundation",
+            "-Wl,-framework",
+            "-Wl,Security",
+        ],
+        "//conditions:default": ["-lrt"],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         "@zlib//:zlib",

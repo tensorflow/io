@@ -135,6 +135,8 @@ cc_library(
         "src/snappy.h",
         "src/tinycthread.c",
         "src/tinycthread.h",
+        "src/tinycthread_extra.c",
+        "src/tinycthread_extra.h",
         "src/xxhash.c",
         "src/xxhash.h",
     ],
