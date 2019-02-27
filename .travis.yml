@@ -20,8 +20,7 @@ install:
 
 stages:
 - build
-- preview
-- nightly
+- release
 
 jobs:
   include:
@@ -55,10 +54,10 @@ jobs:
     before_script: *developer_build
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e script.sh
-  # Preview Builds is for TensorFlow 2.0 Preview release.
+  # Preview Release Builds are for TensorFlow 2.0 Preview release.
   # Note only Linux (Ubuntu 18.04) and macOS are supported.
-  - stage: preview
-    name: "TensorFlow 2.0 Preview Build on Linux"
+  - stage: release
+    name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python python3.6
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
@@ -67,8 +66,8 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
       fi
-  - stage: preview
-    name: "TensorFlow 2.0 Preview Build on macOS"
+  - stage: release
+    name: "TensorFlow 2.0 Preview Release Build on macOS"
     os: osx
     osx_image: xcode9
     script:
@@ -79,10 +78,10 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
       fi
-  # Release Builds is for nightly release.
+  # Release Builds are for nightly release.
   # Note Python 2.7, 3.4, 3.5, 3.6 are supported on Linux
   # for Ubuntu 14.04/16.04/18.04, and Python 2.7 for macOS.
-  - stage: nightly
+  - stage: release
     name: "Nightly Release Build on Linux"
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
@@ -92,7 +91,7 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/*.whl
       fi
-  - stage: nightly
+  - stage: release
     name: "Nightly Release Build on macOS"
     os: osx
     osx_image: xcode9
