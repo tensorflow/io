@@ -18,6 +18,8 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.video`: Video file support with FFmpeg.
 - `tensorflow_io.parquet`: Apache Parquet data format support.
 - `tensorflow_io.lmdb`: LMDB file format support.
+- `tensorflow_io.mnist`: MNIST file format support.
+- `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
 
 ## Installation
 

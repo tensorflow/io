@@ -1,3 +1,21 @@
+# Release 0.4.0
+
+## Major Features
+* `tensorflow_io.pubsub`: Google Cloud Pub/Sub Dataset support.
+* `tensorflow_io.mnist`: MNIST file format support.
+* `tensorflow_io.image`: `decode_webp` support.
+* `tensorflow_io.kafka`: `write_kafka` support.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, Jongwook Choi, Sergii Khomenko, Stephan Uphoff,
+Yong Tang, Yuan (Terry) Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.3.0
 
 ## Major Features

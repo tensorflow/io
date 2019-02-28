@@ -1,3 +1,21 @@
+# tfio 0.4.0
+
+## Major Features
+* Support Google Cloud Pub/Sub Dataset.
+* Support MNIST file format.
+* Support `decode_webp` in image.
+* Support `write_kafka` in kafka.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, Jongwook Choi, Sergii Khomenko, Stephan Uphoff,
+Yong Tang, Yuan (Terry) Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # tfio 0.3.0
 
 ## Major Features
