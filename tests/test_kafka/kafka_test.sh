@@ -29,8 +29,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     (cd kafka_2.11-0.10.1.0/ && bin/kafka-server-start.sh -daemon config/server.properties)
     echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > kafka_2.11-0.10.1.0/test
     echo Wait 15 secs until kafka is up and running
-    # Note somehow it takes longer time in Darwin
-    sleep 15
+    sleep 5
     kafka_2.11-0.10.1.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
     kafka_2.11-0.10.1.0/bin/kafka-console-producer.sh --topic test --broker-list 127.0.0.1:9092 < kafka_2.11-0.10.1.0/test
     exit 0
