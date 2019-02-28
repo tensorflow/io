@@ -43,7 +43,7 @@ arrow_feather_dataset <- function(
     output_types = output_types,
     output_shapes = output_shapes
   )
-  as_tf_dataset(dataset)
+  as_tf_dataset(dataset, "arrow_feather_dataset")
 }
 
 #' Creates a `ArrowStreamDataset`.
@@ -90,7 +90,7 @@ arrow_stream_dataset <- function(
     output_types = output_types,
     output_shapes = output_shapes
   )
-  as_tf_dataset(dataset)
+  as_tf_dataset(dataset, "arrow_stream_dataset")
 }
 
 #' Create an Arrow Dataset from the given Arrow schema.
@@ -109,13 +109,19 @@ from_schema <- function(object, ...) {
 #' Create an Arrow Dataset for reading record batches from Arrow feather files,
 #' inferring output types and shapes from the given Arrow schema.
 #'
-#' @param filenames A `tf.string` tensor, list or scalar containing files in
-#'   Arrow Feather format.
+#' @param object An \R object.
 #' @param schema Arrow schema defining the record batch data in the stream.
 #' @param columns A list of column indices to be used in the Dataset.
+#' @param host Not used.
+#' @param filenames A `tf.string` tensor, list or scalar containing files in
+#'   Arrow Feather format.
+#' @param ... Optional arguments passed on to implementing methods.
+#'
 #' @export
-from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowFeatherDataset <- function(
-  object, filenames, schema, columns = NULL) {
+from_schema.arrow_feather_dataset <- function(
+  object, schema, columns = NULL, host = NULL, filenames = NULL, ...) {
+  # TODO: Workaround for S3 generic/method consistency check
+  if (is.null(filenames)) stop('host must be specified for from_schema.arrow_stream_dataset()')
   object$from_schema(
     filenames = filenames,
     schema = schema,
@@ -126,14 +132,19 @@ from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowFeatherDataset
 #' Create an Arrow Dataset from an input stream, inferring output types and
 #' shapes from the given Arrow schema.
 #'
-#' @param host A `tf.string` tensor or string defining the input stream.
-#'   For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
+#' @param object An \R object.
 #' @param schema Arrow schema defining the record batch data in the stream.
 #' @param columns A list of column indices to be used in the Dataset.
+#' @param host A `tf.string` tensor or string defining the input stream.
+#'   For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
+#' @param filenames Not used.
+#' @param ... Optional arguments passed on to implementing methods.
 #'
 #' @export
-from_schema.tensorflow_io.arrow.python.ops.arrow_dataset_ops.ArrowStreamDataset <- function(
-  object, host, schema, columns = NULL) {
+from_schema.arrow_stream_dataset <- function(
+  object, schema, columns = NULL, host = NULL, filenames = NULL, ...) {
+  # TODO: Workaround for S3 generic/method consistency check
+  if (is.null(host)) stop('host must be specified for from_schema.arrow_stream_dataset()')
   object$from_schema(
     host = host,
     schema = schema,
