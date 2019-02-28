@@ -29,14 +29,17 @@ class _MNISTBaseDataset(data.Dataset):
   """A MNIST Dataset
   """
 
-  def __init__(self, filenames, compression_type=None):
+  def __init__(self, mnist_op_class, filenames, compression_type=None):
     """Create a MNISTReader.
 
     Args:
+      mnist_op_class: The op of the dataset, either
+          mnist_ops.mnist_image_dataset or mnist_ops.mnist_label_dataset.
       filenames: A `tf.string` tensor containing one or more filenames.
       compression_type: (Optional.) A `tf.string` scalar evaluating to one of
         `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
+    self._func = mnist_op_class
     self._filenames = tensorflow.compat.v1.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     self._compression_type = tensorflow.compat.v1.convert_to_tensor(
@@ -75,8 +78,10 @@ class MNISTImageDataset(_MNISTBaseDataset):
       compression_type: (Optional.) A `tf.string` scalar evaluating to one of
         `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
-    self._func = mnist_ops.mnist_image_dataset
-    super(MNISTImageDataset, self).__init__(filenames, compression_type=compression_type)
+    super(MNISTImageDataset, self).__init__(
+        mnist_ops.mnist_image_dataset,
+        filenames,
+        compression_type=compression_type)
 
 class MNISTLabelDataset(_MNISTBaseDataset):
   """A MNIST Label Dataset
@@ -90,5 +95,7 @@ class MNISTLabelDataset(_MNISTBaseDataset):
       compression_type: (Optional.) A `tf.string` scalar evaluating to one of
         `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
-    self._func = mnist_ops.mnist_label_dataset
-    super(MNISTLabelDataset, self).__init__(filenames, compression_type=compression_type)
+    super(MNISTLabelDataset, self).__init__(
+        mnist_ops.mnist_label_dataset,
+        filenames,
+        compression_type=compression_type)
