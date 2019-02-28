@@ -1,8 +1,8 @@
-as_tf_dataset <- function (dataset) {
+as_tf_dataset <- function (dataset, tags = NULL) {
   if (!is_dataset(dataset))
     stop("Provided dataset is not a TensorFlow Dataset")
   if (!inherits(dataset, "tf_dataset"))
-    class(dataset) <- c("tf_dataset", class(dataset))
+    class(dataset) <- c("tf_dataset", class(dataset), tags)
   dataset
 }
 
