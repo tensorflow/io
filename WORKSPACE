@@ -188,6 +188,7 @@ http_archive(
     strip_prefix = "lmdb-LMDB_0.9.22/libraries/liblmdb",
     build_file = "//third_party:lmdb.BUILD",
 )
+
 http_archive(
     name = "libtiff",
     urls = [
@@ -197,4 +198,30 @@ http_archive(
     sha256 = "2c52d11ccaf767457db0c46795d9c7d1a8d8f76f68b0b800a3dfe45786b996e4",
     strip_prefix = "tiff-4.0.10",
     build_file = "//third_party:libtiff.BUILD",
+)
+
+http_archive(
+    name = "com_github_grpc_grpc",
+    urls = [
+        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.18.0.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.18.0.tar.gz",
+    ],
+    sha256 = "069a52a166382dd7b99bf8e7e805f6af40d797cfcee5f80e530ca3fc75fd06e2",
+    strip_prefix = "grpc-1.18.0",
+)
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+grpc_deps()
+
+http_archive(
+    name = "com_google_googleapis",
+    urls = [
+        "https://mirror.bazel.build/github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
+        "https://github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
+    ],
+    sha256 = "ff903931e738b98418df9e95edeb00abe642007071dc3d579631d57957c3aa13",
+    strip_prefix = "googleapis-c911062bb7a1c41a208957bed923b8750f3b6f28",
+    patches = [
+        "//third_party:googleapis.patch",
+    ],
+    patch_args = ["-p1"],
 )
