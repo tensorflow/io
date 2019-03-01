@@ -17,7 +17,7 @@ Description: Interface to 'TensorFlow IO', Datasets and filesystem extensions ma
 License: Apache License 2.0
 URL: https://github.com/tensorflow/io
 BugReports: https://github.com/tensorflow/io/issues
-SystemRequirements: TensorFlow >= 1.13.0 (https://www.tensorflow.org/)
+SystemRequirements: TensorFlow >= 1.13.0 (https://www.tensorflow.org/) and TensorFlow IO >= 0.4.0 (https://github.com/tensorflow/io)
 Encoding: UTF-8
 LazyData: true
 Depends:
