@@ -203,11 +203,11 @@ http_archive(
 http_archive(
     name = "com_github_grpc_grpc",
     urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.18.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.18.0.tar.gz",
+        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.19.0.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.19.0.tar.gz",
     ],
-    sha256 = "069a52a166382dd7b99bf8e7e805f6af40d797cfcee5f80e530ca3fc75fd06e2",
-    strip_prefix = "grpc-1.18.0",
+    sha256 = "1d54cd95ed276c42c276e0a3df8ab33ee41968b73af14023c03a19db48f82e73",
+    strip_prefix = "grpc-1.19.0",
 )
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
