@@ -310,20 +310,15 @@ class TIFFDatasetOp : public DatasetOpKernel {
             // get the size of the tiff
             TIFFGetField(file_.Tiff(), TIFFTAG_IMAGEWIDTH, &width);
             TIFFGetField(file_.Tiff(), TIFFTAG_IMAGELENGTH, &height);
-            // get the total number of pixels
-            unsigned int npixels = width*height;
-            uint32* raster = (uint32*)_TIFFmalloc(npixels * sizeof(uint32));
-            if (!TIFFReadRGBAImageOriented(file_.Tiff(), width, height, raster, ORIENTATION_TOPLEFT, 0)) {
-              _TIFFfree(raster);
-              return errors::InvalidArgument("unable to read file: ", dataset()->filenames_[current_file_index_]);
-            }
-           // RGBA
+            // RGBA
             static const int channel = 4;
             Tensor value_tensor(ctx->allocator({}), DT_UINT8, {height, width, channel});
-            int num_bytes = npixels * sizeof(uint32);
-            std::memcpy(reinterpret_cast<char*>(value_tensor.flat<uint8_t>().data()), raster, num_bytes * sizeof(uint8_t));
+            // Tensor is aligned
+            uint32* raster = reinterpret_cast<uint32*>(value_tensor.flat<uint8_t>().data());
+            if (!TIFFReadRGBAImageOriented(file_.Tiff(), width, height, raster, ORIENTATION_TOPLEFT, 0)) {
+              return errors::InvalidArgument("unable to read file: ", dataset()->filenames_[current_file_index_]);
+            }
             out_tensors->emplace_back(std::move(value_tensor));
-            _TIFFfree(raster);
             if (!TIFFReadDirectory(file_.Tiff())) {
               ResetStreamsLocked();
               ++current_file_index_;
