@@ -59,10 +59,6 @@ class _MNISTBaseDataset(data.Dataset):
     return tensorflow.Tensor
 
   @property
-  def output_shapes(self):
-    return tensorflow.TensorShape([None, None])
-
-  @property
   def output_types(self):
     return dtypes.uint8
 
@@ -83,6 +79,11 @@ class MNISTImageDataset(_MNISTBaseDataset):
         filenames,
         compression_type=compression_type)
 
+  @property
+  def output_shapes(self):
+    return tensorflow.TensorShape([None, None])
+
+
 class MNISTLabelDataset(_MNISTBaseDataset):
   """A MNIST Label Dataset
   """
@@ -99,3 +100,7 @@ class MNISTLabelDataset(_MNISTBaseDataset):
         mnist_ops.mnist_label_dataset,
         filenames,
         compression_type=compression_type)
+
+  @property
+  def output_shapes(self):
+    return tensorflow.TensorShape([])

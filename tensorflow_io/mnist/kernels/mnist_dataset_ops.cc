@@ -210,10 +210,9 @@ class MNISTDatasetOp : public DatasetOpKernel {
           return errors::InvalidArgument("mnist image file header must starts with `0x00000803`");
         }
         index_ = 0;
-        count_ = (((int32)header[4]) << 24) | (((int32)header[5]) << 16) | (((int32)header[6]) << 8) | (((int32)header[7]));
-        rows_ = (((int32)header[8]) << 24) | (((int32)header[9]) << 16) | (((int32)header[10]) << 8) | (((int32)header[11]));
-        cols_ = (((int32)header[12]) << 24) | (((int32)header[13]) << 16) | (((int32)header[14]) << 8) | (((int32)header[15]));
-
+        count_ = (((int32)header[4] & 0xFF) << 24) | (((int32)header[5] & 0xFF) << 16) | (((int32)header[6] & 0xFF) << 8) | (((int32)header[7] & 0xFF));
+        rows_ = (((int32)header[8] & 0xFF) << 24) | (((int32)header[9] & 0xFF) << 16) | (((int32)header[10] & 0xFF) << 8) | (((int32)header[11] & 0xFF));
+        cols_ = (((int32)header[12] & 0xFF) << 24) | (((int32)header[13] & 0xFF) << 16) | (((int32)header[14] & 0xFF) << 8) | (((int32)header[15] & 0xFF));
         return Status::OK();
       }
       Status ReadRecord(IteratorContext* ctx, std::vector<Tensor>* out_tensors) override {
@@ -237,7 +236,7 @@ class MNISTDatasetOp : public DatasetOpKernel {
           return errors::InvalidArgument("mnist label file header must starts with `0x00000801`");
         }
         index_ = 0;
-        count_ = (((int32)header[4]) << 24) | (((int32)header[5]) << 16) | (((int32)header[6]) << 8) | (((int32)header[7]));
+        count_ = (((int32)header[4] & 0xFF) << 24) | (((int32)header[5] & 0xFF) << 16) | (((int32)header[6] & 0xFF) << 8) | (((int32)header[7] & 0xFF));
 
         return Status::OK();
       }
