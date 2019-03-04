@@ -43,6 +43,10 @@ class MNISTDatasetTest(test.TestCase):
 
     image_dataset = mnist_dataset_ops.MNISTImageDataset([image_filename], compression_type="GZIP")
     label_dataset = mnist_dataset_ops.MNISTLabelDataset([label_filename], compression_type="GZIP")
+
+    self.assertEqual(image_dataset.output_shapes.as_list(), [None, None])
+    self.assertEqual(label_dataset.output_shapes.as_list(), [])
+
     iterator = data.Dataset.zip((image_dataset, label_dataset)).make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()
