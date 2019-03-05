@@ -35,30 +35,39 @@ People who are a little more adventurous can also try our nightly binaries:
 $ pip install tensorflow-io-nightly
 ```
 
+The use of tensorflow-io is straightforward with keras. Below is the example
+of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+data processing replaced by tensorflow-io:
 
-The related module such as Kafka could be imported with python:
 ```
-$  python
-Python 2.7.6 (default, Nov 13 2018, 12:45:42)
-[GCC 4.8.4] on linux2
-Type "help", "copyright", "credits" or "license" for more information.
->>> import tensorflow as tf
->>> import tensorflow_io.kafka as kafka
->>>
->>> dataset = kafka.KafkaDataset(["test:0:0:4"], group="test", eof=True)
->>> iterator = dataset.make_initializable_iterator()
->>> init_op = iterator.initializer
->>> get_next = iterator.get_next()
->>>
->>> with tf.Session() as sess:
-...   print(sess.run(init_op))
-...   for i in range(5):
-...     print(sess.run(get_next))
->>>
+import tensorflow as tf
+import tensorflow_io.mnist as mnist_io
+
+# Read MNIST into tf.data.Dataset
+d_train = mnist_io.MNISTDataset(
+    'train-images-idx3-ubyte.gz',
+    'train-labels-idx1-ubyte.gz',
+    compression_type="GZIP")
+
+# By default image data is uint8 so conver to float32.
+d_train = d_train.map(lambda x, y: (tf.cast(x, tf.float32)/255.0, y)).batch(1)
+
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Flatten(input_shape=(28, 28)),
+  tf.keras.layers.Dense(512, activation=tf.nn.relu),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+])
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+model.fit(d_train, epochs=5, steps_per_epoch=10000)
 ```
 
-Note that python has to run outside of repo directory itself, otherwise python may not
-be able to find the correct path to the module.
+Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
+files are assumed to have been downloaded and saved to the local directory.
+Compression files could be processed automatically with `compression_type="GZIP"`.
 
 ### R Package
 
