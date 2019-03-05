@@ -141,6 +141,12 @@ until_out_of_range({
 })
 ```
 
+## Community
+
+* SIG IO [Google Group](https://groups.google.com/a/tensorflow.org/forum/#!forum/io) and mailing list: [io@tensorflow.org](io@tensorflow.org)
+* SIG IO [Monthly Meeting Notes](https://docs.google.com/document/d/1CB51yJxns5WA4Ylv89D-a5qReiGTC0GYum6DU-9nKGo/edit)
+* Gitter room: [tensorflow/sig-io](https://gitter.im/tensorflow/sig-io)
+
 ## License
 
 [Apache License 2.0](LICENSE)
