@@ -104,3 +104,46 @@ class MNISTLabelDataset(_MNISTBaseDataset):
   @property
   def output_shapes(self):
     return tensorflow.TensorShape([])
+
+class MNISTDataset(data.Dataset):
+  """A MNIST Dataset
+  """
+
+  def __init__(self, image, label, compression_type=None):
+    """Create a MNISTReader.
+
+    Args:
+      image: A `tf.string` tensor containing image filename.
+      label: A `tf.string` tensor containing label filename.
+      compression_type: (Optional.) A `tf.string` scalar evaluating to one of
+        `""` (no compression), `"ZLIB"`, or `"GZIP"`.
+    """
+    self._image = tensorflow.compat.v1.convert_to_tensor(
+        image, dtype=dtypes.string, name="image")
+    self._label = tensorflow.compat.v1.convert_to_tensor(
+        label, dtype=dtypes.string, name="label")
+    self._compression_type = tensorflow.compat.v1.convert_to_tensor(
+        compression_type if compression_type is not None else "",
+        dtype=dtypes.string,
+        name="compression_type")
+    super(MNISTDataset, self).__init__()
+
+  def _inputs(self):
+    return []
+
+  def _as_variant_tensor(self):
+    return data.Dataset.zip(
+        (MNISTImageDataset(self._image, self._compression_type),
+         MNISTLabelDataset(self._label, self._compression_type)))._as_variant_tensor()
+
+  @property
+  def output_shapes(self):
+    return  (tensorflow.TensorShape([None, None]), tensorflow.TensorShape([]))
+
+  @property
+  def output_classes(self):
+    return tensorflow.Tensor, tensorflow.Tensor
+
+  @property
+  def output_types(self):
+    return dtypes.uint8, dtypes.uint8
