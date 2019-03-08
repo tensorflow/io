@@ -54,6 +54,7 @@ The Avro dataset shall support
 | bytes: a sequence of 8-bit unsigned bytes | tf.string |
 | string: unicode character sequence | tf.string |
 | enum: enumeration | tf.string |
+
 **Table 1** lists the mapping of Avro primitive types to TensorFlow primitive types.
 
 The Avro dataset shall NOT support
