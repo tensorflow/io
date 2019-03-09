@@ -19,19 +19,17 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import sys
-import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow.compat.v1 import data
-from tensorflow import dtypes
-from tensorflow import errors
+from tensorflow import dtypes          # pylint: disable=wrong-import-position
+from tensorflow import errors          # pylint: disable=wrong-import-position
+from tensorflow import test            # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data  # pylint: disable=wrong-import-position
 
-import tensorflow_io.kafka as kafka_io
+import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
 
-from tensorflow import test
 
 class KafkaDatasetTest(test.TestCase):
   """Tests for KafkaDataset."""
@@ -99,7 +97,9 @@ class KafkaDatasetTest(test.TestCase):
       for _ in range(10):
         for j in range(2):
           for i in range(5):
-            self.assertEqual(("D" + str(i + j * 5)).encode(), sess.run(get_next))
+            self.assertEqual(
+                ("D" + str(i + j * 5)).encode(),
+                sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -118,14 +118,17 @@ class KafkaDatasetTest(test.TestCase):
                             sess.run(get_next))
 
   def test_write_kafka(self):
+    """test_write_kafka"""
     channel = "e{}e".format(time.time())
 
     # Start with reading test topic, replace `D` with `e(time)e`,
     # and write to test_e(time)e` topic.
-    dataset = kafka_io.KafkaDataset(topics=["test:0:0:4"], group="test", eof=True)
+    dataset = kafka_io.KafkaDataset(
+        topics=["test:0:0:4"], group="test", eof=True)
     dataset = dataset.map(
         lambda x: kafka_io.write_kafka(
-            tensorflow.strings.regex_replace(x, "D", channel), topic="test_"+channel))
+            tensorflow.strings.regex_replace(x, "D", channel),
+            topic="test_"+channel))
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()
@@ -139,7 +142,8 @@ class KafkaDatasetTest(test.TestCase):
         sess.run(get_next)
 
     # Reading from `test_e(time)e` we should get the same result
-    dataset = kafka_io.KafkaDataset(topics=["test_"+channel], group="test", eof=True)
+    dataset = kafka_io.KafkaDataset(
+        topics=["test_"+channel], group="test", eof=True)
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer
     get_next = iterator.get_next()

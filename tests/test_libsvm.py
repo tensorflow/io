@@ -22,14 +22,15 @@ import numpy as np
 
 from tensorflow import dtypes
 from tensorflow import sparse
+from tensorflow import test
 
 import tensorflow_io.libsvm as libsvm_io
 
-from tensorflow import test
 
 class DecodeLibsvmOpTest(test.TestCase):
-
-  def testBasic(self):
+  """DecodeLibsvmOpTest"""
+  def test_basic(self):
+    """test_basic"""
     with self.cached_session() as sess:
       content = [
           "1 1:3.4 2:0.5 4:0.231", "1 2:2.5 3:inf 5:0.503",
@@ -48,7 +49,8 @@ class DecodeLibsvmOpTest(test.TestCase):
           features, [[0, 3.4, 0.5, 0, 0.231, 0], [0, 0, 2.5, np.inf, 0, 0.503],
                      [0, 0.105, np.nan, 2.5, 0, 0]])
 
-  def testNDimension(self):
+  def test_n_dimension(self):
+    """test_n_dimension"""
     with self.cached_session() as sess:
       content = [["1 1:3.4 2:0.5 4:0.231", "1 1:3.4 2:0.5 4:0.231"],
                  ["1 2:2.5 3:inf 5:0.503", "1 2:2.5 3:inf 5:0.503"],

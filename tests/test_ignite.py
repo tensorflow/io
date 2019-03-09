@@ -18,20 +18,18 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
-import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow.compat.v1 import data
-from tensorflow.compat.v1 import gfile
+from tensorflow import dtypes            # pylint: disable=wrong-import-position
+from tensorflow import errors            # pylint: disable=wrong-import-position
+from tensorflow import test              # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data    # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
-import tensorflow_io.ignite as ignite_io
+import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-from tensorflow import test
 
 class IGFSTest(test.TestCase):
   """The Apache Ignite servers have to setup before the test and tear down
@@ -125,8 +123,8 @@ class IGFSTest(test.TestCase):
     self.assertTrue(gfile.Exists(src_file_name))
     self.assertTrue(gfile.Exists(dst_file_name))
     with gfile.Open(dst_file_name, mode="r") as r:
-      data = r.read()
-    self.assertEqual("42", data)
+      data_v = r.read()
+    self.assertEqual("42", data_v)
     # Remove file.
     gfile.Remove(src_file_name)
     gfile.Remove(dst_file_name)
@@ -221,8 +219,8 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(src_file_name))
     self.assertTrue(gfile.Exists(dst_file_name))
     with gfile.Open(dst_file_name, mode="r") as r:
-      data = r.read()
-    self.assertEqual("42", data)
+      data_v = r.read()
+    self.assertEqual("42", data_v)
     # Remove file.
     gfile.Remove(dst_file_name)
     # Check that file was removed.
@@ -274,9 +272,10 @@ class IgniteDatasetTest(test.TestCase):
     """
     self._clear_env()
     ds = data.Dataset.from_tensor_slices(["localhost"]).interleave(
-        lambda host: ignite_io.IgniteDataset(cache_name="SQL_PUBLIC_TEST_CACHE",
-                                   schema_host="localhost", host=host,
-                                   port=10800), cycle_length=4, block_length=16
+        lambda host: ignite_io.IgniteDataset(
+            cache_name="SQL_PUBLIC_TEST_CACHE",
+            schema_host="localhost", host=host,
+            port=10800), cycle_length=4, block_length=16
     )
     self._check_dataset(ds)
 

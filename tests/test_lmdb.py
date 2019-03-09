@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for LMDBDatasetOp."""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -23,25 +22,24 @@ import shutil
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
+from tensorflow import errors # pylint: disable=wrong-import-position
+from tensorflow import test   # pylint: disable=wrong-import-position
 
-from tensorflow import dtypes
-from tensorflow import errors
-
-import tensorflow_io.lmdb as lmdb_io
-
-from tensorflow import test
+import tensorflow_io.lmdb as lmdb_io # pylint: disable=wrong-import-position
 
 
 class LMDBDatasetTest(test.TestCase):
+  """LMDBDatasetTest"""
 
-  def setUp(self):
+  def test_read_from_file(self):
+    """test_read_from_file"""
     super(LMDBDatasetTest, self).setUp()
     # Copy database out because we need the path to be writable to use locks.
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
     self.db_path = os.path.join(self.get_temp_dir(), "data.mdb")
     shutil.copy(path, self.db_path)
 
-  def testReadFromFile(self):
     filename = self.db_path
 
     num_repeats = 2

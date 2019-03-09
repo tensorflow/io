@@ -103,7 +103,7 @@ if '--package-version' in sys.argv:
   sys.exit(0)
 
 # Note: import setuptools later to avoid unnecessary dependency
-from setuptools import sandbox
+from setuptools import sandbox # pylint: disable=wrong-import-position
 
 if '--nightly' in sys.argv:
   nightly_idx = sys.argv.index('--nightly')
@@ -129,7 +129,9 @@ print("setup.py - create {}/MANIFEST.in".format(rootpath))
 with open(os.path.join(rootpath, "MANIFEST.in"), "w") as f:
   f.write("recursive-include tensorflow_io *.so")
 
-print("setup.py - create {}/setup.py with required = '{}', project_name = '{}' and __version__ = {}".format(rootpath, package, project, version))
+print("setup.py - create {}/setup.py with required = '{}', "
+      "project_name = '{}' and __version__ = {}".format(
+          rootpath, package, project, version))
 with open(os.path.join(rootpath, "setup.py"), "w") as f:
   f.write(content.format(package, version, project))
 
@@ -143,21 +145,27 @@ else:
   datapath = os.environ.get('TFIO_DATAPATH')
 
 if datapath is not None:
-  for rootname, _, filenames in os.walk(os.path.join(datapath, "tensorflow_io")):
-    if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(rootname, "*runfiles*"):
+  for rootname, _, filenames in os.walk(
+      os.path.join(datapath, "tensorflow_io")):
+    if (not fnmatch.fnmatch(rootname, "*test*") and
+        not fnmatch.fnmatch(rootname, "*runfiles*")):
       for filename in fnmatch.filter(filenames, "*.so"):
         src = os.path.join(rootname, filename)
-        dst = os.path.join(rootpath, os.path.relpath(os.path.join(rootname, filename), datapath))
+        dst = os.path.join(
+            rootpath,
+            os.path.relpath(os.path.join(rootname, filename), datapath))
         print("setup.py - copy {} to {}".format(src, dst))
         shutil.copyfile(src, dst)
 
-print("setup.py - run sandbox.run_setup {} {}".format(os.path.join(rootpath, "setup.py"), sys.argv[1:]))
+print("setup.py - run sandbox.run_setup {} {}".format(
+    os.path.join(rootpath, "setup.py"), sys.argv[1:]))
 sandbox.run_setup(os.path.join(rootpath, "setup.py"), sys.argv[1:])
 
 if not os.path.exists("dist"):
   os.makedirs("dist")
 for f in os.listdir(os.path.join(rootpath, "dist")):
-  print("setup.py - copy {} to {}".format(os.path.join(rootpath, "dist", f), os.path.join("dist", f)))
+  print("setup.py - copy {} to {}".format(
+      os.path.join(rootpath, "dist", f), os.path.join("dist", f)))
   shutil.copyfile(os.path.join(rootpath, "dist", f), os.path.join("dist", f))
 print("setup.py - remove {}".format(rootpath))
 shutil.rmtree(rootpath)

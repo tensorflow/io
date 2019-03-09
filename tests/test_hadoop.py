@@ -23,16 +23,15 @@ import os
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow.compat.v1 import data
-from tensorflow.compat.v1 import resource_loader
+from tensorflow import errors                    # pylint: disable=wrong-import-position
+from tensorflow import test                      # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data            # pylint: disable=wrong-import-position
 
-import tensorflow_io.hadoop as hadoop_io
+import tensorflow_io.hadoop as hadoop_io         # pylint: disable=wrong-import-position
 
-from tensorflow import test
 
 class SequenceFileDatasetTest(test.TestCase):
+  """SequenceFileDatasetTest"""
 
   def test_sequence_file_dataset(self):
     """Test case for SequenceFileDataset.
@@ -43,7 +42,8 @@ class SequenceFileDatasetTest(test.TestCase):
     value = VALUEXXX
     where XXX is replaced as the line number (starts with 001).
     """
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_hadoop", "string.seq")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_hadoop", "string.seq")
 
     num_repeats = 2
 

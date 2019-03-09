@@ -24,9 +24,9 @@ from tensorflow_io import _load_library
 parquet_ops = _load_library('_parquet_ops.so')
 
 if hasattr(tensorflow, "nest"):
-  from tensorflow import nest
+  from tensorflow import nest # pylint: disable=ungrouped-imports
 else:
-  from tensorflow.python.data.util import nest
+  from tensorflow.python.data.util import nest # pylint: disable=ungrouped-imports
 
 class ParquetDataset(data.Dataset):
   """A Parquet Dataset that reads the parquet file."""
@@ -69,8 +69,8 @@ class ParquetDataset(data.Dataset):
 
   def _as_variant_tensor(self):
     return parquet_ops.parquet_dataset(self._filenames, self._columns,
-                                           nest.flatten(self.output_types),
-                                           nest.flatten(self.output_shapes))
+                                       nest.flatten(self.output_types),
+                                       nest.flatten(self.output_shapes))
 
   @property
   def output_classes(self):
