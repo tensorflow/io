@@ -24,34 +24,34 @@ import sys
 import socket
 import tempfile
 import threading
-import unittest
 import pytest
-
-if sys.version_info == (3,4):
-  pytest.skip("pyarrow is not supported with python 3.4", allow_module_level=True)
-
-import pyarrow as pa
-from pyarrow.feather import write_feather
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow.compat.v1 import data
+from tensorflow import dtypes # pylint: disable=wrong-import-position
+from tensorflow import errors # pylint: disable=wrong-import-position
+from tensorflow import test   # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
-import tensorflow_io.arrow as arrow_io
+import tensorflow_io.arrow as arrow_io # pylint: disable=wrong-import-position
 
-from tensorflow import test
+if sys.version_info == (3, 4):
+  pytest.skip(
+      "pyarrow is not supported with python 3.4", allow_module_level=True)
+
+import pyarrow as pa  # pylint: disable=wrong-import-position
+from pyarrow.feather import write_feather # pylint: disable=wrong-import-position
+
 
 TruthData = namedtuple("TruthData", ["data", "output_types", "output_shapes"])
 
 
 class ArrowDatasetTest(test.TestCase):
-
+  """ArrowDatasetTest"""
   @classmethod
-  def setUpClass(cls):
-
+  def setUpClass(cls): # pylint: disable=invalid-name
+    """setUpClass"""
     cls.scalar_data = [
         [True, False, True, True],
         [1, 2, -3, 4],
@@ -101,6 +101,7 @@ class ArrowDatasetTest(test.TestCase):
         [tensorflow.TensorShape([None]) for _ in cls.list_dtypes])
 
   def run_test_case(self, dataset, truth_data):
+    """run_test_case"""
     iterator = data.make_one_shot_iterator(dataset)
     next_element = iterator.get_next()
 
@@ -124,6 +125,7 @@ class ArrowDatasetTest(test.TestCase):
               self.assertListEqual(value[i].tolist(), truth_data.data[col][row])
 
   def get_arrow_type(self, dt, is_list):
+    """get_arrow_type"""
     if dt == dtypes.bool:
       arrow_type = pa.bool_()
     elif dt == dtypes.int8:
@@ -153,17 +155,18 @@ class ArrowDatasetTest(test.TestCase):
     if is_list:
       arrow_type = pa.list_(arrow_type)
     return arrow_type
- 
+
   def make_record_batch(self, truth_data):
     arrays = [pa.array(truth_data.data[col],
-                  type=self.get_arrow_type(truth_data.output_types[col],
-                  truth_data.output_shapes[col].ndims == 1))
+                       type=self.get_arrow_type(
+                           truth_data.output_types[col],
+                           truth_data.output_shapes[col].ndims == 1))
               for col in range(len(truth_data.output_types))]
     names = ["%s_[%s]" % (i, a.type) for i, a in enumerate(arrays)]
     return pa.RecordBatch.from_arrays(arrays, names)
 
-  def testArrowDataset(self):
-
+  def test_arrow_dataset(self):
+    """test_arrow_dataset"""
     truth_data = TruthData(
         self.scalar_data + self.list_data,
         self.scalar_dtypes + self.list_dtypes,
@@ -194,14 +197,15 @@ class ArrowDatasetTest(test.TestCase):
         df, preserve_index=False)
     self.run_test_case(dataset, truth_data)
 
-  def testFromPandasPreserveIndex(self):
-    data = [
+  def test_from_pandas_preserve_index(self):
+    """test_from_pandas_preserve_index"""
+    data_v = [
         [1.0, 2.0, 3.0],
         [0.2, 0.4, 0.8],
     ]
 
     truth_data = TruthData(
-        data,
+        data_v,
         (dtypes.float32, dtypes.float32),
         (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
 
@@ -227,11 +231,11 @@ class ArrowDatasetTest(test.TestCase):
         df, columns=(1,), preserve_index=True)
     self.run_test_case(dataset, truth_data_selected_with_index)
 
-  def testArrowFeatherDataset(self):
-
+  def test_arrow_feather_dataset(self):
+    """test_arrow_feather_dataset"""
     # Feather files currently do not support columns of list types
     truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
-        self.scalar_shapes)
+                           self.scalar_shapes)
 
     batch = self.make_record_batch(truth_data)
     df = batch.to_pandas()
@@ -267,8 +271,8 @@ class ArrowDatasetTest(test.TestCase):
 
     os.unlink(f.name)
 
-  def testArrowSocketDataset(self):
-
+  def test_arrow_socket_dataset(self):
+    """test_arrow_socket_dataset"""
     truth_data = TruthData(
         self.scalar_data + self.list_data,
         self.scalar_dtypes + self.list_dtypes,
@@ -308,12 +312,13 @@ class ArrowDatasetTest(test.TestCase):
 
     server.join()
 
-  def testBoolArrayType(self):
-
-    # NOTE: need to test this seperately because to_pandas fails with
-    # ArrowNotImplementedError:
-    #   Not implemented type for list in DataFrameBlock: bool
-    # see https://issues.apache.org/jira/browse/ARROW-4370
+  def test_bool_array_type(self):
+    """
+    NOTE: need to test this seperately because to_pandas fails with
+    ArrowNotImplementedError:
+      Not implemented type for list in DataFrameBlock: bool
+    see https://issues.apache.org/jira/browse/ARROW-4370
+    """
     truth_data = TruthData(
         [[[False, False], [False, True], [True, False], [True, True]]],
         (dtypes.bool,),
@@ -328,9 +333,10 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data)
 
-  def testIncorrectColumnType(self):
+  def test_incorrect_column_type(self):
+    """test_incorrect_column_type"""
     truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
-        self.scalar_shapes)
+                           self.scalar_shapes)
     batch = self.make_record_batch(truth_data)
 
     dataset = arrow_io.ArrowDataset(

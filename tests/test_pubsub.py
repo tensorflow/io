@@ -20,25 +20,22 @@ from __future__ import print_function
 import os
 import time
 import sys
+from google.cloud import pubsub_v1
 
 import pytest
-
-if sys.platform == "darwin":
-  pytest.skip("pubsub is not supported on macOS yet", allow_module_level=True)
-
-
-from google.cloud import pubsub_v1
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow.compat.v1 import data
-from tensorflow import dtypes
-from tensorflow import errors
+from tensorflow import dtypes         # pylint: disable=wrong-import-position
+from tensorflow import errors         # pylint: disable=wrong-import-position
+from tensorflow import test           # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
-from tensorflow import test
+from tensorflow_io.pubsub.python.ops import pubsub_dataset_ops # pylint: disable=wrong-import-position
 
-from tensorflow_io.pubsub.python.ops import pubsub_dataset_ops
+if sys.platform == "darwin":
+  pytest.skip("pubsub is not supported on macOS yet", allow_module_level=True)
 
 class PubSubDatasetTest(test.TestCase):
   """Tests for PubSubDataset."""
@@ -52,57 +49,78 @@ class PubSubDatasetTest(test.TestCase):
   #
   # To team down the Pubsub server:
   # $ bash pubsub_test.sh stop pubsub
-  def setUp(self):
+  def setUp(self): # pylint: disable=invalid-name
+    """setUp"""
     super(PubSubDatasetTest, self).setUp()
 
     self._channel = "e{}e".format(time.time())
 
     os.environ['PUBSUB_EMULATOR_HOST'] = 'localhost:8085'
     publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path("pubsub-project", "pubsub_topic_"+self._channel)
-    topic = publisher.create_topic(topic_path)
+    topic_path = publisher.topic_path(
+        "pubsub-project", "pubsub_topic_"+self._channel)
+    publisher.create_topic(topic_path)
     # print('Topic created: {}'.format(topic))
     subscriber = pubsub_v1.SubscriberClient()
     for i in range(4):
-      subscription_path = subscriber.subscription_path("pubsub-project", "pubsub_subscription_{}_{}".format(self._channel, i))
-      subscription = subscriber.create_subscription(subscription_path, topic_path)
-    # print('Subscription created: {}'.format(subscription))
+      subscription_path = subscriber.subscription_path(
+          "pubsub-project",
+          "pubsub_subscription_{}_{}".format(self._channel, i))
+      subscription = subscriber.create_subscription(
+          subscription_path, topic_path)
+      print('Subscription created: {}'.format(subscription))
     for n in range(0, 10):
-      data = u'Message number {}'.format(n)
+      data_v = u'Message number {}'.format(n)
       # Data must be a bytestring
-      data = data.encode('utf-8')
+      data_v = data_v.encode('utf-8')
       # When you publish a message, the client returns a future.
-      future = publisher.publish(topic_path, data=data)
-      print('Published {} of message ID {}.'.format(data, future.result()))
+      future = publisher.publish(topic_path, data=data_v)
+      print('Published {} of message ID {}.'.format(data_v, future.result()))
     print('Published messages.')
 
   def test_pubsub_dataset(self):
     """Tests for PubSubDataset."""
-    subscriptions = tensorflow.compat.v1.placeholder(dtypes.string, shape=[None])
-    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
-    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    subscriptions = tensorflow.compat.v1.placeholder(
+        dtypes.string, shape=[None])
+    num_epochs = tensorflow.compat.v1.placeholder(
+        dtypes.int64, shape=[])
+    batch_size = tensorflow.compat.v1.placeholder(
+        dtypes.int64, shape=[])
 
     repeat_dataset = pubsub_dataset_ops.PubSubDataset(
-            subscriptions, server="http://localhost:8085", eof=True).repeat(num_epochs)
+        subscriptions,
+        server="http://localhost:8085",
+        eof=True).repeat(num_epochs)
     batch_dataset = repeat_dataset.batch(batch_size)
 
     iterator = data.Iterator.from_structure(batch_dataset.output_types)
     init_op = iterator.make_initializer(repeat_dataset)
-    init_batch_op = iterator.make_initializer(batch_dataset)
     get_next = iterator.get_next()
 
     with self.cached_session() as sess:
       # Basic test: read from subscription 0.
-      sess.run(init_op, feed_dict={subscriptions: ["projects/pubsub-project/subscriptions/pubsub_subscription_"+self._channel+"_0"], num_epochs: 1})
+      sess.run(init_op, feed_dict={
+          subscriptions: [
+              "projects/pubsub-project/"
+              "subscriptions/pubsub_subscription_"+self._channel+"_0"],
+          num_epochs: 1})
       for i in range(10):
-        self.assertEqual(("Message number " + str(i)).encode(), sess.run(get_next))
+        self.assertEqual(
+            ("Message number " + str(i)).encode(),
+            sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
       # Basic test: read from subscription 1.
-      sess.run(init_op, feed_dict={subscriptions: ["projects/pubsub-project/subscriptions/pubsub_subscription_"+self._channel+"_1"], num_epochs: 1})
+      sess.run(init_op, feed_dict={
+          subscriptions: [
+              "projects/pubsub-project/"
+              "subscriptions/pubsub_subscription_"+self._channel+"_1"],
+          num_epochs: 1})
       for i in range(10):
-        self.assertEqual(("Message number " + str(i)).encode(), sess.run(get_next))
+        self.assertEqual(
+            ("Message number " + str(i)).encode(),
+            sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -110,12 +128,17 @@ class PubSubDatasetTest(test.TestCase):
       sess.run(
           init_op,
           feed_dict={
-              subscriptions: ["projects/pubsub-project/subscriptions/pubsub_subscription_"+self._channel+"_2", "projects/pubsub-project/subscriptions/pubsub_subscription_"+self._channel+"_3"],
-              num_epochs: 1
-          })
-      for j in range(2):
+              subscriptions: [
+                  "projects/pubsub-project/"
+                  "subscriptions/pubsub_subscription_"+self._channel+"_2",
+                  "projects/pubsub-project/"
+                  "subscriptions/pubsub_subscription_"+self._channel+"_3"],
+              num_epochs: 1})
+      for _ in range(2):
         for i in range(10):
-          self.assertEqual(("Message number " + str(i)).encode(), sess.run(get_next))
+          self.assertEqual(
+              ("Message number " + str(i)).encode(),
+              sess.run(get_next))
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 

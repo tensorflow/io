@@ -25,7 +25,8 @@ import tensorflow
 from tensorflow import errors
 
 def _load_library(filename, lib="op"):
-  f = inspect.getfile(sys._getframe(1))
+  """_load_library"""
+  f = inspect.getfile(sys._getframe(1)) # pylint: disable=protected-access
 
   # Construct filename
   f = os.path.join(os.path.dirname(f), filename)
@@ -36,12 +37,13 @@ def _load_library(filename, lib="op"):
   datapath = os.environ.get('TFIO_DATAPATH')
   if datapath is not None:
     # Build filename from `datapath` + `package_name` + `relpath_to_library`
-    f = os.path.join(datapath, __name__, os.path.relpath(f, os.path.dirname(__file__)))
-    filenames.append(f);
+    f = os.path.join(
+        datapath, __name__, os.path.relpath(f, os.path.dirname(__file__)))
+    filenames.append(f)
 
   # Function to load the library, return True if file system library is loaded
   load_fn = tensorflow.load_op_library if lib == "op" \
-      else lambda f: tensorflow.compat.v1.load_file_system_library(f) == None
+      else lambda f: tensorflow.compat.v1.load_file_system_library(f) is None
 
   # Try to load all paths for file, fail if none succeed
   errs = []
@@ -52,5 +54,6 @@ def _load_library(filename, lib="op"):
         return l
     except errors.NotFoundError as e:
       errs.append(str(e))
-  raise NotImplementedError("unable to open file: " +
+  raise NotImplementedError(
+      "unable to open file: " +
       "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))

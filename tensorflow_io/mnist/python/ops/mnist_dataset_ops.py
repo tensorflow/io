@@ -17,8 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -132,9 +130,10 @@ class MNISTDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return data.Dataset.zip(
+    return data.Dataset.zip( # pylint: disable=protected-access
         (MNISTImageDataset(self._image, self._compression_type),
-         MNISTLabelDataset(self._label, self._compression_type)))._as_variant_tensor()
+         MNISTLabelDataset(self._label, self._compression_type))
+        )._as_variant_tensor()
 
   @property
   def output_shapes(self):

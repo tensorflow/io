@@ -17,8 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -50,7 +48,7 @@ class WebPDataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([None, None, None]))
+    return tensorflow.TensorShape([None, None, None])
 
   @property
   def output_types(self):
@@ -80,7 +78,7 @@ class TIFFDataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([None, None, None]))
+    return tensorflow.TensorShape([None, None, None])
 
   @property
   def output_types(self):

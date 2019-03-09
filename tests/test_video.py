@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
+"""test_video.py"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,22 +21,25 @@ import os
 import sys
 import pytest
 
-if sys.platform == "darwin":
-  pytest.skip("video is not supported on macOS yet", allow_module_level=True)
-
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow import image
-from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions
-import tensorflow_io.video as video_io
+from tensorflow import errors # pylint: disable=wrong-import-position
+from tensorflow import image  # pylint: disable=wrong-import-position
+from tensorflow.keras.applications.resnet50 import ResNet50 # pylint: disable=wrong-import-position
+from tensorflow.keras.applications.resnet50 import preprocess_input, decode_predictions # pylint: disable=wrong-import-position
 
-video_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
+if sys.platform == "darwin":
+  pytest.skip("video is not supported on macOS yet", allow_module_level=True)
 
-@pytest.mark.skipif(not (hasattr(tensorflow, "version") and tensorflow.version.VERSION.startswith("2.0.")), reason=None)
+import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
+
+video_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
+
+@pytest.mark.skipif(
+    not (hasattr(tensorflow, "version") and
+         tensorflow.version.VERSION.startswith("2.0.")), reason=None)
 def test_video_predict():
   model = ResNet50(weights='imagenet')
   x = video_io.VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize(x, (224, 224))))
@@ -44,6 +48,7 @@ def test_video_predict():
   assert len(p) == 166
 
 def test_video_dataset():
+  """test_video_dataset"""
   num_repeats = 2
 
   dataset = video_io.VideoDataset([video_path]).repeat(num_repeats)
