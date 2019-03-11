@@ -107,7 +107,7 @@ class GIFDataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([None, None, None]))
+    return tensorflow.TensorShape([None, None, None])
 
   @property
   def output_types(self):

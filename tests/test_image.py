@@ -139,15 +139,17 @@ class ImageDatasetTest(test.TestCase):
 
   def test_gif_file_dataset(self):
     """Test case for GIFFDataset.
-    
-    Image is taken from WIKI (Newton's Cradle: Newtons_cradle_animation_book_2.gif):
+
+    Image is taken from WIKI
+    (Newton's Cradle: Newtons_cradle_animation_book_2.gif):
     https://en.wikipedia.org/wiki/GIF
     """
     height = 360
     width = 480
     channel = 3
 
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "cradle.gif")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "cradle.gif")
     with open(filename, 'rb') as f:
       gif_contents = f.read()
     with self.cached_session():
