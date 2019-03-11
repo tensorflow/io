@@ -49,4 +49,27 @@ REGISTER_OP("DecodeWebP")
       return Status::OK();
     });
 
+REGISTER_OP("ImageInputSequence")
+    .Input("filenames: string")
+    .Output("sequence: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("ImageInputSequenceCount")
+    .Input("sequence: resource")
+    .Output("count: int64")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("ImageInputSequenceType")
+    .Input("sequence: resource")
+    .Output("type: string")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({-1}));
+       return Status::OK();
+     });
+
 }  // namespace tensorflow

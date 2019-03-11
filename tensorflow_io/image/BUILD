@@ -5,9 +5,14 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = 'python/ops/_image_ops.so',
     srcs = [
+        "kernels/image_ops.h",
+        "kernels/image_ops.cc",
         "kernels/webp_dataset_ops.cc",
         "kernels/tiff_dataset_ops.cc",
         "ops/dataset_ops.cc",
+    ],
+    includes = [
+        ".",
     ],
     linkshared = 1,
     deps = [

@@ -18,11 +18,10 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 #include "tiff.h"
 #include "tiffio.h"
+#include "kernels/image_ops.h"
 
 namespace tensorflow {
 namespace data {
-namespace {
-
 extern "C" {
   static tmsize_t tiffclient_read(thandle_t handle, void* buf, tmsize_t tsize);
   static tmsize_t tiffclient_write(thandle_t handle, void* buf, tmsize_t tsize);
@@ -31,63 +30,6 @@ extern "C" {
   static toff_t tiffclient_size(thandle_t handle);
   static int tiffclient_map(thandle_t handle, void** base, toff_t* tsize);
   static void tiffclient_unmap(thandle_t handle, void* base, toff_t tsize);
-}
-
-
-// Base object for wrapping TIFFClientOpen file operation callbacks
-
-class TiffFileBase {
-  std::unique_ptr<TIFF, decltype(&TIFFClose)> tif_;
-
- public:
-  TIFF* Tiff() { return tif_.get(); }
-
-  TiffFileBase() :  tif_(nullptr, TIFFClose) {}
-  virtual ~TiffFileBase() {}
-
- protected:
-  Status ClientOpen(const char *name, const char* mode) {
-    auto tif = TIFFClientOpen(name, mode, this,
-                          tiffclient_read,
-                          tiffclient_write,
-                          tiffclient_seek,
-                          tiffclient_close,
-                          tiffclient_size,
-                          tiffclient_map,
-                          tiffclient_unmap);
-
-    if (tif == NULL) {
-      return errors::InvalidArgument("unable to open file:", name);
-    }
-
-    tif_.reset(tif);
-    return Status::OK();
-  }
-
-
-  void ClientClose() {tif_.reset(); }
-
- protected:
-  virtual size_t  TiffClientRead(void*, size_t) { return 0;}
-  virtual size_t  TiffClientWrite(void*, size_t) { return 0; }
-  virtual off_t   TiffClientSeek(off_t offset, int whence) = 0;
-  virtual int     TiffClientClose() { return 0;}
-  virtual off_t   TiffClientSize() = 0;
-  virtual int     TiffClientMap(void** base, off_t* size) { return 0;}
-  virtual void    TiffClientUnmap(void* base, off_t size) {}
-
-  friend tmsize_t tiffclient_read(thandle_t handle, void* buf, tmsize_t tsize);
-  friend tmsize_t tiffclient_write(thandle_t handle, void* buf, tmsize_t tsize);
-  friend toff_t tiffclient_seek(thandle_t handle, toff_t toffset, int whence);
-  friend int tiffclient_close(thandle_t handle);
-  friend toff_t tiffclient_size(thandle_t handle);
-  friend int tiffclient_map(thandle_t handle, void** base, toff_t* tsize);
-  friend void tiffclient_unmap(thandle_t handle, void* base, toff_t tsize);
-};
-
-
-
-extern "C"  {
 
 static tmsize_t
 tiffclient_read(thandle_t handle, void* buf, tmsize_t tsize) {
@@ -148,51 +90,23 @@ tiffclient_unmap(thandle_t handle, void* base, toff_t tsize) {
 
 }  //  extern "C"
 
-// Use RandomAccessFile for tiff file system operation callbacks
-class TiffRandomFile : public TiffFileBase {
- public:
-  TiffRandomFile() {}
-  ~TiffRandomFile() override  {
-    Close();
+Status TiffFileBase::ClientOpen(const char *name, const char* mode) {
+  auto tif = TIFFClientOpen(name, mode, this,
+                        tiffclient_read,
+                        tiffclient_write,
+                        tiffclient_seek,
+                        tiffclient_close,
+                        tiffclient_size,
+                        tiffclient_map,
+                        tiffclient_unmap);
+
+  if (tif == NULL) {
+    return errors::InvalidArgument("unable to open file:", name);
   }
 
-  Status Open(Env *env, const string& filename) {
-    // Open Random access file
-    std::unique_ptr<RandomAccessFile> file;
-    TF_RETURN_IF_ERROR(env->NewRandomAccessFile(filename, &file));
-    // Read Size and hope we get same file as above
-    uint64 size = 0;
-    TF_RETURN_IF_ERROR(env->GetFileSize(filename, &size));
-    // Open Tiff
-    fileSize_ = static_cast<off_t>(size);
-    offset_ = 0;
-    file_ = std::move(file);
-    Status s = ClientOpen(filename.c_str(), "rm");
-    if (!s.ok()) {
-      file_.reset();
-    }
-    return s;
-  }
-
-  bool IsOpen() {
-    return static_cast<bool>(file_);
-  }
-
-  void Close() {
-    ClientClose();
-    file_.reset();
-  }
-
- private:
-  size_t  TiffClientRead(void*, size_t) override;
-  off_t   TiffClientSeek(off_t offset, int whence) override;
-  int     TiffClientClose() override;
-  off_t   TiffClientSize() override;
-
-  std::unique_ptr<RandomAccessFile> file_;
-  off_t fileSize_;
-  off_t offset_;
-};
+  tif_.reset(tif);
+  return Status::OK();
+}
 
 size_t TiffRandomFile::TiffClientRead(void* data, size_t n) {
   StringPiece result;
@@ -383,6 +297,5 @@ class TIFFDatasetOp : public DatasetOpKernel {
 REGISTER_KERNEL_BUILDER(Name("TIFFDataset").Device(DEVICE_CPU),
                         TIFFDatasetOp);
 
-}  // namespace
 }  // namespace data
 }  // namespace tensorflow

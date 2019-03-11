@@ -98,3 +98,15 @@ def decode_webp(contents, name=None):
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
   return image_ops.decode_web_p(contents, name=name)
+
+class ImageInputSequence:
+  def __init__(self, filenames):
+    self._filenames = tensorflow.convert_to_tensor(
+        filenames, dtype=dtypes.string, name="filenames")
+    self._resource = image_ops.image_input_sequence(filenames=filenames)
+
+  def count(self):
+    return image_ops.image_input_sequence_count(self._resource)
+
+  def type(self):
+    return image_ops.image_input_sequence_type(self._resource)
