@@ -137,5 +137,38 @@ class ImageDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_gif_file_dataset(self):
+    """Test case for GIFFDataset.
+    
+    Image is taken from WIKI (Newton's Cradle: Newtons_cradle_animation_book_2.gif):
+    https://en.wikipedia.org/wiki/GIF
+    """
+    height = 360
+    width = 480
+    channel = 3
+
+    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "cradle.gif")
+    with open(filename, 'rb') as f:
+      gif_contents = f.read()
+    with self.cached_session():
+      image_p = image.decode_gif(gif_contents)
+      image_v = image_p.eval()
+      self.assertEqual(image_v.shape, (36, height, width, channel))
+
+    num_repeats = 2
+
+    dataset = image_io.GIFDataset([filename]).repeat(num_repeats)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):
+        for i in range(36):
+          v = sess.run(get_next)
+          self.assertAllEqual(image_v[i], v)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
 if __name__ == "__main__":
   test.main()

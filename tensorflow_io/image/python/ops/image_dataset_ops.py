@@ -84,6 +84,35 @@ class TIFFDataset(data.Dataset):
   def output_types(self):
     return dtypes.uint8
 
+class GIFDataset(data.Dataset):
+  """A GIF Image File Dataset that reads the GIF file."""
+
+  def __init__(self, filenames):
+    """Create a `GIFDataset`.
+      filenames: A `tf.string` tensor containing one or more filenames.
+    """
+    self._filenames = tensorflow.convert_to_tensor(
+        filenames, dtype=dtypes.string, name="filenames")
+    super(GIFDataset, self).__init__()
+
+  def _inputs(self):
+    return []
+
+  def _as_variant_tensor(self):
+    return image_ops.gif_dataset(self._filenames)
+
+  @property
+  def output_classes(self):
+    return tensorflow.Tensor
+
+  @property
+  def output_shapes(self):
+    return (tensorflow.TensorShape([None, None, None]))
+
+  @property
+  def output_types(self):
+    return dtypes.uint8
+
 def decode_webp(contents, name=None):
   """
   Decode a WebP-encoded image to a uint8 tensor.

@@ -225,3 +225,14 @@ http_archive(
     ],
     patch_args = ["-p1"],
 )
+
+http_archive(
+    name = "giflib",
+    urls = [
+        "https://mirror.bazel.build/ufpr.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
+        "http://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
+    ],
+    sha256 = "34a7377ba834397db019e8eb122e551a49c98f49df75ec3fcc92b9a794a4f6d1",
+    strip_prefix = "giflib-5.1.4",
+    build_file = "//third_party:giflib.BUILD",
+)
