@@ -32,6 +32,18 @@ import tensorflow_io.image as image_io
 
 from tensorflow import test
 
+def test_image_input_sequence():
+  webp_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+  tiff_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
+
+  seq = image_io.ImageInputSequence([webp_filename, tiff_filename])
+  seq_count = seq.count()
+  seq_type = seq.type()
+  # One frame for sample.webp, 5 frames for small.tiff
+  with tensorflow.compat.v1.Session() as sess:
+    assert sess.run(seq_count) == 6
+    assert (sess.run(seq_type) == ["webp", "tiff", "tiff", "tiff", "tiff", "tiff"]).all()
+
 class ImageDatasetTest(test.TestCase):
 
   def test_decode_webp(self):
