@@ -22,11 +22,16 @@ install:
 - export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
 
 stages:
+- lint
 - build
 - release
 
 jobs:
   include:
+  - stage: lint
+    name: "Lint"
+    script:
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
   # Install Builds make sure the release of the repo could be
   # install and run on commodity user environment (Ubuntu 16.04/18.04).
   # Note the release of the repo build on Ubuntu 14.04.

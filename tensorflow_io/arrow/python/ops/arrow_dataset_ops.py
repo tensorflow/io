@@ -27,9 +27,9 @@ from tensorflow_io import _load_library
 arrow_ops = _load_library('_arrow_ops.so')
 
 if hasattr(tensorflow, "nest"):
-  from tensorflow import nest
+  from tensorflow import nest # pylint: disable=ungrouped-imports
 else:
-  from tensorflow.python.data.util import nest
+  from tensorflow.python.data.util import nest # pylint: disable=ungrouped-imports
 
 
 def arrow_to_tensor_type(pa_t):
