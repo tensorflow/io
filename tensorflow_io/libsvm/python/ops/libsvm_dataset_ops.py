@@ -3,10 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from functools import partial
-
-import tensorflow
-from tensorflow import dtypes
 from tensorflow import sparse
 from tensorflow_io import _load_library
 gen_libsvm_ops = _load_library('_libsvm_ops.so')
@@ -44,8 +40,10 @@ def make_libsvm_dataset(file_names,
   Args:
     file_names: A `tf.string` tensor containing one or more filenames.
     num_features: The number of features.
-    dtype(Optional): The type of the output feature tensor. Default to tf.float32.
-    label_dtype(Optional): The type of the output label tensor. Default to tf.int64.
+    dtype(Optional): The type of the output feature tensor.
+      Default to tf.float32.
+    label_dtype(Optional): The type of the output label tensor.
+      Default to tf.int64.
     batch_size: (Optional.) An int representing the number of records to combine
       in a single batch, default 1.
     compression_type: (Optional.) A `tf.string` scalar evaluating to one of
@@ -63,17 +61,18 @@ def make_libsvm_dataset(file_names,
       Defaults to auto-tune. Set to 0 to disable prefetching.
   """
   dataset = core_readers.TextLineDataset(file_names,
-                                         compression_type=compression_type, 
+                                         compression_type=compression_type,
                                          buffer_size=buffer_size)
   def parsing_func(content):
-    return decode_libsvm(content, num_features, dtype, label_type)
+    return decode_libsvm(content, num_features, dtype, label_dtype)
 
-  dataset = dataset.apply(data.experimental.map_and_batch(
-                                        parsing_func, 
-                                        batch_size, 
-                                        num_parallel_calls=num_parallel_parser_calls,
-                                        drop_remainder=drop_final_batch))
+  dataset = dataset.apply(
+      data.experimental.map_and_batch(
+          parsing_func,
+          batch_size,
+          num_parallel_calls=num_parallel_parser_calls,
+          drop_remainder=drop_final_batch))
   if prefetch_buffer_size == 0:
     return dataset
-  else:
-    return dataset.prefetch(buffer_size=prefetch_buffer_size)
+
+  return dataset.prefetch(buffer_size=prefetch_buffer_size)

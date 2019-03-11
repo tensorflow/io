@@ -23,27 +23,27 @@ import os
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow import image
-from tensorflow.compat.v1 import resource_loader
+from tensorflow import errors # pylint: disable=wrong-import-position
+from tensorflow import image  # pylint: disable=wrong-import-position
+from tensorflow import test   # pylint: disable=wrong-import-position
 
-import tensorflow_io.image as image_io
+import tensorflow_io.image as image_io # pylint: disable=wrong-import-position
 
-from tensorflow import test
 
 class ImageDatasetTest(test.TestCase):
-
+  """ImageDatasetTest"""
   def test_decode_webp(self):
     """Test case for decode_webp.
     """
     width = 400
     height = 301
     channel = 4
-    png_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
+    png_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
     with open(png_file, 'rb') as f:
       png_contents = f.read()
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
     with open(filename, 'rb') as f:
       webp_contents = f.read()
 
@@ -65,7 +65,8 @@ class ImageDatasetTest(test.TestCase):
     width = 400
     height = 301
     channel = 4
-    png_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
+    png_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
     with open(png_file, 'rb') as f:
       png_contents = f.read()
     with self.cached_session():
@@ -73,7 +74,8 @@ class ImageDatasetTest(test.TestCase):
       image_v = image_p.eval()
       self.assertEqual(image_v.shape, (height, width, channel))
 
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
 
     num_repeats = 2
 
@@ -99,8 +101,16 @@ class ImageDatasetTest(test.TestCase):
     channels = 4
 
     images = []
-    for filename in ["small-00.png", "small-01.png", "small-02.png", "small-03.png", "small-04.png"]:
-      with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", filename), 'rb') as f:
+    for filename in [
+        "small-00.png",
+        "small-01.png",
+        "small-02.png",
+        "small-03.png",
+        "small-04.png"]:
+      with open(
+          os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "test_image",
+                       filename), 'rb') as f:
         png_contents = f.read()
       with self.cached_session():
         image_p = image.decode_png(png_contents, channels=channels)
@@ -108,7 +118,8 @@ class ImageDatasetTest(test.TestCase):
         self.assertEqual(image_v.shape, (height, width, channels))
         images.append(image_v)
 
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
     filename = "file://" + filename
 
     num_repeats = 2

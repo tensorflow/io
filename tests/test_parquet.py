@@ -23,17 +23,15 @@ import os
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow.compat.v1 import data
-from tensorflow.compat.v1 import resource_loader
+from tensorflow import dtypes  # pylint: disable=wrong-import-position
+from tensorflow import errors  # pylint: disable=wrong-import-position
+from tensorflow import test    # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
-import tensorflow_io.parquet as parquet_io
-
-from tensorflow import test
+import tensorflow_io.parquet as parquet_io # pylint: disable=wrong-import-position
 
 class ParquetDatasetTest(test.TestCase):
-
+  """ParquetDatasetTest"""
   def test_parquet_dataset(self):
     """Test case for ParquetDataset.
 
@@ -49,7 +47,10 @@ class ParquetDatasetTest(test.TestCase):
     Column 4 (float): Equal to row_index * 1.1.
     Column 5 (double): Equal to row_index * 1.1111111.
     """
-    filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_parquet", "parquet_cpp_example.parquet")
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_parquet",
+        "parquet_cpp_example.parquet")
 
     filenames = tensorflow.constant([filename], dtypes.string)
     columns = [0, 1, 2, 4, 5]
@@ -67,7 +68,7 @@ class ParquetDatasetTest(test.TestCase):
       sess.run(init_op)
       for _ in range(num_repeats):  # Dataset is repeated.
         for i in range(500): # 500 rows.
-          v0 = True if ((i % 2) == 0) else False
+          v0 = ((i % 2) == 0)
           v1 = i
           v2 = i * 1000 * 1000 * 1000 * 1000
           v4 = 1.1 * i

@@ -27,21 +27,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.platform import test
-
 import os
-import sys
 import boto3
-import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
-from tensorflow import dtypes
-from tensorflow import errors
-from tensorflow.compat.v1 import data
+from tensorflow import dtypes              # pylint: disable=wrong-import-position
+from tensorflow import errors              # pylint: disable=wrong-import-position
+from tensorflow import test                # pylint: disable=wrong-import-position
+from tensorflow.compat.v1 import data      # pylint: disable=wrong-import-position
 
-import tensorflow_io.kinesis as kinesis_io
+import tensorflow_io.kinesis as kinesis_io # pylint: disable=wrong-import-position
 
 class KinesisDatasetTest(test.TestCase):
   """Tests for KinesisDataset."""
@@ -66,7 +63,9 @@ class KinesisDatasetTest(test.TestCase):
     for i in range(10):
       data_v = "D" + str(i)
       client.put_record(
-          StreamName=stream_name, Data=data_v, PartitionKey="TensorFlow" + str(i))
+          StreamName=stream_name,
+          Data=data_v,
+          PartitionKey="TensorFlow" + str(i))
 
     stream = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
     num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
@@ -113,7 +112,9 @@ class KinesisDatasetTest(test.TestCase):
     for i in range(10):
       data_v = "D" + str(i)
       client.put_record(
-          StreamName=stream_name, Data=data_v, PartitionKey="TensorFlow" + str(i))
+          StreamName=stream_name,
+          Data=data_v,
+          PartitionKey="TensorFlow" + str(i))
     response = client.describe_stream(StreamName=stream_name)
     shard_id_0 = response["StreamDescription"]["Shards"][0]["ShardId"]
     shard_id_1 = response["StreamDescription"]["Shards"][1]["ShardId"]

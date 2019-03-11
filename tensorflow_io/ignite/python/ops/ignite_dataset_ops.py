@@ -18,7 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import abc
-import os
 import socket
 import ssl
 import struct
@@ -32,7 +31,7 @@ from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 ignite_ops = _load_library("_ignite_ops.so")
 
-@six.add_metaclass(abc.ABCMeta)
+@six.add_metaclass(abc.ABCMeta) # pylint: disable=useless-object-inheritance
 class Readable(object):
   """Readable abstract class that exposes methods to do reading-related
 
@@ -180,7 +179,7 @@ class TcpClient(Readable):
     self.sock.sendall(data_buffer)
 
 
-class BinaryType(object):
+class BinaryType(object): # pylint: disable=useless-object-inheritance
   """BinaryType class that encapsulated type id, type name and fields."""
 
   def __init__(self, type_id, type_name, fields):
@@ -190,7 +189,7 @@ class BinaryType(object):
     self.fields = fields
 
 
-class BinaryField(object):
+class BinaryField(object): # pylint: disable=useless-object-inheritance
   """BinaryField class that encapsulated field name, type id and field id."""
 
   def __init__(self, field_name, type_id, field_id):
@@ -226,7 +225,7 @@ types = {
 }
 
 
-class TypeTreeNode(object):
+class TypeTreeNode(object): # pylint: disable=useless-object-inheritance
   """TypeTreeNode class exposes methods to format object tree structure
 
      data.
@@ -461,7 +460,7 @@ class IgniteClient(TcpClient):
       h = (31 * h + ord(c)) & 0xFFFFFFFF
     return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
 
-  def _collect_types(self, field_name, data):
+  def _collect_types(self, field_name, data): # pylint: disable=redefined-outer-name
     """Extracts type information from the specified object."""
     type_id = data.read_byte()
 
@@ -740,9 +739,9 @@ class IgniteDataset(data.Dataset):
         password is necessary.
     """
     if not schema_host:
-        schema_host = host
+      schema_host = host
     if not schema_port:
-        schema_port = port
+      schema_port = port
 
     with IgniteClient(schema_host, schema_port, username, password, certfile,
                       keyfile, cert_password) as client:
@@ -751,10 +750,14 @@ class IgniteDataset(data.Dataset):
 
     self.cache_name = tensorflow.convert_to_tensor(
         cache_name, dtype=dtypes.string, name="cache_name")
-    self.host = tensorflow.convert_to_tensor(host, dtype=dtypes.string, name="host")
-    self.port = tensorflow.convert_to_tensor(port, dtype=dtypes.int32, name="port")
-    self.local = tensorflow.convert_to_tensor(local, dtype=dtypes.bool, name="local")
-    self.part = tensorflow.convert_to_tensor(part, dtype=dtypes.int32, name="part")
+    self.host = tensorflow.convert_to_tensor(
+        host, dtype=dtypes.string, name="host")
+    self.port = tensorflow.convert_to_tensor(
+        port, dtype=dtypes.int32, name="port")
+    self.local = tensorflow.convert_to_tensor(
+        local, dtype=dtypes.bool, name="local")
+    self.part = tensorflow.convert_to_tensor(
+        part, dtype=dtypes.int32, name="part")
     self.page_size = tensorflow.convert_to_tensor(
         page_size, dtype=dtypes.int32, name="page_size")
     self.schema = tensorflow.convert_to_tensor(

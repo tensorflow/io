@@ -26,3 +26,6 @@ tfio_*.tar.gz
 build
 dist
 wheelhouse
+
+# Lint
+.pylint
