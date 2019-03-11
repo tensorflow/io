@@ -20,9 +20,8 @@ from __future__ import print_function
 import os
 import time
 import sys
-from google.cloud import pubsub_v1
-
 import pytest
+from google.cloud import pubsub_v1
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
