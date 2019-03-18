@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow/core/public/version.h"
 #include "kernels/sequence_ops.h"
 
 #include <deque>
@@ -58,7 +59,11 @@ class TextOutputSequence : public OutputSequence {
     }
     return Status::OK();
   }
+#if TF_MAJOR_VERSION==1&&TF_MINOR_VERSION==13
+  virtual string DebugString() {
+#else
   virtual string DebugString() const {
+#endif
     return strings::StrCat("TextOutputSequence[]");
   }
  private:
