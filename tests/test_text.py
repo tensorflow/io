@@ -19,16 +19,17 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import pytest
 import tempfile
+
+import pytest
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_io.text as text_io
 
 @pytest.mark.skipif(
-    not (hasattr(tensorflow, "version") and
-         tensorflow.version.VERSION.startswith("2.0.")), reason=None)
+    not (hasattr(tf, "version") and
+         tf.version.VERSION.startswith("2.0.")), reason=None)
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
   fashion_mnist = tf.keras.datasets.fashion_mnist
