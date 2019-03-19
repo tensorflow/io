@@ -30,5 +30,5 @@ class TextOutputSequence(object):
     self._filenames = filenames
     self._resource = text_ops.text_output_sequence(destination=filenames)
 
-  def insert(self, index, item):
+  def setitem(self, index, item):
     text_ops.text_output_sequence_set_item(self._resource, index, item)
