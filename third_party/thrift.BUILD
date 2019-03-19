@@ -10,40 +10,40 @@ exports_files(["LICENSE"])
 cc_library(
     name = "thrift",
     srcs = [
-        "lib/cpp/src/thrift/Thrift.h",
+        "compiler/cpp/src/thrift/version.h",
+        "lib/cpp/src/thrift/TApplicationException.h",
+        "lib/cpp/src/thrift/TBase.h",
         "lib/cpp/src/thrift/TLogging.h",
         "lib/cpp/src/thrift/TOutput.h",
-        "lib/cpp/src/thrift/TBase.h",
         "lib/cpp/src/thrift/TToString.h",
-        "lib/cpp/src/thrift/TApplicationException.h",
-        "lib/cpp/src/thrift/transport/PlatformSocket.h",
-        "lib/cpp/src/thrift/transport/TTransport.h",
-        "lib/cpp/src/thrift/transport/TBufferTransports.h",
-        "lib/cpp/src/thrift/transport/TBufferTransports.cpp",
-        "lib/cpp/src/thrift/transport/TTransportException.h",
-        "lib/cpp/src/thrift/transport/TTransportException.cpp",
-        "lib/cpp/src/thrift/transport/TVirtualTransport.h",
-        "lib/cpp/src/thrift/protocol/TProtocol.h",
+        "lib/cpp/src/thrift/Thrift.h",
+        "lib/cpp/src/thrift/config.h",
         "lib/cpp/src/thrift/protocol/TProtocol.cpp",
+        "lib/cpp/src/thrift/protocol/TProtocol.h",
         "lib/cpp/src/thrift/protocol/TProtocolException.h",
         "lib/cpp/src/thrift/protocol/TVirtualProtocol.h",
-        "lib/cpp/src/thrift/thrift-config.h",
-        "lib/cpp/src/thrift/config.h",
         "lib/cpp/src/thrift/stdcxx.h",
-        "compiler/cpp/src/thrift/version.h",
+        "lib/cpp/src/thrift/thrift-config.h",
+        "lib/cpp/src/thrift/transport/PlatformSocket.h",
+        "lib/cpp/src/thrift/transport/TBufferTransports.cpp",
+        "lib/cpp/src/thrift/transport/TBufferTransports.h",
+        "lib/cpp/src/thrift/transport/TTransport.h",
+        "lib/cpp/src/thrift/transport/TTransportException.cpp",
+        "lib/cpp/src/thrift/transport/TTransportException.h",
+        "lib/cpp/src/thrift/transport/TVirtualTransport.h",
     ],
     hdrs = [
+        "lib/cpp/src/thrift/protocol/TBinaryProtocol.h",
+        "lib/cpp/src/thrift/protocol/TBinaryProtocol.tcc",
         "lib/cpp/src/thrift/protocol/TCompactProtocol.h",
         "lib/cpp/src/thrift/protocol/TCompactProtocol.tcc",
         "lib/cpp/src/thrift/protocol/TDebugProtocol.h",
-        "lib/cpp/src/thrift/protocol/TBinaryProtocol.h",
-        "lib/cpp/src/thrift/protocol/TBinaryProtocol.tcc",
-    ],
-    includes = [
-        "lib/cpp/src",
     ],
     copts = [
         "-D_GLIBCXX_USE_CXX11_ABI=0",
+    ],
+    includes = [
+        "lib/cpp/src",
     ],
     deps = [
         "@boost",
@@ -55,10 +55,10 @@ genrule(
     srcs = [
         "compiler/cpp/src/thrift/version.h.in",
     ],
-    cmd = "sed 's/@PACKAGE_VERSION@/0.11.0/g' $< > $@",
     outs = [
         "compiler/cpp/src/thrift/version.h",
     ],
+    cmd = "sed 's/@PACKAGE_VERSION@/0.11.0/g' $< > $@",
 )
 
 genrule(

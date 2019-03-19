@@ -39,6 +39,9 @@ cc_library(
     hdrs = [
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
+    copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+    ],
     defines = [
         "PLATFORM_LINUX",
         "ENABLE_CURL_CLIENT",
@@ -48,9 +51,6 @@ cc_library(
         "aws-cpp-sdk-core/include/",
         "aws-cpp-sdk-kinesis/include/",
         "aws-cpp-sdk-s3/include/",
-    ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
     ],
     deps = [
         "@curl",
@@ -62,8 +62,8 @@ genrule(
     srcs = [
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h.in",
     ],
-    cmd = "sed 's/cmakedefine/define/g' $< > $@",
     outs = [
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
+    cmd = "sed 's/cmakedefine/define/g' $< > $@",
 )
