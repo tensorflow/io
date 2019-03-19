@@ -28,6 +28,7 @@ class TextOutputSequence : public OutputSequence {
 
   virtual ~TextOutputSequence() override {}
   virtual Status SetItem(int64 index, const void *item) {
+    mutex_lock l(mu_);
     if (destination_.size() != 1) {
       return errors::Unimplemented("only one file is supported: ", destination_.size());
     }
@@ -80,6 +81,7 @@ class TextOutputSequenceOp : public ResourceOpKernel<TextOutputSequence> {
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<TextOutputSequence>::Compute(context);
+    mutex_lock l(mu_);
     const Tensor* destination_tensor;
     OP_REQUIRES_OK(context, context->input("destination", &destination_tensor));
     OP_REQUIRES(
@@ -106,6 +108,7 @@ class TextOutputSequenceSetItemOp : public OpKernel {
  public:
   using OpKernel::OpKernel;
   void Compute(OpKernelContext* ctx) override {
+    mutex_lock l(mu_);
     TextOutputSequence* sequence;
     OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
     core::ScopedUnref unref(sequence);
@@ -126,6 +129,7 @@ class TextOutputSequenceSetItemOp : public OpKernel {
     OP_REQUIRES_OK(ctx, sequence->SetItem(index, item.c_str()));
   }
  private:
+  mutex mu_;
 };
 
 

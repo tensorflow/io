@@ -20,10 +20,9 @@ from __future__ import print_function
 
 import os
 import tempfile
-
 import pytest
-
 import numpy as np
+
 import tensorflow as tf
 import tensorflow_io.text as text_io
 
@@ -62,7 +61,7 @@ def test_text_output_sequence():
       index = batch * self._batch_size
       for outputs in logs['outputs']:
         for output in outputs:
-          self._sequence.insert(index, class_names[np.argmax(output)])
+          self._sequence.setitem(index, class_names[np.argmax(output)])
           index += 1
 
   f, filename = tempfile.mkstemp()
