@@ -18,7 +18,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import time
+import pytest
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
@@ -30,6 +32,8 @@ from tensorflow.compat.v1 import data  # pylint: disable=wrong-import-position
 
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
 
+if sys.platform == "darwin":
+  pytest.skip("kafka is failing on macOS", allow_module_level=True)
 
 class KafkaDatasetTest(test.TestCase):
   """Tests for KafkaDataset."""

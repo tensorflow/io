@@ -31,7 +31,7 @@ class OutputSequence : public ResourceBase {
     return strings::StrCat("OutputSequence[]");
   }
  protected:
-  mutable mutex mu_;
+  mutex mu_;
   Env* env_ GUARDED_BY(mu_);
   std::vector<string> destination_ GUARDED_BY(mu_);
 };
