@@ -18,7 +18,6 @@ cc_library(
         "snappy-stubs-public.h",
     ],
     hdrs = ["snappy.h"],
-    includes = ["."],
     copts = [
         "-D_GLIBCXX_USE_CXX11_ABI=0",
         "-DHAVE_CONFIG_H",
@@ -27,6 +26,7 @@ cc_library(
         "-Wno-shift-negative-value",
         "-Wno-implicit-function-declaration",
     ],
+    includes = ["."],
 )
 
 genrule(

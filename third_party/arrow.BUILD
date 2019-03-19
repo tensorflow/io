@@ -12,43 +12,45 @@ load("@com_github_google_flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
 flatbuffer_cc_library(
     name = "arrow_format",
     srcs = [
+        "cpp/src/arrow/ipc/feather.fbs",
         "format/File.fbs",
         "format/Message.fbs",
         "format/Schema.fbs",
         "format/Tensor.fbs",
-        "cpp/src/arrow/ipc/feather.fbs",
     ],
-    out_prefix = "cpp/src/arrow/ipc/",
     flatc_args = [
         "--no-union-value-namespacing",
         "--gen-object-api",
     ],
+    out_prefix = "cpp/src/arrow/ipc/",
 )
 
 cc_library(
     name = "arrow",
-    srcs = glob([
-        "cpp/src/arrow/*.cc",
-        "cpp/src/arrow/*.h",
-        "cpp/src/arrow/adapters/tensorflow/convert.h",
-        "cpp/src/arrow/io/*.cc",
-        "cpp/src/arrow/io/*.h",
-        "cpp/src/arrow/ipc/*.cc",
-        "cpp/src/arrow/ipc/*.h",
-        "cpp/src/arrow/util/*.cc",
-        "cpp/src/arrow/util/*.h",
-    ],
-    exclude=[
-        "cpp/src/arrow/**/*-test.cc",
-        "cpp/src/arrow/**/*benchmark*.cc",
-        "cpp/src/arrow/**/*hdfs*.cc",
-        "cpp/src/arrow/util/compression_zstd.*",
-        "cpp/src/arrow/util/compression_lz4.*",
-        "cpp/src/arrow/util/compression_brotli.*",
-        "cpp/src/arrow/ipc/json*.cc",
-        "cpp/src/arrow/ipc/stream-to-file.cc",
-        "cpp/src/arrow/ipc/file-to-stream.cc",
-    ]) + [
+    srcs = glob(
+        [
+            "cpp/src/arrow/*.cc",
+            "cpp/src/arrow/*.h",
+            "cpp/src/arrow/adapters/tensorflow/convert.h",
+            "cpp/src/arrow/io/*.cc",
+            "cpp/src/arrow/io/*.h",
+            "cpp/src/arrow/ipc/*.cc",
+            "cpp/src/arrow/ipc/*.h",
+            "cpp/src/arrow/util/*.cc",
+            "cpp/src/arrow/util/*.h",
+        ],
+        exclude = [
+            "cpp/src/arrow/**/*-test.cc",
+            "cpp/src/arrow/**/*benchmark*.cc",
+            "cpp/src/arrow/**/*hdfs*.cc",
+            "cpp/src/arrow/util/compression_zstd.*",
+            "cpp/src/arrow/util/compression_lz4.*",
+            "cpp/src/arrow/util/compression_brotli.*",
+            "cpp/src/arrow/ipc/json*.cc",
+            "cpp/src/arrow/ipc/stream-to-file.cc",
+            "cpp/src/arrow/ipc/file-to-stream.cc",
+        ],
+    ) + [
         "cpp/src/parquet/api/io.h",
         "cpp/src/parquet/api/reader.h",
         "cpp/src/parquet/api/schema.h",
@@ -88,14 +90,14 @@ cc_library(
     ],
     hdrs = [
     ],
+    copts = [
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+    ],
     defines = [
         "ARROW_WITH_SNAPPY",
     ],
     includes = [
         "cpp/src",
-    ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
     ],
     deps = [
         ":arrow_format",
