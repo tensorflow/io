@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,28 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Cloud Bigtable Client for TensorFlow.
 
-This contrib package allows TensorFlow to interface directly with Cloud Bigtable
-for high-speed data loading.
-
-@@BigtableClient
-@@BigtableTable
-
-"""
+"""This module contains the Python API for the Cloud Bigtable integration."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableClient
-from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableTable
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    'BigtableClient',
-    'BigtableTable',
-]
-
-remove_undocumented(__name__, _allowed_symbols)
