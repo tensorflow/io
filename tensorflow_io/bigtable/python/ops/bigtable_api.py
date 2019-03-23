@@ -722,4 +722,3 @@ class _BigtableSampleKeyPairsDataset(dataset_ops.DatasetSource):
     return structure.NestedStructure(
         (structure.TensorStructure(dtypes.string, []),
          structure.TensorStructure(dtypes.string, [])))
-
