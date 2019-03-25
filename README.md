@@ -26,12 +26,12 @@ At the moment TensorFlow I/O supports the following data sources:
 ### Python Package
 
 The `tensorflow-io` Python package could be installed with pip directly:
-```
+```sh
 $ pip install tensorflow-io
 ```
 
 People who are a little more adventurous can also try our nightly binaries:
-```
+```sh
 $ pip install tensorflow-io-nightly
 ```
 
@@ -39,7 +39,7 @@ The use of tensorflow-io is straightforward with keras. Below is the example
 of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
 data processing replaced by tensorflow-io:
 
-```
+```python
 import tensorflow as tf
 import tensorflow_io.mnist as mnist_io
 
@@ -50,7 +50,7 @@ d_train = mnist_io.MNISTDataset(
     compression_type="GZIP")
 
 # By default image data is uint8 so conver to float32.
-d_train = d_train.map(lambda x, y: (tf.cast(x, tf.float32)/255.0, y)).batch(1)
+d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -117,7 +117,7 @@ libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
 Some tests require launching a test container before running. In order
 to run all tests, execute the following commands:
 
-```
+```sh
 $ bash -x -e tests/test_ignite/start_ignite.sh
 $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
