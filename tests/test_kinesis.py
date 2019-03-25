@@ -28,6 +28,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import pytest
 import boto3
 
 import tensorflow
@@ -39,6 +41,9 @@ from tensorflow import test                # pylint: disable=wrong-import-positi
 from tensorflow.compat.v1 import data      # pylint: disable=wrong-import-position
 
 import tensorflow_io.kinesis as kinesis_io # pylint: disable=wrong-import-position
+
+if sys.platform == "darwin":
+  pytest.skip("kinesis/localstack is failing on macOS", allow_module_level=True)
 
 class KinesisDatasetTest(test.TestCase):
   """Tests for KinesisDataset."""
