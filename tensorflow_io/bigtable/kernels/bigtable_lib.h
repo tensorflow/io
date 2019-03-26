@@ -43,7 +43,11 @@ class BigtableClientResource : public ResourceBase {
     return client_;
   }
 
+#if TF_MAJOR_VERSION==1&&TF_MINOR_VERSION==13
   string DebugString() override {
+#else
+  string DebugString() const override {
+#endif
     return strings::StrCat("BigtableClientResource(project_id: ", project_id_,
                            ", instance_id: ", instance_id_, ")");
   }
@@ -68,7 +72,11 @@ class BigtableTableResource : public ResourceBase {
 
   ::google::cloud::bigtable::noex::Table& table() { return table_; }
 
+#if TF_MAJOR_VERSION==1&&TF_MINOR_VERSION==13
   string DebugString() override {
+#else
+  string DebugString() const override {
+#endif
     return strings::StrCat(
         "BigtableTableResource(client: ", client_->DebugString(),
         ", table: ", table_name_, ")");
