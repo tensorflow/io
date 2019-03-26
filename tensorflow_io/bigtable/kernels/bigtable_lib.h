@@ -22,6 +22,7 @@ limitations under the License.
 #include "google/cloud/bigtable/internal/table.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/public/version.h"
 
 namespace tensorflow {
 
