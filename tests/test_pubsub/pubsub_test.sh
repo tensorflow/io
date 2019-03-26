@@ -41,9 +41,9 @@ action=$1
 container=$2
 if [ "$action" == "start" ]; then
     echo pull google/cloud-sdk
-    docker pull google/cloud-sdk
+    docker pull google/cloud-sdk:236.0.0
     echo pull google/cloud-sdk successfully
-    docker run -d --rm --net=host --name=$container -v $base:/v -w /v google/cloud-sdk bash -x -c 'gcloud beta emulators pubsub start'
+    docker run -d --rm --net=host --name=$container -v $base:/v -w /v google/cloud-sdk:236.0.0 bash -x -c 'gcloud beta emulators pubsub start'
     #echo wait 10 secs until pubsub is up and running
     #sleep 10
 elif [ "$action" == "stop" ]; then
