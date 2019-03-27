@@ -238,3 +238,43 @@ http_archive(
         "http://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
     ],
 )
+
+http_archive(
+    name = "com_github_googlecloudplatform_google_cloud_cpp",
+    sha256 = "06bc735a117ec7ea92ea580e7f2ffa4b1cd7539e0e04f847bf500588d7f0fe90",
+    strip_prefix = "google-cloud-cpp-0.7.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_googleapis_googleapis",
+    build_file = "@com_github_googlecloudplatform_google_cloud_cpp//bazel:googleapis.BUILD",
+    sha256 = "82ba91a41fb01305de4e8805c0a9270ed2035007161aa5a4ec60f887a499f5e9",
+    strip_prefix = "googleapis-6a3277c0656219174ff7c345f31fb20a90b30b97",
+    urls = [
+        "https://github.com/google/googleapis/archive/6a3277c0656219174ff7c345f31fb20a90b30b97.zip",
+    ],
+)
+
+http_archive(
+    name = "com_googlesource_code_re2",
+    sha256 = "a31397714a353587413d307337d0b58f8a2e20e2b9d02f2e24e3463fa4eeda81",
+    strip_prefix = "re2-2018-10-01",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/re2/archive/2018-10-01.tar.gz",
+        "https://github.com/google/re2/archive/2018-10-01.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_google_googletest",
+    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
+    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
+    urls = [
+        "https://mirror.bazel.build/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
+        "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
+    ],
+)
