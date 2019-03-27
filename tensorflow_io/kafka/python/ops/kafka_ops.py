@@ -1,4 +1,4 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Kafka Dataset.
-
-@@KafkaOutputSequence
-@@KafkaDataset
-@@write_kafka
-"""
-
+"""KafkaOutputSequence."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.kafka.python.ops.kafka_ops import KafkaOutputSequence
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import KafkaDataset
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import write_kafka
+from tensorflow_io import _load_library
+kafka_ops = _load_library('_kafka_ops.so')
 
-from tensorflow.python.util.all_util import remove_undocumented
 
-_allowed_symbols = [
-    "KafkaOutputSequence",
-    "KafkaDataset",
-    "write_kafka",
-]
+class KafkaOutputSequence(object):
+  """KafkaOutputSequence"""
 
-remove_undocumented(__name__)
+  def __init__(self, topic, servers="localhost"):
+    """Create a `KafkaOutputSequence`.
+    """
+    self._topic = topic
+    self._resource = kafka_ops.kafka_output_sequence(
+        topic=topic, servers=servers)
+
+  def setitem(self, index, item):
+    kafka_ops.kafka_output_sequence_set_item(self._resource, index, item)
+
+  def flush(self):
+    kafka_ops.kafka_output_sequence_flush(self._resource)

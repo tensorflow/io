@@ -27,27 +27,7 @@ class TextOutputSequence : public OutputSequence {
    : OutputSequence(env) {}
 
   virtual ~TextOutputSequence() override {}
-  virtual Status SetItem(int64 index, const void *item) {
-    mutex_lock l(mu_);
-    if (destination_.size() != 1) {
-      return errors::Unimplemented("only one file is supported: ", destination_.size());
-    }
-    int64 size = fifo_.size();
-    if (index < base_) {
-      return errors::InvalidArgument("the item has already been add: ", index);
-    }
-    if (base_ <= index && index < base_ + size) {
-      if (fifo_[index - base_].get() != nullptr) {
-        return errors::InvalidArgument("the item has already been add before: ", index);
-      }
-      fifo_[index - base_].reset(new string((const char *)item));
-    }
-    if (base_ + size <= index) {
-      for (int64 i = base_ + size; i < index; i++) {
-        fifo_.push_back(nullptr);
-      }
-      fifo_.push_back(std::unique_ptr<string>(new string((const char *)item)));
-    }
+  virtual Status Output() override {
     if (fifo_.front().get() != nullptr) {
       std::unique_ptr<WritableFile> file;
       TF_RETURN_IF_ERROR(env_->NewAppendableFile(destination_[0], &file));
@@ -67,16 +47,21 @@ class TextOutputSequence : public OutputSequence {
 #endif
     return strings::StrCat("TextOutputSequence[]");
   }
+  Status Initialize(const std::vector<string>& destination) {
+    destination_ = destination;
+    if (destination_.size() != 1) {
+      return errors::Unimplemented("only one file is supported: ", destination_.size());
+    }
+    return Status::OK();
+  }
  private:
-  int64 base_ GUARDED_BY(mu_) = 0;
-  std::deque<std::unique_ptr<string>> fifo_ GUARDED_BY(mu_);
+  std::vector<string> destination_ GUARDED_BY(mu_);
 };
 
-class TextOutputSequenceOp : public ResourceOpKernel<TextOutputSequence> {
+class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {
  public:
   explicit TextOutputSequenceOp(OpKernelConstruction* context)
-    : ResourceOpKernel<TextOutputSequence>(context) {
-    env_ = context->env();
+    : OutputSequenceOp<TextOutputSequence>(context) {
   }
  private:
   void Compute(OpKernelContext* context) override {
@@ -96,47 +81,12 @@ class TextOutputSequenceOp : public ResourceOpKernel<TextOutputSequence> {
 
     OP_REQUIRES_OK(context, resource_->Initialize(destination));
   }
-  Status CreateResource(TextOutputSequence** sequence)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *sequence = new TextOutputSequence(env_);
-    return Status::OK();
-  }
-  Env* env_;
 };
-
-class TextOutputSequenceSetItemOp : public OpKernel {
- public:
-  using OpKernel::OpKernel;
-  void Compute(OpKernelContext* ctx) override {
-    mutex_lock l(mu_);
-    TextOutputSequence* sequence;
-    OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
-    core::ScopedUnref unref(sequence);
-    const Tensor* index_tensor;
-    const Tensor* item_tensor;
-    OP_REQUIRES_OK(ctx, ctx->input("index", &index_tensor));
-    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(index_tensor->shape()),
-                errors::InvalidArgument(
-                    "Index tensor must be scalar, but had shape: ",
-                    index_tensor->shape().DebugString()));
-    OP_REQUIRES_OK(ctx, ctx->input("item", &item_tensor));
-    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(item_tensor->shape()),
-                errors::InvalidArgument(
-                    "Item tensor must be scalar, but had shape: ",
-                    item_tensor->shape().DebugString()));
-    const int64 index = index_tensor->scalar<int64>()();
-    const string& item = item_tensor->scalar<string>()();
-    OP_REQUIRES_OK(ctx, sequence->SetItem(index, item.c_str()));
-  }
- private:
-  mutex mu_;
-};
-
 
 REGISTER_KERNEL_BUILDER(Name("TextOutputSequence").Device(DEVICE_CPU),
                         TextOutputSequenceOp);
 
 
 REGISTER_KERNEL_BUILDER(Name("TextOutputSequenceSetItem").Device(DEVICE_CPU),
-                        TextOutputSequenceSetItemOp);
+                        OutputSequenceSetItemOp<TextOutputSequence>);
 }  // namespace tensorflow
