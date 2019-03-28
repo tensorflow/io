@@ -76,6 +76,7 @@ class OutputSequenceOp : public ResourceOpKernel<T> {
     return Status::OK();
   }
   Env* env_;
+  mutex mu_;
 };
 
 template<typename T>
