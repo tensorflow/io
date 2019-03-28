@@ -480,7 +480,6 @@ class BigtableTable(object): # pylint: disable=useless-object-inheritance
       raise ValueError("A column name must be specified for every component of "
                        "the dataset elements. (e.g.: len(columns) != "
                        "len(dataset.output_types))")
-    print("write!write!")
     return _bigtable_so.dataset_to_bigtable(
         self._resource,
         dataset._as_variant_tensor(),  # pylint: disable=protected-access
