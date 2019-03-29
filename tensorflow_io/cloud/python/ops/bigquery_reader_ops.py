@@ -18,9 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.contrib.cloud.python.ops import gen_bigquery_reader_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import io_ops
+from tensorflow_io import _load_library
+
+_bigquery_reader_so = _load_library("_bigquery_reader_ops.so")
 
 
 class BigQueryReader(io_ops.ReaderBase):
@@ -114,7 +116,7 @@ class BigQueryReader(io_ops.ReaderBase):
     self._num_partitions = num_partitions
     self._test_end_point = test_end_point
 
-    reader = gen_bigquery_reader_ops.big_query_reader(
+    reader = _bigquery_reader_so.big_query_reader(
         name=name,
         project_id=self._project_id,
         dataset_id=self._dataset_id,
@@ -136,7 +138,7 @@ class BigQueryReader(io_ops.ReaderBase):
     Returns:
       `1-D` string `Tensor` of serialized `BigQueryTablePartition` messages.
     """
-    return gen_bigquery_reader_ops.generate_big_query_reader_partitions(
+    return _bigquery_reader_so.generate_big_query_reader_partitions(
         name=name,
         project_id=self._project_id,
         dataset_id=self._dataset_id,
