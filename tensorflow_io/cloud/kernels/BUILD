@@ -1,6 +1,10 @@
 # Description:
 # BigQueryReader implementation
 
+package(
+    default_visibility = ["//tensorflow_io/cloud:__subpackages__"],
+)
+
 licenses(["notice"])  # Apache 2.0
 
 cc_library(
