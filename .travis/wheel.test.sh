@@ -5,8 +5,8 @@ run_test() {
   CPYTHON_VERSION=$($entry -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
   (cd wheelhouse && $entry -m pip install *-cp${CPYTHON_VERSION}-*.whl)
   $entry -m pip install -q pytest boto3 google-cloud-pubsub==0.39.1 pyarrow==0.11.1 pandas==0.19.2
-  (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! -iname "test_text.py" \)))
-  (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_text.py" \)))
+  (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! -iname "test_*_eager.py" \)))
+  (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_*_eager.py" \)))
 }
 
 # If Linux just assume testing both python and python3
