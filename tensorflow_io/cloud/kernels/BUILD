@@ -25,7 +25,7 @@ cc_library(
     linkstatic = 1,
     deps = [
         ":bigquery_table_partition_proto_cc",
-        "@curl//:curl",
+        "@curl",
         "@jsoncpp_git//:jsoncpp",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
@@ -47,7 +47,7 @@ cc_library(
     name = "gcs_config_ops",
     srcs = ["gcs_config_ops.cc"],
     deps = [
-        "@curl//:curl",
+        "@curl",
         "@jsoncpp_git//:jsoncpp",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
