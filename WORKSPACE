@@ -278,3 +278,14 @@ http_archive(
         "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
     ],
 )
+
+http_archive(
+    name = "jsoncpp_git",
+    build_file = "//third_party:jsoncpp.BUILD",
+    sha256 = "c49deac9e0933bcb7044f08516861a2d560988540b23de2ac1ad443b219afdb6",
+    strip_prefix = "jsoncpp-1.8.4",
+    urls = [
+        "https://mirror.bazel.build/github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
+        "https://github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
+    ],
+)
