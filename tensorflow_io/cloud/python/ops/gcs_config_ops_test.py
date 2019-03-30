@@ -23,13 +23,13 @@ from tensorflow.python.platform import test
 
 
 class GcsConfigOpsTest(test.TestCase):
-
-  def testSetBlockCache(self):
+  """GCS Config OPS test"""
+  def test_set_block_cache(self):
     cfg = gcs_config_ops.BlockCacheParams(max_bytes=1024*1024*1024)
     with self.cached_session() as sess:
       gcs_config_ops.configure_gcs(sess, block_cache=cfg)
 
-  def testConfigureGcsHook(self):
+  def test_configure_gcs_hook(self):
     creds = {'client_id': 'fake_client',
              'refresh_token': 'fake_token',
              'client_secret': 'fake_secret',

@@ -31,7 +31,7 @@ _gcs_config_so = _load_library("_gcs_config_ops.so")
 
 
 # @tf_export('contrib.cloud.BlockCacheParams')
-class BlockCacheParams(object):
+class BlockCacheParams(object):  # pylint: disable=useless-object-inheritance
   """BlockCacheParams is a struct used for configuring the GCS Block Cache."""
 
   def __init__(self, block_size=None, max_bytes=None, max_staleness=None):
@@ -121,6 +121,14 @@ class ConfigureGcsHook(training.SessionRunHook):
     self._block_cache = block_cache
 
   def begin(self):
+    """Called once before using the session.
+
+    When called, the default graph is the one that will be launched in the
+    session.  The hook can modify the graph by adding new operations to it.
+    After the `begin()` call the graph will be finalized and the other callbacks
+    can not modify the graph anymore. Second call of `begin()` on the same
+    graph, should not change the graph.
+    """
     if self._credentials:
       self._credentials_placeholder = array_ops.placeholder(dtypes.string)
       self._credentials_op = _gcs_config_so.gcs_configure_credentials(
@@ -137,6 +145,20 @@ class ConfigureGcsHook(training.SessionRunHook):
       self._block_cache_op = None
 
   def after_create_session(self, session, coord):
+    """Called when new TensorFlow session is created.
+
+    This is called to signal the hooks that a new session has been created. This
+    has two essential differences with the situation in which `begin` is called:
+
+    * When this is called, the graph is finalized and ops can no longer be added
+        to the graph.
+    * This method will also be called as a result of recovering a wrapped
+        session, not only at the beginning of the overall session.
+
+    Args:
+      session: A TensorFlow Session that has been created.
+      coord: A Coordinator object which keeps track of all threads.
+    """
     del coord
     if self._credentials_op:
       session.run(

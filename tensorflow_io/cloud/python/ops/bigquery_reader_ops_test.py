@@ -134,7 +134,7 @@ class BigQueryRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
   num_rows = 0
 
-  def do_GET(self):
+  def do_GET(self):  # pylint: disable=invalid-name,missing-docstring
     if "data?maxResults=" not in self.path:
       # This is a schema request.
       _SCHEMA["numRows"] = self.num_rows
@@ -179,8 +179,8 @@ def _SetUpQueue(reader):
 
 
 class BigQueryReaderOpsTest(test.TestCase):
-
-  def setUp(self):
+  """Big query reader ops tests."""
+  def setUp(self):  # pylint: disable=invalid-name
     super(BigQueryReaderOpsTest, self).setUp()
     self.server = FakeBigQueryServer("localhost", 0)
     self.server.start()
@@ -190,11 +190,11 @@ class BigQueryReaderOpsTest(test.TestCase):
     # in google_auth_provider.cc.
     os.environ["GOOGLE_AUTH_TOKEN_FOR_TESTING"] = "not-used"
 
-  def tearDown(self):
+  def tearDown(self):  # pylint: disable=invalid-name
     self.server.shutdown()
     super(BigQueryReaderOpsTest, self).tearDown()
 
-  def _ReadAndCheckRowsUsingFeatures(self, num_rows):
+  def _ReadAndCheckRowsUsingFeatures(self, num_rows):  # pylint: disable=invalid-name,missing-docstring
     self.server.handler.num_rows = num_rows
 
     with self.cached_session() as sess:
@@ -244,13 +244,13 @@ class BigQueryReaderOpsTest(test.TestCase):
                                     "\\(requested 1, current size 0\\)"):
         sess.run([key, value])
 
-  def testReadingSingleRowUsingFeatures(self):
+  def testReadingSingleRowUsingFeatures(self):  # pylint: disable=invalid-name
     self._ReadAndCheckRowsUsingFeatures(1)
 
-  def testReadingMultipleRowsUsingFeatures(self):
+  def testReadingMultipleRowsUsingFeatures(self):  # pylint: disable=invalid-name
     self._ReadAndCheckRowsUsingFeatures(10)
 
-  def testReadingMultipleRowsUsingColumns(self):
+  def testReadingMultipleRowsUsingColumns(self):  # pylint: disable=invalid-name,missing-docstring
     num_rows = 10
     self.server.handler.num_rows = num_rows
 
