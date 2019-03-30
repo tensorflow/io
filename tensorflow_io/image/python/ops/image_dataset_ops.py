@@ -17,8 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -50,7 +48,7 @@ class WebPDataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([None, None, None]))
+    return tensorflow.TensorShape([None, None, None])
 
   @property
   def output_types(self):
@@ -80,7 +78,36 @@ class TIFFDataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([None, None, None]))
+    return tensorflow.TensorShape([None, None, None])
+
+  @property
+  def output_types(self):
+    return dtypes.uint8
+
+class GIFDataset(data.Dataset):
+  """A GIF Image File Dataset that reads the GIF file."""
+
+  def __init__(self, filenames):
+    """Create a `GIFDataset`.
+      filenames: A `tf.string` tensor containing one or more filenames.
+    """
+    self._filenames = tensorflow.convert_to_tensor(
+        filenames, dtype=dtypes.string, name="filenames")
+    super(GIFDataset, self).__init__()
+
+  def _inputs(self):
+    return []
+
+  def _as_variant_tensor(self):
+    return image_ops.gif_dataset(self._filenames)
+
+  @property
+  def output_classes(self):
+    return tensorflow.Tensor
+
+  @property
+  def output_shapes(self):
+    return tensorflow.TensorShape([None, None, None])
 
   @property
   def output_types(self):
