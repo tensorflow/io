@@ -68,7 +68,7 @@ jobs:
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python python3.6
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python python3.6
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
     after_success:
     - |
@@ -80,7 +80,7 @@ jobs:
     os: osx
     osx_image: xcode9
     script:
-    - sudo -H bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python
+    - sudo -H bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python
     - sudo -H bash -x -e .travis/wheel.test.sh
     after_success:
     - |
