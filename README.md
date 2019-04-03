@@ -123,6 +123,15 @@ $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 ```
 
+#### Running Python Style Checks
+
+Style checks for Python can be run with the following commands:
+
+```sh
+$ curl -o .pylint -sSL https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
+$ find . -name '*.py' | xargs pylint --rcfile=.pylint
+```
+
 ### R
 
 We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
