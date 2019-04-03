@@ -334,7 +334,7 @@ class ArrowDatasetTest(test.TestCase):
     self.run_test_case(dataset, truth_data)
 
   def test_incorrect_column_type(self):
-    """test_incorrect_column_type"""
+    """Test that a column with incorrect dtype raises error"""
     truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
                            self.scalar_shapes)
     batch = self.make_record_batch(truth_data)
@@ -346,6 +346,38 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
     with self.assertRaisesRegexp(errors.OpError, 'Arrow type mismatch'):
       self.run_test_case(dataset, truth_data)
+
+  def test_map_and_batch(self):
+    """
+    Test that using map then batch produces correct output. This will create
+    a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
+    """
+    truth_data = TruthData(
+        [list(range(10))],
+        (dtypes.int32,),
+        (tensorflow.TensorShape([]),))
+    batch = self.make_record_batch(truth_data)
+    dataset = arrow_io.ArrowDataset(
+        batch,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes)
+
+    dataset = dataset.map(lambda x: x).batch(4)
+    it = dataset.make_one_shot_iterator()
+    d = it.get_next()
+
+    expected = truth_data.data[0]
+    with self.test_session() as sess:
+      while True:
+        try:
+          result = sess.run(d)
+          self.assertTrue(expected, 'Dataset has more output than expected')
+          for x in result:
+            self.assertEqual(x, expected[0])
+            expected.pop(0)
+        except tensorflow.errors.OutOfRangeError:
+          break
 
 
 if __name__ == "__main__":
