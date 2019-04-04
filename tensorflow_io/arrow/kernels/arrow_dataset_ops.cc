@@ -212,13 +212,14 @@ class ArrowDatasetBase : public DatasetBase {
                            bool* end_of_sequence) override {
       mutex_lock l(mu_);
 
-      // Intialize and read first batch
-      if (current_batch_ == nullptr) {
+      // If in initial state, setup and read first batch
+      if (current_batch_ == nullptr && current_row_idx_ == 0) {
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
       }
 
-      // Try to go to next batch if consumed all rows
-      if (current_row_idx_ >= current_batch_->num_rows()) {
+      // Try to go to next batch if consumed all rows in current batch
+      if (current_batch_ != nullptr &&
+          current_row_idx_ >= current_batch_->num_rows()) {
         TF_RETURN_IF_ERROR(NextStreamLocked());
       }
 
@@ -271,8 +272,9 @@ class ArrowDatasetBase : public DatasetBase {
 
     // Reset the Arrow record batch consumer when done with batches.
     virtual void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      // This is the final state of the iterator after end_of_sequence=true
       current_batch_ = nullptr;
-      current_row_idx_ = 0;
+      current_row_idx_ = 1;
     }
 
     // Check columns of batch in stream are expected data type
@@ -570,9 +572,8 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         if (++current_batch_idx_ < record_batches_.size()) {
           current_batch_ = record_batches_[current_batch_idx_];
         } else if (++current_file_idx_ < dataset()->filenames_.size()) {
-          size_t temp_file_idx = current_file_idx_;
-          ResetStreamsLocked();
-          current_file_idx_ = temp_file_idx;
+          current_batch_idx_ = 0;
+          record_batches_.clear();
           SetupStreamsLocked();
         }
         return Status::OK();
