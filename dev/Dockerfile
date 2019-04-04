@@ -37,6 +37,7 @@ ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     pytest \
+    pylint \
     boto3 \
     pyarrow==${ARROW_VERSION} \
     pandas \
