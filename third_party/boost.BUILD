@@ -697,9 +697,6 @@ cc_library(
         "libs/regex/src/wide_posix_api.cpp",
         "libs/regex/src/winstances.cpp",
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     includes = [
         ".",
     ],
