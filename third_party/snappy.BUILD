@@ -19,7 +19,6 @@ cc_library(
     ],
     hdrs = ["snappy.h"],
     copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
         "-DHAVE_CONFIG_H",
         "-fno-exceptions",
         "-Wno-sign-compare",

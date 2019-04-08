@@ -90,9 +90,6 @@ cc_library(
     ],
     hdrs = [
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     defines = [
         "ARROW_WITH_SNAPPY",
     ],
