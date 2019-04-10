@@ -64,6 +64,7 @@ class CIFAR10Dataset(_CIFAR10Dataset):
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
+      test: A boolean to indicate if the data input is for test or for train.
     """
     if test:
       self._filename = filename + "|test_batch.bin"
@@ -84,7 +85,7 @@ class _CIFAR100Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
   def __init__(self, filename):
-    """Create a `CIFARDataset`.
+    """Create a `CIFAR100Dataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
@@ -119,10 +120,12 @@ class CIFAR100Dataset(_CIFAR100Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
   def __init__(self, filename, test=False, mode='fine'):
-    """Create a `CIFAR10Dataset`.
+    """Create a `CIFAR100Dataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
+      test: A boolean to indicate if the data input is for test or for train.
+      mode: A string indicate if `coarse` or `fine` label is used.
     """
     if test:
       self._filename = filename + "|test.bin"
