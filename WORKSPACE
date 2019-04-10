@@ -278,3 +278,14 @@ http_archive(
         "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
     ],
 )
+
+http_archive(
+    name = "libarchive",
+    build_file = "//third_party:libarchive.BUILD",
+    sha256 = "720da414e7aebb255fcdaee106894e4d30e2472ac1390c2c15b70c84c7479658",
+    strip_prefix = "libarchive-3.3.3",
+    urls = [
+        "https://mirror.bazel.build/github.com/libarchive/libarchive/archive/v3.3.3.tar.gz",
+        "https://github.com/libarchive/libarchive/archive/v3.3.3.tar.gz",
+    ],
+)
