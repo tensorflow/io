@@ -1,6 +1,24 @@
 # Cloud Bigtable client for TensorFlow
 licenses(["notice"])  # Apache 2.0
 
+package(
+    default_visibility = ["//tensorflow_io/cloud:__subpackages__"],
+)
+
+py_library(
+    name = "bigtable",
+    srcs = [
+        "__init__.py",
+        "python/__init__.py",
+        "python/ops/__init__.py",
+        "python/ops/bigtable_api.py",
+    ],
+    data = [
+        ":python/ops/_bigtable.so",
+    ],
+    srcs_version = "PY2AND3",
+)
+
 cc_binary(
     name = "python/ops/_bigtable.so",
     srcs = [
@@ -57,6 +75,12 @@ cc_binary(
     name = "bigtable_test_client_test",
     srcs = [
         "kernels/test_kernels/bigtable_test_client_test.cc",
+    ],
+    copts = [
+        "-pthread",
+        "-std=c++11",
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+        "-DNDEBUG",
     ],
     deps = [
         ":bigtable_lib_cc",
