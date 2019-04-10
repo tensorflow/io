@@ -39,9 +39,6 @@ cc_library(
         "lib/cpp/src/thrift/protocol/TCompactProtocol.tcc",
         "lib/cpp/src/thrift/protocol/TDebugProtocol.h",
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     includes = [
         "lib/cpp/src",
     ],
