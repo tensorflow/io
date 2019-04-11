@@ -136,15 +136,16 @@ class KafkaDatasetOp : public DatasetOpKernel {
                 return Status::OK();
               }
 
-              if (message->err() == RdKafka::ERR__PARTITION_EOF &&
-                  dataset()->eof_) {
-                // EOF current topic
-                break;
+              if (message->err() == RdKafka::ERR__PARTITION_EOF) {
+                  if (dataset()->eof_) break;
               }
-              if (message->err() != RdKafka::ERR__TIMED_OUT) {
-                return errors::Internal("Failed to consume:",
+              else {
+                  if (message->err() != RdKafka::ERR__TIMED_OUT) {
+                      return errors::Internal("Failed to consume:",
                                         message->errstr());
+                  }
               }
+
               message.reset(nullptr);
               consumer_->poll(0);
             }
