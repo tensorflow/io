@@ -18,13 +18,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import numpy as np
 
-from tensorflow import dtypes
-from tensorflow import sparse
-from tensorflow import test
+import tensorflow
+tensorflow.compat.v1.disable_eager_execution()
 
-import tensorflow_io.libsvm as libsvm_io
+from tensorflow import errors # pylint: disable=wrong-import-position
+from tensorflow import dtypes # pylint: disable=wrong-import-position
+from tensorflow import sparse # pylint: disable=wrong-import-position
+from tensorflow import test   # pylint: disable=wrong-import-position
+
+import tensorflow_io.libsvm as libsvm_io # pylint: disable=wrong-import-position
 
 
 class DecodeLibsvmOpTest(test.TestCase):
@@ -69,6 +74,29 @@ class DecodeLibsvmOpTest(test.TestCase):
               [0, 0, 2.5, np.inf, 0, 0.503], [0, 0, 2.5, np.inf, 0, 0.503]
           ], [[0, 0.105, np.nan, 2.5, 0, 0], [0, 0.105, np.nan, 2.5, 0, 0]]])
 
+  def test_dataset(self):
+    """test_dataset"""
+    libsvm_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_libsvm", "sample")
+    dataset = libsvm_io.make_libsvm_dataset(
+        libsvm_file, num_features=6)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    sparse_features, labels = iterator.get_next()
+    features = sparse.to_dense(sparse_features, validate_indices=False)
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      f, l = sess.run([features, labels])
+      self.assertAllEqual(l, [1])
+      self.assertAllClose(f, [[0, 3.4, 0.5, 0, 0.231, 0]])
+      f, l = sess.run([features, labels])
+      self.assertAllEqual(l, [1])
+      self.assertAllClose(f, [[0, 0, 2.5, np.inf, 0, 0.503]])
+      f, l = sess.run([features, labels])
+      self.assertAllEqual(l, [2])
+      self.assertAllClose(f, [[0, 0.105, np.nan, 2.5, 0, 0]])
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run([features, labels])
 
 if __name__ == "__main__":
   test.main()
