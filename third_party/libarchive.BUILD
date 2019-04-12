@@ -33,6 +33,9 @@ cc_library(
         "libarchive",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "@zlib",
+    ],
 )
 
 genrule(
