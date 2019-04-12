@@ -20,3 +20,22 @@ cc_library(
         "@local_config_tf//:tf_header_lib",
     ],
 )
+
+cc_library(
+    name = "dataset_ops",
+    srcs = [
+        "kernels/dataset_ops.h",
+    ],
+    copts = [
+        "-pthread",
+        "-std=c++11",
+        "-DNDEBUG",
+    ],
+    includes = [
+        ".",
+    ],
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+)

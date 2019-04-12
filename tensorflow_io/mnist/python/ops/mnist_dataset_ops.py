@@ -27,30 +27,25 @@ class _MNISTBaseDataset(data.Dataset):
   """A MNIST Dataset
   """
 
-  def __init__(self, mnist_op_class, filenames, compression_type=None):
+  def __init__(self, mnist_op_class):
     """Create a MNISTReader.
 
     Args:
       mnist_op_class: The op of the dataset, either
           mnist_ops.mnist_image_dataset or mnist_ops.mnist_label_dataset.
       filenames: A `tf.string` tensor containing one or more filenames.
-      compression_type: (Optional.) A `tf.string` scalar evaluating to one of
-        `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
     self._func = mnist_op_class
-    self._filenames = tensorflow.compat.v1.convert_to_tensor(
-        filenames, dtype=dtypes.string, name="filenames")
-    self._compression_type = tensorflow.compat.v1.convert_to_tensor(
-        compression_type if compression_type is not None else "",
-        dtype=dtypes.string,
-        name="compression_type")
     super(_MNISTBaseDataset, self).__init__()
 
   def _inputs(self):
     return []
 
   def _as_variant_tensor(self):
-    return self._func(self._filenames, self._compression_type)
+    return self._func(
+        self._data_input,
+        output_types=self.output_types,
+        output_shapes=self.output_shapes)
 
   @property
   def output_classes(self):
@@ -58,72 +53,58 @@ class _MNISTBaseDataset(data.Dataset):
 
   @property
   def output_types(self):
-    return dtypes.uint8
+    return tuple([dtypes.uint8])
 
 class MNISTImageDataset(_MNISTBaseDataset):
   """A MNIST Image Dataset
   """
 
-  def __init__(self, filenames, compression_type=None):
+  def __init__(self, filename):
     """Create a MNISTReader.
 
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
-      compression_type: (Optional.) A `tf.string` scalar evaluating to one of
-        `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
+    self._data_input = mnist_ops.mnist_image_input(filename, ["none", "gz"])
     super(MNISTImageDataset, self).__init__(
-        mnist_ops.mnist_image_dataset,
-        filenames,
-        compression_type=compression_type)
+        mnist_ops.mnist_image_dataset)
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([None, None])
+    return tuple([tensorflow.TensorShape([None, None])])
 
 
 class MNISTLabelDataset(_MNISTBaseDataset):
   """A MNIST Label Dataset
   """
 
-  def __init__(self, filenames, compression_type=None):
+  def __init__(self, filename):
     """Create a MNISTReader.
 
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
-      compression_type: (Optional.) A `tf.string` scalar evaluating to one of
-        `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
+    self._data_input = mnist_ops.mnist_label_input(filename, ["none", "gz"])
     super(MNISTLabelDataset, self).__init__(
-        mnist_ops.mnist_label_dataset,
-        filenames,
-        compression_type=compression_type)
+        mnist_ops.mnist_label_dataset)
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([])
+    return tuple([tensorflow.TensorShape([])])
 
 class MNISTDataset(data.Dataset):
   """A MNIST Dataset
   """
 
-  def __init__(self, image, label, compression_type=None):
+  def __init__(self, image, label):
     """Create a MNISTReader.
 
     Args:
       image: A `tf.string` tensor containing image filename.
       label: A `tf.string` tensor containing label filename.
-      compression_type: (Optional.) A `tf.string` scalar evaluating to one of
-        `""` (no compression), `"ZLIB"`, or `"GZIP"`.
     """
-    self._image = tensorflow.compat.v1.convert_to_tensor(
-        image, dtype=dtypes.string, name="image")
-    self._label = tensorflow.compat.v1.convert_to_tensor(
-        label, dtype=dtypes.string, name="label")
-    self._compression_type = tensorflow.compat.v1.convert_to_tensor(
-        compression_type if compression_type is not None else "",
-        dtype=dtypes.string,
-        name="compression_type")
+    self._image = image
+    self._label = label
     super(MNISTDataset, self).__init__()
 
   def _inputs(self):
@@ -131,8 +112,8 @@ class MNISTDataset(data.Dataset):
 
   def _as_variant_tensor(self):
     return data.Dataset.zip( # pylint: disable=protected-access
-        (MNISTImageDataset(self._image, self._compression_type),
-         MNISTLabelDataset(self._label, self._compression_type))
+        (MNISTImageDataset(self._image),
+         MNISTLabelDataset(self._label))
         )._as_variant_tensor()
 
   @property
