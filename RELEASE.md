@@ -1,4 +1,4 @@
-# Release 0.4.0
+# Release 0.5.0
 
 ## Major Features
 * `tensorflow_io.kafka`: Kafka Output support.
