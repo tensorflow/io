@@ -1,6 +1,23 @@
 # Release 0.4.0
 
 ## Major Features
+* `tensorflow_io.kafka`: Kafka Output support.
+* `tensorflow_io.cifar`: CIFAR file format support.
+* `tensorflow_io.bigtable`: Google Cloud BigTable support.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, Damien Pontifex, Florian Raudies, Henry Tan,
+Junqin Zhang, Stephan Uphoff, Yong Tang, Yuan (Terry) Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.4.0
+
+## Major Features
 * `tensorflow_io.pubsub`: Google Cloud Pub/Sub Dataset support.
 * `tensorflow_io.mnist`: MNIST file format support.
 * `tensorflow_io.image`: `decode_webp` support.
