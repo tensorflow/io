@@ -307,7 +307,21 @@ class InputDatasetBase : public DatasetBase {
   Status AsGraphDefInternal(SerializationContext* ctx,
                             DatasetGraphDefBuilder* b,
                             Node** node) const override {
-    return errors::Unimplemented(DebugString(), "::AsGraphDefInternal");
+    Node* input_node;
+    Tensor input_tensor(DT_STRING, TensorShape({static_cast<int64>(input_.size())}));
+    // GraphDefInternal has some trouble with Variant so use serialized string.
+    for (size_t i = 0; i < input_.size(); i++) {
+      string message;
+      VariantTensorData serialized_data_f;
+      VariantTensorDataProto serialized_proto_f;
+      input_[i].Encode(&serialized_data_f);
+      serialized_data_f.ToProto(&serialized_proto_f);
+      EncodeVariant(serialized_proto_f, &message);
+      input_tensor.flat<string>()(i) = message;
+    }
+    TF_RETURN_IF_ERROR(b->AddTensor(input_tensor, &input_node));
+    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node }, node));
+    return Status::OK();
   }
  private:
   class Iterator : public DatasetIterator<InputDatasetBase<InputType, StateType>> {
@@ -421,13 +435,28 @@ class InputDatasetOp : public DatasetOpKernel {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(ctx, ctx->input("input", &input_tensor));
     OP_REQUIRES(
+        ctx, (input_tensor->dtype() == DT_VARIANT || input_tensor->dtype() == DT_STRING),
+        errors::InvalidArgument("`input` must be a variant or string, received ", input_tensor->dtype()));
+    OP_REQUIRES(
         ctx, input_tensor->dims() <= 1,
-        errors::InvalidArgument("`input` must be a scalar or a vector."));
-
+        errors::InvalidArgument("`input` must be a scalar or a vector, dim = ", input_tensor->dims()));
     std::vector<InputType> input;
     input.reserve(input_tensor->NumElements());
-    for (int i = 0; i < input_tensor->NumElements(); ++i) {
-      input.push_back(*(input_tensor->flat<Variant>()(i).get<InputType>()));
+    if (input_tensor->dtype() == DT_VARIANT) {
+      for (int i = 0; i < input_tensor->NumElements(); ++i) {
+        input.push_back(*(input_tensor->flat<Variant>()(i).get<InputType>()));
+      }
+    } else {
+      for (int i = 0; i < input_tensor->NumElements(); ++i) {
+        string message = input_tensor->flat<string>()(i);
+        VariantTensorDataProto serialized_proto_f;
+        VariantTensorData serialized_data_f;
+        DecodeVariant(&message, &serialized_proto_f);
+        serialized_data_f.FromProto(serialized_proto_f);
+        InputType entry;
+        entry.Decode(serialized_data_f);
+        input.emplace_back(entry);
+      }
     }
     *output = new InputDatasetBase<InputType, StateType>(ctx, input, output_types_, output_shapes_);
   }
