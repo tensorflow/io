@@ -58,4 +58,24 @@ REGISTER_OP("DecodeWebP")
       return Status::OK();
     });
 
+REGISTER_OP("ImageDataset")
+    .Input("input: T")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+       return Status::OK();
+     });
+
+REGISTER_OP("ImageInput")
+    .Input("source: string")
+    .Output("handle: variant")
+    .Attr("filters: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
 }  // namespace tensorflow

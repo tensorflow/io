@@ -172,5 +172,83 @@ class ImageDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_webp_file_image_dataset(self):
+    """Test case for ImageDataset.
+    """
+    width = 400
+    height = 301
+    channel = 4
+    png_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
+    with open(png_file, 'rb') as f:
+      png_contents = f.read()
+    with self.cached_session():
+      image_p = image.decode_png(png_contents, channels=channel)
+      image_v = image_p.eval()
+      self.assertEqual(image_v.shape, (height, width, channel))
+
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+
+    num_repeats = 2
+
+    dataset = image_io.ImageDataset([filename]).repeat(
+        num_repeats)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):
+        v = sess.run(get_next)
+        self.assertAllEqual(image_v, v)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+  def test_tiff_file_image_dataset(self):
+    """Test case for ImageDataset.
+    """
+    width = 560
+    height = 320
+    channels = 4
+
+    images = []
+    for filename in [
+        "small-00.png",
+        "small-01.png",
+        "small-02.png",
+        "small-03.png",
+        "small-04.png"]:
+      with open(
+          os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       "test_image",
+                       filename), 'rb') as f:
+        png_contents = f.read()
+      with self.cached_session():
+        image_p = image.decode_png(png_contents, channels=channels)
+        image_v = image_p.eval()
+        self.assertEqual(image_v.shape, (height, width, channels))
+        images.append(image_v)
+
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
+    filename = "file://" + filename
+
+    num_repeats = 2
+
+    dataset = image_io.ImageDataset([filename]).repeat(num_repeats)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):
+        for i in range(5):
+          v = sess.run(get_next)
+          self.assertAllEqual(images[i], v)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
 if __name__ == "__main__":
   test.main()

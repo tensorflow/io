@@ -10,6 +10,7 @@ cc_library(
     srcs = glob(
         [
             "libtiff/tif_*.c",
+            "libtiff/tif_stream.cxx",
         ],
         exclude = [
             "libtiff/tif_win32.c",
@@ -17,6 +18,7 @@ cc_library(
     ),
     hdrs = glob([
         "libtiff/*.h",
+        "libtiff/tiffio.hxx",
     ]) + [
         "libtiff/tif_config.h",
         "libtiff/tiffconf.h",

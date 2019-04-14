@@ -23,6 +23,39 @@ from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 image_ops = _load_library('_image_ops.so')
 
+class ImageDataset(data.Dataset):
+  """An Image Dataset
+  """
+
+  def __init__(self, filename):
+    """Create a ImageReader.
+
+    Args:
+      filename: A `tf.string` tensor containing one or more filenames.
+    """
+    self._data_input = image_ops.image_input(filename)
+    super(ImageDataset, self).__init__()
+
+  def _inputs(self):
+    return []
+
+  def _as_variant_tensor(self):
+    return image_ops.image_dataset(
+        self._data_input,
+        output_types=self.output_types,
+        output_shapes=self.output_shapes)
+
+  @property
+  def output_classes(self):
+    return tensorflow.Tensor
+
+  @property
+  def output_shapes(self):
+    return tuple([tensorflow.TensorShape([None, None, None])])
+
+  @property
+  def output_types(self):
+    return tuple([dtypes.uint8])
 
 class WebPDataset(data.Dataset):
   """A WebP Image File Dataset that reads the WebP file."""
