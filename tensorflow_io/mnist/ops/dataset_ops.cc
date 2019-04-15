@@ -20,21 +20,44 @@ limitations under the License.
 namespace tensorflow {
 
 REGISTER_OP("MNISTImageDataset")
-    .Input("filenames: string")
-    .Input("compression_type: string")
+    .Input("input: T")
     .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
 REGISTER_OP("MNISTLabelDataset")
-    .Input("filenames: string")
-    .Input("compression_type: string")
+    .Input("input: T")
     .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({}));
+       return Status::OK();
+     });
+
+
+REGISTER_OP("MNISTLabelInput")
+    .Input("source: string")
+    .Output("handle: variant")
+    .Attr("filters: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
+
+REGISTER_OP("MNISTImageInput")
+    .Input("source: string")
+    .Output("handle: variant")
+    .Attr("filters: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
 

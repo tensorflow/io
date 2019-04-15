@@ -26,13 +26,13 @@ cifar_ops = _load_library('_cifar_ops.so')
 class _CIFAR10Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename):
+  def __init__(self, filename, filters):
     """Create a `CIFARDataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = cifar_ops.cifar10_input(filename)
+    self._data_input = cifar_ops.cifar10_input(filename, filters)
     super(_CIFAR10Dataset, self).__init__()
 
   def _inputs(self):
@@ -66,15 +66,16 @@ class CIFAR10Dataset(_CIFAR10Dataset):
       filename: A `tf.string` tensor containing one or more filenames.
       test: A boolean to indicate if the data input is for test or for train.
     """
+    self._filename = filename
     if test:
-      self._filename = filename + "|test_batch.bin"
+      self._filters = ["tar.gz:test_batch.bin"]
     else:
-      entries = ["|data_batch_" + str(e) + ".bin" for e in range(1, 6)]
-      self._filename = [filename + entry for entry in entries]
-    super(CIFAR10Dataset, self).__init__(self._filename)
+      self._filters = [
+          "tar.gz:data_batch_" + str(i) +".bin" for i in range(1, 6)]
+    super(CIFAR10Dataset, self).__init__(self._filename, self._filters)
 
   def _as_variant_tensor(self):
-    return _CIFAR10Dataset(self._filename).map( # pylint: disable=protected-access
+    return _CIFAR10Dataset(self._filename, self._filters).map( # pylint: disable=protected-access
         lambda label, image: (tensorflow.transpose(image, [1, 2, 0]), label))._as_variant_tensor()
 
   @property
@@ -84,13 +85,13 @@ class CIFAR10Dataset(_CIFAR10Dataset):
 class _CIFAR100Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename):
+  def __init__(self, filename, filters):
     """Create a `CIFAR100Dataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = cifar_ops.cifar100_input(filename)
+    self._data_input = cifar_ops.cifar100_input(filename, filters)
     super(_CIFAR100Dataset, self).__init__()
 
   def _inputs(self):
@@ -127,15 +128,16 @@ class CIFAR100Dataset(_CIFAR100Dataset):
       test: A boolean to indicate if the data input is for test or for train.
       mode: A string indicate if `coarse` or `fine` label is used.
     """
+    self._filename = filename
     if test:
-      self._filename = filename + "|test.bin"
+      self._filters = ["tar.gz:test.bin"]
     else:
-      self._filename = filename + "|train.bin"
+      self._filters = ["tar.gz:train.bin"]
     self._mode = mode
-    super(CIFAR100Dataset, self).__init__(self._filename)
+    super(CIFAR100Dataset, self).__init__(self._filename, self._filters)
 
   def _as_variant_tensor(self):
-    return _CIFAR100Dataset(self._filename).map( # pylint: disable=protected-access
+    return _CIFAR100Dataset(self._filename, self._filters).map( # pylint: disable=protected-access
         lambda coarse, fine, image: (tensorflow.transpose(image, [1, 2, 0]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
 
   @property

@@ -20,24 +20,27 @@ limitations under the License.
 namespace tensorflow {
 
 REGISTER_OP("CIFAR10Dataset")
-    .Input("input: variant")
+    .Input("input: T")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
 REGISTER_OP("CIFAR100Dataset")
-    .Input("input: variant")
+    .Input("input: T")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
 REGISTER_OP("CIFAR10Input")
     .Input("source: string")
     .Output("handle: variant")
+    .Attr("filters: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
@@ -46,6 +49,7 @@ REGISTER_OP("CIFAR10Input")
 REGISTER_OP("CIFAR100Input")
     .Input("source: string")
     .Output("handle: variant")
+    .Attr("filters: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
