@@ -21,6 +21,8 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/lib/io/inputstream_interface.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
+#include "tensorflow/core/lib/io/zlib_compression_options.h"
+#include "tensorflow/core/lib/io/zlib_inputstream.h"
 #include "tensorflow/core/framework/variant_op_registry.h"
 
 namespace tensorflow {
@@ -231,9 +233,9 @@ class DataInputOp: public OpKernel {
       OP_REQUIRES_OK(ctx, env_->NewRandomAccessFile(filename, &file));
       if (filters_.size() == 0) {
         // No filter means only a file stream.
-        io::RandomAccessInputStream s(file.get());
+        io::RandomAccessInputStream file_stream(file.get());
         T entry;
-        OP_REQUIRES_OK(ctx, entry.FromInputStream(s, filename, string(""), string("")));
+        OP_REQUIRES_OK(ctx, entry.FromInputStream(file_stream, filename, string(""), string("")));
         output.emplace_back(std::move(entry));
         continue;
       }
@@ -241,10 +243,10 @@ class DataInputOp: public OpKernel {
       std::unique_ptr<struct archive, void(*)(struct archive *)> archive(archive_read_new(), [](struct archive *a){ archive_read_free(a);});
       OP_REQUIRES_OK(ctx, ArchiveInputStream::SetupFilters(archive.get(), filters_));
 
-      ArchiveInputStream s(file.get(), archive.get());
+      ArchiveInputStream archive_stream(file.get(), archive.get());
 
       OP_REQUIRES(
-          ctx, (archive_read_open(archive.get(), &s, NULL, ArchiveInputStream::CallbackRead, NULL) == ARCHIVE_OK), 
+          ctx, (archive_read_open(archive.get(), &archive_stream, NULL, ArchiveInputStream::CallbackRead, NULL) == ARCHIVE_OK),
           errors::InvalidArgument("unable to open datainput for ", filename, ": ", archive_error_string(archive.get())));
 
       size_t index = output.size();
@@ -254,9 +256,26 @@ class DataInputOp: public OpKernel {
         string entryname = archive_entry_pathname(entry);
 	string filtername;
         if (ArchiveInputStream::MatchFilters(archive.get(), entryname, filters_, &filtername)) {
-          s.ResetEntryOffset();
 	  T entry;
-          OP_REQUIRES_OK(ctx, entry.FromInputStream(s, filename, entryname, filtername));
+	  if (filtername == "none") {
+            // If filter is none, then just use the initial stream.
+	    // NOTE: Looks like libarchive may not be able to handle
+	    // none with text type correctly (not reading data in none archive)
+	    // So use the shortcut here.
+            io::RandomAccessInputStream file_stream(file.get());
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(file_stream, filename, entryname, filtername));
+	  } else if (filtername == "gz") {
+            // Treat gz file specially. Looks like libarchive always have issue
+            // with text file so use ZlibInputStream. Now libarchive
+            // is mostly used for archive (not compressio).
+            io::RandomAccessInputStream file_stream(file.get());
+            io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
+            io::ZlibInputStream compression_stream(&file_stream, 65536, 65536,  zlib_compression_options);
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(compression_stream, filename, entryname, filtername));
+          } else {
+            archive_stream.ResetEntryOffset();
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(archive_stream, filename, entryname, filtername));
+          }
           output.emplace_back(std::move(entry));
 	}
       }
@@ -374,9 +393,20 @@ class InputDatasetBase : public DatasetBase {
       current_input_state_.reset(nullptr);
 
       TF_RETURN_IF_ERROR(env->NewRandomAccessFile(filename, &file_));
-      if (filtername.size() == 0) {
-        // No filter means only a file stream.
+      if (filtername.size() == 0 || filtername == "none") {
+	// If filter is none, then just use the initial stream.
+	// NOTE: Looks like libarchive may not be able to handle
+	// none with text type correctly (not reading data in none archive)
+	// So use the shortcut here.
         stream_.reset(new io::RandomAccessInputStream(file_.get()));
+        return Status::OK();
+      } else if (filtername == "gz") {
+        // Treat gz file specially. Looks like libarchive always have issue
+	// with text file so use ZlibInputStream. Now libarchive
+	// is mostly used for archive (not compressio).
+	io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
+        file_stream_.reset(new io::RandomAccessInputStream(file_.get()));
+	stream_.reset(new io::ZlibInputStream(file_stream_.get(), 65536, 65536,  zlib_compression_options));
         return Status::OK();
       }
       archive_.reset(archive_read_new());
@@ -405,6 +435,7 @@ class InputDatasetBase : public DatasetBase {
       current_input_state_.reset(nullptr);
       stream_.reset(nullptr);
       archive_.reset(nullptr);
+      file_stream_.reset(nullptr);
       file_.reset(nullptr);
     }
 
@@ -413,6 +444,7 @@ class InputDatasetBase : public DatasetBase {
     std::unique_ptr<StateType> current_input_state_ GUARDED_BY(mu_);
     std::unique_ptr<io::InputStreamInterface> stream_ GUARDED_BY(mu_);
     std::unique_ptr<struct archive, void(*)(struct archive *)> archive_ GUARDED_BY(mu_);
+    std::unique_ptr<io::InputStreamInterface> file_stream_ GUARDED_BY(mu_);
     std::unique_ptr<tensorflow::RandomAccessFile> file_ GUARDED_BY(mu_);
   };
   OpKernelContext* ctx_;

@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""TextOutputSequence
+"""TextInput/TextOutput
 
 @@TextOutputSequence
+@@TextDataset
 """
 
 from __future__ import absolute_import
@@ -22,11 +23,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.text.python.ops.text_ops import TextOutputSequence
+from tensorflow_io.text.python.ops.text_ops import TextDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "TextOutputSequence",
+    "TextDataset",
 ]
 
 remove_undocumented(__name__)
