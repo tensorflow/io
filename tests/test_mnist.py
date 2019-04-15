@@ -52,16 +52,11 @@ class MNISTDatasetTest(test.TestCase):
         "test_mnist",
         "t10k-labels-idx1-ubyte.gz")
 
-    image_dataset = mnist_dataset_ops.MNISTImageDataset(
-        [image_filename], compression_type="GZIP")
-    label_dataset = mnist_dataset_ops.MNISTLabelDataset(
-        [label_filename], compression_type="GZIP")
+    image_dataset = mnist_dataset_ops.MNISTImageDataset(image_filename)
+    label_dataset = mnist_dataset_ops.MNISTLabelDataset(label_filename)
 
     dataset = mnist_dataset_ops.MNISTDataset(
-        image_filename, label_filename, compression_type="GZIP")
-
-    self.assertEqual(image_dataset.output_shapes.as_list(), [None, None])
-    self.assertEqual(label_dataset.output_shapes.as_list(), [])
+        image_filename, label_filename)
 
     iterator = data.Dataset.zip(
         (image_dataset, label_dataset)).make_initializable_iterator()
