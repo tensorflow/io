@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/platform/logging.h"
 
 #include "rdkafkacpp.h"
 
@@ -137,6 +138,9 @@ class KafkaDatasetOp : public DatasetOpKernel {
               }
 
               if (message->err() == RdKafka::ERR__PARTITION_EOF) {
+                  LOG(INFO) << "Partition reach EOF: " << dataset()->topics_[current_topic_index_]
+                    << ", current offset: " << offset_;
+
                   if (dataset()->eof_) break;
               }
               else {
@@ -147,7 +151,6 @@ class KafkaDatasetOp : public DatasetOpKernel {
               }
 
               message.reset(nullptr);
-              consumer_->poll(0);
             }
 
             // We have reached the end of the current topic, so maybe
@@ -178,6 +181,9 @@ class KafkaDatasetOp : public DatasetOpKernel {
         if (consumer_.get()) {
           TF_RETURN_IF_ERROR(
               writer->WriteScalar(full_name("current_pos"), offset_));
+
+          LOG(INFO) << "Save current topic: " << dataset()->topics_[current_topic_index_]
+            << ", current offset: " << offset_;
         }
         return Status::OK();
       }
@@ -203,7 +209,22 @@ class KafkaDatasetOp : public DatasetOpKernel {
             return errors::Internal("Failed to restore to offset ",
                                     current_pos);
           }
+
+          std::vector<RdKafka::TopicPartition*> partitions;
+          partitions.emplace_back(topic_partition_.get());
+          RdKafka::ErrorCode err = consumer_->assign(partitions);
+          if (err != RdKafka::ERR_NO_ERROR) {
+            return errors::Internal(
+                "Failed to assign partition [", topic_partition_->topic(), ", ",
+                topic_partition_->partition(), ", ", topic_partition_->offset(),
+                "]:", RdKafka::err2str(err));
+          }
           offset_ = current_pos;
+
+          LOG(INFO) << "Restore to topic: " << "["
+            << topic_partition_->topic() << ":" << topic_partition_->partition()
+            << ":" << topic_partition_->offset() << "]";
+
         }
         return Status::OK();
       }
@@ -294,9 +315,11 @@ class KafkaDatasetOp : public DatasetOpKernel {
 
       // Resets all Kafka streams.
       void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        consumer_->unassign();
-        consumer_->close();
-        consumer_.reset(nullptr);
+        if (consumer_.get()) {
+          consumer_->unassign();
+          consumer_->close();
+          consumer_.reset(nullptr);
+        }
       }
 
       mutex mu_;
