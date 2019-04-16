@@ -45,24 +45,6 @@ jobs:
     script:
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python python3.6
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh
-  # Developer Builds make sure the source code of the repo could be
-  # build and run on commodity developer environment (Ubuntu 16.04/18.04).
-  - stage: build
-    name: "Developer Build on Ubuntu 16.04"
-    before_script: &developer_build
-    - |
-      echo "bash -x -e .travis/bazel.configure.sh \"${TENSORFLOW_INSTALL}\"" > script.sh
-      echo "bash -x -e .travis/bazel.build.sh" >> script.sh
-      echo "bash -x -e .travis/build.test.sh \"${TENSORFLOW_INSTALL}\"" >> script.sh
-    - cat script.sh
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:16.04 bash -x -e script.sh
-  - stage: build
-    name: "Developer Build on Ubuntu 18.04"
-    before_script: *developer_build
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:18.04 bash -x -e script.sh
-
   # Preview Release Builds are for TensorFlow 2.0 Preview release.
   # Note only Linux (Ubuntu 18.04) and macOS are supported.
   - stage: release
