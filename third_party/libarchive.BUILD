@@ -20,7 +20,6 @@ cc_library(
         "libarchive/archive_entry.h",
     ],
     copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
         "-DPLATFORM_CONFIG_H=<config.h>",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
