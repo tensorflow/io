@@ -28,7 +28,7 @@ class ImageDataset(data.Dataset):
   """
 
   def __init__(self, filename):
-    """Create a ImageReader.
+    """Create an ImageDataset.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
