@@ -1,6 +1,7 @@
 /.bazelrc
 /bazel-*
 /artifacts
+/get-pip.py
 .DS_Store
 *.pyc
 __pycache__
