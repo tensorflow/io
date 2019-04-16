@@ -26,7 +26,10 @@ class MNISTImageInput: public DataInput<int64> {
       TF_RETURN_IF_ERROR(s.SkipNBytes(16));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, (rows_ * cols_), 1, &buffer , returned));
+    Status status = ReadInputStream(s, (rows_ * cols_), 1, &buffer , returned);
+    if (!(status.ok() || errors::IsOutOfRange(status))) {
+      return status;
+    }
     (*(state.get())) += *returned;
     if (*returned == 1) {
       Tensor value_tensor(ctx->allocator({}), DT_UINT8, {rows_, cols_});
