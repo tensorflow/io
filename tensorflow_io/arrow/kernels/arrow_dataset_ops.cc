@@ -19,6 +19,7 @@ limitations under the License.
 #include "arrow/util/io-util.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/graph/graph.h"
 
 #define CHECK_ARROW(arrow_status)             \
   do {                                        \
@@ -362,8 +363,6 @@ class ArrowOpKernelBase : public DatasetOpKernel {
 // memory in a Python process, or a Pandas DataFrame.
 class ArrowDatasetOp : public ArrowOpKernelBase {
  public:
-  //using DatasetOpKernel::DatasetOpKernel;
-
   explicit ArrowDatasetOp(OpKernelConstruction* ctx) : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
@@ -374,11 +373,14 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
     const Tensor* batches_tensor;
     OP_REQUIRES_OK(ctx, ctx->input("serialized_batches", &batches_tensor));
     OP_REQUIRES(
-        ctx, batches_tensor->dims() <= 0,
-        errors::InvalidArgument("`serialized_batches` must be a scalar."));
-    string batches = batches_tensor->flat<string>()(0);
-
-    *output = new Dataset(ctx, batches, columns, output_types_, output_shapes_);
+        ctx, TensorShapeUtils::IsScalar(batches_tensor->shape()),
+        errors::InvalidArgument("serialized_batches must be a scalar"));
+    *output = new Dataset(
+        ctx,
+        *batches_tensor,
+        columns,
+        output_types_,
+        output_shapes_);
   }
 
  private:
@@ -386,12 +388,14 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
    public:
     // Construct a Dataset that consumed Arrow batches from serialized bytes
     // in a string. Record batches should be serialized in Arrow File format.
-    Dataset(OpKernelContext* ctx, const string& serialized_batches,
+    Dataset(OpKernelContext* ctx,
+            const Tensor batches_tensor,
             const std::vector<int32>& columns,
             const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, output_types, output_shapes),
-          batches_(serialized_batches) {}
+          batches_(std::move(batches_tensor)) {
+    }
 
     string DebugString() const override { return "ArrowDatasetOp::Dataset"; }
 
@@ -400,7 +404,13 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
                               DatasetGraphDefBuilder* b,
                               Node** output) const override {
       Node* batches = nullptr;
-      TF_RETURN_IF_ERROR(b->AddScalar(batches_, &batches));
+      if (ctx->optimization_only()) {
+        TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
+        DCHECK_NE(ctx->input_list(), nullptr);
+        ctx->input_list()->emplace_back(batches->name(), batches_);
+      } else {
+        TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
+      }
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       TF_RETURN_IF_ERROR(b->AddDataset(this, {batches, columns}, output));
@@ -422,8 +432,8 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env* env)
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        std::shared_ptr<arrow::Buffer> buffer;
-        CHECK_ARROW(arrow::Buffer::FromString(dataset()->batches_, &buffer));
+        const string& batches = dataset()->batches_.scalar<string>()();
+        auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
         CHECK_ARROW(
             arrow::ipc::RecordBatchFileReader::Open(buffer_reader, &reader_));
@@ -458,7 +468,7 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
       int num_batches_ GUARDED_BY(mu_) = 0;
     };
 
-    const string batches_;
+    const Tensor batches_;
   };
 };
 
