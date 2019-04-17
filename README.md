@@ -93,7 +93,7 @@ used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
 $ # Build and run the Docker image
 $ docker build -f dev/Dockerfile -t tfio-dev .
-$ docker run -it -rm --net=host -v ${PWD}:/v -w /v tfio-dev
+$ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 $ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
 $ # Build TensorFlow I/O C++
