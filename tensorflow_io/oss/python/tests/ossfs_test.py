@@ -41,11 +41,11 @@ class OSSFSTest(test.TestCase):
   """OSS Filesystem Tests"""
 
   @classmethod
-  def setUpClass(cls):
+  def setUpClass(cls):  # pylint: disable=invalid-name
     gfile.MkDir(get_oss_path(""))
 
   @classmethod
-  def tearDownClass(cls):
+  def tearDownClass(cls):  # pylint: disable=invalid-name
     gfile.DeleteRecursively(get_oss_path(""))
 
   def test_file_operations(self):
