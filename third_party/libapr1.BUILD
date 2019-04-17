@@ -164,11 +164,11 @@ cc_library(
         "include/arch/unix",
         "include/private",
     ],
-    strip_include_prefix = "include",
     linkopts = [
         "-lrt",
         "-lcrypt",
         "-lpthread",
         "-ldl",
-    ]
+    ],
+    strip_include_prefix = "include",
 )
