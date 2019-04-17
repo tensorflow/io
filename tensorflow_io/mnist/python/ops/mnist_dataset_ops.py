@@ -18,112 +18,80 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
+from tensorflow.compat.v2 import data
 from tensorflow_io import _load_library
 mnist_ops = _load_library('_mnist_ops.so')
 
-class _MNISTBaseDataset(data.Dataset):
-  """A MNIST Dataset
-  """
+class InputDataset(data.Dataset):
+  """An InputDataset"""
 
-  def __init__(self, mnist_op_class):
-    """Create a MNISTReader.
-
-    Args:
-      mnist_op_class: The op of the dataset, either
-          mnist_ops.mnist_image_dataset or mnist_ops.mnist_label_dataset.
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    self._func = mnist_op_class
-    super(_MNISTBaseDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return self._func(
+  def __init__(self, fn, data_input, output_types, output_shapes):
+    """Create an InputDataset."""
+    self._data_input = data_input
+    self._output_types = output_types
+    self._output_shapes = output_shapes
+    super(InputDataset, self).__init__(fn(
         self._data_input,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_classes(self):
-    return tensorflow.Tensor
-
-  @property
-  def output_types(self):
-    return tuple([dtypes.uint8])
-
-class MNISTImageDataset(_MNISTBaseDataset):
-  """A MNIST Image Dataset
-  """
-
-  def __init__(self, filename):
-    """Create a MNISTReader.
-
-    Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    self._data_input = mnist_ops.mnist_image_input(filename, ["none", "gz"])
-    super(MNISTImageDataset, self).__init__(
-        mnist_ops.mnist_image_dataset)
-
-  @property
-  def output_shapes(self):
-    return tuple([tensorflow.TensorShape([None, None])])
-
-
-class MNISTLabelDataset(_MNISTBaseDataset):
-  """A MNIST Label Dataset
-  """
-
-  def __init__(self, filename):
-    """Create a MNISTReader.
-
-    Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    self._data_input = mnist_ops.mnist_label_input(filename, ["none", "gz"])
-    super(MNISTLabelDataset, self).__init__(
-        mnist_ops.mnist_label_dataset)
-
-  @property
-  def output_shapes(self):
-    return tuple([tensorflow.TensorShape([])])
-
-class MNISTDataset(data.Dataset):
-  """A MNIST Dataset
-  """
-
-  def __init__(self, image, label):
-    """Create a MNISTReader.
-
-    Args:
-      image: A `tf.string` tensor containing image filename.
-      label: A `tf.string` tensor containing label filename.
-    """
-    self._image = image
-    self._label = label
-    super(MNISTDataset, self).__init__()
+        output_types=self._output_types,
+        output_shapes=self._output_shapes))
 
   def _inputs(self):
     return []
 
-  def _as_variant_tensor(self):
-    return data.Dataset.zip( # pylint: disable=protected-access
-        (MNISTImageDataset(self._image),
-         MNISTLabelDataset(self._label))
-        )._as_variant_tensor()
-
   @property
-  def output_shapes(self):
-    return  (tensorflow.TensorShape([None, None]), tensorflow.TensorShape([]))
-
-  @property
-  def output_classes(self):
-    return tensorflow.Tensor, tensorflow.Tensor
+  def _element_structure(self):
+    e = [
+        tensorflow.data.experimental.TensorStructure(
+            p, q.as_list()) for (p, q) in zip(
+                self.output_types, self.output_shapes)
+    ]
+    if len(e) == 1:
+      return e[0]
+    return tensorflow.data.experimental.NestedStructure(e)
 
   @property
   def output_types(self):
-    return dtypes.uint8, dtypes.uint8
+    return self._output_types
+
+  @property
+  def output_shapes(self):
+    return self._output_shapes
+
+class MNISTLabelDataset(InputDataset):
+  """A MNISTLabelDataset
+  """
+
+  def __init__(self, filename):
+    """Create a MNISTLabelDataset.
+
+    Args:
+      filenames: A `tf.string` tensor containing one or more filenames.
+    """
+    super(MNISTLabelDataset, self).__init__(
+        mnist_ops.mnist_label_dataset,
+        mnist_ops.mnist_label_input(filename, ["none", "gz"]),
+        [tensorflow.uint8],
+        [tensorflow.TensorShape([])]
+    )
+
+class MNISTImageDataset(InputDataset):
+  """A MNISTImageDataset
+  """
+
+  def __init__(self, filename):
+    """Create a MNISTImageDataset.
+
+    Args:
+      filenames: A `tf.string` tensor containing one or more filenames.
+    """
+    super(MNISTImageDataset, self).__init__(
+        mnist_ops.mnist_image_dataset,
+        mnist_ops.mnist_image_input(filename, ["none", "gz"]),
+        [tensorflow.uint8],
+        [tensorflow.TensorShape([None, None])]
+    )
+
+def MNISTDataset(image_filename, label_filename):
+  return data.Dataset.zip((
+      MNISTImageDataset(image_filename),
+      MNISTLabelDataset(label_filename)))

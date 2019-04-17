@@ -22,74 +22,58 @@ import os
 import numpy as np
 
 import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+tensorflow.compat.v1.enable_eager_execution()
 
-from tensorflow import errors         # pylint: disable=wrong-import-position
-from tensorflow import test           # pylint: disable=wrong-import-position
-from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
-
-from tensorflow_io.mnist.python.ops import mnist_dataset_ops # pylint: disable=wrong-import-position
+from tensorflow_io import mnist as mnist_io # pylint: disable=wrong-import-position
 
 
-class MNISTDatasetTest(test.TestCase):
-  """MNISTDatasetTest"""
-  def test_mnist_dataset(self):
-    """Test case for MNIST Dataset.
-    """
-    mnist_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "mnist.npz")
-    with np.load(mnist_filename) as f:
-      (x_test, y_test) = f['x_test'], f['y_test']
+def test_mnist_dataset():
+  """Test case for MNIST Dataset.
+  """
+  mnist_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "mnist.npz")
+  with np.load(mnist_filename) as f:
+    (x_test, y_test) = f['x_test'], f['y_test']
 
-    image_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "t10k-images-idx3-ubyte.gz")
-    label_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "t10k-labels-idx1-ubyte.gz")
+  image_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-images-idx3-ubyte.gz")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-labels-idx1-ubyte.gz")
 
-    image_dataset = mnist_dataset_ops.MNISTImageDataset(image_filename)
-    label_dataset = mnist_dataset_ops.MNISTLabelDataset(label_filename)
+  image_dataset = mnist_io.MNISTImageDataset(image_filename)
+  label_dataset = mnist_io.MNISTLabelDataset(label_filename)
 
-    dataset = mnist_dataset_ops.MNISTDataset(
-        image_filename, label_filename)
+  i = 0
+  for m_x in image_dataset:
+    v_x = x_test[i]
+    assert np.alltrue(v_x == m_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
-    iterator = data.Dataset.zip(
-        (image_dataset, label_dataset)).make_initializable_iterator()
-    init_op = iterator.initializer
-    get_next = iterator.get_next()
+  i = 0
+  for m_y in label_dataset:
+    v_y = y_test[i]
+    assert np.alltrue(v_y == m_y.numpy())
+    i += 1
+  assert i == len(y_test)
 
-    with self.cached_session() as sess:
-      sess.run(init_op)
-      l = len(y_test)
-      for i in range(l):
-        v_x = x_test[i]
-        v_y = y_test[i]
-        m_x, m_y = sess.run(get_next)
-        self.assertEqual(v_y, m_y)
-        self.assertAllEqual(v_x, m_x)
-      with self.assertRaises(errors.OutOfRangeError):
-        sess.run(get_next)
+  dataset = mnist_io.MNISTDataset(
+      image_filename, label_filename)
 
-    iterator = dataset.make_initializable_iterator()
-    init_op = iterator.initializer
-    get_next = iterator.get_next()
-
-    with self.cached_session() as sess:
-      sess.run(init_op)
-      l = len(y_test)
-      for i in range(l):
-        v_x = x_test[i]
-        v_y = y_test[i]
-        m_x, m_y = sess.run(get_next)
-        self.assertEqual(v_y, m_y)
-        self.assertAllEqual(v_x, m_x)
-      with self.assertRaises(errors.OutOfRangeError):
-        sess.run(get_next)
+  i = 0
+  for (m_x, m_y) in dataset:
+    v_x = x_test[i]
+    v_y = y_test[i]
+    assert np.alltrue(v_y == m_y.numpy())
+    assert np.alltrue(v_x == m_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
 if __name__ == "__main__":
   test.main()

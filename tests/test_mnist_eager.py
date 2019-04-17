@@ -19,14 +19,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import pytest
 
 import tensorflow as tf
 import tensorflow_io.mnist as mnist_io
 
-@pytest.mark.skipif(
-    not (hasattr(tf, "version") and
-         tf.version.VERSION.startswith("2.0.")), reason=None)
 def test_mnist_tutorial():
   """test_mnist_tutorial"""
   image_filename = os.path.join(
@@ -55,9 +51,6 @@ def test_mnist_tutorial():
 
   model.fit(d_train, epochs=5)
 
-@pytest.mark.skipif(
-    not (hasattr(tf, "version") and
-         tf.version.VERSION.startswith("2.0.")), reason=None)
 def test_mnist_tutorial_uncompressed():
   """test_mnist_tutorial_uncompressed"""
   image_filename = os.path.join(
