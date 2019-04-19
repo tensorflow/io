@@ -41,7 +41,7 @@ def test_mnist_tutorial():
       image_filename,
       label_filename)
 
-  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(32)
+  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1000)
 
   model = tf.keras.models.Sequential([
       tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -72,7 +72,7 @@ def test_mnist_tutorial_uncompressed():
       image_filename,
       label_filename)
 
-  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(32)
+  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
 
   model = tf.keras.models.Sequential([
       tf.keras.layers.Flatten(input_shape=(28, 28)),
