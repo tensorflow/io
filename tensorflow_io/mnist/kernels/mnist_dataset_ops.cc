@@ -20,20 +20,20 @@ namespace data {
 
 class MNISTImageInput: public DataInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
       TF_RETURN_IF_ERROR(s.SkipNBytes(16));
     }
     string buffer;
-    Status status = ReadInputStream(s, (rows_ * cols_), 1, &buffer , returned);
+    Status status = ReadInputStream(s, (rows_ * cols_), record_to_read, &buffer, record_read);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
       return status;
     }
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {rows_, cols_});
-      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*returned) * rows_ * cols_);
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read, rows_, cols_});
+      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*record_read) * rows_ * cols_);
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
@@ -70,17 +70,17 @@ class MNISTImageInput: public DataInput<int64> {
 };
 class MNISTLabelInput: public DataInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
       TF_RETURN_IF_ERROR(s.SkipNBytes(8));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, 1, 1, &buffer, returned));
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {});
-      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*returned));
+    TF_RETURN_IF_ERROR(ReadInputStream(s, 1, record_to_read, &buffer, record_read));
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read});
+      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*record_read));
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();

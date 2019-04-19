@@ -21,24 +21,26 @@ namespace tensorflow {
 
 REGISTER_OP("MNISTImageDataset")
     .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
 REGISTER_OP("MNISTLabelDataset")
     .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
 
