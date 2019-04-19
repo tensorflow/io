@@ -361,28 +361,47 @@ class InputDatasetBase : public DatasetBase {
       mutex_lock l(mu_);
       int64 returned = 0;
       int64 count = dataset()->batch_ == 0 ? 1 : dataset()->batch_;
-      std::vector<Tensor> prefix_tensors;
       while (returned < count) {
         if (stream_) {
           int64 record_read = 0;
           int64 record_to_read = count - returned;
-          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadRecord((*stream_.get()), ctx, current_input_state_, count - returned, &record_read, out_tensors));
+          std::vector<Tensor> chunk_tensors;
+          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadRecord((*stream_.get()), ctx, current_input_state_, count - returned, &record_read, &chunk_tensors));
           if (record_read > 0) {
-            if (prefix_tensors.size() != 0) {
-              for (size_t i = 0; i < prefix_tensors.size(); i++) {
-                TensorShape shape = prefix_tensors[i].shape();
+            if (out_tensors->size() == 0) {
+              // Replace out_tensors with chunk_tensors
+              out_tensors->reserve(chunk_tensors.size());
+              // dataset()->batch_ == 0 could only read at most one record
+              // so it only happens here.
+              if (dataset()->batch_ == 0) {
+                for (size_t i = 0; i < chunk_tensors.size(); i++) {
+                  TensorShape shape = chunk_tensors[i].shape();
+                  shape.RemoveDim(0);
+                  Tensor value_tensor(ctx->allocator({}), chunk_tensors[i].dtype(), shape);
+                  value_tensor.CopyFrom(chunk_tensors[i], shape);
+                  out_tensors->emplace_back(std::move(value_tensor));
+                }
+              } else {
+                for (size_t i = 0; i < chunk_tensors.size(); i++) {
+                  out_tensors->emplace_back(std::move(chunk_tensors[i]));
+                }
+              }
+            } else {
+              // Append out_tensors with chunk_tensors
+              for (size_t i = 0; i < out_tensors->size(); i++) {
+                TensorShape shape = (*out_tensors)[i].shape();
                 shape.set_dim(0, shape.dim_size(0) + record_read);
-                Tensor value_tensor(ctx->allocator({}), prefix_tensors[i].dtype(), shape);
+                Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
                 TensorShape element_shape = shape;
                 element_shape.RemoveDim(0);
-                Tensor element(ctx->allocator({}), prefix_tensors[i].dtype(), element_shape);
-                for (size_t index = 0; index < prefix_tensors[i].shape().dim_size(0); index++) {
-                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement(prefix_tensors[i], &element, index));
+                Tensor element(ctx->allocator({}), (*out_tensors)[i].dtype(), element_shape);
+                for (size_t index = 0; index < (*out_tensors)[i].shape().dim_size(0); index++) {
+                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement((*out_tensors)[i], &element, index));
                   TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, index));
                 }
                 for (size_t index = 0; index < record_read; index++) {
-                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement((*out_tensors)[i], &element, index));
-                  TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, prefix_tensors[i].shape().dim_size(0) + index));
+                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement(chunk_tensors[i], &element, index));
+                  TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, (*out_tensors)[i].shape().dim_size(0) + index));
                 }
                 (*out_tensors)[i] = std::move(value_tensor);
               }
@@ -390,15 +409,6 @@ class InputDatasetBase : public DatasetBase {
             returned += record_read;
           }
           if (returned == count) {
-            if (dataset()->batch_ == 0) {
-              for (size_t i = 0; i < out_tensors->size(); i++) {
-                TensorShape shape = (*out_tensors)[i].shape();
-                shape.RemoveDim(0);
-                Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
-                value_tensor.CopyFrom((*out_tensors)[i], shape);
-                (*out_tensors)[i] = std::move(value_tensor);
-              }
-            }
             *end_of_sequence = false;
             return Status::OK();
           }
@@ -409,15 +419,6 @@ class InputDatasetBase : public DatasetBase {
         // Iteration ends when there are no more input to process.
         if (current_input_index_ == dataset()->input_.size()) {
           if (out_tensors->size() != 0) {
-            if (dataset()->batch_ == 0) {
-              for (size_t i = 0; i < out_tensors->size(); i++) {
-                TensorShape shape = (*out_tensors)[i].shape();
-                shape.RemoveDim(0);
-                Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
-                value_tensor.CopyFrom((*out_tensors)[i], shape);
-                (*out_tensors)[i] = std::move(value_tensor);
-              }
-            }
             *end_of_sequence = false;
             return Status::OK();
           }
