@@ -21,19 +21,30 @@ namespace data {
 
 class TextInput: public DataInput<io::BufferedInputStream> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new io::BufferedInputStream(&s, 4096));
     }
-    string buffer;
-    Status status = state.get()->ReadLine(&buffer);
-    if (!(status.ok() || errors::IsOutOfRange(status))) {
-      return status;
+    std::vector<string> records;
+    records.reserve(record_to_read);
+    while ((*record_read) < record_to_read) {
+      string buffer;
+      buffer.clear();
+      Status status = state.get()->ReadLine(&buffer);
+      if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return status;
+      }
+      if (!status.ok()) {
+        break;
+      }
+      records.emplace_back(std::move(buffer));
+      (*record_read)++;
     }
-    *returned = (status.ok()) ? 1 : 0;
-    if (*returned == 1) {
-      Tensor value_tensor(ctx->allocator({}), DT_STRING, {});
-      value_tensor.scalar<string>()() = buffer;
+    if (*record_read > 0) {
+      Tensor value_tensor(ctx->allocator({}), DT_STRING, {*record_read});
+      for (size_t i = 0; i < (*record_read); i++) {
+        value_tensor.flat<string>()(i) = std::move(records[i]);
+      }
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();

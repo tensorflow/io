@@ -30,6 +30,7 @@ REGISTER_OP("TextInput")
 
 REGISTER_OP("TextDataset")
     .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
