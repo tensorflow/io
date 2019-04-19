@@ -46,7 +46,7 @@ class CIFARDatasetTest(test.TestCase):
 
     num_repeats = 2
 
-    dataset = cifar_io.CIFAR10Dataset(filename).repeat(
+    dataset = cifar_io.CIFAR10Dataset(filename, batch=3).repeat(
         num_repeats)
     iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer
@@ -55,10 +55,19 @@ class CIFARDatasetTest(test.TestCase):
     with self.cached_session() as sess:
       sess.run(init_op)
       for _ in range(num_repeats):  # Dataset is repeated.
-        for i in range(50000):
+        for i in range(16666):
           image, label = sess.run(get_next)
-          self.assertAllEqual(image, x_train[i])
-          self.assertEqual(label, y_train[i])
+          self.assertAllEqual(image[0], x_train[i*3+0])
+          self.assertEqual(label[0], y_train[i*3+0])
+          self.assertAllEqual(image[1], x_train[i*3+1])
+          self.assertEqual(label[1], y_train[i*3+1])
+          self.assertAllEqual(image[2], x_train[i*3+2])
+          self.assertEqual(label[2], y_train[i*3+2])
+        image, label = sess.run(get_next)
+        self.assertAllEqual(image[0], x_train[49998])
+        self.assertEqual(label[0], y_train[49998])
+        self.assertAllEqual(image[1], x_train[49999])
+        self.assertEqual(label[1], y_train[49999])
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
