@@ -25,96 +25,71 @@ namespace data {
 namespace {
 class CIFAR10Input: public DataInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, 3073, 1, &buffer , returned));
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor label_tensor(ctx->allocator({}), DT_UINT8, {});
-      label_tensor.scalar<uint8>()() = *((uint8 *)(&(buffer.data()[0])));
+    TF_RETURN_IF_ERROR(ReadInputStream(s, 3073, record_to_read, &buffer, record_read));
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor label_tensor(ctx->allocator({}), DT_UINT8, {*record_read});
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read, 3, 32, 32});
+      for (int64 i = 0; i < (*record_read); i++) {
+        // Memory alignment?
+        memcpy(&(label_tensor.flat<uint8>().data()[i]), &(buffer.data()[i * 3073 + 0]), 1);
+        memcpy(&(value_tensor.flat<uint8>().data()[i * 3072]), &(buffer.data()[i * 3073 + 1]), 3072);
+      }
       out_tensors->emplace_back(std::move(label_tensor));
-
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {3, 32, 32});
-      memcpy(value_tensor.flat<uint8>().data(), &(buffer.data()[1]), 3072);
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
   }
   Status FromStream(io::InputStreamInterface& s) override {
-    size_ = 0;
-    Status status = s.SkipNBytes(3073);
-    while (status.ok()) {
-      size_ += 1;
-      status = s.SkipNBytes(3073);
-    }
-    if (status != errors::OutOfRange("EOF reached")) {
-      return status;
-    }
     return Status::OK();
   }
   void EncodeAttributes(VariantTensorData* data) const override {
-    data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_.back().scalar<int64>()() = size_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_t size_index = data.tensors().size() - 1;
-    size_ = data.tensors(size_index).scalar<int64>()();
     return true;
   }
  protected:
-  int64 size_;
 };
 
 class CIFAR100Input: public DataInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, 3074, 1, &buffer , returned));
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor coarse_tensor(ctx->allocator({}), DT_UINT8, {});
-      coarse_tensor.scalar<uint8>()() = *((uint8 *)(&(buffer.data()[0])));
+    TF_RETURN_IF_ERROR(ReadInputStream(s, 3074, record_to_read, &buffer, record_read));
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor coarse_tensor(ctx->allocator({}), DT_UINT8, {*record_read});
+      Tensor fine_tensor(ctx->allocator({}), DT_UINT8, {*record_read});
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read, 3, 32, 32});
+      for (int64 i = 0; i < (*record_read); i++) {
+        // Memory alignment?
+        memcpy(&(coarse_tensor.flat<uint8>().data()[i]), &(buffer.data()[i * 3074 + 0]), 1);
+        memcpy(&(fine_tensor.flat<uint8>().data()[i]), &(buffer.data()[i * 3074 + 1]), 1);
+        memcpy(&(value_tensor.flat<uint8>().data()[i * 3072]), &(buffer.data()[i * 3074 + 2]), 3072);
+      }
       out_tensors->emplace_back(std::move(coarse_tensor));
-
-      Tensor fine_tensor(ctx->allocator({}), DT_UINT8, {});
-      fine_tensor.scalar<uint8>()() = *((uint8 *)(&(buffer.data()[1])));
       out_tensors->emplace_back(std::move(fine_tensor));
-
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {3, 32, 32});
-      memcpy(value_tensor.flat<uint8>().data(), &(buffer.data()[2]), 3072);
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
   }
   Status FromStream(io::InputStreamInterface& s) override {
-    size_ = 0;
-    Status status = s.SkipNBytes(3074);
-    while (status.ok()) {
-      size_ += 1;
-      status = s.SkipNBytes(3074);
-    }
-    if (status != errors::OutOfRange("EOF reached")) {
-      return status;
-    }
     return Status::OK();
   }
   void EncodeAttributes(VariantTensorData* data) const override {
-    data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_.back().scalar<int64>()() = size_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_t size_index = data.tensors().size() - 1;
-    size_ = data.tensors(size_index).scalar<int64>()();
     return true;
   }
  protected:
-  int64 size_;
 };
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::CIFAR10Input");

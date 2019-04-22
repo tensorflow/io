@@ -26,13 +26,14 @@ cifar_ops = _load_library('_cifar_ops.so')
 class _CIFAR10Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename, filters):
+  def __init__(self, filename, filters, batch=None):
     """Create a `CIFARDataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
     self._data_input = cifar_ops.cifar10_input(filename, filters)
+    self._batch = 0 if batch is None else batch
     super(_CIFAR10Dataset, self).__init__()
 
   def _inputs(self):
@@ -41,6 +42,7 @@ class _CIFAR10Dataset(data.Dataset):
   def _as_variant_tensor(self):
     return cifar_ops.cifar10_dataset(
         self._data_input,
+        self._batch,
         output_types=self.output_types,
         output_shapes=self.output_shapes)
 
@@ -50,7 +52,11 @@ class _CIFAR10Dataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([]), tensorflow.TensorShape([3, 32, 32]))
+    return (
+        tensorflow.TensorShape([]),
+        tensorflow.TensorShape([3, 32, 32])) if self._batch == 0 else (
+            tensorflow.TensorShape([None]),
+            tensorflow.TensorShape([None, 3, 32, 32]))
 
   @property
   def output_types(self):
@@ -59,7 +65,7 @@ class _CIFAR10Dataset(data.Dataset):
 class CIFAR10Dataset(_CIFAR10Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename, test=False):
+  def __init__(self, filename, batch=None, test=False):
     """Create a `CIFAR10Dataset`.
 
     Args:
@@ -67,31 +73,43 @@ class CIFAR10Dataset(_CIFAR10Dataset):
       test: A boolean to indicate if the data input is for test or for train.
     """
     self._filename = filename
+    self._batch = 0 if batch is None else batch
     if test:
       self._filters = ["tar.gz:test_batch.bin"]
     else:
       self._filters = [
           "tar.gz:data_batch_" + str(i) +".bin" for i in range(1, 6)]
-    super(CIFAR10Dataset, self).__init__(self._filename, self._filters)
+    super(CIFAR10Dataset, self).__init__(
+        self._filename, self._filters, batch=self._batch)
 
   def _as_variant_tensor(self):
-    return _CIFAR10Dataset(self._filename, self._filters).map( # pylint: disable=protected-access
-        lambda label, image: (tensorflow.transpose(image, [1, 2, 0]), label))._as_variant_tensor()
+    if self._batch == 0:
+      return _CIFAR10Dataset( # pylint: disable=protected-access
+          self._filename, self._filters, batch=self._batch).map(
+              lambda label, image: (tensorflow.transpose(image, [1, 2, 0]), label))._as_variant_tensor()
+    return _CIFAR10Dataset( # pylint: disable=protected-access
+        self._filename, self._filters, batch=self._batch).map(
+            lambda label, image: (tensorflow.transpose(image, [0, 2, 3, 1]), label))._as_variant_tensor()
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([32, 32, 3]), tensorflow.TensorShape([]))
+    return (
+        tensorflow.TensorShape([32, 32, 3]),
+        tensorflow.TensorShape([])) if self._batch == 0 else (
+            tensorflow.TensorShape([None, 32, 32, 3]),
+            tensorflow.TensorShape([None]))
 
 class _CIFAR100Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename, filters):
+  def __init__(self, filename, filters, batch=None):
     """Create a `CIFAR100Dataset`.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
     self._data_input = cifar_ops.cifar100_input(filename, filters)
+    self._batch = 0 if batch is None else batch
     super(_CIFAR100Dataset, self).__init__()
 
   def _inputs(self):
@@ -100,6 +118,7 @@ class _CIFAR100Dataset(data.Dataset):
   def _as_variant_tensor(self):
     return cifar_ops.cifar100_dataset(
         self._data_input,
+        self._batch,
         output_types=self.output_types,
         output_shapes=self.output_shapes)
 
@@ -109,9 +128,13 @@ class _CIFAR100Dataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([]),
-            tensorflow.TensorShape([]),
-            tensorflow.TensorShape([3, 32, 32]))
+    return (
+        tensorflow.TensorShape([]),
+        tensorflow.TensorShape([]),
+        tensorflow.TensorShape([3, 32, 32])) if self._batch == 0 else (
+            tensorflow.TensorShape([None]),
+            tensorflow.TensorShape([None]),
+            tensorflow.TensorShape([None, 3, 32, 32]))
 
   @property
   def output_types(self):
@@ -120,7 +143,7 @@ class _CIFAR100Dataset(data.Dataset):
 class CIFAR100Dataset(_CIFAR100Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
 
-  def __init__(self, filename, test=False, mode='fine'):
+  def __init__(self, filename, batch=None, test=False, mode='fine'):
     """Create a `CIFAR100Dataset`.
 
     Args:
@@ -129,16 +152,23 @@ class CIFAR100Dataset(_CIFAR100Dataset):
       mode: A string indicate if `coarse` or `fine` label is used.
     """
     self._filename = filename
+    self._batch = 0 if batch is None else batch
     if test:
       self._filters = ["tar.gz:test.bin"]
     else:
       self._filters = ["tar.gz:train.bin"]
     self._mode = mode
-    super(CIFAR100Dataset, self).__init__(self._filename, self._filters)
+    super(CIFAR100Dataset, self).__init__(
+        self._filename, self._filters, batch=self._batch)
 
   def _as_variant_tensor(self):
-    return _CIFAR100Dataset(self._filename, self._filters).map( # pylint: disable=protected-access
-        lambda coarse, fine, image: (tensorflow.transpose(image, [1, 2, 0]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
+    if self._batch == 0:
+      return _CIFAR100Dataset( # pylint: disable=protected-access
+          self._filename, self._filters, batch=self._batch).map(
+              lambda coarse, fine, image: (tensorflow.transpose(image, [1, 2, 0]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
+    return _CIFAR100Dataset( # pylint: disable=protected-access
+        self._filename, self._filters, batch=self._batch).map(
+            lambda coarse, fine, image: (tensorflow.transpose(image, [0, 2, 3, 1]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
 
   @property
   def output_classes(self):
@@ -146,7 +176,11 @@ class CIFAR100Dataset(_CIFAR100Dataset):
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([32, 32, 3]), tensorflow.TensorShape([]))
+    return (
+        tensorflow.TensorShape([32, 32, 3]),
+        tensorflow.TensorShape([])) if self._batch == 0 else (
+            tensorflow.TensorShape([None, 32, 32, 3]),
+            tensorflow.TensorShape([None]))
 
   @property
   def output_types(self):

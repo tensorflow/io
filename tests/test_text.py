@@ -39,20 +39,20 @@ def test_text_input():
       os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
   gzip_text_filename = "file://" + gzip_text_filename
 
-  num_repeats = 2
-
-  filenames = [text_filename, gzip_text_filename]
-  dataset = text_io.TextDataset(filenames).repeat(num_repeats)
+  lines = lines * 3
+  filenames = [text_filename, gzip_text_filename, text_filename]
+  dataset = text_io.TextDataset(filenames, batch=2)
   iterator = dataset.make_initializable_iterator()
   init_op = iterator.initializer
   get_next = iterator.get_next()
   with tensorflow.compat.v1.Session() as sess:
     sess.run(init_op)
-    for _ in range(num_repeats):
-      for _ in filenames:
-        for i in lines:
-          v = sess.run(get_next)
-          assert i == v
+    for i in range(0, len(lines) - 2, 2):
+      v = sess.run(get_next)
+      assert lines[i] == v[0]
+      assert lines[i + 1] == v[1]
+    v = sess.run(get_next)
+    assert lines[len(lines) - 1] == v[0]
     with pytest.raises(errors.OutOfRangeError):
       sess.run(get_next)
 
