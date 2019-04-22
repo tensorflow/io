@@ -19,6 +19,7 @@ limitations under the License.
 #define EIGEN_USE_THREADS
 
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/util/batch_util.h"
 #include "tensorflow/core/lib/io/inputstream_interface.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 #include "tensorflow/core/lib/io/zlib_compression_options.h"
@@ -152,7 +153,7 @@ class DataInput {
   DataInput() {}
   virtual ~DataInput() {}
   virtual Status FromStream(io::InputStreamInterface& s) = 0;
-  virtual Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<T>& state, int64* returned, std::vector<Tensor>* out_tensors) const = 0;
+  virtual Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const = 0;
   virtual void EncodeAttributes(VariantTensorData* data) const = 0;
   virtual bool DecodeAttributes(const VariantTensorData& data) = 0;
 
@@ -298,10 +299,11 @@ class DataInputOp: public OpKernel {
 template<typename InputType, typename StateType>
 class InputDatasetBase : public DatasetBase {
  public:
-  InputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
+  InputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const int64 batch, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
       : DatasetBase(DatasetContext(ctx)),
         ctx_(ctx),
         input_(input),
+        batch_(batch),
         output_types_(output_types),
         output_shapes_(output_shapes) {}
 
@@ -339,7 +341,11 @@ class InputDatasetBase : public DatasetBase {
       input_tensor.flat<string>()(i) = message;
     }
     TF_RETURN_IF_ERROR(b->AddTensor(input_tensor, &input_node));
-    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node }, node));
+    Node* batch_node;
+    Tensor batch_tensor(DT_INT64, TensorShape({}));
+    batch_tensor.scalar<int64>()() = batch_;
+    TF_RETURN_IF_ERROR(b->AddTensor(batch_tensor, &batch_node));
+    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node, batch_node}, node));
     return Status::OK();
   }
  private:
@@ -353,11 +359,55 @@ class InputDatasetBase : public DatasetBase {
                            std::vector<Tensor>* out_tensors,
                            bool* end_of_sequence) override {
       mutex_lock l(mu_);
-      do {
+      int64 returned = 0;
+      int64 count = dataset()->batch_ == 0 ? 1 : dataset()->batch_;
+      while (returned < count) {
         if (stream_) {
-	  int64 count = 1;
-          int64 returned = 0;
-          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadRecord((*stream_.get()), ctx, current_input_state_, &returned, out_tensors));
+          int64 record_read = 0;
+          int64 record_to_read = count - returned;
+          std::vector<Tensor> chunk_tensors;
+          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadRecord((*stream_.get()), ctx, current_input_state_, count - returned, &record_read, &chunk_tensors));
+          if (record_read > 0) {
+            if (out_tensors->size() == 0) {
+              // Replace out_tensors with chunk_tensors
+              out_tensors->reserve(chunk_tensors.size());
+              // dataset()->batch_ == 0 could only read at most one record
+              // so it only happens here.
+              if (dataset()->batch_ == 0) {
+                for (size_t i = 0; i < chunk_tensors.size(); i++) {
+                  TensorShape shape = chunk_tensors[i].shape();
+                  shape.RemoveDim(0);
+                  Tensor value_tensor(ctx->allocator({}), chunk_tensors[i].dtype(), shape);
+                  value_tensor.CopyFrom(chunk_tensors[i], shape);
+                  out_tensors->emplace_back(std::move(value_tensor));
+                }
+              } else {
+                for (size_t i = 0; i < chunk_tensors.size(); i++) {
+                  out_tensors->emplace_back(std::move(chunk_tensors[i]));
+                }
+              }
+            } else {
+              // Append out_tensors with chunk_tensors
+              for (size_t i = 0; i < out_tensors->size(); i++) {
+                TensorShape shape = (*out_tensors)[i].shape();
+                shape.set_dim(0, shape.dim_size(0) + record_read);
+                Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
+                TensorShape element_shape = shape;
+                element_shape.RemoveDim(0);
+                Tensor element(ctx->allocator({}), (*out_tensors)[i].dtype(), element_shape);
+                for (size_t index = 0; index < (*out_tensors)[i].shape().dim_size(0); index++) {
+                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement((*out_tensors)[i], &element, index));
+                  TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, index));
+                }
+                for (size_t index = 0; index < record_read; index++) {
+                  TF_RETURN_IF_ERROR(batch_util::CopySliceToElement(chunk_tensors[i], &element, index));
+                  TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, (*out_tensors)[i].shape().dim_size(0) + index));
+                }
+                (*out_tensors)[i] = std::move(value_tensor);
+              }
+            }
+            returned += record_read;
+          }
           if (returned == count) {
             *end_of_sequence = false;
             return Status::OK();
@@ -368,12 +418,16 @@ class InputDatasetBase : public DatasetBase {
         }
         // Iteration ends when there are no more input to process.
         if (current_input_index_ == dataset()->input_.size()) {
+          if (out_tensors->size() != 0) {
+            *end_of_sequence = false;
+            return Status::OK();
+          }
           *end_of_sequence = true;
           return Status::OK();
         }
 
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
-      } while (true);
+      };
     }
 
    private:
@@ -450,6 +504,7 @@ class InputDatasetBase : public DatasetBase {
   OpKernelContext* ctx_;
  protected:
   std::vector<InputType> input_;
+  int64 batch_;
   const DataTypeVector output_types_;
   const std::vector<PartialTensorShape> output_shapes_;
 };
@@ -490,7 +545,10 @@ class InputDatasetOp : public DatasetOpKernel {
         input.emplace_back(entry);
       }
     }
-    *output = new InputDatasetBase<InputType, StateType>(ctx, input, output_types_, output_shapes_);
+    const Tensor* batch_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("batch", &batch_tensor));
+    int64 batch = batch_tensor->scalar<int64>()();
+    *output = new InputDatasetBase<InputType, StateType>(ctx, input, batch, output_types_, output_shapes_);
   }
   DataTypeVector output_types_;
   std::vector<PartialTensorShape> output_shapes_;

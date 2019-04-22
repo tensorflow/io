@@ -21,6 +21,7 @@ namespace tensorflow {
 
 REGISTER_OP("CIFAR10Dataset")
     .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
@@ -30,6 +31,7 @@ REGISTER_OP("CIFAR10Dataset")
 
 REGISTER_OP("CIFAR100Dataset")
     .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
