@@ -19,11 +19,11 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class TextInput: public DataInput<io::BufferedInputStream> {
+class TextInput: public FileInput<io::BufferedInputStream> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new io::BufferedInputStream(&s, 4096));
+      state.reset(new io::BufferedInputStream(s, 4096));
     }
     std::vector<string> records;
     records.reserve(record_to_read);
@@ -49,7 +49,7 @@ class TextInput: public DataInput<io::BufferedInputStream> {
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     // TODO: Read 4K buffer to detect BOM.
     //string header;
     //TF_RETURN_IF_ERROR(s.ReadNBytes(4096, &header));
@@ -71,8 +71,8 @@ class TextInput: public DataInput<io::BufferedInputStream> {
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(TextInput, "tensorflow::data::TextInput");
 
 REGISTER_KERNEL_BUILDER(Name("TextInput").Device(DEVICE_CPU),
-                        DataInputOp<TextInput>);
+                        FileInputOp<TextInput>);
 REGISTER_KERNEL_BUILDER(Name("TextDataset").Device(DEVICE_CPU),
-                        InputDatasetOp<TextInput, io::BufferedInputStream>);
+                        FileInputDatasetOp<TextInput, io::BufferedInputStream>);
 }  // namespace data
 }  // namespace tensorflow

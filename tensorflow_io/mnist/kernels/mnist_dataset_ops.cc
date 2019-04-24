@@ -18,12 +18,12 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class MNISTImageInput: public DataInput<int64> {
+class MNISTImageInput: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
-      TF_RETURN_IF_ERROR(s.SkipNBytes(16));
+      TF_RETURN_IF_ERROR(s->SkipNBytes(16));
     }
     string buffer;
     Status status = ReadInputStream(s, (rows_ * cols_), record_to_read, &buffer, record_read);
@@ -38,9 +38,9 @@ class MNISTImageInput: public DataInput<int64> {
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     string header;
-    TF_RETURN_IF_ERROR(s.ReadNBytes(16, &header));
+    TF_RETURN_IF_ERROR(s->ReadNBytes(16, &header));
     if (header[0] != 0x00 || header[1] != 0x00 || header[2] != 0x08 || header[3] != 0x03) {
       return errors::InvalidArgument("mnist image file header must starts with `0x00000803`");
     }
@@ -68,12 +68,12 @@ class MNISTImageInput: public DataInput<int64> {
   int64 rows_;
   int64 cols_;
 };
-class MNISTLabelInput: public DataInput<int64> {
+class MNISTLabelInput: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
-      TF_RETURN_IF_ERROR(s.SkipNBytes(8));
+      TF_RETURN_IF_ERROR(s->SkipNBytes(8));
     }
     string buffer;
     TF_RETURN_IF_ERROR(ReadInputStream(s, 1, record_to_read, &buffer, record_read));
@@ -85,9 +85,9 @@ class MNISTLabelInput: public DataInput<int64> {
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     string header;
-    TF_RETURN_IF_ERROR(s.ReadNBytes(8, &header));
+    TF_RETURN_IF_ERROR(s->ReadNBytes(8, &header));
     if (header[0] != 0x00 || header[1] != 0x00 || header[2] != 0x08 || header[3] != 0x01) {
       return errors::InvalidArgument("mnist label file header must starts with `0x00000801`");
     }
@@ -110,12 +110,12 @@ REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::data::MNIST
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::data::MNISTImageInput");
 
 REGISTER_KERNEL_BUILDER(Name("MNISTLabelInput").Device(DEVICE_CPU),
-                        DataInputOp<MNISTLabelInput>);
+                        FileInputOp<MNISTLabelInput>);
 REGISTER_KERNEL_BUILDER(Name("MNISTImageInput").Device(DEVICE_CPU),
-                        DataInputOp<MNISTImageInput>);
+                        FileInputOp<MNISTImageInput>);
 REGISTER_KERNEL_BUILDER(Name("MNISTLabelDataset").Device(DEVICE_CPU),
-                        InputDatasetOp<MNISTLabelInput, int64>);
+                        FileInputDatasetOp<MNISTLabelInput, int64>);
 REGISTER_KERNEL_BUILDER(Name("MNISTImageDataset").Device(DEVICE_CPU),
-                        InputDatasetOp<MNISTImageInput, int64>);
+                        FileInputDatasetOp<MNISTImageInput, int64>);
 }  // namespace data
 }  // namespace tensorflow
