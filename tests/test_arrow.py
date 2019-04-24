@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 from collections import namedtuple
+import io
 import os
 import sys
 import socket
@@ -175,7 +176,7 @@ class ArrowDatasetTest(test.TestCase):
     batch = self.make_record_batch(truth_data)
 
     # test all columns selected
-    dataset = arrow_io.ArrowDataset(
+    dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
@@ -184,7 +185,7 @@ class ArrowDatasetTest(test.TestCase):
 
     # test column selection
     columns = (1, 3, len(truth_data.output_types) - 1)
-    dataset = arrow_io.ArrowDataset(
+    dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
         columns,
         tuple([truth_data.output_types[c] for c in columns]),
@@ -326,7 +327,7 @@ class ArrowDatasetTest(test.TestCase):
 
     batch = self.make_record_batch(truth_data)
 
-    dataset = arrow_io.ArrowDataset(
+    dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
         (0,),
         truth_data.output_types,
@@ -339,7 +340,7 @@ class ArrowDatasetTest(test.TestCase):
                            self.scalar_shapes)
     batch = self.make_record_batch(truth_data)
 
-    dataset = arrow_io.ArrowDataset(
+    dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
         list(range(len(truth_data.output_types))),
         tuple([dtypes.int32 for _ in truth_data.output_types]),
@@ -357,7 +358,7 @@ class ArrowDatasetTest(test.TestCase):
         (dtypes.int32,),
         (tensorflow.TensorShape([]),))
     batch = self.make_record_batch(truth_data)
-    dataset = arrow_io.ArrowDataset(
+    dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
@@ -378,6 +379,39 @@ class ArrowDatasetTest(test.TestCase):
             expected.pop(0)
         except tensorflow.errors.OutOfRangeError:
           break
+
+  def test_feed_batches(self):
+    """
+    Test that an ArrowDataset can initialize an iterator to feed a placeholder
+    """
+    truth_data = TruthData(
+        [list(range(10)), [x * 1.1 for x in range(10)]],
+        (dtypes.int32, dtypes.float64),
+        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
+    batch = self.make_record_batch(truth_data)
+
+    buf = io.BytesIO()
+    writer = pa.RecordBatchFileWriter(buf, batch.schema)
+    writer.write_batch(batch)
+    writer.close()
+
+    buf_placeholder = tensorflow.compat.v1.placeholder(
+        tensorflow.dtypes.string, tensorflow.TensorShape([]))
+
+    dataset = arrow_io.ArrowDataset(
+        buf_placeholder,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes)
+    it = dataset.make_initializable_iterator()
+    next_element = it.get_next()
+
+    with self.test_session() as sess:
+      sess.run(it.initializer, feed_dict={buf_placeholder: buf.getvalue()})
+      for row in range(len(truth_data.data)):
+        value = sess.run(next_element)
+        self.assertEqual(value[0], truth_data.data[0][row])
+        self.assertAlmostEqual(value[1], truth_data.data[1][row], 4)
 
 
 if __name__ == "__main__":
