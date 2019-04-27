@@ -51,7 +51,6 @@ class GRPCDataset(data.Dataset):
     endpoint = grpc_server.endpoint()
     dtype = a.dtype
     shape = list(a.shape)
-    batch = batch
     dataset = GRPCDataset(endpoint, shape, dtype, batch=batch)
     dataset._grpc_server = grpc_server # pylint: disable=protected-access
     return dataset
