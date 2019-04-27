@@ -56,8 +56,12 @@ class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
     return self._endpoint
 
   def ReadRecord(self, request, context): # pylint: disable=unused-argument
-    tensor = tensorflow.compat.v1.make_tensor_proto(
-        self._data[request.offset:request.offset+request.length, :])
+    if len(self._data.shape) == 1:
+      tensor = tensorflow.compat.v1.make_tensor_proto(
+          self._data[request.offset:request.offset+request.length])
+    else:
+      tensor = tensorflow.compat.v1.make_tensor_proto(
+          self._data[request.offset:request.offset+request.length, :])
     record = google.protobuf.any_pb2.Any()
     record.Pack(tensor)
     return endpoint_pb2.Response(record=record)
