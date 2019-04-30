@@ -45,6 +45,7 @@ constexpr char kOSSCredentialsAccesskeyKey[] = "accesskey";
 constexpr char kOSSAccessIdKey[] = "id";
 constexpr char kOSSAccessKeyKey[] = "key";
 constexpr char kOSSHostKey[] = "host";
+constexpr char kDelim[] = "/";
 
 bool checkFile(const string& filename) {
   std::ifstream fstream(filename.c_str());
@@ -75,8 +76,8 @@ Status oss_initialize() {
   try {
     std::call_once(initFlag, [] { oss_initialize_with_throwable(); });
   } catch (...) {
-    LOG(FATAL) << "can not init oss connection";
-    return errors::Internal("can not init oss connection");
+    LOG(FATAL) << "can not init OSS connection";
+    return errors::Internal("can not init OSS connection");
   }
 
   return Status::OK();
@@ -239,7 +240,7 @@ class OSSRandomAccessFile : public RandomAccessFile {
         .append("-")
         .append(std::to_string(range_end));
     apr_table_set(headers_, "Range", range.c_str());
-    VLOG(1) << "read from oss with " << range.c_str();
+    VLOG(1) << "read from OSS with " << range.c_str();
 
     aos_status_t* s =
         oss_get_object_to_buffer(_options, &bucket_, &object_, headers_, NULL,
@@ -510,13 +511,13 @@ Status OSSFileSystem::_InitOSSCredentials() {
   string filename;
   if (!GetCredentialsFileFromEnv(&filename).ok()) {
     filename = getpwuid(getuid())->pw_dir;
-    filename.append("/").append(kOSSCredentialsDefaultFile);
+    filename.append(kDelim).append(kOSSCredentialsDefaultFile);
     if (!checkFile(filename)) {
-      return errors::NotFound("can not find any oss credentials file");
+      return errors::NotFound("can not find any OSS credentials file");
     }
   }
 
-  VLOG(0) << "read oss credentials from " << filename;
+  VLOG(0) << "read OSS credentials from " << filename;
 
   minIni config(filename);
   mutex_lock lock(mu_);
@@ -527,14 +528,14 @@ Status OSSFileSystem::_InitOSSCredentials() {
       config.gets(kOSSCredentialsSection, kOSSCredentialsAccesskeyKey));
 
   if (host_.empty() || access_id_.empty() || access_key_.empty()) {
-    VLOG(1) << filename << " does not contains full oss credentials";
-    return errors::Internal(filename, "does not contains full oss credentials");
+    VLOG(1) << filename << " does not contains full OSS credentials";
+    return errors::Internal(filename, "does not contains full OSS credentials");
   }
 
   init_ = true;
   return Status::OK();
 }
-// Splits a oss path to endpoint bucket object and token
+// Splits an OSS path to endpoint bucket object and token
 // For example
 // "oss://bucket-name?id=accessid&key=accesskey&host=endpoint/path/to/file.txt"
 Status OSSFileSystem::_ParseOSSURIPath(StringPiece fname, std::string* bucket,
@@ -550,7 +551,7 @@ Status OSSFileSystem::_ParseOSSURIPath(StringPiece fname, std::string* bucket,
                                    fname);
   }
 
-  str_util::ConsumePrefix(&remaining, "/");
+  str_util::ConsumePrefix(&remaining, kDelim);
   *object = string(remaining);
 
   if (bucketp.find('?') != StringPiece::npos) {
@@ -596,7 +597,7 @@ Status OSSFileSystem::_ParseOSSURIPath(StringPiece fname, std::string* bucket,
       init_ = false;
     }
   } else {
-    str_util::ConsumePrefix(&remaining, "/");
+    str_util::ConsumePrefix(&remaining, kDelim);
     *object = string(remaining);
     *bucket = string(bucketp);
     if (bucket->empty() || *bucket == ".") {
@@ -739,7 +740,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   }
 
   // add suffix
-  std::string objectName = object + "/";
+  std::string objectName = object + kDelim;
   s = _RetrieveObjectMetadata(pool, options, bucket, objectName, stat);
   if (s.ok()) {
     stat->is_directory = true;
@@ -846,7 +847,7 @@ Status OSSFileSystem::GetMatchingPaths(const std::string& pattern,
   const string& dir = string(io::Dirname(fixed_prefix));
   const string& base_prefix = string(io::Basename(fixed_prefix));
   if (dir.empty()) {
-    return errors::InvalidArgument("A oss pattern doesn't have a bucket name: ",
+    return errors::InvalidArgument("An OSS pattern doesn't have a bucket name: ",
                                    pattern);
   }
 
@@ -873,7 +874,7 @@ Status OSSFileSystem::GetMatchingPaths(const std::string& pattern,
     if (str_util::StartsWith(StringPiece(path), base_prefix)) {
       const string file_path = io::JoinPath(dir, path);
       if (Env::Default()->MatchPath(file_path, pattern)) {
-        results->push_back(dir + "/" + path);
+        results->push_back(dir + kDelim + path);
       }
     }
   }
@@ -959,7 +960,7 @@ Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
 
   std::string dir = "";
   for (auto path : splitPaths) {
-    dir.append(path + "/");
+    dir.append(path + kDelim);
     if (!_CreateDirInternal(pool, ossOptions, bucket, dir).ok()) {
       return errors::Internal("create dir failed: ", dir);
     }
@@ -1038,7 +1039,7 @@ Status OSSFileSystem::DeleteDir(const std::string& dirname) {
   }
 
   // Maybe should add slash
-  return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
+  return _DeleteObjectInternal(oss_options, bucket, object.append(kDelim));
 }
 
 Status OSSFileSystem::GetFileSize(const std::string& fname, uint64* file_size) {
@@ -1146,11 +1147,11 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   }
 
   if (*undeleted_dirs == 0 && *undeleted_files == 0) {
-    // delete its self
+    // delete directory itself.
     if (object.at(object.length() - 1) == '/') {
       return _DeleteObjectInternal(oss_options, bucket, object);
     } else {
-      return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
+      return _DeleteObjectInternal(oss_options, bucket, object.append(kDelim));
     }
   }
   return Status::OK();

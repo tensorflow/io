@@ -17,31 +17,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import sys
+import unittest
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 import tensorflow_io.oss.python.ops.ossfs_ops  # pylint: disable=unused-import
 
-if not os.getenv("OSS_CREDENTIALS"):
-  sys.exit(
-      "OSS_CREDENTIALS env variable not set. Please set it to the "
-      "path of your oss credential file."
-  )
-bucket = os.getenv("OSS_FS_TEST_BUCKET")
-if not bucket:
-  sys.exit(
-      "OSS_FS_TEST_BUCKET env variable not set. Please set it to "
-      "your oss bucket"
-  )
-get_oss_path = lambda p: os.path.join("oss://" + bucket, "oss_fs_test", p)
+def _have_required_env():
+  return os.getenv("OSS_CREDENTIALS") and os.getenv("OSS_FS_TEST_BUCKET")
 
+_msg = ("OSS tests skipped. To enable them, set OSS_CREDENTIALS env variable "
+        "to the path of your oss credential file and OSS_FS_TEST_BUCKET env "
+        "variable to your oss test bucket name.")
 
+@unittest.skipIf(not _have_required_env(), _msg)
 class OSSFSTest(test.TestCase):
   """OSS Filesystem Tests"""
 
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
+    global bucket, get_oss_path
+    bucket = os.getenv("OSS_FS_TEST_BUCKET") 
+    get_oss_path = lambda p: os.path.join("oss://" + bucket, "oss_fs_test", p)
     gfile.MkDir(get_oss_path(""))
 
   @classmethod

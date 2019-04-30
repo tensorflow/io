@@ -17,18 +17,19 @@ Then set environment variable `OSS_CREDENTIALS` to the path of the file.
 
 In Python code, import the extension `ossfs_op` module to use the extension with `gfile`. The files and directory URI should have `oss://` prefix, followed by a bucket name, then the directory hierarchy.
 
-```
+```python
 import tensorflow_io.oss.python.ops.ossfs_ops
 from tensorflow.python.platform import gfile
 
 gfile.MkDir('oss://your_bucket_name/test_dir')
 ```
+
+With the extension installed, OSS files can be use with Dataset Ops, etc., in the same fashion as other files.
+
+```python
+dataset = tf.data.TextLineDataset(["oss://bucket_name/data_dir/file1"])
+```
 
 ## Test
 
-File `python/tests/ossfs_test.py` contains basic filesystem functionality tests. Besides `OSS_CREDENTIALS`, the tests also require an `OSS_FS_TEST_BUCKET` environment variable containing an accessible bucket name. To build the extension and run tests:
-
-```
-bazel build tensorflow_io/oss/...
-./bazel-bin/tensorflow_io/oss/ossfs_py_test
-```
+File `tests/test_oss.py` contains basic filesystem functionality tests. See `README.md` in root directory for more information about running tests. Besides `OSS_CREDENTIALS`, the tests also require an `OSS_FS_TEST_BUCKET` environment variable containing an accessible bucket name. Make sure they are set before running `pytest tests`. You can also just run the OSS test using `pytest tests/test_oss.py`
