@@ -18,12 +18,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
 import unittest
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 import tensorflow_io.oss.python.ops.ossfs_ops  # pylint: disable=unused-import
+
+bucket = None
+get_oss_path = None
 
 def _have_required_env():
   return os.getenv("OSS_CREDENTIALS") and os.getenv("OSS_FS_TEST_BUCKET")
@@ -39,7 +41,7 @@ class OSSFSTest(test.TestCase):
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
     global bucket, get_oss_path
-    bucket = os.getenv("OSS_FS_TEST_BUCKET") 
+    bucket = os.getenv("OSS_FS_TEST_BUCKET")
     get_oss_path = lambda p: os.path.join("oss://" + bucket, "oss_fs_test", p)
     gfile.MkDir(get_oss_path(""))
 
