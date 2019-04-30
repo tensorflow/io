@@ -24,7 +24,7 @@ tfio_*.tar.gz
 
 # Setuptools
 *.egg-info
-build
+build/
 dist
 wheelhouse
 
