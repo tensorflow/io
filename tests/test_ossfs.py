@@ -22,7 +22,7 @@ import unittest
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
-import tensorflow_io.oss.python.ops.ossfs_ops  # pylint: disable=unused-import
+from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 
 bucket = None
 get_oss_path = None
