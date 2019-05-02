@@ -4,7 +4,10 @@ licenses(["notice"])  # Apache license (for libapr1)
 
 cc_library(
     name = "libaprutil1",
-    srcs = [
+    srcs = glob([
+        "include/private/apu_*.h",
+        "include/private/apr_*.h",
+    ]) + [
         "buckets/apr_brigade.c",
         "buckets/apr_buckets.c",
         "buckets/apr_buckets_alloc.c",
@@ -117,5 +120,6 @@ cc_library(
     strip_include_prefix = "include",
     deps = [
         "@libapr1",
+        "@libexpat",
     ],
 )
