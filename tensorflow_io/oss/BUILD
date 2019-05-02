@@ -22,27 +22,3 @@ cc_binary(
         "@minini",
     ],
 )
-
-py_library(
-    name = "ossfs_ops_py",
-    srcs = [
-        "python/ops/ossfs_ops.py",
-    ],
-    data = [
-        ":python/ops/_oss_ops.so",
-    ],
-    srcs_version = "PY2AND3",
-)
-
-py_library(
-    name = "oss_py",
-    srcs = [
-        "__init__.py",
-        "python/__init__.py",
-        "python/ops/__init__.py",
-    ],
-    srcs_version = "PY2AND3",
-    deps = [
-        ":ossfs_ops_py",
-    ],
-)
