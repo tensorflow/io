@@ -24,7 +24,6 @@ cc_library(
         "crypto/apr_crypto.c",
         "crypto/apr_md4.c",
         "crypto/apr_md5.c",
-        "crypto/apr_passwd.c",
         "crypto/apr_sha1.c",
         "crypto/apr_siphash.c",
         "crypto/crypt_blowfish.c",
