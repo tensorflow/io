@@ -113,13 +113,12 @@ cc_library(
     ],
     linkopts = [
         "-lrt",
-        "-lcrypt",
         "-lpthread",
-        "-lexpat",
     ],
     strip_include_prefix = "include",
     deps = [
         "@libapr1",
         "@libexpat",
+        "@boringssl//:ssl",
     ],
 )
