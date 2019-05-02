@@ -289,3 +289,14 @@ http_archive(
         "https://github.com/libarchive/libarchive/archive/v3.3.3.tar.gz",
     ],
 )
+
+http_archive(
+    name = "libexpat",
+    build_file = "//third_party:libexpat.BUILD",
+    sha256 = "574499cba22a599393e28d99ecfa1e7fc85be7d6651d543045244d5b561cb7ff",
+    strip_prefix = "libexpat-R_2_2_6/expat",
+    urls = [
+        "https://mirror.bazel.build/github.com/libexpat/libexpat/archive/R_2_2_6.tar.gz",
+        "http://github.com/libexpat/libexpat/archive/R_2_2_6.tar.gz",
+    ],
+)
