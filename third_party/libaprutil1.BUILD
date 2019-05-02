@@ -117,8 +117,8 @@ cc_library(
     ],
     strip_include_prefix = "include",
     deps = [
+        "@boringssl//:ssl",
         "@libapr1",
         "@libexpat",
-        "@boringssl//:ssl",
     ],
 )
