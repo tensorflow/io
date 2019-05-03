@@ -111,7 +111,6 @@ cc_library(
         "include/private",
     ],
     linkopts = [
-        "-lrt",
         "-lpthread",
     ],
     strip_include_prefix = "include",

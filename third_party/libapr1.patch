@@ -1,7 +1,7 @@
 diff -urN libapr1/include/apr.h libapr/include/apr.h
 --- libapr1/include/apr.h	1970-01-01 00:00:00.000000000 +0000
 +++ libapr/include/apr.h	2019-02-09 23:44:46.000000000 +0000
-@@ -0,0 +1,638 @@
+@@ -0,0 +1,679 @@
 +/* Licensed to the Apache Software Foundation (ASF) under one or more
 + * contributor license agreements.  See the NOTICE file distributed with
 + * this work for additional information regarding copyright ownership.
@@ -75,7 +75,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +
 +#define APR_HAVE_ARPA_INET_H     1
 +#define APR_HAVE_CONIO_H         0
++#ifdef __APPLE__
++#define APR_HAVE_CRYPT_H         0
++#else
 +#define APR_HAVE_CRYPT_H         1
++#endif
 +#define APR_HAVE_CTYPE_H         1
 +#define APR_HAVE_DIRENT_H        1
 +#define APR_HAVE_ERRNO_H         1
@@ -98,11 +102,20 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +#define APR_HAVE_STRING_H        1
 +#define APR_HAVE_STRINGS_H       1
 +#define APR_HAVE_SYS_IOCTL_H     1
++#ifdef __APPLE__
++#define APR_HAVE_SYS_SENDFILE_H  0
++#else
 +#define APR_HAVE_SYS_SENDFILE_H  1
++#endif
 +#define APR_HAVE_SYS_SIGNAL_H    1
 +#define APR_HAVE_SYS_SOCKET_H    1
++#ifdef __APPLE__
++#define APR_HAVE_SYS_SOCKIO_H    1
++#define APR_HAVE_SYS_SYSLIMITS_H 1
++#else
 +#define APR_HAVE_SYS_SOCKIO_H    0
 +#define APR_HAVE_SYS_SYSLIMITS_H 0
++#endif
 +#define APR_HAVE_SYS_TIME_H      1
 +#define APR_HAVE_SYS_TYPES_H     1
 +#define APR_HAVE_SYS_UIO_H       1
@@ -214,7 +227,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +
 +#define APR_HAVE_SHMEM_MMAP_TMP     1
 +#define APR_HAVE_SHMEM_MMAP_SHM     1
++#ifdef __APPLE__
++#define APR_HAVE_SHMEM_MMAP_ZERO    0
++#else
 +#define APR_HAVE_SHMEM_MMAP_ZERO    1
++#endif
 +#define APR_HAVE_SHMEM_SHMGET_ANON  1
 +#define APR_HAVE_SHMEM_SHMGET       1
 +#define APR_HAVE_SHMEM_MMAP_ANON    1
@@ -239,7 +256,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +#define APR_HAS_SYSVSEM_SERIALIZE         1
 +#define APR_HAS_POSIXSEM_SERIALIZE        1
 +#define APR_HAS_FCNTL_SERIALIZE           1
++#ifdef __APPLE__
++#define APR_HAS_PROC_PTHREAD_SERIALIZE    0
++#else
 +#define APR_HAS_PROC_PTHREAD_SERIALIZE    1
++#endif
 +
 +#define APR_PROCESS_LOCK_IS_GLOBAL        0
 +
@@ -264,14 +285,18 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +#define APR_HAVE_STRSTR         1
 +#define APR_HAVE_MEMCHR         1
 +#define APR_HAVE_STRUCT_RLIMIT  1
++#ifdef __APPLE__
++#define APR_HAVE_UNION_SEMUN    1
++#else
 +#define APR_HAVE_UNION_SEMUN    0
++#endif
 +#define APR_HAVE_SCTP           0
 +#define APR_HAVE_IOVEC          1
 +
 +/*  APR Feature Macros */
 +#define APR_HAS_SHARED_MEMORY     1
 +#define APR_HAS_THREADS           1
-+#define APR_HAS_SENDFILE          1
++#define APR_HAS_SENDFILE          0
 +#define APR_HAS_MMAP              1
 +#define APR_HAS_FORK              1
 +#define APR_HAS_RANDOM            1
@@ -283,7 +308,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +#define APR_HAS_USER              1
 +#define APR_HAS_LARGE_FILES       0
 +#define APR_HAS_XTHREAD_FILES     0
++#ifdef __APPLE__
++#define APR_HAS_OS_UUID           1
++#else
 +#define APR_HAS_OS_UUID           0
++#endif
 +
 +#define APR_PROCATTR_USER_SET_REQUIRES_PASSWORD 0
 +
@@ -299,7 +328,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +/* If we have a TCP implementation that can be "corked", what flag
 + * do we use?
 + */
++#ifdef __APPLE__
++#define APR_TCP_NOPUSH_FLAG       TCP_NOPUSH
++#else
 +#define APR_TCP_NOPUSH_FLAG       TCP_CORK
++#endif
 +
 +/* Is the TCP_NODELAY socket option inherited from listening sockets?
 +*/
@@ -307,7 +340,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +
 +/* Is the O_NONBLOCK flag inherited from listening sockets?
 +*/
++#ifdef __APPLE__
++#define APR_O_NONBLOCK_INHERITED 1
++#else
 +#define APR_O_NONBLOCK_INHERITED 0
++#endif
 +
 +/* Typedefs that APR needs. */
 +
@@ -618,7 +655,11 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 +#error no decision has been made on APR_PATH_MAX for your platform
 +#endif
 +
++#ifdef __APPLE__
++#define APR_DSOPATH "DYLD_LIBRARY_PATH"
++#else
 +#define APR_DSOPATH "LD_LIBRARY_PATH"
++#endif
 +
 +/** @} */
 +
@@ -643,7 +684,7 @@ diff -urN libapr1/include/apr.h libapr/include/apr.h
 diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_private.h
 --- libapr1/include/arch/unix/apr_private.h	1970-01-01 00:00:00.000000000 +0000
 +++ libapr/include/arch/unix/apr_private.h	2019-02-09 23:46:52.000000000 +0000
-@@ -0,0 +1,1022 @@
+@@ -0,0 +1,1158 @@
 +/* include/arch/unix/apr_private.h.  Generated from apr_private.h.in by configure.  */
 +/* include/arch/unix/apr_private.h.in.  Generated from configure.in by autoheader.  */
 +
@@ -689,7 +730,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define DIRENT_TYPE d_type
 +
 +/* Define if DSO support uses dlfcn.h */
++#ifdef __APPLE__
++#define DSO_USE_DLFCN 1
++#else
 +/* #undef DSO_USE_DLFCN */
++#endif
 +
 +/* Define if DSO support uses dyld.h */
 +/* #undef DSO_USE_DYLD */
@@ -716,7 +761,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef GETHOSTBYNAME_IS_THREAD_SAFE */
 +
 +/* Define if gethostbyname_r has the glibc style */
++#ifdef __APPLE__
++/* #undef GETHOSTBYNAME_R_GLIBC2 */
++#else
 +#define GETHOSTBYNAME_R_GLIBC2 1
++#endif
 +
 +/* Define if gethostbyname_r has the hostent_data for the third argument */
 +/* #undef GETHOSTBYNAME_R_HOSTENT_DATA */
@@ -725,7 +774,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef GETSERVBYNAME_IS_THREAD_SAFE */
 +
 +/* Define if getservbyname_r has the glibc style */
++#ifdef __APPLE__
++/* #undef GETSERVBYNAME_R_GLIBC2 */
++#else
 +#define GETSERVBYNAME_R_GLIBC2 1
++#endif
 +
 +/* Define if getservbyname_r has the OSF/1 style */
 +/* #undef GETSERVBYNAME_R_OSF1 */
@@ -734,7 +787,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef GETSERVBYNAME_R_SOLARIS */
 +
 +/* Define if accept4 function is supported */
++#ifdef __APPLE__
++/* #undef HAVE_ACCEPT4 */
++#else
 +#define HAVE_ACCEPT4 1
++#endif
 +
 +/* Define if async i/o supports message q's */
 +/* #undef HAVE_AIO_MSGQ */
@@ -771,7 +828,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_CREATE_SEM */
 +
 +/* Define to 1 if you have the <crypt.h> header file. */
++#ifdef __APPLE__
++/* #undef HAVE_CRYPT_H */
++#else
 +#define HAVE_CRYPT_H 1
++#endif
 +
 +/* Define to 1 if you have the <ctype.h> header file. */
 +#define HAVE_CTYPE_H 1
@@ -793,16 +854,28 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_DL_H */
 +
 +/* Define if dup3 function is supported */
++#ifdef __APPLE__
++/* #undef HAVE_DUP3 */
++#else
 +#define HAVE_DUP3 1
++#endif
 +
 +/* Define if EGD is supported */
 +/* #undef HAVE_EGD */
 +
 +/* Define if the epoll interface is supported */
++#ifdef __APPLE__
++/* #undef HAVE_EPOLL */
++#else
 +#define HAVE_EPOLL 1
++#endif
 +
 +/* Define if epoll_create1 function is supported */
++#ifdef __APPLE__
++/* #undef HAVE_EPOLL_CREATE1 */
++#else
 +#define HAVE_EPOLL_CREATE1 1
++#endif
 +
 +/* Define to 1 if you have the <errno.h> header file. */
 +#define HAVE_ERRNO_H 1
@@ -811,7 +884,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_FCNTL_H 1
 +
 +/* Define to 1 if you have the `fdatasync' function. */
++#ifdef __APPLE__
++/* #undef HAVE_FDATASYNC */
++#else
 +#define HAVE_FDATASYNC 1
++#endif
 +
 +/* Define to 1 if you have the `flock' function. */
 +#define HAVE_FLOCK 1
@@ -841,10 +918,18 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_GETGRNAM_R 1
 +
 +/* Define to 1 if you have the `gethostbyaddr_r' function. */
++#ifdef __APPLE__
++/* #undef HAVE_GETHOSTBYADDR_R */
++#else
 +#define HAVE_GETHOSTBYADDR_R 1
++#endif
 +
 +/* Define to 1 if you have the `gethostbyname_r' function. */
++#ifdef __APPLE__
++/* #undef HAVE_GETHOSTBYNAME_R */
++#else
 +#define HAVE_GETHOSTBYNAME_R 1
++#endif
 +
 +/* Define to 1 if you have the `getifaddrs' function. */
 +#define HAVE_GETIFADDRS 1
@@ -868,7 +953,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_GETRLIMIT 1
 +
 +/* Define to 1 if you have the `getservbyname_r' function. */
++#ifdef __APPLE__
++/* #undef HAVE_GETSERVBYNAME_R */
++#else
 +#define HAVE_GETSERVBYNAME_R 1
++#endif
 +
 +/* Define to 1 if you have the `gmtime_r' function. */
 +#define HAVE_GMTIME_R 1
@@ -895,7 +984,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_KERNEL_OS_H */
 +
 +/* Define to 1 if you have the `kqueue' function. */
++#ifdef __APPLE__
++#define HAVE_KQUEUE 1
++#else
 +/* #undef HAVE_KQUEUE */
++#endif
 +
 +/* Define to 1 if you have the <langinfo.h> header file. */
 +#define HAVE_LANGINFO_H 1
@@ -919,10 +1012,18 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_LOCK_EX 1
 +
 +/* Define to 1 if you have the <mach-o/dyld.h> header file. */
++#ifdef __APPLE__
++#define HAVE_MACH_O_DYLD_H 1
++#else
 +/* #undef HAVE_MACH_O_DYLD_H */
++#endif
 +
 +/* Define to 1 if you have the <malloc.h> header file. */
++#ifdef __APPLE__
++/* #undef HAVE_MALLOC_H */
++#else
 +#define HAVE_MALLOC_H 1
++#endif
 +
 +/* Define if MAP_ANON is defined in sys/mman.h */
 +#define HAVE_MAP_ANON 1
@@ -1021,7 +1122,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_PTHREAD_MUTEX_RECURSIVE 1
 +
 +/* Define if cross-process robust mutexes are available */
++#ifdef __APPLE__
++/* #undef HAVE_PTHREAD_MUTEX_ROBUST */
++#else
 +#define HAVE_PTHREAD_MUTEX_ROBUST 1
++#endif
 +
 +/* Define if PTHREAD_PROCESS_SHARED is defined in pthread.h */
 +#define HAVE_PTHREAD_PROCESS_SHARED 1
@@ -1033,7 +1138,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_PTHREAD_RWLOCK_INIT 1
 +
 +/* Define to 1 if you have the `pthread_yield' function. */
++#ifdef __APPLE__
++/* #undef HAVE_PTHREAD_YIELD */
++#else
 +#define HAVE_PTHREAD_YIELD 1
++#endif
 +
 +/* Define to 1 if you have the `putenv' function. */
 +#define HAVE_PUTENV 1
@@ -1045,10 +1154,18 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_READDIR64_R */
 +
 +/* Define to 1 if you have the <sched.h> header file. */
++#ifdef __APPLE__
++#define HAVE_SCHED_H 1
++#else
 +/* #undef HAVE_SCHED_H */
++#endif
 +
 +/* Define to 1 if you have the `sched_yield' function. */
++#ifdef __APPLE__
++#define HAVE_SCHED_YIELD 1
++#else
 +/* #undef HAVE_SCHED_YIELD */
++#endif
 +
 +/* Define to 1 if you have the <semaphore.h> header file. */
 +#define HAVE_SEMAPHORE_H 1
@@ -1135,7 +1252,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_SOCKLEN_T 1
 +
 +/* Define if the SOCK_CLOEXEC flag is supported */
++#ifdef __APPLE__
++/* #undef HAVE_SOCK_CLOEXEC */
++#else
 +#define HAVE_SOCK_CLOEXEC 1
++#endif
 +
 +/* Define if SO_ACCEPTFILTER is defined in sys/socket.h */
 +/* #undef HAVE_SO_ACCEPTFILTER */
@@ -1192,7 +1313,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_STRUCT_STAT_ST_ATIME_N */
 +
 +/* Define to 1 if `st_atim.tv_nsec' is a member of `struct stat'. */
++#ifdef __APPLE__
++/* #undef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC */
++#else
 +#define HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC 1
++#endif
 +
 +/* Define to 1 if `st_blocks' is a member of `struct stat'. */
 +#define HAVE_STRUCT_STAT_ST_BLOCKS 1
@@ -1204,7 +1329,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_STRUCT_STAT_ST_CTIME_N */
 +
 +/* Define to 1 if `st_ctim.tv_nsec' is a member of `struct stat'. */
++#ifdef __APPLE__
++/* #undef HAVE_STRUCT_STAT_ST_CTIM_TV_NSEC */
++#else
 +#define HAVE_STRUCT_STAT_ST_CTIM_TV_NSEC 1
++#endif
 +
 +/* Define to 1 if `st_mtimensec' is a member of `struct stat'. */
 +/* #undef HAVE_STRUCT_STAT_ST_MTIMENSEC */
@@ -1213,7 +1342,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_STRUCT_STAT_ST_MTIME_N */
 +
 +/* Define to 1 if `st_mtim.tv_nsec' is a member of `struct stat'. */
++#ifdef __APPLE__
++/* #undef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC */
++#else
 +#define HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC 1
++#endif
 +
 +/* Define to 1 if `tm_gmtoff' is a member of `struct tm'. */
 +#define HAVE_STRUCT_TM_TM_GMTOFF 1
@@ -1258,7 +1391,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_SYS_SEM_H 1
 +
 +/* Define to 1 if you have the <sys/sendfile.h> header file. */
++#ifdef __APPLE__
++/* #undef HAVE_SYS_SENDFILE_H */
++#else
 +#define HAVE_SYS_SENDFILE_H 1
++#endif
 +
 +/* Define to 1 if you have the <sys/shm.h> header file. */
 +#define HAVE_SYS_SHM_H 1
@@ -1270,7 +1407,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_SYS_SOCKET_H 1
 +
 +/* Define to 1 if you have the <sys/sockio.h> header file. */
++#ifdef __APPLE__
++#define HAVE_SYS_SOCKIO_H 1
++#else
 +/* #undef HAVE_SYS_SOCKIO_H */
++#endif
 +
 +/* Define to 1 if you have the <sys/stat.h> header file. */
 +#define HAVE_SYS_STAT_H 1
@@ -1279,7 +1420,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_SYS_SYSCTL_H 1
 +
 +/* Define to 1 if you have the <sys/syslimits.h> header file. */
++#ifdef __APPLE__
++#define HAVE_SYS_SYSLIMITS_H 1
++#else
 +/* #undef HAVE_SYS_SYSLIMITS_H */
++#endif
 +
 +/* Define to 1 if you have the <sys/time.h> header file. */
 +#define HAVE_SYS_TIME_H 1
@@ -1300,13 +1445,25 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define HAVE_SYS_WAIT_H 1
 +
 +/* Define if TCP_CORK is defined in netinet/tcp.h */
++#ifdef __APPLE__
++/* #undef HAVE_TCP_CORK */
++#else
 +#define HAVE_TCP_CORK 1
++#endif
 +
 +/* Define if TCP_NODELAY and TCP_CORK can be enabled at the same time */
++#ifdef __APPLE__
++/* #undef HAVE_TCP_NODELAY_WITH_CORK */
++#else
 +#define HAVE_TCP_NODELAY_WITH_CORK 1
++#endif
 +
 +/* Define if TCP_NOPUSH is defined in netinet/tcp.h */
++#ifdef __APPLE__
++#define HAVE_TCP_NOPUSH 1
++#else
 +/* #undef HAVE_TCP_NOPUSH */
++#endif
 +
 +/* Define to 1 if you have the <termios.h> header file. */
 +#define HAVE_TERMIOS_H 1
@@ -1342,13 +1499,21 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +/* #undef HAVE_UUID_CREATE */
 +
 +/* Define to 1 if you have the `uuid_generate' function. */
++#ifdef __APPLE__
++#define HAVE_UUID_GENERATE 1
++#else
 +/* #undef HAVE_UUID_GENERATE */
++#endif
 +
 +/* Define to 1 if you have the <uuid.h> header file. */
 +/* #undef HAVE_UUID_H */
 +
 +/* Define to 1 if you have the <uuid/uuid.h> header file. */
++#ifdef __APPLE__
++#define HAVE_UUID_UUID_H 1
++#else
 +/* #undef HAVE_UUID_UUID_H */
++#endif
 +
 +/* Compile in valgrind support */
 +/* #undef HAVE_VALGRIND */
@@ -1379,7 +1544,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define LT_OBJDIR ".libs/"
 +
 +/* Define if EAI_ error codes from getaddrinfo are negative */
++#ifdef __APPLE__
++/* #undef NEGATIVE_EAI */
++#else
 +#define NEGATIVE_EAI 1
++#endif
 +
 +/* Define to the address where bug reports for this package should be sent. */
 +#define PACKAGE_BUGREPORT ""
@@ -1400,7 +1569,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define PACKAGE_VERSION ""
 +
 +/* Define if POSIX semaphores affect threads within the process */
++#ifdef __APPLE__
++#define POSIXSEM_IS_GLOBAL 1
++#else
 +/* #undef POSIXSEM_IS_GLOBAL */
++#endif
 +
 +/* Define on PowerPC 405 where errata 77 applies */
 +/* #undef PPC405_ERRATA */
@@ -1468,7 +1641,11 @@ diff -urN libapr1/include/arch/unix/apr_private.h libapr/include/arch/unix/apr_p
 +#define STDC_HEADERS 1
 +
 +/* Define if strerror returns int */
++#ifdef __APPLE__
++#define STRERROR_R_RC_INT 1
++#else
 +/* #undef STRERROR_R_RC_INT */
++#endif
 +
 +/* Define if SysV semaphores affect threads within the process */
 +/* #undef SYSVSEM_IS_GLOBAL */

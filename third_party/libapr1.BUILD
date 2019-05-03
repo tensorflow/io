@@ -165,8 +165,6 @@ cc_library(
         "include/private",
     ],
     linkopts = [
-        "-lrt",
-        "-lcrypt",
         "-lpthread",
         "-ldl",
     ],
