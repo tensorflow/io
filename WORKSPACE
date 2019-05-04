@@ -65,6 +65,17 @@ http_archive(
 )
 
 http_archive(
+    name = "hdf5",
+    build_file = "//third_party:hdf5.BUILD",
+    sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
+    strip_prefix = "hdf5-1.10.5",
+    urls = [
+        "https://s3.amazonaws.com/hdf-wordpress-1/wp-content/uploads/manual/HDF5/HDF5_1_10_5/source/hdf5-1.10.5.tar.gz",
+     ],
+
+)
+
+http_archive(
     name = "snappy",
     build_file = "//third_party:snappy.BUILD",
     sha256 = "3dfa02e873ff51a11ee02b9ca391807f0c8ea0529a4924afa645fbf97163f9d4",
