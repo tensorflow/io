@@ -33,7 +33,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
+        "@com_github_madler_zlib//:z",
     ],
 )
 

@@ -23,9 +23,9 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 namespace {
-class CIFAR10Input: public DataInput<int64> {
+class CIFAR10Input: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
     }
@@ -45,7 +45,7 @@ class CIFAR10Input: public DataInput<int64> {
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     return Status::OK();
   }
   void EncodeAttributes(VariantTensorData* data) const override {
@@ -56,9 +56,9 @@ class CIFAR10Input: public DataInput<int64> {
  protected:
 };
 
-class CIFAR100Input: public DataInput<int64> {
+class CIFAR100Input: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
     }
@@ -81,7 +81,7 @@ class CIFAR100Input: public DataInput<int64> {
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     return Status::OK();
   }
   void EncodeAttributes(VariantTensorData* data) const override {
@@ -96,13 +96,13 @@ REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::CIFAR10Input")
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR100Input, "tensorflow::CIFAR100Input");
 
 REGISTER_KERNEL_BUILDER(Name("CIFAR10Input").Device(DEVICE_CPU),
-                        DataInputOp<CIFAR10Input>);
+                        FileInputOp<CIFAR10Input>);
 REGISTER_KERNEL_BUILDER(Name("CIFAR100Input").Device(DEVICE_CPU),
-                        DataInputOp<CIFAR100Input>);
+                        FileInputOp<CIFAR100Input>);
 REGISTER_KERNEL_BUILDER(Name("CIFAR10Dataset").Device(DEVICE_CPU),
-                        InputDatasetOp<CIFAR10Input, int64>);
+                        FileInputDatasetOp<CIFAR10Input, int64>);
 REGISTER_KERNEL_BUILDER(Name("CIFAR100Dataset").Device(DEVICE_CPU),
-                        InputDatasetOp<CIFAR100Input, int64>);
+                        FileInputDatasetOp<CIFAR100Input, int64>);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow
