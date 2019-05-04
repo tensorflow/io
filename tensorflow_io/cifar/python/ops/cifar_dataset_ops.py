@@ -20,8 +20,7 @@ from __future__ import print_function
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-cifar_ops = _load_library('_cifar_ops.so')
+from tensorflow_io.core.python.ops import core_ops as cifar_ops
 
 class _CIFAR10Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""

@@ -20,8 +20,7 @@ from __future__ import print_function
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-mnist_ops = _load_library('_mnist_ops.so')
+from tensorflow_io.core.python.ops import core_ops as mnist_ops
 
 class _MNISTBaseDataset(data.Dataset):
   """A MNIST Dataset

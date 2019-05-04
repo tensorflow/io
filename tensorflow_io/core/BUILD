@@ -35,6 +35,29 @@ cc_library(
         ".",
     ],
     deps = [
+        "@libarchive",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+)
+
+cc_binary(
+    name = "python/ops/libtensorflowio.so",
+    srcs = [
+    ],
+    copts = [
+        "-pthread",
+        "-std=c++11",
+        "-DNDEBUG",
+    ],
+    includes = [
+    ],
+    linkshared = 1,
+    deps = [
+        "//tensorflow_io/cifar:cifar_ops",
+        "//tensorflow_io/mnist:mnist_ops",
+        "//tensorflow_io/text:text_ops",
+        "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
