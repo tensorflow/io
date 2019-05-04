@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""GRPCInput
 
-rm -f .bazelrc
-if python -c "import tensorflow" &> /dev/null; then
-    echo 'using installed tensorflow'
-else
-    pip install tensorflow
-fi
-python -m pip install grpcio-tools
-python config_helper.py
+@@GRPCDataset
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from tensorflow_io.grpc.python.ops.grpc_ops import GRPCDataset
+
+from tensorflow.python.util.all_util import remove_undocumented
+
+_allowed_symbols = [
+    "GRPCDataset",
+]
+
+remove_undocumented(__name__)

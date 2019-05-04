@@ -36,7 +36,11 @@ if [[ "$#" -gt 0 ]]; then
     shift
 fi
 
-apt-get -y -qq update && apt-get -y -qq install $PYTHON_VERSION
+apt-get -y -qq update && apt-get -y -qq install python $PYTHON_VERSION
+python get-pip.py -q
+python -m pip --version
+python -m pip install -q grpcio-tools
+
 $PYTHON_VERSION get-pip.py -q
 $PYTHON_VERSION -m pip --version
 
