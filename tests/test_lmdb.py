@@ -59,6 +59,39 @@ class LMDBDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_read_from_file_with_batch(self):
+    """test_read_from_file"""
+    super(LMDBDatasetTest, self).setUp()
+    # Copy database out because we need the path to be writable to use locks.
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
+    self.db_path = os.path.join(self.get_temp_dir(), "data.mdb")
+    shutil.copy(path, self.db_path)
+
+    filename = self.db_path
+
+    dataset = lmdb_io.LMDBDataset([filename], batch=3)
+    iterator = dataset.make_initializable_iterator()
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op)
+      for i in range(0, 9, 3):
+        k = [
+            str(i).encode(),
+            str(i + 1).encode(),
+            str(i + 2).encode()]
+        v = [
+            str(chr(ord("a") + i)).encode(),
+            str(chr(ord("a") + i + 1)).encode(),
+            str(chr(ord("a") + i + 2)).encode()]
+        self.assertAllEqual((k, v), sess.run(get_next))
+      self.assertAllEqual(
+          ([str(9).encode()], [str('j').encode()]), sess.run(get_next))
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
 
 if __name__ == "__main__":
   test.main()
