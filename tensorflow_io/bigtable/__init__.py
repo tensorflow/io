@@ -35,4 +35,4 @@ _allowed_symbols = [
     'BigtableTable',
 ]
 
-remove_undocumented(__name__, _allowed_symbols)
+remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
