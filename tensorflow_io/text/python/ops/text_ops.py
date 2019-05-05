@@ -20,8 +20,7 @@ from __future__ import print_function
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-text_ops = _load_library('_text_ops.so')
+from tensorflow_io.core.python.ops import core_ops as text_ops
 
 class TextDataset(data.Dataset):
   """A Text Dataset
