@@ -35,4 +35,4 @@ _allowed_symbols = [
     "write_kafka",
 ]
 
-remove_undocumented(__name__)
+remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
