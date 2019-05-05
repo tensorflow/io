@@ -22,8 +22,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.cifar.python.ops.cifar_dataset_ops import CIFAR10Dataset
-from tensorflow_io.cifar.python.ops.cifar_dataset_ops import CIFAR100Dataset
+from tensorflow_io.cifar.python.ops.cifar_ops import CIFAR10Dataset
+from tensorflow_io.cifar.python.ops.cifar_ops import CIFAR100Dataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 

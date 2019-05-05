@@ -51,16 +51,16 @@ class MNISTImageInput: public FileInput<int64> {
   }
   void EncodeAttributes(VariantTensorData* data) const override {
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
+    data->tensors_.back().scalar<int64>()() = size_;
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
+    data->tensors_.back().scalar<int64>()() = rows_;
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_[3].scalar<int64>()() = size_;
-    data->tensors_[4].scalar<int64>()() = rows_;
-    data->tensors_[5].scalar<int64>()() = cols_;
+    data->tensors_.back().scalar<int64>()() = cols_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_ = data.tensors(3).scalar<int64>()();
-    rows_ = data.tensors(4).scalar<int64>()();
-    cols_ = data.tensors(5).scalar<int64>()();
+    size_ = data.tensors(data.tensors().size() - 3).scalar<int64>()();
+    rows_ = data.tensors(data.tensors().size() - 2).scalar<int64>()();
+    cols_ = data.tensors(data.tensors().size() - 1).scalar<int64>()();
     return true;
   }
  protected:
@@ -96,10 +96,10 @@ class MNISTLabelInput: public FileInput<int64> {
   }
   void EncodeAttributes(VariantTensorData* data) const override {
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_[3].scalar<int64>()() = size_;
+    data->tensors_.back().scalar<int64>()() = size_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_ = data.tensors(3).scalar<int64>()();
+    size_ = data.tensors(data.tensors().size() - 1).scalar<int64>()();
     return true;
   }
  protected:
