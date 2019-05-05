@@ -17,8 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
 import tensorflow
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -29,13 +27,13 @@ class WAVDataset(data.Dataset):
   """A WAV Dataset
   """
 
-  def __init__(self, filename, batch=None):
+  def __init__(self, filenames, batch=None):
     """Create a WAVDataset.
 
     Args:
-      filename: A `tf.string` tensor containing one or more filenames.
+      filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = audio_ops.wav_input(filename, [])
+    self._data_input = audio_ops.wav_input(filenames)
     self._batch = 0 if batch is None else batch
     super(WAVDataset, self).__init__()
 
