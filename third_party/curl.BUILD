@@ -255,7 +255,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@boringssl//:ssl",
-        "@zlib",
+        "@com_github_madler_zlib//:z",
     ],
 )
 

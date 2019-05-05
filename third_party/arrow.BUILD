@@ -99,8 +99,8 @@ cc_library(
     deps = [
         ":arrow_format",
         "@boost",
+        "@com_github_madler_zlib//:z",
         "@snappy",
         "@thrift",
-        "@zlib",
     ],
 )
