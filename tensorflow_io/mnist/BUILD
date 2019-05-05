@@ -5,8 +5,8 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "mnist_ops",
     srcs = [
-        "kernels/mnist_dataset_ops.cc",
-        "ops/dataset_ops.cc",
+        "kernels/mnist_input.cc",
+        "ops/mnist_ops.cc",
     ],
     copts = [
         "-pthread",

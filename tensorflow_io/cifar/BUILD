@@ -5,8 +5,8 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "cifar_ops",
     srcs = [
-        "kernels/cifar_dataset_ops.cc",
-        "ops/dataset_ops.cc",
+        "kernels/cifar_input.cc",
+        "ops/cifar_ops.cc",
     ],
     copts = [
         "-pthread",

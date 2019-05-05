@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("MNISTImageDataset")
+REGISTER_OP("CIFAR10Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -27,11 +27,9 @@ REGISTER_OP("MNISTImageDataset")
     .Attr("output_shapes: list(shape) >= 1")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
-REGISTER_OP("MNISTLabelDataset")
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("CIFAR100Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -39,28 +37,27 @@ REGISTER_OP("MNISTLabelDataset")
     .Attr("output_shapes: list(shape) >= 1")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+    .SetShapeFn(shape_inference::ScalarShape);
 
-
-REGISTER_OP("MNISTLabelInput")
+REGISTER_OP("CIFAR10Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
 
-REGISTER_OP("MNISTImageInput")
+REGISTER_OP("CIFAR100Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
+
 
 }  // namespace tensorflow

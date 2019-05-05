@@ -42,7 +42,7 @@ class TextInput: public FileInput<io::BufferedInputStream> {
     }
     if (*record_read > 0) {
       Tensor value_tensor(ctx->allocator({}), DT_STRING, {*record_read});
-      for (size_t i = 0; i < (*record_read); i++) {
+      for (int64 i = 0; i < (*record_read); i++) {
         value_tensor.flat<string>()(i) = std::move(records[i]);
       }
       out_tensors->emplace_back(std::move(value_tensor));

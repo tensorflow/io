@@ -22,6 +22,7 @@ namespace tensorflow {
 REGISTER_OP("GRPCInput")
     .Input("source: string")
     .Output("handle: variant")
+    .Attr("columns: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
