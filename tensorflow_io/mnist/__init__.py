@@ -23,9 +23,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.mnist.python.ops.mnist_dataset_ops import MNISTDataset
-from tensorflow_io.mnist.python.ops.mnist_dataset_ops import MNISTImageDataset
-from tensorflow_io.mnist.python.ops.mnist_dataset_ops import MNISTLabelDataset
+from tensorflow_io.mnist.python.ops.mnist_ops import MNISTDataset
+from tensorflow_io.mnist.python.ops.mnist_ops import MNISTImageDataset
+from tensorflow_io.mnist.python.ops.mnist_ops import MNISTLabelDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 

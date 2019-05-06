@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,17 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("MNISTImageDataset")
+REGISTER_OP("ParquetInput")
+    .Input("source: string")
+    .Output("handle: variant")
+    .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
+
+REGISTER_OP("ParquetDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -28,38 +38,7 @@ REGISTER_OP("MNISTImageDataset")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
-REGISTER_OP("MNISTLabelDataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
-
-REGISTER_OP("MNISTLabelInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
-REGISTER_OP("MNISTImageInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(0, c->MakeShape({}));
        return Status::OK();
      });
 
