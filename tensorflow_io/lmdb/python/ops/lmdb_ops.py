@@ -26,7 +26,7 @@ lmdb_ops = _load_library('_lmdb_ops.so')
 class LMDBDataset(data.Dataset):
   """A LMDB Dataset that reads the lmdb file."""
 
-  def __init__(self, filenames):
+  def __init__(self, filenames, batch=None):
     """Create a `LMDBDataset`.
 
     `LMDBDataset` allows a user to read data from a mdb file as
@@ -43,8 +43,8 @@ class LMDBDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
-        filenames, dtype=dtypes.string, name="filenames")
+    self._data_input = lmdb_ops.lmdb_input(filenames)
+    self._batch = 0 if batch is None else batch
     super(LMDBDataset, self).__init__()
 
   def _inputs(self):
@@ -52,17 +52,22 @@ class LMDBDataset(data.Dataset):
 
   def _as_variant_tensor(self):
     return lmdb_ops.lmdb_dataset(
-        self._filenames,
-        (dtypes.string, dtypes.string),
-        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
+        self._data_input,
+        self._batch,
+        output_types=self.output_types,
+        output_shapes=self.output_shapes)
+
+  @property
+  def output_shapes(self):
+    return (
+        tensorflow.TensorShape([]),
+        tensorflow.TensorShape([])) if self._batch == 0 else (
+            tensorflow.TensorShape([None]),
+            tensorflow.TensorShape([None]))
 
   @property
   def output_classes(self):
     return tensorflow.Tensor, tensorflow.Tensor
-
-  @property
-  def output_shapes(self):
-    return (tensorflow.TensorShape([]), tensorflow.TensorShape([]))
 
   @property
   def output_types(self):
