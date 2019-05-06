@@ -23,7 +23,7 @@ from tensorflow.python.platform import gfile
 
 gfile.MkDir('oss://your_bucket_name/test_dir')
 ```
-
+
 With the extension installed, OSS files can be use with Dataset Ops, etc., in the same fashion as other files.
 
 ```python
