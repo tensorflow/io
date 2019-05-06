@@ -16,6 +16,7 @@ cc_library(
         ".",
     ],
     deps = [
+        "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
