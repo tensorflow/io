@@ -19,16 +19,27 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("ParquetInput")
+    .Input("source: string")
+    .Output("handle: variant")
+    .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
+
 REGISTER_OP("ParquetDataset")
-    .Input("filenames: string")
-    .Input("columns: int64")
+    .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);  // TODO (yongtang): check that
-                                                // filenames and columns are
-                                                // scalars, and check
-                                                // output_types and shapes.
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({}));
+       return Status::OK();
+     });
 
 }  // namespace tensorflow
