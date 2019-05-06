@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,33 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("TextInput")
+REGISTER_OP("MNISTImageDataset")
+    .Input("input: T")
+    .Input("batch: int64")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+       return Status::OK();
+     });
+REGISTER_OP("MNISTLabelDataset")
+    .Input("input: T")
+    .Input("batch: int64")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
+
+
+REGISTER_OP("MNISTLabelInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -29,31 +55,14 @@ REGISTER_OP("TextInput")
        return Status::OK();
      });
 
-REGISTER_OP("TextDataset")
-    .Input("input: T")
-    .Input("batch: int64")
+REGISTER_OP("MNISTImageInput")
+    .Input("source: string")
     .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
+    .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
-
-REGISTER_OP("TextOutputSequence")
-    .Input("destination: string")
-    .Output("sequence: resource")
-    .Attr("container: string = ''")
-    .Attr("shared_name: string = ''")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
-REGISTER_OP("TextOutputSequenceSetItem")
-    .Input("sequence: resource")
-    .Input("index: int64")
-    .Input("item: string")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
 
 }  // namespace tensorflow
