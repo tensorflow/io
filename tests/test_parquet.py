@@ -51,7 +51,7 @@ class ParquetDatasetTest(test.TestCase):
         os.path.dirname(os.path.abspath(__file__)),
         "test_parquet",
         "parquet_cpp_example.parquet")
-
+    filename = "file://" + filename
     columns = [
         'boolean_field',
         'int32_field',
