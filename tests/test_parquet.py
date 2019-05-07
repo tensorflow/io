@@ -51,7 +51,7 @@ class ParquetDatasetTest(test.TestCase):
         os.path.dirname(os.path.abspath(__file__)),
         "test_parquet",
         "parquet_cpp_example.parquet")
-
+    filename = "file://" + filename
     columns = [
         'boolean_field',
         'int32_field',
@@ -130,5 +130,26 @@ class ParquetDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+    # With compression
+    filename = filename + '.gz'
+    dataset = parquet_io.ParquetDataset(
+        [filename], columns, output_types).repeat(num_repeats)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):  # Dataset is repeated.
+        for i in range(500): # 500 rows.
+          v0 = ((i % 2) == 0)
+          v1 = i
+          v2 = i * 1000 * 1000 * 1000 * 1000
+          v4 = 1.1 * i
+          v5 = 1.1111111 * i
+          vv = sess.run(get_next)
+          self.assertAllClose((v0, v1, v2, v4, v5), vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
 if __name__ == "__main__":
   test.main()
