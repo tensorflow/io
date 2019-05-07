@@ -19,8 +19,11 @@ limitations under the License.
 #define EIGEN_USE_THREADS
 
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/util/batch_util.h"
 #include "tensorflow/core/lib/io/inputstream_interface.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
+#include "tensorflow/core/lib/io/zlib_compression_options.h"
+#include "tensorflow/core/lib/io/zlib_inputstream.h"
 #include "tensorflow/core/framework/variant_op_registry.h"
 
 namespace tensorflow {
@@ -144,41 +147,97 @@ class ArchiveInputStream : public io::InputStreamInterface {
   TF_DISALLOW_COPY_AND_ASSIGN(ArchiveInputStream);
 };
 
+// Note: Forward declaration for friend class.
+template<typename T> class FileInput;
+template<typename T> class StreamInput;
+
 template<typename T>
 class DataInput {
  public:
   DataInput() {}
   virtual ~DataInput() {}
-  virtual Status FromStream(io::InputStreamInterface& s) = 0;
-  virtual Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<T>& state, int64* returned, std::vector<Tensor>* out_tensors) const = 0;
+ protected:
   virtual void EncodeAttributes(VariantTensorData* data) const = 0;
   virtual bool DecodeAttributes(const VariantTensorData& data) = 0;
-
-  Status ReadInputStream(io::InputStreamInterface& s, int64 chunk, int64 count, string* buffer, int64* returned) const {
-    int64 offset = s.Tell();
-    int64 bytes_to_read = count * chunk;
-    Status status = (buffer == nullptr) ? s.SkipNBytes(bytes_to_read) : s.ReadNBytes(bytes_to_read, buffer);
-    if (!(status.ok() || status == errors::OutOfRange("EOF reached"))) {
-      return status;
+  virtual Status ReadReferenceRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const = 0;
+  Status ReadReferenceBatchRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
+    int64 record_read = 0;
+    int64 record_to_read = count - (*returned);
+    std::vector<Tensor> chunk_tensors;
+    TF_RETURN_IF_ERROR(ReadReferenceRecord(s, ctx, state, record_to_read, &record_read, &chunk_tensors));
+    if (record_read > 0) {
+      if (out_tensors->size() == 0) {
+        // Replace out_tensors with chunk_tensors
+        out_tensors->reserve(chunk_tensors.size());
+        // batch == 0 could only read at most one record
+        // so it only happens here.
+        if (batch == 0) {
+          for (size_t i = 0; i < chunk_tensors.size(); i++) {
+            TensorShape shape = chunk_tensors[i].shape();
+            shape.RemoveDim(0);
+            Tensor value_tensor(ctx->allocator({}), chunk_tensors[i].dtype(), shape);
+            value_tensor.CopyFrom(chunk_tensors[i], shape);
+            out_tensors->emplace_back(std::move(value_tensor));
+          }
+        } else {
+          for (size_t i = 0; i < chunk_tensors.size(); i++) {
+            out_tensors->emplace_back(std::move(chunk_tensors[i]));
+          }
+        }
+      } else {
+        // Append out_tensors with chunk_tensors
+        for (size_t i = 0; i < out_tensors->size(); i++) {
+          TensorShape shape = (*out_tensors)[i].shape();
+          shape.set_dim(0, shape.dim_size(0) + record_read);
+          Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
+          TensorShape element_shape = shape;
+          element_shape.RemoveDim(0);
+          Tensor element(ctx->allocator({}), (*out_tensors)[i].dtype(), element_shape);
+          for (size_t index = 0; index < (*out_tensors)[i].shape().dim_size(0); index++) {
+            TF_RETURN_IF_ERROR(batch_util::CopySliceToElement((*out_tensors)[i], &element, index));
+            TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, index));
+          }
+          for (size_t index = 0; index < record_read; index++) {
+            TF_RETURN_IF_ERROR(batch_util::CopySliceToElement(chunk_tensors[i], &element, index));
+            TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(element, &value_tensor, (*out_tensors)[i].shape().dim_size(0) + index));
+          }
+          (*out_tensors)[i] = std::move(value_tensor);
+        }
+      }
+      (*returned) += record_read;
     }
-    int64 bytes_read = s.Tell() - offset;
-    if (bytes_read % chunk != 0) {
-      return errors::DataLoss("corrupted data, expected multiple of ", chunk, ", received ", bytes_read);
-    }
-    *returned = bytes_read / chunk;
     return Status::OK();
   }
-  Status FromInputStream(io::InputStreamInterface& s, const string& filename, const string& entryname, const string& filtername) {
+  friend class FileInput<T>;
+  friend class StreamInput<T>;
+};
+template<typename T>
+class FileInput : public DataInput<T> {
+ public:
+  FileInput() {}
+  virtual ~FileInput() {}
+  Status FromInputStream(io::InputStreamInterface* s, const string& filename, const string& entryname, const string& filtername, const std::vector<string>& columns) {
     filename_ = filename;
     entryname_ = entryname;
     filtername_ = filtername;
+    columns_ = columns;
     return FromStream(s);
   }
+  Status ReadBatchRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
+    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(static_cast<void *>(s), ctx, state, batch, count, returned, out_tensors);
+  }
   void Encode(VariantTensorData* data) const {
-    data->tensors_ = {Tensor(DT_STRING, TensorShape({})), Tensor(DT_STRING, TensorShape({})), Tensor(DT_STRING, TensorShape({}))};
+    data->tensors_ = {
+        Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({columns_.size()}))};
     data->tensors_[0].scalar<string>()() = filename_;
     data->tensors_[1].scalar<string>()() = entryname_;
     data->tensors_[2].scalar<string>()() = filtername_;
+    for (size_t i = 0; i < columns_.size(); i++) {
+      data->tensors_[3].flat<string>()(i) = columns_[i];
+    }
 
     EncodeAttributes(data);
   }
@@ -186,6 +245,10 @@ class DataInput {
     filename_ = data.tensors(0).scalar<string>()();
     entryname_ = data.tensors(1).scalar<string>()();
     filtername_ = data.tensors(2).scalar<string>()();
+    columns_.resize(data.tensors(3).NumElements());
+    for (int64 i = 0; i < data.tensors(3).NumElements(); i++) {
+      columns_[i] = data.tensors_[3].flat<string>()(i);
+    }
 
     return DecodeAttributes(data);
   }
@@ -198,18 +261,44 @@ class DataInput {
   const string& filtername() const {
     return filtername_;
   }
+  const std::vector<string>& columns() const {
+    return columns_;
+  }
  protected:
+  virtual Status FromStream(io::InputStreamInterface* s) = 0;
+  virtual Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const = 0;
+  virtual void EncodeAttributes(VariantTensorData* data) const = 0;
+  virtual bool DecodeAttributes(const VariantTensorData& data) = 0;
+  Status ReadInputStream(io::InputStreamInterface* s, int64 chunk, int64 count, string* buffer, int64* returned) const {
+    int64 offset = s->Tell();
+    int64 bytes_to_read = count * chunk;
+    Status status = (buffer == nullptr) ? s->SkipNBytes(bytes_to_read) : s->ReadNBytes(bytes_to_read, buffer);
+    if (!(status.ok() || status == errors::OutOfRange("EOF reached"))) {
+      return status;
+    }
+    int64 bytes_read = s->Tell() - offset;
+    if (bytes_read % chunk != 0) {
+      return errors::DataLoss("corrupted data, expected multiple of ", chunk, ", received ", bytes_read);
+    }
+    *returned = bytes_read / chunk;
+    return Status::OK();
+  }
+  Status ReadReferenceRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+    return ReadRecord(static_cast<io::InputStreamInterface*>(s), ctx, state, record_to_read, record_read, out_tensors);
+  }
   string filename_;
   string entryname_;
   string filtername_;
+  std::vector<string> columns_;
 };
 
 template<typename T>
-class DataInputOp: public OpKernel {
+class FileInputOp: public OpKernel {
  public:
-  explicit DataInputOp(OpKernelConstruction* context) : OpKernel(context) {
+  explicit FileInputOp(OpKernelConstruction* context) : OpKernel(context) {
     env_ = context->env();
     OP_REQUIRES_OK(context, context->GetAttr("filters", &filters_));
+    OP_REQUIRES_OK(context, context->GetAttr("columns", &columns_));
   }
   void Compute(OpKernelContext* ctx) override {
     const Tensor* source_tensor;
@@ -231,9 +320,9 @@ class DataInputOp: public OpKernel {
       OP_REQUIRES_OK(ctx, env_->NewRandomAccessFile(filename, &file));
       if (filters_.size() == 0) {
         // No filter means only a file stream.
-        io::RandomAccessInputStream s(file.get());
+        io::RandomAccessInputStream file_stream(file.get());
         T entry;
-        OP_REQUIRES_OK(ctx, entry.FromInputStream(s, filename, string(""), string("")));
+        OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, string(""), string(""), columns_));
         output.emplace_back(std::move(entry));
         continue;
       }
@@ -241,10 +330,10 @@ class DataInputOp: public OpKernel {
       std::unique_ptr<struct archive, void(*)(struct archive *)> archive(archive_read_new(), [](struct archive *a){ archive_read_free(a);});
       OP_REQUIRES_OK(ctx, ArchiveInputStream::SetupFilters(archive.get(), filters_));
 
-      ArchiveInputStream s(file.get(), archive.get());
+      ArchiveInputStream archive_stream(file.get(), archive.get());
 
       OP_REQUIRES(
-          ctx, (archive_read_open(archive.get(), &s, NULL, ArchiveInputStream::CallbackRead, NULL) == ARCHIVE_OK), 
+          ctx, (archive_read_open(archive.get(), &archive_stream, NULL, ArchiveInputStream::CallbackRead, NULL) == ARCHIVE_OK),
           errors::InvalidArgument("unable to open datainput for ", filename, ": ", archive_error_string(archive.get())));
 
       size_t index = output.size();
@@ -254,9 +343,26 @@ class DataInputOp: public OpKernel {
         string entryname = archive_entry_pathname(entry);
 	string filtername;
         if (ArchiveInputStream::MatchFilters(archive.get(), entryname, filters_, &filtername)) {
-          s.ResetEntryOffset();
 	  T entry;
-          OP_REQUIRES_OK(ctx, entry.FromInputStream(s, filename, entryname, filtername));
+	  if (filtername == "none") {
+            // If filter is none, then just use the initial stream.
+	    // NOTE: Looks like libarchive may not be able to handle
+	    // none with text type correctly (not reading data in none archive)
+	    // So use the shortcut here.
+            io::RandomAccessInputStream file_stream(file.get());
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, entryname, filtername, columns_));
+	  } else if (filtername == "gz") {
+            // Treat gz file specially. Looks like libarchive always have issue
+            // with text file so use ZlibInputStream. Now libarchive
+            // is mostly used for archive (not compressio).
+            io::RandomAccessInputStream file_stream(file.get());
+            io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
+            io::ZlibInputStream compression_stream(&file_stream, 65536, 65536,  zlib_compression_options);
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&compression_stream, filename, entryname, filtername, columns_));
+          } else {
+            archive_stream.ResetEntryOffset();
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&archive_stream, filename, entryname, filtername, columns_));
+          }
           output.emplace_back(std::move(entry));
 	}
       }
@@ -275,14 +381,16 @@ class DataInputOp: public OpKernel {
   mutex mu_;
   Env* env_ GUARDED_BY(mu_);
   std::vector<string> filters_ GUARDED_BY(mu_);
+  std::vector<string> columns_ GUARDED_BY(mu_);
 };
 template<typename InputType, typename StateType>
-class InputDatasetBase : public DatasetBase {
+class FileInputDatasetBase : public DatasetBase {
  public:
-  InputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
+  FileInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const int64 batch, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
       : DatasetBase(DatasetContext(ctx)),
         ctx_(ctx),
         input_(input),
+        batch_(batch),
         output_types_(output_types),
         output_shapes_(output_shapes) {}
 
@@ -320,25 +428,29 @@ class InputDatasetBase : public DatasetBase {
       input_tensor.flat<string>()(i) = message;
     }
     TF_RETURN_IF_ERROR(b->AddTensor(input_tensor, &input_node));
-    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node }, node));
+    Node* batch_node;
+    Tensor batch_tensor(DT_INT64, TensorShape({}));
+    batch_tensor.scalar<int64>()() = batch_;
+    TF_RETURN_IF_ERROR(b->AddTensor(batch_tensor, &batch_node));
+    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node, batch_node}, node));
     return Status::OK();
   }
  private:
-  class Iterator : public DatasetIterator<InputDatasetBase<InputType, StateType>> {
+  class Iterator : public DatasetIterator<FileInputDatasetBase<InputType, StateType>> {
    public:
-    using tensorflow::data::DatasetIterator<InputDatasetBase<InputType, StateType>>::dataset;
-    explicit Iterator(const typename tensorflow::data::DatasetIterator<InputDatasetBase<InputType, StateType>>::Params& params)
-        : DatasetIterator<InputDatasetBase<InputType, StateType>>(params), stream_(nullptr), archive_(nullptr, [](struct archive *a){ archive_read_free(a);}), file_(nullptr){}
+    using tensorflow::data::DatasetIterator<FileInputDatasetBase<InputType, StateType>>::dataset;
+    explicit Iterator(const typename tensorflow::data::DatasetIterator<FileInputDatasetBase<InputType, StateType>>::Params& params)
+        : DatasetIterator<FileInputDatasetBase<InputType, StateType>>(params), stream_(nullptr), archive_(nullptr, [](struct archive *a){ archive_read_free(a);}), file_(nullptr){}
 
     Status GetNextInternal(IteratorContext* ctx,
                            std::vector<Tensor>* out_tensors,
                            bool* end_of_sequence) override {
       mutex_lock l(mu_);
-      do {
+      int64 returned = 0;
+      int64 count = dataset()->batch_ == 0 ? 1 : dataset()->batch_;
+      while (returned < count) {
         if (stream_) {
-	  int64 count = 1;
-          int64 returned = 0;
-          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadRecord((*stream_.get()), ctx, current_input_state_, &returned, out_tensors));
+          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadBatchRecord(stream_.get(), ctx, current_input_state_, dataset()->batch_, count, &returned, out_tensors));
           if (returned == count) {
             *end_of_sequence = false;
             return Status::OK();
@@ -349,12 +461,16 @@ class InputDatasetBase : public DatasetBase {
         }
         // Iteration ends when there are no more input to process.
         if (current_input_index_ == dataset()->input_.size()) {
+          if (out_tensors->size() != 0) {
+            *end_of_sequence = false;
+            return Status::OK();
+          }
           *end_of_sequence = true;
           return Status::OK();
         }
 
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
-      } while (true);
+      };
     }
 
    private:
@@ -374,9 +490,20 @@ class InputDatasetBase : public DatasetBase {
       current_input_state_.reset(nullptr);
 
       TF_RETURN_IF_ERROR(env->NewRandomAccessFile(filename, &file_));
-      if (filtername.size() == 0) {
-        // No filter means only a file stream.
+      if (filtername.size() == 0 || filtername == "none") {
+	// If filter is none, then just use the initial stream.
+	// NOTE: Looks like libarchive may not be able to handle
+	// none with text type correctly (not reading data in none archive)
+	// So use the shortcut here.
         stream_.reset(new io::RandomAccessInputStream(file_.get()));
+        return Status::OK();
+      } else if (filtername == "gz") {
+        // Treat gz file specially. Looks like libarchive always have issue
+	// with text file so use ZlibInputStream. Now libarchive
+	// is mostly used for archive (not compressio).
+	io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
+        file_stream_.reset(new io::RandomAccessInputStream(file_.get()));
+	stream_.reset(new io::ZlibInputStream(file_stream_.get(), 65536, 65536,  zlib_compression_options));
         return Status::OK();
       }
       archive_.reset(archive_read_new());
@@ -405,6 +532,7 @@ class InputDatasetBase : public DatasetBase {
       current_input_state_.reset(nullptr);
       stream_.reset(nullptr);
       archive_.reset(nullptr);
+      file_stream_.reset(nullptr);
       file_.reset(nullptr);
     }
 
@@ -413,20 +541,22 @@ class InputDatasetBase : public DatasetBase {
     std::unique_ptr<StateType> current_input_state_ GUARDED_BY(mu_);
     std::unique_ptr<io::InputStreamInterface> stream_ GUARDED_BY(mu_);
     std::unique_ptr<struct archive, void(*)(struct archive *)> archive_ GUARDED_BY(mu_);
+    std::unique_ptr<io::InputStreamInterface> file_stream_ GUARDED_BY(mu_);
     std::unique_ptr<tensorflow::RandomAccessFile> file_ GUARDED_BY(mu_);
   };
   OpKernelContext* ctx_;
  protected:
   std::vector<InputType> input_;
+  int64 batch_;
   const DataTypeVector output_types_;
   const std::vector<PartialTensorShape> output_shapes_;
 };
 
 template<typename InputType, typename StateType>
-class InputDatasetOp : public DatasetOpKernel {
+class FileInputDatasetOp : public DatasetOpKernel {
  public:
   using DatasetOpKernel::DatasetOpKernel;
-  explicit InputDatasetOp(OpKernelConstruction* ctx)
+  explicit FileInputDatasetOp(OpKernelConstruction* ctx)
       : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_shapes", &output_shapes_));
@@ -458,7 +588,265 @@ class InputDatasetOp : public DatasetOpKernel {
         input.emplace_back(entry);
       }
     }
-    *output = new InputDatasetBase<InputType, StateType>(ctx, input, output_types_, output_shapes_);
+    const Tensor* batch_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("batch", &batch_tensor));
+    int64 batch = batch_tensor->scalar<int64>()();
+    *output = new FileInputDatasetBase<InputType, StateType>(ctx, input, batch, output_types_, output_shapes_);
+  }
+  DataTypeVector output_types_;
+  std::vector<PartialTensorShape> output_shapes_;
+};
+
+template<typename T>
+class StreamInput : public DataInput<T> {
+ public:
+  StreamInput() {}
+  virtual ~StreamInput() {}
+  Status FromInputEndpoint(const string& endpoint, const std::vector<string>& columns) {
+    endpoint_ = endpoint;
+    columns_ = columns;
+    return FromEndpoint(endpoint);
+  }
+  void Encode(VariantTensorData* data) const {
+    data->tensors_ = {
+        Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({columns_.size()}))};
+    data->tensors_[0].scalar<string>()() = endpoint_;
+    for (size_t i = 0; i < columns_.size(); i++) {
+      data->tensors_[1].flat<string>()(i) = columns_[i];
+    }
+    EncodeAttributes(data);
+  }
+  bool Decode(const VariantTensorData& data) {
+    endpoint_ = data.tensors(0).scalar<string>()();
+    columns_.resize(data.tensors(1).NumElements());
+    for (int64 i = 0; i < data.tensors(1).NumElements(); i++) {
+      columns_[i] = data.tensors_[1].flat<string>()(i);
+    }
+    return DecodeAttributes(data);
+  }
+  const string& endpoint() const {
+    return endpoint_;
+  }
+  const std::vector<string>& columns() const {
+    return columns_;
+  }
+  Status ReadBatchRecord(IteratorContext* ctx, std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
+    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(nullptr, ctx, state, batch, count, returned, out_tensors);
+  }
+ protected:
+  virtual Status FromEndpoint(const string& endpoint) = 0;
+  virtual Status ReadRecord(IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const = 0;
+  virtual void EncodeAttributes(VariantTensorData* data) const = 0;
+  virtual bool DecodeAttributes(const VariantTensorData& data) = 0;
+  Status ReadReferenceRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+    return ReadRecord(ctx, state, record_to_read, record_read, out_tensors);
+  }
+  string endpoint_;
+  std::vector<string> columns_;
+};
+
+template<typename T>
+class StreamInputOp: public OpKernel {
+ public:
+  explicit StreamInputOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+    OP_REQUIRES_OK(context, context->GetAttr("columns", &columns_));
+  }
+  void Compute(OpKernelContext* ctx) override {
+    const Tensor* source_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("source", &source_tensor));
+    OP_REQUIRES(
+        ctx, source_tensor->dims() <= 1,
+        errors::InvalidArgument("`source` must be a scalar or a vector."));
+
+    std::vector<string> source;
+    source.reserve(source_tensor->NumElements());
+    for (int i = 0; i < source_tensor->NumElements(); ++i) {
+      source.push_back(source_tensor->flat<string>()(i));
+    }
+
+    std::vector<T> output;
+
+    for (const auto& endpoint: source) {
+      T entry;
+      OP_REQUIRES_OK(ctx, entry.FromInputEndpoint(endpoint, columns_));
+      output.emplace_back(std::move(entry));
+    }
+
+    Tensor* output_tensor;
+    OP_REQUIRES_OK(ctx, ctx->allocate_output(0, TensorShape({static_cast<int64>(output.size())}), &output_tensor));
+    for (int i = 0; i < output.size(); i++) {
+      output_tensor->flat<Variant>()(i) = output[i];
+    }
+   }
+ protected:
+  mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::vector<string> columns_ GUARDED_BY(mu_);
+};
+template<typename InputType, typename StateType>
+class StreamInputDatasetBase : public DatasetBase {
+ public:
+  StreamInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const int64 batch, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
+      : DatasetBase(DatasetContext(ctx)),
+        ctx_(ctx),
+        input_(input),
+        batch_(batch),
+        output_types_(output_types),
+        output_shapes_(output_shapes) {}
+
+  std::unique_ptr<IteratorBase> MakeIteratorInternal(
+      const string& prefix) const override {
+    return std::unique_ptr<IteratorBase>(
+        new Iterator({this, strings::StrCat(prefix, DebugString())}));
+  }
+
+  const DataTypeVector& output_dtypes() const override {
+    return output_types_;
+  }
+
+  const std::vector<PartialTensorShape>& output_shapes() const override {
+    return output_shapes_;
+  }
+
+  string DebugString() const override {
+    return "InputDatasetBase::Dataset";
+  }
+
+  Status AsGraphDefInternal(SerializationContext* ctx,
+                            DatasetGraphDefBuilder* b,
+                            Node** node) const override {
+    Node* input_node;
+    Tensor input_tensor(DT_STRING, TensorShape({static_cast<int64>(input_.size())}));
+    // GraphDefInternal has some trouble with Variant so use serialized string.
+    for (size_t i = 0; i < input_.size(); i++) {
+      string message;
+      VariantTensorData serialized_data_f;
+      VariantTensorDataProto serialized_proto_f;
+      input_[i].Encode(&serialized_data_f);
+      serialized_data_f.ToProto(&serialized_proto_f);
+      EncodeVariant(serialized_proto_f, &message);
+      input_tensor.flat<string>()(i) = message;
+    }
+    TF_RETURN_IF_ERROR(b->AddTensor(input_tensor, &input_node));
+    Node* batch_node;
+    Tensor batch_tensor(DT_INT64, TensorShape({}));
+    batch_tensor.scalar<int64>()() = batch_;
+    TF_RETURN_IF_ERROR(b->AddTensor(batch_tensor, &batch_node));
+    TF_RETURN_IF_ERROR(b->AddDataset(this, {input_node, batch_node}, node));
+    return Status::OK();
+  }
+ private:
+  class Iterator : public DatasetIterator<StreamInputDatasetBase<InputType, StateType>> {
+   public:
+    using tensorflow::data::DatasetIterator<StreamInputDatasetBase<InputType, StateType>>::dataset;
+    explicit Iterator(const typename tensorflow::data::DatasetIterator<StreamInputDatasetBase<InputType, StateType>>::Params& params)
+        : DatasetIterator<StreamInputDatasetBase<InputType, StateType>>(params) {}
+
+    Status GetNextInternal(IteratorContext* ctx,
+                           std::vector<Tensor>* out_tensors,
+                           bool* end_of_sequence) override {
+      mutex_lock l(mu_);
+      int64 returned = 0;
+      int64 count = dataset()->batch_ == 0 ? 1 : dataset()->batch_;
+      while (returned < count) {
+        if (current_input_index_ < dataset()->input_.size()) {
+          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadBatchRecord(ctx, current_input_state_, dataset()->batch_, count, &returned, out_tensors));
+          if (returned == count) {
+            *end_of_sequence = false;
+            return Status::OK();
+          }
+          // We have reached the end of the current input, move next.
+          ResetStreamsLocked();
+          ++current_input_index_;
+        }
+        // Iteration ends when there are no more input to process.
+        if (current_input_index_ == dataset()->input_.size()) {
+          if (out_tensors->size() != 0) {
+            *end_of_sequence = false;
+            return Status::OK();
+          }
+          *end_of_sequence = true;
+          return Status::OK();
+        }
+
+        TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
+      };
+    }
+
+   private:
+    // Sets up streams to read from `current_input_index_`.
+    Status SetupStreamsLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      if (current_input_index_ >= dataset()->input_.size()) {
+        return errors::InvalidArgument(
+            "current_input_index_:", current_input_index_,
+            " >= input_.size():", dataset()->input_.size());
+      }
+
+      // Actually move on to next entry.
+      current_input_state_.reset(nullptr);
+
+      return Status::OK();
+    }
+
+    // Resets all streams.
+    void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      current_input_state_.reset(nullptr);
+    }
+
+    mutex mu_;
+    size_t current_input_index_ GUARDED_BY(mu_) = 0;
+    std::unique_ptr<StateType> current_input_state_ GUARDED_BY(mu_);
+  };
+  OpKernelContext* ctx_;
+ protected:
+  std::vector<InputType> input_;
+  int64 batch_;
+  const DataTypeVector output_types_;
+  const std::vector<PartialTensorShape> output_shapes_;
+};
+
+template<typename InputType, typename StateType>
+class StreamInputDatasetOp : public DatasetOpKernel {
+ public:
+  using DatasetOpKernel::DatasetOpKernel;
+  explicit StreamInputDatasetOp(OpKernelConstruction* ctx)
+      : DatasetOpKernel(ctx) {
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("output_shapes", &output_shapes_));
+  }
+  void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("input", &input_tensor));
+    OP_REQUIRES(
+        ctx, (input_tensor->dtype() == DT_VARIANT || input_tensor->dtype() == DT_STRING),
+        errors::InvalidArgument("`input` must be a variant or string, received ", input_tensor->dtype()));
+    OP_REQUIRES(
+        ctx, input_tensor->dims() <= 1,
+        errors::InvalidArgument("`input` must be a scalar or a vector, dim = ", input_tensor->dims()));
+    std::vector<InputType> input;
+    input.reserve(input_tensor->NumElements());
+    if (input_tensor->dtype() == DT_VARIANT) {
+      for (int i = 0; i < input_tensor->NumElements(); ++i) {
+        input.push_back(*(input_tensor->flat<Variant>()(i).get<InputType>()));
+      }
+    } else {
+      for (int i = 0; i < input_tensor->NumElements(); ++i) {
+        string message = input_tensor->flat<string>()(i);
+        VariantTensorDataProto serialized_proto_f;
+        VariantTensorData serialized_data_f;
+        DecodeVariant(&message, &serialized_proto_f);
+        serialized_data_f.FromProto(serialized_proto_f);
+        InputType entry;
+        entry.Decode(serialized_data_f);
+        input.emplace_back(entry);
+      }
+    }
+    const Tensor* batch_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("batch", &batch_tensor));
+    int64 batch = batch_tensor->scalar<int64>()();
+    *output = new StreamInputDatasetBase<InputType, StateType>(ctx, input, batch, output_types_, output_shapes_);
   }
   DataTypeVector output_types_;
   std::vector<PartialTensorShape> output_shapes_;

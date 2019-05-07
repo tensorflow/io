@@ -18,20 +18,14 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow
-from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 parquet_ops = _load_library('_parquet_ops.so')
 
-if hasattr(tensorflow, "nest"):
-  from tensorflow import nest # pylint: disable=ungrouped-imports
-else:
-  from tensorflow.python.data.util import nest # pylint: disable=ungrouped-imports
-
 class ParquetDataset(data.Dataset):
   """A Parquet Dataset that reads the parquet file."""
 
-  def __init__(self, filenames, columns, output_types):
+  def __init__(self, filename, columns, dtypes=None, batch=None):
     """Create a `ParquetDataset`.
 
     `ParquetDataset` allows a user to read data from a parquet file.
@@ -51,36 +45,40 @@ class ParquetDataset(data.Dataset):
     ```
 
     Args:
-      filenames: A 0-D or 1-D `tf.string` tensor containing one or more
+      filename: A 0-D or 1-D `tf.string` tensor containing one or more
         filenames.
       columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
-      output_types: A tuple of `tf.DType` objects representing the types of the
+      dtypes: A tuple of `tf.DType` objects representing the types of the
         columns returned.
     """
-    self._filenames = tensorflow.convert_to_tensor(
-        filenames, dtype=dtypes.string, name="filenames")
-    self._columns = tensorflow.convert_to_tensor(
-        columns, dtype=dtypes.int64, name="columns")
-    self._output_types = output_types
+    self._data_input = parquet_ops.parquet_input(filename, [], columns=columns)
+    self._columns = columns
+    self._dtypes = dtypes
+    self._batch = 0 if batch is None else batch
     super(ParquetDataset, self).__init__()
 
   def _inputs(self):
     return []
 
   def _as_variant_tensor(self):
-    return parquet_ops.parquet_dataset(self._filenames, self._columns,
-                                       nest.flatten(self.output_types),
-                                       nest.flatten(self.output_shapes))
+    return parquet_ops.parquet_dataset(
+        self._data_input,
+        self._batch,
+        output_types=self.output_types,
+        output_shapes=self.output_shapes)
 
   @property
   def output_classes(self):
-    return nest.map_structure(lambda _: tensorflow.Tensor, self._output_types)
+    return tuple([tensorflow.Tensor for _ in self._columns])
 
   @property
   def output_shapes(self):
-    return nest.map_structure(lambda _: tensorflow.TensorShape([]),
-                              self._output_types)
+    return tuple(
+        [tensorflow.TensorShape([]) for _ in self._columns]
+    ) if self._batch is None else tuple(
+        [tensorflow.TensorShape([None]) for _ in self._columns]
+    )
 
   @property
   def output_types(self):
-    return self._output_types
+    return self._dtypes

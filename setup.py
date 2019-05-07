@@ -149,7 +149,9 @@ if datapath is not None:
       os.path.join(datapath, "tensorflow_io")):
     if (not fnmatch.fnmatch(rootname, "*test*") and
         not fnmatch.fnmatch(rootname, "*runfiles*")):
-      for filename in fnmatch.filter(filenames, "*.so"):
+      for filename in [
+          f for f in filenames if fnmatch.fnmatch(
+              f, "*.so") or fnmatch.fnmatch(f, "*.py")]:
         src = os.path.join(rootname, filename)
         dst = os.path.join(
             rootpath,

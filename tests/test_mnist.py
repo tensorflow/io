@@ -28,7 +28,7 @@ from tensorflow import errors         # pylint: disable=wrong-import-position
 from tensorflow import test           # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
-from tensorflow_io.mnist.python.ops import mnist_dataset_ops # pylint: disable=wrong-import-position
+from tensorflow_io import mnist as mnist_io # pylint: disable=wrong-import-position
 
 
 class MNISTDatasetTest(test.TestCase):
@@ -52,10 +52,10 @@ class MNISTDatasetTest(test.TestCase):
         "test_mnist",
         "t10k-labels-idx1-ubyte.gz")
 
-    image_dataset = mnist_dataset_ops.MNISTImageDataset(image_filename)
-    label_dataset = mnist_dataset_ops.MNISTLabelDataset(label_filename)
+    image_dataset = mnist_io.MNISTImageDataset(image_filename, batch=3)
+    label_dataset = mnist_io.MNISTLabelDataset(label_filename, batch=3)
 
-    dataset = mnist_dataset_ops.MNISTDataset(
+    dataset = mnist_io.MNISTDataset(
         image_filename, label_filename)
 
     iterator = data.Dataset.zip(
@@ -66,12 +66,17 @@ class MNISTDatasetTest(test.TestCase):
     with self.cached_session() as sess:
       sess.run(init_op)
       l = len(y_test)
-      for i in range(l):
-        v_x = x_test[i]
-        v_y = y_test[i]
+      for i in range(0, l-1, 3):
+        v_x = x_test[i:i+3]
+        v_y = y_test[i:i+3]
         m_x, m_y = sess.run(get_next)
-        self.assertEqual(v_y, m_y)
+        self.assertAllEqual(v_y, m_y)
         self.assertAllEqual(v_x, m_x)
+      v_x = x_test[l-1:l]
+      v_y = y_test[l-1:l]
+      m_x, m_y = sess.run(get_next)
+      self.assertAllEqual(v_y, m_y)
+      self.assertAllEqual(v_x, m_x)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
@@ -86,7 +91,7 @@ class MNISTDatasetTest(test.TestCase):
         v_x = x_test[i]
         v_y = y_test[i]
         m_x, m_y = sess.run(get_next)
-        self.assertEqual(v_y, m_y)
+        self.assertAllEqual(v_y, m_y)
         self.assertAllEqual(v_x, m_x)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)

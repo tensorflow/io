@@ -13,18 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/common_shape_fns.h"
-#include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/shape_inference.h"
+#include "tensorflow/core/platform/env.h"
+
+#include "tensorflow_io/oss/kernels/ossfs/oss_file_system.h"
 
 namespace tensorflow {
 
-REGISTER_OP("LMDBDataset")
-    .Input("filenames: string")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+REGISTER_FILE_SYSTEM("oss", OSSFileSystem);
 
 }  // namespace tensorflow

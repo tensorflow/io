@@ -20,5 +20,5 @@ if python -c "import tensorflow" &> /dev/null; then
 else
     pip install tensorflow
 fi
-
+python -m pip install grpcio-tools
 python config_helper.py

@@ -18,26 +18,29 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class MNISTImageInput: public DataInput<int64> {
+class MNISTImageInput: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
-      TF_RETURN_IF_ERROR(s.SkipNBytes(16));
+      TF_RETURN_IF_ERROR(s->SkipNBytes(16));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, (rows_ * cols_), 1, &buffer , returned));
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {rows_, cols_});
-      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*returned) * rows_ * cols_);
+    Status status = ReadInputStream(s, (rows_ * cols_), record_to_read, &buffer, record_read);
+    if (!(status.ok() || errors::IsOutOfRange(status))) {
+      return status;
+    }
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read, rows_, cols_});
+      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*record_read) * rows_ * cols_);
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     string header;
-    TF_RETURN_IF_ERROR(s.ReadNBytes(16, &header));
+    TF_RETURN_IF_ERROR(s->ReadNBytes(16, &header));
     if (header[0] != 0x00 || header[1] != 0x00 || header[2] != 0x08 || header[3] != 0x03) {
       return errors::InvalidArgument("mnist image file header must starts with `0x00000803`");
     }
@@ -48,16 +51,16 @@ class MNISTImageInput: public DataInput<int64> {
   }
   void EncodeAttributes(VariantTensorData* data) const override {
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
+    data->tensors_.back().scalar<int64>()() = size_;
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
+    data->tensors_.back().scalar<int64>()() = rows_;
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_[3].scalar<int64>()() = size_;
-    data->tensors_[4].scalar<int64>()() = rows_;
-    data->tensors_[5].scalar<int64>()() = cols_;
+    data->tensors_.back().scalar<int64>()() = cols_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_ = data.tensors(3).scalar<int64>()();
-    rows_ = data.tensors(4).scalar<int64>()();
-    cols_ = data.tensors(5).scalar<int64>()();
+    size_ = data.tensors(data.tensors().size() - 3).scalar<int64>()();
+    rows_ = data.tensors(data.tensors().size() - 2).scalar<int64>()();
+    cols_ = data.tensors(data.tensors().size() - 1).scalar<int64>()();
     return true;
   }
  protected:
@@ -65,26 +68,26 @@ class MNISTImageInput: public DataInput<int64> {
   int64 rows_;
   int64 cols_;
 };
-class MNISTLabelInput: public DataInput<int64> {
+class MNISTLabelInput: public FileInput<int64> {
  public:
-  Status ReadRecord(io::InputStreamInterface& s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64* returned, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new int64(0));
-      TF_RETURN_IF_ERROR(s.SkipNBytes(8));
+      TF_RETURN_IF_ERROR(s->SkipNBytes(8));
     }
     string buffer;
-    TF_RETURN_IF_ERROR(ReadInputStream(s, 1, 1, &buffer, returned));
-    (*(state.get())) += *returned;
-    if (*returned == 1) {
-      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {});
-      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*returned));
+    TF_RETURN_IF_ERROR(ReadInputStream(s, 1, record_to_read, &buffer, record_read));
+    (*(state.get())) += *record_read;
+    if (*record_read > 0) {
+      Tensor value_tensor(ctx->allocator({}), DT_UINT8, {*record_read});
+      memcpy(value_tensor.flat<uint8>().data(), buffer.data(), (*record_read));
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
   }
-  Status FromStream(io::InputStreamInterface& s) override {
+  Status FromStream(io::InputStreamInterface* s) override {
     string header;
-    TF_RETURN_IF_ERROR(s.ReadNBytes(8, &header));
+    TF_RETURN_IF_ERROR(s->ReadNBytes(8, &header));
     if (header[0] != 0x00 || header[1] != 0x00 || header[2] != 0x08 || header[3] != 0x01) {
       return errors::InvalidArgument("mnist label file header must starts with `0x00000801`");
     }
@@ -93,10 +96,10 @@ class MNISTLabelInput: public DataInput<int64> {
   }
   void EncodeAttributes(VariantTensorData* data) const override {
     data->tensors_.emplace_back(Tensor(DT_INT64, TensorShape({})));
-    data->tensors_[3].scalar<int64>()() = size_;
+    data->tensors_.back().scalar<int64>()() = size_;
   }
   bool DecodeAttributes(const VariantTensorData& data) override {
-    size_ = data.tensors(3).scalar<int64>()();
+    size_ = data.tensors(data.tensors().size() - 1).scalar<int64>()();
     return true;
   }
  protected:
@@ -107,12 +110,12 @@ REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::data::MNIST
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::data::MNISTImageInput");
 
 REGISTER_KERNEL_BUILDER(Name("MNISTLabelInput").Device(DEVICE_CPU),
-                        DataInputOp<MNISTLabelInput>);
+                        FileInputOp<MNISTLabelInput>);
 REGISTER_KERNEL_BUILDER(Name("MNISTImageInput").Device(DEVICE_CPU),
-                        DataInputOp<MNISTImageInput>);
+                        FileInputOp<MNISTImageInput>);
 REGISTER_KERNEL_BUILDER(Name("MNISTLabelDataset").Device(DEVICE_CPU),
-                        InputDatasetOp<MNISTLabelInput, int64>);
+                        FileInputDatasetOp<MNISTLabelInput, int64>);
 REGISTER_KERNEL_BUILDER(Name("MNISTImageDataset").Device(DEVICE_CPU),
-                        InputDatasetOp<MNISTImageInput, int64>);
+                        FileInputDatasetOp<MNISTImageInput, int64>);
 }  // namespace data
 }  // namespace tensorflow

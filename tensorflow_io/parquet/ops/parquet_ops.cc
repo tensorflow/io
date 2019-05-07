@@ -19,41 +19,27 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("CIFAR10Dataset")
-    .Input("input: T")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
-
-REGISTER_OP("CIFAR100Dataset")
-    .Input("input: T")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
-
-REGISTER_OP("CIFAR10Input")
+REGISTER_OP("ParquetInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
+    .Attr("columns: list(string) = []")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
 
-REGISTER_OP("CIFAR100Input")
-    .Input("source: string")
+REGISTER_OP("ParquetDataset")
+    .Input("input: T")
+    .Input("batch: int64")
     .Output("handle: variant")
-    .Attr("filters: list(string) = []")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .Attr("T: {string, variant} = DT_VARIANT")
+    .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(0, c->MakeShape({}));
        return Status::OK();
      });
-
 
 }  // namespace tensorflow

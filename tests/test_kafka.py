@@ -121,6 +121,43 @@ class KafkaDatasetTest(test.TestCase):
         self.assertAllEqual([("D" + str(i + 5)).encode() for i in range(5)],
                             sess.run(get_next))
 
+
+  @pytest.mark.skipif(
+      (hasattr(tensorflow, "version") and
+       tensorflow.version.VERSION.startswith("2.0.")), reason=None)
+  def test_kafka_dataset_save_and_restore(self):
+    """Tests for KafkaDataset save and restore."""
+    g = tensorflow.Graph()
+    with g.as_default():
+      topics = tensorflow.compat.v1.placeholder(dtypes.string, shape=[None])
+      num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+
+      repeat_dataset = kafka_io.KafkaDataset(
+          topics, group="test", eof=True).repeat(num_epochs)
+      iterator = repeat_dataset.make_initializable_iterator()
+      get_next = iterator.get_next()
+
+      it = tensorflow.data.experimental.make_saveable_from_iterator(iterator)
+      g.add_to_collection(tensorflow.GraphKeys.SAVEABLE_OBJECTS, it)
+      saver = tensorflow.train.Saver()
+
+      model_file = "/tmp/test-kafka-model"
+      with self.cached_session() as sess:
+        sess.run(iterator.initializer,
+                 feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
+        for i in range(3):
+          self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
+        # Save current offset which is 2
+        saver.save(sess, model_file, global_step=3)
+
+      checkpoint_file = "/tmp/test-kafka-model-3"
+      with self.cached_session() as sess:
+        saver.restore(sess, checkpoint_file)
+        # Restore current offset to 2
+        for i in [2, 3]:
+          self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
+
+
   def test_write_kafka(self):
     """test_write_kafka"""
     channel = "e{}e".format(time.time())

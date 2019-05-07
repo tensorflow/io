@@ -1,6 +1,7 @@
 /.bazelrc
 /bazel-*
 /artifacts
+/get-pip.py
 .DS_Store
 *.pyc
 __pycache__
@@ -23,7 +24,7 @@ tfio_*.tar.gz
 
 # Setuptools
 *.egg-info
-build
+build/
 dist
 wheelhouse
 

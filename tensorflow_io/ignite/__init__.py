@@ -39,4 +39,4 @@ _allowed_symbols = [
     "IgniteDataset",
 ]
 
-remove_undocumented(__name__)
+remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
