@@ -20,30 +20,15 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class BlockStream {
+class SizedRandomAccessBufferedStream : public SizedRandomAccessInputStreamInterface {
 public:
-  explicit BlockStream(io::InputStreamInterface* s)
+  explicit SizedRandomAccessBufferedStream(io::InputStreamInterface* s)
     : input_stream_(s) { }
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) {
-    int64 size = 0;
-    TF_RETURN_IF_ERROR(GetSize(&size));
-    if (offset > size) {
-      return errors::OutOfRange("EOF reached: ", offset);
-    }
-    Status status = Status::OK();
-    if (offset + n > size) {
-      status = errors::OutOfRange("EOF reached: ", result->size(), " bytes read, ", n, " requested");
-      n = size - offset;
-    }
-    memcpy(scratch, &buffer_.data()[offset], n);
-    *result = StringPiece(scratch, n);
-    return status;
-  }
-  Status GetSize(int64* size) {
+  Status GetFileSize(uint64* file_size) override {
     // TODO: This is not necessary the best format as it needs
     // two pass to get the buffer. Could be enhanced later.
     if (size_ >= 0) {
-      *size = size_;
+      *file_size = size_;
       return Status::OK();
     }
     std::vector<string> buffer;
@@ -71,8 +56,27 @@ public:
     }
     buffer.clear();
 
-    *size = size_;
+    *file_size = size_;
     return  Status::OK();
+  }
+  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
+    Status status = Status::OK();
+    if (offset + n > size_) {
+      status = errors::OutOfRange("EOF reached: ", result->size(), " bytes read, ", n, " requested");
+      n = size_ - offset;
+    }
+    memcpy(scratch, &buffer_.data()[offset], n);
+    *result = StringPiece(scratch, n);
+    return status;
+  }
+  Status ReadNBytes(int64 bytes_to_read, string* result) override {
+    return input_stream_->ReadNBytes(bytes_to_read, result);
+  }
+  int64 Tell() const override {
+    return input_stream_->Tell();
+  }
+  Status Reset() override {
+    return input_stream_->Reset();
   }
 private:
   io::InputStreamInterface* input_stream_;
@@ -83,9 +87,13 @@ private:
 class ParquetRandomAccessFile : public ::arrow::io::RandomAccessFile {
 public:
   explicit ParquetRandomAccessFile(io::InputStreamInterface* s)
-    : input_stream_(s)
-    , stream_(new BlockStream(s)) {
-
+    : input_stream_(nullptr)
+    , buffered_stream_(nullptr) {
+    input_stream_ = dynamic_cast<SizedRandomAccessInputStreamInterface*>(s);
+    if (input_stream_ == nullptr) {
+      buffered_stream_.reset(new SizedRandomAccessBufferedStream(s));
+      input_stream_ = buffered_stream_.get();
+    }
   }
   ~ParquetRandomAccessFile() {}
   arrow::Status Close() override {
@@ -104,8 +112,8 @@ public:
     return arrow::Status::NotImplemented("Read (Buffer*)");
   }
   arrow::Status GetSize(int64_t* size) override {
-    int64 size_value = 0;
-    Status status = stream_.get()->GetSize(&size_value);
+    uint64 size_value = 0;
+    Status status = input_stream_->GetFileSize(&size_value);
     if (!status.ok()) {
       return arrow::Status::IOError(status.error_message());
     }
@@ -117,7 +125,7 @@ public:
   }
   arrow::Status ReadAt(int64_t position, int64_t nbytes, int64_t* bytes_read, void* out) override {
     StringPiece result;
-    Status status = stream_.get()->Read(position, nbytes, &result, (char *)out);
+    Status status = input_stream_->Read(position, nbytes, &result, (char *)out);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
         return arrow::Status::IOError(status.error_message());
     }
@@ -128,7 +136,7 @@ public:
     string buffer;
     buffer.resize(nbytes);
     StringPiece result;
-    Status status = stream_.get()->Read(position, nbytes, &result, &buffer[0]);
+    Status status = input_stream_->Read(position, nbytes, &result, &buffer[0]);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
         return arrow::Status::IOError(status.error_message());
     }
@@ -136,8 +144,8 @@ public:
     return arrow::Buffer::FromString(buffer, out);
   }
 private:
-  io::InputStreamInterface* input_stream_;
-  std::unique_ptr<BlockStream> stream_;
+  SizedRandomAccessInputStreamInterface* input_stream_;
+  std::unique_ptr<SizedRandomAccessBufferedStream> buffered_stream_;
 };
 
 class ParquetInputStream{
