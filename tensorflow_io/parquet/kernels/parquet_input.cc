@@ -20,14 +20,142 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
+class SizedRandomAccessBufferedStream : public SizedRandomAccessInputStreamInterface {
+public:
+  explicit SizedRandomAccessBufferedStream(io::InputStreamInterface* s)
+    : input_stream_(s) { }
+  Status GetFileSize(uint64* file_size) override {
+    // TODO: This is not necessary the best format as it needs
+    // two pass to get the buffer. Could be enhanced later.
+    if (size_ >= 0) {
+      *file_size = size_;
+      return Status::OK();
+    }
+    std::vector<string> buffer;
+    do {
+      string chunk;
+      Status status = input_stream_->ReadNBytes(4096, &chunk);
+      if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return status;
+      }
+      if (chunk.size() > 0) {
+        buffer.emplace_back(std::move(chunk));
+      }
+      if (!status.ok()) {
+        break;
+      }
+    } while (true);
+    size_ = 0;
+    for (size_t i = 0; i < buffer.size(); i++) {
+        size_ += buffer[i].size();
+    }
+    buffer_.clear();
+    buffer_.reserve(size_);
+    for (size_t i = 0; i < buffer.size(); i++) {
+        buffer_.append(buffer[i]);
+    }
+    buffer.clear();
+
+    *file_size = size_;
+    return  Status::OK();
+  }
+  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
+    Status status = Status::OK();
+    if (offset + n > size_) {
+      status = errors::OutOfRange("EOF reached: ", result->size(), " bytes read, ", n, " requested");
+      n = size_ - offset;
+    }
+    memcpy(scratch, &buffer_.data()[offset], n);
+    *result = StringPiece(scratch, n);
+    return status;
+  }
+  Status ReadNBytes(int64 bytes_to_read, string* result) override {
+    return input_stream_->ReadNBytes(bytes_to_read, result);
+  }
+  int64 Tell() const override {
+    return input_stream_->Tell();
+  }
+  Status Reset() override {
+    return input_stream_->Reset();
+  }
+private:
+  io::InputStreamInterface* input_stream_;
+  string buffer_;
+  int64 size_ = -1;
+};
+
+class ParquetRandomAccessFile : public ::arrow::io::RandomAccessFile {
+public:
+  explicit ParquetRandomAccessFile(io::InputStreamInterface* s)
+    : input_stream_(nullptr)
+    , buffered_stream_(nullptr) {
+    input_stream_ = dynamic_cast<SizedRandomAccessInputStreamInterface*>(s);
+    if (input_stream_ == nullptr) {
+      buffered_stream_.reset(new SizedRandomAccessBufferedStream(s));
+      input_stream_ = buffered_stream_.get();
+    }
+  }
+  ~ParquetRandomAccessFile() {}
+  arrow::Status Close() override {
+    return arrow::Status::OK();
+  }
+  arrow::Status Tell(int64_t* position) const override {
+    return arrow::Status::NotImplemented("Tell");
+  }
+  arrow::Status Seek(int64_t position) override {
+    return arrow::Status::NotImplemented("Seek");
+  }
+  arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override {
+    return arrow::Status::NotImplemented("Read (void*)");
+  }
+  arrow::Status Read(int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
+    return arrow::Status::NotImplemented("Read (Buffer*)");
+  }
+  arrow::Status GetSize(int64_t* size) override {
+    uint64 size_value = 0;
+    Status status = input_stream_->GetFileSize(&size_value);
+    if (!status.ok()) {
+      return arrow::Status::IOError(status.error_message());
+    }
+    *size = size_value;
+    return arrow::Status::OK();
+  }
+  bool supports_zero_copy() const override {
+    return false;
+  }
+  arrow::Status ReadAt(int64_t position, int64_t nbytes, int64_t* bytes_read, void* out) override {
+    StringPiece result;
+    Status status = input_stream_->Read(position, nbytes, &result, (char *)out);
+    if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return arrow::Status::IOError(status.error_message());
+    }
+    *bytes_read = result.size();
+    return arrow::Status::OK();
+  }
+  arrow::Status ReadAt(int64_t position, int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
+    string buffer;
+    buffer.resize(nbytes);
+    StringPiece result;
+    Status status = input_stream_->Read(position, nbytes, &result, &buffer[0]);
+    if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return arrow::Status::IOError(status.error_message());
+    }
+    buffer.resize(result.size());
+    return arrow::Buffer::FromString(buffer, out);
+  }
+private:
+  SizedRandomAccessInputStreamInterface* input_stream_;
+  std::unique_ptr<SizedRandomAccessBufferedStream> buffered_stream_;
+};
+
 class ParquetInputStream{
 public:
-  explicit ParquetInputStream(const string& filename, const std::vector<string>& columns)
-    : filename_(filename)
+  explicit ParquetInputStream(io::InputStreamInterface* s, const std::vector<string>& columns)
+    : input_stream_(new ParquetRandomAccessFile(s))
     , column_names_(columns) {
   }
   Status ReadHeader() {
-    parquet_reader_ = parquet::ParquetFileReader::OpenFile(filename_, false);
+    parquet_reader_ = parquet::ParquetFileReader::Open(input_stream_);
     file_metadata_ = parquet_reader_->metadata();
     columns_ = std::vector<int64>(column_names_.size(), -1);
     dtypes_ = std::vector<DataType>(column_names_.size());
@@ -187,7 +315,7 @@ private:
     }
     return Status::OK();
   }
-  string filename_;
+  std::shared_ptr<::arrow::io::RandomAccessFile> input_stream_;
   std::vector<string> column_names_;
   std::vector<int64> columns_;
   std::vector<DataType> dtypes_;
@@ -203,7 +331,7 @@ class ParquetInput: public FileInput<ParquetInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<ParquetInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new ParquetInputStream(filename(), columns()));
+      state.reset(new ParquetInputStream(s, columns()));
       TF_RETURN_IF_ERROR(state.get()->ReadHeader());
     }
     // Let's allocate enough space for Tensor, if more than read, replace.

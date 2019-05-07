@@ -29,6 +29,41 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
+class SizedRandomAccessInputStreamInterface : public io::InputStreamInterface {
+public:
+  virtual Status GetFileSize(uint64* file_size) = 0;
+  virtual Status Read(uint64 offset, size_t n, StringPiece* result,
+                      char* scratch) const = 0;
+};
+
+class SizedRandomAccessFileStream : public SizedRandomAccessInputStreamInterface {
+public:
+  explicit SizedRandomAccessFileStream(RandomAccessFile *file, uint64 size)
+    : file_(file)
+    , size_(size)
+    , file_stream_(file) {}
+  Status GetFileSize(uint64* file_size) override {
+    *file_size = size_;
+    return Status::OK();
+  }
+  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
+    return file_->Read(offset, n , result, scratch);
+  }
+  Status ReadNBytes(int64 bytes_to_read, string* result) override {
+    return file_stream_.ReadNBytes(bytes_to_read, result);
+  }
+  int64 Tell() const override {
+    return file_stream_.Tell();
+  }
+  Status Reset() override {
+    return file_stream_.Reset();
+  }
+private:
+  RandomAccessFile *file_;
+  uint64 size_;
+  io::RandomAccessInputStream file_stream_;
+};
+
 class ArchiveInputStream : public io::InputStreamInterface {
  public:
   explicit ArchiveInputStream(RandomAccessFile* file, struct archive* archive)
@@ -320,7 +355,9 @@ class FileInputOp: public OpKernel {
       OP_REQUIRES_OK(ctx, env_->NewRandomAccessFile(filename, &file));
       if (filters_.size() == 0) {
         // No filter means only a file stream.
-        io::RandomAccessInputStream file_stream(file.get());
+        uint64 size = 0;
+        OP_REQUIRES_OK(ctx, env_->GetFileSize(filename, &size));
+        SizedRandomAccessFileStream file_stream(file.get(), size);
         T entry;
         OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, string(""), string(""), columns_));
         output.emplace_back(std::move(entry));
@@ -349,7 +386,9 @@ class FileInputOp: public OpKernel {
 	    // NOTE: Looks like libarchive may not be able to handle
 	    // none with text type correctly (not reading data in none archive)
 	    // So use the shortcut here.
-            io::RandomAccessInputStream file_stream(file.get());
+            uint64 size = 0;
+            OP_REQUIRES_OK(ctx, env_->GetFileSize(filename, &size));
+            SizedRandomAccessFileStream file_stream(file.get(), size);
             OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, entryname, filtername, columns_));
 	  } else if (filtername == "gz") {
             // Treat gz file specially. Looks like libarchive always have issue
@@ -495,7 +534,9 @@ class FileInputDatasetBase : public DatasetBase {
 	// NOTE: Looks like libarchive may not be able to handle
 	// none with text type correctly (not reading data in none archive)
 	// So use the shortcut here.
-        stream_.reset(new io::RandomAccessInputStream(file_.get()));
+        uint64 size = 0;
+        TF_RETURN_IF_ERROR(env->GetFileSize(filename, &size));
+        stream_.reset(new SizedRandomAccessFileStream(file_.get(), size));
         return Status::OK();
       } else if (filtername == "gz") {
         // Treat gz file specially. Looks like libarchive always have issue

@@ -51,7 +51,8 @@ class ParquetDataset(data.Dataset):
       dtypes: A tuple of `tf.DType` objects representing the types of the
         columns returned.
     """
-    self._data_input = parquet_ops.parquet_input(filename, [], columns=columns)
+    self._data_input = parquet_ops.parquet_input(
+        filename, ["none", "gz"], columns=columns)
     self._columns = columns
     self._dtypes = dtypes
     self._batch = 0 if batch is None else batch
