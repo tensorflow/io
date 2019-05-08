@@ -374,16 +374,26 @@ http_archive(
 # $ ./configure --enable-cxx
 # $ make
 # $ exit
-# cp hdf5-1.10.5/src/H5pubconf.h b/src/H5pubconf.h
-# cp hdf5-1.10.5/src/H5lib_settings.c b/src/H5lib_settings.c
-# cp hdf5-1.10.5/src/H5Tinit.c b/src/H5Tinit.c
-# diff -Naur a b > hdf5.patch
+# mkdir -p b/linux/src
+# cp hdf5-1.10.5/src/H5pubconf.h b/linux/src/H5pubconf.h
+# cp hdf5-1.10.5/src/H5lib_settings.c b/linux/src/H5lib_settings.c
+# cp hdf5-1.10.5/src/H5Tinit.c b/linux/src/H5Tinit.c
+# diff -Naur a b > hdf5.linux.patch
+#
+# On darwin, change to:
+#
+# mkdir -p b/darwin/src
+# cp hdf5-1.10.5/src/H5pubconf.h b/darwin/src/H5pubconf.h
+# cp hdf5-1.10.5/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
+# cp hdf5-1.10.5/src/H5Tinit.c b/darwin/src/H5Tinit.c
+# diff -Naur a b > hdf5.darwin.patch
 http_archive(
     name = "hdf5",
     build_file = "//third_party:hdf5.BUILD",
     patch_args = ["-p1"],
     patches = [
-        "//third_party:hdf5.patch",
+        "//third_party:hdf5.linux.patch",
+        "//third_party:hdf5.darwin.patch",
     ],
     sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
     strip_prefix = "hdf5-1.10.5",
