@@ -362,3 +362,33 @@ http_archive(
         "https://github.com/aliyun/aliyun-oss-c-sdk/archive/3.7.0.tar.gz",
     ],
 )
+
+# hdf5 header files are generated from:
+#
+# tar xzf hdf5-1.10.5.tar.gz
+# cp -r hdf5-1.10.5 a
+# cp -r hdf5-1.10.5 b
+# docker run -i -t --rm -v $PWD/hdf5-1.10.5:/v -w /v --net=host ubuntu:14.04
+# $ apt-get -y -qq update
+# $ apt-get -y -qq install make gcc g++
+# $ ./configure --enable-cxx
+# $ make
+# $ exit
+# cp hdf5-1.10.5/src/H5pubconf.h b/src/H5pubconf.h
+# cp hdf5-1.10.5/src/H5lib_settings.c b/src/H5lib_settings.c
+# cp hdf5-1.10.5/src/H5Tinit.c b/src/H5Tinit.c
+# diff -Naur a b > hdf5.patch
+http_archive(
+    name = "hdf5",
+    build_file = "//third_party:hdf5.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:hdf5.patch",
+    ],
+    sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
+    strip_prefix = "hdf5-1.10.5",
+    urls = [
+        "https://mirror.bazel.build/support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
+        "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
+    ],
+)
