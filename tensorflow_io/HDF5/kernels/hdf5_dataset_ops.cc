@@ -68,10 +68,47 @@ public:
       boost::multi_array<long double, rank_> array_type;
     
     boost::array<array::index, rank_> shape = dims;
+    Tensor *out_(ctx->allocator({}), DataTypeToEnum<std::remove_pointer<data.data()>::type>(), dims);
     array_type data(shape_);
-    DataSpace memspace(rank_, dims);
-    dataset_->read(data.data(), dtype,memspace, *filespace_);
-    memcpy(flat_<std::remove_pointer<data.data()>::type>.data(), data.data(), sizeof(data.data()));
-    return Status:OK();
+    try{
+      DataSpace memspace(rank_, dims);
+      dataset_->read(data.data(), dtype,memspace, *filespace_);
+      memcpy(out_->flat<std::remove_pointer<data.data()>::type>.data(), data.data(), sizeof(data.data()));
+      out = std::move(out_);
+      return Status:OK();
+    }catch(DataSpaceIException error){
+      throw errors::Internal("DataSpace Exception Raised");
+    }
+    catch(DataTypeIException error){
+      throw errors::Internal("DataType Exception Raised");
+    }
   }
-}
+};
+class HDF5Input:FileInput<H5InputStream>{
+  public:
+    Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<H5InputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors){
+      if (state.get() == nullptr){
+        state.reset(new H5InputStream(filename(), columns()));
+      }
+      Tensor out_tensor;
+      Status status = state.get()->ReadRecord(&out_tensor);
+      if(!status.ok()){
+        return status;
+      }
+      (*record_read)++;
+      out_tensors->emplace_back(std::move(out_tensor));
+      return Status::OK();
+    }
+    
+    Status FromStream(io::InputStreamInterface *s){
+      return Status::OK();
+    }
+    
+    void EncodeAttributes(VariantTensorData *data) const override{
+    }
+    
+    bool DecodeAttributes(VariantTensorData *data) const override{
+      return true;
+    }
+    protected:
+};
