@@ -85,6 +85,19 @@ if (!require("devtools")) install.packages("devtools")
 devtools::install_github("tensorflow/io", subdir = "R-package")
 ```
 
+### TensorFlow Version Compatibility
+
+To ensure compatibility with TensorFlow, it is recommended to install a matching
+version of TensorFlow I/O according to the table below:
+
+| TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
+| --- | --- | --- |
+| 0.5.0 | 1.13.x | Apr 12, 2019 |
+| 0.4.0 | 1.13.x | Mar 01, 2019 |
+| 0.3.0 | 1.12.0 | Feb 15, 2019 |
+| 0.2.0 | 1.12.0 | Jan 29, 2019 |
+| 0.1.0 | 1.12.0 | Dec 16, 2018 |
+
 ## Developing
 
 ### Python
