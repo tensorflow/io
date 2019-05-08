@@ -47,8 +47,7 @@ import tensorflow_io.mnist as mnist_io
 # Read MNIST into tf.data.Dataset
 d_train = mnist_io.MNISTDataset(
     'train-images-idx3-ubyte.gz',
-    'train-labels-idx1-ubyte.gz',
-    compression_type="GZIP")
+    'train-labels-idx1-ubyte.gz')
 
 # By default image data is uint8 so conver to float32.
 d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
@@ -68,7 +67,7 @@ model.fit(d_train, epochs=5, steps_per_epoch=10000)
 
 Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
 files are assumed to have been downloaded and saved to the local directory.
-Compression files could be processed automatically with `compression_type="GZIP"`.
+Compression files(gzip) could be detected and uncompressed automatically.
 
 ### R Package
 
