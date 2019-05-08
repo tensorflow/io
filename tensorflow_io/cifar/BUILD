@@ -13,6 +13,7 @@ cc_library(
         "-std=c++11",
         "-DNDEBUG",
     ],
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
     ],
