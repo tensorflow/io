@@ -67,7 +67,7 @@ model.fit(d_train, epochs=5, steps_per_epoch=10000)
 
 Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
 files are assumed to have been downloaded and saved to the local directory.
-Compression files(gzip) could be detected and uncompressed automatically.
+Compression files (e.g. gzip) could be detected and uncompressed automatically.
 
 ### R Package
 
