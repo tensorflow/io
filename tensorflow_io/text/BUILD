@@ -17,6 +17,7 @@ cc_library(
     includes = [
         ".",
     ],
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:sequence_ops",
