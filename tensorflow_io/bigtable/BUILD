@@ -77,6 +77,7 @@ cc_library(
         "-std=c++11",
         "-DNDEBUG",
     ],
+    linkstatic = True,
     deps = [
         "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@com_googlesource_code_re2//:re2",
@@ -95,6 +96,7 @@ cc_library(
         "-std=c++11",
         "-DNDEBUG",
     ],
+    linkstatic = True,
     deps = [
         "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@local_config_tf//:libtensorflow_framework",

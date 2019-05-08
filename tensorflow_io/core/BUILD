@@ -15,6 +15,7 @@ cc_library(
     includes = [
         ".",
     ],
+    linkstatic = True,
     deps = [
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
@@ -35,6 +36,7 @@ cc_library(
     includes = [
         ".",
     ],
+    linkstatic = True,
     deps = [
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
