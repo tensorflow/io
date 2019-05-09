@@ -58,6 +58,7 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/cifar:cifar_ops",
+        "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",
