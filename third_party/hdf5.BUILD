@@ -15,6 +15,7 @@ cc_library(
         ],
         exclude = [
             "src/H5make_libsettings.c",
+            "src/H5detect.c",
         ],
     ) + select({
         "@bazel_tools//src/conditions:darwin": [
