@@ -24,6 +24,7 @@ REGISTER_OP("LMDBInput")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
     .Attr("columns: list(string) = []")
+    .Attr("schema: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();

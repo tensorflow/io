@@ -1,0 +1,12 @@
+diff -Naur a/impl/DataFile.cc b/impl/DataFile.cc
+--- a/impl/DataFile.cc	2019-05-11 21:21:50.543768633 +0000
++++ b/impl/DataFile.cc	2019-05-11 21:21:54.835135191 +0000
+@@ -272,7 +272,7 @@
+ }
+ 
+ DataFileReaderBase::DataFileReaderBase(std::unique_ptr<InputStream> inputStream) :
+-    filename_(NULL), stream_(std::move(inputStream)),
++    filename_(""), stream_(std::move(inputStream)),
+     decoder_(binaryDecoder()), objectCount_(0), eof_(false)
+ {
+     readHeader();

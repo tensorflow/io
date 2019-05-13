@@ -402,3 +402,18 @@ http_archive(
         "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
     ],
 )
+
+http_archive(
+    name = "avro",
+    build_file = "//third_party:avro.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:avro.patch",
+    ],
+    sha256 = "42fbe407263ec174d448121cd0e20adcd75c43cb9f192b97476d9b99fa69faf3",
+    strip_prefix = "avro-release-1.9.0-rc4/lang/c++",
+    urls = [
+        "https://mirror.bazel.build/github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+        "https://github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+    ],
+)
