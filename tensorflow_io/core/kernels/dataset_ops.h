@@ -316,10 +316,11 @@ class FileInput : public DataInput<T> {
  public:
   FileInput() {}
   virtual ~FileInput() {}
-  Status FromInputStream(io::InputStreamInterface* s, const string& filename, const string& entryname, const string& filtername, const std::vector<string>& columns) {
+  Status FromInputStream(io::InputStreamInterface* s, const string& filename, const string& entryname, const string& filtername, const string& schema, const std::vector<string>& columns) {
     filename_ = filename;
     entryname_ = entryname;
     filtername_ = filtername;
+    schema_ = schema;
     columns_ = columns;
     return FromStream(s);
   }
@@ -331,12 +332,14 @@ class FileInput : public DataInput<T> {
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({columns_.size()}))};
     data->tensors_[0].scalar<string>()() = filename_;
     data->tensors_[1].scalar<string>()() = entryname_;
     data->tensors_[2].scalar<string>()() = filtername_;
+    data->tensors_[3].scalar<string>()() = schema_;
     for (size_t i = 0; i < columns_.size(); i++) {
-      data->tensors_[3].flat<string>()(i) = columns_[i];
+      data->tensors_[4].flat<string>()(i) = columns_[i];
     }
 
     EncodeAttributes(data);
@@ -345,9 +348,10 @@ class FileInput : public DataInput<T> {
     filename_ = data.tensors(0).scalar<string>()();
     entryname_ = data.tensors(1).scalar<string>()();
     filtername_ = data.tensors(2).scalar<string>()();
-    columns_.resize(data.tensors(3).NumElements());
-    for (int64 i = 0; i < data.tensors(3).NumElements(); i++) {
-      columns_[i] = data.tensors_[3].flat<string>()(i);
+    schema_ = data.tensors(3).scalar<string>()();
+    columns_.resize(data.tensors(4).NumElements());
+    for (int64 i = 0; i < data.tensors(4).NumElements(); i++) {
+      columns_[i] = data.tensors_[4].flat<string>()(i);
     }
 
     return DecodeAttributes(data);
@@ -360,6 +364,9 @@ class FileInput : public DataInput<T> {
   }
   const string& filtername() const {
     return filtername_;
+  }
+  const string& schema() const {
+    return schema_;
   }
   const std::vector<string>& columns() const {
     return columns_;
@@ -389,6 +396,7 @@ class FileInput : public DataInput<T> {
   string filename_;
   string entryname_;
   string filtername_;
+  string schema_;
   std::vector<string> columns_;
 };
 
@@ -399,6 +407,7 @@ class FileInputOp: public OpKernel {
     env_ = context->env();
     OP_REQUIRES_OK(context, context->GetAttr("filters", &filters_));
     OP_REQUIRES_OK(context, context->GetAttr("columns", &columns_));
+    OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
   }
   void Compute(OpKernelContext* ctx) override {
     const Tensor* source_tensor;
@@ -424,7 +433,7 @@ class FileInputOp: public OpKernel {
         OP_REQUIRES_OK(ctx, env_->GetFileSize(filename, &size));
         SizedRandomAccessFileStream file_stream(file.get(), size);
         T entry;
-        OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, string(""), string(""), columns_));
+        OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, string(""), string(""), schema_, columns_));
         output.emplace_back(std::move(entry));
         continue;
       }
@@ -454,7 +463,7 @@ class FileInputOp: public OpKernel {
             uint64 size = 0;
             OP_REQUIRES_OK(ctx, env_->GetFileSize(filename, &size));
             SizedRandomAccessFileStream file_stream(file.get(), size);
-            OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, entryname, filtername, columns_));
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&file_stream, filename, entryname, filtername, schema_, columns_));
 	  } else if (filtername == "gz") {
             // Treat gz file specially. Looks like libarchive always have issue
             // with text file so use ZlibInputStream. Now libarchive
@@ -462,10 +471,10 @@ class FileInputOp: public OpKernel {
             io::RandomAccessInputStream file_stream(file.get());
             io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
             io::ZlibInputStream compression_stream(&file_stream, 65536, 65536,  zlib_compression_options);
-            OP_REQUIRES_OK(ctx, entry.FromInputStream(&compression_stream, filename, entryname, filtername, columns_));
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&compression_stream, filename, entryname, filtername, schema_, columns_));
           } else {
             archive_stream.ResetEntryOffset();
-            OP_REQUIRES_OK(ctx, entry.FromInputStream(&archive_stream, filename, entryname, filtername, columns_));
+            OP_REQUIRES_OK(ctx, entry.FromInputStream(&archive_stream, filename, entryname, filtername, schema_, columns_));
           }
           output.emplace_back(std::move(entry));
 	}
@@ -486,6 +495,7 @@ class FileInputOp: public OpKernel {
   Env* env_ GUARDED_BY(mu_);
   std::vector<string> filters_ GUARDED_BY(mu_);
   std::vector<string> columns_ GUARDED_BY(mu_);
+  string schema_ GUARDED_BY(mu_);
 };
 template<typename InputType, typename StateType>
 class FileInputDatasetBase : public DatasetBase {
@@ -708,31 +718,38 @@ class StreamInput : public DataInput<T> {
  public:
   StreamInput() {}
   virtual ~StreamInput() {}
-  Status FromInputEndpoint(const string& endpoint, const std::vector<string>& columns) {
+  Status FromInputEndpoint(const string& endpoint, const string& schema, const std::vector<string>& columns) {
     endpoint_ = endpoint;
+    schema_ = schema;
     columns_ = columns;
     return FromEndpoint(endpoint);
   }
   void Encode(VariantTensorData* data) const {
     data->tensors_ = {
         Tensor(DT_STRING, TensorShape({})),
+        Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({columns_.size()}))};
     data->tensors_[0].scalar<string>()() = endpoint_;
+    data->tensors_[1].scalar<string>()() = schema_;
     for (size_t i = 0; i < columns_.size(); i++) {
-      data->tensors_[1].flat<string>()(i) = columns_[i];
+      data->tensors_[2].flat<string>()(i) = columns_[i];
     }
     EncodeAttributes(data);
   }
   bool Decode(const VariantTensorData& data) {
     endpoint_ = data.tensors(0).scalar<string>()();
-    columns_.resize(data.tensors(1).NumElements());
-    for (int64 i = 0; i < data.tensors(1).NumElements(); i++) {
-      columns_[i] = data.tensors_[1].flat<string>()(i);
+    schema_ = data.tensors(1).scalar<string>()();
+    columns_.resize(data.tensors(2).NumElements());
+    for (int64 i = 0; i < data.tensors(2).NumElements(); i++) {
+      columns_[i] = data.tensors_[2].flat<string>()(i);
     }
     return DecodeAttributes(data);
   }
   const string& endpoint() const {
     return endpoint_;
+  }
+  const string& schema() const {
+    return schema_;
   }
   const std::vector<string>& columns() const {
     return columns_;
@@ -749,6 +766,7 @@ class StreamInput : public DataInput<T> {
     return ReadRecord(ctx, state, record_to_read, record_read, out_tensors);
   }
   string endpoint_;
+  string schema_;
   std::vector<string> columns_;
 };
 
@@ -758,6 +776,7 @@ class StreamInputOp: public OpKernel {
   explicit StreamInputOp(OpKernelConstruction* context) : OpKernel(context) {
     env_ = context->env();
     OP_REQUIRES_OK(context, context->GetAttr("columns", &columns_));
+    OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
   }
   void Compute(OpKernelContext* ctx) override {
     const Tensor* source_tensor;
@@ -776,7 +795,7 @@ class StreamInputOp: public OpKernel {
 
     for (const auto& endpoint: source) {
       T entry;
-      OP_REQUIRES_OK(ctx, entry.FromInputEndpoint(endpoint, columns_));
+      OP_REQUIRES_OK(ctx, entry.FromInputEndpoint(endpoint, schema_, columns_));
       output.emplace_back(std::move(entry));
     }
 
@@ -789,6 +808,7 @@ class StreamInputOp: public OpKernel {
  protected:
   mutex mu_;
   Env* env_ GUARDED_BY(mu_);
+  string schema_ GUARDED_BY(mu_);
   std::vector<string> columns_ GUARDED_BY(mu_);
 };
 template<typename InputType, typename StateType>
