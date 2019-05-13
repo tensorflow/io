@@ -24,7 +24,7 @@ from tensorflow_io.core.python.ops import core_ops as hdf5_ops
 class HDF5Dataset(data.Dataset):
   """A HDF5 Dataset that reads the hdf5 file."""
 
-  def __init__(self, filenames, columns, dtypes=None, batch=None):
+  def __init__(self, filenames, columns, dtypes=None, shapes=None, batch=None):
     """Create a `HDF5Dataset`.
 
     Args:
@@ -38,6 +38,7 @@ class HDF5Dataset(data.Dataset):
         filenames, ["none", "gz"], columns=columns)
     self._columns = columns
     self._dtypes = dtypes
+    self._shapes = shapes
     self._batch = 0 if batch is None else batch
     super(HDF5Dataset, self).__init__()
 
@@ -57,12 +58,8 @@ class HDF5Dataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return tuple(
-        [tensorflow.TensorShape([]) for _ in self._columns]
-    ) if self._batch is None else tuple(
-        [tensorflow.TensorShape([None]) for _ in self._columns]
-    )
+    return tuple([shape for shape in self._shapes])
 
   @property
   def output_types(self):
-    return self._dtypes
+    return tuple([dtype for dtype in self._dtypes])
