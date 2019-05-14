@@ -27,6 +27,10 @@ from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 bucket = None
 get_oss_path = None
 
+oss_id = None
+oss_key = None
+oss_host = None
+
 def _have_required_env():
   return os.getenv("OSS_CREDENTIALS") and os.getenv("OSS_FS_TEST_BUCKET")
 
@@ -103,6 +107,83 @@ class OSSFSTest(test.TestCase):
     content_s = gfile.ListDirectory(get_oss_path("d1/d2/"))
     self.assertEqual(content, content_s)
     self.assertEqual([], content)
+
+
+_msg2 = ("OSS tests2 skipped. To enable them, set oss_id, oss_key, oss_host and bucket variable "
+        "to its true value")
+@unittest.skipIf(oss_id and oss_key and oss_host and bucket, _msg2)
+class OSSFSTest2(test.TestCase):
+  """OSS Filesystem Tests"""
+
+  @classmethod
+  def setUpClass(cls):  # pylint: disable=invalid-name
+    global get_oss_path
+    get_oss_path = lambda p: os.path.join("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, oss_id, oss_key, oss_host), "oss_fs_test", p)
+    gfile.MkDir(get_oss_path(""))
+
+  @classmethod
+  def tearDownClass(cls):  # pylint: disable=invalid-name
+    gfile.DeleteRecursively(get_oss_path(""))
+
+  def test_file_operations(self):
+    """ Test file operations"""
+
+    f = get_oss_path("test_file_operations")
+    self.assertFalse(gfile.Exists(f))
+
+    fh = gfile.Open(f, mode="w")
+    content = "file content"
+    fh.write(content)
+    fh.close()
+    self.assertTrue(gfile.Exists(f))
+
+    fh = gfile.Open(f)
+    self.assertEqual(fh.read(), content)
+
+    self.assertEqual(gfile.Stat(f).length, len(content))
+
+    f2 = get_oss_path("test_file_2")
+    gfile.Rename(f, f2)
+    self.assertFalse(gfile.Exists(f))
+    self.assertTrue(gfile.Exists(f2))
+
+  def test_dir_operations(self):
+    """ Test directory operations"""
+
+    d = get_oss_path("d1/d2")
+    gfile.MakeDirs(d)
+    self.assertTrue(gfile.Stat(d).is_directory)
+
+    # Test listing bucket directory with and without trailing '/'
+    content = gfile.ListDirectory(get_oss_path(""))
+    content_s = gfile.ListDirectory(get_oss_path("/"))
+    self.assertEqual(content, content_s)
+    self.assertIn("oss_fs_test", content)
+    self.assertIn("oss_fs_test/d1", content)
+    self.assertIn("oss_fs_test/d1/d2", content)
+
+    # Test listing sub directories.
+    content = gfile.ListDirectory(get_oss_path("d1"))
+    content_s = gfile.ListDirectory(get_oss_path("d1/"))
+    self.assertEqual(content, content_s)
+    self.assertIn("d2", content)
+
+    content = gfile.ListDirectory(get_oss_path("d1/d2"))
+    content_s = gfile.ListDirectory(get_oss_path("d1/d2/"))
+    self.assertEqual(content, content_s)
+    self.assertEqual([], content)
+
+    # Test Rename directories
+    self.assertTrue(gfile.Exists(get_oss_path("d1")))
+    gfile.Rename(get_oss_path("d1"), get_oss_path("d1_rename"), overwrite=True)
+    self.assertTrue(gfile.Exists(get_oss_path("d1_rename")))
+    self.assertFalse(gfile.Exists(get_oss_path("d1")))
+
+    content = gfile.ListDirectory(get_oss_path("d1_rename"))
+    content_s = gfile.ListDirectory(get_oss_path("d1_rename/"))
+    self.assertEqual(content, content_s)
+    self.assertIn("d2", content)
+
 
 
 if __name__ == "__main__":
