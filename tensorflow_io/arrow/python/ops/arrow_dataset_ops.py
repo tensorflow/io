@@ -23,6 +23,7 @@ import tensorflow
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
+from tensorflow.python.data.util import structure as structure_lib
 from tensorflow_io import _load_library
 arrow_ops = _load_library('_arrow_ops.so')
 
@@ -87,28 +88,38 @@ class ArrowBaseDataset(data.Dataset):
   and corresponding output tensor types, shapes and classes.
   """
 
-  def __init__(self, columns, output_types, output_shapes=None):
+  def __init__(self,
+               columns,
+               output_types,
+               output_shapes=None,
+               batch_size=None,
+               batch_mode='keep_remainder'):
     self._columns = columns
-    self._output_types = output_types
-    self._output_shapes = output_shapes or \
-        nest.map_structure(
-            lambda _: tensorflow.TensorShape(None), self._output_types)
+    self._structure = structure_lib.convert_legacy_structure(
+        output_types,
+        output_shapes or nest.map_structure(
+            lambda _: tensorflow.TensorShape(None), output_types),
+        nest.map_structure(lambda _: tensorflow.Tensor, output_types))
+    self._batch_size = tensorflow.convert_to_tensor(
+        batch_size or 0,
+        dtype=dtypes.int64,
+        name="batch_size")
+    self._batch_mode = tensorflow.convert_to_tensor(
+        batch_mode,
+        dtypes.string,
+        name="batch_mode")
+    if batch_size is not None:
+      # pylint: disable=protected-access
+      self._structure = self._structure._batch(
+          batch_size if batch_mode == 'drop_remainder' else None)
     super(ArrowBaseDataset, self).__init__()
 
   def _inputs(self):
     return []
 
   @property
-  def output_classes(self):
-    return nest.map_structure(lambda _: tensorflow.Tensor, self._output_types)
-
-  @property
-  def output_shapes(self):
-    return self._output_shapes
-
-  @property
-  def output_types(self):
-    return self._output_types
+  def _element_structure(self):
+    return self._structure
 
   @property
   def columns(self):
@@ -123,7 +134,9 @@ class ArrowDataset(ArrowBaseDataset):
                serialized_batches,
                columns,
                output_types,
-               output_shapes=None):
+               output_shapes=None,
+               batch_size=None,
+               batch_mode='keep_remainder'):
     """Create an ArrowDataset from a Tensor of serialized batches.
     This constructor requires pyarrow to be installed.
 
@@ -134,19 +147,26 @@ class ArrowDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
     self._serialized_batches = serialized_batches
-    self._columns = columns
-    self._output_types = output_types
-    self._output_shapes = output_shapes or \
-        nest.map_structure(
-            lambda _: tensorflow.TensorShape(None), self._output_types)
-    super(ArrowDataset, self).__init__(columns, output_types, output_shapes)
+    super(ArrowDataset, self).__init__(
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
   def _as_variant_tensor(self):
     return arrow_ops.arrow_dataset(
         self._serialized_batches,
         self._columns,
+        self._batch_size,
+        self._batch_mode,
         nest.flatten(self.output_types),
         nest.flatten(self.output_shapes))
 
@@ -155,7 +175,9 @@ class ArrowDataset(ArrowBaseDataset):
                           record_batches,
                           columns,
                           output_types,
-                          output_shapes=None):
+                          output_shapes=None,
+                          batch_size=None,
+                          batch_mode='keep_remainder'):
     """Create an ArrowDataset directly from Arrow record batches.
     This constructor requires pyarrow to be installed.
 
@@ -165,6 +187,11 @@ class ArrowDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
     import pyarrow as pa
     if isinstance(record_batches, pa.RecordBatch):
@@ -179,10 +206,21 @@ class ArrowDataset(ArrowBaseDataset):
         buf.getvalue(),
         dtype=dtypes.string,
         name="serialized_batches")
-    return cls(serialized_batches, columns, output_types, output_shapes)
+    return cls(
+        serialized_batches,
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
   @classmethod
-  def from_pandas(cls, df, columns=None, preserve_index=True):
+  def from_pandas(cls,
+                  df,
+                  columns=None,
+                  preserve_index=True,
+                  batch_size=None,
+                  batch_mode='keep_remainder'):
     """Create an ArrowDataset from a given Pandas DataFrame. Output types
     and shapes are inferred from the Arrow schema after DataFrame conversion.
     If preserve_index is True, the DataFrame index will be the last column.
@@ -192,6 +230,11 @@ class ArrowDataset(ArrowBaseDataset):
       df: a Pandas DataFrame
       columns: Optional column indices to use, if None all are used
       preserve_index: Flag to include the DataFrame index as the last column
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
     import pyarrow as pa
     if columns is not None:
@@ -199,7 +242,13 @@ class ArrowDataset(ArrowBaseDataset):
     batch = pa.RecordBatch.from_pandas(df, preserve_index=preserve_index)
     columns = tuple(range(batch.num_columns))
     output_types, output_shapes = arrow_schema_to_tensor_types(batch.schema)
-    return cls.from_record_batches(batch, columns, output_types, output_shapes)
+    return cls.from_record_batches(
+        batch,
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
 
 class ArrowFeatherDataset(ArrowBaseDataset):
@@ -213,7 +262,9 @@ class ArrowFeatherDataset(ArrowBaseDataset):
                filenames,
                columns,
                output_types,
-               output_shapes=None):
+               output_shapes=None,
+               batch_size=None,
+               batch_mode='keep_remainder'):
     """Create an ArrowDataset from one or more Feather file names.
 
     Args:
@@ -223,29 +274,39 @@ class ArrowFeatherDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
-    self._columns = columns
-    self._output_types = output_types
-    self._output_shapes = output_shapes or \
-        nest.map_structure(
-            lambda _: tensorflow.TensorShape(None), self._output_types)
     self._filenames = tensorflow.convert_to_tensor(
         filenames,
         dtype=dtypes.string,
         name="filenames")
-    super(ArrowFeatherDataset, self).__init__(columns,
-                                              output_types,
-                                              output_shapes)
+    super(ArrowFeatherDataset, self).__init__(
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
   def _as_variant_tensor(self):
     return arrow_ops.arrow_feather_dataset(
         self._filenames,
         self._columns,
+        self._batch_size,
+        self._batch_mode,
         nest.flatten(self.output_types),
         nest.flatten(self.output_shapes))
 
   @classmethod
-  def from_schema(cls, filenames, schema, columns=None):
+  def from_schema(cls,
+                  filenames,
+                  schema,
+                  columns=None,
+                  batch_size=None,
+                  batch_mode='keep_remainder'):
     """Create an Arrow Dataset for reading record batches from Arrow feather
     files, inferring output types and shapes from the given Arrow schema.
     This method requires pyarrow to be installed.
@@ -255,11 +316,22 @@ class ArrowFeatherDataset(ArrowBaseDataset):
                  in Arrow Feather format
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
     if columns is None:
       columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
-    return cls(filenames, columns, output_types, output_shapes)
+    return cls(
+        filenames,
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
 
 class ArrowStreamDataset(ArrowBaseDataset):
@@ -271,7 +343,9 @@ class ArrowStreamDataset(ArrowBaseDataset):
                host,
                columns,
                output_types,
-               output_shapes=None):
+               output_shapes=None,
+               batch_size=None,
+               batch_mode='keep_remainder'):
     """Create an ArrowDataset from an input stream.
 
     Args:
@@ -281,28 +355,39 @@ class ArrowStreamDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
-    self._columns = columns
-    self._output_types = output_types
-    self._output_shapes = output_shapes or \
-        nest.map_structure(
-            lambda _: tensorflow.TensorShape(None), self._output_types)
     self._host = tensorflow.convert_to_tensor(
         host,
         dtype=dtypes.string,
         name="host")
-    super(ArrowStreamDataset, self).__init__(columns,
-                                             output_types,
-                                             output_shapes)
+    super(ArrowStreamDataset, self).__init__(
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
 
   def _as_variant_tensor(self):
     return arrow_ops.arrow_stream_dataset(
-        self._host, self._columns,
+        self._host,
+        self._columns,
+        self._batch_size,
+        self._batch_mode,
         nest.flatten(self.output_types),
         nest.flatten(self.output_shapes))
 
   @classmethod
-  def from_schema(cls, host, schema, columns=None):
+  def from_schema(cls,
+                  host,
+                  schema,
+                  columns=None,
+                  batch_size=None,
+                  batch_mode='keep_remainder'):
     """Create an Arrow Dataset from an input stream, inferring output types
     and shapes from the given Arrow schema.
     This method requires pyarrow to be installed.
@@ -312,8 +397,19 @@ class ArrowStreamDataset(ArrowBaseDataset):
             For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
+      batch_size: Batch size of output tensors
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
     """
     if columns is None:
       columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
-    return cls(host, columns, output_types, output_shapes)
+    return cls(
+        host,
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode)
