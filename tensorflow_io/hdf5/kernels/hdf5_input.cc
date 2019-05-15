@@ -55,10 +55,63 @@ public:
     // TODO: replace boilerplate
     for (size_t i = 0; i < columns_.size(); i++) {
       try {
-        H5::DataSet data_set(file_->openDataSet(H5std_string(columns_[i])));
+        H5::DataSet dataset = file_->openDataSet(H5std_string(columns_[i]));
+        H5::DataSpace dataspace = dataset.getSpace();
+        int rank = dataspace.getSimpleExtentNdims();
+        absl::InlinedVector<hsize_t, 4> dims(rank);
+        dataspace.getSimpleExtentDims(dims.data());
+        dataset_.emplace_back(dataset);
+        dataspace_.emplace_back(dataspace);
+        dims_.emplace_back(dims);
+
+        // Make sure first dimension remains the same
+        if (i == 0) {
+          count_ = dims[0];
+        } else if (count_ != dims[0]) {
+          // Maybe we should fill in blanks?
+          return errors::InvalidArgument("dataset ", columns_[i], " has uneven count ", dims[0], " with others ", count_);
+        }
       } catch(H5::FileIException e){
         return errors::InvalidArgument("unable to open dataset ", columns_[i], ": ", e.getCDetailMsg());
       }
+    }
+    return Status::OK();
+  }
+  Status ReadRecord(IteratorContext* ctx, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) {
+    if (index_ + record_to_read > count_) {
+      record_to_read = count_ - index_;
+    }
+    out_tensors->clear();
+    if (record_to_read > 0) {
+      for (size_t i = 0; i < columns_.size(); i++) {
+        absl::InlinedVector<hsize_t, 4> dims = dims_[i];
+        dims[0] = record_to_read;
+        H5::DataSpace memoryspace(dims.size(), dims.data());
+        absl::InlinedVector<hsize_t, 4> start(dims_[i].size(), 0);
+        start[0] = index_;
+        dataspace_[i].selectHyperslab(H5S_SELECT_SET, dims.data(), start.data());
+
+        absl::InlinedVector<int64, 4> shape_dims(dims_[i].size());
+        for (size_t ii = 0; ii < dims_[i].size(); ii++) {
+          shape_dims[ii] = dims_[i][ii];
+        }
+        shape_dims[0] = record_to_read;
+        TensorShape shape(shape_dims);
+
+        if (dataset_[i].getTypeClass() == H5T_INTEGER) {
+          Tensor tensor(ctx->allocator({}), DT_INT32, shape);
+          dataset_[i].read(tensor.flat<int32>().data(), H5::PredType::NATIVE_INT, memoryspace, dataspace_[i]);
+          out_tensors->emplace_back(std::move(tensor));
+        } else if (dataset_[i].getTypeClass() == H5T_FLOAT) {
+          Tensor tensor(ctx->allocator({}), DT_FLOAT, shape);
+          dataset_[i].read(tensor.flat<float>().data(), H5::PredType::NATIVE_FLOAT, memoryspace, dataspace_[i]);
+          out_tensors->emplace_back(std::move(tensor));
+        } else {
+          return errors::Unimplemented("data type not supported yet: ", dataset_[i].getTypeClass());
+        }
+      }
+      *record_read = record_to_read;
+      index_ += record_to_read;
     }
     return Status::OK();
   }
@@ -69,6 +122,11 @@ private:
   string buffer_;
   std::unique_ptr<H5::H5File> file_;
   hid_t file_image_;
+  std::vector<H5::DataSet> dataset_;
+  std::vector<H5::DataSpace> dataspace_;
+  std::vector<absl::InlinedVector<hsize_t, 4>> dims_;
+  int64 count_ = -1;
+  int64 index_ = 0;
 };
 
 class HDF5Input: public FileInput<HDF5InputStream> {
@@ -78,7 +136,7 @@ class HDF5Input: public FileInput<HDF5InputStream> {
       state.reset(new HDF5InputStream(s, columns()));
       TF_RETURN_IF_ERROR(state.get()->Open());
     }
-    return errors::Unimplemented("HDF5 is currently not supported");
+    return state.get()->ReadRecord(ctx, record_to_read, record_read, out_tensors);
   }
   Status FromStream(io::InputStreamInterface* s) override {
     return Status::OK();
