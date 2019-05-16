@@ -34,37 +34,16 @@ reference:
       - tiff_dataset
       - video_dataset
       - webp_dataset
+      - arrow_feather_dataset
+      - arrow_stream_dataset
 
-  - title: "Dataset Utility Methods"
+  - title: "Utility Methods"
     contents:
-      - tfdatasets.dataset_batch
-      - tfdatasets.dataset_cache
-      - tfdatasets.dataset_concatenate
-      - tfdatasets.dataset_filter
-      - tfdatasets.dataset_flat_map
-      - tfdatasets.dataset_interleave
-      - tfdatasets.dataset_map
-      - tfdatasets.dataset_map_and_batch
-      - tfdatasets.dataset_padded_batch
-      - tfdatasets.dataset_prefetch
-      - tfdatasets.dataset_prefetch_to_device
-      - tfdatasets.dataset_prepare
-      - tfdatasets.dataset_repeat
-      - tfdatasets.dataset_shard
-      - tfdatasets.dataset_shuffle
-      - tfdatasets.dataset_shuffle_and_repeat
-      - tfdatasets.dataset_skip
-      - tfdatasets.dataset_take
-      - tfdatasets.iterator_get_next
-      - tfdatasets.iterator_initializer
-      - tfdatasets.iterator_make_initializer
-      - tfdatasets.iterator_string_handle
-      - tfdatasets.make_iterator_from_string_handle
-      - tfdatasets.make_iterator_from_structure
-      - tfdatasets.make_iterator_initializable
-      - tfdatasets.make_iterator_one_shot
-      - tfdatasets.next_batch
-      - tfdatasets.out_of_range_handler
-      - tfdatasets.output_types
-      - tfdatasets.until_out_of_range
-      - tfdatasets.with_dataset
+      - from_schema
+      - from_schema.arrow_feather_dataset
+      - from_schema.arrow_stream_dataset
+      - make_libsvm_dataset
+
+  - title: "Re-exported Methods"
+    contents:
+      - reexports
