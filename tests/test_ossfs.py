@@ -24,12 +24,12 @@ from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 
-bucket = "alipay-ainlp-bucket"
+bucket = ""
 get_oss_path = None
 
-oss_id = "14QEnBCL7zjWUUwM"
-oss_key = "zLv5h5SsWOURh2PU0TSU1ZOVirSBRM"
-oss_host = "cn-hangzhou.oss.jiuzhou.cloud.aliyun-inc.com"
+oss_id = ""
+oss_key = ""
+oss_host = ""
 
 _msg = ("OSS tests skipped. To enable them, set oss_id, oss_key, oss_host and bucket variable "
         "to its real value")
