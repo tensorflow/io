@@ -60,8 +60,8 @@ Status oss_initialize() {
   try {
     std::call_once(initFlag, [] { oss_initialize_with_throwable(); });
   } catch (...) {
-    LOG(FATAL) << "can not init oss connection";
-    return errors::Internal("can not init oss connection");
+    LOG(FATAL) << "can not init OSS connection";
+    return errors::Internal("can not init OSS connection");
   }
 
   return Status::OK();
@@ -204,7 +204,7 @@ private:
   Status LoadBufferFromOSS(size_t desired_buffer_size)  const EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     size_t range_start = buffer_start_offset_;
     size_t range_end = buffer_start_offset_ + std::min(buffer_.capacity() - 1, desired_buffer_size - 1);
-	range_end = std::min(range_end, total_file_length_ - 1);
+    range_end = std::min(range_end, total_file_length_ - 1);
 
     OSSConnection conn(shost, sak, ssk);
     aos_pool_t* _pool = conn.getPool();
@@ -228,7 +228,7 @@ private:
     std::string range("bytes=");
     range.append(std::to_string(range_start)).append("-").append(std::to_string(range_end));
     apr_table_set(headers_, "Range", range.c_str());
-	  VLOG(1) << "read from oss with " << range.c_str();
+    VLOG(1) << "read from oss with " << range.c_str();
 
     aos_status_t* s = oss_get_object_to_buffer(
       _options,
@@ -321,10 +321,7 @@ public:
     }
 
     aos_buf_t* tmp_buf = aos_create_buf(pool_, data.size() + 1);
-
-    std::string sdata;
-	  sdata.assign(data.begin(), data.end());
-    aos_buf_append_string(pool_, tmp_buf, sdata.c_str(), data.size());
+    aos_buf_append_string(pool_, tmp_buf, data.data(), data.size());
     aos_list_add_tail(&tmp_buf->node, &buffer_);
     return Status::OK();
   }
@@ -395,8 +392,8 @@ public:
     mutex_lock lock(mu_);
     TF_RETURN_IF_ERROR(_CheckClosed());
     if (CurrentBufferLength() >= part_size_) {
-        InitAprPool();
-        TF_RETURN_IF_ERROR(_FlushInternal());
+      InitAprPool();
+      TF_RETURN_IF_ERROR(_FlushInternal());
     }
 
     return Status::OK();
@@ -454,8 +451,7 @@ private:
         string msg;
         oss_error_message(status, &msg);
         VLOG(0) << "Init multipart upload " << sobject << " failed, errMsg: " << msg;
-        return errors::Unavailable(
-            "Init multipart upload failed: ", sobject,
+        return errors::Unavailable("Init multipart upload failed: ", sobject,
             " errMsg: ", msg);
       }
 
@@ -522,7 +518,7 @@ private:
   aos_string_t bucket_;
   aos_string_t object_;
   aos_table_t* headers_ = NULL;
-  aos_list_t     buffer_;
+  aos_list_t  buffer_;
   std::string upload_id_;
 
   bool is_closed_;
@@ -552,15 +548,14 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   }
 
   //remaining.Consume("/");
-  tensorflow::str_util::ConsumePrefix(&remaining, kDelim);
-  object.assign(remaining.begin(), remaining.end());
+  str_util::ConsumePrefix(&remaining, kDelim);
+  object = string(remaining);
 
   if (bucketp.find('\x01') != StringPiece::npos) {
     // contains id, key, host information
     size_t pos = bucketp.find('\x01');
     size_t tmpPos = pos;
-    StringPiece tmpStr = bucketp.substr(0, pos);
-    bucket.assign(tmpStr.begin(), tmpStr.end());
+    bucket = string(bucketp.substr(0, pos));
     StringPiece access_info = bucketp.substr(pos+1);
     std::vector<std::string> access_infos = str_util::Split(access_info, "\x02");
     for (auto& key_value : access_infos) {
@@ -572,12 +567,12 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       }
       StringPiece key = data.substr(0, pos);
       StringPiece value = data.substr(pos + 1);
-      if (tensorflow::str_util::StartsWith(key, kOSSAccessIdKey)) {
-        access_id.assign(value.begin(), value.end());
-      } else if (tensorflow::str_util::StartsWith(key, kOSSAccessKeyKey)) {
-        access_key.assign(value.begin(), value.end());
-      } else if (tensorflow::str_util::StartsWith(key, kOSSHostKey)) {
-        host.assign(value.begin(), value.end());
+      if (str_util::StartsWith(key, kOSSAccessIdKey)) {
+        access_id = string(value);
+      } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
+        access_key = string(value);
+      } else if (str_util::StartsWith(key, kOSSHostKey)) {
+        host = string(value);
       } else {
         return errors::InvalidArgument("OSS path access info faied: ",
           fname, " unkown info:", key_value);
@@ -591,7 +586,7 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   }else if (bucketp.find('?') != StringPiece::npos) {
     // contains id, key, host information
     size_t pos = bucketp.find('?');
-    bucket.assign(bucketp.substr(0, pos).begin(), bucketp.substr(0, pos).end());
+    bucket = string(bucketp.substr(0, pos));
     StringPiece access_info = bucketp.substr(pos+1);
     std::vector<std::string> access_infos = str_util::Split(access_info, "&");
     for (auto& key_value : access_infos) {
@@ -603,12 +598,12 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       }
       StringPiece key = data.substr(0, pos);
       StringPiece value = data.substr(pos + 1);
-      if (tensorflow::str_util::StartsWith(key, kOSSAccessIdKey)) {
-        access_id.assign(value.begin(), value.end());
-      } else if (tensorflow::str_util::StartsWith(key, kOSSAccessKeyKey)) {
-        access_key.assign(value.begin(), value.end());
-      } else if (tensorflow::str_util::StartsWith(key, kOSSHostKey)) {
-        host.assign(value.begin(), value.end());
+      if (str_util::StartsWith(key, kOSSAccessIdKey)) {
+        access_id = string(value);
+      } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
+        access_key = string(value);
+      } else if (str_util::StartsWith(key, kOSSHostKey)) {
+        host = string(value);
       } else {
         return errors::InvalidArgument("OSS path access info faied: ",
           fname, " unkown info:", key_value);
@@ -644,8 +639,9 @@ Status OSSFileSystem::NewRandomAccessFile(
   OSSConnection conn(host, access_id, access_key);
   TF_RETURN_IF_ERROR(_RetrieveObjectMetadata(
       conn.getPool(), conn.getRequestOptions(), bucket, object, &stat));
-  result->reset(
-      new OSSRandomAccessFile(host, access_id, access_key, bucket, object, read_ahead_bytes_, stat.length));
+  result->reset(new OSSRandomAccessFile(host, access_id, access_key,
+                                      bucket, object, read_ahead_bytes_,
+                                      stat.length));
   return Status::OK();
 }
 
@@ -657,8 +653,9 @@ Status OSSFileSystem::NewWritableFile(const std::string& fname,
   TF_RETURN_IF_ERROR(
       _ParseOSSURIPath(fname, bucket, object, host, access_id, access_key));
 
-  result->reset(
-      new OSSWritableFile(host, access_id, access_key, bucket, object, upload_part_bytes_));
+  result->reset(new OSSWritableFile(host, access_id, access_key,
+                                  bucket, object,
+                                  upload_part_bytes_));
   return Status::OK();
 }
 
@@ -702,19 +699,18 @@ Status OSSFileSystem::_ListObjects(aos_pool_t* pool,
                                    std::vector<std::string>* result,
                                    bool return_all,
                                    bool return_full_path,
-								                   bool should_remove_suffix,
+                                   bool should_remove_suffix,
                                    int max_ret_per_iterator) {
-  std::string tmp_key = key;
   aos_string_t bucket_;
   aos_status_t* s = NULL;
   oss_list_object_params_t* params = NULL;
   oss_list_object_content_t* content = NULL;
-  char* next_marker = "";
+  const char* next_marker = "";
 
   aos_str_set(&bucket_, bucket.c_str());
   params = oss_create_list_object_params(pool);
   params->max_ret = max_ret_per_iterator;
-  aos_str_set(&params->prefix, tmp_key.c_str());
+  aos_str_set(&params->prefix, key.c_str());
   aos_str_set(&params->marker, next_marker);
 
   do {
@@ -722,8 +718,8 @@ Status OSSFileSystem::_ListObjects(aos_pool_t* pool,
     if (!aos_status_is_ok(s)) {
       string msg;
       oss_error_message(s, &msg);
-      VLOG(0) << "cam not list object " << tmp_key << " errMsg: " << msg;
-      return errors::NotFound("can not list object:", tmp_key,
+      VLOG(0) << "cam not list object " << key << " errMsg: " << msg;
+      return errors::NotFound("can not list object:", key,
                               " errMsg: ", msg);
     }
 
@@ -774,7 +770,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   }
 
   // add suffix
-  std::string objectName = object + "/";
+  std::string objectName = object + kDelim;
   s = _RetrieveObjectMetadata(pool, options, bucket, objectName, stat);
   if (s.ok()) {
     VLOG(1) << "RetrieveObjectMetadata for object: " << objectName
@@ -788,7 +784,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   s = _ListObjects(pool, options, bucket, object, &listing, true, false, false, 10);
 
   if (s == Status::OK() && !listing.empty()) {
-    if (tensorflow::str_util::EndsWith(object, "/")){
+    if (str_util::EndsWith(object, "/")){
         stat->is_directory = true;
     }
     stat->length = 0;
@@ -803,10 +799,10 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
 }
 
 Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
-                              const oss_request_options_t* options,
-                              const std::string& bucket,
-                              const std::string& object,
-                              FileStatistics* stat) {
+                                              const oss_request_options_t* options,
+                                              const std::string& bucket,
+                                              const std::string& object,
+                                              FileStatistics* stat) {
   aos_string_t oss_bucket;
   aos_string_t oss_object;
   aos_table_t* headers = NULL;
@@ -834,7 +830,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
              << " , with length: " << stat->length;
     }
 
-    object_date_str = (char *) apr_table_get(resp_headers, OSS_DATE);
+    object_date_str = (char*)apr_table_get(resp_headers, OSS_DATE);
     if (object_date_str != NULL) {
       // the time is GMT Date, format like below
       // Date: Fri, 24 Feb 2012 07:32:52 GMT
@@ -962,18 +958,15 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
 	FileStatistics stat;
 	StringPiece parent = io::Dirname(dirs);
 
-
-	std::string sparent;
-	sparent.assign(parent.begin(), parent.end());
-	if (!_StatInternal(pool, ossOptions, bucket, sparent, &stat).ok()) {
-	    VLOG(0) << "CreateDir() failed with bucket: " << bucket
-	        << ", parent: " << parent;
-		return errors::Internal("parent does not exists: ", parent);
+  if (!_StatInternal(pool, ossOptions, bucket, string(parent), &stat).ok()) {
+    VLOG(0) << "CreateDir() failed with bucket: " << bucket
+      << ", parent: " << parent;
+  	return errors::Internal("parent does not exists: ", parent);
 	}
 
-	if (!stat.is_directory) {
-		return errors::Internal("can not mkdir because parent is a file: ", parent);
-	}
+  if (!stat.is_directory) {
+    return errors::Internal("can not mkdir because parent is a file: ", parent);
+  }
 
 	TF_RETURN_IF_ERROR(_CreateDirInternal(pool, ossOptions, bucket, object));
 	return Status::OK();
@@ -997,13 +990,13 @@ Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
 
   std::string dir = "";
   for (auto path : splitPaths) {
-    dir.append(path + "/");
+    dir.append(path + kDelim);
 
     if (!_CreateDirInternal(pool, ossOptions, bucket, dir).ok()) {
       VLOG(0) << "create dir failed with bucket: " << bucket << ", dir: " << dir;
       return errors::Internal("create dir failed: ", dir);
     }
-	}
+  }
 
   return Status::OK();
 }
@@ -1011,7 +1004,7 @@ Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
 Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
                                          const oss_request_options_t* options,
                                          const std::string& bucket,
-                                         const std::string &dirname) {
+                                         const std::string& dirname) {
   FileStatistics stat;
   if (_RetrieveObjectMetadata(pool, options, bucket, dirname, &stat).ok()) {
     if (!stat.is_directory) {
@@ -1031,7 +1024,7 @@ Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
   aos_table_t* resp_headers;
   aos_string_t bucket_;
   aos_string_t object_;
-  char* data = "";
+  const char* data = "";
   aos_list_t buffer;
   aos_buf_t* content;
 
@@ -1078,7 +1071,7 @@ Status OSSFileSystem::DeleteDir(const std::string& dirname) {
   }
 
   // Maybe should add slash
-  return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
+  return _DeleteObjectInternal(oss_options, bucket, object.append(kDelim));
 }
 
 Status OSSFileSystem::GetFileSize(const std::string& fname, uint64* file_size) {
@@ -1132,11 +1125,11 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
       _DeleteObjectInternal(oss_options, sbucket, tmp_sobject);
     }
 
-    if (!tensorflow::str_util::EndsWith(sobject, "/")){
+    if (!str_util::EndsWith(sobject, "/")){
       sobject += "/";
     }
 
-    if (!tensorflow::str_util::EndsWith(dobject, "/")){
+    if (!str_util::EndsWith(dobject, "/")){
       dobject += "/";
     }
   }
@@ -1271,8 +1264,9 @@ Status OSSFileSystem::IsDirectory(const std::string& fname) {
   FileStatistics stat;
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
 
-  return stat.is_directory ? Status::OK()
-                           : errors::FailedPrecondition(fname + " is not a directory");
+  return stat.is_directory
+              ? Status::OK()
+              : errors::FailedPrecondition(fname + " is not a directory");
 }
 
 Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undeleted_files,
@@ -1314,25 +1308,23 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
       s = _StatInternal(pool, oss_options, bucket, child, &stat);
       if (s.ok()) {
         if (stat.is_directory) {
-          *undeleted_dirs++;
+          ++*undeleted_dirs;
         } else {
-          *undeleted_files++;
+          ++*undeleted_files;
         }
       }
     }
   }
 
   if (*undeleted_dirs == 0 && *undeleted_files == 0) {
-    // delete its self
+    // delete directory itself
     if (object.at(object.length() - 1) == '/') {
-        return _DeleteObjectInternal(oss_options, bucket, object);
+      return _DeleteObjectInternal(oss_options, bucket, object);
     } else {
-        return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
+      return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
     }
   }
   return Status::OK();
 }
-
-REGISTER_FILE_SYSTEM("oss", OSSFileSystem);
 } // end namespace tensorflow
 
