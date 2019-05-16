@@ -49,23 +49,23 @@ constexpr char kOSSAccessKeyKey[] = "key";
 constexpr char kOSSHostKey[] = "host";
 constexpr char kDelim[] = "/";
 
-bool checkFile(const string& filename) {
-  std::ifstream fstream(filename.c_str());
-  return fstream.good();
-}
-
-Status GetCredentialsFileFromEnv(string* filename) {
-  if (!filename) {
-    return errors::FailedPrecondition("'filename' cannot be nullptr.");
-  }
-  const char* result = std::getenv(kOSSCredentialsFileEnvKey);
-  if (!result || !checkFile(result)) {
-    return errors::NotFound(strings::StrCat("$", kOSSCredentialsFileEnvKey,
-                                            " is not set or corrupt."));
-  }
-  *filename = result;
-  return Status::OK();
-}
+//bool checkFile(const string& filename) {
+//  std::ifstream fstream(filename.c_str());
+//  return fstream.good();
+//}
+//
+//Status GetCredentialsFileFromEnv(string* filename) {
+//  if (!filename) {
+//    return errors::FailedPrecondition("'filename' cannot be nullptr.");
+//  }
+//  const char* result = std::getenv(kOSSCredentialsFileEnvKey);
+//  if (!result || !checkFile(result)) {
+//    return errors::NotFound(strings::StrCat("$", kOSSCredentialsFileEnvKey,
+//                                            " is not set or corrupt."));
+//  }
+//  *filename = result;
+//  return Status::OK();
+//}
 
 void oss_initialize_with_throwable() {
   if (aos_http_io_initialize(NULL, 0) != AOSE_OK) {
@@ -119,12 +119,16 @@ public:
     aos_str_set(&_options->config->access_key_secret, accessKeySecret.c_str());
     _options->config->is_cname = 0;
     _options->ctl = aos_http_controller_create(_options->pool, 0);
+
+    init_options(_options);
   }
 
   ~OSSConnection() {
     if (NULL != _pool) {
       aos_pool_destroy(_pool);
     }
+
+    aos_http_io_deinitialize();
   }
 
   oss_request_options_t* getRequestOptions() {
@@ -555,7 +559,7 @@ OSSFileSystem::OSSFileSystem()
 }
 
 // Splits a oss path to endpoint bucket object and token
-// For example "oss://bucket-name?id=accessid&key=accesskey&host=endpoint/path/to/file.txt"
+// For example "oss://bucket-name\x01id=accessid\x02key=accesskey\x02host=endpoint/path/to/file.txt"
 Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
                                        std::string& bucket,
                                        std::string& object,
@@ -1153,17 +1157,24 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
         }
         _DeleteObjectInternal(oss_options, sbucket, tmp_sobject);
     }
-  } else {
-    aos_str_set(&source_object, sobject.c_str());
-    aos_str_set(&dest_object, dobject.c_str());
 
-    resp_status = _RenameFileInternal(oss_options, pool, source_bucket, source_object, dest_bucket, dest_object);
-    if (!aos_status_is_ok(resp_status)) {
-          string msg;
-          oss_error_message(resp_status, &msg);
-          VLOG(0) << "rename " << src << " to " << target << " failed, errMsg: " << msg;
-          return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
+    if (!tensorflow::str_util::EndsWith(sobject, "/")){
+        sobject += "/";
     }
+
+    if (!tensorflow::str_util::EndsWith(dobject, "/")){
+        dobject += "/";
+    }
+  }
+
+  aos_str_set(&source_object, sobject.c_str());
+  aos_str_set(&dest_object, dobject.c_str());
+  resp_status = _RenameFileInternal(oss_options, pool, source_bucket, source_object, dest_bucket, dest_object);
+  if (!aos_status_is_ok(resp_status)) {
+      string msg;
+      oss_error_message(resp_status, &msg);
+      VLOG(0) << "rename " << src << " to " << target << " failed, errMsg: " << msg;
+      return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
   }
 
   return _DeleteObjectInternal(oss_options, sbucket, sobject);
