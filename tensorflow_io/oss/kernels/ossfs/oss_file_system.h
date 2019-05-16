@@ -117,7 +117,7 @@ class OSSFileSystem : public FileSystem {
                       std::vector<string>* result,
                       bool return_all = true,
                       bool return_full_path = false,
-					  bool should_remove_suffix = true,
+                      bool should_remove_suffix = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
