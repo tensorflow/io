@@ -1,6 +1,6 @@
 template:
   params:
-    bootswatch: cosmo
+    bootswatch: flatly
 
 navbar:
   title: "tfio"
@@ -8,9 +8,8 @@ navbar:
   left:
     - text: "Home"
       href: index.html
-    - text: "Using"
+    - text: "Tutorials"
       menu:
-        - text: "Getting Started"
         - text: "TensorFlow IO Basics"
           href: articles/introduction.html
     - text: "Reference"
