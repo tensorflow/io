@@ -24,12 +24,12 @@ from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 
-bucket = ""
+bucket = None
 get_oss_path = None
 
-oss_id = ""
-oss_key = ""
-oss_host = ""
+oss_id = None
+oss_key = None
+oss_host = None
 
 _msg = ("OSS tests skipped. To enable them, set oss_id, oss_key, oss_host and bucket variable "
         "to its real value")
