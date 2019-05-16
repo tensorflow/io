@@ -1,0 +1,37 @@
+template:
+  params:
+    bootswatch: cosmo
+
+navbar:
+  title: "tfio"
+  type: inverse
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Using"
+      menu:
+        - text: "Getting Started"
+        - text: "TensorFlow IO Basics"
+          href: articles/introduction.html
+    - text: "Reference"
+      href: reference/index.html
+  right:
+   - icon: fa-github
+     href: https://github.com/tensorflow/io
+
+reference:
+
+  - title: "Dataset Builders"
+    contents:
+      - ignite_dataset
+      - kafka_dataset
+      - kinesis_dataset
+      - lmdb_dataset
+      - mnist_image_dataset
+      - mnist_label_dataset
+      - parquet_dataset
+      - pubsub_dataset
+      - sequence_file_dataset
+      - tiff_dataset
+      - video_dataset
+      - webp_dataset
