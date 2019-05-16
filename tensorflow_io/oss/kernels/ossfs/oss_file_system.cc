@@ -49,24 +49,6 @@ constexpr char kOSSAccessKeyKey[] = "key";
 constexpr char kOSSHostKey[] = "host";
 constexpr char kDelim[] = "/";
 
-//bool checkFile(const string& filename) {
-//  std::ifstream fstream(filename.c_str());
-//  return fstream.good();
-//}
-//
-//Status GetCredentialsFileFromEnv(string* filename) {
-//  if (!filename) {
-//    return errors::FailedPrecondition("'filename' cannot be nullptr.");
-//  }
-//  const char* result = std::getenv(kOSSCredentialsFileEnvKey);
-//  if (!result || !checkFile(result)) {
-//    return errors::NotFound(strings::StrCat("$", kOSSCredentialsFileEnvKey,
-//                                            " is not set or corrupt."));
-//  }
-//  *filename = result;
-//  return Status::OK();
-//}
-
 void oss_initialize_with_throwable() {
   if (aos_http_io_initialize(NULL, 0) != AOSE_OK) {
     throw std::exception();
@@ -250,16 +232,16 @@ private:
     std::string range("bytes=");
     range.append(std::to_string(range_start)).append("-").append(std::to_string(range_end));
     apr_table_set(headers_, "Range", range.c_str());
-	VLOG(1) << "read from oss with " << range.c_str();
+	  VLOG(1) << "read from oss with " << range.c_str();
 
     aos_status_t* s = oss_get_object_to_buffer(
-        _options,
-        &bucket_,
-        &object_,
-        headers_,
-        NULL,
-        &tmp_buffer,
-        &resp_headers);
+      _options,
+      &bucket_,
+      &object_,
+      headers_,
+      NULL,
+      &tmp_buffer,
+      &resp_headers);
     if (aos_status_is_ok(s)) {
       aos_buf_t* content = NULL;
       int64_t size = 0;
@@ -345,7 +327,7 @@ public:
     aos_buf_t* tmp_buf = aos_create_buf(pool_, data.size() + 1);
 
     std::string sdata;
-	sdata.assign(data.begin(), data.end());
+	  sdata.assign(data.begin(), data.end());
     aos_buf_append_string(pool_, tmp_buf, sdata.c_str(), data.size());
     aos_list_add_tail(&tmp_buf->node, &buffer_);
     return Status::OK();
@@ -566,10 +548,6 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
                                        std::string& host,
                                        std::string& access_id,
                                        std::string& access_key) {
-//  if (bucket.empty() || object.empty()) {
-//    return errors::Internal("host bucket token and object cannot be null");
-//  }
-
   StringPiece scheme, bucketp, remaining;
   io::ParseURI(fname, &scheme, &bucketp, &remaining);
 
@@ -594,19 +572,19 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       size_t pos = data.find('=');
       if (pos == StringPiece::npos) {
         return errors::InvalidArgument("OSS path access info faied: ",
-            fname, " info:", key_value);
+          fname, " info:", key_value);
       }
       StringPiece key = data.substr(0, pos);
       StringPiece value = data.substr(pos + 1);
       if (tensorflow::str_util::StartsWith(key, kOSSAccessIdKey)) {
-          access_id.assign(value.begin(), value.end());
+        access_id.assign(value.begin(), value.end());
       } else if (tensorflow::str_util::StartsWith(key, kOSSAccessKeyKey)) {
-          access_key.assign(value.begin(), value.end());
+        access_key.assign(value.begin(), value.end());
       } else if (tensorflow::str_util::StartsWith(key, kOSSHostKey)) {
-          host.assign(value.begin(), value.end());
+        host.assign(value.begin(), value.end());
       } else {
         return errors::InvalidArgument("OSS path access info faied: ",
-            fname, " unkown info:", key_value);
+          fname, " unkown info:", key_value);
       }
     }
 
@@ -625,19 +603,19 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       size_t pos = data.find('=');
       if (pos == StringPiece::npos) {
         return errors::InvalidArgument("OSS path access info faied: ",
-            fname, " info:", key_value);
+          fname, " info:", key_value);
       }
       StringPiece key = data.substr(0, pos);
       StringPiece value = data.substr(pos + 1);
       if (tensorflow::str_util::StartsWith(key, kOSSAccessIdKey)) {
-          access_id.assign(value.begin(), value.end());
+        access_id.assign(value.begin(), value.end());
       } else if (tensorflow::str_util::StartsWith(key, kOSSAccessKeyKey)) {
-          access_key.assign(value.begin(), value.end());
+        access_key.assign(value.begin(), value.end());
       } else if (tensorflow::str_util::StartsWith(key, kOSSHostKey)) {
-          host.assign(value.begin(), value.end());
+        host.assign(value.begin(), value.end());
       } else {
         return errors::InvalidArgument("OSS path access info faied: ",
-            fname, " unkown info:", key_value);
+          fname, " unkown info:", key_value);
       }
     }
 
@@ -650,10 +628,10 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       return errors::InvalidArgument("OSS path does not contain valid access info:", fname);
   }
 
-   VLOG(1) << "bucket: " << bucket
-            << ",access_id: " << access_id
-            << ",access_key: " << access_key
-            << ",host: " << host;
+  VLOG(1) << "bucket: " << bucket
+          << ",access_id: " << access_id
+          << ",access_key: " << access_key
+          << ",host: " << host;
 
   return Status::OK();
 }
@@ -728,7 +706,7 @@ Status OSSFileSystem::_ListObjects(aos_pool_t* pool,
                                    std::vector<std::string>* result,
                                    bool return_all,
                                    bool return_full_path,
-								   bool should_remove_suffix,
+								                   bool should_remove_suffix,
                                    int max_ret_per_iterator) {
   std::string tmp_key = key;
   aos_string_t bucket_;
@@ -919,15 +897,15 @@ Status OSSFileSystem::GetChildren(const std::string& dir, std::vector<std::strin
   oss_request_options_t* oss_options = oss.getRequestOptions();
   aos_pool_t* pool = oss.getPool();
   return _ListObjects(
-      pool,
-      oss_options,
-      bucket,
-      object,
-      result,
-      true,
-      false,
-      true,
-      1000);
+    pool,
+    oss_options,
+    bucket,
+    object,
+    result,
+    true,
+    false,
+    true,
+    1000);
 }
 
 Status OSSFileSystem::GetMatchingPaths(const std::string& pattern,
@@ -1142,28 +1120,28 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
     std::vector<std::string> childPaths;
     _ListObjects(pool, oss_options, sbucket, sobject, &childPaths, true, false, false, 1000);
     for (auto child : childPaths) {
-        std::string tmp_sobject = sobject + "/" + child;
-        std::string tmp_dobject = dobject + "/" + child;
+      std::string tmp_sobject = sobject + "/" + child;
+      std::string tmp_dobject = dobject + "/" + child;
 
-        aos_str_set(&source_object, tmp_sobject.c_str());
-        aos_str_set(&dest_object, tmp_dobject.c_str());
+      aos_str_set(&source_object, tmp_sobject.c_str());
+      aos_str_set(&dest_object, tmp_dobject.c_str());
 
-        resp_status = _RenameFileInternal(oss_options, pool, source_bucket, source_object, dest_bucket, dest_object);
-        if (!aos_status_is_ok(resp_status)) {
-          string msg;
-          oss_error_message(resp_status, &msg);
-          VLOG(0) << "rename " << src << " to " << target << " failed, with specific file:  " << tmp_sobject << ", with errMsg: " << msg;
-          return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
-        }
-        _DeleteObjectInternal(oss_options, sbucket, tmp_sobject);
+      resp_status = _RenameFileInternal(oss_options, pool, source_bucket, source_object, dest_bucket, dest_object);
+      if (!aos_status_is_ok(resp_status)) {
+        string msg;
+        oss_error_message(resp_status, &msg);
+        VLOG(0) << "rename " << src << " to " << target << " failed, with specific file:  " << tmp_sobject << ", with errMsg: " << msg;
+        return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
+      }
+      _DeleteObjectInternal(oss_options, sbucket, tmp_sobject);
     }
 
     if (!tensorflow::str_util::EndsWith(sobject, "/")){
-        sobject += "/";
+      sobject += "/";
     }
 
     if (!tensorflow::str_util::EndsWith(dobject, "/")){
-        dobject += "/";
+      dobject += "/";
     }
   }
 
@@ -1171,10 +1149,10 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
   aos_str_set(&dest_object, dobject.c_str());
   resp_status = _RenameFileInternal(oss_options, pool, source_bucket, source_object, dest_bucket, dest_object);
   if (!aos_status_is_ok(resp_status)) {
-      string msg;
-      oss_error_message(resp_status, &msg);
-      VLOG(0) << "rename " << src << " to " << target << " failed, errMsg: " << msg;
-      return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
+    string msg;
+    oss_error_message(resp_status, &msg);
+    VLOG(0) << "rename " << src << " to " << target << " failed, errMsg: " << msg;
+    return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ", msg);
   }
 
   return _DeleteObjectInternal(oss_options, sbucket, sobject);
@@ -1187,114 +1165,112 @@ aos_status_t* OSSFileSystem::_RenameFileInternal(const oss_request_options_t* os
                             const aos_string_t& dest_bucket,
                             const aos_string_t& dest_object) {
 
-    aos_status_t* resp_status;
-    aos_table_t* resp_headers;
-    aos_table_t* headers = aos_table_make(pool, 0);
-    aos_string_t upload_id;
+  aos_status_t* resp_status;
+  aos_table_t* resp_headers;
+  aos_table_t* headers = aos_table_make(pool, 0);
+  aos_string_t upload_id;
 
-    oss_list_upload_part_params_t* list_upload_part_params;
-    oss_upload_part_copy_params_t* upload_part_copy_params = oss_create_upload_part_copy_params(pool);
-    oss_list_part_content_t* part_content;
-    aos_list_t complete_part_list;
-    oss_complete_part_content_t* complete_content;
-    aos_table_t* list_part_resp_headers = NULL;
-    aos_table_t* complete_resp_headers = NULL;
-    int max_ret = 1000;
+  oss_list_upload_part_params_t* list_upload_part_params;
+  oss_upload_part_copy_params_t* upload_part_copy_params = oss_create_upload_part_copy_params(pool);
+  oss_list_part_content_t* part_content;
+  aos_list_t complete_part_list;
+  oss_complete_part_content_t* complete_content;
+  aos_table_t* list_part_resp_headers = NULL;
+  aos_table_t* complete_resp_headers = NULL;
+  int max_ret = 1000;
 
-    // 获取文件的大小
-    FileStatistics stat;
-    _StatInternal(pool, oss_options, std::string(source_bucket.data), std::string(source_object.data), &stat);
-    uint64 file_size = stat.length;
+  // get file size
+  FileStatistics stat;
+  _StatInternal(pool, oss_options, std::string(source_bucket.data), std::string(source_object.data), &stat);
+  uint64 file_size = stat.length;
 
-    // 需要分片处理
-    if (file_size > upload_part_bytes_){
-
-        resp_status = oss_init_multipart_upload(oss_options, &dest_bucket, &dest_object, &upload_id, headers, &resp_headers);
-        if (aos_status_is_ok(resp_status)) {
-            VLOG(1) << "init multipart upload succeeded, upload_id is %s" << upload_id.data;
-        } else {
-            return resp_status;
-        }
-
-        // 每个分片单独处理
-        int parts = ceil(double(file_size) / double(upload_part_bytes_));
-        for (int i = 0; i < parts - 1; i++){
-            int64_t range_start = i * upload_part_bytes_;
-            int64_t range_end = (i + 1) * upload_part_bytes_ - 1;
-            int part_num = i + 1;
-
-            aos_str_set(&upload_part_copy_params->source_bucket, source_bucket.data);
-            aos_str_set(&upload_part_copy_params->source_object, source_object.data);
-            aos_str_set(&upload_part_copy_params->dest_bucket, dest_bucket.data);
-            aos_str_set(&upload_part_copy_params->dest_object, dest_object.data);
-            aos_str_set(&upload_part_copy_params->upload_id, upload_id.data);
-
-            upload_part_copy_params->part_num = part_num;
-            upload_part_copy_params->range_start = range_start;
-            upload_part_copy_params->range_end = range_end;
-
-            headers = aos_table_make(pool, 0);
-
-            resp_status = oss_upload_part_copy(oss_options, upload_part_copy_params, headers, &resp_headers);
-            if (aos_status_is_ok(resp_status)) {
-                VLOG(1) << "upload part " << part_num << " copy succeeded";
-            } else {
-                return resp_status;
-            }
-        }
-
-        int64_t range_start = (parts - 1) * upload_part_bytes_;
-        int64_t range_end = file_size - 1;
-
-        aos_str_set(&upload_part_copy_params->source_bucket, source_bucket.data);
-        aos_str_set(&upload_part_copy_params->source_object, source_object.data);
-        aos_str_set(&upload_part_copy_params->dest_bucket, dest_bucket.data);
-        aos_str_set(&upload_part_copy_params->dest_object, dest_object.data);
-        aos_str_set(&upload_part_copy_params->upload_id, upload_id.data);
-        upload_part_copy_params->part_num = parts;
-        upload_part_copy_params->range_start = range_start;
-        upload_part_copy_params->range_end = range_end;
-
-        headers = aos_table_make(pool, 0);
-
-        resp_status = oss_upload_part_copy(oss_options, upload_part_copy_params, headers, &resp_headers);
-        if (aos_status_is_ok(resp_status)) {
-            VLOG(1) << "upload part " << parts << " copy succeeded";
-        } else {
-            return resp_status;
-        }
-
-        /* 列出分片。*/
-        headers = aos_table_make(pool, 0);
-        list_upload_part_params = oss_create_list_upload_part_params(pool);
-        list_upload_part_params->max_ret = max_ret;
-        aos_list_init(&complete_part_list);
-        resp_status = oss_list_upload_part(oss_options, &dest_bucket, &dest_object, &upload_id, list_upload_part_params, &list_part_resp_headers);
-        aos_list_for_each_entry(oss_list_part_content_t, part_content, &list_upload_part_params->part_list, node) {
-           complete_content = oss_create_complete_part_content(pool);
-           aos_str_set(&complete_content->part_number, part_content->part_number.data);
-           aos_str_set(&complete_content->etag, part_content->etag.data);
-           aos_list_add_tail(&complete_content->node, &complete_part_list);
-        }
-
-        /* 完成分片拷贝。*/
-        resp_status = oss_complete_multipart_upload(oss_options, &dest_bucket, &dest_object, &upload_id, &complete_part_list, headers, &complete_resp_headers);
-        if (aos_status_is_ok(resp_status)) {
-            VLOG(1) << "complete multipart upload succeeded";
-        }
+  // file size bigger than upload_part_bytes_, need to split into multi parts
+  if (file_size > upload_part_bytes_){
+    resp_status = oss_init_multipart_upload(oss_options, &dest_bucket, &dest_object, &upload_id, headers, &resp_headers);
+    if (aos_status_is_ok(resp_status)) {
+      VLOG(1) << "init multipart upload succeeded, upload_id is %s" << upload_id.data;
     } else {
-       resp_status = oss_copy_object(
-          oss_options,
-          &source_bucket,
-          &source_object,
-          &dest_bucket,
-          &dest_object,
-          headers,
-          &resp_headers);
+      return resp_status;
     }
 
-    return resp_status;
+    // process for each single part
+    int parts = ceil(double(file_size) / double(upload_part_bytes_));
+    for (int i = 0; i < parts - 1; i++){
+      int64_t range_start = i * upload_part_bytes_;
+      int64_t range_end = (i + 1) * upload_part_bytes_ - 1;
+      int part_num = i + 1;
+
+      aos_str_set(&upload_part_copy_params->source_bucket, source_bucket.data);
+      aos_str_set(&upload_part_copy_params->source_object, source_object.data);
+      aos_str_set(&upload_part_copy_params->dest_bucket, dest_bucket.data);
+      aos_str_set(&upload_part_copy_params->dest_object, dest_object.data);
+      aos_str_set(&upload_part_copy_params->upload_id, upload_id.data);
+
+      upload_part_copy_params->part_num = part_num;
+      upload_part_copy_params->range_start = range_start;
+      upload_part_copy_params->range_end = range_end;
+
+      headers = aos_table_make(pool, 0);
+
+      resp_status = oss_upload_part_copy(oss_options, upload_part_copy_params, headers, &resp_headers);
+      if (aos_status_is_ok(resp_status)) {
+        VLOG(1) << "upload part " << part_num << " copy succeeded";
+      } else {
+        return resp_status;
+      }
+    }
+
+    int64_t range_start = (parts - 1) * upload_part_bytes_;
+    int64_t range_end = file_size - 1;
+
+    aos_str_set(&upload_part_copy_params->source_bucket, source_bucket.data);
+    aos_str_set(&upload_part_copy_params->source_object, source_object.data);
+    aos_str_set(&upload_part_copy_params->dest_bucket, dest_bucket.data);
+    aos_str_set(&upload_part_copy_params->dest_object, dest_object.data);
+    aos_str_set(&upload_part_copy_params->upload_id, upload_id.data);
+    upload_part_copy_params->part_num = parts;
+    upload_part_copy_params->range_start = range_start;
+    upload_part_copy_params->range_end = range_end;
+
+    headers = aos_table_make(pool, 0);
+
+    resp_status = oss_upload_part_copy(oss_options, upload_part_copy_params, headers, &resp_headers);
+    if (aos_status_is_ok(resp_status)) {
+      VLOG(1) << "upload part " << parts << " copy succeeded";
+    } else {
+      return resp_status;
+    }
+
+    headers = aos_table_make(pool, 0);
+    list_upload_part_params = oss_create_list_upload_part_params(pool);
+    list_upload_part_params->max_ret = max_ret;
+    aos_list_init(&complete_part_list);
+    resp_status = oss_list_upload_part(oss_options, &dest_bucket, &dest_object, &upload_id, list_upload_part_params, &list_part_resp_headers);
+      aos_list_for_each_entry(oss_list_part_content_t, part_content, &list_upload_part_params->part_list, node) {
+      complete_content = oss_create_complete_part_content(pool);
+      aos_str_set(&complete_content->part_number, part_content->part_number.data);
+      aos_str_set(&complete_content->etag, part_content->etag.data);
+      aos_list_add_tail(&complete_content->node, &complete_part_list);
+    }
+
+    resp_status = oss_complete_multipart_upload(oss_options, &dest_bucket, &dest_object, &upload_id, &complete_part_list, headers, &complete_resp_headers);
+    if (aos_status_is_ok(resp_status)) {
+      VLOG(1) << "complete multipart upload succeeded";
+    }
+  } else {
+    resp_status = oss_copy_object(
+      oss_options,
+      &source_bucket,
+      &source_object,
+      &dest_bucket,
+      &dest_object,
+      headers,
+      &resp_headers);
+  }
+
+  return resp_status;
 }
+
 Status OSSFileSystem::IsDirectory(const std::string& fname) {
   FileStatistics stat;
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
