@@ -101,16 +101,12 @@ public:
     aos_str_set(&_options->config->access_key_secret, accessKeySecret.c_str());
     _options->config->is_cname = 0;
     _options->ctl = aos_http_controller_create(_options->pool, 0);
-
-    init_options(_options);
   }
 
   ~OSSConnection() {
     if (NULL != _pool) {
       aos_pool_destroy(_pool);
     }
-
-    aos_http_io_deinitialize();
   }
 
   oss_request_options_t* getRequestOptions() {
