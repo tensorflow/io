@@ -198,11 +198,11 @@ public:
 private:
   /// A helper function to actually read the data from OSS. This function loads
   /// buffer_ from OSS based on its current capacity.
-  Status LoadBufferFromOSS(size_t desired_buffer_size)  const
+  Status LoadBufferFromOSS(size_t desired_buffer_size) const
       EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     size_t range_start = buffer_start_offset_;
     size_t range_end = buffer_start_offset_ + std::min(buffer_.capacity() - 1,
-                                                        desired_buffer_size - 1);
+                                                       desired_buffer_size - 1);
     range_end = std::min(range_end, total_file_length_ - 1);
 
     OSSConnection conn(shost, sak, ssk);
@@ -229,7 +229,7 @@ private:
         .append("-")
         .append(std::to_string(range_end));
     apr_table_set(headers_, "Range", range.c_str());
-    VLOG(1) << "read from oss with " << range.c_str();
+    VLOG(1) << "read from OSS with " << range.c_str();
 
     aos_status_t* s =
         oss_get_object_to_buffer(_options, &bucket_, &object_, headers_, NULL,
@@ -303,9 +303,7 @@ public:
     InitAprPool();
   }
 
-  ~OSSWritableFile() {
-    ReleaseAprPool();
-  }
+  ~OSSWritableFile() { ReleaseAprPool(); }
 
   Status Append(StringPiece data) override {
     mutex_lock lock(mu_);
@@ -349,7 +347,8 @@ public:
                               " errMsg: ", msg);
     }
 
-    aos_list_for_each_entry(oss_list_part_content_t, part_content, &params->part_list, node) {
+    aos_list_for_each_entry(oss_list_part_content_t, part_content,
+                            &params->part_list, node) {
       complete_part_content = oss_create_complete_part_content(pool_);
       aos_str_set(&complete_part_content->part_number,
                   part_content->part_number.data);
@@ -427,9 +426,10 @@ private:
       if (!aos_status_is_ok(status)) {
         string msg;
         oss_error_message(status, &msg);
-        VLOG(0) << "Init multipart upload " << sobject << " failed, errMsg: " << msg;
+        VLOG(0) << "Init multipart upload " << sobject
+                << " failed, errMsg: " << msg;
         return errors::Unavailable("Init multipart upload failed: ", sobject,
-            " errMsg: ", msg);
+                                   " errMsg: ", msg);
       }
 
       upload_id_ = uploadId.data;
@@ -454,11 +454,12 @@ private:
         string msg;
         oss_error_message(status, &msg);
         VLOG(0) << "Upload multipart " << sobject << " failed, errMsg: " << msg;
-        return errors::Internal(
-            "Upload multipart failed: ", sobject, " errMsg: ", msg);
+        return errors::Internal("Upload multipart failed: ", sobject,
+                                " errMsg: ", msg);
       }
 
-      VLOG(1) << " upload " << sobject << " with part" << part_number_ << " succ";
+      VLOG(1) << " upload " << sobject << " with part" << part_number_
+              << " succ";
       part_number_++;
       ReleaseAprPool();
       InitAprPool();
@@ -495,7 +496,7 @@ private:
   mutex mu_;
   int64_t part_number_;
 };
-}
+} // namespace
 
 OSSFileSystem::OSSFileSystem()
 {
@@ -514,10 +515,10 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   io::ParseURI(fname, &scheme, &bucketp, &remaining);
 
   if (scheme != "oss") {
-    return errors::InvalidArgument("OSS path does not start with 'oss://':", fname);
+    return errors::InvalidArgument("OSS path does not start with 'oss://':",
+                                   fname);
   }
 
-  //remaining.Consume("/");
   str_util::ConsumePrefix(&remaining, kDelim);
   object = string(remaining);
 
@@ -586,7 +587,7 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   }
 
   if (access_id.empty() || access_key.empty() || host.empty()) {
-      return errors::InvalidArgument("OSS path does not contain valid access info:", fname);
+    return errors::InvalidArgument("OSS path does not contain valid access info:", fname);
   }
 
   VLOG(1) << "bucket: " << bucket
@@ -609,8 +610,8 @@ Status OSSFileSystem::NewRandomAccessFile(
   TF_RETURN_IF_ERROR(_RetrieveObjectMetadata(
       conn.getPool(), conn.getRequestOptions(), bucket, object, &stat));
   result->reset(new OSSRandomAccessFile(host, access_id, access_key,
-                                      bucket, object, read_ahead_bytes_,
-                                      stat.length));
+                                        bucket, object, read_ahead_bytes_,
+                                        stat.length));
   return Status::OK();
 }
 
@@ -758,12 +759,12 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
     }
     stat->length = 0;
     VLOG(1) << "RetrieveObjectMetadata for object: " << object
-             << " get children success";
+            << " get children success";
     return s;
   }
 
   VLOG(1) << "_StatInternal for object: " << object
-             << ", failed with bucket: " << bucket;
+          << ", failed with bucket: " << bucket;
   return errors::NotFound("can not find ", object);
 }
 
@@ -790,13 +791,14 @@ Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
   aos_str_set(&oss_object, object.c_str());
   headers = aos_table_make(pool, 0);
 
-  status = oss_head_object(options, &oss_bucket, &oss_object, headers, &resp_headers);
+  status = oss_head_object(options, &oss_bucket, &oss_object, headers,
+                           &resp_headers);
   if (aos_status_is_ok(status)) {
     content_length_str = (char*)apr_table_get(resp_headers, OSS_CONTENT_LENGTH);
     if (content_length_str != NULL) {
       stat->length = static_cast<int64>(atoll(content_length_str));
       VLOG(1) << "_RetrieveObjectMetadata object: " << object
-             << " , with length: " << stat->length;
+              << " , with length: " << stat->length;
     }
 
     object_date_str = (char*)apr_table_get(resp_headers, OSS_DATE);
@@ -808,7 +810,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
       stat->mtime_nsec = static_cast<int64>(mktime(&tm) * 1000) * 1e9;
 
       VLOG(1) << "_RetrieveObjectMetadata object: " << object
-             << " , with time: " << stat->mtime_nsec;
+              << " , with time: " << stat->mtime_nsec;
     } else {
       VLOG(0) << "find " << object << " with no datestr";
       return errors::NotFound("find ", object,
@@ -827,8 +829,8 @@ Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
     string msg;
     oss_error_message(status, &msg);
     VLOG(1) << "can not find object: " << object
-        << ", with bucket: "<< bucket
-        << ", errMsg: " << msg;
+            << ", with bucket: "<< bucket
+            << ", errMsg: " << msg;
     return errors::NotFound("can not find ", object,
                             " errMsg: ", msg);
   }
@@ -919,7 +921,8 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
   aos_pool_t* pool = oss.getPool();
   StringPiece dirs(object);
 
-  std::vector<std::string> splitPaths = str_util::Split(dirs, '/', str_util::SkipEmpty());
+  std::vector<std::string> splitPaths =
+      str_util::Split(dirs, '/', str_util::SkipEmpty());
   if (splitPaths.size() < 2) {
     return _CreateDirInternal(pool, ossOptions, bucket, object);
   }
@@ -929,9 +932,9 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
 
   if (!_StatInternal(pool, ossOptions, bucket, string(parent), &stat).ok()) {
     VLOG(0) << "CreateDir() failed with bucket: " << bucket
-      << ", parent: " << parent;
-  	return errors::Internal("parent does not exists: ", parent);
-	}
+            << ", parent: " << parent;
+    return errors::Internal("parent does not exists: ", parent);
+  }
 
   if (!stat.is_directory) {
     return errors::Internal("can not mkdir because parent is a file: ", parent);
@@ -952,7 +955,8 @@ Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
   aos_pool_t* pool = oss.getPool();
   StringPiece dirs(object);
 
-  std::vector<std::string> splitPaths = str_util::Split(dirs, '/', str_util::SkipEmpty());
+  std::vector<std::string> splitPaths =
+      str_util::Split(dirs, '/', str_util::SkipEmpty());
   if (splitPaths.size() < 2) {
     return _CreateDirInternal(pool, ossOptions, bucket, object);
   }
@@ -1290,7 +1294,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
     if (object.at(object.length() - 1) == '/') {
       return _DeleteObjectInternal(oss_options, bucket, object);
     } else {
-      return _DeleteObjectInternal(oss_options, bucket, object.append("/"));
+      return _DeleteObjectInternal(oss_options, bucket, object.append(kDelim));
     }
   }
   return Status::OK();
