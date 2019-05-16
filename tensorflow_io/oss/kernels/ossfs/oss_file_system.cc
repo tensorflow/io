@@ -12,16 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-
+#include <pwd.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <vector>
 #include <iostream>
-#include <unistd.h>
-#include <pwd.h>
+#include <vector>
 #include <cmath>
 
+#include "aos_string.h"
+#include "oss_define.h"
 #include "oss_file_system.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/io/path.h"
@@ -31,8 +32,6 @@ limitations under the License.
 #include "tensorflow/core/platform/thread_annotations.h"
 #include "tensorflow/core/platform/file_system_helper.h"
 #include "tensorflow/core/platform/file_system.h"
-#include "aos_string.h"
-#include "oss_define.h"
 
 namespace tensorflow {
 
@@ -90,8 +89,7 @@ void oss_error_message(aos_status_s* status, std::string* msg) {
 
 class OSSConnection {
 public:
-  OSSConnection(const std::string& endPoint,
-                const std::string& accessKey,
+  OSSConnection(const std::string& endPoint, const std::string& accessKey,
                 const std::string& accessKeySecret) {
     aos_pool_create(&_pool, NULL);
     _options = oss_request_options_create(_pool);
@@ -109,13 +107,9 @@ public:
     }
   }
 
-  oss_request_options_t* getRequestOptions() {
-    return _options;
-  }
+  oss_request_options_t* getRequestOptions() { return _options; }
 
-  aos_pool_t* getPool() {
-    return _pool;
-  }
+  aos_pool_t* getPool() { return _pool; }
 
 private:
   aos_pool_t* _pool = NULL;
@@ -146,8 +140,9 @@ public:
               StringPiece* result,
               char* scratch) const override {
     if (offset > total_file_length_) {
-      return errors::OutOfRange("EOF reached, ", offset ,
-                                " is read out of file length ", total_file_length_);
+      return errors::OutOfRange("EOF reached, ", offset,
+                                " is read out of file length ",
+                                total_file_length_);
     }
 
     if (offset + n > total_file_length_) {
@@ -165,13 +160,15 @@ public:
       const size_t offset_in_buffer =
           std::min<uint64>(offset - buffer_start_offset_, buffer_size_);
       const auto copy_size = std::min(n, buffer_size_ - offset_in_buffer);
-      VLOG(1) << "read from buffer " << offset_in_buffer << " to " << offset_in_buffer + copy_size << " total " << buffer_size_;
+      VLOG(1) << "read from buffer " << offset_in_buffer << " to "
+              << offset_in_buffer + copy_size << " total " << buffer_size_;
       std::copy(buffer_.begin() + offset_in_buffer,
                 buffer_.begin() + offset_in_buffer + copy_size, scratch);
       *result = StringPiece(scratch, copy_size);
     } else {
       // Update the buffer content based on the new requested range.
-      const size_t desired_buffer_size = std::min(n + read_ahead_bytes_, total_file_length_);
+      const size_t desired_buffer_size =
+          std::min(n + read_ahead_bytes_, total_file_length_);
       if (n > buffer_.capacity() ||
           desired_buffer_size > 2 * buffer_.capacity()) {
         // Re-allocate only if buffer capacity increased significantly.
@@ -201,9 +198,11 @@ public:
 private:
   /// A helper function to actually read the data from OSS. This function loads
   /// buffer_ from OSS based on its current capacity.
-  Status LoadBufferFromOSS(size_t desired_buffer_size)  const EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  Status LoadBufferFromOSS(size_t desired_buffer_size)  const
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     size_t range_start = buffer_start_offset_;
-    size_t range_end = buffer_start_offset_ + std::min(buffer_.capacity() - 1, desired_buffer_size - 1);
+    size_t range_end = buffer_start_offset_ + std::min(buffer_.capacity() - 1,
+                                                        desired_buffer_size - 1);
     range_end = std::min(range_end, total_file_length_ - 1);
 
     OSSConnection conn(shost, sak, ssk);
@@ -226,18 +225,15 @@ private:
     headers_ = aos_table_make(_pool, 1);
 
     std::string range("bytes=");
-    range.append(std::to_string(range_start)).append("-").append(std::to_string(range_end));
+    range.append(std::to_string(range_start))
+        .append("-")
+        .append(std::to_string(range_end));
     apr_table_set(headers_, "Range", range.c_str());
     VLOG(1) << "read from oss with " << range.c_str();
 
-    aos_status_t* s = oss_get_object_to_buffer(
-      _options,
-      &bucket_,
-      &object_,
-      headers_,
-      NULL,
-      &tmp_buffer,
-      &resp_headers);
+    aos_status_t* s =
+        oss_get_object_to_buffer(_options, &bucket_, &object_, headers_, NULL,
+                                 &tmp_buffer, &resp_headers);
     if (aos_status_is_ok(s)) {
       aos_buf_t* content = NULL;
       int64_t size = 0;
@@ -257,8 +253,7 @@ private:
       string msg;
       oss_error_message(s, &msg);
       VLOG(0) << "read " << sobject << " failed, errMsg: " << msg;
-      return errors::Internal("read failed: ", sobject,
-                              " errMsg: ", msg);
+      return errors::Internal("read failed: ", sobject, " errMsg: ", msg);
     }
   }
 
@@ -343,13 +338,8 @@ public:
 
     params = oss_create_list_upload_part_params(pool_);
     aos_list_init(&complete_part_list);
-    status = oss_list_upload_part(
-        options_,
-        &bucket_,
-        &object_,
-        &upload_id,
-        params,
-        &resp_headers);
+    status = oss_list_upload_part(options_, &bucket_, &object_, &upload_id,
+                                  params, &resp_headers);
 
     if (!aos_status_is_ok(status)) {
       string msg;
@@ -367,14 +357,9 @@ public:
       aos_list_add_tail(&complete_part_content->node, &complete_part_list);
     }
 
-    status = oss_complete_multipart_upload(
-        options_,
-        &bucket_,
-        &object_,
-        &upload_id,
-        &complete_part_list,
-        complete_headers,
-        &resp_headers);
+    status = oss_complete_multipart_upload(options_, &bucket_, &object_,
+                                           &upload_id, &complete_part_list,
+                                           complete_headers, &resp_headers);
 
     if (!aos_status_is_ok(status)) {
       string msg;
@@ -399,9 +384,7 @@ public:
     return Status::OK();
   }
 
-  Status Sync() override {
-    return Flush();
-  }
+  Status Sync() override { return Flush(); }
 
 private:
 
@@ -438,14 +421,8 @@ private:
       aos_table_t* resp_headers = NULL;
 
       InitAprPool();
-      status = oss_init_multipart_upload(
-          options_,
-          &bucket_,
-          &object_,
-          &uploadId,
-          headers_,
-          &resp_headers
-      );
+      status = oss_init_multipart_upload(options_, &bucket_, &object_,
+                                         &uploadId, headers_, &resp_headers);
 
       if (!aos_status_is_ok(status)) {
         string msg;
@@ -469,14 +446,9 @@ private:
       _InitMultiUpload();
 
       aos_str_set(&uploadId, upload_id_.c_str());
-      status = oss_upload_part_from_buffer(
-          options_,
-          &bucket_,
-          &object_,
-          &uploadId,
-          part_number_,
-          &buffer_,
-          &resp_headers);
+      status =
+          oss_upload_part_from_buffer(options_, &bucket_, &object_, &uploadId,
+                                      part_number_, &buffer_, &resp_headers);
 
       if (!aos_status_is_ok(status)) {
         string msg;
@@ -494,9 +466,7 @@ private:
     return Status::OK();
   }
 
-  const size_t CurrentBufferLength() {
-    return aos_buf_list_len(&buffer_);
-  }
+  const size_t CurrentBufferLength() { return aos_buf_list_len(&buffer_); }
 
   Status _CheckClosed() {
     if (is_closed_) {
@@ -518,7 +488,7 @@ private:
   aos_string_t bucket_;
   aos_string_t object_;
   aos_table_t* headers_ = NULL;
-  aos_list_t  buffer_;
+  aos_list_t buffer_;
   std::string upload_id_;
 
   bool is_closed_;
@@ -562,8 +532,8 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       StringPiece data(key_value);
       size_t pos = data.find('=');
       if (pos == StringPiece::npos) {
-        return errors::InvalidArgument("OSS path access info faied: ",
-          fname, " info:", key_value);
+        return errors::InvalidArgument("OSS path access info faied: ", fname,
+                                       " info:", key_value);
       }
       StringPiece key = data.substr(0, pos);
       StringPiece value = data.substr(pos + 1);
@@ -574,8 +544,8 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
       } else if (str_util::StartsWith(key, kOSSHostKey)) {
         host = string(value);
       } else {
-        return errors::InvalidArgument("OSS path access info faied: ",
-          fname, " unkown info:", key_value);
+        return errors::InvalidArgument("OSS path access info faied: ", fname,
+                                       " unkown info:", key_value);
       }
     }
 
@@ -628,8 +598,7 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
 }
 
 Status OSSFileSystem::NewRandomAccessFile(
-    const std::string& filename,
-    std::unique_ptr<RandomAccessFile>* result) {
+    const std::string& filename, std::unique_ptr<RandomAccessFile>* result) {
   TF_RETURN_IF_ERROR(oss_initialize());
   std::string object, bucket;
   std::string host, access_id, access_key;
@@ -823,7 +792,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(aos_pool_t* pool,
 
   status = oss_head_object(options, &oss_bucket, &oss_object, headers, &resp_headers);
   if (aos_status_is_ok(status)) {
-    content_length_str = (char *) apr_table_get(resp_headers, OSS_CONTENT_LENGTH);
+    content_length_str = (char*)apr_table_get(resp_headers, OSS_CONTENT_LENGTH);
     if (content_length_str != NULL) {
       stat->length = static_cast<int64>(atoll(content_length_str));
       VLOG(1) << "_RetrieveObjectMetadata object: " << object
@@ -955,8 +924,8 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
     return _CreateDirInternal(pool, ossOptions, bucket, object);
   }
 
-	FileStatistics stat;
-	StringPiece parent = io::Dirname(dirs);
+  FileStatistics stat;
+  StringPiece parent = io::Dirname(dirs);
 
   if (!_StatInternal(pool, ossOptions, bucket, string(parent), &stat).ok()) {
     VLOG(0) << "CreateDir() failed with bucket: " << bucket
@@ -968,8 +937,8 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
     return errors::Internal("can not mkdir because parent is a file: ", parent);
   }
 
-	TF_RETURN_IF_ERROR(_CreateDirInternal(pool, ossOptions, bucket, object));
-	return Status::OK();
+  TF_RETURN_IF_ERROR(_CreateDirInternal(pool, ossOptions, bucket, object));
+  return Status::OK();
 }
 
 Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
@@ -1265,8 +1234,8 @@ Status OSSFileSystem::IsDirectory(const std::string& fname) {
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
 
   return stat.is_directory
-              ? Status::OK()
-              : errors::FailedPrecondition(fname + " is not a directory");
+             ? Status::OK()
+             : errors::FailedPrecondition(fname + " is not a directory");
 }
 
 Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undeleted_files,
@@ -1317,7 +1286,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
   }
 
   if (*undeleted_dirs == 0 && *undeleted_files == 0) {
-    // delete directory itself
+    // delete directory itself.
     if (object.at(object.length() - 1) == '/') {
       return _DeleteObjectInternal(oss_options, bucket, object);
     } else {
