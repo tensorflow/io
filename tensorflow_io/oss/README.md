@@ -19,13 +19,13 @@ In Python code, import the extension `ossfs_op` module to use the extension with
 import tensorflow_io.oss
 from tensorflow.python.platform import gfile
 
-gfile.MkDir('oss://your_bucket_name\x01id=accessid\x02key=accesskey\x02host=osshost/test_dir')
+gfile.MkDir('oss://${bucket}\x01id=${accessid}\x02key=${accesskey}\x02host=${osshost}/test_dir')
 ```
 
 With the extension installed, OSS files can be use with Dataset Ops, etc., in the same fashion as other files.
 
 ```python
-dataset = tf.data.TextLineDataset(["oss://your_bucket_name\x01id=accessid\x02key=accesskey\x02host=osshost/data_dir/file1"])
+dataset = tf.data.TextLineDataset(["oss://${bucket}\x01id=${accessid}\x02key=${accesskey}\x02host=${osshost}/data_dir/file1"])
 ```
 
 ## Test
