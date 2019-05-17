@@ -31,7 +31,7 @@ access_id = None
 access_key = None
 host = None
 
-_msg = ("OSS tests skipped. To enable them, set oss_id, oss_key, oss_host and bucket variable "
+_msg = ("OSS tests skipped. To enable them, set access_id, access_key, host and bucket variable "
         "to its real value")
 def _check_oss_variable():
     return access_id is not None and access_key is not None and host is not None and bucket is not None
