@@ -34,7 +34,7 @@ host = None
 _msg = ("OSS tests skipped. To enable them, set access_id, access_key, host and bucket variable "
         "to its real value")
 def _check_oss_variable():
-    return access_id is not None and access_key is not None and host is not None and bucket is not None
+  return access_id is not None and access_key is not None and host is not None and bucket is not None
 
 @unittest.skipIf(not _check_oss_variable(), _msg)
 class OSSFSTest(test.TestCase):
@@ -43,7 +43,9 @@ class OSSFSTest(test.TestCase):
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
     global get_oss_path
-    get_oss_path = lambda p: os.path.join("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, access_id, access_key, host), "oss_fs_test", p)
+    get_oss_path = lambda p: os.path.join("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                          %(bucket, access_id, access_key, host),
+                                          "oss_fs_test", p)
     gfile.MkDir(get_oss_path(""))
 
   @classmethod
@@ -80,16 +82,22 @@ class OSSFSTest(test.TestCase):
     self.assertTrue(gfile.Stat(d).is_directory)
 
     # Test listing bucket directory with and without trailing '/'
-    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, access_id, access_key, host))
-    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s/" %(bucket, access_id, access_key, host))
+    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                  %(bucket, access_id, access_key, host))
+    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s/"
+                                    %(bucket, access_id, access_key, host))
     self.assertEqual(content, content_s)
     self.assertIn("oss_fs_test", content)
     self.assertIn("oss_fs_test/d1", content)
     self.assertIn("oss_fs_test/d1/d2", content)
 
     # Test listing test directory with and without trailing '/'
-    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, access_id, access_key, host) + "/oss_fs_test")
-    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, access_id, access_key, host) + "/oss_fs_test/")
+    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                  %(bucket, access_id, access_key, host)
+                                  + "/oss_fs_test")
+    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                    %(bucket, access_id, access_key, host)
+                                    + "/oss_fs_test/")
     self.assertEqual(content, content_s)
     self.assertIn("d1", content)
     self.assertIn("d1/d2", content)
