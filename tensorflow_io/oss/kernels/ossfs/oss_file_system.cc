@@ -522,69 +522,75 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   str_util::ConsumePrefix(&remaining, kDelim);
   object = string(remaining);
 
+  constexpr char bucketDelim[] = "?";
+  constexpr char accessDelim[] = "&";
   if (bucketp.find('\x01') != StringPiece::npos) {
-    // contains id, key, host information
-    size_t pos = bucketp.find('\x01');
-    size_t tmpPos = pos;
-    bucket = string(bucketp.substr(0, pos));
-    StringPiece access_info = bucketp.substr(pos+1);
-    std::vector<std::string> access_infos = str_util::Split(access_info, "\x02");
-    for (auto& key_value : access_infos) {
-      StringPiece data(key_value);
-      size_t pos = data.find('=');
-      if (pos == StringPiece::npos) {
-        return errors::InvalidArgument("OSS path access info faied: ", fname,
-                                       " info:", key_value);
-      }
-      StringPiece key = data.substr(0, pos);
-      StringPiece value = data.substr(pos + 1);
-      if (str_util::StartsWith(key, kOSSAccessIdKey)) {
-        access_id = string(value);
-      } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
-        access_key = string(value);
-      } else if (str_util::StartsWith(key, kOSSHostKey)) {
-        host = string(value);
-      } else {
-        return errors::InvalidArgument("OSS path access info faied: ", fname,
-                                       " unkown info:", key_value);
-      }
-    }
+    bucketDelim = "\x01";
+    accessDelim = "\x02";
+  }
 
-    if (bucket.empty()) {
-      return errors::InvalidArgument("OSS path does not contain a bucket name:", fname);
+  // contains id, key, host information
+  size_t pos = bucketp.find(bucketDelim);
+  size_t tmpPos = pos;
+  bucket = string(bucketp.substr(0, pos));
+  StringPiece access_info = bucketp.substr(pos+1);
+  std::vector<std::string> access_infos = str_util::Split(access_info, accessDelim);
+  for (const auto& key_value : access_infos) {
+    StringPiece data(key_value);
+    size_t pos = data.find('=');
+    if (pos == StringPiece::npos) {
+      return errors::InvalidArgument("OSS path access info faied: ", fname,
+                                     " info:", key_value);
     }
-
-  }else if (bucketp.find('?') != StringPiece::npos) {
-    // contains id, key, host information
-    size_t pos = bucketp.find('?');
-    bucket = string(bucketp.substr(0, pos));
-    StringPiece access_info = bucketp.substr(pos+1);
-    std::vector<std::string> access_infos = str_util::Split(access_info, "&");
-    for (auto& key_value : access_infos) {
-      StringPiece data(key_value);
-      size_t pos = data.find('=');
-      if (pos == StringPiece::npos) {
-        return errors::InvalidArgument("OSS path access info faied: ",
-          fname, " info:", key_value);
-      }
-      StringPiece key = data.substr(0, pos);
-      StringPiece value = data.substr(pos + 1);
-      if (str_util::StartsWith(key, kOSSAccessIdKey)) {
-        access_id = string(value);
-      } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
-        access_key = string(value);
-      } else if (str_util::StartsWith(key, kOSSHostKey)) {
-        host = string(value);
-      } else {
-        return errors::InvalidArgument("OSS path access info faied: ",
-          fname, " unkown info:", key_value);
-      }
-    }
-
-    if (bucket.empty()) {
-      return errors::InvalidArgument("OSS path does not contain a bucket name:", fname);
+    StringPiece key = data.substr(0, pos);
+    StringPiece value = data.substr(pos + 1);
+    if (str_util::StartsWith(key, kOSSAccessIdKey)) {
+      access_id = string(value);
+    } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
+      access_key = string(value);
+    } else if (str_util::StartsWith(key, kOSSHostKey)) {
+      host = string(value);
+    } else {
+      return errors::InvalidArgument("OSS path access info faied: ", fname,
+                                     " unkown info:", key_value);
     }
   }
+
+  if (bucket.empty()) {
+    return errors::InvalidArgument("OSS path does not contain a bucket name:", fname);
+  }
+
+//  } else if (bucketp.find('?') != StringPiece::npos) {
+//    // contains id, key, host information
+//    size_t pos = bucketp.find('?');
+//    bucket = string(bucketp.substr(0, pos));
+//    StringPiece access_info = bucketp.substr(pos+1);
+//    std::vector<std::string> access_infos = str_util::Split(access_info, "&");
+//    for (const auto& key_value : access_infos) {
+//      StringPiece data(key_value);
+//      size_t pos = data.find('=');
+//      if (pos == StringPiece::npos) {
+//        return errors::InvalidArgument("OSS path access info faied: ",
+//          fname, " info:", key_value);
+//      }
+//      StringPiece key = data.substr(0, pos);
+//      StringPiece value = data.substr(pos + 1);
+//      if (str_util::StartsWith(key, kOSSAccessIdKey)) {
+//        access_id = string(value);
+//      } else if (str_util::StartsWith(key, kOSSAccessKeyKey)) {
+//        access_key = string(value);
+//      } else if (str_util::StartsWith(key, kOSSHostKey)) {
+//        host = string(value);
+//      } else {
+//        return errors::InvalidArgument("OSS path access info faied: ",
+//          fname, " unkown info:", key_value);
+//      }
+//    }
+//
+//    if (bucket.empty()) {
+//      return errors::InvalidArgument("OSS path does not contain a bucket name:", fname);
+//    }
+//  }
 
   if (access_id.empty() || access_key.empty() || host.empty()) {
     return errors::InvalidArgument("OSS path does not contain valid access info:", fname);
@@ -1061,8 +1067,16 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
   TF_RETURN_IF_ERROR(
       _ParseOSSURIPath(src, sbucket, sobject, host, access_id, access_key));
   std::string dobject, dbucket;
+  std::string dhost, daccess_id, daccess_key;
   TF_RETURN_IF_ERROR(
-      _ParseOSSURIPath(target, dbucket, dobject, host, access_id, access_key));
+      _ParseOSSURIPath(target, dbucket, dobject, dhost, daccess_id, daccess_key));
+
+  if (host != dhost || access_id != daccess_id || access_key != daccess_key){
+    VLOG(0) << "rename " << src << " to " << target << " failed, with errMsg: "
+            << " source oss cluster does not match dest oss cluster";
+    return errors::Internal("rename " , src, " to ", target, " failed, errMsg: ",
+                            "source oss cluster does not match dest oss cluster");
+  }
 
   OSSConnection oss(host, access_id, access_key);
   oss_request_options_t* oss_options = oss.getRequestOptions();

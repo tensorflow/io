@@ -33,10 +33,10 @@ oss_host = None
 
 _msg = ("OSS tests skipped. To enable them, set oss_id, oss_key, oss_host and bucket variable "
         "to its real value")
-def check_oss_variable():
+def _check_oss_variable():
     return oss_id is not None and oss_key is not None and oss_host is not None and bucket is not None
 
-@unittest.skipIf(not check_oss_variable(), _msg)
+@unittest.skipIf(not _check_oss_variable(), _msg)
 class OSSFSTest(test.TestCase):
   """OSS Filesystem Tests"""
 
@@ -86,6 +86,13 @@ class OSSFSTest(test.TestCase):
     self.assertIn("oss_fs_test", content)
     self.assertIn("oss_fs_test/d1", content)
     self.assertIn("oss_fs_test/d1/d2", content)
+
+    # Test listing test directory with and without trailing '/'
+    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, oss_id, oss_key, oss_host) + "/oss_fs_test")
+    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s" %(bucket, oss_id, oss_key, oss_host) + "/oss_fs_test/")
+    self.assertEqual(content, content_s)
+    self.assertIn("d1", content)
+    self.assertIn("d1/d2", content)
 
     # Test listing sub directories.
     content = gfile.ListDirectory(get_oss_path("d1"))
