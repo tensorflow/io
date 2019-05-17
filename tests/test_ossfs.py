@@ -45,10 +45,10 @@ class OSSFSTest(test.TestCase):
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
     global get_oss_path
-    get_oss_path = lambda p: os.path.join(
-                                          "oss://%s\x01id=%s\x02key=%s\x02host=%s"
-                                          %(bucket, access_id, access_key, host),
-                                          "oss_fs_test", p)
+    get_oss_path = \
+      lambda p: os.path.join("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                             %(bucket, access_id, access_key, host),
+                             "oss_fs_test", p)
     gfile.MkDir(get_oss_path(""))
 
   @classmethod
