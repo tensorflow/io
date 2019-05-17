@@ -1095,7 +1095,7 @@ Status OSSFileSystem::RenameFile(const std::string& src, const std::string& targ
   if (status.ok()) {
     std::vector<std::string> childPaths;
     _ListObjects(pool, oss_options, sbucket, sobject, &childPaths, true, false, false, 1000);
-    for (auto child : childPaths) {
+    for (const auto& child : childPaths) {
       std::string tmp_sobject = sobject + "/" + child;
       std::string tmp_dobject = dobject + "/" + child;
 
@@ -1289,7 +1289,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
     return _DeleteObjectInternal(oss_options, bucket, object);
   }
 
-  for (auto child : children) {
+  for (const auto& child : children) {
     s = _DeleteObjectInternal(oss_options, bucket, child);
     if (!s.ok()) {
       s = _StatInternal(pool, oss_options, bucket, child, &stat);
