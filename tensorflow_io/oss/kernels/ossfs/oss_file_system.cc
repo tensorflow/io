@@ -522,8 +522,8 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   str_util::ConsumePrefix(&remaining, kDelim);
   object = string(remaining);
 
-  constexpr char bucketDelim[] = "?";
-  constexpr char accessDelim[] = "&";
+  std::string bucketDelim = "?";
+  std::string accessDelim = "&";
   if (bucketp.find('\x01') != StringPiece::npos) {
     bucketDelim = "\x01";
     accessDelim = "\x02";
