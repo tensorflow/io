@@ -7,9 +7,9 @@ This module provides an extension that emulates a filesystem using the object st
 To use the extension, first get your OSS credential from [Alibaba OSS Service](https://www.alibabacloud.com/product/oss), includes:
 
 ```
-osshost = your_oss_cluster_host
-accessid = your_oss_access_id
-accesskey = you_oss_access_key
+host = your_oss_cluster_host
+access_id = your_oss_access_id
+access_key = you_oss_access_key
 bucket = your_oss_bucket_name
 ```
 
@@ -19,13 +19,13 @@ In Python code, import the extension `ossfs_op` module to use the extension with
 import tensorflow_io.oss
 from tensorflow.python.platform import gfile
 
-gfile.MkDir('oss://${bucket}\x01id=${accessid}\x02key=${accesskey}\x02host=${osshost}/test_dir')
+gfile.MkDir('oss://${bucket}\x01id=${access_id}\x02key=${access_key}\x02host=${host}/test_dir')
 ```
 
 With the extension installed, OSS files can be use with Dataset Ops, etc., in the same fashion as other files.
 
 ```python
-dataset = tf.data.TextLineDataset(["oss://${bucket}\x01id=${accessid}\x02key=${accesskey}\x02host=${osshost}/data_dir/file1"])
+dataset = tf.data.TextLineDataset(["oss://${bucket}\x01id=${access_id}\x02key=${access_key}\x02host=${host}/data_dir/file1"])
 ```
 
 ## Test
