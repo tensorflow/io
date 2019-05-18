@@ -1,11 +1,8 @@
 /* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +29,7 @@ limitations under the License.
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/file_system.h"
 #include "tensorflow/core/platform/mutex.h"
+#include "tensorflow/core/platform/env.h"
 
 namespace tensorflow {
 
@@ -81,31 +79,53 @@ class OSSFileSystem : public FileSystem {
                            int64* undeleted_dirs) override;
 
  private:
-  Status _CreateDirInternal(aos_pool_t* pool, oss_request_options_t* options,
-                            const string& bucket, const string& dirname);
+  Status _CreateDirInternal(aos_pool_t* pool,
+                            const oss_request_options_t* options,
+                            const string& bucket,
+                            const string& dirname);
 
-  Status _StatInternal(aos_pool_t* pool, oss_request_options_t* options,
-                       const string& bucket, const string& object,
+  Status _StatInternal(aos_pool_t* pool,
+                       const oss_request_options_t* options,
+                       const string& bucket,
+                       const string& object,
                        FileStatistics* stat);
 
-  Status _DeleteObjectInternal(oss_request_options_t* options,
-                               const string& bucket, const string& object);
+  Status _DeleteObjectInternal(const oss_request_options_t* options,
+                               const string& bucket,
+                               const string& object);
 
   Status _RetrieveObjectMetadata(aos_pool_t* pool,
-                                 oss_request_options_t* options,
-                                 const string& bucket, const string& object,
+                                 const oss_request_options_t* options,
+                                 const string& bucket,
+                                 const string& object,
                                  FileStatistics* stat);
 
-  Status _ListObjects(aos_pool_t* pool, oss_request_options_t* options,
-                      const string& bucket, const string& key,
-                      std::vector<string>* result, bool return_all,
-                      bool return_full_path, bool should_remove_suffix = true,
+  aos_status_t* _RenameFileInternal(const oss_request_options_t* oss_options,
+                            aos_pool_t* pool,
+                            const aos_string_t& source_bucket,
+                            const aos_string_t& source_object,
+                            const aos_string_t& dest_bucket,
+                            const aos_string_t& dest_object);
+
+  Status _ListObjects(aos_pool_t* pool,
+                      const oss_request_options_t* options,
+                      const string& bucket,
+                      const string& key,
+                      std::vector<string>* result,
+                      bool return_all = true,
+                      bool return_full_path = false,
+                      bool should_remove_suffix = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
 
-  Status _ParseOSSURIPath(StringPiece fname, std::string* bucket,
-                          std::string* object);
+  Status _ParseOSSURIPath(
+      const StringPiece fname,
+      std::string& bucket,
+      std::string& object,
+      std::string& host,
+      std::string& access_id,
+      std::string& access_key);
 
   // The number of bytes to read ahead for buffering purposes
   //  in the RandomAccessFile implementation. Defaults to 5Mb.
@@ -119,10 +139,6 @@ class OSSFileSystem : public FileSystem {
   const int32 max_upload_attempts_ = 5;
 
   mutex mu_;
-  string host_;
-  string access_id_;
-  string access_key_;
-  std::atomic_bool init_;
 
   TF_DISALLOW_COPY_AND_ASSIGN(OSSFileSystem);
 };
