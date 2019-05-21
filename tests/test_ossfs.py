@@ -27,22 +27,28 @@ from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 bucket = None
 get_oss_path = None
 
-def _have_required_env():
-  return os.getenv("OSS_CREDENTIALS") and os.getenv("OSS_FS_TEST_BUCKET")
+access_id = None
+access_key = None
+host = None
 
-_msg = ("OSS tests skipped. To enable them, set OSS_CREDENTIALS env variable "
-        "to the path of your oss credential file and OSS_FS_TEST_BUCKET env "
-        "variable to your oss test bucket name.")
+_msg = ("OSS tests skipped. To enable them, set access_id, access_key, "
+        "host and bucket variable "
+        "to its real value")
+def _check_oss_variable():
+  return access_id is not None and access_key is not None \
+         and host is not None and bucket is not None
 
-@unittest.skipIf(not _have_required_env(), _msg)
+@unittest.skipIf(not _check_oss_variable(), _msg)
 class OSSFSTest(test.TestCase):
   """OSS Filesystem Tests"""
 
   @classmethod
   def setUpClass(cls):  # pylint: disable=invalid-name
-    global bucket, get_oss_path
-    bucket = os.getenv("OSS_FS_TEST_BUCKET")
-    get_oss_path = lambda p: os.path.join("oss://" + bucket, "oss_fs_test", p)
+    global get_oss_path
+    get_oss_path = \
+      lambda p: os.path.join("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                             %(bucket, access_id, access_key, host),
+                             "oss_fs_test", p)
     gfile.MkDir(get_oss_path(""))
 
   @classmethod
@@ -74,21 +80,27 @@ class OSSFSTest(test.TestCase):
   def test_dir_operations(self):
     """ Test directory operations"""
 
-    d = get_oss_path("d1/d2")
+    d = get_oss_path("d1/d2/d3/d4")
     gfile.MakeDirs(d)
     self.assertTrue(gfile.Stat(d).is_directory)
 
     # Test listing bucket directory with and without trailing '/'
-    content = gfile.ListDirectory("oss://" + bucket)
-    content_s = gfile.ListDirectory("oss://" + bucket + "/")
+    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                  %(bucket, access_id, access_key, host))
+    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s/"
+                                    %(bucket, access_id, access_key, host))
     self.assertEqual(content, content_s)
     self.assertIn("oss_fs_test", content)
     self.assertIn("oss_fs_test/d1", content)
     self.assertIn("oss_fs_test/d1/d2", content)
 
     # Test listing test directory with and without trailing '/'
-    content = gfile.ListDirectory("oss://" + bucket + "/oss_fs_test")
-    content_s = gfile.ListDirectory("oss://" + bucket + "/oss_fs_test/")
+    content = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                  %(bucket, access_id, access_key, host)
+                                  + "/oss_fs_test")
+    content_s = gfile.ListDirectory("oss://%s\x01id=%s\x02key=%s\x02host=%s"
+                                    %(bucket, access_id, access_key, host)
+                                    + "/oss_fs_test/")
     self.assertEqual(content, content_s)
     self.assertIn("d1", content)
     self.assertIn("d1/d2", content)
@@ -99,11 +111,21 @@ class OSSFSTest(test.TestCase):
     self.assertEqual(content, content_s)
     self.assertIn("d2", content)
 
-    content = gfile.ListDirectory(get_oss_path("d1/d2"))
-    content_s = gfile.ListDirectory(get_oss_path("d1/d2/"))
+    content = gfile.ListDirectory(get_oss_path("d1/d2/d3/d4"))
+    content_s = gfile.ListDirectory(get_oss_path("d1/d2/d3/d4"))
     self.assertEqual(content, content_s)
     self.assertEqual([], content)
 
+    # Test Rename directories
+    self.assertTrue(gfile.Exists(get_oss_path("d1")))
+    gfile.Rename(get_oss_path("d1"), get_oss_path("rename_d1"), overwrite=True)
+    self.assertTrue(gfile.Exists(get_oss_path("rename_d1")))
+    self.assertFalse(gfile.Exists(get_oss_path("d1")))
+
+    content = gfile.ListDirectory(get_oss_path("rename_d1"))
+    content_s = gfile.ListDirectory(get_oss_path("rename_d1/"))
+    self.assertEqual(content, content_s)
+    self.assertIn("d2", content)
 
 if __name__ == "__main__":
   test.main()
