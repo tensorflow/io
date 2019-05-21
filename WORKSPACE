@@ -344,16 +344,6 @@ http_archive(
 )
 
 http_archive(
-    name = "minini",
-    build_file = "//third_party:minini.BUILD",
-    sha256 = "a97dd5ac6811af95c8f2aeaa6894b3113377e78ffd585363c6848745760d0152",
-    strip_prefix = "minIni-1.0",
-    urls = [
-        "https://github.com/ElasticDL/minIni/archive/v1.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "aliyun_oss_c_sdk",
     build_file = "//third_party:oss_c_sdk.BUILD",
     sha256 = "6450d3970578c794b23e9e1645440c6f42f63be3f82383097660db5cf2fba685",
