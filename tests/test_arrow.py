@@ -41,8 +41,8 @@ if sys.version_info == (3, 4):
   pytest.skip(
       "pyarrow is not supported with python 3.4", allow_module_level=True)
 
-import pyarrow as pa  # pylint: disable=wrong-import-position
-from pyarrow.feather import write_feather # pylint: disable=wrong-import-position
+import pyarrow as pa  # pylint: disable=wrong-import-order,wrong-import-position
+from pyarrow.feather import write_feather # pylint: disable=wrong-import-order,wrong-import-position
 
 
 TruthData = namedtuple("TruthData", ["data", "output_types", "output_shapes"])
@@ -101,7 +101,7 @@ class ArrowDatasetTest(test.TestCase):
     cls.list_shapes = tuple(
         [tensorflow.TensorShape([None]) for _ in cls.list_dtypes])
 
-  def run_test_case(self, dataset, truth_data):
+  def run_test_case(self, dataset, truth_data, batch_size=None):
     """run_test_case"""
     iterator = data.make_one_shot_iterator(dataset)
     next_element = iterator.get_next()
@@ -109,9 +109,19 @@ class ArrowDatasetTest(test.TestCase):
     def is_float(dtype):
       return dtype in [dtypes.float16, dtypes.float32, dtypes.float64]
 
+    batch_counter = batch_size
+
     with self.test_session() as sess:
       for row in range(len(truth_data.data[0])):
-        value = sess.run(next_element)
+        if batch_size is None:
+          value = sess.run(next_element)
+        else:
+          if batch_counter == batch_size:
+            value_batch = sess.run(next_element)
+            print(value_batch)
+            batch_counter = 0
+          value = [v[batch_counter] for v in value_batch]
+          batch_counter += 1
         for i, col in enumerate(dataset.columns):
           if truth_data.output_shapes[col].ndims == 0:
             if is_float(truth_data.output_types[col]):
@@ -349,8 +359,7 @@ class ArrowDatasetTest(test.TestCase):
       self.run_test_case(dataset, truth_data)
 
   def test_map_and_batch(self):
-    """
-    Test that using map then batch produces correct output. This will create
+    """Test that using map then batch produces correct output. This will create
     a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
     """
     truth_data = TruthData(
@@ -412,6 +421,223 @@ class ArrowDatasetTest(test.TestCase):
         value = sess.run(next_element)
         self.assertEqual(value[0], truth_data.data[0][row])
         self.assertAlmostEqual(value[1], truth_data.data[1][row], 4)
+
+  def test_batch_no_remainder(self):
+    """Test batch_size that does not leave a remainder
+    """
+    batch_size = len(self.scalar_data[0])
+    num_batches = 2
+
+    truth_data = TruthData(
+        [d * num_batches for d in self.scalar_data],
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    dataset = arrow_io.ArrowDataset.from_pandas(
+        df, preserve_index=False, batch_size=batch_size)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_remainder(self):
+    """Test batch_size that does leave a remainder
+    """
+    batch_size = len(self.scalar_data[0]) - 1
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    dataset = arrow_io.ArrowDataset.from_pandas(
+        df, preserve_index=False, batch_size=batch_size)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_drop_remainder(self):
+    """Test batch_size that drops remainder data
+    """
+    batch_size = len(self.scalar_data[0]) - 1
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    truth_data_drop_last = TruthData(
+        [d[:-1] for d in truth_data.data],
+        truth_data.output_types,
+        truth_data.output_shapes)
+
+    dataset = arrow_io.ArrowDataset.from_pandas(
+        df,
+        preserve_index=False,
+        batch_size=batch_size,
+        batch_mode='drop_remainder')
+    self.run_test_case(dataset, truth_data_drop_last, batch_size=batch_size)
+
+  def test_batch_mode_auto(self):
+    """Test auto batch_mode to size to record batch number of rows
+    """
+    num_batches = 2
+
+    single_batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(single_batch_data)
+    batches = [batch] * num_batches
+
+    truth_data = TruthData(
+        [d * num_batches for d in single_batch_data.data],
+        single_batch_data.output_types,
+        single_batch_data.output_shapes)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        batches,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_mode='auto')
+
+    self.run_test_case(dataset, truth_data, batch_size=batch.num_rows)
+
+  def test_batch_with_partials(self):
+    """Test batch_size that divides an Arrow record batch into partial batches
+    """
+    num_batches = 3
+    batch_size = int(len(self.scalar_data[0]) * 1.5)
+
+    single_batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(single_batch_data)
+    batches = [batch] * num_batches
+
+    truth_data = TruthData(
+        [d * num_batches for d in single_batch_data.data],
+        single_batch_data.output_types,
+        single_batch_data.output_shapes)
+
+    # Batches should divide input without remainder
+    self.assertEqual(len(truth_data.data[0]) % batch_size, 0)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        batches,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_size=batch_size)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_with_partials_and_remainder(self):
+    """ Test batch_size that divides an Arrow record batch into partial batches
+    and leaves remainder data
+    """
+    num_batches = 3
+    batch_size = len(self.scalar_data[0]) + 1
+
+    truth_data = TruthData(
+        [d * num_batches for d in self.scalar_data],
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+
+    # Batches should divide input and leave a remainder
+    self.assertNotEqual(len(truth_data.data[0]) % batch_size, 0)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        [batch] * num_batches,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_size=batch_size)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_spans_mulitple_partials(self):
+    """Test large batch_size that spans mulitple Arrow record batches
+    """
+    num_batches = 6
+    batch_size = int(len(self.scalar_data[0]) * 3)
+
+    single_batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(single_batch_data)
+    batches = [batch] * num_batches
+
+    truth_data = TruthData(
+        [d * num_batches for d in single_batch_data.data],
+        single_batch_data.output_types,
+        single_batch_data.output_shapes)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        batches,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_size=batch_size)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_fixed_lists(self):
+    """Test batching with fixed length list types
+    """
+    batch_size = int(len(self.list_data[0]) / 2)
+
+    fixed_width_list_idx = [0, 2, 3, 5]
+
+    truth_data = TruthData(
+        [self.list_data[i] for i in fixed_width_list_idx],
+        tuple([self.list_dtypes[i] for i in fixed_width_list_idx]),
+        tuple([self.list_shapes[i] for i in fixed_width_list_idx]))
+
+    batch = self.make_record_batch(truth_data)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        [batch],
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_size=batch_size)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_batch_variable_length_list(self):
+    """Test batching with variable length lists raises error
+    """
+    batch_size = len(self.list_data[1])
+
+    truth_data = TruthData(
+        [self.list_data[1]],
+        (self.list_dtypes[1],),
+        (self.list_shapes[1],))
+
+    batch = self.make_record_batch(truth_data)
+
+    dataset = arrow_io.ArrowDataset.from_record_batches(
+        [batch],
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes,
+        batch_size=batch_size)
+
+    with self.assertRaisesRegexp(errors.OpError, 'variable.*unsupported'):
+      self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
 
 if __name__ == "__main__":
