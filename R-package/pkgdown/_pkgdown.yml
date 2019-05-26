@@ -1,0 +1,49 @@
+template:
+  params:
+    bootswatch: flatly
+
+navbar:
+  title: "tfio"
+  type: inverse
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Tutorials"
+      menu:
+        - text: "TensorFlow IO Basics"
+          href: articles/introduction.html
+    - text: "Reference"
+      href: reference/index.html
+  right:
+   - icon: fa-github
+     href: https://github.com/tensorflow/io
+
+reference:
+
+  - title: "Dataset Builders"
+    contents:
+      - ignite_dataset
+      - kafka_dataset
+      - kinesis_dataset
+      - lmdb_dataset
+      - mnist_image_dataset
+      - mnist_label_dataset
+      - parquet_dataset
+      - pubsub_dataset
+      - sequence_file_dataset
+      - tiff_dataset
+      - video_dataset
+      - webp_dataset
+      - arrow_feather_dataset
+      - arrow_stream_dataset
+
+  - title: "Utility Methods"
+    contents:
+      - from_schema
+      - from_schema.arrow_feather_dataset
+      - from_schema.arrow_stream_dataset
+      - make_libsvm_dataset
+
+  - title: "Re-exported Methods"
+    contents:
+      - reexports
