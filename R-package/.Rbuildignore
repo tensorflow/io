@@ -3,3 +3,6 @@
 ^man-roxygen/
 scripts
 ^cran-comments\.md$
+^docs/
+^index.*$
+^pkgdown$

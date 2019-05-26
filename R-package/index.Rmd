@@ -1,0 +1,28 @@
+---
+title: "R interface to TensorFlow IO"
+output: html_document
+type: docs
+repo: https://github.com/tensorflow/io
+menu:
+  main:
+    name: "Overview"
+    identifier: "tfio-overview"
+    parent: "tfio-using-tfio"
+    weight: 10
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE, echo = TRUE)
+```
+
+## Overview
+
+This is the R interface to datasets and filesystem extensions maintained by SIG-IO. Some example data sources that TensorFlow I/O supports are:
+
+* Data source for Apache Ignite and Ignite File System (IGFS).
+* Apache Kafka stream-processing.
+* Amazon Kinesis data streams.
+* Hadoop SequenceFile format.
+* Video file format such as mp4.
+* Apache Parquet format.
+* Image file format such as WebP.
