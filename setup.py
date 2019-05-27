@@ -94,8 +94,8 @@ setup(
 )
 """
 
-# Note: Change to tensorflow == 1.13.0 once 1.13.0 is released
-package = 'tensorflow>=1.13.0,<1.14.0'
+# Note: Change to tensorflow == 1.14.0 once 1.14.0 is released
+package = 'tensorflow==1.14.0rc0'
 version = '0.6.0'
 project = 'tensorflow-io'
 if '--package-version' in sys.argv:
