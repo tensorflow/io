@@ -5,7 +5,9 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = "python/ops/_image_ops.so",
     srcs = [
+        "kernels/font_opensans_regular.h",
         "kernels/gif_dataset_ops.cc",
+        "kernels/image_kernels.cc",
         "kernels/tiff_dataset_ops.cc",
         "kernels/webp_dataset_ops.cc",
         "ops/dataset_ops.cc",
@@ -15,8 +17,12 @@ cc_binary(
         "-std=c++11",
         "-DNDEBUG",
     ],
+    includes = [
+        ".",
+    ],
     linkshared = 1,
     deps = [
+        "@freetype",
         "@giflib",
         "@libtiff",
         "@libwebp",

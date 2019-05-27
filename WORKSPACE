@@ -408,3 +408,14 @@ http_archive(
         "https://github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
     ],
 )
+
+http_archive(
+    name = "freetype",
+    build_file = "//third_party:freetype.BUILD",
+    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
+    strip_prefix = "freetype-2.10.0",
+    urls = [
+        "https://mirror.bazel.build/download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
+    ],
+)

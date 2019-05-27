@@ -125,3 +125,24 @@ def decode_webp(contents, name=None):
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
   return image_ops.decode_web_p(contents, name=name)
+
+def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
+  """
+  Draw bounding boxes on a batch of images.
+
+  Args:
+    images: A Tensor. Must be one of the following types: float32, half.
+      4-D with shape [batch, height, width, depth]. A batch of images.
+    boxes: A Tensor of type float32. 3-D with shape
+      [batch, num_bounding_boxes, 4] containing bounding boxes.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  if texts is None:
+    texts = []
+  if colors is None:
+    colors = [[]]
+  return image_ops.draw_bounding_boxes_v3(
+      images, boxes, colors, texts, name=name)
