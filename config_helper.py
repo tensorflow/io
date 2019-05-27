@@ -75,6 +75,13 @@ def write_config():
 
       bazel_rc.write('build --action_env TF_SHARED_LIBRARY_DIR="{}"\n'
                      .format(libdir_list[0][2:]))
+      library_name = library_list[0][2:]
+      if library_name.startswith(":"):
+        library_name = library_name[1:]
+      else:
+        library_name = "lib" + library_name + ".so"
+      bazel_rc.write('build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'
+                     .format(library_name))
       bazel_rc.close()
   except OSError:
     print("ERROR: Writing .bazelrc")
