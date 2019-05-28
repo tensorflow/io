@@ -213,7 +213,6 @@ class GIFDatasetOp : public DatasetOpKernel {
 
 	index_ = 0;
 
-	std::cerr << "OPENED: " << f->ImageCount << " : " << height_ << "x" << width_ << std::endl;
 	return Status::OK();
       }
 
