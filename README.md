@@ -98,6 +98,7 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.6.0 | 1.13.x | May 29, 2019 |
 | 0.5.0 | 1.13.x | Apr 12, 2019 |
 | 0.4.0 | 1.13.x | Mar 01, 2019 |
 | 0.3.0 | 1.12.0 | Feb 15, 2019 |
