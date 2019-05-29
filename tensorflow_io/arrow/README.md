@@ -109,3 +109,23 @@ with tf.Session() as sess:
 
 An alternate constructor can also be used to infer output types and shapes from
 a given `pyarrow.Schema`, e.g. `dataset = ArrowStreamDataset.from_schema(host, schema)`
+
+## Creating Batches with Arrow Datasets
+
+Arrow Datasets have optional parameters to specify a `batch_size` and
+`batch_mode`. Supported `batch_modes` are: 'keep_remainder', 'drop_remainder'
+and 'auto'. If the last elements of the Dataset do not combine to the set
+`batch_size`, then 'keep_remainder' will return a partial batch, while
+'drop_remainder' will discard the partial batch. Setting `batch_mode` to 'auto'
+will automatically set a batch size to the number of records in the incoming
+Arrow record batches. This a good option to use if the incoming Arrow record
+batch size can be controlled to ensure the output batch size is not too large
+and sequential Arrow record batches are sized equally.
+
+Setting the `batch_size` or using `batch_mode` of 'auto' can be more efficient
+than using `tf.data.Dataset.batch()` on an Arrow Dataset. This is because the
+output tensor can be sized to the desired batch size on creation, and then data
+is transferred directly from Arrow memory. Otherwise, if batching elements with
+the output of an Arrow Dataset, e.g. `ArrowDataset(...).batch(batch_size=4)`,
+then the tensor data will need to be aggregated and copied to get the final
+batched outputs.
