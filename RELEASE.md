@@ -1,3 +1,21 @@
+# Release 0.6.0
+
+## Major Features
+* `tensorflow_io.avro`: Apache Avro Dataset.
+* `tensorflow_io.audio`: WAV file Dataset.
+* `tensorflow_io.grpc`: gRPC server Dataset, support for streaming Numpy input.
+* `tensorflow_io.hdf5`: HDF5 file Dataset.
+* `tensorflow_io.text`: Text file Dataset and TextSequence output.
+* Improved batching support for many Datasets, see [#191](https://github.com/tensorflow/io/issues/191).
+
+This release contains contributions from many people:
+
+Yong Tang, Yuan (Terry) Tang, Bryan Cutler, Jiacheng Xu, Junqin Zhang,
+August Xiong, caszkgui, zou000
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.5.0
 
 ## Major Features
