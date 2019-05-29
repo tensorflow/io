@@ -88,6 +88,8 @@ class ArrowBaseDataset(data.Dataset):
   and corresponding output tensor types, shapes and classes.
   """
 
+  batch_modes_supported = ('keep_remainder', 'drop_remainder', 'auto')
+
   def __init__(self,
                columns,
                output_types,
@@ -104,6 +106,10 @@ class ArrowBaseDataset(data.Dataset):
         batch_size or 0,
         dtype=dtypes.int64,
         name="batch_size")
+    if batch_mode not in self.batch_modes_supported:
+      raise ValueError(
+          "Unsupported batch_mode: '{}', must be one of {}"
+          .format(batch_mode, self.batch_modes_supported))
     self._batch_mode = tensorflow.convert_to_tensor(
         batch_mode,
         dtypes.string,
@@ -147,7 +153,10 @@ class ArrowDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched Tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -187,7 +196,10 @@ class ArrowDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -230,7 +242,10 @@ class ArrowDataset(ArrowBaseDataset):
       df: a Pandas DataFrame
       columns: Optional column indices to use, if None all are used
       preserve_index: Flag to include the DataFrame index as the last column
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -274,7 +289,10 @@ class ArrowFeatherDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -316,7 +334,10 @@ class ArrowFeatherDataset(ArrowBaseDataset):
                  in Arrow Feather format
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -355,7 +376,10 @@ class ArrowStreamDataset(ArrowBaseDataset):
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
@@ -397,7 +421,10 @@ class ArrowStreamDataset(ArrowBaseDataset):
             For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
-      batch_size: Batch size of output tensors
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
       batch_mode: Mode of batching, supported strings:
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
