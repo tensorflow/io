@@ -88,6 +88,8 @@ class ArrowBaseDataset(data.Dataset):
   and corresponding output tensor types, shapes and classes.
   """
 
+  batch_modes_supported = ('keep_remainder', 'drop_remainder', 'auto')
+
   def __init__(self,
                columns,
                output_types,
@@ -104,6 +106,10 @@ class ArrowBaseDataset(data.Dataset):
         batch_size or 0,
         dtype=dtypes.int64,
         name="batch_size")
+    if batch_mode not in self.batch_modes_supported:
+      raise ValueError(
+          "Unsupported batch_mode: '{}', must be one of {}"
+          .format(batch_mode, self.batch_modes_supported))
     self._batch_mode = tensorflow.convert_to_tensor(
         batch_mode,
         dtypes.string,

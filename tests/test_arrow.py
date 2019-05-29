@@ -639,6 +639,22 @@ class ArrowDatasetTest(test.TestCase):
     with self.assertRaisesRegexp(errors.OpError, 'variable.*unsupported'):
       self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
+  def test_unsupported_batch_mode(self):
+    """Test using an unsupported batch mode
+    """
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    with self.assertRaisesRegexp(ValueError, 'Unsupported batch_mode.*doh'):
+      arrow_io.ArrowDataset.from_record_batches(
+          [self.make_record_batch(truth_data)],
+          list(range(len(truth_data.output_types))),
+          truth_data.output_types,
+          truth_data.output_shapes,
+          batch_mode='doh')
+
 
 if __name__ == "__main__":
   test.main()
