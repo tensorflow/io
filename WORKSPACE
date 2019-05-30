@@ -110,6 +110,7 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
         "https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
+        "https://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz",
     ],
 )
 
