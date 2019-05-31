@@ -54,10 +54,11 @@ import tensorflow_io.mnist as mnist_io
 # Read MNIST into tf.data.Dataset
 d_train = mnist_io.MNISTDataset(
     'train-images-idx3-ubyte.gz',
-    'train-labels-idx1-ubyte.gz')
+    'train-labels-idx1-ubyte.gz',
+    batch=1)
 
 # By default image data is uint8 so conver to float32.
-d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
+d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
