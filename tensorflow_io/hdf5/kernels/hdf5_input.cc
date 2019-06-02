@@ -98,13 +98,24 @@ public:
         shape_dims[0] = record_to_read;
         TensorShape shape(shape_dims);
 
-        if (dataset_[i].getTypeClass() == H5T_INTEGER) {
+
+        H5::DataType data_type = dataset_[i].getDataType();
+        hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
+        if (H5Tequal(native_type, H5T_NATIVE_INT)) {
           Tensor tensor(ctx->allocator({}), DT_INT32, shape);
           dataset_[i].read(tensor.flat<int32>().data(), H5::PredType::NATIVE_INT, memoryspace, dataspace_[i]);
           out_tensors->emplace_back(std::move(tensor));
-        } else if (dataset_[i].getTypeClass() == H5T_FLOAT) {
+        } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
+          Tensor tensor(ctx->allocator({}), DT_INT64, shape);
+          dataset_[i].read(tensor.flat<int64>().data(), H5::PredType::NATIVE_LONG, memoryspace, dataspace_[i]);
+          out_tensors->emplace_back(std::move(tensor));
+        } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
           Tensor tensor(ctx->allocator({}), DT_FLOAT, shape);
           dataset_[i].read(tensor.flat<float>().data(), H5::PredType::NATIVE_FLOAT, memoryspace, dataspace_[i]);
+          out_tensors->emplace_back(std::move(tensor));
+        } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
+          Tensor tensor(ctx->allocator({}), DT_DOUBLE, shape);
+          dataset_[i].read(tensor.flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memoryspace, dataspace_[i]);
           out_tensors->emplace_back(std::move(tensor));
         } else {
           return errors::Unimplemented("data type not supported yet: ", dataset_[i].getTypeClass());
