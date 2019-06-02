@@ -86,7 +86,7 @@ class HDF5DatasetTest(test.TestCase):
         "test_hdf5", "tdset.h5")
     filename = "file://" + filename
     columns = ['/dset2']
-    output_types = [dtypes.float32]
+    output_types = [dtypes.float64]
     output_shapes = [(1, 20)]
 
     dataset = hdf5_io.HDF5Dataset(
@@ -99,9 +99,32 @@ class HDF5DatasetTest(test.TestCase):
       for i in range(30):
         v0 = list(
             [np.asarray([[i + 1e-04 * v for v in range(20)]],
-                        dtype=np.float32)])
+                        dtype=np.float64)])
         vv = sess.run(get_next)
         self.assertAllEqual(v0, vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+  def test_hdf5_dataset_binary(self):
+    """Test case for HDF5Dataset."""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_hdf5", "tbinary.h5")
+    filename = "file://" + filename
+    columns = ['integer', 'float', 'double']
+    output_types = [dtypes.int32, dtypes.float32, dtypes.float64]
+    output_shapes = [(1), (1), (1)]
+
+    dataset = hdf5_io.HDF5Dataset(
+        [filename], columns, output_types, output_shapes)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for i in range(1, 7):
+        vv = sess.run(get_next)
+        self.assertAllEqual((i, np.float32(i), np.float64(i)), vv)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
