@@ -68,19 +68,19 @@ jobs:
   - stage: build
     name: "Install Build on Ubuntu 18.04 with Python 2.7 for 2.0 Preview"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${TRAVIS_BUILD_NUMBER} python
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tf-nightly-2.0-preview" --preview ${TRAVIS_BUILD_NUMBER} python
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
   - stage: build
     name: "Install Build on Ubuntu 18.04 with Python 3.6 for 2.0 Preview"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${TRAVIS_BUILD_NUMBER} python3.6
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tf-nightly-2.0-preview" --preview ${TRAVIS_BUILD_NUMBER} python3.6
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
   # Preview Release Builds are for TensorFlow 2.0 Preview release.
   # Note only Linux (Ubuntu 18.04) and macOS are supported.
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
     - echo "Skip test for now, will fix later"
     after_success:
     - |
@@ -90,7 +90,7 @@ jobs:
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success:
     - |
@@ -102,7 +102,7 @@ jobs:
     os: osx
     osx_image: xcode9
     script:
-    - sudo -H bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python
+    - sudo -H bash -x -e .travis/python.release.sh tf-nightly-2.0-preview --preview ${TRAVIS_BUILD_NUMBER} python
     - sudo -H bash -x -e .travis/wheel.test.sh
     after_success:
     - |
