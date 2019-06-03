@@ -172,5 +172,42 @@ class ImageDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_draw_bounding_box(self):
+    """Test case for draw_bounding_box."""
+    width = 560
+    height = 320
+    channels = 4
+
+    with open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "test_image",
+                     "small-00.png"), 'rb') as f:
+      png_contents = f.read()
+    with open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "test_image",
+                     "small-bb.png"), 'rb') as f:
+      ex_png_contents = f.read()
+    with self.cached_session():
+      ex_image_p = image.decode_png(ex_png_contents, channels=channels)
+      ex_image_p = tensorflow.expand_dims(ex_image_p, 0)
+      # TODO: Travis seems to have issues with different rendering. Skip for now.
+      # ex_image_v = ex_image_p.eval()
+      _ = ex_image_p.eval()
+
+    bb = [[[0.1, 0.2, 0.5, 0.9]]]
+    with self.cached_session():
+      image_p = image.decode_png(png_contents, channels=channels)
+      image_v = image_p.eval()
+      self.assertEqual(image_v.shape, (height, width, channels))
+      image_p = image.convert_image_dtype(image_p, tensorflow.float32)
+      image_p = tensorflow.expand_dims(image_p, 0)
+      bb_image_p = image_io.draw_bounding_boxes(image_p, bb, ["hello world!"])
+      bb_image_p = image.convert_image_dtype(bb_image_p, tensorflow.uint8)
+      # TODO: Travis seems to have issues with different rendering. Skip for now.
+      # bb_image_v = bb_image_p.eval()
+      # self.assertAllEqual(bb_image_v, ex_image_v)
+      _ = bb_image_p.eval()
+
 if __name__ == "__main__":
   test.main()
