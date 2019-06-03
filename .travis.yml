@@ -22,7 +22,6 @@ install:
 
 stages:
 - lint
-- build
 - release
 
 jobs:
@@ -32,49 +31,6 @@ jobs:
     script:
     - bash -x -e .travis/lint.bazel.sh
     - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
-  # Install Builds make sure the release of the repo could be
-  # install and run on commodity user environment (Ubuntu 16.04/18.04).
-  # Note the release of the repo build on Ubuntu 14.04.
-  - stage: build
-    name: "Install Build on Ubuntu 16.04 with Python 2.7"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python
-  - stage: build
-    name: "Install Build on Ubuntu 16.04 with Python 3.5"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python3.5
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python3.5
-  - stage: build
-    name: "Install Build on Ubuntu 18.04 with Python 2.7"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
-  - stage: build
-    name: "Install Build on Ubuntu 18.04 with Python 3.6"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python3.6
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
-  - stage: build
-    name: "Install Build on Ubuntu 16.04 with R"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python python3.5
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:16.04 bash -x -e .travis/wheel.r.test.sh
-  - stage: build
-    name: "Install Build on Ubuntu 18.04 with R"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python python3.6
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.r.test.sh
-  - stage: build
-    name: "Install Build on Ubuntu 18.04 with Python 2.7 for 2.0 Preview"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${TRAVIS_BUILD_NUMBER} python
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
-  - stage: build
-    name: "Install Build on Ubuntu 18.04 with Python 3.6 for 2.0 Preview"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${TRAVIS_BUILD_NUMBER} python3.6
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host -e GITHUB_PAT=9eecea9200150af1ec29f70bb067575eb2e56fc7 buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
   # Preview Release Builds are for TensorFlow 2.0 Preview release.
   # Note only Linux (Ubuntu 18.04) and macOS are supported.
   - stage: release
