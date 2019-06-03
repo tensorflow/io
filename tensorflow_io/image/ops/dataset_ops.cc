@@ -58,4 +58,16 @@ REGISTER_OP("DecodeWebP")
       return Status::OK();
     });
 
+REGISTER_OP("DrawBoundingBoxesV3")
+    .Input("images: T")
+    .Input("boxes: float")
+    .Input("colors: float")
+    .Input("texts: string")
+    .Attr("font_size: int = 0")
+    .Output("output: T")
+    .Attr("T: {float, half} = DT_FLOAT")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      return shape_inference::UnchangedShapeWithRankAtLeast(c, 3);
+    });
+
 }  // namespace tensorflow
