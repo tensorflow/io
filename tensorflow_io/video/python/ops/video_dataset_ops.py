@@ -20,7 +20,7 @@ from __future__ import print_function
 import ctypes
 import _ctypes
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
@@ -94,7 +94,7 @@ class VideoDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     super(VideoDataset, self).__init__()
 
@@ -106,11 +106,11 @@ class VideoDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([None, None, 3])
+    return tf.TensorShape([None, None, 3])
 
   @property
   def output_types(self):

@@ -20,8 +20,8 @@ from __future__ import print_function
 
 import os
 import pytest
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import errors # pylint: disable=wrong-import-position
 import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
@@ -45,7 +45,7 @@ def test_text_input():
   iterator = dataset.make_initializable_iterator()
   init_op = iterator.initializer
   get_next = iterator.get_next()
-  with tensorflow.compat.v1.Session() as sess:
+  with tf.compat.v1.Session() as sess:
     sess.run(init_op)
     for i in range(0, len(lines) - 2, 2):
       v = sess.run(get_next)

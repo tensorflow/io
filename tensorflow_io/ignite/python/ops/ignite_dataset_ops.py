@@ -24,7 +24,7 @@ import struct
 
 import six
 
-import tensorflow
+import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -248,7 +248,7 @@ class TypeTreeNode(object): # pylint: disable=useless-object-inheritance
   def to_output_classes(self):
     """Formats the tree object as required by `Dataset.output_classes`."""
     if self.fields is None:
-      return tensorflow.Tensor
+      return tf.Tensor
     output_classes = {}
     for field in self.fields:
       output_classes[field.name] = field.to_output_classes()
@@ -261,8 +261,8 @@ class TypeTreeNode(object): # pylint: disable=useless-object-inheritance
         object_type = types[self.type_id]
         is_array = object_type[1]
         if is_array:
-          return tensorflow.TensorShape([None])
-        return tensorflow.TensorShape([])
+          return tf.TensorShape([None])
+        return tf.TensorShape([])
       raise ValueError("Unsupported type [type_id=%d]" % self.type_id)
     output_shapes = {}
     for field in self.fields:
@@ -748,21 +748,21 @@ class IgniteDataset(data.Dataset):
       client.handshake()
       self.cache_type = client.get_cache_type(cache_name)
 
-    self.cache_name = tensorflow.convert_to_tensor(
+    self.cache_name = tf.convert_to_tensor(
         cache_name, dtype=dtypes.string, name="cache_name")
-    self.host = tensorflow.convert_to_tensor(
+    self.host = tf.convert_to_tensor(
         host, dtype=dtypes.string, name="host")
-    self.port = tensorflow.convert_to_tensor(
+    self.port = tf.convert_to_tensor(
         port, dtype=dtypes.int32, name="port")
-    self.local = tensorflow.convert_to_tensor(
+    self.local = tf.convert_to_tensor(
         local, dtype=dtypes.bool, name="local")
-    self.part = tensorflow.convert_to_tensor(
+    self.part = tf.convert_to_tensor(
         part, dtype=dtypes.int32, name="part")
-    self.page_size = tensorflow.convert_to_tensor(
+    self.page_size = tf.convert_to_tensor(
         page_size, dtype=dtypes.int32, name="page_size")
-    self.schema = tensorflow.convert_to_tensor(
+    self.schema = tf.convert_to_tensor(
         self.cache_type.to_flat(), dtype=dtypes.int32, name="schema")
-    self.permutation = tensorflow.convert_to_tensor(
+    self.permutation = tf.convert_to_tensor(
         self.cache_type.to_permutation(),
         dtype=dtypes.int32,
         name="permutation")

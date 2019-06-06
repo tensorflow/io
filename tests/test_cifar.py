@@ -21,8 +21,8 @@ import os
 import tempfile
 from six.moves.urllib.request import urlopen
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import errors         # pylint: disable=wrong-import-position
 from tensorflow import test           # pylint: disable=wrong-import-position
@@ -42,7 +42,7 @@ class CIFARDatasetTest(test.TestCase):
     os.write(f, filedata.read())
     os.close(f)
     (x_train, y_train), (
-        x_test, y_test) = tensorflow.keras.datasets.cifar10.load_data()
+        x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
     num_repeats = 2
 
@@ -97,7 +97,7 @@ class CIFARDatasetTest(test.TestCase):
     os.write(f, filedata.read())
     os.close(f)
     (x_train, y_train), (
-        x_test, y_test) = tensorflow.keras.datasets.cifar100.load_data(
+        x_test, y_test) = tf.keras.datasets.cifar100.load_data(
             label_mode='coarse')
 
     num_repeats = 2

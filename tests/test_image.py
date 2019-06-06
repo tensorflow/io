@@ -20,8 +20,8 @@ from __future__ import print_function
 
 import os
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import errors # pylint: disable=wrong-import-position
 from tensorflow import image  # pylint: disable=wrong-import-position
@@ -190,7 +190,7 @@ class ImageDatasetTest(test.TestCase):
       ex_png_contents = f.read()
     with self.cached_session():
       ex_image_p = image.decode_png(ex_png_contents, channels=channels)
-      ex_image_p = tensorflow.expand_dims(ex_image_p, 0)
+      ex_image_p = tf.expand_dims(ex_image_p, 0)
       # TODO: Travis seems to have issues with different rendering. Skip for now.
       # ex_image_v = ex_image_p.eval()
       _ = ex_image_p.eval()
@@ -200,10 +200,10 @@ class ImageDatasetTest(test.TestCase):
       image_p = image.decode_png(png_contents, channels=channels)
       image_v = image_p.eval()
       self.assertEqual(image_v.shape, (height, width, channels))
-      image_p = image.convert_image_dtype(image_p, tensorflow.float32)
-      image_p = tensorflow.expand_dims(image_p, 0)
+      image_p = image.convert_image_dtype(image_p, tf.float32)
+      image_p = tf.expand_dims(image_p, 0)
       bb_image_p = image_io.draw_bounding_boxes(image_p, bb, ["hello world!"])
-      bb_image_p = image.convert_image_dtype(bb_image_p, tensorflow.uint8)
+      bb_image_p = image.convert_image_dtype(bb_image_p, tf.uint8)
       # TODO: Travis seems to have issues with different rendering. Skip for now.
       # bb_image_v = bb_image_p.eval()
       # self.assertAllEqual(bb_image_v, ex_image_v)

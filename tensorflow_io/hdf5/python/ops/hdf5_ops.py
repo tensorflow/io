@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops as hdf5_ops
 
@@ -54,7 +54,7 @@ class HDF5Dataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tuple([tensorflow.Tensor for _ in self._columns])
+    return tuple([tf.Tensor for _ in self._columns])
 
   @property
   def output_shapes(self):

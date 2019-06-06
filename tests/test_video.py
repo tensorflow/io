@@ -21,8 +21,8 @@ import os
 import sys
 import pytest
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import errors # pylint: disable=wrong-import-position
 from tensorflow import image  # pylint: disable=wrong-import-position
@@ -38,8 +38,8 @@ video_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 
 @pytest.mark.skipif(
-    not (hasattr(tensorflow, "version") and
-         tensorflow.version.VERSION.startswith("2.0.")), reason=None)
+    not (hasattr(tf, "version") and
+         tf.version.VERSION.startswith("2.0.")), reason=None)
 def test_video_predict():
   model = ResNet50(weights='imagenet')
   x = video_io.VideoDataset(video_path).batch(1).map(lambda x: preprocess_input(image.resize(x, (224, 224))))
@@ -56,7 +56,7 @@ def test_video_dataset():
   init_op = iterator.initializer
   get_next = iterator.get_next()
 
-  with tensorflow.compat.v1.Session() as sess:
+  with tf.compat.v1.Session() as sess:
     sess.run(init_op)
     for _ in range(num_repeats):
       for _ in range(166):

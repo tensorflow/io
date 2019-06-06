@@ -27,8 +27,8 @@ import tempfile
 import threading
 import pytest
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes # pylint: disable=wrong-import-position
 from tensorflow import errors # pylint: disable=wrong-import-position
@@ -80,7 +80,7 @@ class ArrowDatasetTest(test.TestCase):
         dtypes.float64
     )
     cls.scalar_shapes = tuple(
-        [tensorflow.TensorShape([]) for _ in cls.scalar_dtypes])
+        [tf.TensorShape([]) for _ in cls.scalar_dtypes])
 
     cls.list_data = [
         [[1, 1], [2, 2], [3, 3], [4, 4]],
@@ -99,7 +99,7 @@ class ArrowDatasetTest(test.TestCase):
         dtypes.float64
     )
     cls.list_shapes = tuple(
-        [tensorflow.TensorShape([None]) for _ in cls.list_dtypes])
+        [tf.TensorShape([None]) for _ in cls.list_dtypes])
 
   def run_test_case(self, dataset, truth_data, batch_size=None):
     """run_test_case"""
@@ -218,7 +218,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         data_v,
         (dtypes.float32, dtypes.float32),
-        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
+        (tf.TensorShape([]), tf.TensorShape([])))
 
     batch = self.make_record_batch(truth_data)
     df = batch.to_pandas()
@@ -229,7 +229,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data_with_index = TruthData(
         truth_data.data + [range(len(truth_data.data[0]))],
         truth_data.output_types + (dtypes.int64,),
-        truth_data.output_shapes + (tensorflow.TensorShape([]),))
+        truth_data.output_shapes + (tf.TensorShape([]),))
     self.run_test_case(dataset, truth_data_with_index)
 
     # Test preserve_index again, selecting second column only
@@ -333,7 +333,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         [[[False, False], [False, True], [True, False], [True, True]]],
         (dtypes.bool,),
-        (tensorflow.TensorShape([None]),))
+        (tf.TensorShape([None]),))
 
     batch = self.make_record_batch(truth_data)
 
@@ -365,7 +365,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         [list(range(10))],
         (dtypes.int32,),
-        (tensorflow.TensorShape([]),))
+        (tf.TensorShape([]),))
     batch = self.make_record_batch(truth_data)
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
@@ -386,7 +386,7 @@ class ArrowDatasetTest(test.TestCase):
           for x in result:
             self.assertEqual(x, expected[0])
             expected.pop(0)
-        except tensorflow.errors.OutOfRangeError:
+        except tf.errors.OutOfRangeError:
           break
 
   def test_feed_batches(self):
@@ -396,7 +396,7 @@ class ArrowDatasetTest(test.TestCase):
     truth_data = TruthData(
         [list(range(10)), [x * 1.1 for x in range(10)]],
         (dtypes.int32, dtypes.float64),
-        (tensorflow.TensorShape([]), tensorflow.TensorShape([])))
+        (tf.TensorShape([]), tf.TensorShape([])))
     batch = self.make_record_batch(truth_data)
 
     buf = io.BytesIO()
@@ -404,8 +404,8 @@ class ArrowDatasetTest(test.TestCase):
     writer.write_batch(batch)
     writer.close()
 
-    buf_placeholder = tensorflow.compat.v1.placeholder(
-        tensorflow.dtypes.string, tensorflow.TensorShape([]))
+    buf_placeholder = tf.compat.v1.placeholder(
+        tf.dtypes.string, tf.TensorShape([]))
 
     dataset = arrow_io.ArrowDataset(
         buf_placeholder,
