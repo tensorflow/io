@@ -1,0 +1,18 @@
+REPOSITORY = "tensorflow-io"
+REVIEWBOARD_URL='https://rb.corp.linkedin.com'
+TARGET_GROUPS='tensorflow-reviewers,tony-reviewers'
+TRACKING_BRANCH='origin/master'
+BRANCH='master'
+
+SLACK_CONFIGS = [
+    {
+        "channels": ["tensorflow-dev", "tf-on-hadoop"],
+        "extra_info_template": "{PARTICIPANTS}",
+        "events_ignored": [
+          'review_published',
+          'reply_published',
+          'review_request_closed',
+          'review_request_updated'
+        ]
+    }
+]
