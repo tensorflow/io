@@ -5,8 +5,8 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "avro_ops",
     srcs = [
-        "kernels/avro_input.cc",
-        "ops/avro_ops.cc",
+        "ops/avro_record_dataset.cc",
+        "ops/parse_avro_record.cc",
     ],
     copts = [
         "-pthread",
@@ -19,6 +19,13 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@avro",
+        ":avro_c",
     ],
+)
+
+cc_library(
+    name = "avro_c",
+    srcs = ["avro_c/lib/libavro.so"],
+    includes = ["avro_c/include/"],
+    visibility = ["//visibility:public"],
 )

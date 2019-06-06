@@ -21,12 +21,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.avro.python.ops.avro_ops import AvroDataset
+from tensorflow_io.avro.python.ops.avro_record_dataset import AvroRecordDataset
+from tensorflow_io.avro.python.ops.parse_avro_record import parse_avro_record
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
-    "AvroDataset",
+    "AvroRecordDataset",
+    "parse_avro_record",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
