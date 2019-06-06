@@ -70,7 +70,10 @@ if [[ "$1" == "--"* ]]; then
   shift
   shift
 fi
-
+# Let's also build a release candidate if it is nightly build
+if [[ "$VERSION_CHOICE" == "--nightly" ]]; then
+  $PYTHON_VERSION setup.py --data bazel-bin -q bdist_wheel
+fi
 $PYTHON_VERSION setup.py --data bazel-bin -q bdist_wheel $VERSION_CHOICE $VERSION_NUMBER
 ls dist/*
 
