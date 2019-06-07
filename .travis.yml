@@ -30,28 +30,28 @@ jobs:
     name: "Lint"
     script:
     - bash -x -e .travis/lint.bazel.sh
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
   # Preview Release Builds are for TensorFlow 2.0 Preview release.
   # Note only Linux (Ubuntu 18.04) and macOS are supported.
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
     - echo "Skip test for now, will fix later"
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on macOS"
@@ -63,31 +63,37 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
 
   # Release Builds are for nightly release.
-  # Note Python 2.7, 3.4, 3.5, 3.6 are supported on Linux
+  # Note Python 2.7, 3.4, 3.5, 3.6, 3.7 are supported on Linux
   # for Ubuntu 14.04/16.04/18.04, and Python 2.7 for macOS.
   - stage: release
     name: "Nightly Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
     - echo "Skip test for nightly build, as it has been covered in install build"
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
   - stage: release
     name: "Nightly Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -v $PWD/.cache/pip/:/root/.cache/pip -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
   - stage: release
     name: "Nightly Release Build on macOS"
@@ -99,7 +105,10 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
 
 notifications:
