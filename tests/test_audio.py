@@ -20,10 +20,10 @@ from __future__ import print_function
 import os
 import pytest
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
-if hasattr(tensorflow, "audio"):
+if hasattr(tf, "audio"):
   from tensorflow import audio         # pylint: disable=wrong-import-position
 else:
   from tensorflow.contrib.framework.python.ops import audio_ops as audio # pylint: disable=wrong-import-position
@@ -40,7 +40,7 @@ def test_audio_dataset():
   with open(audio_path, 'rb') as f:
     wav_contents = f.read()
   audio_p = audio.decode_wav(wav_contents)
-  with tensorflow.compat.v1.Session() as sess:
+  with tf.compat.v1.Session() as sess:
     audio_v = sess.run(audio_p).audio
 
   f = lambda x: float(x) / (1 << 15)
@@ -49,7 +49,7 @@ def test_audio_dataset():
   iterator = dataset.make_initializable_iterator()
   init_op = iterator.initializer
   get_next = iterator.get_next()
-  with tensorflow.compat.v1.Session() as sess:
+  with tf.compat.v1.Session() as sess:
     sess.run(init_op)
     for i in range(audio_v.shape[0]):
       v = sess.run(get_next)
@@ -61,7 +61,7 @@ def test_audio_dataset():
   iterator = dataset.make_initializable_iterator()
   init_op = iterator.initializer
   get_next = iterator.get_next()
-  with tensorflow.compat.v1.Session() as sess:
+  with tf.compat.v1.Session() as sess:
     sess.run(init_op)
     for i in range(0, audio_v.shape[0], 2):
       v = sess.run(get_next)

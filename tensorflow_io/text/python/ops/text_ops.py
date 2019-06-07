@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops as text_ops
@@ -49,12 +49,12 @@ class TextDataset(data.Dataset):
   @property
   def output_shapes(self):
     return tuple([
-        tensorflow.TensorShape([])]) if self._batch == 0 else tuple([
-            tensorflow.TensorShape([None])])
+        tf.TensorShape([])]) if self._batch == 0 else tuple([
+            tf.TensorShape([None])])
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_types(self):
