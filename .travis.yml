@@ -36,7 +36,7 @@ jobs:
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0beta --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
     - echo "Skip test for now, will fix later"
     after_success:
     - |
@@ -46,7 +46,7 @@ jobs:
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0beta --preview ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success:
     - |
@@ -58,7 +58,7 @@ jobs:
     os: osx
     osx_image: xcode9
     script:
-    - sudo -H bash -x -e .travis/python.release.sh tensorflow==2.0.0alpha --preview ${TRAVIS_BUILD_NUMBER} python
+    - sudo -H bash -x -e .travis/python.release.sh tensorflow==2.0.0beta --preview ${TRAVIS_BUILD_NUMBER} python
     - sudo -H bash -x -e .travis/wheel.test.sh
     after_success:
     - |

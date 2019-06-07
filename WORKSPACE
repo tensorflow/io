@@ -211,6 +211,23 @@ http_archive(
     ],
 )
 
+# 3.7.1 with a fix to BUILD file
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "1c020fafc84acd235ec81c6aac22d73f23e85a700871466052ff231d69c1b17a",
+    strip_prefix = "protobuf-5902e759108d14ee8e6b0b07653dac2f4e70ac73",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
+)
+
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
