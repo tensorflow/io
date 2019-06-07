@@ -41,7 +41,7 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
@@ -51,7 +51,7 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on macOS"
@@ -63,11 +63,11 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_2.0_preview-*.whl
       fi
 
   # Release Builds are for nightly release.
-  # Note Python 2.7, 3.4, 3.5, 3.6 are supported on Linux
+  # Note Python 2.7, 3.4, 3.5, 3.6, 3.7 are supported on Linux
   # for Ubuntu 14.04/16.04/18.04, and Python 2.7 for macOS.
   - stage: release
     name: "Nightly Release Build on Linux"
@@ -77,7 +77,10 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
   - stage: release
     name: "Nightly Release Build on Linux with Python 3.7"
@@ -87,7 +90,10 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
   - stage: release
     name: "Nightly Release Build on macOS"
@@ -99,7 +105,10 @@ jobs:
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
-        twine upload wheelhouse/*.whl
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/teensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+        done
       fi
 
 notifications:
