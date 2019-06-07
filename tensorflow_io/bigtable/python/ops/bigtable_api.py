@@ -686,7 +686,8 @@ class _BigtableScanDataset(dataset_ops.DatasetSource):  # pylint: disable=abstra
         column_families=self._column_families,
         columns=self._columns,
         probability=self._probability)
-    super(_BigtableScanDataset, self).__init__(variant_tensor)
+    super(_BigtableScanDataset, self).__init__()
+    self._variant_tensor_attr = variant_tensor
 
   @property
   def _element_structure(self):
