@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
@@ -41,12 +41,12 @@ class PubSubDataset(data.Dataset):
       timeout: The timeout value for the PubSub to wait
                (in millisecond).
     """
-    self._subscriptions = tensorflow.convert_to_tensor(
+    self._subscriptions = tf.convert_to_tensor(
         subscriptions, dtype=dtypes.string, name="subscriptions")
-    self._server = tensorflow.convert_to_tensor(
+    self._server = tf.convert_to_tensor(
         server, dtype=dtypes.string, name="server")
-    self._eof = tensorflow.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
-    self._timeout = tensorflow.convert_to_tensor(
+    self._eof = tf.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
+    self._timeout = tf.convert_to_tensor(
         timeout, dtype=dtypes.int64, name="timeout")
     super(PubSubDataset, self).__init__()
 
@@ -59,11 +59,11 @@ class PubSubDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([])
+    return tf.TensorShape([])
 
   @property
   def output_types(self):

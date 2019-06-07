@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import io
 
-import tensorflow
+import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -27,7 +27,7 @@ from tensorflow.python.data.util import structure as structure_lib
 from tensorflow_io import _load_library
 arrow_ops = _load_library('_arrow_ops.so')
 
-if hasattr(tensorflow, "nest"):
+if hasattr(tf, "nest"):
   from tensorflow import nest # pylint: disable=ungrouped-imports
 else:
   from tensorflow.python.data.util import nest # pylint: disable=ungrouped-imports
@@ -79,7 +79,7 @@ def arrow_schema_to_tensor_types(schema):
   """
   type_shape_list = [arrow_to_tensor_type(field.type) for field in schema]
   tensor_types, shape_dims = zip(*type_shape_list)
-  tensor_shapes = tuple(tensorflow.TensorShape(s) for s in shape_dims)
+  tensor_shapes = tuple(tf.TensorShape(s) for s in shape_dims)
   return tensor_types, tensor_shapes
 
 
@@ -100,9 +100,9 @@ class ArrowBaseDataset(data.Dataset):
     self._structure = structure_lib.convert_legacy_structure(
         output_types,
         output_shapes or nest.map_structure(
-            lambda _: tensorflow.TensorShape(None), output_types),
-        nest.map_structure(lambda _: tensorflow.Tensor, output_types))
-    self._batch_size = tensorflow.convert_to_tensor(
+            lambda _: tf.TensorShape(None), output_types),
+        nest.map_structure(lambda _: tf.Tensor, output_types))
+    self._batch_size = tf.convert_to_tensor(
         batch_size or 0,
         dtype=dtypes.int64,
         name="batch_size")
@@ -110,7 +110,7 @@ class ArrowBaseDataset(data.Dataset):
       raise ValueError(
           "Unsupported batch_mode: '{}', must be one of {}"
           .format(batch_mode, self.batch_modes_supported))
-    self._batch_mode = tensorflow.convert_to_tensor(
+    self._batch_mode = tf.convert_to_tensor(
         batch_mode,
         dtypes.string,
         name="batch_mode")
@@ -214,7 +214,7 @@ class ArrowDataset(ArrowBaseDataset):
     for batch in record_batches:
       writer.write_batch(batch)
     writer.close()
-    serialized_batches = tensorflow.convert_to_tensor(
+    serialized_batches = tf.convert_to_tensor(
         buf.getvalue(),
         dtype=dtypes.string,
         name="serialized_batches")
@@ -298,7 +298,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames,
         dtype=dtypes.string,
         name="filenames")
@@ -385,7 +385,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    self._host = tensorflow.convert_to_tensor(
+    self._host = tf.convert_to_tensor(
         host,
         dtype=dtypes.string,
         name="host")

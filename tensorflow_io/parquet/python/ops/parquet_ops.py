@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 parquet_ops = _load_library('_parquet_ops.so')
@@ -70,14 +70,14 @@ class ParquetDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tuple([tensorflow.Tensor for _ in self._columns])
+    return tuple([tf.Tensor for _ in self._columns])
 
   @property
   def output_shapes(self):
     return tuple(
-        [tensorflow.TensorShape([]) for _ in self._columns]
+        [tf.TensorShape([]) for _ in self._columns]
     ) if self._batch is None else tuple(
-        [tensorflow.TensorShape([None]) for _ in self._columns]
+        [tf.TensorShape([None]) for _ in self._columns]
     )
 
   @property

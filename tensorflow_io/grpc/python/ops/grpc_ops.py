@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 grpc_ops = _load_library('_grpc_ops.so')
@@ -36,8 +36,8 @@ class GRPCDataset(data.Dataset):
     self._batch = 0 if batch is None else batch
     shape[0] = None
     self._output_shapes = tuple([
-        tensorflow.TensorShape(shape[1:])]) if self._batch == 0 else tuple([
-            tensorflow.TensorShape(shape)])
+        tf.TensorShape(shape[1:])]) if self._batch == 0 else tuple([
+            tf.TensorShape(shape)])
     self._output_types = tuple([dtype])
     self._batch = 0 if batch is None else batch
     super(GRPCDataset, self).__init__()
@@ -75,7 +75,7 @@ class GRPCDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_types(self):

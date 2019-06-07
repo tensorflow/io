@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
@@ -68,13 +68,13 @@ class KinesisDataset(data.Dataset):
       interval: The interval for the Kinesis Client to wait before
         it tries to get records again (in millisecond).
     """
-    self._stream = tensorflow.convert_to_tensor(
+    self._stream = tf.convert_to_tensor(
         stream, dtype=dtypes.string, name="stream")
-    self._shard = tensorflow.convert_to_tensor(
+    self._shard = tf.convert_to_tensor(
         shard, dtype=dtypes.string, name="shard")
-    self._read_indefinitely = tensorflow.convert_to_tensor(
+    self._read_indefinitely = tf.convert_to_tensor(
         read_indefinitely, dtype=dtypes.bool, name="read_indefinitely")
-    self._interval = tensorflow.convert_to_tensor(
+    self._interval = tf.convert_to_tensor(
         interval, dtype=dtypes.int64, name="interval")
     super(KinesisDataset, self).__init__()
 
@@ -87,11 +87,11 @@ class KinesisDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([])
+    return tf.TensorShape([])
 
   @property
   def output_types(self):

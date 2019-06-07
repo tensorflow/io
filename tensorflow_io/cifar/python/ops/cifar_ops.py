@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops as cifar_ops
@@ -47,15 +47,15 @@ class _CIFAR10Dataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor, tensorflow.Tensor
+    return tf.Tensor, tf.Tensor
 
   @property
   def output_shapes(self):
     return (
-        tensorflow.TensorShape([]),
-        tensorflow.TensorShape([3, 32, 32])) if self._batch == 0 else (
-            tensorflow.TensorShape([None]),
-            tensorflow.TensorShape([None, 3, 32, 32]))
+        tf.TensorShape([]),
+        tf.TensorShape([3, 32, 32])) if self._batch == 0 else (
+            tf.TensorShape([None]),
+            tf.TensorShape([None, 3, 32, 32]))
 
   @property
   def output_types(self):
@@ -85,18 +85,18 @@ class CIFAR10Dataset(_CIFAR10Dataset):
     if self._batch == 0:
       return _CIFAR10Dataset( # pylint: disable=protected-access
           self._filename, self._filters, batch=self._batch).map(
-              lambda label, image: (tensorflow.transpose(image, [1, 2, 0]), label))._as_variant_tensor()
+              lambda label, image: (tf.transpose(image, [1, 2, 0]), label))._as_variant_tensor()
     return _CIFAR10Dataset( # pylint: disable=protected-access
         self._filename, self._filters, batch=self._batch).map(
-            lambda label, image: (tensorflow.transpose(image, [0, 2, 3, 1]), label))._as_variant_tensor()
+            lambda label, image: (tf.transpose(image, [0, 2, 3, 1]), label))._as_variant_tensor()
 
   @property
   def output_shapes(self):
     return (
-        tensorflow.TensorShape([32, 32, 3]),
-        tensorflow.TensorShape([])) if self._batch == 0 else (
-            tensorflow.TensorShape([None, 32, 32, 3]),
-            tensorflow.TensorShape([None]))
+        tf.TensorShape([32, 32, 3]),
+        tf.TensorShape([])) if self._batch == 0 else (
+            tf.TensorShape([None, 32, 32, 3]),
+            tf.TensorShape([None]))
 
 class _CIFAR100Dataset(data.Dataset):
   """A CIFAR File Dataset that reads the cifar file."""
@@ -123,17 +123,17 @@ class _CIFAR100Dataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor, tensorflow.Tensor, tensorflow.Tensor
+    return tf.Tensor, tf.Tensor, tf.Tensor
 
   @property
   def output_shapes(self):
     return (
-        tensorflow.TensorShape([]),
-        tensorflow.TensorShape([]),
-        tensorflow.TensorShape([3, 32, 32])) if self._batch == 0 else (
-            tensorflow.TensorShape([None]),
-            tensorflow.TensorShape([None]),
-            tensorflow.TensorShape([None, 3, 32, 32]))
+        tf.TensorShape([]),
+        tf.TensorShape([]),
+        tf.TensorShape([3, 32, 32])) if self._batch == 0 else (
+            tf.TensorShape([None]),
+            tf.TensorShape([None]),
+            tf.TensorShape([None, 3, 32, 32]))
 
   @property
   def output_types(self):
@@ -164,22 +164,22 @@ class CIFAR100Dataset(_CIFAR100Dataset):
     if self._batch == 0:
       return _CIFAR100Dataset( # pylint: disable=protected-access
           self._filename, self._filters, batch=self._batch).map(
-              lambda coarse, fine, image: (tensorflow.transpose(image, [1, 2, 0]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
+              lambda coarse, fine, image: (tf.transpose(image, [1, 2, 0]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
     return _CIFAR100Dataset( # pylint: disable=protected-access
         self._filename, self._filters, batch=self._batch).map(
-            lambda coarse, fine, image: (tensorflow.transpose(image, [0, 2, 3, 1]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
+            lambda coarse, fine, image: (tf.transpose(image, [0, 2, 3, 1]), fine if self._mode == 'fine' else coarse))._as_variant_tensor()
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor, tensorflow.Tensor
+    return tf.Tensor, tf.Tensor
 
   @property
   def output_shapes(self):
     return (
-        tensorflow.TensorShape([32, 32, 3]),
-        tensorflow.TensorShape([])) if self._batch == 0 else (
-            tensorflow.TensorShape([None, 32, 32, 3]),
-            tensorflow.TensorShape([None]))
+        tf.TensorShape([32, 32, 3]),
+        tf.TensorShape([])) if self._batch == 0 else (
+            tf.TensorShape([None, 32, 32, 3]),
+            tf.TensorShape([None]))
 
   @property
   def output_types(self):

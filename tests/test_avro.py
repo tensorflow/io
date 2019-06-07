@@ -20,8 +20,8 @@ from __future__ import print_function
 
 import os
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes  # pylint: disable=wrong-import-position
 from tensorflow import errors  # pylint: disable=wrong-import-position
