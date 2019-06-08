@@ -18,124 +18,48 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
+from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as mnist_ops
 
-class _MNISTBaseDataset(data.Dataset):
-  """A MNIST Dataset
-  """
-
-  def __init__(self, batch, mnist_op_class):
-    """Create a MNISTReader.
-
-    Args:
-      mnist_op_class: The op of the dataset, either
-          mnist_ops.mnist_image_dataset or mnist_ops.mnist_label_dataset.
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    self._batch = batch
-    self._func = mnist_op_class
-    super(_MNISTBaseDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return self._func(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_classes(self):
-    return tf.Tensor
-
-  @property
-  def output_types(self):
-    return tuple([dtypes.uint8])
-
-class MNISTImageDataset(_MNISTBaseDataset):
-  """A MNIST Image Dataset
+class MNISTLabelDataset(data_ops.Dataset):
+  """A MNISTLabelDataset
   """
 
   def __init__(self, filename, batch=None):
-    """Create a MNISTReader.
-
+    """Create a MNISTLabelDataset.
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
     batch = 0 if batch is None else batch
-    self._data_input = mnist_ops.mnist_image_input(filename, ["none", "gz"])
-    super(MNISTImageDataset, self).__init__(
-        batch, mnist_ops.mnist_image_dataset)
-
-  @property
-  def output_shapes(self):
-    return tuple([
-        tf.TensorShape([None, None])]) if self._batch == 0 else tuple([
-            tf.TensorShape([None, None, None])])
-
-
-class MNISTLabelDataset(_MNISTBaseDataset):
-  """A MNIST Label Dataset
-  """
-
-  def __init__(self, filename, batch=None):
-    """Create a MNISTReader.
-
-    Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    batch = 0 if batch is None else batch
-    self._data_input = mnist_ops.mnist_label_input(filename, ["none", "gz"])
+    dtypes = [tf.uint8]
+    shapes = [
+        tf.TensorShape([])] if batch == 0 else [
+            tf.TensorShape([batch])]
     super(MNISTLabelDataset, self).__init__(
-        batch, mnist_ops.mnist_label_dataset)
+        mnist_ops.mnist_label_dataset,
+        mnist_ops.mnist_label_input(filename, ["none", "gz"]),
+        batch, dtypes, shapes)
 
-  @property
-  def output_shapes(self):
-    return tuple([
-        tf.TensorShape([])]) if self._batch == 0 else tuple([
-            tf.TensorShape([None])])
-
-class MNISTDataset(data.Dataset):
-  """A MNIST Dataset
+class MNISTImageDataset(data_ops.Dataset):
+  """A MNISTImageDataset
   """
 
-  def __init__(self, image, label, batch=None):
-    """Create a MNISTReader.
-
+  def __init__(self, filename, batch=None):
+    """Create a MNISTImageDataset.
     Args:
-      image: A `tf.string` tensor containing image filename.
-      label: A `tf.string` tensor containing label filename.
+      filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._image = image
-    self._label = label
-    self._batch = 0 if batch is None else batch
-    super(MNISTDataset, self).__init__()
+    batch = 0 if batch is None else batch
+    dtypes = [tf.uint8]
+    shapes = [
+        tf.TensorShape([None, None])] if batch == 0 else [
+            tf.TensorShape([batch, None, None])]
+    super(MNISTImageDataset, self).__init__(
+        mnist_ops.mnist_image_dataset,
+        mnist_ops.mnist_image_input(filename, ["none", "gz"]),
+        batch, dtypes, shapes)
 
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return data.Dataset.zip( # pylint: disable=protected-access
-        (MNISTImageDataset(self._image, self._batch),
-         MNISTLabelDataset(self._label, self._batch))
-        )._as_variant_tensor()
-
-  @property
-  def output_shapes(self):
-    return (
-        tf.TensorShape([None, None]),
-        tf.TensorShape([])) if self._batch == 0 else (
-            tf.TensorShape([None, None, None]),
-            tf.TensorShape([None]))
-
-  @property
-  def output_classes(self):
-    return tf.Tensor, tf.Tensor
-
-  @property
-  def output_types(self):
-    return dtypes.uint8, dtypes.uint8
+def MNISTDataset(image_filename, label_filename, batch=None):
+  return data_ops.Dataset.zip((
+      MNISTImageDataset(image_filename, batch),
+      MNISTLabelDataset(label_filename, batch)))
