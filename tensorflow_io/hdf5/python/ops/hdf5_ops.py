@@ -58,7 +58,7 @@ class HDF5Dataset(data.Dataset):
 
   @property
   def output_shapes(self):
-    return tuple([shape for shape in self._shapes])
+    return tuple([tf.TensorShape([]) for _ in self._shapes])
 
   @property
   def output_types(self):
