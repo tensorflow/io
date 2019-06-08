@@ -80,6 +80,11 @@ def write_config():
         library_name = library_name[1:]
       else:
         library_name = "lib" + library_name + ".so"
+      ## NOTE: temporary measure for 2.0.0beta
+      if library_name == "libtensorflow_framework.so.2":
+        library_name = "libtensorflow_framework.so.1"
+      if library_name == "libtensorflow_framework.2.dylib":
+        library_name = "libtensorflow_framework.1.dylib"
       bazel_rc.write('build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'
                      .format(library_name))
       bazel_rc.close()
