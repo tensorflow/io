@@ -19,16 +19,22 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import pytest
-
+import numpy as np
 import tensorflow as tf
-import tensorflow_io.mnist as mnist_io
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io.mnist as mnist_io # pylint: disable=wrong-import-position
 
-@pytest.mark.skipif(
-    not (hasattr(tf, "version") and
-         tf.version.VERSION.startswith("2.0.")), reason=None)
-def test_mnist_tutorial():
-  """test_mnist_tutorial"""
+def test_mnist_dataset():
+  """Test case for MNIST Dataset.
+  """
+  mnist_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "mnist.npz")
+  with np.load(mnist_filename) as f:
+    (x_test, y_test) = f['x_test'], f['y_test']
+
   image_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_mnist",
@@ -37,54 +43,35 @@ def test_mnist_tutorial():
       os.path.dirname(os.path.abspath(__file__)),
       "test_mnist",
       "t10k-labels-idx1-ubyte.gz")
-  d_train = mnist_io.MNISTDataset(
-      image_filename,
-      label_filename)
 
-  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1000)
+  image_dataset = mnist_io.MNISTImageDataset(image_filename)
+  label_dataset = mnist_io.MNISTLabelDataset(label_filename)
 
-  model = tf.keras.models.Sequential([
-      tf.keras.layers.Flatten(input_shape=(28, 28)),
-      tf.keras.layers.Dense(512, activation=tf.nn.relu),
-      tf.keras.layers.Dropout(0.2),
-      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
-  ])
-  model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy'])
+  i = 0
+  for m_x in image_dataset:
+    v_x = x_test[i]
+    assert np.alltrue(v_x == m_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
-  model.fit(d_train, epochs=5)
+  i = 0
+  for m_y in label_dataset:
+    v_y = y_test[i]
+    assert np.alltrue(v_y == m_y.numpy())
+    i += 1
+  assert i == len(y_test)
 
-@pytest.mark.skipif(
-    not (hasattr(tf, "version") and
-         tf.version.VERSION.startswith("2.0.")), reason=None)
-def test_mnist_tutorial_uncompressed():
-  """test_mnist_tutorial_uncompressed"""
-  image_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_mnist",
-      "t10k-images-idx3-ubyte")
-  label_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_mnist",
-      "t10k-labels-idx1-ubyte")
-  d_train = mnist_io.MNISTDataset(
-      image_filename,
-      label_filename)
+  dataset = mnist_io.MNISTDataset(
+      image_filename, label_filename)
 
-  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
-
-  model = tf.keras.models.Sequential([
-      tf.keras.layers.Flatten(input_shape=(28, 28)),
-      tf.keras.layers.Dense(512, activation=tf.nn.relu),
-      tf.keras.layers.Dropout(0.2),
-      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
-  ])
-  model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy'])
-
-  model.fit(d_train, epochs=5)
+  i = 0
+  for (m_x, m_y) in dataset:
+    v_x = x_test[i]
+    v_y = y_test[i]
+    assert np.alltrue(v_y == m_y.numpy())
+    assert np.alltrue(v_x == m_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
 if __name__ == "__main__":
   test.main()

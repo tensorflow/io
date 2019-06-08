@@ -19,82 +19,66 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import numpy as np
-
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
+import tensorflow_io.mnist as mnist_io
 
-from tensorflow import errors         # pylint: disable=wrong-import-position
-from tensorflow import test           # pylint: disable=wrong-import-position
-from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
+def test_mnist_tutorial():
+  """test_mnist_tutorial"""
+  image_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-images-idx3-ubyte.gz")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-labels-idx1-ubyte.gz")
+  d_train = mnist_io.MNISTDataset(
+      image_filename,
+      label_filename,
+      batch=1000)
 
-from tensorflow_io import mnist as mnist_io # pylint: disable=wrong-import-position
+  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
+  model = tf.keras.models.Sequential([
+      tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(512, activation=tf.nn.relu),
+      tf.keras.layers.Dropout(0.2),
+      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+  ])
+  model.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
 
-class MNISTDatasetTest(test.TestCase):
-  """MNISTDatasetTest"""
-  def test_mnist_dataset(self):
-    """Test case for MNIST Dataset.
-    """
-    mnist_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "mnist.npz")
-    with np.load(mnist_filename) as f:
-      (x_test, y_test) = f['x_test'], f['y_test']
+  model.fit(d_train, epochs=5)
 
-    image_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "t10k-images-idx3-ubyte.gz")
-    label_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_mnist",
-        "t10k-labels-idx1-ubyte.gz")
+def test_mnist_tutorial_uncompressed():
+  """test_mnist_tutorial_uncompressed"""
+  image_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-images-idx3-ubyte")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-labels-idx1-ubyte")
+  d_train = mnist_io.MNISTDataset(
+      image_filename,
+      label_filename,
+      batch=1)
 
-    image_dataset = mnist_io.MNISTImageDataset(image_filename, batch=3)
-    label_dataset = mnist_io.MNISTLabelDataset(label_filename, batch=3)
+  d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
-    dataset = mnist_io.MNISTDataset(
-        image_filename, label_filename)
+  model = tf.keras.models.Sequential([
+      tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(512, activation=tf.nn.relu),
+      tf.keras.layers.Dropout(0.2),
+      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+  ])
+  model.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
 
-    iterator = data.Dataset.zip(
-        (image_dataset, label_dataset)).make_initializable_iterator()
-    init_op = iterator.initializer
-    get_next = iterator.get_next()
-
-    with self.cached_session() as sess:
-      sess.run(init_op)
-      l = len(y_test)
-      for i in range(0, l-1, 3):
-        v_x = x_test[i:i+3]
-        v_y = y_test[i:i+3]
-        m_x, m_y = sess.run(get_next)
-        self.assertAllEqual(v_y, m_y)
-        self.assertAllEqual(v_x, m_x)
-      v_x = x_test[l-1:l]
-      v_y = y_test[l-1:l]
-      m_x, m_y = sess.run(get_next)
-      self.assertAllEqual(v_y, m_y)
-      self.assertAllEqual(v_x, m_x)
-      with self.assertRaises(errors.OutOfRangeError):
-        sess.run(get_next)
-
-    iterator = dataset.make_initializable_iterator()
-    init_op = iterator.initializer
-    get_next = iterator.get_next()
-
-    with self.cached_session() as sess:
-      sess.run(init_op)
-      l = len(y_test)
-      for i in range(l):
-        v_x = x_test[i]
-        v_y = y_test[i]
-        m_x, m_y = sess.run(get_next)
-        self.assertAllEqual(v_y, m_y)
-        self.assertAllEqual(v_x, m_x)
-      with self.assertRaises(errors.OutOfRangeError):
-        sess.run(get_next)
+  model.fit(d_train, epochs=5)
 
 if __name__ == "__main__":
   test.main()
