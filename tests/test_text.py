@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-"""Tests for MNIST Dataset."""
+"""Tests for TextDataset."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -73,3 +73,6 @@ def test_text_output_sequence():
   assert len(lines) == len(predictions)
   for line, prediction in zip(lines, predictions):
     assert line == prediction
+
+if __name__ == "__main__":
+  test.main()
