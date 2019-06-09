@@ -47,4 +47,4 @@ class Dataset(tf.compat.v2.data.Dataset):
     ]
     if len(e) == 1:
       return e[0]
-    return tf.data.experimental.NestedStructure(e)
+    return tf.data.experimental.NestedStructure(tuple(e))

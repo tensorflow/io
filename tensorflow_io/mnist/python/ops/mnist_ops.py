@@ -34,7 +34,7 @@ class MNISTLabelDataset(data_ops.Dataset):
     dtypes = [tf.uint8]
     shapes = [
         tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([batch])]
+            tf.TensorShape([None])]
     super(MNISTLabelDataset, self).__init__(
         mnist_ops.mnist_label_dataset,
         mnist_ops.mnist_label_input(filename, ["none", "gz"]),
@@ -53,7 +53,7 @@ class MNISTImageDataset(data_ops.Dataset):
     dtypes = [tf.uint8]
     shapes = [
         tf.TensorShape([None, None])] if batch == 0 else [
-            tf.TensorShape([batch, None, None])]
+            tf.TensorShape([None, None, None])]
     super(MNISTImageDataset, self).__init__(
         mnist_ops.mnist_image_dataset,
         mnist_ops.mnist_image_input(filename, ["none", "gz"]),
