@@ -79,7 +79,11 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
-          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io-nightly/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry)
+          if [[ "$STATUS" -ne 201 ]] ; then
+            echo "Upload to Bintray: $STATUS"
+            exit 1
+          fi
         done
       fi
   - stage: release
@@ -92,7 +96,11 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
-          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io-nightly/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry)
+          if [[ "$STATUS" -ne 201 ]] ; then
+            echo "Upload to Bintray: $STATUS"
+            exit 1
+          fi
         done
       fi
   - stage: release
@@ -107,7 +115,11 @@ jobs:
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
-          curl -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io-nightly/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -T $entry -utensorflow-io-nightly:$BINTRAY_API https://api.bintray.com/content/tensorflow-io/tensorflow-io-nightly/tensorflow-io-release/${TRAVIS_BUILD_NUMBER}/$entry)
+          if [[ "$STATUS" -ne 201 ]] ; then
+            echo "Upload to Bintray: $STATUS"
+            exit 1
+          fi
         done
       fi
 
