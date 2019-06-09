@@ -12,49 +12,64 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-"""Tests for Text Input."""
+"""Tests for MNIST Dataset."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
-import pytest
+import tempfile
+import numpy as np
+
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
+import tensorflow_io.text as text_io
 
-from tensorflow import errors # pylint: disable=wrong-import-position
-import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
+def test_text_output_sequence():
+  """Test case based on fashion mnist tutorial"""
+  fashion_mnist = tf.keras.datasets.fashion_mnist
+  ((train_images, train_labels),
+   (test_images, _)) = fashion_mnist.load_data()
 
-def test_text_input():
-  """test_text_input
-  """
-  text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
+  class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+                 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+  train_images = train_images / 255.0
+  test_images = test_images / 255.0
+
+  model = tf.keras.Sequential([
+      tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(128, activation=tf.nn.relu),
+      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+  ])
+
+  model.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
+
+  model.fit(train_images, train_labels, epochs=5)
+
+  class OutputCallback(tf.keras.callbacks.Callback):
+    """OutputCallback"""
+    def __init__(self, filename, batch_size):
+      self._sequence = text_io.TextOutputSequence(filename)
+      self._batch_size = batch_size
+
+    def on_predict_batch_end(self, batch, logs=None):
+      index = batch * self._batch_size
+      for outputs in logs['outputs']:
+        for output in outputs:
+          self._sequence.setitem(index, class_names[np.argmax(output)])
+          index += 1
+
+  f, filename = tempfile.mkstemp()
+  os.close(f)
+  # By default batch size is 32
+  output = OutputCallback(filename, 32)
+  predictions = model.predict(test_images, callbacks=[output])
+  with open(filename) as f:
     lines = [line.strip() for line in f]
-  text_filename = "file://" + text_filename
-
-  gzip_text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
-  gzip_text_filename = "file://" + gzip_text_filename
-
-  lines = lines * 3
-  filenames = [text_filename, gzip_text_filename, text_filename]
-  dataset = text_io.TextDataset(filenames, batch=2)
-  iterator = dataset.make_initializable_iterator()
-  init_op = iterator.initializer
-  get_next = iterator.get_next()
-  with tf.compat.v1.Session() as sess:
-    sess.run(init_op)
-    for i in range(0, len(lines) - 2, 2):
-      v = sess.run(get_next)
-      assert lines[i] == v[0]
-      assert lines[i + 1] == v[1]
-    v = sess.run(get_next)
-    assert lines[len(lines) - 1] == v[0]
-    with pytest.raises(errors.OutOfRangeError):
-      sess.run(get_next)
-
-if __name__ == "__main__":
-  test.main()
+  predictions = [class_names[v] for v in np.argmax(predictions, axis=1)]
+  assert len(lines) == len(predictions)
+  for line, prediction in zip(lines, predictions):
+    assert line == prediction
