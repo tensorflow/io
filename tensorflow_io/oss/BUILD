@@ -12,7 +12,9 @@ cc_binary(
         "ops/ossfs_ops.cc",
     ],
     copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
+        "-pthread",
+        "-std=c++11",
+        "-DNDEBUG",
     ],
     linkshared = 1,
     deps = [
