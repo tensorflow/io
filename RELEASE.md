@@ -21,7 +21,7 @@ answered questions, and were part of inspiring discussions.
 ## Major Features
 * `tensorflow_io.kafka`: Kafka Output support.
 * `tensorflow_io.cifar`: CIFAR file format support.
-* `tensorflow_io.bigtable`: Google Cloud BigTable support.
+* `tensorflow_io.bigtable`: Google Cloud Bigtable support.
 
 ## Thanks to our Contributors
 
