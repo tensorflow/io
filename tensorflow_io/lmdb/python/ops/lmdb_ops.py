@@ -18,15 +18,13 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-lmdb_ops = _load_library('_lmdb_ops.so')
+from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import core_ops as lmdb_ops
 
-class LMDBDataset(data.Dataset):
+class LMDBDataset(data_ops.Dataset):
   """A LMDB Dataset that reads the lmdb file."""
 
-  def __init__(self, filenames, batch=None):
+  def __init__(self, filename, batch=None):
     """Create a `LMDBDataset`.
 
     `LMDBDataset` allows a user to read data from a mdb file as
@@ -41,34 +39,14 @@ class LMDBDataset(data.Dataset):
       print(key, value)
     ```
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = lmdb_ops.lmdb_input(filenames)
-    self._batch = 0 if batch is None else batch
-    super(LMDBDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return lmdb_ops.lmdb_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_shapes(self):
-    return (
-        tf.TensorShape([]),
-        tf.TensorShape([])) if self._batch == 0 else (
-            tf.TensorShape([None]),
-            tf.TensorShape([None]))
-
-  @property
-  def output_classes(self):
-    return tf.Tensor, tf.Tensor
-
-  @property
-  def output_types(self):
-    return dtypes.string, dtypes.string
+    batch = 0 if batch is None else batch
+    dtypes = [tf.string, tf.string]
+    shapes = [
+        tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
+            tf.TensorShape([None]), tf.TensorShape([None])]
+    super(LMDBDataset, self).__init__(
+        lmdb_ops.lmdb_dataset,
+        lmdb_ops.lmdb_input(filename),
+        batch, dtypes, shapes)
