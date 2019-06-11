@@ -22,6 +22,8 @@ import sys
 import pytest
 
 import tensorflow as tf
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
 if sys.platform == "darwin":
   pytest.skip("video is not supported on macOS yet", allow_module_level=True)
 import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
@@ -29,9 +31,14 @@ import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
 video_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 
-def test_video_predict():
-  model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
-  x = video_io.VideoDataset(video_path).batch(1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
-  y = model.predict(x)
-  p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
-  assert len(p) == 166
+def test_video_dataset():
+  """test_video_dataset"""
+  num_repeats = 2
+
+  video_dataset = video_io.VideoDataset([video_path]).repeat(num_repeats)
+
+  i = 0
+  for v in video_dataset:
+    assert v.shape == (320, 560, 3)
+    i += 1
+  assert i == 166 * num_repeats
