@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.video.python.ops.video_dataset_ops import VideoDataset
+from tensorflow_io.video.python.ops.video_ops import VideoDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 

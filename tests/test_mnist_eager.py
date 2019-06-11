@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import os
 import numpy as np
+
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
