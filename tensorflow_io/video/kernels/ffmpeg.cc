@@ -50,6 +50,7 @@ Status VideoReader::ReadHeader()
     }
 
     AVStream *video_stream = format_context_->streams[stream_index_];
+#if LIBAVCODEC_VERSION_MAJOR > 56
     // Find decoder for the stream
     AVCodec *codec = avcodec_find_decoder(video_stream->codecpar->codec_id);
     if (!codec) {
@@ -64,6 +65,14 @@ Status VideoReader::ReadHeader()
     if (avcodec_parameters_to_context(codec_context_, video_stream->codecpar) < 0) {
       return errors::Internal("could not copy codec parameters from input stream to output codec context");
     }
+#else
+    codec_context_ = video_stream->codec;
+    // Find decoder for the stream
+    AVCodec *codec = avcodec_find_decoder(codec_context_->codec_id);
+    if (!codec) {
+      return errors::Internal("could not find video codec: ", codec_context_->codec_id);
+    }
+#endif
     // Initialize the decoders
     // TODO (yongtang): avcodec_open2 is not thread-safe
     AVDictionary *opts = NULL;
@@ -72,7 +81,11 @@ Status VideoReader::ReadHeader()
     }
 
     // Allocate frame
+#if LIBAVCODEC_VERSION_MAJOR > 54
     frame_ = av_frame_alloc();
+#else
+    frame_ = avcodec_alloc_frame();
+#endif
     if (!frame_) {
       return errors::Internal("could not allocate frame");
     }
@@ -83,16 +96,28 @@ Status VideoReader::ReadHeader()
     packet_.size = 0;
 
     // create scaling context
+#if LIBSWSCALE_VERSION_MAJOR > 2
     sws_context_ = sws_getContext(codec_context_->width, codec_context_->height, codec_context_->pix_fmt, codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24, 0, NULL, NULL, NULL);
+#else
+    sws_context_ = sws_getContext(codec_context_->width, codec_context_->height, codec_context_->pix_fmt, codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, NULL, NULL, NULL);
+#endif
     if (!sws_context_) {
       return errors::Internal("could not allocate sws context");
     }
+#if LIBAVCODEC_VERSION_MAJOR > 54
     frame_rgb_ = av_frame_alloc();
+#else
+    frame_rgb_ = avcodec_alloc_frame();
+#endif
     if (!frame_rgb_) {
       return errors::Internal("could not allocate rgb frame");
     }
     // Determine required buffer size and allocate buffer
+#if LIBAVCODEC_VERSION_MAJOR > 54
     num_bytes_ = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height, 1);
+#else
+    num_bytes_ = avpicture_get_size(AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height);
+#endif
     buffer_rgb_ = (uint8_t *)av_malloc(num_bytes_ * sizeof(uint8_t));
     avpicture_fill((AVPicture *)frame_rgb_, buffer_rgb_, AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height);
 
@@ -130,7 +155,12 @@ bool VideoReader::ReadAhead(bool first)
       }
       if (frame_more_) {
         // If this is not the first time, unref the packet
-	av_packet_unref(&packet_);
+#if LIBAVCODEC_VERSION_MAJOR > 54
+        av_packet_unref(&packet_);
+#else
+	// NOTE: libav 9.20 does not need unref or free here.
+	// av_packet_unref(&packet_);
+#endif
 	frame_more_ = (av_read_frame(format_context_, &packet_) == 0); 
 	if (!frame_more_) {
           // Flush out the cached packet
@@ -161,10 +191,20 @@ Status VideoReader::ReadFrame(int *num_bytes, uint8_t**value, int *height, int *
 
 VideoReader::~VideoReader() {
     av_free(buffer_rgb_);
+#if LIBAVCODEC_VERSION_MAJOR > 54
     av_frame_free(&frame_rgb_);
+#else
+    avcodec_free_frame(&frame_rgb_);
+#endif
     sws_freeContext(sws_context_);
+#if LIBAVCODEC_VERSION_MAJOR > 54
     av_frame_free(&frame_);
+#else
+    avcodec_free_frame(&frame_);
+#endif
+#if LIBAVCODEC_VERSION_MAJOR > 56
     avcodec_free_context(&codec_context_);
+#endif
     avformat_close_input(&format_context_);
 }
 

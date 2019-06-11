@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = "python/ops/_video_ops_ffmpeg_3.4.so",
     srcs = [
-        "kernels/ffmpeg_3_4.cc",
+        "kernels/ffmpeg.cc",
         "kernels/video_dataset_ops.cc",
         "kernels/video_reader.h",
         "ops/dataset_ops.cc",
@@ -29,7 +29,7 @@ cc_binary(
 cc_binary(
     name = "python/ops/_video_ops_ffmpeg_2.8.so",
     srcs = [
-        "kernels/ffmpeg_2_8.cc",
+        "kernels/ffmpeg.cc",
         "kernels/video_dataset_ops.cc",
         "kernels/video_reader.h",
         "ops/dataset_ops.cc",
@@ -53,7 +53,7 @@ cc_binary(
 cc_binary(
     name = "python/ops/_video_ops_libav_9.20.so",
     srcs = [
-        "kernels/libav_9_20.cc",
+        "kernels/ffmpeg.cc",
         "kernels/video_dataset_ops.cc",
         "kernels/video_reader.h",
         "ops/dataset_ops.cc",
