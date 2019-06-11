@@ -18,12 +18,12 @@ from __future__ import division
 from __future__ import print_function
 
 import ctypes
-import _ctypes
 
 import tensorflow as tf
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
+from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io import _load_library
+
+import _ctypes
 
 def load_dependency_and_library(p):
   """load_dependency_and_library"""
@@ -68,10 +68,10 @@ video_ops = load_dependency_and_library({
     ],
 })
 
-class VideoDataset(data.Dataset):
+class VideoDataset(data_ops.BaseDataset):
   """A Video File Dataset that reads the video file."""
 
-  def __init__(self, filenames):
+  def __init__(self, filename):
     """Create a `VideoDataset`.
 
     `VideoDataset` allows a user to read data from a video file with
@@ -92,26 +92,12 @@ class VideoDataset(data.Dataset):
     ```
 
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tf.convert_to_tensor(
-        filenames, dtype=dtypes.string, name="filenames")
-    super(VideoDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return video_ops.video_dataset(self._filenames)
-
-  @property
-  def output_classes(self):
-    return tf.Tensor
-
-  @property
-  def output_shapes(self):
-    return tf.TensorShape([None, None, 3])
-
-  @property
-  def output_types(self):
-    return dtypes.uint8
+    batch = None # TODO: Add batch support
+    self._batch = 0 if batch is None else batch
+    self._dtypes = [tf.uint8]
+    self._shapes = [tf.TensorShape([None, None, 3])]
+    super(VideoDataset, self).__init__(
+        video_ops.video_dataset(filename),
+        self._batch, self._dtypes, self._shapes)

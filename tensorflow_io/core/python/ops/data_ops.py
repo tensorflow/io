@@ -19,21 +19,17 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-class Dataset(tf.compat.v2.data.Dataset):
-  """A base Dataset"""
+# Note: BaseDataset could be used by Dataset implementations
+# that does not utilize DataInput implementation.
+class BaseDataset(tf.compat.v2.data.Dataset):
+  """A Base Dataset"""
 
-  def __init__(self, fn, data_input, batch, dtypes, shapes):
-    """Create a base Dataset."""
-    self._fn = fn
-    self._data_input = data_input
+  def __init__(self, variant, batch, dtypes, shapes):
+    """Create a Base Dataset."""
     self._batch = 0 if batch is None else batch
     self._dtypes = dtypes
     self._shapes = shapes
-    super(Dataset, self).__init__(fn(
-        self._data_input,
-        self._batch,
-        output_types=self._dtypes,
-        output_shapes=self._shapes))
+    super(BaseDataset, self).__init__(variant)
 
   def _inputs(self):
     return []
@@ -48,3 +44,19 @@ class Dataset(tf.compat.v2.data.Dataset):
     if len(e) == 1:
       return e[0]
     return tf.data.experimental.NestedStructure(tuple(e))
+
+class Dataset(BaseDataset):
+  """A Dataset that takes DataInput"""
+
+  def __init__(self, fn, data_input, batch, dtypes, shapes):
+    """Create a Dataset."""
+    self._fn = fn
+    self._data_input = data_input
+    self._batch = 0 if batch is None else batch
+    self._dtypes = dtypes
+    self._shapes = shapes
+    super(Dataset, self).__init__(fn(
+        self._data_input,
+        self._batch,
+        output_types=self._dtypes,
+        output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
