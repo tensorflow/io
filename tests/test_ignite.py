@@ -43,12 +43,136 @@ class IGFSTest(test.TestCase):
      $ bash stop_ignite.sh
   """
 
-  def test_create_file(self):
+  '''
+  def test_create_file_igfs(self):
+    """Test create file on IGFS.
+
+    """
+    self._test_create_file("igfs")
+  '''
+
+  def test_create_file_ggfs(self):
+    """Test create file on GGFS.
+
+    """
+    self._test_create_file("ggfs")
+
+  '''
+  def test_write_read_file_igfs(self):
+    """Test write/read file on IGFS.
+
+    """
+    self._test_write_read_file("igfs")
+
+  def test_write_read_file_ggfs(self):
+    """Test write/read file on GGFS.
+
+    """
+    self._test_write_read_file("ggfs")
+
+  def test_delete_recursively_igfs(self):
+    """Test delete recursively on IGFS.
+
+    """
+    self._test_delete_recursively("igfs")
+
+  def test_delete_recursively_ggfs(self):
+    """Test delete recursively on GGFS.
+
+    """
+    self._test_delete_recursively("ggfs")
+
+  def test_copy_igfs(self):
+    """Test copy on IGFS.
+
+    """
+    self._test_copy("igfs")
+
+  def test_copy_ggfs(self):
+    """Test copy on GGFS.
+
+    """
+    self._test_copy("ggfs")
+
+  def test_is_directory_igfs(self):
+    """Test is directory on IGFS.
+
+    """
+    self._test_is_directory("igfs")
+
+  def test_is_directory_ggfs(self):
+    """Test is directory on GGFS.
+
+    """
+    self._test_is_directory("ggfs")
+
+  def test_list_directory_igfs(self):
+    """Test list directory on IGFS.
+
+    """
+    self._test_list_directory("igfs")
+
+  def test_list_directory_ggfs(self):
+    """Test list directory on GGFS.
+
+    """
+    self._test_list_directory("ggfs");
+
+  def test_make_dirs_igfs(self):
+    """Test make directories on IGFS.
+
+    """
+    self._test_make_dirs("igfs")
+
+  def test_make_dirs_ggfs(self):
+    """Test make directories on GGFS.
+
+    """
+    self._test_make_dirs("ggfs")
+
+  def test_remove_igfs(self):
+    """Test remove on IGFS.
+
+    """
+    self._test_remove("igfs")
+
+  def test_remove_ggfs(self):
+    """Test remove on GGFS.
+
+    """
+    self._test_remove("ggfs")
+
+  def test_rename_file_igfs(self):
+    """Test rename file on IGFS.
+
+    """
+    self._test_rename_file("igfs")
+
+  def test_rename_file_ggfs(self):
+    """Test rename file on GGFS.
+
+    """
+    self._test_rename_file("ggfs")
+
+  def test_rename_dir_igfs(self):
+    """Test rename directory on IGFS.
+
+    """
+    self._test_rename_dir("igfs")
+
+  def test_rename_dir_ggfs(self):
+    """Test rename directory on GGFS.
+
+    """
+    self._test_rename_dir("ggfs")
+  '''
+
+  def _test_create_file(self, fs_prefix):
     """Test create file.
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_create_file/1"
+    file_name = fs_prefix + ":///test_create_file/1"
     self.assertFalse(gfile.Exists(file_name))
     # Create file.
     with gfile.Open(file_name, mode="w") as w:
@@ -60,12 +184,12 @@ class IGFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(file_name))
 
-  def test_write_read_file(self):
+  def _test_write_read_file(self, fs_prefix):
     """Test write/read file.
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_write_read_file/1"
+    file_name = fs_prefix + ":///test_write_read_file/1"
     rows = 10000
     self.assertFalse(gfile.Exists(file_name))
     # Write data.
@@ -84,13 +208,13 @@ class IGFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(file_name))
 
-  def test_delete_recursively(self):
+  def _test_delete_recursively(self, fs_prefix):
     """Test delete recursively.
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_delete_recursively/"
-    file_name = "igfs:///test_delete_recursively/1"
+    dir_name = fs_prefix + ":///test_delete_recursively/"
+    file_name = fs_prefix + ":///test_delete_recursively/1"
     self.assertFalse(gfile.Exists(dir_name))
     self.assertFalse(gfile.Exists(file_name))
     gfile.MkDir(dir_name)
@@ -104,13 +228,13 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(dir_name))
     self.assertFalse(gfile.Exists(file_name))
 
-  def test_copy(self):
+  def _test_copy(self, fs_prefix):
     """Test copy.
 
     """
     # Setup and check preconditions.
-    src_file_name = "igfs:///test_copy/1"
-    dst_file_name = "igfs:///test_copy/2"
+    src_file_name = fs_prefix + ":///test_copy/1"
+    dst_file_name = fs_prefix + ":///test_copy/2"
     self.assertFalse(gfile.Exists(src_file_name))
     self.assertFalse(gfile.Exists(dst_file_name))
     with gfile.Open(src_file_name, mode="w") as w:
@@ -132,13 +256,13 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(src_file_name))
     self.assertFalse(gfile.Exists(dst_file_name))
 
-  def test_is_directory(self):
+  def _test_is_directory(self, fs_prefix):
     """Test is directory.
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_is_directory/1"
-    file_name = "igfs:///test_is_directory/2"
+    dir_name = fs_prefix + ":///test_is_directory/1"
+    file_name = fs_prefix + ":///test_is_directory/2"
     with gfile.Open(file_name, mode="w") as w:
       w.write("")
     gfile.MkDir(dir_name)
@@ -147,17 +271,17 @@ class IGFSTest(test.TestCase):
     # Check that file is not a directory.
     self.assertFalse(gfile.IsDirectory(file_name))
 
-  def test_list_directory(self):
+  def _test_list_directory(self, fs_prefix):
     """Test list directory.
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_list_directory/"
+    dir_name = fs_prefix + ":///test_list_directory/"
     file_names = [
-        "igfs:///test_list_directory/1", "igfs:///test_list_directory/2/3"
+        fs_prefix + ":///test_list_directory/1", fs_prefix + ":///test_list_directory/2/3"
     ]
     ch_dir_names = [
-        "igfs:///test_list_directory/4",
+        fs_prefix + ":///test_list_directory/4",
     ]
     for file_name in file_names:
       with gfile.Open(file_name, mode="w") as w:
@@ -172,12 +296,12 @@ class IGFSTest(test.TestCase):
     for e in ["1", "2", "4"]:
       self.assertTrue(e in ls_result)
 
-  def test_make_dirs(self):
+  def _test_make_dirs(self, fs_prefix):
     """Test make dirs.
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_make_dirs/"
+    dir_name = fs_prefix + ":///test_make_dirs/"
     self.assertFalse(gfile.Exists(dir_name))
     # Make directory.
     gfile.MkDir(dir_name)
@@ -188,12 +312,12 @@ class IGFSTest(test.TestCase):
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dir_name))
 
-  def test_remove(self):
+  def _test_remove(self, fs_prefix):
     """Test remove.
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_remove/1"
+    file_name = fs_prefix + ":///test_remove/1"
     self.assertFalse(gfile.Exists(file_name))
     with gfile.Open(file_name, mode="w") as w:
       w.write("")
@@ -203,13 +327,13 @@ class IGFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(file_name))
 
-  def test_rename_file(self):
+  def _test_rename_file(self, fs_prefix):
     """Test rename file.
 
     """
     # Setup and check preconditions.
-    src_file_name = "igfs:///test_rename_file/1"
-    dst_file_name = "igfs:///test_rename_file/2"
+    src_file_name = fs_prefix + ":///test_rename_file/1"
+    dst_file_name = fs_prefix + ":///test_rename_file/2"
     with gfile.Open(src_file_name, mode="w") as w:
       w.write("42")
     self.assertTrue(gfile.Exists(src_file_name))
@@ -226,13 +350,13 @@ class IGFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(dst_file_name))
 
-  def test_rename_dir(self):
+  def _test_rename_dir(self, fs_prefix):
     """Test rename dir.
 
     """
     # Setup and check preconditions.
-    src_dir_name = "igfs:///test_rename_dir/1"
-    dst_dir_name = "igfs:///test_rename_dir/2"
+    src_dir_name = fs_prefix + ":///test_rename_dir/1"
+    dst_dir_name = fs_prefix + ":///test_rename_dir/2"
     gfile.MkDir(src_dir_name)
     # Rename directory.
     gfile.Rename(src_dir_name, dst_dir_name)
@@ -245,7 +369,7 @@ class IGFSTest(test.TestCase):
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dst_dir_name))
 
-
+'''
 class IgniteDatasetTest(test.TestCase):
   """The Apache Ignite servers have to setup before the test and tear down
 
@@ -309,6 +433,7 @@ class IgniteDatasetTest(test.TestCase):
     self.assertEqual({"key": 1, "val": {"NAME": b"TEST1", "VAL": 42}}, rows[0])
     self.assertEqual({"key": 2, "val": {"NAME": b"TEST2", "VAL": 43}}, rows[1])
     self.assertEqual({"key": 3, "val": {"NAME": b"TEST3", "VAL": 44}}, rows[2])
+'''
 
 
 if __name__ == "__main__":
