@@ -30,7 +30,7 @@ import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
 
 video_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-
+video_path = "file://" + video_path
 def test_video_dataset():
   """test_video_dataset"""
   num_repeats = 2

@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "kernels/dataset_ops.h"
 #include "kernels/video_reader.h"
 
 namespace tensorflow {
@@ -35,7 +34,7 @@ class VideoInput: public FileInput<video::VideoReader> {
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<video::VideoReader>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       VideoReaderInit();
-      state.reset(new video::VideoReader(filename()));
+      state.reset(new video::VideoReader(dynamic_cast<SizedRandomAccessInputStreamInterface*>(s), filename()));
       TF_RETURN_IF_ERROR(state.get()->ReadHeader());
     }
     // Read the first frame to get height and width

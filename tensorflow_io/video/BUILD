@@ -18,8 +18,8 @@ cc_binary(
     includes = ["."],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_3_4//:ffmpeg",
-         "//tensorflow_io/core:dataset_ops",
     ],
 )
 
@@ -39,8 +39,8 @@ cc_binary(
     includes = ["."],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_2_8//:ffmpeg",
-         "//tensorflow_io/core:dataset_ops",
     ],
 )
 
@@ -60,7 +60,7 @@ cc_binary(
     includes = ["."],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@libav_9_20//:libav",
-         "//tensorflow_io/core:dataset_ops",
     ],
 )

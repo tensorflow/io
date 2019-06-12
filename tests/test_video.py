@@ -28,7 +28,7 @@ import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
 
 video_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-
+video_path = "file://" + video_path
 def test_video_predict():
   model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
   x = video_io.VideoDataset(video_path, batch=1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
