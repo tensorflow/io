@@ -68,10 +68,10 @@ video_ops = load_dependency_and_library({
     ],
 })
 
-class VideoDataset(data_ops.BaseDataset):
+class VideoDataset(data_ops.Dataset):
   """A Video File Dataset that reads the video file."""
 
-  def __init__(self, filename):
+  def __init__(self, filename, batch=None):
     """Create a `VideoDataset`.
 
     `VideoDataset` allows a user to read data from a video file with
@@ -94,10 +94,11 @@ class VideoDataset(data_ops.BaseDataset):
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
-    batch = None # TODO: Add batch support
-    self._batch = 0 if batch is None else batch
-    self._dtypes = [tf.uint8]
-    self._shapes = [tf.TensorShape([None, None, 3])]
+    batch = 0 if batch is None else batch
+    dtypes = [tf.uint8]
+    shapes = [
+        tf.TensorShape([None, None, 3])] if batch == 0 else [
+            tf.TensorShape([None, None, None, 3])]
     super(VideoDataset, self).__init__(
-        video_ops.video_dataset(filename),
-        self._batch, self._dtypes, self._shapes)
+        video_ops.video_dataset,
+        video_ops.video_input(filename), batch, dtypes, shapes)

@@ -31,7 +31,7 @@ video_path = os.path.join(
 
 def test_video_predict():
   model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
-  x = video_io.VideoDataset(video_path).batch(1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  x = video_io.VideoDataset(video_path, batch=1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
   y = model.predict(x)
   p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
   assert len(p) == 166
