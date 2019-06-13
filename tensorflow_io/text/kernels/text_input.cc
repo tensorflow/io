@@ -25,8 +25,7 @@ class TextInput: public FileInput<io::BufferedInputStream> {
     if (state.get() == nullptr) {
       state.reset(new io::BufferedInputStream(s, 4096));
     }
-    std::vector<string> records;
-    records.reserve(record_to_read);
+    Tensor value_tensor(ctx->allocator({}), DT_STRING, {record_to_read});
     while ((*record_read) < record_to_read) {
       string buffer;
       buffer.clear();
@@ -37,14 +36,10 @@ class TextInput: public FileInput<io::BufferedInputStream> {
       if (!status.ok()) {
         break;
       }
-      records.emplace_back(std::move(buffer));
+      value_tensor.flat<string>()((*record_read)) = std::move(buffer);
       (*record_read)++;
     }
     if (*record_read > 0) {
-      Tensor value_tensor(ctx->allocator({}), DT_STRING, {*record_read});
-      for (int64 i = 0; i < (*record_read); i++) {
-        value_tensor.flat<string>()(i) = std::move(records[i]);
-      }
       out_tensors->emplace_back(std::move(value_tensor));
     }
     return Status::OK();
