@@ -57,6 +57,7 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/audio:audio_ops",
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/cifar:cifar_ops",
         "//tensorflow_io/hdf5:hdf5_ops",

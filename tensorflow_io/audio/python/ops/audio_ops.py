@@ -18,46 +18,24 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-audio_ops = _load_library('_audio_ops.so')
+from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import core_ops as audio_ops
 
-class WAVDataset(data.Dataset):
-  """A WAV Dataset
-  """
+class WAVDataset(data_ops.Dataset):
+  """A WAV Dataset"""
 
-  def __init__(self, filenames, batch=None):
+  def __init__(self, filename, batch=None):
     """Create a WAVDataset.
 
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = audio_ops.wav_input(filenames)
-    self._batch = 0 if batch is None else batch
-    super(WAVDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return audio_ops.wav_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_shapes(self):
-    return tuple([
-        tf.TensorShape([])]) if self._batch == 0 else tuple([
-            tf.TensorShape([None])])
-
-  @property
-  def output_classes(self):
-    return tf.Tensor
-
-
-  @property
-  def output_types(self):
-    return tuple([dtypes.int16])
+    batch = 0 if batch is None else batch
+    dtypes = [tf.int16]
+    shapes = [
+        tf.TensorShape([None])] if batch == 0 else [
+            tf.TensorShape([None, None])]
+    super(WAVDataset, self).__init__(
+        audio_ops.wav_dataset,
+        audio_ops.wav_input(filename),
+        batch, dtypes, shapes)
