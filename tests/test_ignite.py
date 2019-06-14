@@ -49,7 +49,6 @@ class IGFSTest(test.TestCase):
 
     """
     self._test_create_file("igfs")
-  '''
 
   def test_create_file_ggfs(self):
     """Test create file on GGFS.
@@ -57,7 +56,6 @@ class IGFSTest(test.TestCase):
     """
     self._test_create_file("ggfs")
 
-  '''
   def test_write_read_file_igfs(self):
     """Test write/read file on IGFS.
 
@@ -255,6 +253,9 @@ class IGFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(src_file_name))
     self.assertFalse(gfile.Exists(dst_file_name))
+
+  def test_aaa(self):
+    gfile.Exists('ggfs:///test')
 
   def _test_is_directory(self, fs_prefix):
     """Test is directory.

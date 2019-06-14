@@ -32,6 +32,8 @@ cc_binary(
         "kernels/igfs/igfs_writable_file.h",
         "kernels/ggfs/ggfs.cc",
         "kernels/ggfs/ggfs.h",
+        "kernels/ggfs/ggfs_client.cc",
+        "kernels/ggfs/ggfs_client.h",
         "kernels/ggfs/ggfs_random_access_file.cc",
         "kernels/ggfs/ggfs_random_access_file.h",
         "kernels/ggfs/ggfs_writable_file.cc",
