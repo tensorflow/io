@@ -93,6 +93,9 @@ class VideoDataset(data_ops.Dataset):
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
+      batch: An integer representing the number of consecutive image frames
+        to combine in a single batch. If `batch == 0` then each element
+        of the dataset has one standalone image frame.
     """
     batch = 0 if batch is None else batch
     dtypes = [tf.uint8]
