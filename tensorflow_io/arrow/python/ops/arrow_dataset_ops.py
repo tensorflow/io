@@ -17,12 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from functools import partial
 import io
 
 import tensorflow as tf
-
 from tensorflow import dtypes
-from tensorflow.compat.v1 import data
+from tensorflow.compat.v2 import data
+from tensorflow.python.data.ops.dataset_ops import flat_structure
 from tensorflow.python.data.util import structure as structure_lib
 from tensorflow_io import _load_library
 arrow_ops = _load_library('_arrow_ops.so')
@@ -91,6 +92,7 @@ class ArrowBaseDataset(data.Dataset):
   batch_modes_supported = ('keep_remainder', 'drop_remainder', 'auto')
 
   def __init__(self,
+               make_variant_fn,
                columns,
                output_types,
                output_shapes=None,
@@ -114,11 +116,16 @@ class ArrowBaseDataset(data.Dataset):
         batch_mode,
         dtypes.string,
         name="batch_mode")
-    if batch_size is not None:
+    if batch_size is not None or batch_mode == 'auto':
       # pylint: disable=protected-access
       self._structure = self._structure._batch(
           batch_size if batch_mode == 'drop_remainder' else None)
-    super(ArrowBaseDataset, self).__init__()
+    variant_tensor = make_variant_fn(
+        columns=self._columns,
+        batch_size=self._batch_size,
+        batch_mode=self._batch_mode,
+        **flat_structure(self))
+    super(ArrowBaseDataset, self).__init__(variant_tensor)
 
   def _inputs(self):
     return []
@@ -130,6 +137,14 @@ class ArrowBaseDataset(data.Dataset):
   @property
   def columns(self):
     return self._columns
+
+  @property
+  def batch_size(self):
+    return self._batch_size
+
+  @property
+  def batch_mode(self):
+    return self._batch_mode
 
 
 class ArrowDataset(ArrowBaseDataset):
@@ -162,22 +177,13 @@ class ArrowDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    self._serialized_batches = serialized_batches
     super(ArrowDataset, self).__init__(
+        partial(arrow_ops.arrow_dataset, serialized_batches),
         columns,
         output_types,
         output_shapes,
         batch_size,
         batch_mode)
-
-  def _as_variant_tensor(self):
-    return arrow_ops.arrow_dataset(
-        self._serialized_batches,
-        self._columns,
-        self._batch_size,
-        self._batch_mode,
-        nest.flatten(self.output_types),
-        nest.flatten(self.output_shapes))
 
   @classmethod
   def from_record_batches(cls,
@@ -298,25 +304,17 @@ class ArrowFeatherDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    self._filenames = tf.convert_to_tensor(
+    filenames = tf.convert_to_tensor(
         filenames,
         dtype=dtypes.string,
         name="filenames")
     super(ArrowFeatherDataset, self).__init__(
+        partial(arrow_ops.arrow_feather_dataset, filenames),
         columns,
         output_types,
         output_shapes,
         batch_size,
         batch_mode)
-
-  def _as_variant_tensor(self):
-    return arrow_ops.arrow_feather_dataset(
-        self._filenames,
-        self._columns,
-        self._batch_size,
-        self._batch_mode,
-        nest.flatten(self.output_types),
-        nest.flatten(self.output_shapes))
 
   @classmethod
   def from_schema(cls,
@@ -385,25 +383,17 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    self._host = tf.convert_to_tensor(
+    host = tf.convert_to_tensor(
         host,
         dtype=dtypes.string,
         name="host")
     super(ArrowStreamDataset, self).__init__(
+        partial(arrow_ops.arrow_stream_dataset, host),
         columns,
         output_types,
         output_shapes,
         batch_size,
         batch_mode)
-
-  def _as_variant_tensor(self):
-    return arrow_ops.arrow_stream_dataset(
-        self._host,
-        self._columns,
-        self._batch_size,
-        self._batch_mode,
-        nest.flatten(self.output_types),
-        nest.flatten(self.output_shapes))
 
   @classmethod
   def from_schema(cls,

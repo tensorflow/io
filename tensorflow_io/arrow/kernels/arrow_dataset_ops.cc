@@ -314,6 +314,9 @@ class ArrowDatasetBase : public DatasetBase {
       // Check if reached end of stream
       if (current_batch_ == nullptr) {
 
+        // Finalize the iterator state
+        ResetStreamsLocked();
+
         // Return partial batch if drop_remainder flag not set
         if (partial_batch_size > 0 && this->dataset()->batch_mode_ !=
             ArrowBatchMode::BATCH_DROP_REMAINDER) {
@@ -321,8 +324,8 @@ class ArrowDatasetBase : public DatasetBase {
           TF_RETURN_IF_ERROR(AppendPartialTensors(ctx, partial_batch_size,
               partial_batches, out_tensors));
           have_result = true;
-        } else {
-          ResetStreamsLocked();
+        // No more results, so end the sequence
+        }  else {
           *end_of_sequence = true;
         }
       } else {

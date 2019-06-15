@@ -28,12 +28,12 @@ import threading
 import pytest
 
 import tensorflow as tf
-tf.compat.v1.disable_eager_execution()
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
 
 from tensorflow import dtypes # pylint: disable=wrong-import-position
 from tensorflow import errors # pylint: disable=wrong-import-position
 from tensorflow import test   # pylint: disable=wrong-import-position
-from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
 import tensorflow_io.arrow as arrow_io # pylint: disable=wrong-import-position
 
@@ -103,37 +103,56 @@ class ArrowDatasetTest(test.TestCase):
 
   def run_test_case(self, dataset, truth_data, batch_size=None):
     """run_test_case"""
-    iterator = data.make_one_shot_iterator(dataset)
-    next_element = iterator.get_next()
 
     def is_float(dtype):
+      """Check if dtype is a floating-point"""
       return dtype in [dtypes.float16, dtypes.float32, dtypes.float64]
 
-    batch_counter = batch_size
+    def evaluate_result(value):
+      """Check the results match truth data"""
+      for i, col in enumerate(dataset.columns):
+        if truth_data.output_shapes[col].ndims == 0:
+          if is_float(truth_data.output_types[col]):
+            self.assertAlmostEqual(value[i], truth_data.data[col][row], 4)
+          else:
+            self.assertEqual(value[i], truth_data.data[col][row])
+        elif truth_data.output_shapes[col].ndims == 1:
+          if is_float(truth_data.output_types[col]):
+            for j, v in enumerate(value[i]):
+              self.assertAlmostEqual(v, truth_data.data[col][row][j], 4)
+          else:
+            self.assertListEqual(value[i].tolist(), truth_data.data[col][row])
 
-    with self.test_session() as sess:
-      for row in range(len(truth_data.data[0])):
+    # Row counter for each single result or batch of multiple rows
+    row = 0
+
+    # Iterate over the dataset
+    for results in dataset:
+
+      # For batches, iterate over each row in batch or remainder at end
+      for result_idx in range(batch_size or 1):
+
+        # Get a single row value
         if batch_size is None:
-          value = sess.run(next_element)
+          value = [r.numpy() for r in results]
+        # Get a batch of values and check 1 row at a time
         else:
-          if batch_counter == batch_size:
-            value_batch = sess.run(next_element)
-            print(value_batch)
-            batch_counter = 0
-          value = [v[batch_counter] for v in value_batch]
-          batch_counter += 1
-        for i, col in enumerate(dataset.columns):
-          if truth_data.output_shapes[col].ndims == 0:
-            if is_float(truth_data.output_types[col]):
-              self.assertAlmostEqual(value[i], truth_data.data[col][row], 4)
-            else:
-              self.assertEqual(value[i], truth_data.data[col][row])
-          elif truth_data.output_shapes[col].ndims == 1:
-            if is_float(truth_data.output_types[col]):
-              for j, v in enumerate(value[i]):
-                self.assertAlmostEqual(v, truth_data.data[col][row][j], 4)
-            else:
-              self.assertListEqual(value[i].tolist(), truth_data.data[col][row])
+          if result_idx == 0:
+            value_batch = [r.numpy() for r in results]
+
+          # Check for a partial result
+          if result_idx == value_batch[0].shape[0]:
+            break
+
+          # Get a single row out of the batch
+          value = [v[result_idx] for v in value_batch]
+
+        # Check the result then increment the row counter
+        evaluate_result(value)
+        row += 1
+
+    # Check that all data was returned by Dataset
+    self.assertEqual(row, len(truth_data.data[0]))
 
   def get_arrow_type(self, dt, is_list):
     """get_arrow_type"""
@@ -168,6 +187,7 @@ class ArrowDatasetTest(test.TestCase):
     return arrow_type
 
   def make_record_batch(self, truth_data):
+    """Make an Arrow RecordBatch for given test data"""
     arrays = [pa.array(truth_data.data[col],
                        type=self.get_arrow_type(
                            truth_data.output_types[col],
@@ -355,7 +375,7 @@ class ArrowDatasetTest(test.TestCase):
         list(range(len(truth_data.output_types))),
         tuple([dtypes.int32 for _ in truth_data.output_types]),
         truth_data.output_shapes)
-    with self.assertRaisesRegexp(errors.OpError, 'Arrow type mismatch'):
+    with self.assertRaisesRegex(errors.OpError, 'Arrow type mismatch'):
       self.run_test_case(dataset, truth_data)
 
   def test_map_and_batch(self):
@@ -374,53 +394,46 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
 
     dataset = dataset.map(lambda x: x).batch(4)
-    it = dataset.make_one_shot_iterator()
-    d = it.get_next()
 
     expected = truth_data.data[0]
-    with self.test_session() as sess:
-      while True:
-        try:
-          result = sess.run(d)
-          self.assertTrue(expected, 'Dataset has more output than expected')
-          for x in result:
-            self.assertEqual(x, expected[0])
-            expected.pop(0)
-        except tf.errors.OutOfRangeError:
-          break
+    for result_tensors in dataset:
+      results = result_tensors.numpy()
+      for x in results:
+        self.assertTrue(expected, 'Dataset has more output than expected')
+        self.assertEqual(x, expected[0])
+        expected.pop(0)
 
-  def test_feed_batches(self):
+  def test_tf_function(self):
+    """ Test that an ArrowDataset can be used in tf.function call
     """
-    Test that an ArrowDataset can initialize an iterator to feed a placeholder
-    """
+    if not tf.version.VERSION.startswith("2."):
+      self.skipTest("Test requires TF2.0 for tf.function")
+
     truth_data = TruthData(
         [list(range(10)), [x * 1.1 for x in range(10)]],
         (dtypes.int32, dtypes.float64),
         (tf.TensorShape([]), tf.TensorShape([])))
-    batch = self.make_record_batch(truth_data)
 
+    @tf.function
+    def create_arrow_dataset(serialized_batch):
+      """Create an arrow dataset from input tensor"""
+      dataset = arrow_io.ArrowDataset(
+          serialized_batch,
+          list(range(len(truth_data.output_types))),
+          truth_data.output_types,
+          truth_data.output_shapes)
+      return dataset
+
+    batch = self.make_record_batch(truth_data)
     buf = io.BytesIO()
     writer = pa.RecordBatchFileWriter(buf, batch.schema)
     writer.write_batch(batch)
     writer.close()
 
-    buf_placeholder = tf.compat.v1.placeholder(
-        tf.dtypes.string, tf.TensorShape([]))
-
-    dataset = arrow_io.ArrowDataset(
-        buf_placeholder,
-        list(range(len(truth_data.output_types))),
-        truth_data.output_types,
-        truth_data.output_shapes)
-    it = dataset.make_initializable_iterator()
-    next_element = it.get_next()
-
-    with self.test_session() as sess:
-      sess.run(it.initializer, feed_dict={buf_placeholder: buf.getvalue()})
-      for row in range(len(truth_data.data)):
-        value = sess.run(next_element)
-        self.assertEqual(value[0], truth_data.data[0][row])
-        self.assertAlmostEqual(value[1], truth_data.data[1][row], 4)
+    for row, results in enumerate(create_arrow_dataset(buf.getvalue())):
+      value = [result.numpy() for result in results]
+      self.assertEqual(value[0], truth_data.data[0][row])
+      self.assertAlmostEqual(value[1], truth_data.data[1][row], 4)
 
   def test_batch_no_remainder(self):
     """Test batch_size that does not leave a remainder
@@ -547,18 +560,24 @@ class ArrowDatasetTest(test.TestCase):
     num_batches = 3
     batch_size = len(self.scalar_data[0]) + 1
 
-    truth_data = TruthData(
-        [d * num_batches for d in self.scalar_data],
+    single_batch_data = TruthData(
+        self.scalar_data,
         self.scalar_dtypes,
         self.scalar_shapes)
 
-    batch = self.make_record_batch(truth_data)
+    batch = self.make_record_batch(single_batch_data)
+    batches = [batch] * num_batches
+
+    truth_data = TruthData(
+        [d * num_batches for d in single_batch_data.data],
+        single_batch_data.output_types,
+        single_batch_data.output_shapes)
 
     # Batches should divide input and leave a remainder
     self.assertNotEqual(len(truth_data.data[0]) % batch_size, 0)
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
-        [batch] * num_batches,
+        batches,
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
@@ -636,7 +655,7 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes,
         batch_size=batch_size)
 
-    with self.assertRaisesRegexp(errors.OpError, 'variable.*unsupported'):
+    with self.assertRaisesRegex(errors.OpError, 'variable.*unsupported'):
       self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
   def test_unsupported_batch_mode(self):
@@ -647,7 +666,7 @@ class ArrowDatasetTest(test.TestCase):
         self.scalar_dtypes,
         self.scalar_shapes)
 
-    with self.assertRaisesRegexp(ValueError, 'Unsupported batch_mode.*doh'):
+    with self.assertRaisesRegex(ValueError, 'Unsupported batch_mode.*doh'):
       arrow_io.ArrowDataset.from_record_batches(
           [self.make_record_batch(truth_data)],
           list(range(len(truth_data.output_types))),
