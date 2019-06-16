@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""PcapInput/PcapOutput
+"""PcapInput
 
-@@PcapOutputSequence
 @@PcapDataset
 """
 
@@ -23,9 +22,9 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.util.all_util import remove_undocumented
+from tensorflow_io.pcap.python.ops.pcap_ops import PcapDataset
 
 _allowed_symbols = [
-    "PcapOutputSequence",
     "PcapDataset",
 ]
 

@@ -20,11 +20,9 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow.python.framework import ops
-
+from tensorflow_io import _load_library
 pcap_ops = _load_library('_pcap_ops.so')
 
-# @tf_export("PcapDataset")
 class PcapDataset(data.Dataset):
   """A pcap Dataset. Pcap is a popular file format for capturing network packets.
   """
@@ -35,7 +33,7 @@ class PcapDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = audio_ops.wav_input(filenames)
+    self._data_input = pcap_ops.pcap_input(filenames)
     self._batch = 0 if batch is None else batch
     super(PcapDataset, self).__init__()
 
@@ -54,7 +52,7 @@ class PcapDataset(data.Dataset):
   @property
   def output_classes(self):
     # we output a tensor for packet timestamp and one for packet data
-    return tuple(tf.Tensor, tf.Tensor)
+    return (tf.Tensor, tf.Tensor)
 
   @property
   def output_shapes(self):
@@ -67,4 +65,3 @@ class PcapDataset(data.Dataset):
   @property
   def output_types(self):
     return tuple([dtypes.float64, dtypes.string])
-

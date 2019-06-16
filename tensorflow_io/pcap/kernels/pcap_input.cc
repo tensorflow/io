@@ -37,8 +37,8 @@ public:
     buffer.clear();
 
     // read packet header
-    TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct pcapPacketHeader), &buffer));
-    struct pcapPacketHeader *header = (struct pcapPacketHeader *)buffer.data();
+    TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct PacketHeader), &buffer));
+    struct PacketHeader *header = (struct PacketHeader *)buffer.data();
 
     if (reverse_header_byte_order) {
       // switch byte order to get accurate representation of field values
@@ -64,14 +64,14 @@ public:
     TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct PcapFileHeader), &buffer));
     struct PcapFileHeader *header = (struct PcapFileHeader *)buffer.data();
 
-    if(!ValidateMagicNumber(header->magic_number))
+    if(!ValidateMagicNumber(header->magic_number)) {
       return errors::InvalidArgument("PCAP file must starts with a standard magic number.");
     }
 
     if (reverse_header_byte_order) {
         // switch byte order to get accurate representation of packet slices
         // snaplen will be needed to reconstruct sliced payloads spread across multiple pcap packets
-        EndianSwap(header->snaplen)
+        EndianSwap(header->snaplen);
     }
     return Status::OK();
   }
@@ -119,7 +119,7 @@ private:
         (x<<8);
   }
 
-  inline void EndianSwap(int32_t& x)
+  inline void EndianSwap(uint32_t& x)
   {
     x = (x>>24) |
         ((x<<8) & 0x00FF0000) |
@@ -132,7 +132,7 @@ private:
   /**
   Check for the magic numbers of the two most typical pcap formats used in practice.
   */
-  bool ValidateMagicNumber(uint32_t magic) {
+  bool ValidateMagicNumber(uint32_t magic_number) {
         if (magic_number == MAGIC_NUMBER) {
             return true;
         } else if (magic_number == MAGIC_NUMBER_REVERSED) {
@@ -170,9 +170,9 @@ class PcapInput: public FileInput<PcapInputStream> {
       TF_RETURN_IF_ERROR(state.get()->ReadRecord(packet_timestamp, &packet_data_buffer, record_count));
       if (record_count > 0) {
         Tensor timestamp_tensor = (*out_tensors)[0];
-        timestamp_tensor->flat<double>()(record_read) = packet_timestamp;
+        timestamp_tensor.flat<double>()(*record_read) = packet_timestamp;
         Tensor data_tensor = (*out_tensors)[1];
-        timestamp_tensor.flat<string>()(record_read) = std::move(packet_data_buffer)
+        timestamp_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
         (*record_read) += record_count;
       } else {
         // no more records available to read
