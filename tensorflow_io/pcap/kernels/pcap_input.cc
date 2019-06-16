@@ -149,11 +149,13 @@ private:
 class PcapInput: public FileInput<PcapInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<PcapInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+    std::cout << "pcap_input.cc: Entering PcapInput::ReadRecord\n";
     if (state.get() == nullptr) {
       state.reset(new PcapInputStream(s));
       TF_RETURN_IF_ERROR(state.get()->ReadHeader());
     }
-
+    std::cout << "PCAP header read from file.\n";
+    std::cout << "Will read " << record_to_read << " records.\n";
     // Let's allocate enough space for Tensor, if more than read, replace.
     // The output tensor has two columns (packet_timestamp,packet_data).
     // Hence the shape of the output tensor is (record_to_read,2) unless there are less than record_to_read packets left in the file
@@ -161,22 +163,31 @@ class PcapInput: public FileInput<PcapInputStream> {
     out_tensors->emplace_back(std::move(tensor_packet_ts)); // add timestamp column to the output tensor
     Tensor tensor_packet_data(ctx->allocator({}), DT_STRING, {record_to_read}); // Tensor column for packet data
     out_tensors->emplace_back(std::move(tensor_packet_data)); // add data column to the output tensor
+    std::cout << "Allocated tensor placeholders for packet timestamp and data.\n";
 
     // read packets from the file up to record_to_read or end of file
     while ((*record_read) < record_to_read) {
+      std::cout << "Records read so far:" << (*record_read) << "\n";
       int64 record_count = 0;
       double packet_timestamp;
       string packet_data_buffer;
+      std::cout << "Reading next record.\n";
       TF_RETURN_IF_ERROR(state.get()->ReadRecord(packet_timestamp, &packet_data_buffer, record_count));
+      std::cout << "packet record_count: " << record_count << "\n";
+      std::cout << "packet timestamp: " << packet_timestamp << "\n";
+      std::cout << "packet data length: " << packet_data_buffer.length() << "\n";
       if (record_count > 0) {
+        std::cout << "Placing record in output tensors\n";
         Tensor timestamp_tensor = (*out_tensors)[0];
-        timestamp_tensor.flat<double>()(*record_read) = packet_timestamp;
+        timestamp_tensor.flat<double>()(*record_read-1) = packet_timestamp;
         Tensor data_tensor = (*out_tensors)[1];
-        timestamp_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
+        timestamp_tensor.flat<string>()(*record_read-1) = std::move(packet_data_buffer);
         (*record_read) += record_count;
+        std::cout << "Record placed in output tensors\n";
       } else {
         // no more records available to read
         // record_count == 0
+        std::cout << "No more records left in the file.\n";
         break;
       }
     }
@@ -208,5 +219,6 @@ REGISTER_KERNEL_BUILDER(Name("PcapInput").Device(DEVICE_CPU),
                         FileInputOp<PcapInput>);
 REGISTER_KERNEL_BUILDER(Name("PcapDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<PcapInput, PcapInputStream>);
+
 }  // namespace data
 }  // namespace tensorflow
