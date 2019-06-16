@@ -6,23 +6,20 @@ cc_binary(
     name = "python/ops/_video_ops_ffmpeg_3.4.so",
     srcs = [
         "kernels/ffmpeg.cc",
-        "kernels/video_dataset_ops.cc",
+        "kernels/video_input.cc",
         "kernels/video_reader.h",
-        "ops/dataset_ops.cc",
+        "ops/video_ops.cc",
     ],
     copts = [
         "-pthread",
         "-std=c++11",
         "-DNDEBUG",
     ],
-    data = [],
     includes = ["."],
-    linkopts = [],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_3_4//:ffmpeg",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )
 
@@ -30,23 +27,20 @@ cc_binary(
     name = "python/ops/_video_ops_ffmpeg_2.8.so",
     srcs = [
         "kernels/ffmpeg.cc",
-        "kernels/video_dataset_ops.cc",
+        "kernels/video_input.cc",
         "kernels/video_reader.h",
-        "ops/dataset_ops.cc",
+        "ops/video_ops.cc",
     ],
     copts = [
         "-pthread",
         "-std=c++11",
         "-DNDEBUG",
     ],
-    data = [],
     includes = ["."],
-    linkopts = [],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_2_8//:ffmpeg",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )
 
@@ -54,22 +48,19 @@ cc_binary(
     name = "python/ops/_video_ops_libav_9.20.so",
     srcs = [
         "kernels/ffmpeg.cc",
-        "kernels/video_dataset_ops.cc",
+        "kernels/video_input.cc",
         "kernels/video_reader.h",
-        "ops/dataset_ops.cc",
+        "ops/video_ops.cc",
     ],
     copts = [
         "-pthread",
         "-std=c++11",
         "-DNDEBUG",
     ],
-    data = [],
     includes = ["."],
-    linkopts = [],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@libav_9_20//:libav",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )

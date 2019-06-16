@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/file_system.h"
+#include "kernels/dataset_ops.h"
 
 extern "C" {
 
@@ -33,7 +34,7 @@ namespace video {
 
 class VideoReader {
  public:
-  explicit VideoReader(const string &filename) : filename_(filename) {}
+  explicit VideoReader(SizedRandomAccessInputStreamInterface* s, const string& filename) : stream_(s), filename_(filename) {}
 
   Status ReadHeader();
 
@@ -43,6 +44,9 @@ class VideoReader {
 
   virtual ~VideoReader();
 
+ public:
+  SizedRandomAccessInputStreamInterface* stream_;
+  int64 offset_ = 0;
  private:
   std::string ahead_;
   std::string filename_;
@@ -58,6 +62,7 @@ class VideoReader {
   AVCodecContext *codec_context_ = 0;
   AVFrame *frame_ = 0;
   AVPacket packet_;
+  AVIOContext *io_context_ = NULL;
   TF_DISALLOW_COPY_AND_ASSIGN(VideoReader);
 };
 

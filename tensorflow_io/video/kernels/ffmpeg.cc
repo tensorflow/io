@@ -34,8 +34,63 @@ namespace tensorflow {
 namespace data {
 namespace video {
 
+static int io_read_packet(void *opaque, uint8_t *buf, int buf_size) {
+  VideoReader *r = (VideoReader *)opaque;
+  StringPiece result;
+  Status status = r->stream_->Read(r->offset_, buf_size, &result, (char *)buf);
+  if (!(status.ok() || errors::IsOutOfRange(status))) {
+    return -1;
+  }
+  r->offset_ += result.size();
+  return result.size();
+}
+
+static int64_t io_seek(void *opaque, int64_t offset, int whence) {
+  VideoReader *r = (VideoReader *)opaque;
+  uint64 file_size = 0;
+  Status status = r->stream_->GetFileSize(&file_size);
+  if (!status.ok()) {
+    return -1;
+  }
+  switch (whence)
+  {
+  case SEEK_SET:
+    if (offset > file_size) {
+      return -1;
+    }
+    r->offset_ = offset;
+    return r->offset_;
+  case SEEK_CUR:
+    if (r->offset_ + offset > file_size) {
+      return -1;
+    }
+    r->offset_ += offset;
+    return r->offset_;
+  case SEEK_END:
+    if (offset > file_size) {
+      return -1;
+    }
+    r->offset_ = file_size - offset;
+    return r->offset_;
+  case AVSEEK_SIZE:
+    return file_size;
+  default:
+    break;
+  }
+  return -1;
+}
+
 Status VideoReader::ReadHeader()
 {
+    // Allocate format
+    if ((format_context_ = avformat_alloc_context()) == NULL) {
+      return errors::InvalidArgument("could not allocate format context");
+    }
+    // Allocate context
+    if ((io_context_ = avio_alloc_context(NULL, 0, 0, this, io_read_packet, NULL, io_seek)) == NULL) {
+      return errors::InvalidArgument("could not allocate io context");
+    }
+    format_context_->pb = io_context_;
     // Open input file, and allocate format context
     if (avformat_open_input(&format_context_, filename_.c_str(), NULL, NULL) < 0) {
       return errors::InvalidArgument("could not open video file: ", filename_);
@@ -206,6 +261,10 @@ VideoReader::~VideoReader() {
     avcodec_free_context(&codec_context_);
 #endif
     avformat_close_input(&format_context_);
+    av_free(format_context_);
+    if (io_context_ != NULL) {
+      av_free(io_context_);
+    }
 }
 
 }  // namespace
