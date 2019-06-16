@@ -177,11 +177,15 @@ class PcapInput: public FileInput<PcapInputStream> {
       std::cout << "packet timestamp: " << packet_timestamp << "\n";
       std::cout << "packet data length: " << packet_data_buffer.length() << "\n";
       if (record_count > 0) {
-        std::cout << "Placing record in output tensors\n";
+        std::cout << "Placing packet in output tensors\n";
         Tensor timestamp_tensor = (*out_tensors)[0];
-        timestamp_tensor.flat<double>()(*record_read-1) = packet_timestamp;
+        timestamp_tensor.flat<double>()(*record_read) = packet_timestamp;
+        std::cout << "Packet timestamp placed in output tensor.\n";
         Tensor data_tensor = (*out_tensors)[1];
-        timestamp_tensor.flat<string>()(*record_read-1) = std::move(packet_data_buffer);
+        std::cout << "data tensor placeholder fetched.\n";
+        timestamp_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
+        std::cout << "Packet data placed in output tensor.\n";
+        return Status::OK(); // test line, DELETE !!!
         (*record_read) += record_count;
         std::cout << "Record placed in output tensors\n";
       } else {
