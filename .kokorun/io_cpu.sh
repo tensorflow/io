@@ -67,7 +67,7 @@ if [[ $PYTHON_VERSION == "2" ]]; then
     sudo rm -rf dist wheelhouse
 
     ## TF 2.0
-    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0beta" --preview ${KOKORO_BUILD_NUMBER} python
+    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0b1" --preview ${KOKORO_BUILD_NUMBER} python
 
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
@@ -81,7 +81,7 @@ else
     sudo rm -rf dist wheelhouse
 
     ## TF 2.0
-    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0beta" --preview ${KOKORO_BUILD_NUMBER} python3.5 python3.6
+    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0b1" --preview ${KOKORO_BUILD_NUMBER} python3.5 python3.6
 
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python3.5
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
