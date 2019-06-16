@@ -21,7 +21,8 @@ import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow.python.framework import ops
-from tensorflow_io.core.python.ops import core_ops
+
+pcap_ops = _load_library('_pcap_ops.so')
 
 # @tf_export("PcapDataset")
 class PcapDataset(data.Dataset):
@@ -34,23 +35,17 @@ class PcapDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    super(PcapDataset, self).__init__()
-    self._filenames = ops.convert_to_tensor(
-      filenames, dtype=dtypes.string, name="filenames")
+    self._data_input = audio_ops.wav_input(filenames)
     self._batch = 0 if batch is None else batch
+    super(PcapDataset, self).__init__()
+
+
 
   def _inputs(self):
     return []
 
   def _as_variant_tensor(self):
-    return text_ops.text_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  def _as_variant_tensor(self):
-    return parquet_ops.parquet_dataset(
+    return pcap_ops.pcap_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,
@@ -58,17 +53,18 @@ class PcapDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tuple([tf.Tensor for _ in range(2)]) # 2 columns - packet ts and data
+    # we output a tensor for packet timestamp and one for packet data
+    return tuple(tf.Tensor, tf.Tensor)
 
   @property
   def output_shapes(self):
     return tuple(
         [tf.TensorShape([]) for _ in self._columns]
-    ) if self._batch is None else \
-        tuple([tf.TensorShape([None]) for _ in range(2)] # 2 columns - packet timestamp and data
+    ) if self._batch is None else tuple(
+        [tf.TensorShape([None]), tf.TensorShape([None])]
     )
 
   @property
   def output_types(self):
-    return tuple([dtypes.string, dtypes.float64])
+    return tuple([dtypes.float64, dtypes.string])
 
