@@ -40,16 +40,21 @@ def test_pcap_input():
     get_next = iterator.get_next()
     with tf.compat.v1.Session() as sess:
         sess.run(init_op)
-        try:
-            print("Reading pcap data via tf session")
+        v = sess.run(get_next)
+        first_packet_timestamp = v[0][0]
+        first_packet_data = v[1][0]
+        assert first_packet_timestamp == 1084443427.311224 # we know this is the correct value in the test pcap file
+        assert len(first_packet_data) == 62 # we know this is the correct packet data buffer length in the test pcap file
+
+
+        packets_total = 43 # we know this is the correct number of packets in the test pcap file
+        for packets_read in range(1, packets_total):
             v = sess.run(get_next)
-            # sample_timestamp, sample_buf = v[0]
-            # assert sample_timestamp != None
-            # assert sample_buf != None
-        except tf.errors.OutOfRangeError as err:
-            print("Exception caught during test:")
-            print(err)
-            # break
+            next_packet_timestamp = v[0][0]
+            next_packet_data = v[1][0]
+            assert next_packet_timestamp
+            assert next_packet_data
+            print(packets_read)
 
 
 if __name__ == "__main__":

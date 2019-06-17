@@ -40,12 +40,20 @@ public:
     TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct PacketHeader), &buffer));
     struct PacketHeader *header = (struct PacketHeader *)buffer.data();
 
+    std::cout << "packet caplen before endianswap." << header->caplen << "\n";
+    std::cout << "packet orig_len before endianswap." << header->orig_len << "\n";
+
     if (reverse_header_byte_order) {
       // switch byte order to get accurate representation of field values
       EndianSwap(header->ts_sec);
       EndianSwap(header->ts_msec);
+
       EndianSwap(header->caplen);
+      EndianSwap(header->orig_len);
     }
+
+    std::cout << "packet caplen after endianswap." << header->caplen << "\n";
+    std::cout << "packet orig_len after endianswap." << header->orig_len << "\n";
 
     // Combine date and time in seconds plus milliseconds offset into one composite value
     timestamp = header->ts_sec + (header->ts_msec / 1e6);
@@ -103,7 +111,7 @@ private:
     ts_sec: the date and time when this packet was captured. This value is in seconds since January 1, 1970 00:00:00 GMT; this is also known as a UN*X time_t. You can use the ANSI C time() function from time.h to get this value, but you might use a more optimized way to get this timestamp value. If this timestamp isn't based on GMT (UTC), use thiszone from the global header for adjustments.
     ts_msec: in regular pcap files, the microseconds when this packet was captured, as an offset to ts_sec. In nanosecond-resolution files, this is, instead, the nanoseconds when the packet was captured, as an offset to ts_sec /!\ Beware: this value shouldn't reach 1 second (in regular pcap files 1 000 000; in nanosecond-resolution files, 1 000 000 000); in this case ts_sec must be increased instead!
     caplen: the number of bytes of packet data actually captured and saved in the file. This value should never become larger than orig_len or the snaplen value of the global header.
-    orig_len: the length of the packet as it appeared on the network when it was captured. If incl_len and orig_len differ, the actually saved packet size was limited by snaplen.
+    orig_len: the length of the packet as it appeared on the network when it was captured. If caplen and orig_len differ, the actually saved packet size was limited by snaplen.
   */
   struct PacketHeader
   {
@@ -183,9 +191,8 @@ class PcapInput: public FileInput<PcapInputStream> {
         std::cout << "Packet timestamp placed in output tensor.\n";
         Tensor data_tensor = (*out_tensors)[1];
         std::cout << "data tensor placeholder fetched.\n";
-        timestamp_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
+        data_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
         std::cout << "Packet data placed in output tensor.\n";
-        return Status::OK(); // test line, DELETE !!!
         (*record_read) += record_count;
         std::cout << "Record placed in output tensors\n";
       } else {
