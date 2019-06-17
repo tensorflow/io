@@ -13,6 +13,8 @@ python get-pip.py -q
 python -m pip --version
 if [[ $(uname) == "Darwin" ]]; then
   python -m pip install -q -U matplotlib numpy --ignore-installed six
+else
+  apt-get -y -qq install git
 fi
 python -m pip install -q --ignore-installed six "${TENSORFLOW_INSTALL}"
 python -c 'import tensorflow as tf; print(tf.version.VERSION)'
