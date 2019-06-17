@@ -24,7 +24,7 @@ from tensorflow_io import _load_library
 pcap_ops = _load_library('_pcap_ops.so')
 
 class PcapDataset(data.Dataset):
-  """A pcap Dataset. Pcap is a popular file format for capturing network packets.
+  """ A pcap Dataset. Pcap is a popular file format for capturing network packets.
   """
 
   def __init__(self, filenames, batch=None):
