@@ -22,12 +22,11 @@ install:
 - export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
 
 stages:
-- lint
 - release
 
 jobs:
   include:
-  - stage: lint
+  - stage: release
     name: "Lint"
     script:
     - bash -x -e .travis/lint.bazel.sh
