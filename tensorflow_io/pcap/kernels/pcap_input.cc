@@ -40,20 +40,13 @@ public:
     TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct PacketHeader), &buffer));
     struct PacketHeader *header = (struct PacketHeader *)buffer.data();
 
-    std::cout << "packet caplen before endianswap." << header->caplen << "\n";
-    std::cout << "packet orig_len before endianswap." << header->orig_len << "\n";
-
     if (reverse_header_byte_order) {
       // switch byte order to get accurate representation of field values
       EndianSwap(header->ts_sec);
       EndianSwap(header->ts_msec);
-
       EndianSwap(header->caplen);
       EndianSwap(header->orig_len);
     }
-
-    std::cout << "packet caplen after endianswap." << header->caplen << "\n";
-    std::cout << "packet orig_len after endianswap." << header->orig_len << "\n";
 
     // Combine date and time in seconds plus milliseconds offset into one composite value
     timestamp = header->ts_sec + (header->ts_msec / 1e6);
@@ -157,13 +150,10 @@ private:
 class PcapInput: public FileInput<PcapInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<PcapInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
-    std::cout << "pcap_input.cc: Entering PcapInput::ReadRecord\n";
     if (state.get() == nullptr) {
       state.reset(new PcapInputStream(s));
       TF_RETURN_IF_ERROR(state.get()->ReadHeader());
     }
-    std::cout << "PCAP header read from file.\n";
-    std::cout << "Will read " << record_to_read << " records.\n";
     // Let's allocate enough space for Tensor, if more than read, replace.
     // The output tensor has two columns (packet_timestamp,packet_data).
     // Hence the shape of the output tensor is (record_to_read,2) unless there are less than record_to_read packets left in the file
@@ -171,34 +161,22 @@ class PcapInput: public FileInput<PcapInputStream> {
     out_tensors->emplace_back(std::move(tensor_packet_ts)); // add timestamp column to the output tensor
     Tensor tensor_packet_data(ctx->allocator({}), DT_STRING, {record_to_read}); // Tensor column for packet data
     out_tensors->emplace_back(std::move(tensor_packet_data)); // add data column to the output tensor
-    std::cout << "Allocated tensor placeholders for packet timestamp and data.\n";
 
     // read packets from the file up to record_to_read or end of file
     while ((*record_read) < record_to_read) {
-      std::cout << "Records read so far:" << (*record_read) << "\n";
       int64 record_count = 0;
       double packet_timestamp;
       string packet_data_buffer;
-      std::cout << "Reading next record.\n";
       TF_RETURN_IF_ERROR(state.get()->ReadRecord(packet_timestamp, &packet_data_buffer, record_count));
-      std::cout << "packet record_count: " << record_count << "\n";
-      std::cout << "packet timestamp: " << packet_timestamp << "\n";
-      std::cout << "packet data length: " << packet_data_buffer.length() << "\n";
       if (record_count > 0) {
-        std::cout << "Placing packet in output tensors\n";
         Tensor timestamp_tensor = (*out_tensors)[0];
         timestamp_tensor.flat<double>()(*record_read) = packet_timestamp;
-        std::cout << "Packet timestamp placed in output tensor.\n";
         Tensor data_tensor = (*out_tensors)[1];
-        std::cout << "data tensor placeholder fetched.\n";
         data_tensor.flat<string>()(*record_read) = std::move(packet_data_buffer);
-        std::cout << "Packet data placed in output tensor.\n";
         (*record_read) += record_count;
-        std::cout << "Record placed in output tensors\n";
       } else {
         // no more records available to read
         // record_count == 0
-        std::cout << "No more records left in the file.\n";
         break;
       }
     }

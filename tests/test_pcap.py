@@ -54,7 +54,6 @@ def test_pcap_input():
             next_packet_data = v[1][0]
             assert next_packet_timestamp
             assert next_packet_data
-            print(packets_read)
 
 
 if __name__ == "__main__":
