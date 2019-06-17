@@ -37,7 +37,7 @@ class GGFSClient {
   Status ListFiles(string path, std::vector<string>* out_files);
 
  private:
-  std::unique_ptr<Client> client_;
+  std::shared_ptr<Client> client_;
 
   const string username_;
   const string password_;
@@ -50,14 +50,14 @@ class GGFSClient {
 };
 
 constexpr uint8_t kWriteFileMethodId = 0;
-constexpr uint8_t kReadFileMethodId = 0;
-constexpr uint8_t kMoveMethodId = 0;
-constexpr uint8_t kStatMethodId = 0;
-constexpr uint8_t kExistsMethodId = 0;
-constexpr uint8_t kRemoveMethodId = 0;
-constexpr uint8_t kMkDirMethodId = 0;
-constexpr uint8_t kMkDirsMethodId = 0;
-constexpr uint8_t kListFilesMethodId = 0;
+constexpr uint8_t kReadFileMethodId = 1;
+constexpr uint8_t kMoveMethodId = 2;
+constexpr uint8_t kStatMethodId = 3;
+constexpr uint8_t kExistsMethodId = 4;
+constexpr uint8_t kRemoveMethodId = 5;
+constexpr uint8_t kMkDirMethodId = 6;
+constexpr uint8_t kMkDirsMethodId = 7;
+constexpr uint8_t kListFilesMethodId = 8;
 
 constexpr uint8_t kNullVal = 101;
 constexpr uint8_t kStringVal = 9;

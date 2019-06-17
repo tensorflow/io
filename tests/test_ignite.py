@@ -255,7 +255,16 @@ class IGFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(dst_file_name))
 
   def test_aaa(self):
-    gfile.Exists('ggfs:///test')
+    gfile.MkDir('ggfs:///')
+    with gfile.Open('ggfs:///test', mode="w") as w:
+      w.write("test")
+      w.write("hello")
+      w.write("world")
+    with gfile.Open('ggfs:///test', mode='w') as w:
+      w.write("pwd")
+    with gfile.Open('ggfs:///test', mode="r") as r:
+      lines = r.readlines()
+    print(lines)
 
   def _test_is_directory(self, fs_prefix):
     """Test is directory.

@@ -27,9 +27,12 @@ limitations under the License.
 
 namespace tensorflow {
 
+std::unique_ptr<GGFSClient> GGFS::CreateClient() const {
+  return std::unique_ptr<GGFSClient>(new GGFSClient("localhost", 10800, "", "", "", "", ""));
+}
+
 GGFS::GGFS() {
   LOG(INFO) << "Call GGFS::GGFS";
-  client_ = std::unique_ptr<GGFSClient>(new GGFSClient("localhost", 10800, NULL, NULL, NULL, NULL, NULL));
 }
 
 GGFS::~GGFS() {
@@ -40,7 +43,8 @@ Status GGFS::NewRandomAccessFile(const string &file_name,
                                  std::unique_ptr<RandomAccessFile> *result) {
   LOG(INFO) << "Call GGFS::NewRandomAccessFile [file_name = " << file_name << "]";
 
-  result->reset(new GGFSRandomAccessFile(file_name, std::move(client_)));
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  result->reset(new GGFSRandomAccessFile(TranslateName(file_name), std::move(client)));
 
   return Status::OK();
 }
@@ -49,7 +53,8 @@ Status GGFS::NewWritableFile(const string &file_name,
                              std::unique_ptr<WritableFile> *result) {
   LOG(INFO) << "Call GGFS::NewWritableFile [file_name = " << file_name << "]";
   
-  result->reset(new GGFSWritableFile(file_name, std::move(client_)));
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  result->reset(new GGFSWritableFile(TranslateName(file_name), std::move(client)));
 
   return Status::OK();
 }
@@ -58,7 +63,8 @@ Status GGFS::NewAppendableFile(const string &file_name,
                                std::unique_ptr<WritableFile> *result) {
   LOG(INFO) << "Call GGFS::NewAppendableFile [file_name = " << file_name << "]";
   
-  result->reset(new GGFSWritableFile(file_name, std::move(client_)));
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  result->reset(new GGFSWritableFile(TranslateName(file_name), std::move(client)));
   
   return Status::OK();
 }
@@ -79,7 +85,8 @@ Status GGFS::FileExists(const string &file_name) {
 Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {
   LOG(INFO) << "Call GGFS::GetChildren [file_name = " << file_name << "]";
   
-  return client_->ListFiles(file_name, result);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->ListFiles(TranslateName(file_name), result);
 }
 
 Status GGFS::GetMatchingPaths(const string &pattern,
@@ -92,19 +99,22 @@ Status GGFS::GetMatchingPaths(const string &pattern,
 Status GGFS::DeleteFile(const string &file_name) {
   LOG(INFO) << "Call GGFS::DeleteFile [file_name = " << file_name << "]";
   
-  return client_->Remove(file_name);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->Remove(TranslateName(file_name));
 }
 
 Status GGFS::CreateDir(const string &file_name) {
   LOG(INFO) << "Call GGFS::CreateDir [file_name = " << file_name << "]";
   
-  return client_->MkDir(file_name, false);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->MkDirs(TranslateName(file_name), false);
 }
 
 Status GGFS::DeleteDir(const string &file_name) {
   LOG(INFO) << "Call GGFS::DeleteDir [file_name = " << file_name << "]";
 
-  return client_->Remove(file_name);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->Remove(TranslateName(file_name));
 }
 
 Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
@@ -113,13 +123,15 @@ Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
   bool is_directory;
   int64_t modification_time;
 
-  return client_->Stat(file_name, &is_directory, &modification_time, (int32_t *) size);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->Stat(TranslateName(file_name), &is_directory, &modification_time, (int32_t *) size);
 }
 
 Status GGFS::RenameFile(const string &src, const string &dst) {
   LOG(INFO) << "Call GGFS::RenameFile [src = " << src << ", dst = " << dst << "]";
   
-  return client_->Move(src, dst);
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->Move(TranslateName(src), TranslateName(dst));
 }
 
 Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
@@ -129,7 +141,8 @@ Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
   int64_t modification_time;
   int32_t size;
 
-  TF_RETURN_IF_ERROR(client_->Stat(file_name, &is_directory, &modification_time, &size));
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  TF_RETURN_IF_ERROR(client->Stat(TranslateName(file_name), &is_directory, &modification_time, &size));
 
   *stats = FileStatistics(size, modification_time * 1000000, is_directory);
 
@@ -138,7 +151,10 @@ Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
 
 string GGFS::TranslateName(const string &name) const {
   LOG(INFO) << "Call GGFS::TranslateName [name = " << name << "]";
-  return "";
+
+  StringPiece scheme, namenode, path;
+  io::ParseURI(name, &scheme, &namenode, &path);
+  return string(path.data(), path.length());
 }
 
 }  // namespace tensorflow

@@ -48,7 +48,7 @@ class GGFS : public FileSystem {
   string TranslateName(const string& name) const override;
 
  private:
-  std::unique_ptr<GGFSClient> client_;
+  std::unique_ptr<GGFSClient> CreateClient() const;
 };
 
 }  // namespace tensorflow

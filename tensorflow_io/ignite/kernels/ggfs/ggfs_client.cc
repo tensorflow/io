@@ -13,14 +13,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_client.h"
 #include "tensorflow/core/lib/gtl/cleanup.h"
 #include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
 
-GGFSClient::GGFSClient(string host, int32 port, string username, string password, string certfile, string keyfile, string cert_password) {
+GGFSClient::GGFSClient(string host, int32 port, string username, string password, string certfile, string keyfile, string cert_password)
+  : username_(username),
+    password_(password) {
 	LOG(INFO) << "Call GGFSClient::GGFSClient [host = " << host << ", port = " << port << ", username = " << username << ", certfile = " << certfile << ", keyfile = " << keyfile << "]";
+  
+  Client* p_client = new PlainClient(std::move(host), port, false);
+
+  if (certfile.empty()) {
+    client_ = std::shared_ptr<Client>(p_client);
+    LOG(INFO) << "Simple client created!";
+  }
+  else {
+    client_ = std::shared_ptr<Client>(
+        new SslWrapper(std::shared_ptr<Client>(p_client), std::move(certfile),
+                       std::move(keyfile), std::move(cert_password), false));
+    LOG(INFO) << "SSL client created!";
+  }
+
 }
 
 GGFSClient::~GGFSClient() {
@@ -29,9 +47,8 @@ GGFSClient::~GGFSClient() {
 
 Status GGFSClient::WriteFile(string path, bool create, bool append, uint8_t* data, int32_t length) {
 	LOG(INFO) << "Call GGFSClient::WriteFile [path = " << path << ", create = " << create << ", append = " << append << "]";
-	
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kWriteFileMethodId, 12 + path.length() + length));
 
+  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kWriteFileMethodId, 12 + path.length() + length));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
   TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
@@ -40,7 +57,6 @@ Status GGFSClient::WriteFile(string path, bool create, bool append, uint8_t* dat
   TF_RETURN_IF_ERROR(client_->WriteByte(kByteArrayVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(length));
   TF_RETURN_IF_ERROR(client_->WriteData(data, length));
-
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
   return Status::OK();
@@ -54,8 +70,26 @@ Status GGFSClient::ReadFile(string path, uint8_t** out_data, int32_t* out_length
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
   TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
-
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
+
+  uint8_t type;
+  TF_RETURN_IF_ERROR(client_->ReadByte(&type));
+
+  LOG(INFO) << "Type: " << (int32_t)type;
+
+  TF_RETURN_IF_ERROR(client_->ReadInt(out_length));
+
+  LOG(INFO) << "Length: " << *out_length;
+
+  uint8_t* data = new uint8_t[*out_length];
+
+  LOG(INFO) << "42";
+
+  TF_RETURN_IF_ERROR(client_->ReadData(data, *out_length));
+
+  LOG(INFO) << "43";
+
+  *out_data = data;
 
   return Status::OK();
 }
@@ -136,12 +170,14 @@ Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
+  LOG(INFO) << "Dir created!";
+
   return Status::OK();
 }
 
 Status GGFSClient::MkDirs(string path, bool only_if_not_exists) {
 	LOG(INFO) << "Call GGFSClient::MkDirs [path = " << path << ", only_if_not_exists = " << only_if_not_exists << "]";
-	
+
   TF_RETURN_IF_ERROR(SendCommonRequestHeader(kMkDirsMethodId, 6 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
@@ -169,14 +205,13 @@ Status GGFSClient::ListFiles(string path, std::vector<string>* out_files) {
 }
 
 Status GGFSClient::SendCommonRequestHeader(uint8_t method_id, int32_t length) {
+  EstablishConnection();
   TF_RETURN_IF_ERROR(client_->WriteInt(32 + length));
   TF_RETURN_IF_ERROR(client_->WriteShort(kCustomProcessorOpcode));
   TF_RETURN_IF_ERROR(client_->WriteLong(0));
-
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(16));
   TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>("ML_MODEL_STORAGE"), 16));
-
   TF_RETURN_IF_ERROR(client_->WriteByte(method_id));
 
   return Status::OK();

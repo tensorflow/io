@@ -20,20 +20,28 @@ namespace tensorflow {
 GGFSRandomAccessFile::GGFSRandomAccessFile(const string &file_name, std::unique_ptr<GGFSClient> &&client)
 	: file_name_(file_name),
 	  client_(std::move(client)) {
-    LOG(INFO) << "Call GGFSRandomAccessFile constructor [file_name = " << file_name_ << "]";
+    LOG(INFO) << "Call GGFSRandomAccessFile::GGFSRandomAccessFile [file_name = " << file_name_ << "]";
 }
 
 GGFSRandomAccessFile::~GGFSRandomAccessFile() {
-  LOG(INFO) << "Call GGFSRandomAccessFile destructor [file_name = " << file_name_ << "]";
+  LOG(INFO) << "Call GGFSRandomAccessFile::~GGFSRandomAccessFile [file_name = " << file_name_ << "]";
 }
 
 Status GGFSRandomAccessFile::Read(uint64 offset, size_t n, StringPiece *result,
                                   char *scratch) const {
-  LOG(INFO) << "Call Read [file_name = " << file_name_ << ", offset = " << offset << "]";
+  LOG(INFO) << "Call GGFSRandomAccessFile::Read [file_name = " << file_name_ << ", offset = " << offset << ", n = " << n << "]";
 
-  
+  uint8_t* out_data;
+  int32_t out_length;
 
-  return errors::Unimplemented("Not implemented yet");
+  TF_RETURN_IF_ERROR(client_->ReadFile(file_name_, &out_data, &out_length));
+
+  if (offset >= out_length)
+    return errors::OutOfRange("End of file");
+
+  *result = StringPiece(reinterpret_cast<char*>(out_data) + offset, out_length - offset);
+
+  return Status::OK();
 }
 
 }  // namespace tensorflow
