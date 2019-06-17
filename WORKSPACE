@@ -203,11 +203,11 @@ http_archive(
 
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "1d54cd95ed276c42c276e0a3df8ab33ee41968b73af14023c03a19db48f82e73",
-    strip_prefix = "grpc-1.19.0",
+    sha256 = "1bf082fb3016154d3f806da8eb5876caf05743da4b2e8130fadd000df74b5bb6",
+    strip_prefix = "grpc-1.21.1",
     urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.19.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.19.0.tar.gz",
+        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.21.1.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.21.1.tar.gz",
     ],
 )
 
@@ -233,20 +233,6 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 grpc_deps()
 
 http_archive(
-    name = "com_google_googleapis",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:googleapis.patch",
-    ],
-    sha256 = "ff903931e738b98418df9e95edeb00abe642007071dc3d579631d57957c3aa13",
-    strip_prefix = "googleapis-c911062bb7a1c41a208957bed923b8750f3b6f28",
-    urls = [
-        "https://mirror.bazel.build/github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
-        "https://github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
-    ],
-)
-
-http_archive(
     name = "giflib",
     build_file = "//third_party:giflib.BUILD",
     sha256 = "34a7377ba834397db019e8eb122e551a49c98f49df75ec3fcc92b9a794a4f6d1",
@@ -258,23 +244,43 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_googlecloudplatform_google_cloud_cpp",
-    sha256 = "06bc735a117ec7ea92ea580e7f2ffa4b1cd7539e0e04f847bf500588d7f0fe90",
-    strip_prefix = "google-cloud-cpp-0.7.0",
+    name = "com_github_googleapis_google_cloud_cpp",
+    sha256 = "ed9c01904c6497c4d119eeeff38d2cc42b10fec6a304a2ace60656426dba6c23",
+    strip_prefix = "google-cloud-cpp-618925d7f6be9c374a3fec6f535e9a99b5efbe30",
     urls = [
-        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
+        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/618925d7f6be9c374a3fec6f535e9a99b5efbe30.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/618925d7f6be9c374a3fec6f535e9a99b5efbe30.tar.gz",
     ],
 )
 
+# Manually load com_google_googleapis as we need a patch for pubsub
+# The patch file was generated from:
+# diff -Naur a b > third_party/googleapis.patch
 http_archive(
-    name = "com_github_googleapis_googleapis",
-    build_file = "@com_github_googlecloudplatform_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "82ba91a41fb01305de4e8805c0a9270ed2035007161aa5a4ec60f887a499f5e9",
-    strip_prefix = "googleapis-6a3277c0656219174ff7c345f31fb20a90b30b97",
-    urls = [
-        "https://github.com/google/googleapis/archive/6a3277c0656219174ff7c345f31fb20a90b30b97.zip",
+    name = "com_google_googleapis",
+    build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:googleapis.patch",
     ],
+    sha256 = "6b8a9b2bcb4476e9a5a9872869996f0d639c8d5df76dd8a893e79201f211b1cf",
+    strip_prefix = "googleapis-a8ee1416f4c588f2ab92da72e7c1f588c784d3e6",
+    urls = [
+        "https://github.com/googleapis/googleapis/archive/a8ee1416f4c588f2ab92da72e7c1f588c784d3e6.tar.gz",
+    ],
+)
+
+load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
+
+google_cloud_cpp_deps()
+
+load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+
+# Configure @com_google_googleapis to only compile C++ and gRPC:
+switched_rules_by_language(
+    name = "com_google_googleapis_imports",
+    cc = True,  # C++ support is only "Partially implemented", roll our own.
+    grpc = True,
 )
 
 http_archive(
@@ -284,16 +290,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/google/re2/archive/2018-10-01.tar.gz",
         "https://github.com/google/re2/archive/2018-10-01.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "com_google_googletest",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
-    urls = [
-        "https://mirror.bazel.build/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-        "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
     ],
 )
 
