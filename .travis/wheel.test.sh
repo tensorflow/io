@@ -17,7 +17,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq update
-  apt-get -y -qq install $PYTHON_VERSION ffmpeg
+  apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   $PYTHON_VERSION get-pip.py -q
 fi
