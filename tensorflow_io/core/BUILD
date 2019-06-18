@@ -57,11 +57,13 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
+        "//tensorflow_io/audio:audio_ops",
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/cifar:cifar_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
+        "//tensorflow_io/prometheus:prometheus_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",

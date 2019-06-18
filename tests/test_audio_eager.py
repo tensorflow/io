@@ -12,32 +12,41 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-"""test_video.py"""
+"""Test Audio Dataset"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
-import pytest
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-if sys.platform == "darwin":
-  pytest.skip("video is not supported on macOS yet", allow_module_level=True)
-import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
+import tensorflow_io.audio as audio_io # pylint: disable=wrong-import-position
 
-video_path = "file://" + os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-def test_video_dataset():
-  """test_video_dataset"""
-  num_repeats = 2
+audio_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "test_audio", "mono_10khz.wav")
 
-  video_dataset = video_io.VideoDataset([video_path]).repeat(num_repeats)
+def test_audio_dataset():
+  """Test Audio Dataset"""
+  with open(audio_path, 'rb') as f:
+    wav_contents = f.read()
+  audio_v = tf.audio.decode_wav(wav_contents)
 
+  f = lambda x: float(x) / (1 << 15)
+
+  audio_dataset = audio_io.WAVDataset([audio_path])
   i = 0
-  for v in video_dataset:
-    assert v.shape == (320, 560, 3)
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v.numpy())
     i += 1
-  assert i == 166 * num_repeats
+  assert i == 5760
+
+  audio_dataset = audio_io.WAVDataset([audio_path], batch=2)
+  i = 0
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v[0].numpy())
+    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
+    i += 2
+  assert i == 5760

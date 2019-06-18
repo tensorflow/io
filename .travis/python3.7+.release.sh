@@ -21,7 +21,7 @@ set -e -x
 
 apt-get -y -qq update && apt-get -y -qq install \
     software-properties-common \
-    gcc g++ make patch \
+    gcc g++ make patch git \
     unzip curl patchelf
 
 add-apt-repository -y ppa:deadsnakes/ppa

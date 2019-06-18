@@ -12,43 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""TextInput/TextOutput."""
+"""PrometheusDataset."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as text_ops
+from tensorflow_io.core.python.ops import core_ops as prometheus_ops
 
-class TextDataset(data_ops.Dataset):
-  """A Text Dataset"""
+class PrometheusDataset(data_ops.Dataset):
+  """A Prometheus Dataset
+  """
 
-  def __init__(self, filename, batch=None):
-    """Create a Text Reader.
+  def __init__(self, endpoint, schema=None, batch=None):
+    """Create a Prometheus Reader.
 
     Args:
-      filename: A `tf.string` tensor containing one or more filenames.
+      endpoint: A `tf.string` tensor containing address of
+        the prometheus server.
+      schema: A `tf.string` tensor containing the query
+        string.
+      batch: Size of the batch.
     """
     batch = 0 if batch is None else batch
-    dtypes = [tf.string]
+    dtypes = [tf.int64, tf.float64]
     shapes = [
-        tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None])]
-    super(TextDataset, self).__init__(
-        text_ops.text_dataset,
-        text_ops.text_input(filename, ["none", "gz"]),
+        tf.TensorShape([]), tensorflow.TensorShape([])] if batch == 0 else [
+            tf.TensorShape([None]), tf.TensorShape([None])]
+    super(PrometheusDataset, self).__init__(
+        prometheus_ops.prometheus_dataset,
+        prometheus_ops.prometheus_input(endpoint, schema=schema),
         batch, dtypes, shapes)
-
-
-class TextOutputSequence(object):
-  """TextOutputSequence"""
-
-  def __init__(self, filenames):
-    """Create a `TextOutputSequence`.
-    """
-    self._filenames = filenames
-    self._resource = text_ops.text_output_sequence(destination=filenames)
-
-  def setitem(self, index, item):
-    text_ops.text_output_sequence_set_item(self._resource, index, item)

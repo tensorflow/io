@@ -12,32 +12,45 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-"""test_video.py"""
+"""Tests for PrometheusDataset."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
+import time
+import subprocess
 import sys
 import pytest
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
+import tensorflow_io.prometheus as prometheus_io # pylint: disable=wrong-import-position
+
 if sys.platform == "darwin":
-  pytest.skip("video is not supported on macOS yet", allow_module_level=True)
-import tensorflow_io.video as video_io  # pylint: disable=wrong-import-position
+  pytest.skip(
+      "prometheus is not supported on macOS yet", allow_module_level=True)
 
-video_path = "file://" + os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-def test_video_dataset():
-  """test_video_dataset"""
-  num_repeats = 2
-
-  video_dataset = video_io.VideoDataset([video_path]).repeat(num_repeats)
-
+def test_prometheus_input():
+  """test_prometheus_input
+  """
+  for _ in range(6):
+    subprocess.call(["dig", "@localhost", "-p", "1053", "www.google.com"])
+    time.sleep(1)
+  time.sleep(2)
+  prometheus_dataset = prometheus_io.PrometheusDataset(
+      "http://localhost:9090",
+      schema="coredns_dns_request_count_total[5s]",
+      batch=2)
   i = 0
-  for v in video_dataset:
-    assert v.shape == (320, 560, 3)
-    i += 1
-  assert i == 166 * num_repeats
+  for k, v in prometheus_dataset:
+    print("K, V: ", k.numpy(), v.numpy())
+    if i == 4:
+      # Last entry guaranteed 6.0
+      assert v.numpy() == 6.0
+    i += 2
+  assert i == 6
+
+if __name__ == "__main__":
+  test.main()
