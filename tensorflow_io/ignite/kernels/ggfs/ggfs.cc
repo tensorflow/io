@@ -79,7 +79,8 @@ Status GGFS::NewReadOnlyMemoryRegionFromFile(
 Status GGFS::FileExists(const string &file_name) {
   LOG(INFO) << "Call GGFS::FileExists [file_name = " << file_name << "]";
 
-  return Status::OK();
+  std::unique_ptr<GGFSClient> client = CreateClient();
+  return client->Exists(TranslateName(file_name));
 }
 
 Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {

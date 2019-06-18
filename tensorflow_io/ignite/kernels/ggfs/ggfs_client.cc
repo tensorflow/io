@@ -21,6 +21,20 @@ limitations under the License.
 
 namespace tensorflow {
 
+static string MakeRelative(const string &a, const string &b) {
+  string max = a;
+  string min = b;
+  bool first = b.size() > a.size();
+
+  if (first) {
+    max = b;
+    min = a;
+  }
+
+  auto r = mismatch(min.begin(), min.end(), max.begin());
+  return string((first ? r.first : r.second), first ? min.end() : max.end());
+}
+
 GGFSClient::GGFSClient(string host, int32 port, string username, string password, string certfile, string keyfile, string cert_password)
   : username_(username),
     password_(password) {
@@ -30,13 +44,11 @@ GGFSClient::GGFSClient(string host, int32 port, string username, string password
 
   if (certfile.empty()) {
     client_ = std::shared_ptr<Client>(p_client);
-    LOG(INFO) << "Simple client created!";
   }
   else {
     client_ = std::shared_ptr<Client>(
         new SslWrapper(std::shared_ptr<Client>(p_client), std::move(certfile),
                        std::move(keyfile), std::move(cert_password), false));
-    LOG(INFO) << "SSL client created!";
   }
 
 }
@@ -75,20 +87,10 @@ Status GGFSClient::ReadFile(string path, uint8_t** out_data, int32_t* out_length
   uint8_t type;
   TF_RETURN_IF_ERROR(client_->ReadByte(&type));
 
-  LOG(INFO) << "Type: " << (int32_t)type;
-
   TF_RETURN_IF_ERROR(client_->ReadInt(out_length));
 
-  LOG(INFO) << "Length: " << *out_length;
-
   uint8_t* data = new uint8_t[*out_length];
-
-  LOG(INFO) << "42";
-
   TF_RETURN_IF_ERROR(client_->ReadData(data, *out_length));
-
-  LOG(INFO) << "43";
-
   *out_data = data;
 
   return Status::OK();
@@ -120,6 +122,13 @@ Status GGFSClient::Stat(string path, bool* out_is_directory, int64_t* out_modifi
   TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
+
+  uint8_t is_directory;
+  TF_RETURN_IF_ERROR(client_->ReadByte(&is_directory));
+  *out_is_directory = is_directory != 0;
+
+  TF_RETURN_IF_ERROR(client_->ReadInt(out_size));
+  TF_RETURN_IF_ERROR(client_->ReadLong(out_modification_time));
 
   return Status::OK();
 }
@@ -170,8 +179,6 @@ Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
-  LOG(INFO) << "Dir created!";
-
   return Status::OK();
 }
 
@@ -201,6 +208,26 @@ Status GGFSClient::ListFiles(string path, std::vector<string>* out_files) {
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
+  int32_t length;
+  TF_RETURN_IF_ERROR(client_->ReadInt(&length));
+
+  while (length > 0) {
+    uint8_t type;
+    TF_RETURN_IF_ERROR(client_->ReadByte(&type));
+    if (type != kStringVal)
+      return errors::Unknown("Method GGFSClient::ListFiles expects strings in response");
+
+    int32_t str_length;
+    TF_RETURN_IF_ERROR(client_->ReadInt(&str_length));
+    
+    uint8_t str[str_length];
+    TF_RETURN_IF_ERROR(client_->ReadData(str, str_length));
+
+    out_files->push_back(MakeRelative(string(reinterpret_cast<char*>(str), str_length), path));  
+
+    length--;
+  }
+  
   return Status::OK();
 }
 
@@ -239,10 +266,9 @@ Status GGFSClient::ReceiveCommonResponseHeader() {
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c, err_msg_length));
       string err_msg(reinterpret_cast<char*>(err_msg_c), err_msg_length);
 
-      return errors::Unknown("Close Resource Error [status=", status,
-                               ", message=", err_msg, "]");
+      return errors::Unknown("Error [status=", status, ", message=", err_msg, "]");
     }
-    return errors::Unknown("Close Resource Error [status=", status, "]");
+    return errors::Unknown("Error [status=", status, "]");
   }
 
   return Status::OK();
