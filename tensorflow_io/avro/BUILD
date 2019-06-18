@@ -20,6 +20,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         ":avro_c",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
 
