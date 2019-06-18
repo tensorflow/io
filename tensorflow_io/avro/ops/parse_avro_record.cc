@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <regex>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -21,6 +20,7 @@ limitations under the License.
 
 #include <avro.h>
 
+#include "re2/re2.h"
 #include "tensorflow/core/lib/gtl/inlined_vector.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/shape_inference.h"
@@ -1433,12 +1433,12 @@ class ParseAvroRecordOp : public OpKernel {
 
     std::vector<string> incomplete_tokens = str_util::Split(str, ".");
     std::vector<string> tokens;
-    std::regex re(R"(([A-Za-z_][A-Za-z0-9_]*)(\[\S+\]))");
+    RE2 re(R"(([A-Za-z_][A-Za-z0-9_]*)(\[\S+\]))");
     for(const string& token: incomplete_tokens) {
-      std::smatch index_match;
-      if (std::regex_search(token, index_match, re)) {
-        tokens.push_back(index_match[1]);
-        tokens.push_back(index_match[2]);
+      string match1, match2;
+      if (RE2::PartialMatch(token, re, &match1, &match2)) {
+        tokens.push_back(match1);
+        tokens.push_back(match2);
       } else {
         tokens.push_back(token);
       }
