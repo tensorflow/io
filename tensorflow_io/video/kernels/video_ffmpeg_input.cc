@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "kernels/video_reader.h"
+#include "kernels/video_ffmpeg_reader.h"
 
 namespace tensorflow {
 namespace data {

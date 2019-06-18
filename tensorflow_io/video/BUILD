@@ -2,13 +2,13 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "python/ops/_video_ops_ffmpeg_3.4.so",
+cc_library(
+    name = "ffmpeg_3.4_ops",
     srcs = [
-        "kernels/ffmpeg.cc",
-        "kernels/video_input.cc",
-        "kernels/video_reader.h",
-        "ops/video_ops.cc",
+        "kernels/video_ffmpeg_input.cc",
+        "kernels/video_ffmpeg_reader.cc",
+        "kernels/video_ffmpeg_reader.h",
+        "ops/video_ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -16,20 +16,19 @@ cc_binary(
         "-DNDEBUG",
     ],
     includes = ["."],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@ffmpeg_3_4//:ffmpeg",
+        "//tensorflow_io/core:ffmpeg_3.4",
     ],
 )
 
-cc_binary(
-    name = "python/ops/_video_ops_ffmpeg_2.8.so",
+cc_library(
+    name = "ffmpeg_2.8_ops",
     srcs = [
-        "kernels/ffmpeg.cc",
-        "kernels/video_input.cc",
-        "kernels/video_reader.h",
-        "ops/video_ops.cc",
+        "kernels/video_ffmpeg_input.cc",
+        "kernels/video_ffmpeg_reader.cc",
+        "kernels/video_ffmpeg_reader.h",
+        "ops/video_ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -37,20 +36,19 @@ cc_binary(
         "-DNDEBUG",
     ],
     includes = ["."],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@ffmpeg_2_8//:ffmpeg",
+        "//tensorflow_io/core:ffmpeg_2.8",
     ],
 )
 
-cc_binary(
-    name = "python/ops/_video_ops_libav_9.20.so",
+cc_library(
+    name = "libav_9.20_ops",
     srcs = [
-        "kernels/ffmpeg.cc",
-        "kernels/video_input.cc",
-        "kernels/video_reader.h",
-        "ops/video_ops.cc",
+        "kernels/video_ffmpeg_input.cc",
+        "kernels/video_ffmpeg_reader.cc",
+        "kernels/video_ffmpeg_reader.h",
+        "ops/video_ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -58,9 +56,8 @@ cc_binary(
         "-DNDEBUG",
     ],
     includes = ["."],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@libav_9_20//:libav",
+        "//tensorflow_io/core:libav_9.20",
     ],
 )

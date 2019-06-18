@@ -17,56 +17,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import ctypes
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io import _load_library
-
-import _ctypes
-
-def load_dependency_and_library(p):
-  """load_dependency_and_library"""
-  for library in p:
-    # First try load all dependencies with RTLD_LOCAL
-    entries = []
-    for dependency in p[library]:
-      try:
-        entries.append(ctypes.CDLL(dependency))
-      except OSError:
-        pass
-    if len(entries) == len(p[library]):
-      # Dependencies has been satisfied, load dependencies again with RTLD_GLOBAL, no error is expected
-      for dependency in p[library]:
-        ctypes.CDLL(dependency, mode=ctypes.RTLD_GLOBAL)
-      # Load video_op
-      return _load_library(library)
-    # Otherwise we dlclose and retry
-    entries.reverse()
-    for entry in entries:
-      _ctypes.dlclose(entry._handle) # pylint: disable=protected-access
-  raise NotImplementedError("could not find ffmpeg after search through ", p)
-
-video_ops = load_dependency_and_library({
-    '_video_ops_ffmpeg_3.4.so': [
-        "libavformat.so.57",
-        "libavformat.so.57",
-        "libavutil.so.55",
-        "libswscale.so.4",
-    ],
-    '_video_ops_ffmpeg_2.8.so': [
-        "libavformat-ffmpeg.so.56",
-        "libavcodec-ffmpeg.so.56",
-        "libavutil-ffmpeg.so.54",
-        "libswscale-ffmpeg.so.3",
-    ],
-    '_video_ops_libav_9.20.so': [
-        "libavformat.so.54",
-        "libavcodec.so.54",
-        "libavutil.so.52",
-        "libswscale.so.2",
-    ],
-})
+from tensorflow_io.core.python.ops import ffmpeg_ops as ffmpeg_ops
 
 class VideoDataset(data_ops.Dataset):
   """A Video File Dataset that reads the video file."""
@@ -103,5 +56,5 @@ class VideoDataset(data_ops.Dataset):
         tf.TensorShape([None, None, 3])] if batch == 0 else [
             tf.TensorShape([None, None, None, 3])]
     super(VideoDataset, self).__init__(
-        video_ops.video_dataset,
-        video_ops.video_input(filename), batch, dtypes, shapes)
+        ffmpeg_ops.video_dataset,
+        ffmpeg_ops.video_input(filename), batch, dtypes, shapes)
