@@ -18,6 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import pytest
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
@@ -28,7 +30,7 @@ audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "test_audio", "mono_10khz.wav")
 
-def test_audio_dataset():
+def test_wav_dataset():
   """Test Audio Dataset"""
   with open(audio_path, 'rb') as f:
     wav_contents = f.read()
@@ -44,6 +46,30 @@ def test_audio_dataset():
   assert i == 5760
 
   audio_dataset = audio_io.WAVDataset([audio_path], batch=2)
+  i = 0
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v[0].numpy())
+    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
+    i += 2
+  assert i == 5760
+
+@pytest.mark.skipif(sys.platform == "darwin", reason=None)
+def test_audio_dataset():
+  """Test Audio Dataset"""
+  with open(audio_path, 'rb') as f:
+    wav_contents = f.read()
+  audio_v = tf.audio.decode_wav(wav_contents)
+
+  f = lambda x: float(x) / (1 << 15)
+
+  audio_dataset = audio_io.AudioDataset([audio_path])
+  i = 0
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v.numpy())
+    i += 1
+  assert i == 5760
+
+  audio_dataset = audio_io.AudioDataset([audio_path], batch=2)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v[0].numpy())

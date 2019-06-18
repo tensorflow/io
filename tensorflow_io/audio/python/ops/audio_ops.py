@@ -20,6 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as audio_ops
+from tensorflow_io.core.python.ops import ffmpeg_ops as ffmpeg_ops
 
 class WAVDataset(data_ops.Dataset):
   """A WAV Dataset"""
@@ -38,4 +39,22 @@ class WAVDataset(data_ops.Dataset):
     super(WAVDataset, self).__init__(
         audio_ops.wav_dataset,
         audio_ops.wav_input(filename),
+        batch, dtypes, shapes)
+
+class AudioDataset(data_ops.Dataset):
+  """A Audio File Dataset that reads the audio file."""
+
+  def __init__(self, filename, batch=None):
+    """Create a `AudioDataset`.
+    Args:
+      filename: A `tf.string` tensor containing one or more filenames.
+    """
+    batch = 0 if batch is None else batch
+    dtypes = [tf.int16]
+    shapes = [
+        tf.TensorShape([None])] if batch == 0 else [
+            tf.TensorShape([None, None])]
+    super(AudioDataset, self).__init__(
+        ffmpeg_ops.audio_dataset,
+        ffmpeg_ops.audio_input(filename),
         batch, dtypes, shapes)

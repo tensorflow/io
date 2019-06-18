@@ -66,5 +66,7 @@ _ffmpeg_ops = _load_dependency_and_library({
     ],
 })
 
+audio_input = _ffmpeg_ops.audio_input
 video_input = _ffmpeg_ops.video_input
+audio_dataset = _ffmpeg_ops.audio_dataset
 video_dataset = _ffmpeg_ops.video_dataset

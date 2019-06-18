@@ -32,6 +32,17 @@ extern "C" {
 namespace tensorflow {
 namespace data {
 
+static mutex mu(LINKER_INITIALIZED);
+static unsigned count(0);
+void FFmpegReaderInit() {
+  mutex_lock lock(mu);
+  count++;
+  if (count == 1) {
+    // Register all formats and codecs
+    av_register_all();
+  }
+}
+
 static int io_read_packet(void *opaque, uint8_t *buf, int buf_size) {
   FFmpegReader *r = (FFmpegReader *)opaque;
   StringPiece result;

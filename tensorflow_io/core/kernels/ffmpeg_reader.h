@@ -31,6 +31,8 @@ extern "C" {
 namespace tensorflow {
 namespace data {
 
+void FFmpegReaderInit();
+
 class FFmpegReader {
  public:
   explicit FFmpegReader(SizedRandomAccessInputStreamInterface* s, const string& filename) : stream_(s), filename_(filename) {}
