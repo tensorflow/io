@@ -155,7 +155,13 @@ string GGFS::TranslateName(const string &name) const {
 
   StringPiece scheme, namenode, path;
   io::ParseURI(name, &scheme, &namenode, &path);
-  return string(path.data(), path.length());
+
+  string res = string(path.data(), path.length());
+
+  if (res.length() != 0 && res.at(res.length() - 1) == '/')
+    res = res.substr(0, res.length() - 1);
+
+  return res;
 }
 
 }  // namespace tensorflow

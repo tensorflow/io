@@ -20,38 +20,26 @@ namespace tensorflow {
 
 GGFSWritableFile::GGFSWritableFile(const string &file_name, std::unique_ptr<GGFSClient> &&client)
   : file_name_(file_name),
-    client_(std::move(client)) {
-  LOG(INFO) << "Call GGFSWritableFile::GGFSWritableFile [file_name = " << file_name_ << "]";
-}
+    client_(std::move(client)) {}
 
-GGFSWritableFile::~GGFSWritableFile() {
-  LOG(INFO) << "Call GGFSWritableFile::~GGFSWritableFile [file_name = " << file_name_ << "]";
-}
+GGFSWritableFile::~GGFSWritableFile() {}
 
 Status GGFSWritableFile::Append(StringPiece data) {
-  LOG(INFO) << "Call GGFSWritableFile::Append [file_name = " << file_name_ << "]";
-
   Status exists_status = client_->Exists(file_name_);
   bool create = exists_status.code() == errors::Code::NOT_FOUND;
 
   return client_->WriteFile(file_name_, create, true, (uint8_t *)data.data(), data.size());
 }
 
-Status GGFSWritableFile::Close() {
-  LOG(INFO) << "Call GGFSWritableFile::Close [file_name = " << file_name_ << "]";
-  
+Status GGFSWritableFile::Close() {  
   return Status::OK();
 }
 
 Status GGFSWritableFile::Flush() {
-  LOG(INFO) << "Call GGFSWritableFile::Flush [file_name = " << file_name_ << "]";
-
   return Status::OK();
 }
 
 Status GGFSWritableFile::Sync() {
-  LOG(INFO) << "Call GGFSWritableFile::Sync [file_name = " << file_name_ << "]";
-
   return Status::OK();
 }
 

@@ -19,18 +19,12 @@ namespace tensorflow {
 
 GGFSRandomAccessFile::GGFSRandomAccessFile(const string &file_name, std::unique_ptr<GGFSClient> &&client)
 	: file_name_(file_name),
-	  client_(std::move(client)) {
-    LOG(INFO) << "Call GGFSRandomAccessFile::GGFSRandomAccessFile [file_name = " << file_name_ << "]";
-}
+	  client_(std::move(client)) {}
 
-GGFSRandomAccessFile::~GGFSRandomAccessFile() {
-  LOG(INFO) << "Call GGFSRandomAccessFile::~GGFSRandomAccessFile [file_name = " << file_name_ << "]";
-}
+GGFSRandomAccessFile::~GGFSRandomAccessFile() {}
 
 Status GGFSRandomAccessFile::Read(uint64 offset, size_t n, StringPiece *result,
                                   char *scratch) const {
-  LOG(INFO) << "Call GGFSRandomAccessFile::Read [file_name = " << file_name_ << ", offset = " << offset << ", n = " << n << "]";
-
   uint8_t* out_data;
   int32_t out_length;
 

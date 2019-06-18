@@ -188,7 +188,6 @@ class TestFS():
     ls_result = gfile.ListDirectory(dir_name)
     # Check that list of files is correct.
     self.assertEqual(len(ls_expected_result), len(ls_result))
-    print(ls_result)
     for e in ["1", "2", "4"]:
       self.assertTrue(e in ls_result, msg="Result doesn't contain '%s'" % e)
 
@@ -197,7 +196,6 @@ class TestFS():
 
     """
     # Setup and check preconditions.
-    gfile.MkDir(self.prefix() + ":///test_make_dirs")
     dir_name = self.prefix() + ":///test_make_dirs/"
     self.assertFalse(gfile.Exists(dir_name))
     # Make directory.
