@@ -12,19 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""PcapInput/PcapOutput."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+"""PcapDataset"""
 import tensorflow as tf
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
+from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io import _load_library
 pcap_ops = _load_library('_pcap_ops.so')
 
-class PcapDataset(data.Dataset):
-  """ A pcap Dataset. Pcap is a popular file format for capturing network packets.
+
+class PcapDataset(data_ops.Dataset):
+  """A pcap Dataset. Pcap is a popular file format for capturing network packets.
   """
 
   def __init__(self, filenames, batch=None):
@@ -33,35 +29,12 @@ class PcapDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = pcap_ops.pcap_input(filenames)
-    self._batch = 0 if batch is None else batch
-    super(PcapDataset, self).__init__()
-
-
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return pcap_ops.pcap_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_classes(self):
-    # we output a tensor for packet timestamp and one for packet data
-    return (tf.Tensor, tf.Tensor)
-
-  @property
-  def output_shapes(self):
-    return tuple(
-        [tf.TensorShape([]) for _ in self._columns]
-    ) if self._batch is None else tuple(
-        [tf.TensorShape([None]), tf.TensorShape([None])]
-    )
-
-  @property
-  def output_types(self):
-    return tuple([dtypes.float64, dtypes.string])
+    batch = 0 if batch is None else batch
+    dtypes = [tf.float64, tf.string]
+    shapes = [
+        tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
+            tf.TensorShape([None]), tf.TensorShape([None])]
+    super(PcapDataset, self).__init__(
+        pcap_ops.pcap_dataset,
+        pcap_ops.pcap_input(filenames),
+        batch, dtypes, shapes)

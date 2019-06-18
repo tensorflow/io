@@ -167,7 +167,10 @@ class PcapInput: public FileInput<PcapInputStream> {
       int64 record_count = 0;
       double packet_timestamp;
       string packet_data_buffer;
-      TF_RETURN_IF_ERROR(state.get()->ReadRecord(packet_timestamp, &packet_data_buffer, record_count));
+      Status status = state.get()->ReadRecord(packet_timestamp, &packet_data_buffer, record_count);
+      if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return status;
+      }
       if (record_count > 0) {
         Tensor timestamp_tensor = (*out_tensors)[0];
         timestamp_tensor.flat<double>()(*record_read) = packet_timestamp;
@@ -178,15 +181,6 @@ class PcapInput: public FileInput<PcapInputStream> {
         // no more records available to read
         // record_count == 0
         break;
-      }
-    }
-    if (*record_read < record_to_read) {
-      if (*record_read == 0) {
-        out_tensors->clear();
-      }
-      for (size_t i = 0; i < out_tensors->size(); i++) {
-        Tensor tensor = (*out_tensors)[i].Slice(0, *record_read);
-        (*out_tensors)[i] = std::move(tensor);
       }
     }
     return Status::OK();
