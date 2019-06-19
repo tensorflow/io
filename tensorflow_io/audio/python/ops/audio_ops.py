@@ -20,7 +20,6 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as audio_ops
-from tensorflow_io.core.python.ops import ffmpeg_ops as ffmpeg_ops
 
 class WAVDataset(data_ops.Dataset):
   """A WAV Dataset"""

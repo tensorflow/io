@@ -15,7 +15,7 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.arrow`: Apache Arrow data format support. Usage guide [here](tensorflow_io/arrow/README.md).
 - `tensorflow_io.image`: WebP and TIFF image format support.
 - `tensorflow_io.libsvm`: LIBSVM file format support.
-- `tensorflow_io.video`: Video file support with FFmpeg.
+- `tensorflow_io.ffmpeg`: Video and Audio file support with FFmpeg.
 - `tensorflow_io.parquet`: Apache Parquet data format support.
 - `tensorflow_io.lmdb`: LMDB file format support.
 - `tensorflow_io.mnist`: MNIST file format support.

@@ -5,10 +5,13 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
+        "kernels/audio_ffmpeg_input.cc",
+        "kernels/audio_ffmpeg_reader.cc",
+        "kernels/audio_ffmpeg_reader.h",
         "kernels/video_ffmpeg_input.cc",
         "kernels/video_ffmpeg_reader.cc",
         "kernels/video_ffmpeg_reader.h",
-        "ops/video_ffmpeg_ops.cc",
+        "ops/ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -25,10 +28,13 @@ cc_library(
 cc_library(
     name = "ffmpeg_2.8_ops",
     srcs = [
+        "kernels/audio_ffmpeg_input.cc",
+        "kernels/audio_ffmpeg_reader.cc",
+        "kernels/audio_ffmpeg_reader.h",
         "kernels/video_ffmpeg_input.cc",
         "kernels/video_ffmpeg_reader.cc",
         "kernels/video_ffmpeg_reader.h",
-        "ops/video_ffmpeg_ops.cc",
+        "ops/ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -45,10 +51,13 @@ cc_library(
 cc_library(
     name = "libav_9.20_ops",
     srcs = [
+        "kernels/audio_ffmpeg_input.cc",
+        "kernels/audio_ffmpeg_reader.cc",
+        "kernels/audio_ffmpeg_reader.h",
         "kernels/video_ffmpeg_input.cc",
         "kernels/video_ffmpeg_reader.cc",
         "kernels/video_ffmpeg_reader.h",
-        "ops/video_ffmpeg_ops.cc",
+        "ops/ffmpeg_ops.cc",
     ],
     copts = [
         "-pthread",

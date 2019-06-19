@@ -133,8 +133,7 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
-        "//tensorflow_io/audio:ffmpeg_3.4_ops",
-        "//tensorflow_io/video:ffmpeg_3.4_ops",
+        "//tensorflow_io/ffmpeg:ffmpeg_3.4_ops",
     ],
 )
 
@@ -147,8 +146,7 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
-        "//tensorflow_io/audio:ffmpeg_2.8_ops",
-        "//tensorflow_io/video:ffmpeg_2.8_ops",
+        "//tensorflow_io/ffmpeg:ffmpeg_2.8_ops",
     ],
 )
 
@@ -161,7 +159,6 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
-        "//tensorflow_io/audio:libav_9.20_ops",
-        "//tensorflow_io/video:libav_9.20_ops",
+        "//tensorflow_io/ffmpeg:libav_9.20_ops",
     ],
 )

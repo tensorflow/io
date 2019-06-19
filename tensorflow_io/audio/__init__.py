@@ -15,21 +15,18 @@
 """Audio Dataset.
 
 @@WAVDataset
-@@AudioDataset
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.util.all_util import remove_undocumented
-
-from tensorflow_io.audio.python.ops.audio_ops import AudioDataset
 from tensorflow_io.audio.python.ops.audio_ops import WAVDataset
+
+from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "WAVDataset",
-    "AudioDataset",
 ]
 
 remove_undocumented(__name__)
