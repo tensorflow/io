@@ -35,6 +35,7 @@ class GGFSClient {
   Status MkDir(string path, bool only_if_not_exists);
   Status MkDirs(string path, bool only_if_not_exists);
   Status ListFiles(string path, std::vector<string>* out_files);
+  string MakeRelative(const string &a, const string &b);
 
  private:
   std::shared_ptr<Client> client_;

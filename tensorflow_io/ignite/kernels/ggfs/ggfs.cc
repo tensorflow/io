@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <queue>
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/file_system.h"
@@ -130,9 +131,45 @@ Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
 
 Status GGFS::RenameFile(const string &src, const string &dst) {
   LOG(INFO) << "Call GGFS::RenameFile [src = " << src << ", dst = " << dst << "]";
-  
+
   std::unique_ptr<GGFSClient> client = CreateClient();
-  return client->Move(TranslateName(src), TranslateName(dst));
+  
+  bool is_directory;
+  int64_t modification_time;
+  int32_t size;
+
+  TF_RETURN_IF_ERROR(client->Stat(TranslateName(src), &is_directory, &modification_time, &size));
+
+  if (!is_directory)
+    return client->Move(TranslateName(src), TranslateName(dst));
+
+  std::queue<string> file_queue;
+  std::queue<string> dir_queue;
+  dir_queue.push(src);
+
+  TF_RETURN_IF_ERROR(client->Remove(TranslateName(dst)));
+
+  while (!dir_queue.empty()) {
+    string src_dir = dir_queue.front();
+    dir_queue.pop();
+    string dst_dir = dst + "/" + client->MakeRelative(src_dir, src);
+
+    TF_RETURN_IF_ERROR(client->MkDirs(TranslateName(dst_dir), false));
+
+    std::vector<string> children;
+    TF_RETURN_IF_ERROR(client->ListFiles(TranslateName(src_dir), &children));
+
+    for (string const& child : children) {
+      string full_child_path = src_dir + "/" + child;
+      TF_RETURN_IF_ERROR(client->Stat(TranslateName(full_child_path), &is_directory, &modification_time, &size));
+      std::queue<string> target_queue = is_directory ? dir_queue : file_queue;
+      target_queue.push(full_child_path);
+    }
+  }
+
+  TF_RETURN_IF_ERROR(client->Remove(TranslateName(src)));
+
+  return Status::OK();
 }
 
 Status GGFS::Stat(const string &file_name, FileStatistics *stats) {

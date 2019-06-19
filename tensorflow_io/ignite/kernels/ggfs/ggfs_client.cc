@@ -21,7 +21,10 @@ limitations under the License.
 
 namespace tensorflow {
 
-static string MakeRelative(const string &a, const string &b) {
+string GGFSClient::MakeRelative(const string &a, const string &b) {
+  if (a == b)
+    return "";
+
   string max = a;
   string min = b;
   bool first = b.size() > a.size();
