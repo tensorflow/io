@@ -24,30 +24,27 @@ import tensorflow_io.json as json_io
 
 
 def test_json():
-    """test_json"""
-    feature_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_json",
-        "feature.json")
-    label_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_json",
-        "label.json")
-    d_train = json_io.JSONDataset(
-        feature_filename,
-        label_filename,
-        )
-    print(d_train)
+  """test_json"""
+  feature_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "feature.json")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "label.json")
+  d_train = json_io.JSONDataset(
+      feature_filename,
+      label_filename,
+    )
+  print(d_train)
 
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(2, input_shape=(1,)),
-    ])
-    model.compile(optimizer='sgd',
-                  loss='mse',
-                  metrics=['accuracy'])
+  model = tf.keras.models.Sequential([
+      tf.keras.layers.Dense(2, input_shape=(1,)),
+  ])
+  model.compile(optimizer='sgd', loss='mse', metrics=['accuracy'])
 
-    model.fit(d_train, epochs=5)
-
+  model.fit(d_train, epochs=5)
 
 if __name__ == "__main__":
-    test.main()
+  test.main()

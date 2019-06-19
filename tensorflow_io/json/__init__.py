@@ -21,11 +21,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.util.all_util import remove_undocumented
+
 from tensorflow_io.json.python.ops.json_ops import JSONDataset
 from tensorflow_io.json.python.ops.json_ops import JSONFeatureDataset
 from tensorflow_io.json.python.ops.json_ops import JSONLabelDataset
-
-from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "JSONDataset",

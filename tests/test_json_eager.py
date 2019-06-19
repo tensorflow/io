@@ -23,58 +23,58 @@ import numpy as np
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-    tf.compat.v1.enable_eager_execution()
+  tf.compat.v1.enable_eager_execution()
+
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
 
-
 def test_json_dataset():
-    """Test case for JSON Dataset.
-    """
-    json_filename = os.path.join(
+  """Test case for JSON Dataset.
+  """
+  json_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "json_test.npz")
-    with np.load(json_filename) as f:
-        (x_test, y_test) = f["x_test"], f["y_test"]
-    feature_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_json",
-        "feature.json")
-    label_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_json",
-        "label.json")
+  with np.load(json_filename) as f:
+    (x_test, y_test) = f["x_test"], f["y_test"]
+  feature_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "feature.json")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "label.json")
 
-    feature_dataset = json_io.JSONFeatureDataset(feature_filename)
-    label_dataset = json_io.JSONLabelDataset(label_filename)
+  feature_dataset = json_io.JSONFeatureDataset(feature_filename)
+  label_dataset = json_io.JSONLabelDataset(label_filename)
 
-    i = 0
-    for j_x in feature_dataset:
-        v_x = x_test[i]
-        print(v_x)
-        print(j_x.numpy())
-        assert np.alltrue(v_x == j_x.numpy())
-        i += 1
-    assert i == len(y_test)
+  i = 0
+  for j_x in feature_dataset:
+    v_x = x_test[i]
+    print(v_x)
+    print(j_x.numpy())
+    assert np.alltrue(v_x == j_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
-    i = 0
-    for j_y in label_dataset:
-        v_y = y_test[i]
-        assert np.alltrue(v_y == j_y.numpy())
-        i += 1
-    assert i == len(y_test)
+  i = 0
+  for j_y in label_dataset:
+    v_y = y_test[i]
+    assert np.alltrue(v_y == j_y.numpy())
+    i += 1
+  assert i == len(y_test)
 
-    dataset = json_io.JSONDataset(feature_filename, label_filename)
+  dataset = json_io.JSONDataset(feature_filename, label_filename)
 
-    i = 0
-    for (j_x, j_y) in dataset:
-        v_x = x_test[i]
-        v_y = y_test[i]
-        assert np.alltrue(v_y == j_y.numpy())
-        assert np.alltrue(v_x == j_x.numpy())
-        i += 1
-    assert i == len(y_test)
+  i = 0
+  for (j_x, j_y) in dataset:
+    v_x = x_test[i]
+    v_y = y_test[i]
+    assert np.alltrue(v_y == j_y.numpy())
+    assert np.alltrue(v_x == j_x.numpy())
+    i += 1
+  assert i == len(y_test)
 
 
 if __name__ == "__main__":
-    test.main()
+  test.main()
