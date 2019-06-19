@@ -213,6 +213,17 @@ http_archive(
 )
 
 http_archive(
+    name = "util_linux",
+    urls = [
+        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz"
+    ],
+    strip_prefix = "util-linux-2.32.1",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    build_file = "//third_party:uuid.BUILD"
+)
+
+http_archive(
     name = "com_github_grpc_grpc",
     sha256 = "1d54cd95ed276c42c276e0a3df8ab33ee41968b73af14023c03a19db48f82e73",
     strip_prefix = "grpc-1.19.0",

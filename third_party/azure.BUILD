@@ -119,5 +119,6 @@ cc_library(
     deps = [
         "@boringssl//:crypto",
         "@curl",
+        "@util_linux//:uuid",
     ],
 )

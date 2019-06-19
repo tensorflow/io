@@ -19,47 +19,47 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.platform import test
-
 import tensorflow_io.azure.azfs_ops  # pylint: disable=unused-import
+from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 
 class AZFSTest(test.TestCase):
   """[summary]
-  
+
   Arguments:
     test {[type]} -- [description]
   """
 
-  def __init__(self, methodName='runTest'):
-      self.account = os.environ.get('TF_AZURE_STORAGE_ACCOUNT', 'devstoreaccount1')
-      self.container = os.environ.get('TF_AZURE_STORAGE_CONTAINER', 'aztest')
-      self.path_root = 'az://' + os.path.join(self.account, self.container)
-      super(AZFSTest, self).__init__(methodName)
+  def __init__(self, methodName='runTest'): # pylint: disable=parameter-override
+    self.account = os.environ.get('TF_AZURE_STORAGE_ACCOUNT', 'devstoreaccount1')
+    self.container = os.environ.get('TF_AZURE_STORAGE_CONTAINER', 'aztest')
+    self.path_root = 'az://' + os.path.join(self.account, self.container)
+    super(AZFSTest, self).__init__(methodName)
 
   def _path_to(self, path):
-      return os.path.join(self.path_root, path)
-  
-  def setUp(self):
-      super(AZFSTest, self).setUp()
-      if not gfile.IsDirectory(self.path_root):
-        gfile.MakeDirs(self.path_root)
+    return os.path.join(self.path_root, path)
+ 
+  def setUp(self): # pylint: disable=method-override
+    super(AZFSTest, self).setUp()
+    if not gfile.IsDirectory(self.path_root):
+      gfile.MakeDirs(self.path_root)
 
-  def tearDown(self):
+  def tearDown(self): # pylint: disable=method-override
     #   Cleanup container
     if gfile.IsDirectory(self.path_root):
       gfile.DeleteRecursively(self.path_root)
-  
+
   def test_exists(self):
-      self.assertTrue(gfile.IsDirectory(self.path_root))
+    self.assertTrue(gfile.IsDirectory(self.path_root))
 
   def test_also_works_with_full_dns_name(self):
     """Test the file system also works when we're given 
-        a path of the form az://<account>.blob.core.windows.net/<container>/<path>
+       a path of the form 
+       az://<account>.blob.core.windows.net/<container>/<path>
     """
     file_name = self.account + '.blob.core.windows.net' + self.container
     if not gfile.IsDirectory(file_name):
-        gfile.MakeDirs(file_name)
+      gfile.MakeDirs(file_name)
 
     self.assertTrue(gfile.IsDirectory(file_name))
 
@@ -69,7 +69,7 @@ class AZFSTest(test.TestCase):
     # Setup and check preconditions.
     file_name = self._path_to("testfile")
     if gfile.Exists(file_name):
-        gfile.Remove(file_name)
+      gfile.Remove(file_name)
     # Create file.
     with gfile.Open(file_name, 'w') as w:
       w.write("")
@@ -257,6 +257,6 @@ class AZFSTest(test.TestCase):
 #    self.assertTrue(gfile.IsDirectory(dst_dir_name))
 #
 
-
 if __name__ == '__main__':
     test.main()
+
