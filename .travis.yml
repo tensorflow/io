@@ -12,7 +12,7 @@ install:
 - |
   if [[ $(uname) == "Darwin" ]]; then
     # Travis CI is questionable about setuptools update.
-    # sudo -H python -m pip install --upgrade pip setuptools
+    sudo -H python -m pip install --user --upgrade pip setuptools
 
     # Ignite probably takes more resource so start it first,
     # otherwise it may run into issues competing with other services.
