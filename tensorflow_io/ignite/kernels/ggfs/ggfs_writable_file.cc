@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_writable_file.h"
+#include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
 
-GGFSWritableFile::GGFSWritableFile(const string &file_name, std::unique_ptr<GGFSClient> &&client)
-  : file_name_(file_name),
-    client_(std::move(client)) {}
+GGFSWritableFile::GGFSWritableFile(const string &file_name,
+                                   std::unique_ptr<GGFSClient> &&client)
+    : file_name_(file_name), client_(std::move(client)) {}
 
 GGFSWritableFile::~GGFSWritableFile() {}
 
@@ -28,20 +28,14 @@ Status GGFSWritableFile::Append(StringPiece data) {
   Status exists_status = client_->Exists(file_name_);
   bool create = exists_status.code() == errors::Code::NOT_FOUND;
 
-  return client_->WriteFile(file_name_, create, true, (uint8_t *)data.data(), data.size());
+  return client_->WriteFile(file_name_, create, true, (uint8_t *)data.data(),
+                            data.size());
 }
 
-Status GGFSWritableFile::Close() {  
-  return Status::OK();
-}
+Status GGFSWritableFile::Close() { return Status::OK(); }
 
-Status GGFSWritableFile::Flush() {
-  return Status::OK();
-}
+Status GGFSWritableFile::Flush() { return Status::OK(); }
 
-Status GGFSWritableFile::Sync() {
-  return Status::OK();
-}
+Status GGFSWritableFile::Sync() { return Status::OK(); }
 
-}  // namespace tensorflow
-
+} // namespace tensorflow

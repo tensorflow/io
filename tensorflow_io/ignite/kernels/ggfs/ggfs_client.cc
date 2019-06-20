@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "tensorflow_io/ignite/kernels/ggfs/ggfs_client.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/gtl/cleanup.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
-#include "tensorflow_io/ignite/kernels/ggfs/ggfs_client.h"
-#include "tensorflow/core/lib/gtl/cleanup.h"
-#include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
 
@@ -38,29 +38,29 @@ string GGFSClient::MakeRelative(const string &a, const string &b) {
   return string((first ? r.first : r.second), first ? min.end() : max.end());
 }
 
-GGFSClient::GGFSClient(string host, int32 port, string username, string password, string certfile, string keyfile, string cert_password)
-  : username_(username),
-    password_(password) {
-	Client* p_client = new PlainClient(std::move(host), port, false);
+GGFSClient::GGFSClient(string host, int32 port, string username,
+                       string password, string certfile, string keyfile,
+                       string cert_password)
+    : username_(username), password_(password) {
+  Client *p_client = new PlainClient(std::move(host), port, false);
 
   if (certfile.empty()) {
     client_ = std::shared_ptr<Client>(p_client);
-  }
-  else {
+  } else {
     client_ = std::shared_ptr<Client>(
         new SslWrapper(std::shared_ptr<Client>(p_client), std::move(certfile),
                        std::move(keyfile), std::move(cert_password), false));
   }
-
 }
 
-GGFSClient::~GGFSClient() {}
-
-Status GGFSClient::WriteFile(string path, bool create, bool append, uint8_t* data, int32_t length) {
-	TF_RETURN_IF_ERROR(SendCommonRequestHeader(kWriteFileMethodId, 12 + path.length() + length));
+Status GGFSClient::WriteFile(string path, bool create, bool append,
+                             uint8_t *data, int32_t length) {
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kWriteFileMethodId, 12 + path.length() + length));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(create));
   TF_RETURN_IF_ERROR(client_->WriteByte(append));
   TF_RETURN_IF_ERROR(client_->WriteByte(kByteArrayVal));
@@ -71,12 +71,15 @@ Status GGFSClient::WriteFile(string path, bool create, bool append, uint8_t* dat
   return Status::OK();
 }
 
-Status GGFSClient::ReadFile(string path, uint8_t** out_data, int32_t* out_length) {
-	TF_RETURN_IF_ERROR(SendCommonRequestHeader(kReadFileMethodId, 5 + path.length()));
+Status GGFSClient::ReadFile(string path, uint8_t **out_data,
+                            int32_t *out_length) {
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kReadFileMethodId, 5 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
   uint8_t type;
@@ -84,7 +87,7 @@ Status GGFSClient::ReadFile(string path, uint8_t** out_data, int32_t* out_length
 
   TF_RETURN_IF_ERROR(client_->ReadInt(out_length));
 
-  uint8_t* data = new uint8_t[*out_length];
+  uint8_t *data = new uint8_t[*out_length];
   TF_RETURN_IF_ERROR(client_->ReadData(data, *out_length));
   *out_data = data;
 
@@ -92,25 +95,30 @@ Status GGFSClient::ReadFile(string path, uint8_t** out_data, int32_t* out_length
 }
 
 Status GGFSClient::Move(string from, string to) {
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kMoveMethodId, 10 + from.length() + to.length()));
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kMoveMethodId, 10 + from.length() + to.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(from.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(from.c_str()), from.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(from.c_str()), from.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(to.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(to.c_str()), to.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(to.c_str()), to.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
   return Status::OK();
 }
 
-Status GGFSClient::Stat(string path, bool* out_is_directory, int64_t* out_modification_time, int32_t* out_size) {
+Status GGFSClient::Stat(string path, bool *out_is_directory,
+                        int64_t *out_modification_time, int32_t *out_size) {
   TF_RETURN_IF_ERROR(SendCommonRequestHeader(kStatMethodId, 5 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
@@ -125,11 +133,13 @@ Status GGFSClient::Stat(string path, bool* out_is_directory, int64_t* out_modifi
 }
 
 Status GGFSClient::Exists(string path) {
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kExistsMethodId, 5 + path.length()));
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kExistsMethodId, 5 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
@@ -143,23 +153,27 @@ Status GGFSClient::Exists(string path) {
 }
 
 Status GGFSClient::Remove(string path) {
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kRemoveMethodId, 5 + path.length()));
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kRemoveMethodId, 5 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
-	return Status::OK();
+  return Status::OK();
 }
 
 Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kMkDirMethodId, 6 + path.length()));
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kMkDirMethodId, 6 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(only_if_not_exists));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
@@ -168,11 +182,13 @@ Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
 }
 
 Status GGFSClient::MkDirs(string path, bool only_if_not_exists) {
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kMkDirsMethodId, 6 + path.length()));
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kMkDirsMethodId, 6 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(only_if_not_exists));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
@@ -180,12 +196,14 @@ Status GGFSClient::MkDirs(string path, bool only_if_not_exists) {
   return Status::OK();
 }
 
-Status GGFSClient::ListFiles(string path, std::vector<string>* out_files) {	
-  TF_RETURN_IF_ERROR(SendCommonRequestHeader(kListFilesMethodId, 5 + path.length()));
+Status GGFSClient::ListFiles(string path, std::vector<string> *out_files) {
+  TF_RETURN_IF_ERROR(
+      SendCommonRequestHeader(kListFilesMethodId, 5 + path.length()));
 
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(path.length()));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>(path.c_str()), path.length()));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>(path.c_str()), path.length()));
 
   TF_RETURN_IF_ERROR(ReceiveCommonResponseHeader());
 
@@ -196,19 +214,21 @@ Status GGFSClient::ListFiles(string path, std::vector<string>* out_files) {
     uint8_t type;
     TF_RETURN_IF_ERROR(client_->ReadByte(&type));
     if (type != kStringVal)
-      return errors::Unknown("Method GGFSClient::ListFiles expects strings in response");
+      return errors::Unknown(
+          "Method GGFSClient::ListFiles expects strings in response");
 
     int32_t str_length;
     TF_RETURN_IF_ERROR(client_->ReadInt(&str_length));
-    
+
     uint8_t str[str_length];
     TF_RETURN_IF_ERROR(client_->ReadData(str, str_length));
 
-    out_files->push_back(MakeRelative(string(reinterpret_cast<char*>(str), str_length), path + "/"));  
+    out_files->push_back(MakeRelative(
+        string(reinterpret_cast<char *>(str), str_length), path + "/"));
 
     length--;
   }
-  
+
   return Status::OK();
 }
 
@@ -219,7 +239,8 @@ Status GGFSClient::SendCommonRequestHeader(uint8_t method_id, int32_t length) {
   TF_RETURN_IF_ERROR(client_->WriteLong(0));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
   TF_RETURN_IF_ERROR(client_->WriteInt(16));
-  TF_RETURN_IF_ERROR(client_->WriteData(reinterpret_cast<const uint8_t*>("ML_MODEL_STORAGE"), 16));
+  TF_RETURN_IF_ERROR(client_->WriteData(
+      reinterpret_cast<const uint8_t *>("ML_MODEL_STORAGE"), 16));
   TF_RETURN_IF_ERROR(client_->WriteByte(method_id));
 
   return Status::OK();
@@ -242,12 +263,13 @@ Status GGFSClient::ReceiveCommonResponseHeader() {
       int32_t err_msg_length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&err_msg_length));
 
-      uint8_t* err_msg_c = new uint8_t[err_msg_length];
+      uint8_t *err_msg_c = new uint8_t[err_msg_length];
       auto clean = gtl::MakeCleanup([err_msg_c] { delete[] err_msg_c; });
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c, err_msg_length));
-      string err_msg(reinterpret_cast<char*>(err_msg_c), err_msg_length);
+      string err_msg(reinterpret_cast<char *>(err_msg_c), err_msg_length);
 
-      return errors::Unknown("Error [status=", status, ", message=", err_msg, "]");
+      return errors::Unknown("Error [status=", status, ", message=", err_msg,
+                             "]");
     }
     return errors::Unknown("Error [status=", status, "]");
   }
@@ -262,7 +284,8 @@ Status GGFSClient::EstablishConnection() {
     Status status = Handshake();
     if (!status.ok()) {
       Status disconnect_status = client_->Disconnect();
-      if (!disconnect_status.ok()) LOG(ERROR) << disconnect_status.ToString();
+      if (!disconnect_status.ok())
+        LOG(ERROR) << disconnect_status.ToString();
 
       return status;
     }
@@ -277,12 +300,12 @@ Status GGFSClient::Handshake() {
   if (username_.empty())
     msg_len += 1;
   else
-    msg_len += 5 + username_.length();  // 1 byte header, 4 bytes length.
+    msg_len += 5 + username_.length(); // 1 byte header, 4 bytes length.
 
   if (password_.empty())
     msg_len += 1;
   else
-    msg_len += 5 + password_.length();  // 1 byte header, 4 bytes length.
+    msg_len += 5 + password_.length(); // 1 byte header, 4 bytes length.
 
   TF_RETURN_IF_ERROR(client_->WriteInt(msg_len));
   TF_RETURN_IF_ERROR(client_->WriteByte(1));
@@ -296,7 +319,7 @@ Status GGFSClient::Handshake() {
     TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
     TF_RETURN_IF_ERROR(client_->WriteInt(username_.length()));
     TF_RETURN_IF_ERROR(
-        client_->WriteData(reinterpret_cast<const uint8_t*>(username_.c_str()),
+        client_->WriteData(reinterpret_cast<const uint8_t *>(username_.c_str()),
                            username_.length()));
   }
 
@@ -306,7 +329,7 @@ Status GGFSClient::Handshake() {
     TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
     TF_RETURN_IF_ERROR(client_->WriteInt(password_.length()));
     TF_RETURN_IF_ERROR(
-        client_->WriteData(reinterpret_cast<const uint8_t*>(password_.c_str()),
+        client_->WriteData(reinterpret_cast<const uint8_t *>(password_.c_str()),
                            password_.length()));
   }
 
@@ -329,10 +352,10 @@ Status GGFSClient::Handshake() {
       int32_t length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&length));
 
-      uint8_t* err_msg_c = new uint8_t[length];
+      uint8_t *err_msg_c = new uint8_t[length];
       auto clean = gtl::MakeCleanup([err_msg_c] { delete[] err_msg_c; });
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c, length));
-      string err_msg(reinterpret_cast<char*>(err_msg_c), length);
+      string err_msg(reinterpret_cast<char *>(err_msg_c), length);
 
       return errors::Unknown("Handshake Error [result=", handshake_res,
                              ", version=", serv_ver_major, ".", serv_ver_minor,
@@ -351,4 +374,4 @@ Status GGFSClient::Handshake() {
   return Status::OK();
 }
 
-}  // namespace tensorflow
+} // namespace tensorflow
