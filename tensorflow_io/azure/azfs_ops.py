@@ -23,4 +23,3 @@ from __future__ import print_function
 
 from tensorflow_io import _load_library
 _load_library("_azfs.so")
-

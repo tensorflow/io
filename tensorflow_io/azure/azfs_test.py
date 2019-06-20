@@ -30,8 +30,9 @@ class AZFSTest(test.TestCase):
     test {[type]} -- [description]
   """
 
-  def __init__(self, methodName='runTest'): # pylint: disable=parameter-override
-    self.account = os.environ.get('TF_AZURE_STORAGE_ACCOUNT', 'devstoreaccount1')
+  def __init__(self, methodName='runTest'): # pylint: disable=invalid-name
+    self.account = os.environ.get(
+        'TF_AZURE_STORAGE_ACCOUNT', 'devstoreaccount1')
     self.container = os.environ.get('TF_AZURE_STORAGE_CONTAINER', 'aztest')
     self.path_root = 'az://' + os.path.join(self.account, self.container)
     super(AZFSTest, self).__init__(methodName)
@@ -39,12 +40,12 @@ class AZFSTest(test.TestCase):
   def _path_to(self, path):
     return os.path.join(self.path_root, path)
 
-  def setUp(self): # pylint: disable=method-override
+  def setUp(self): # pylint: disable=invalid-name
     super(AZFSTest, self).setUp()
     if not gfile.IsDirectory(self.path_root):
       gfile.MakeDirs(self.path_root)
 
-  def tearDown(self): # pylint: disable=method-override
+  def tearDown(self): # pylint: disable=invalid-name
     #   Cleanup container
     if gfile.IsDirectory(self.path_root):
       gfile.DeleteRecursively(self.path_root)
@@ -98,10 +99,11 @@ class AZFSTest(test.TestCase):
         self.assertEqual("This is row {}\n".format(i), line)
 
   def test_wildcard_matching(self):
-
+    """Test glob patterns"""
     for ext in [".txt", ".md"]:
       for i in range(3):
-        with gfile.Open(self._path_to("wildcard/{}{}".format(i, ext)), 'w') as f:
+        file_path = self._path_to("wildcard/{}{}".format(i, ext))
+        with gfile.Open(file_path, 'w') as f:
           f.write('')
 
     txt_files = gfile.Glob(self._path_to("wildcard/*.txt"))
@@ -258,4 +260,3 @@ class AZFSTest(test.TestCase):
 
 if __name__ == '__main__':
   test.main()
-

@@ -98,7 +98,7 @@ cc_test(
     deps = [
         ":azfs",
         "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main"
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -128,4 +128,3 @@ py_test(
         ":azfs_ops_py",
     ],
 )
-
