@@ -34,10 +34,12 @@ cc_library(
   hdrs = [
       "libuuid/src/uuid.h"
   ],
+  copts = ["-std=c99"],
   strip_include_prefix = "libuuid/src",
   include_prefix = "uuid",
   defines = select({
       "//conditions:default": [
+          "_XOPEN_SOURCE=700",
           "HAVE_NANOSLEEP",
           "HAVE_SYS_FILE_H",
           "HAVE_MEMCPY",

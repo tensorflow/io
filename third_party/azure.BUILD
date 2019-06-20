@@ -109,12 +109,6 @@ cc_library(
     }),
     includes = ["include"],
     visibility = ["//visibility:public"],
-    linkopts = select({
-        "@bazel_tools//src/conditions:darwin": [],
-        "//conditions:default": [
-            "-luuid",
-        ]
-    }),
     copts = ["-std=c++11"],
     deps = [
         "@boringssl//:crypto",

@@ -21,9 +21,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.framework import load_library
-from tensorflow.python.platform import resource_loader
+from tensorflow_io import _load_library
+_load_library("_azfs.so")
 
-file_system_library = resource_loader.get_path_to_datafile("_azfs.so")
-load_library.load_library(file_system_library)
-# load_library.load_file_system_library(file_system_library)

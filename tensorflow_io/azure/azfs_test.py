@@ -38,7 +38,7 @@ class AZFSTest(test.TestCase):
 
   def _path_to(self, path):
     return os.path.join(self.path_root, path)
- 
+
   def setUp(self): # pylint: disable=method-override
     super(AZFSTest, self).setUp()
     if not gfile.IsDirectory(self.path_root):
@@ -53,8 +53,8 @@ class AZFSTest(test.TestCase):
     self.assertTrue(gfile.IsDirectory(self.path_root))
 
   def test_also_works_with_full_dns_name(self):
-    """Test the file system also works when we're given 
-       a path of the form 
+    """Test the file system also works when we're given
+       a path of the form
        az://<account>.blob.core.windows.net/<container>/<path>
     """
     file_name = self.account + '.blob.core.windows.net' + self.container
@@ -140,7 +140,7 @@ class AZFSTest(test.TestCase):
     src_file_name = self._path_to("copy/1")
     dst_file_name = self._path_to("copy/2")
     if gfile.Exists(dst_file_name):
-        gfile.Remove(dst_file_name)
+      gfile.Remove(dst_file_name)
     with gfile.Open(src_file_name, 'w') as w:
       w.write("42")
     self.assertTrue(gfile.Exists(src_file_name))
@@ -209,7 +209,6 @@ class AZFSTest(test.TestCase):
 
   def test_remove(self):
     """Test remove.
-
     """
     # Setup and check preconditions.
     file_name = self._path_to("1")
@@ -258,5 +257,5 @@ class AZFSTest(test.TestCase):
 #
 
 if __name__ == '__main__':
-    test.main()
+  test.main()
 

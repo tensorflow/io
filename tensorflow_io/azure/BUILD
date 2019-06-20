@@ -130,12 +130,3 @@ py_test(
     ],
 )
 
-cc_binary(
-    name = "azfs_test",
-    srcs = [
-        "azfs/azfs_test.cc",
-    ],
-    deps = [
-        ":azfs",
-    ],
-)
