@@ -1,6 +1,6 @@
 diff -Naur a/darwin/src/H5Tinit.c b/darwin/src/H5Tinit.c
 --- a/darwin/src/H5Tinit.c	1969-12-31 16:00:00.000000000 -0800
-+++ b/darwin/src/H5Tinit.c	2019-05-08 15:34:36.000000000 -0700
++++ b/darwin/src/H5Tinit.c	2019-06-19 20:47:07.000000000 -0700
 @@ -0,0 +1,982 @@
 +/* Generated automatically by H5detect -- do not edit */
 +
@@ -18,8 +18,8 @@ diff -Naur a/darwin/src/H5Tinit.c b/darwin/src/H5Tinit.c
 + * If you do not have access to either file, you may request a copy from     *
 + * help@hdfgroup.org.                                                        *
 + * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-+ * Created:		May  8, 2019
-+ *			Yong Tang <ytang@qa-automation-mac-mini.mobileiron.com>
++ * Created:		Jun 19, 2019
++ *			Yong Tang <yong.tang.github@outlook.com>
 + *
 + * Purpose:		This machine-generated source code contains
 + *			information about the various integer and
@@ -986,7 +986,7 @@ diff -Naur a/darwin/src/H5Tinit.c b/darwin/src/H5Tinit.c
 +/* sigill_handler called: 5 times */
 diff -Naur a/darwin/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
 --- a/darwin/src/H5lib_settings.c	1969-12-31 16:00:00.000000000 -0800
-+++ b/darwin/src/H5lib_settings.c	2019-05-08 15:34:29.000000000 -0700
++++ b/darwin/src/H5lib_settings.c	2019-06-19 20:47:00.000000000 -0700
 @@ -0,0 +1,113 @@
 +/* Generated automatically by H5make_libsettings -- do not edit */
 +
@@ -1004,8 +1004,8 @@ diff -Naur a/darwin/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
 + * If you do not have access to either file, you may request a copy from     *
 + * help@hdfgroup.org.                                                        *
 + * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-+ * Created:		May  8, 2019
-+ *			Yong Tang <ytang@qa-automation-mac-mini.mobileiron.com>
++ * Created:		Jun 19, 2019
++ *			Yong Tang <yong.tang.github@outlook.com>
 + *
 + * Purpose:		This machine-generated source code contains
 + *			information about the library build configuration
@@ -1025,12 +1025,12 @@ diff -Naur a/darwin/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
 +	"General Information:\n"
 +	"-------------------\n"
 +	"                   HDF5 Version: 1.10.5\n"
-+	"                  Configured on: Wed May  8 15:25:04 PDT 2019\n"
-+	"                  Configured by: ytang@qa-automation-mac-mini.mobileiron.com\n"
-+	"                    Host system: x86_64-apple-darwin18.5.0\n"
-+	"              Uname information: Darwin qa-automation-mac-mini.mobileiron.com 18.5.0 Darwin Kernel Version 18.5.0: Mon Mar 11 20:40:32 PDT 2019; root:xnu-4903.251.3~3/RELEASE_X86_64 x86_64\n"
++	"                  Configured on: Wed Jun 19 20:26:34 PDT 2019\n"
++	"                  Configured by: yong.tang.github@outlook.com\n"
++	"                    Host system: x86_64-apple-darwin18.6.0\n"
++	"              Uname information: Darwin localhost 18.6.0 Darwin Kernel Version 18.6.0: Thu Apr 25 23:16:27 PDT 2019; root:xnu-4903.261.4~2/RELEASE_X86_64 x86_64\n"
 +	"                       Byte sex: little-endian\n"
-+	"             Installation point: /Users/ytang/tmp/vv/hdf5-1.10.5/hdf5\n"
++	"             Installation point: /Users/ytang/tmp/hdf5-1.10.5/hdf5\n"
 +	"\n"
 +	"Compiling Options:\n"
 +	"------------------\n"
@@ -1103,7 +1103,7 @@ diff -Naur a/darwin/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
 +
 diff -Naur a/darwin/src/H5pubconf.h b/darwin/src/H5pubconf.h
 --- a/darwin/src/H5pubconf.h	1969-12-31 16:00:00.000000000 -0800
-+++ b/darwin/src/H5pubconf.h	2019-05-08 15:34:22.000000000 -0700
++++ b/darwin/src/H5pubconf.h	2019-06-19 20:46:52.000000000 -0700
 @@ -0,0 +1,668 @@
 +/* src/H5config.h.  Generated from H5config.h.in by configure.  */
 +/* src/H5config.h.in.  Generated from configure.ac by autoheader.  */

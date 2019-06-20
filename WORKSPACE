@@ -378,8 +378,8 @@ http_archive(
 # cp -r hdf5-1.10.5 b
 # docker run -i -t --rm -v $PWD/hdf5-1.10.5:/v -w /v --net=host ubuntu:14.04
 # $ apt-get -y -qq update
-# $ apt-get -y -qq install make gcc g++
-# $ ./configure --enable-cxx
+# $ apt-get -y -qq install make gcc g++ libz-dev
+# $ ./configure --enable-cxx --with-zlib
 # $ make
 # $ exit
 # mkdir -p b/linux/src
