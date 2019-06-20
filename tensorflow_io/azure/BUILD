@@ -6,7 +6,6 @@ c_opts = [
     "-pthread",
     "-std=c++11",
     "-DNDEBUG",
-    "-D_GLIBCXX_USE_CXX11_ABI=0",
 ]
 
 cc_binary(
