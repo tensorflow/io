@@ -79,6 +79,35 @@ class HDF5DatasetTest(test.TestCase):
         sess.run(get_next)
 
 
+  def test_hdf5_dataset_int32_zlib(self):
+    """Test case for HDF5Dataset with zlib."""
+    # Note the file is generated with tdset.h5:
+    # with h5py.File('compressed_h5.h5', 'w') as output_f:
+    #   output_f.create_dataset(
+    #       '/dset1', data=h5f['/dset1'][()], compression='gzip')
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_hdf5", "compressed_h5.h5")
+    filename = "file://" + filename
+    columns = ['/dset1']
+    output_types = [dtypes.int32]
+    output_shapes = [(1, 20)]
+
+    dataset = hdf5_io.HDF5Dataset(
+        [filename], columns, output_types, output_shapes)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for i in range(10):
+        v0 = list([np.asarray([v for v in range(i, i + 20)])])
+        vv = sess.run(get_next)
+        self.assertAllEqual(v0, vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+
   def test_hdf5_dataset(self):
     """Test case for HDF5Dataset."""
     filename = os.path.join(
