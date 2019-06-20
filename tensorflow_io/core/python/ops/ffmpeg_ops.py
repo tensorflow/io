@@ -12,20 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Video Dataset."""
+"""Dataset."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import ctypes
 
-import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io import _load_library
 
 import _ctypes
 
-def load_dependency_and_library(p):
+def _load_dependency_and_library(p):
   """load_dependency_and_library"""
   for library in p:
     # First try load all dependencies with RTLD_LOCAL
@@ -47,20 +45,20 @@ def load_dependency_and_library(p):
       _ctypes.dlclose(entry._handle) # pylint: disable=protected-access
   raise NotImplementedError("could not find ffmpeg after search through ", p)
 
-video_ops = load_dependency_and_library({
-    '_video_ops_ffmpeg_3.4.so': [
+_ffmpeg_ops = _load_dependency_and_library({
+    'libtensorflowio_ffmpeg_3.4.so': [
         "libavformat.so.57",
         "libavformat.so.57",
         "libavutil.so.55",
         "libswscale.so.4",
     ],
-    '_video_ops_ffmpeg_2.8.so': [
+    'libtensorflowio_ffmpeg_2.8.so': [
         "libavformat-ffmpeg.so.56",
         "libavcodec-ffmpeg.so.56",
         "libavutil-ffmpeg.so.54",
         "libswscale-ffmpeg.so.3",
     ],
-    '_video_ops_libav_9.20.so': [
+    'libtensorflowio_libav_9.20.so': [
         "libavformat.so.54",
         "libavcodec.so.54",
         "libavutil.so.52",
@@ -68,40 +66,7 @@ video_ops = load_dependency_and_library({
     ],
 })
 
-class VideoDataset(data_ops.Dataset):
-  """A Video File Dataset that reads the video file."""
-
-  def __init__(self, filename, batch=None):
-    """Create a `VideoDataset`.
-
-    `VideoDataset` allows a user to read data from a video file with
-    ffmpeg. The output of VideoDataset is a sequence of (height, weight, 3)
-    tensor in rgb24 format.
-
-    For example:
-
-    ```python
-    dataset = VideoDataset("/foo/bar.mp4")
-    iterator = dataset.make_one_shot_iterator()
-    next_element = iterator.get_next()
-    while True:
-      try:
-        print(sess.run(next_element))
-      except tf.errors.OutOfRangeError:
-        break
-    ```
-
-    Args:
-      filename: A `tf.string` tensor containing one or more filenames.
-      batch: An integer representing the number of consecutive image frames
-        to combine in a single batch. If `batch == 0` then each element
-        of the dataset has one standalone image frame.
-    """
-    batch = 0 if batch is None else batch
-    dtypes = [tf.uint8]
-    shapes = [
-        tf.TensorShape([None, None, 3])] if batch == 0 else [
-            tf.TensorShape([None, None, None, 3])]
-    super(VideoDataset, self).__init__(
-        video_ops.video_dataset,
-        video_ops.video_input(filename), batch, dtypes, shapes)
+audio_input = _ffmpeg_ops.audio_input
+video_input = _ffmpeg_ops.video_input
+audio_dataset = _ffmpeg_ops.audio_dataset
+video_dataset = _ffmpeg_ops.video_dataset

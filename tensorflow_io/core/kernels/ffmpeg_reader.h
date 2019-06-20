@@ -30,24 +30,26 @@ extern "C" {
 
 namespace tensorflow {
 namespace data {
-namespace video {
 
-class VideoReader {
+void FFmpegReaderInit();
+
+class FFmpegReader {
  public:
-  explicit VideoReader(SizedRandomAccessInputStreamInterface* s, const string& filename) : stream_(s), filename_(filename) {}
+  explicit FFmpegReader(SizedRandomAccessInputStreamInterface* s, const string& filename) : stream_(s), filename_(filename) {}
 
-  Status ReadHeader();
+  virtual ~FFmpegReader();
 
-  bool ReadAhead(bool first);
-
-  Status ReadFrame(int *num_bytes, uint8_t**value, int *height, int *width);
-
-  virtual ~VideoReader();
-
- public:
   SizedRandomAccessInputStreamInterface* stream_;
   int64 offset_ = 0;
- private:
+
+ protected:
+  Status InitializeReader();
+  bool ReadAhead(bool first);
+
+  virtual enum AVMediaType MediaType() = 0;
+  virtual int DecodeFrame(int *got_frame) = 0;
+  virtual void ProcessFrame() = 0;
+
   std::string ahead_;
   std::string filename_;
   bool frame_more_ = false;
@@ -55,17 +57,14 @@ class VideoReader {
   bool buffer_more_ = false;
   int stream_index_ = -1;
   size_t num_bytes_ = 0;
-  uint8_t *buffer_rgb_ = 0;
-  AVFrame *frame_rgb_ = 0;
-  struct SwsContext *sws_context_ = 0;
+
   AVFormatContext *format_context_ = 0;
   AVCodecContext *codec_context_ = 0;
   AVFrame *frame_ = 0;
   AVPacket packet_;
   AVIOContext *io_context_ = NULL;
-  TF_DISALLOW_COPY_AND_ASSIGN(VideoReader);
+  TF_DISALLOW_COPY_AND_ASSIGN(FFmpegReader);
 };
 
-}  // namespace
 }  // namespace data
 }  // namespace tensorflow
