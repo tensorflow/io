@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Video Dataset.
+"""FFmpeg Dataset.
 
+@@AudioDataset
 @@VideoDataset
 """
 
@@ -21,11 +22,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.video.python.ops.video_ops import VideoDataset
+from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import AudioDataset
+from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import VideoDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
+    "AudioDataset",
     "VideoDataset",
 ]
 

@@ -13,27 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "kernels/video_reader.h"
+#include "kernels/video_ffmpeg_reader.h"
 
 namespace tensorflow {
 namespace data {
-
-static mutex mu(LINKER_INITIALIZED);
-static unsigned count(0);
-void VideoReaderInit() {
-  mutex_lock lock(mu);
-  count++;
-  if (count == 1) {
-    // Register all formats and codecs
-    av_register_all();
-  }
-}
 
 class VideoInput: public FileInput<video::VideoReader> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<video::VideoReader>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      VideoReaderInit();
+      FFmpegReaderInit();
       state.reset(new video::VideoReader(dynamic_cast<SizedRandomAccessInputStreamInterface*>(s), filename()));
       TF_RETURN_IF_ERROR(state.get()->ReadHeader());
     }
