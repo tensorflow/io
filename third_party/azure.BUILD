@@ -102,17 +102,19 @@ cc_library(
     hdrs = [
         "include/blob/blob_client.h"
     ],
-    defines = select({
-        "//conditions:default": [
-            "USE_OPENSSL",
-        ],
-    }),
+    defines = [
+        "USE_OPENSSL",
+    ],
     includes = ["include"],
     visibility = ["//visibility:public"],
     copts = ["-std=c++11"],
     deps = [
         "@boringssl//:crypto",
         "@curl",
-        "@util_linux//:uuid",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+          "@util_linux//:uuid",
+        ]
+    }),
 )
