@@ -49,4 +49,7 @@ cc_library(
     }),
     linkopts = [],
     visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_madler_zlib//:z",
+    ],
 )
