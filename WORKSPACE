@@ -204,23 +204,23 @@ http_archive(
 http_archive(
     name = "com_github_azure_azure_storage_cpplite",
     build_file = "//third_party:azure.BUILD",
-    strip_prefix = "azure-storage-cpplite-54bb4cfb0444f65fd9b0f54792237be43a31788a",
-    sha256 = "57117f0231e0629d025d9803895186183942894d028b122b355c4d6a24f7c69b",
+    sha256 = "617b1762888a5024d27a436aa88e74f7f0bdd11d2a5898074f82db09c2716f61",
+    strip_prefix = "azure-storage-cpplite-21f5d6f3a6ef433b70026f25385925c4aba1df29",
     urls = [
-        "https://github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
-        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
+        "https://github.com/Azure/azure-storage-cpplite/archive/21f5d6f3a6ef433b70026f25385925c4aba1df29.zip",
+        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/21f5d6f3a6ef433b70026f25385925c4aba1df29.zip",
     ],
 )
 
 http_archive(
     name = "util_linux",
+    build_file = "//third_party:uuid.BUILD",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    strip_prefix = "util-linux-2.32.1",
     urls = [
         "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
-        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz"
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
     ],
-    strip_prefix = "util-linux-2.32.1",
-    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
-    build_file = "//third_party:uuid.BUILD"
 )
 
 http_archive(
