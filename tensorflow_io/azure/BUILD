@@ -126,5 +126,6 @@ py_test(
     srcs_version = "PY2AND3",
     deps = [
         ":azfs_ops_py",
+        "//tensorflow_io:init",
     ],
 )

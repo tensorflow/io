@@ -87,16 +87,14 @@ class AZFSTest(test.TestCase):
     if gfile.Exists(file_name):
       gfile.Remove(file_name)
 
-    rows = 100
     # Write data.
     with gfile.Open(file_name, 'w') as w:
-      for i in range(rows):
-        w.write("This is row {}\n".format(i))
+      w.write("Hello\n, world!");
 
     # Read data.
     with gfile.Open(file_name, 'r') as r:
-      for i, line in enumerate(r):
-        self.assertEqual("This is row {}\n".format(i), line)
+      file_read = r.read()
+      self.assertEqual(file_read, "Hello\n, world!");
 
   def test_wildcard_matching(self):
     """Test glob patterns"""
@@ -134,27 +132,6 @@ class AZFSTest(test.TestCase):
     self.assertFalse(gfile.Exists(dir_name))
     self.assertFalse(gfile.Exists(file_name))
 
-  def test_copy(self):
-    """Test copy.
-
-    """
-    # Setup and check preconditions.
-    src_file_name = self._path_to("copy/1")
-    dst_file_name = self._path_to("copy/2")
-    if gfile.Exists(dst_file_name):
-      gfile.Remove(dst_file_name)
-    with gfile.Open(src_file_name, 'w') as w:
-      w.write("42")
-    self.assertTrue(gfile.Exists(src_file_name))
-    # Copy file.
-    gfile.Copy(src_file_name, dst_file_name)
-    # Check that files are identical.
-    self.assertTrue(gfile.Exists(src_file_name))
-    self.assertTrue(gfile.Exists(dst_file_name))
-    with gfile.Open(dst_file_name, 'r') as r:
-      data = r.read()
-    self.assertEqual("42", data)
-
   def test_is_directory(self):
     """Test is directory.
 
@@ -177,22 +154,17 @@ class AZFSTest(test.TestCase):
     # Setup and check preconditions.
     dir_name = self._path_to("listdir")
     file_names = [
-        self._path_to("listdir/3")
+        self._path_to("listdir/{}".format(i)) for i in range(1,4)
     ]
-    ch_dir_names = [
-        self._path_to("listdir/4")
-    ]
+
     for file_name in file_names:
       with gfile.Open(file_name, 'w') as w:
         w.write("")
-    for ch_dir_name in ch_dir_names:
-      gfile.MkDir(ch_dir_name)
-    ls_expected_result = file_names + ch_dir_names
     # Get list of files in directory.
     ls_result = gfile.ListDirectory(dir_name)
     # Check that list of files is correct.
-    self.assertEqual(len(ls_expected_result), len(ls_result))
-    for e in ["1", "2", "4"]:
+    self.assertEqual(len(file_names), len(ls_result))
+    for e in ["1", "2", "3"]:
       self.assertTrue(e in ls_result)
 
   def test_make_dirs(self):
@@ -222,41 +194,6 @@ class AZFSTest(test.TestCase):
     gfile.Remove(file_name)
     # Check that file was removed.
     self.assertFalse(gfile.Exists(file_name))
-#
-#  def test_rename_file(self):
-#    """Test rename file.
-#
-#    """
-#    # Setup and check preconditions.
-#    src_file_name = self.ACCOUNT + self.CONTAINER + "/1"
-#    dst_file_name = self.ACCOUNT + self.CONTAINER + "/2"
-#    with gfile.Open(src_file_name, 'w') as w:
-#      w.write("42")
-#    self.assertTrue(gfile.Exists(src_file_name))
-#    # Rename file.
-#    gfile.Rename(src_file_name, dst_file_name)
-#    # Check that only new name of file is available.
-#    self.assertFalse(gfile.Exists(src_file_name))
-#    self.assertTrue(gfile.Exists(dst_file_name))
-#    with gfile.Open(dst_file_name, 'r') as r:
-#      data = r.read()
-#    self.assertEqual("42", data)
-#
-#  def test_rename_dir(self):
-#    """Test rename dir.
-#
-#    """
-#    # Setup and check preconditions.
-#    src_dir_name = self.ACCOUNT + self.CONTAINER + "/1"
-#    dst_dir_name = self.ACCOUNT + self.CONTAINER + "/2"
-#    gfile.MkDir(src_dir_name)
-#    # Rename directory.
-#    gfile.Rename(src_dir_name, dst_dir_name)
-#    # Check that only new name of directory is available.
-#    self.assertFalse(gfile.Exists(src_dir_name))
-#    self.assertTrue(gfile.Exists(dst_dir_name))
-#    self.assertTrue(gfile.IsDirectory(dst_dir_name))
-#
 
 if __name__ == '__main__':
   test.main()
