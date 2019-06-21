@@ -275,15 +275,11 @@ class TestGGFS(test.TestCase, TestFS):
   def prefix(self):
     return "ggfs"
 
-'''
 class TestIGFS(test.TestCase, TestFS):
 
-  def __init__(self):
-    super(TestIGFS, self).__init__("igfs")  
-'''
+  def prefix(self):
+    return "igfs"
 
-
-'''
 class IgniteDatasetTest(test.TestCase):
   """The Apache Ignite servers have to setup before the test and tear down
 
@@ -347,8 +343,6 @@ class IgniteDatasetTest(test.TestCase):
     self.assertEqual({"key": 1, "val": {"NAME": b"TEST1", "VAL": 42}}, rows[0])
     self.assertEqual({"key": 2, "val": {"NAME": b"TEST2", "VAL": 43}}, rows[1])
     self.assertEqual({"key": 3, "val": {"NAME": b"TEST3", "VAL": 44}}, rows[2])
-'''
-
 
 if __name__ == "__main__":
   test.main()
