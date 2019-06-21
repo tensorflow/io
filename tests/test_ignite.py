@@ -19,6 +19,8 @@ from __future__ import print_function
 
 import os
 
+os.environ["IGNITE_PORT"] = "10801"
+
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
 
@@ -32,8 +34,7 @@ from abc import abstractmethod
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-'''
-class IGFSTest(test.TestCase):
+class TestFS():
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
@@ -44,12 +45,6 @@ class IGFSTest(test.TestCase):
      To tear down Apache Ignite servers:
      $ bash stop_ignite.sh
   """
-
-  def setUp(self):
-    gfile.MkDir("ggfs:///")
-'''
-
-class TestFS():
 
   @abstractmethod
   def prefix(self):
@@ -173,7 +168,8 @@ class TestFS():
     gfile.MkDir(self.prefix() + ":///test_list_directory/4")
     dir_name = self.prefix() + ":///test_list_directory"
     file_names = [
-        self.prefix() + ":///test_list_directory/1", self.prefix() + ":///test_list_directory/2/3"
+        self.prefix() + ":///test_list_directory/1",
+        self.prefix() + ":///test_list_directory/2/3"
     ]
     ch_dir_names = [
         self.prefix() + ":///test_list_directory/4",
@@ -268,6 +264,8 @@ class TestFS():
     self.assertFalse(gfile.Exists(dst_dir_name))
 
 class TestGGFS(test.TestCase, TestFS):
+  """Test GGFS.
+  """
 
   def setUp(self):
     gfile.MkDir("ggfs:///")
@@ -276,6 +274,8 @@ class TestGGFS(test.TestCase, TestFS):
     return "ggfs"
 
 class TestIGFS(test.TestCase, TestFS):
+  """Test IGFS.
+  """
 
   def prefix(self):
     return "igfs"
