@@ -357,6 +357,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
   """An Arrow Dataset for reading record batches from an input stream.
   Currently supported input streams are a socket client or stdin.
   """
+  host_types_supported = ('AF_INET', 'AF_UNIX', 'STDIN')
 
   def __init__(self,
                host,
@@ -364,12 +365,12 @@ class ArrowStreamDataset(ArrowBaseDataset):
                output_types,
                output_shapes=None,
                batch_size=None,
-               batch_mode='keep_remainder'):
+               batch_mode='keep_remainder',
+               host_type='AF_INET'):
     """Create an ArrowDataset from an input stream.
 
     Args:
       host: A `tf.string` tensor or Python string defining the input stream.
-            For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
       columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
@@ -382,13 +383,21 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      host_type: Type of input stream to connect with:
+                 "AF_INET" (default) IPv4 address host as <HOST_IP>:<PORT>
+                 "AF_UNIX" Local UDS address host as filename
+                 "STDIN" Connect to process stdin stream, host is ignored
     """
+    if host_type not in self.host_types_supported:
+      raise ValueError(
+          "Unsupported host_type: '{}', must be one of {}"
+          .format(host_type, self.host_types_supported))
     host = tf.convert_to_tensor(
         host,
         dtype=dtypes.string,
         name="host")
     super(ArrowStreamDataset, self).__init__(
-        partial(arrow_ops.arrow_stream_dataset, host),
+        partial(arrow_ops.arrow_stream_dataset, host, host_type),
         columns,
         output_types,
         output_shapes,
@@ -401,14 +410,14 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   schema,
                   columns=None,
                   batch_size=None,
-                  batch_mode='keep_remainder'):
+                  batch_mode='keep_remainder',
+                  host_type='AF_INET'):
     """Create an Arrow Dataset from an input stream, inferring output types
     and shapes from the given Arrow schema.
     This method requires pyarrow to be installed.
 
     Args:
       host: A `tf.string` tensor or Python string defining the input stream.
-            For a socket client, use "<HOST_IP>:<PORT>", for stdin use "STDIN".
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
       batch_size: Batch size of output tensors, setting a batch size here
@@ -419,6 +428,10 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      host_type: Type of input stream to connect with:
+                 "AF_INET" (default) IPv4 address host as <HOST_IP>:<PORT>
+                 "AF_UNIX" Local UDS address host as filename
+                 "STDIN" Connect to process stdin stream, host is ignored
     """
     if columns is None:
       columns = list(range(len(schema)))
@@ -429,4 +442,5 @@ class ArrowStreamDataset(ArrowBaseDataset):
         output_types,
         output_shapes,
         batch_size,
-        batch_mode)
+        batch_mode,
+        host_type)

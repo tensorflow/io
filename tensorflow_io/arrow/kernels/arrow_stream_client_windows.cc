@@ -29,8 +29,9 @@ limitations under the License.
 
 namespace tensorflow {
 
-ArrowStreamClient::ArrowStreamClient(const std::string& host)
-    : host_(host), sock_(-1), pos_(0) {}
+ArrowStreamClient::ArrowStreamClient(const std::string& host,
+                                     const ArrowStreamFamily family)
+    : host_(host), family_(family), sock_(-1), pos_(0) {}
 
 ArrowStreamClient::~ArrowStreamClient() {
   if (sock_ != -1) {
@@ -39,6 +40,11 @@ ArrowStreamClient::~ArrowStreamClient() {
 }
 
 arrow::Status ArrowStreamClient::Connect() {
+  if (family_ == ArrowStreamFamily::AF_UNIX_SOCKET) {
+    return arrow::Status::Invalid(
+        "Unsupported socket family: " + std::to_string(family_));
+  }
+
   size_t sep_pos = host_.find(':');
   if (sep_pos == std::string::npos || sep_pos == host_.size()) {
     return arrow::Status::Invalid(

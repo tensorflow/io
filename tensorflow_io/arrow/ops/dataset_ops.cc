@@ -53,6 +53,7 @@ filenames: One or more file paths.
 
 REGISTER_OP("ArrowStreamDataset")
     .Input("host: string")
+    .Input("host_type: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
     .Input("batch_mode: string")

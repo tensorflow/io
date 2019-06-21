@@ -20,10 +20,16 @@ limitations under the License.
 
 namespace tensorflow {
 
+// Supported Address Families
+enum ArrowStreamFamily {
+  AF_INET_SOCKET,
+  AF_UNIX_SOCKET,  // For UNIX systems only
+};
+
 // Class to wrap a socket as a readable Arrow InputStream
 class ArrowStreamClient : public arrow::io::InputStream {
  public:
-  ArrowStreamClient(const std::string& host);
+  ArrowStreamClient(const std::string& host, const ArrowStreamFamily family);
   ~ArrowStreamClient() override;
 
   arrow::Status Connect();
@@ -35,6 +41,7 @@ class ArrowStreamClient : public arrow::io::InputStream {
 
  private:
   const std::string host_;
+  ArrowStreamFamily family_;
   int sock_;
   int64_t pos_;
 };

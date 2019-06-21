@@ -871,13 +871,51 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
   };
 };
 
+
+enum ArrowHostType {
+  AF_INET,
+  AF_UNIX,
+  STDIN,
+};
+
+Status GetHostTypeStr(ArrowHostType host_type, string* host_type_str) {
+  switch (host_type) {
+    case ArrowHostType::AF_INET:
+      *host_type_str = "AF_INET";
+      break;
+    case ArrowHostType::AF_UNIX:
+      *host_type_str = "AF_UNIX";
+      break;
+    case ArrowHostType::STDIN:
+      *host_type_str = "STDIN";
+      break;
+    default:
+      return errors::Internal("Unsupported host_type: " +
+                              std::to_string(host_type));
+  }
+  return Status::OK();
+}
+
+Status GetHostType(string host_type_str, ArrowHostType* host_type ) {
+  if (host_type_str == "AF_INET") {
+    *host_type = ArrowHostType::AF_INET;
+  } else if (host_type_str == "AF_UNIX") {
+    *host_type = ArrowHostType::AF_UNIX;
+  } else if (host_type_str == "STDIN") {
+    *host_type = ArrowHostType::STDIN;
+  } else {
+    return errors::Internal("Unsupported host type: " + host_type_str);
+  }
+  return Status::OK();
+}
+
+
 // Op to create an Arrow Dataset that consumes record batches from an input
-// stream. Currently supported input streams are a POSIX socket client, with
-// host given as "<IP>:<PORT>", or from STDIN if host is "STDIN".
+// stream. Currently supported input streams defined by host_type are a
+// POSIX socket client, with host given as "<IP>:<PORT>", a Unix Domain Socket
+// with host given as a pathname, or STDIN.
 class ArrowStreamDatasetOp : public ArrowOpKernelBase {
  public:
-  //using DatasetOpKernel::DatasetOpKernel;
-
   explicit ArrowStreamDatasetOp(OpKernelConstruction* ctx)
       : ArrowOpKernelBase(ctx) {}
 
@@ -894,10 +932,16 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
     OP_REQUIRES(ctx, host_tensor->dims() == 0,
                 errors::InvalidArgument("`host` must be a scalar."));
     string host = host_tensor->flat<string>()(0);
+    string host_type_str;
+    OP_REQUIRES_OK(ctx,
+        ParseScalarArgument(ctx, "host_type", &host_type_str));
+    ArrowHostType host_type;
+    OP_REQUIRES_OK(ctx, GetHostType(host_type_str, &host_type));
 
     *output = new Dataset(
         ctx,
         host,
+        host_type,
         columns,
         batch_size,
         batch_mode,
@@ -910,6 +954,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
    public:
     Dataset(OpKernelContext* ctx,
             const string& host,
+            const ArrowHostType host_type,
             const std::vector<int32>& columns,
             const int64 batch_size,
             const ArrowBatchMode batch_mode,
@@ -917,7 +962,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
               output_types, output_shapes),
-          host_(host) {}
+          host_(host), host_type_(host_type) {}
 
     string DebugString() const override {
       return "ArrowStreamDatasetOp::Dataset";
@@ -929,6 +974,10 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
                               Node** output) const override {
       Node* host = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(host_, &host));
+      Node* host_type = nullptr;
+      string host_type_str;
+      TF_RETURN_IF_ERROR(GetHostTypeStr(host_type_, &host_type_str));
+      TF_RETURN_IF_ERROR(b->AddScalar(host_type_str, &host_type));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;
@@ -940,7 +989,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(
           b->AddDataset(
             this,
-            {host, columns, batch_size, batch_mode},
+            {host, host_type, columns, batch_size, batch_mode},
             output));
       return Status::OK();
     }
@@ -960,11 +1009,14 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env* env)
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        if (dataset()->host_ == "STDIN") {
+        if (dataset()->host_type_ == ArrowHostType::STDIN) {
           in_stream_ = std::make_shared<arrow::io::StdinStream>();
         } else {
-          auto socket_stream =
-              std::make_shared<ArrowStreamClient>(dataset()->host_);
+          auto socket_stream = std::make_shared<ArrowStreamClient>(
+              dataset()->host_,
+              dataset()->host_type_ == ArrowHostType::AF_UNIX ?
+                  ArrowStreamFamily::AF_UNIX_SOCKET :
+                  ArrowStreamFamily::AF_INET_SOCKET);
           CHECK_ARROW(socket_stream->Connect());
           in_stream_ = socket_stream;
         }
@@ -993,6 +1045,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
     };
 
     const string host_;
+    const ArrowHostType host_type_;
   };
 };
 
