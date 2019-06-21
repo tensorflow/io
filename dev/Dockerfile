@@ -2,10 +2,12 @@ FROM tensorflow/tensorflow:custom-op
 
 RUN apt-get update && \
     apt-get install -y \
+    git \
     curl \
     nano \
     unzip \
-    ffmpeg
+    ffmpeg \
+    dnsutils
 
 ARG BAZEL_VERSION=0.24.1
 ARG BAZEL_OS=linux
