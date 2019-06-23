@@ -360,7 +360,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
   host_types_supported = ('AF_INET', 'AF_UNIX', 'STDIN')
 
   def __init__(self,
-               host,
+               hosts,
                columns,
                output_types,
                output_shapes=None,
@@ -370,7 +370,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
     """Create an ArrowDataset from an input stream.
 
     Args:
-      host: A `tf.string` tensor or Python string defining the input stream.
+      hosts: A `tf.string` tensor, Python list or scalar string defining the
+             input stream.
       columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
@@ -392,12 +393,12 @@ class ArrowStreamDataset(ArrowBaseDataset):
       raise ValueError(
           "Unsupported host_type: '{}', must be one of {}"
           .format(host_type, self.host_types_supported))
-    host = tf.convert_to_tensor(
-        host,
+    hosts = tf.convert_to_tensor(
+        hosts,
         dtype=dtypes.string,
-        name="host")
+        name="hosts")
     super(ArrowStreamDataset, self).__init__(
-        partial(arrow_ops.arrow_stream_dataset, host, host_type),
+        partial(arrow_ops.arrow_stream_dataset, hosts, host_type),
         columns,
         output_types,
         output_shapes,
@@ -406,7 +407,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
   @classmethod
   def from_schema(cls,
-                  host,
+                  hosts,
                   schema,
                   columns=None,
                   batch_size=None,
@@ -417,7 +418,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
     This method requires pyarrow to be installed.
 
     Args:
-      host: A `tf.string` tensor or Python string defining the input stream.
+      hosts: A `tf.string` tensor, Python list or scalar string defining the
+             input stream.
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
       batch_size: Batch size of output tensors, setting a batch size here
@@ -437,7 +439,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
       columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
     return cls(
-        host,
+        hosts,
         columns,
         output_types,
         output_shapes,

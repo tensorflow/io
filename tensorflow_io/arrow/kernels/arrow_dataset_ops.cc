@@ -246,9 +246,9 @@ class ArrowConvertTensor : public arrow::ArrayVisitor {
  private:
   int64_t curr_index_;
   int64_t curr_batch_size_;
+  IteratorContext* curr_ctx_;
   int32_t curr_array_length_;
   DataType curr_type_;
-  IteratorContext* curr_ctx_;
   std::vector<Tensor>* out_tensors_;
 };
 
@@ -293,7 +293,7 @@ class ArrowDatasetBase : public DatasetBase {
 
       // If in initial state, setup and read first batch
       if (current_batch_ == nullptr && current_row_idx_ == 0) {
-        TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
+        TF_RETURN_IF_ERROR(SetupStreamsLocked());
       }
 
       std::vector<Tensor>* result_tensors = out_tensors;
@@ -464,8 +464,7 @@ class ArrowDatasetBase : public DatasetBase {
     }
 
     // Setup Arrow record batch consumer and initialze current_batch_
-    virtual Status SetupStreamsLocked(Env* env)
-        EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+    virtual Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
     // Get the next Arrow record batch, if available. If not then
     // current_batch_ will be set to nullptr to indicate no further batches.
@@ -672,8 +671,7 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& batches = dataset()->batches_.scalar<string>()();
         auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
@@ -736,7 +734,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
     OP_REQUIRES_OK(ctx, ctx->input("filenames", &filenames_tensor));
     OP_REQUIRES(
         ctx, filenames_tensor->dims() <= 1,
-        errors::InvalidArgument("`filename` must be a scalar or vector."));
+        errors::InvalidArgument("`filenames` must be a scalar or vector."));
     std::vector<string> filenames;
     filenames.reserve(filenames_tensor->NumElements());
     for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
@@ -806,12 +804,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        return SetupStreamsLocked();
-      }
-
-      Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& filename = dataset()->filenames_[current_file_idx_];
         std::shared_ptr<arrow::io::ReadableFile> in_file;
         CHECK_ARROW(arrow::io::ReadableFile::Open(filename, &in_file));
@@ -927,11 +920,16 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
-    const Tensor* host_tensor;
-    OP_REQUIRES_OK(ctx, ctx->input("host", &host_tensor));
-    OP_REQUIRES(ctx, host_tensor->dims() == 0,
-                errors::InvalidArgument("`host` must be a scalar."));
-    string host = host_tensor->flat<string>()(0);
+    const Tensor* hosts_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("hosts", &hosts_tensor));
+    OP_REQUIRES(
+        ctx, hosts_tensor->dims() <= 1,
+        errors::InvalidArgument("`hosts` must be a scalar or vector."));
+    std::vector<string> hosts;
+    hosts.reserve(hosts_tensor->NumElements());
+    for (int i = 0; i < hosts_tensor->NumElements(); ++i) {
+      hosts.push_back(hosts_tensor->flat<string>()(i));
+    }
     string host_type_str;
     OP_REQUIRES_OK(ctx,
         ParseScalarArgument(ctx, "host_type", &host_type_str));
@@ -940,7 +938,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
 
     *output = new Dataset(
         ctx,
-        host,
+        hosts,
         host_type,
         columns,
         batch_size,
@@ -953,7 +951,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   class Dataset : public ArrowDatasetBase {
    public:
     Dataset(OpKernelContext* ctx,
-            const string& host,
+            const std::vector<string>& hosts,
             const ArrowHostType host_type,
             const std::vector<int32>& columns,
             const int64 batch_size,
@@ -962,7 +960,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
               output_types, output_shapes),
-          host_(host), host_type_(host_type) {}
+          hosts_(hosts), host_type_(host_type) {}
 
     string DebugString() const override {
       return "ArrowStreamDatasetOp::Dataset";
@@ -972,8 +970,8 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b,
                               Node** output) const override {
-      Node* host = nullptr;
-      TF_RETURN_IF_ERROR(b->AddScalar(host_, &host));
+      Node* hosts = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(hosts_, &hosts));
       Node* host_type = nullptr;
       string host_type_str;
       TF_RETURN_IF_ERROR(GetHostTypeStr(host_type_, &host_type_str));
@@ -989,7 +987,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(
           b->AddDataset(
             this,
-            {host, host_type, columns, batch_size, batch_mode},
+            {hosts, host_type, columns, batch_size, batch_mode},
             output));
       return Status::OK();
     }
@@ -1007,14 +1005,14 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked(Env* env)
+      Status SetupStreamsLocked()
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        const string& host = dataset()->hosts_[current_host_idx_];
         if (dataset()->host_type_ == ArrowHostType::STDIN) {
           in_stream_ = std::make_shared<arrow::io::StdinStream>();
         } else {
           auto socket_stream = std::make_shared<ArrowStreamClient>(
-              dataset()->host_,
-              dataset()->host_type_ == ArrowHostType::AF_UNIX ?
+              host, dataset()->host_type_ == ArrowHostType::AF_UNIX ?
                   ArrowStreamFamily::AF_UNIX_SOCKET :
                   ArrowStreamFamily::AF_INET_SOCKET);
           CHECK_ARROW(socket_stream->Connect());
@@ -1031,20 +1029,27 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       Status NextStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked();
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        if (current_batch_ == nullptr &&
+            ++current_host_idx_ < dataset()->hosts_.size()) {
+          reader_.reset();
+          SetupStreamsLocked();
+        }
         return Status::OK();
       }
 
       void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
+        current_host_idx_ = 0;
         reader_.reset();
         in_stream_.reset();
       }
 
+      size_t current_host_idx_ GUARDED_BY(mu_) = 0;
       std::shared_ptr<arrow::io::InputStream> in_stream_ GUARDED_BY(mu_);
       std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ GUARDED_BY(mu_);
     };
 
-    const string host_;
+    const std::vector<string> hosts_;
     const ArrowHostType host_type_;
   };
 };

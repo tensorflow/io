@@ -394,6 +394,60 @@ class ArrowDatasetTest(test.TestCase):
 
     server.join()
 
+  def test_multiple_stream_hosts(self):
+    """test_multiple_stream_hosts"""
+    if os.name == "nt":
+      self.skipTest("Unix Domain Sockets not supported on Windows")
+
+    truth_data = TruthData(
+        self.scalar_data + self.list_data,
+        self.scalar_dtypes + self.list_dtypes,
+        self.scalar_shapes + self.list_shapes)
+
+    batch = self.make_record_batch(truth_data)
+
+    hosts = [os.path.join(tempfile.gettempdir(), 'arrow_io_stream_{}'.format(i))
+             for i in range(1, 3)]
+
+    def start_server(host):
+      try:
+        os.unlink(host)
+      except OSError:
+        if os.path.exists(host):
+          raise
+
+      sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      sock.bind(host)
+      sock.listen(1)
+
+      def run_server(num_batches):
+        conn, _ = sock.accept()
+        outfile = conn.makefile(mode='wb')
+        writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+        for _ in range(num_batches):
+          writer.write_batch(batch)
+        writer.close()
+        outfile.close()
+        conn.close()
+        sock.close()
+
+      # test with multiple batches, construct from schema
+      server = threading.Thread(target=run_server, args=(1,))
+      server.start()
+      return server
+
+    servers = [start_server(h) for h in hosts]
+
+    dataset = arrow_io.ArrowStreamDataset.from_schema(
+        hosts, batch.schema, host_type='AF_UNIX')
+    truth_data_mult = TruthData(
+        [d * len(hosts) for d in truth_data.data],
+        truth_data.output_types,
+        truth_data.output_shapes)
+    self.run_test_case(dataset, truth_data_mult)
+
+    [s.join() for s in servers]
+
   def test_bool_array_type(self):
     """
     NOTE: need to test this seperately because to_pandas fails with

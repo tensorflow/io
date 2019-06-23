@@ -76,20 +76,24 @@ a given `pyarrow.Schema`, e.g. `dataset = ArrowFeatherDataset.from_schema(filena
 
 ## From a Stream of Arrow Record Batches
 
-The `ArrowStreamDataset` provides a Dataset that will connect to a host over
-a socket that is serving Arrow record batches in the Arrow stream format. See
-[here](https://arrow.apache.org/docs/python/ipc.html#writing-and-reading-streams)
-for more on the stream format. The following example will create an
-`ArrowStreamDataset` that will connect to a host that is serving an Arrow
-stream of record batches with 2 columns of dtypes=(int32, float32):
+The `ArrowStreamDataset` provides a Dataset that will connect to one or more
+hosts over a socket that is serving Arrow record batches in the Arrow stream
+format. See [here](https://arrow.apache.org/docs/python/ipc.html#writing-and-reading-streams)
+for more on the stream format. Supported socket families are `AF_INET` and
+`AF_UNIX`, specified by the `host_type` parameter (default is `AF_INET`). The
+following example will create an `ArrowStreamDataset` that will connect to a
+host that is serving an Arrow stream of record batches with 2 columns of
+dtypes=(int32, float32):
 
 ```python
 import tensorflow as tf
 from tensorflow_io.arrow import ArrowStreamDataset
 
-# The str `host` should be in the format '<HOSTNAME>:<PORT>'
+# The parameter `hosts` can be a Python string or a list of strings and should
+# be in the format '<HOSTNAME>:<PORT>' for `host_type` of `AF_INET` or path
+# for `host_type` of `AF_UNIX`
 dataset = ArrowStreamDataset(
-    host,
+    hosts,
     columns=(0, 1),
     output_types=(tf.int32, tf.float32),
     output_shapes=([], []))
