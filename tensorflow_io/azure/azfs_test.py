@@ -89,12 +89,12 @@ class AZFSTest(test.TestCase):
 
     # Write data.
     with gfile.Open(file_name, 'w') as w:
-      w.write("Hello\n, world!");
+      w.write("Hello\n, world!")
 
     # Read data.
     with gfile.Open(file_name, 'r') as r:
       file_read = r.read()
-      self.assertEqual(file_read, "Hello\n, world!");
+      self.assertEqual(file_read, "Hello\n, world!")
 
   def test_wildcard_matching(self):
     """Test glob patterns"""
@@ -154,7 +154,7 @@ class AZFSTest(test.TestCase):
     # Setup and check preconditions.
     dir_name = self._path_to("listdir")
     file_names = [
-        self._path_to("listdir/{}".format(i)) for i in range(1,4)
+        self._path_to("listdir/{}".format(i)) for i in range(1, 4)
     ]
 
     for file_name in file_names:
