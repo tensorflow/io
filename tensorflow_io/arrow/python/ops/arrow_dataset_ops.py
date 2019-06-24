@@ -19,6 +19,11 @@ from __future__ import print_function
 
 from functools import partial
 import io
+from itertools import chain
+import os
+import socket
+import threading
+import tempfile
 
 import tensorflow as tf
 from tensorflow import dtypes
@@ -214,6 +219,8 @@ class ArrowDataset(ArrowBaseDataset):
     import pyarrow as pa
     if isinstance(record_batches, pa.RecordBatch):
       record_batches = [record_batches]
+    if columns is None:
+      columns = tuple(range(record_batches[0].num_columns))
     assert record_batches
     buf = io.BytesIO()
     writer = pa.RecordBatchFileWriter(buf, record_batches[0].schema)
@@ -446,3 +453,146 @@ class ArrowStreamDataset(ArrowBaseDataset):
         batch_size,
         batch_mode,
         host_type)
+
+  @classmethod
+  def from_record_batches(cls,
+                          record_batch_iter,
+                          output_types,
+                          output_shapes=None,
+                          columns=None,
+                          batch_size=None,
+                          batch_mode='keep_remainder',
+                          host=None,
+                          host_type=None):
+    """Create an ArrowStreamDataset by serving a sequence of Arrow record
+    batches in a background thread.
+    This constructor requires pyarrow to be installed.
+
+    Args:
+      record_batch_iter: A sequence or iterator of Arrow record batches
+      output_types: Tensor dtypes of the output tensors
+      output_shapes: TensorShapes of the output tensors or None to
+                     infer partial
+      columns: Optional list of column indices to be used, if None all are used
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: batch_size does not need to be set if batch_mode='auto'
+      batch_mode: Mode of batching, supported strings:
+                  "keep_remainder" (default, keeps partial batch data),
+                  "drop_remainder" (discard partial batch data),
+                  "auto" (size to number of records in Arrow record batch)
+      host: Optionally specify the host name for serving the record batches
+      host_type: Optionally specify the host_type for the server
+    """
+    import pyarrow as pa
+
+    # Create a UDS server
+    if host_type == 'AF_UNIX' or (host is None and os.name != "nt"):
+      host_type = 'AF_UNIX'
+      if host is None:
+        host = os.path.join(tempfile.gettempdir(), 'arrow_io_stream')
+      try:
+        os.unlink(host)
+      except OSError:
+        if os.path.exists(host):
+          raise
+      sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      sock.bind(host)
+    # Create a TCP server
+    else:
+      host_type = 'AF_INET'
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      if host is not None:
+        host_addr, port_str = host.split(':')
+        port = int(port_str)
+      else:
+        host_addr = '127.0.0.1'
+        port = 0
+      sock.bind((host_addr, port))
+      host_addr, port = sock.getsockname()
+      host = "%s:%s" % (host_addr, port)
+    sock.listen(1)
+
+    def run_server():
+      """serve record batches"""
+      conn, _ = sock.accept()
+      outfile = conn.makefile(mode='wb')
+      writer = None
+      for batch in record_batch_iter:
+        if writer is None:
+          writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+        writer.write_batch(batch)
+      writer.close()
+      outfile.close()
+      conn.close()
+      sock.close()
+
+    # Run the server in a thread
+    server = threading.Thread(target=run_server)
+    server.start()
+
+    if columns is None:
+      columns = list(range(len(output_types)))
+
+    return cls(
+        host,
+        columns,
+        output_types,
+        output_shapes,
+        batch_size,
+        batch_mode,
+        host_type)
+
+  @classmethod
+  def from_pandas(cls,
+                  data_frames,
+                  columns=None,
+                  preserve_index=True,
+                  batch_size=None,
+                  host=None):
+    """Create an ArrowStreamDataset by serving a DataFrame, or batches of a
+    DataFrame in a background thread.
+    This constructor requires pandas and pyarrow to be installed.
+
+    Args:
+      df: A Pandas DataFrame or sequence of DataFrames
+      columns: Optional column indices to use, if None all are used
+      preserve_index: Flag to include the DataFrame index as the last column
+      batch_size: Batch size of output tensors, setting a batch size here
+                  will create batched tensors from Arrow memory and can be more
+                  efficient than using tf.data.Dataset.batch().
+                  NOTE: Currently, only 'keep_remainder' batch mode supported
+      host: Optionally specify the host name to serve the DataFrame
+    """
+    import pandas as pd
+    import pyarrow as pa
+    if isinstance(data_frames, pd.DataFrame):
+      data_frames = [data_frames]
+
+    def gen_record_batches():
+      """record batch generator"""
+      for df in data_frames:
+        if columns is not None:
+          df = df.iloc[:, list(columns)]
+
+        # Compute step size (round int up) if slicing into batches
+        step = None if batch_size is None else -(-len(df) // batch_size)
+        for start in range(0, 1 if step is None else len(df), step):
+          df_slice = df if step is None else df[start:start + step]
+          batch = pa.RecordBatch.from_pandas(
+              df_slice, preserve_index=preserve_index)
+          yield batch
+
+    # Get first batch to convert schema to output types and shapes
+    record_batch_iter = gen_record_batches()
+    batch = next(record_batch_iter)
+    output_types, output_shapes = arrow_schema_to_tensor_types(batch.schema)
+
+    return cls.from_record_batches(
+        chain([batch], record_batch_iter),
+        output_types,
+        output_shapes,
+        batch_size=batch_size,
+        batch_mode='keep_remainder',
+        host=host)

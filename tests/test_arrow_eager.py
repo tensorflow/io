@@ -410,6 +410,7 @@ class ArrowDatasetTest(test.TestCase):
              for i in range(1, 3)]
 
     def start_server(host):
+      """start_server"""
       try:
         os.unlink(host)
       except OSError:
@@ -421,6 +422,7 @@ class ArrowDatasetTest(test.TestCase):
       sock.listen(1)
 
       def run_server(num_batches):
+        """run_server"""
         conn, _ = sock.accept()
         outfile = conn.makefile(mode='wb')
         writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
@@ -446,7 +448,65 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data_mult)
 
-    [s.join() for s in servers]
+    for s in servers:
+      s.join()
+
+  def test_stream_from_pandas(self):
+    """test_stream_from_pandas"""
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    batch_size = 2
+
+    # Test preserve index False
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=False)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+    # Test preserve index True and select all but index columns
+    truth_data = TruthData(
+        truth_data.data + [range(len(truth_data.data[0]))],
+        truth_data.output_types + (dtypes.int64,),
+        truth_data.output_shapes + (tf.TensorShape([]),))
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=True)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_stream_from_pandas_iter(self):
+    """test_stream_from_pandas_iter"""
+
+    batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(batch_data)
+    df = batch.to_pandas()
+
+    batch_size = 2
+    num_iters = 3
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        (df for _ in range(num_iters)),
+        batch_size=batch_size,
+        preserve_index=False)
+
+    truth_data = TruthData(
+        [d * num_iters for d in batch_data.data],
+        batch_data.output_types,
+        batch_data.output_shapes)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
   def test_bool_array_type(self):
     """
