@@ -18,10 +18,11 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+from abc import abstractmethod
 
 os.environ["IGNITE_PORT"] = "10801"
 
-import tensorflow as tf
+import tensorflow as tf                  # pylint: disable=wrong-import-position
 tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes            # pylint: disable=wrong-import-position
@@ -29,8 +30,6 @@ from tensorflow import errors            # pylint: disable=wrong-import-position
 from tensorflow import test              # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import data    # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
-
-from abc import abstractmethod
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
