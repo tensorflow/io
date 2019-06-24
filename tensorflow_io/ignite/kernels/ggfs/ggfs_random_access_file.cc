@@ -25,16 +25,17 @@ GGFSRandomAccessFile::~GGFSRandomAccessFile() {}
 
 Status GGFSRandomAccessFile::Read(uint64 offset, size_t n, StringPiece *result,
                                   char *scratch) const {
-  uint8_t *out_data;
-  int32_t out_length;
+  std::shared_ptr<uint8_t> data = {};
+  int32_t length;
 
-  TF_RETURN_IF_ERROR(client_->ReadFile(file_name_, &out_data, &out_length));
+  TF_RETURN_IF_ERROR(client_->ReadFile(file_name_, &data, &length));
 
-  if (offset >= out_length)
+  if (offset >= length)
     return errors::OutOfRange("End of file");
 
-  *result = StringPiece(reinterpret_cast<char *>(out_data) + offset,
-                        out_length - offset);
+  int32_t size = n < length - offset ? n : length - offset;
+  std::copy(data.get() + offset, data.get() + offset + size, scratch);
+  *result = StringPiece(scratch, size);
 
   return Status::OK();
 }

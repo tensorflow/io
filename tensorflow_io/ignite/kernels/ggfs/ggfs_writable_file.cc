@@ -28,8 +28,8 @@ Status GGFSWritableFile::Append(StringPiece data) {
   Status exists_status = client_->Exists(file_name_);
   bool create = exists_status.code() == errors::Code::NOT_FOUND;
 
-  return client_->WriteFile(file_name_, create, true, (uint8_t *)data.data(),
-                            data.size());
+  return client_->WriteFile(file_name_, create, true,
+                            (const uint8_t *)data.data(), data.size());
 }
 
 Status GGFSWritableFile::Close() { return Status::OK(); }

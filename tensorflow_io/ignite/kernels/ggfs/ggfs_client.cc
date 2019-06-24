@@ -38,9 +38,10 @@ string GGFSClient::MakeRelative(const string &a, const string &b) {
   return string((first ? r.first : r.second), first ? min.end() : max.end());
 }
 
-GGFSClient::GGFSClient(string host, int32 port, string username,
-                       string password, string certfile, string keyfile,
-                       string cert_password)
+GGFSClient::GGFSClient(const string &host, const int32_t port,
+                       const string &username, const string &password,
+                       const string &certfile, const string &keyfile,
+                       const string &cert_password)
     : username_(username), password_(password) {
   Client *p_client = new PlainClient(std::move(host), port, false);
 
@@ -53,8 +54,9 @@ GGFSClient::GGFSClient(string host, int32 port, string username,
   }
 }
 
-Status GGFSClient::WriteFile(string path, bool create, bool append,
-                             uint8_t *data, int32_t length) {
+Status GGFSClient::WriteFile(const string &path, const bool create,
+                             const bool append, const uint8_t *data,
+                             const int32_t length) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kWriteFileMethodId, 12 + path.length() + length));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
@@ -71,7 +73,8 @@ Status GGFSClient::WriteFile(string path, bool create, bool append,
   return Status::OK();
 }
 
-Status GGFSClient::ReadFile(string path, uint8_t **out_data,
+Status GGFSClient::ReadFile(const string &path,
+                            std::shared_ptr<uint8_t> *out_data,
                             int32_t *out_length) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kReadFileMethodId, 5 + path.length()));
@@ -87,14 +90,13 @@ Status GGFSClient::ReadFile(string path, uint8_t **out_data,
 
   TF_RETURN_IF_ERROR(client_->ReadInt(out_length));
 
-  uint8_t *data = new uint8_t[*out_length];
-  TF_RETURN_IF_ERROR(client_->ReadData(data, *out_length));
-  *out_data = data;
+  out_data->reset(new uint8_t[*out_length]);
+  TF_RETURN_IF_ERROR(client_->ReadData(out_data->get(), *out_length));
 
   return Status::OK();
 }
 
-Status GGFSClient::Move(string from, string to) {
+Status GGFSClient::Move(const string &from, const string &to) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kMoveMethodId, 10 + from.length() + to.length()));
   TF_RETURN_IF_ERROR(client_->WriteByte(kStringVal));
@@ -111,7 +113,7 @@ Status GGFSClient::Move(string from, string to) {
   return Status::OK();
 }
 
-Status GGFSClient::Stat(string path, bool *out_is_directory,
+Status GGFSClient::Stat(const string &path, bool *out_is_directory,
                         int64_t *out_modification_time, int32_t *out_size) {
   TF_RETURN_IF_ERROR(SendCommonRequestHeader(kStatMethodId, 5 + path.length()));
 
@@ -132,7 +134,7 @@ Status GGFSClient::Stat(string path, bool *out_is_directory,
   return Status::OK();
 }
 
-Status GGFSClient::Exists(string path) {
+Status GGFSClient::Exists(const string &path) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kExistsMethodId, 5 + path.length()));
 
@@ -152,7 +154,7 @@ Status GGFSClient::Exists(string path) {
   return Status::OK();
 }
 
-Status GGFSClient::Remove(string path) {
+Status GGFSClient::Remove(const string &path) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kRemoveMethodId, 5 + path.length()));
 
@@ -166,7 +168,7 @@ Status GGFSClient::Remove(string path) {
   return Status::OK();
 }
 
-Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
+Status GGFSClient::MkDir(const string &path, const bool only_if_not_exists) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kMkDirMethodId, 6 + path.length()));
 
@@ -181,7 +183,7 @@ Status GGFSClient::MkDir(string path, bool only_if_not_exists) {
   return Status::OK();
 }
 
-Status GGFSClient::MkDirs(string path, bool only_if_not_exists) {
+Status GGFSClient::MkDirs(const string &path, const bool only_if_not_exists) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kMkDirsMethodId, 6 + path.length()));
 
@@ -196,7 +198,8 @@ Status GGFSClient::MkDirs(string path, bool only_if_not_exists) {
   return Status::OK();
 }
 
-Status GGFSClient::ListFiles(string path, std::vector<string> *out_files) {
+Status GGFSClient::ListFiles(const string &path,
+                             std::vector<string> *out_files) {
   TF_RETURN_IF_ERROR(
       SendCommonRequestHeader(kListFilesMethodId, 5 + path.length()));
 
@@ -232,7 +235,8 @@ Status GGFSClient::ListFiles(string path, std::vector<string> *out_files) {
   return Status::OK();
 }
 
-Status GGFSClient::SendCommonRequestHeader(uint8_t method_id, int32_t length) {
+Status GGFSClient::SendCommonRequestHeader(const uint8_t method_id,
+                                           const int32_t length) {
   EstablishConnection();
   TF_RETURN_IF_ERROR(client_->WriteInt(32 + length));
   TF_RETURN_IF_ERROR(client_->WriteShort(kCustomProcessorOpcode));

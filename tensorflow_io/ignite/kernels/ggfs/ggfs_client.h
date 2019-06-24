@@ -23,20 +23,22 @@ namespace tensorflow {
 
 class GGFSClient {
 public:
-  GGFSClient(string host, int32 port, string username, string password,
-             string certfile, string keyfile, string cert_password);
+  GGFSClient(const string &host, const int32_t port, const string &username,
+             const string &password, const string &certfile,
+             const string &keyfile, const string &cert_password);
 
-  Status WriteFile(string path, bool create, bool append, uint8_t *data,
-                   int32_t length);
-  Status ReadFile(string path, uint8_t **out_data, int32_t *out_length);
-  Status Move(string from, string to);
-  Status Stat(string path, bool *out_is_directory,
+  Status WriteFile(const string &path, const bool create, const bool append,
+                   const uint8_t *data, const int32_t length);
+  Status ReadFile(const string &path, std::shared_ptr<uint8_t> *out_data,
+                  int32_t *out_length);
+  Status Move(const string &from, const string &to);
+  Status Stat(const string &path, bool *out_is_directory,
               int64_t *out_modification_time, int32_t *out_size);
-  Status Exists(string path);
-  Status Remove(string path);
-  Status MkDir(string path, bool only_if_not_exists);
-  Status MkDirs(string path, bool only_if_not_exists);
-  Status ListFiles(string path, std::vector<string> *out_files);
+  Status Exists(const string &path);
+  Status Remove(const string &path);
+  Status MkDir(const string &path, const bool only_if_not_exists);
+  Status MkDirs(const string &path, const bool only_if_not_exists);
+  Status ListFiles(const string &path, std::vector<string> *out_files);
   string MakeRelative(const string &a, const string &b);
 
 private:
