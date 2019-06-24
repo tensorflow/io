@@ -32,8 +32,8 @@ import sys
 import pytest
 import boto3
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes              # pylint: disable=wrong-import-position
 from tensorflow import errors              # pylint: disable=wrong-import-position
@@ -72,9 +72,9 @@ class KinesisDatasetTest(test.TestCase):
           Data=data_v,
           PartitionKey="TensorFlow" + str(i))
 
-    stream = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
-    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
-    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    stream = tf.compat.v1.placeholder(dtypes.string, shape=[])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kinesis_io.KinesisDataset(
         stream, read_indefinitely=False).repeat(num_epochs)
@@ -124,10 +124,10 @@ class KinesisDatasetTest(test.TestCase):
     shard_id_0 = response["StreamDescription"]["Shards"][0]["ShardId"]
     shard_id_1 = response["StreamDescription"]["Shards"][1]["ShardId"]
 
-    stream = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
-    shard = tensorflow.compat.v1.placeholder(dtypes.string, shape=[])
-    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
-    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    stream = tf.compat.v1.placeholder(dtypes.string, shape=[])
+    shard = tf.compat.v1.placeholder(dtypes.string, shape=[])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kinesis_io.KinesisDataset(
         stream, shard, read_indefinitely=False).repeat(num_epochs)

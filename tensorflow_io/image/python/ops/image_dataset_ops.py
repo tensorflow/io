@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
@@ -32,7 +32,7 @@ class WebPDataset(data.Dataset):
 
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     super(WebPDataset, self).__init__()
 
@@ -44,11 +44,11 @@ class WebPDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([None, None, None])
+    return tf.TensorShape([None, None, None])
 
   @property
   def output_types(self):
@@ -62,7 +62,7 @@ class TIFFDataset(data.Dataset):
 
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     super(TIFFDataset, self).__init__()
 
@@ -74,11 +74,11 @@ class TIFFDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([None, None, None])
+    return tf.TensorShape([None, None, None])
 
   @property
   def output_types(self):
@@ -91,7 +91,7 @@ class GIFDataset(data.Dataset):
     """Create a `GIFDataset`.
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     super(GIFDataset, self).__init__()
 
@@ -103,11 +103,11 @@ class GIFDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor
+    return tf.Tensor
 
   @property
   def output_shapes(self):
-    return tensorflow.TensorShape([None, None, None])
+    return tf.TensorShape([None, None, None])
 
   @property
   def output_types(self):

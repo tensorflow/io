@@ -50,7 +50,7 @@ bash -x -e tests/test_ignite/start_ignite.sh
 bash -x -e tests/test_kafka/kafka_test.sh start kafka
 bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
-
+bash -x -e tests/test_prometheus/prometheus_test.sh start
 
 export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
 PYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0]))')
@@ -59,6 +59,11 @@ if [[ $PYTHON_VERSION == "2" ]]; then
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python
 
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
+
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
 
     ## R
@@ -67,23 +72,50 @@ if [[ $PYTHON_VERSION == "2" ]]; then
     sudo rm -rf dist wheelhouse
 
     ## TF 2.0
-    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${KOKORO_BUILD_NUMBER} python
+    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0b1" --preview ${KOKORO_BUILD_NUMBER} python
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
 
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
+
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python
 else
     ## Python 2
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" python3.5 python3.6
 
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
+
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python3.5
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
+
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
 
     sudo rm -rf dist wheelhouse
 
     ## TF 2.0
-    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0alpha" --preview ${KOKORO_BUILD_NUMBER} python3.5 python3.6
+    docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "tensorflow==2.0.0b1" --preview ${KOKORO_BUILD_NUMBER} python3.5 python3.6
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
 
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:16.04 bash -x -e .travis/wheel.test.sh python3.5
+
+    ## Stop then restart prometheus
+    bash -x -e tests/test_prometheus/prometheus_test.sh stop
+    bash -x -e tests/test_prometheus/prometheus_test.sh start
+
     docker run -i --rm -v $PWD:/v -w /v --net=host buildpack-deps:18.04 bash -x -e .travis/wheel.test.sh python3.6
 fi
 

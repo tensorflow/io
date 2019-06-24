@@ -23,8 +23,8 @@ import sys
 import pytest
 from google.cloud import pubsub_v1
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes         # pylint: disable=wrong-import-position
 from tensorflow import errors         # pylint: disable=wrong-import-position
@@ -79,11 +79,11 @@ class PubSubDatasetTest(test.TestCase):
 
   def test_pubsub_dataset(self):
     """Tests for PubSubDataset."""
-    subscriptions = tensorflow.compat.v1.placeholder(
+    subscriptions = tf.compat.v1.placeholder(
         dtypes.string, shape=[None])
-    num_epochs = tensorflow.compat.v1.placeholder(
+    num_epochs = tf.compat.v1.placeholder(
         dtypes.int64, shape=[])
-    batch_size = tensorflow.compat.v1.placeholder(
+    batch_size = tf.compat.v1.placeholder(
         dtypes.int64, shape=[])
 
     repeat_dataset = pubsub_dataset_ops.PubSubDataset(

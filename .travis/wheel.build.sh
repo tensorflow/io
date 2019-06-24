@@ -10,6 +10,10 @@ fi
 for entry in "$@" ; do
   $entry --version
   $entry -m pip --version
+  # Let's also build a release candidate if it is nightly build
+  if [[ "$VERSION_CHOICE" == "--nightly" ]]; then
+    $entry setup.py --data bazel-bin -q bdist_wheel
+  fi
   $entry setup.py --data bazel-bin -q bdist_wheel $VERSION_CHOICE $VERSION_NUMBER
 done
 ls dist/*

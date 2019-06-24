@@ -15,13 +15,13 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.arrow`: Apache Arrow data format support. Usage guide [here](tensorflow_io/arrow/README.md).
 - `tensorflow_io.image`: WebP and TIFF image format support.
 - `tensorflow_io.libsvm`: LIBSVM file format support.
-- `tensorflow_io.video`: Video file support with FFmpeg.
+- `tensorflow_io.ffmpeg`: Video and Audio file support with FFmpeg.
 - `tensorflow_io.parquet`: Apache Parquet data format support.
 - `tensorflow_io.lmdb`: LMDB file format support.
 - `tensorflow_io.mnist`: MNIST file format support.
 - `tensorflow_io.cifar`: CIFAR file format support.
 - `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
-- `tensorflow_io.bigtable`: Google Cloud BigTable support.
+- `tensorflow_io.bigtable`: Google Cloud Bigtable support.
 - `tensorflow_io.oss`: Alibaba Cloud Object Storage Service (OSS) support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/oss/README.md).
 - `tensorflow_io.avro`: Apache Avro file format support.
 - `tensorflow_io.audio`: WAV file format support.
@@ -105,6 +105,15 @@ version of TensorFlow I/O according to the table below:
 | 0.3.0 | 1.12.0 | Feb 15, 2019 |
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
+
+### Build Status
+
+| Build | Status |
+| --- | --- |
+| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
+| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
+| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
+| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
 
 ## Developing
 

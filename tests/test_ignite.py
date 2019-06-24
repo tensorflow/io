@@ -19,10 +19,15 @@ from __future__ import print_function
 
 import os
 
+<<<<<<< HEAD
 os.environ["IGNITE_PORT"] = "10801"
 
 import tensorflow
 tensorflow.compat.v1.disable_eager_execution()
+=======
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
+>>>>>>> master
 
 from tensorflow import dtypes            # pylint: disable=wrong-import-position
 from tensorflow import errors            # pylint: disable=wrong-import-position
@@ -335,7 +340,7 @@ class IgniteDatasetTest(test.TestCase):
     it = dataset.make_one_shot_iterator()
     ne = it.get_next()
 
-    with tensorflow.compat.v1.Session() as sess:
+    with tf.compat.v1.Session() as sess:
       rows = [sess.run(ne), sess.run(ne), sess.run(ne)]
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(ne)

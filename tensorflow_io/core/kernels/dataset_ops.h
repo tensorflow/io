@@ -281,7 +281,9 @@ class DataInput {
           }
         } else {
           for (size_t i = 0; i < chunk_tensors.size(); i++) {
-            out_tensors->emplace_back(std::move(chunk_tensors[i]));
+            // In case record_read is smaller than record_to_read, cut a slice
+            Tensor tensor = chunk_tensors[i].Slice(0, record_read);
+            out_tensors->emplace_back(std::move(tensor));
           }
         }
       } else {

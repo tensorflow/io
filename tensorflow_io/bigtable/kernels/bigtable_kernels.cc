@@ -77,8 +77,7 @@ class BigtableClientOp : public OpKernel {
                   BigtableClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                 auto client_options =
                     google::cloud::bigtable::ClientOptions()
-                        .set_connection_pool_size(connection_pool_size_)
-                        .set_data_endpoint("batch-bigtable.googleapis.com");
+                        .set_connection_pool_size(connection_pool_size_);
                 auto channel_args = client_options.channel_arguments();
                 channel_args.SetMaxReceiveMessageSize(
                     max_receive_message_size_);

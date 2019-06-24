@@ -23,7 +23,7 @@ import concurrent.futures
 import grpc
 import google.protobuf.any_pb2
 
-import tensorflow
+import tensorflow as tf
 # Incase test is done with TFIO_DATAPATH specified, the
 # import path need to be extended to capture generated
 # grpc files:
@@ -57,10 +57,10 @@ class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
 
   def ReadRecord(self, request, context): # pylint: disable=unused-argument
     if len(self._data.shape) == 1:
-      tensor = tensorflow.compat.v1.make_tensor_proto(
+      tensor = tf.compat.v1.make_tensor_proto(
           self._data[request.offset:request.offset+request.length])
     else:
-      tensor = tensorflow.compat.v1.make_tensor_proto(
+      tensor = tf.compat.v1.make_tensor_proto(
           self._data[request.offset:request.offset+request.length, :])
     record = google.protobuf.any_pb2.Any()
     record.Pack(tensor)

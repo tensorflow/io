@@ -2,8 +2,8 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "python/ops/_lmdb_ops.so",
+cc_library(
+    name = "lmdb_ops",
     srcs = [
         "kernels/lmdb_input.cc",
         "ops/lmdb_ops.cc",
@@ -13,11 +13,9 @@ cc_binary(
         "-std=c++11",
         "-DNDEBUG",
     ],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@lmdb",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )

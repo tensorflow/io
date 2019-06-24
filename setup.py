@@ -94,9 +94,8 @@ setup(
 )
 """
 
-# Note: Change to tensorflow == 1.13.0 once 1.13.0 is released
-package = 'tensorflow>=1.13.0,<1.14.0'
-version = '0.6.0'
+package = 'tensorflow>=1.14.0,<1.15.0'
+version = '0.7.0'
 project = 'tensorflow-io'
 if '--package-version' in sys.argv:
   print(package)
@@ -115,7 +114,7 @@ if '--nightly' in sys.argv:
 if '--preview' in sys.argv:
   preview_idx = sys.argv.index('--preview')
   version = version + ".dev" + sys.argv[preview_idx + 1]
-  package = 'tensorflow==2.0.0alpha'
+  package = 'tensorflow==2.0.0b1'
   project = 'tensorflow-io-2.0-preview'
   sys.argv.remove('--preview')
   sys.argv.pop(preview_idx)
