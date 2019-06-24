@@ -29,7 +29,7 @@ limitations under the License.
 namespace tensorflow {
 
 GGFS::GGFS() {
-  LOG(INFO) << "Call GGFS::GGFS";
+  LOG(DEBUG) << "Call GGFS::GGFS";
 
   const char *env_host = std::getenv("IGNITE_HOST");
   const char *env_port = std::getenv("IGNITE_PORT");
@@ -63,11 +63,11 @@ GGFS::GGFS() {
     cert_password = string(env_cert_password);
 }
 
-GGFS::~GGFS() { LOG(INFO) << "Call GGFS::~GGFS"; }
+GGFS::~GGFS() { LOG(DEBUG) << "Call GGFS::~GGFS"; }
 
 Status GGFS::NewRandomAccessFile(const string &file_name,
                                  std::unique_ptr<RandomAccessFile> *result) {
-  LOG(INFO) << "Call GGFS::NewRandomAccessFile [file_name = " << file_name
+  LOG(DEBUG) << "Call GGFS::NewRandomAccessFile [file_name = " << file_name
             << "]";
 
   result->reset(new GGFSRandomAccessFile(
@@ -80,7 +80,7 @@ Status GGFS::NewRandomAccessFile(const string &file_name,
 
 Status GGFS::NewWritableFile(const string &file_name,
                              std::unique_ptr<WritableFile> *result) {
-  LOG(INFO) << "Call GGFS::NewWritableFile [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::NewWritableFile [file_name = " << file_name << "]";
 
   result->reset(new GGFSWritableFile(
       TranslateName(file_name),
@@ -92,7 +92,7 @@ Status GGFS::NewWritableFile(const string &file_name,
 
 Status GGFS::NewAppendableFile(const string &file_name,
                                std::unique_ptr<WritableFile> *result) {
-  LOG(INFO) << "Call GGFS::NewAppendableFile [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::NewAppendableFile [file_name = " << file_name << "]";
 
   result->reset(new GGFSWritableFile(
       TranslateName(file_name),
@@ -104,14 +104,14 @@ Status GGFS::NewAppendableFile(const string &file_name,
 
 Status GGFS::NewReadOnlyMemoryRegionFromFile(
     const string &file_name, std::unique_ptr<ReadOnlyMemoryRegion> *result) {
-  LOG(INFO) << "Call GGFS::NewReadOnlyMemoryRegionFromFile [file_name = "
+  LOG(DEBUG) << "Call GGFS::NewReadOnlyMemoryRegionFromFile [file_name = "
             << file_name << "]";
 
   return errors::Unimplemented("GGFS does not support ReadOnlyMemoryRegion");
 }
 
 Status GGFS::FileExists(const string &file_name) {
-  LOG(INFO) << "Call GGFS::FileExists [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::FileExists [file_name = " << file_name << "]";
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -119,7 +119,7 @@ Status GGFS::FileExists(const string &file_name) {
 }
 
 Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {
-  LOG(INFO) << "Call GGFS::GetChildren [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::GetChildren [file_name = " << file_name << "]";
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -128,13 +128,13 @@ Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {
 
 Status GGFS::GetMatchingPaths(const string &pattern,
                               std::vector<string> *results) {
-  LOG(INFO) << "Call GGFS::GetMatchingPaths [pattern = " << pattern << "]";
+  LOG(DEBUG) << "Call GGFS::GetMatchingPaths [pattern = " << pattern << "]";
 
   return internal::GetMatchingPaths(this, Env::Default(), pattern, results);
 }
 
 Status GGFS::DeleteFile(const string &file_name) {
-  LOG(INFO) << "Call GGFS::DeleteFile [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::DeleteFile [file_name = " << file_name << "]";
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -142,7 +142,7 @@ Status GGFS::DeleteFile(const string &file_name) {
 }
 
 Status GGFS::CreateDir(const string &file_name) {
-  LOG(INFO) << "Call GGFS::CreateDir [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::CreateDir [file_name = " << file_name << "]";
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -150,7 +150,7 @@ Status GGFS::CreateDir(const string &file_name) {
 }
 
 Status GGFS::DeleteDir(const string &file_name) {
-  LOG(INFO) << "Call GGFS::DeleteDir [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::DeleteDir [file_name = " << file_name << "]";
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -158,7 +158,7 @@ Status GGFS::DeleteDir(const string &file_name) {
 }
 
 Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
-  LOG(INFO) << "Call GGFS::GetFileSize [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::GetFileSize [file_name = " << file_name << "]";
 
   bool is_directory;
   int64_t modification_time;
@@ -170,7 +170,7 @@ Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
 }
 
 Status GGFS::RenameFile(const string &src, const string &dst) {
-  LOG(INFO) << "Call GGFS::RenameFile [src = " << src << ", dst = " << dst
+  LOG(DEBUG) << "Call GGFS::RenameFile [src = " << src << ", dst = " << dst
             << "]";
 
   GGFSClient client = {host,     port,    username,     password,
@@ -217,7 +217,7 @@ Status GGFS::RenameFile(const string &src, const string &dst) {
 }
 
 Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
-  LOG(INFO) << "Call GGFS::Stat [file_name = " << file_name << "]";
+  LOG(DEBUG) << "Call GGFS::Stat [file_name = " << file_name << "]";
 
   bool is_directory;
   int64_t modification_time;
@@ -234,7 +234,7 @@ Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
 }
 
 string GGFS::TranslateName(const string &name) const {
-  LOG(INFO) << "Call GGFS::TranslateName [name = " << name << "]";
+  LOG(DEBUG) << "Call GGFS::TranslateName [name = " << name << "]";
 
   StringPiece scheme, namenode, path;
   io::ParseURI(name, &scheme, &namenode, &path);
