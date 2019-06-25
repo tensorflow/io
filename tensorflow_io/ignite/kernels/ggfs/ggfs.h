@@ -23,8 +23,6 @@ namespace tensorflow {
 
 class GGFS : public FileSystem {
 public:
-  GGFS();
-  ~GGFS();
   Status
   NewRandomAccessFile(const string &file_name,
                       std::unique_ptr<RandomAccessFile> *result) override;
@@ -55,6 +53,8 @@ private:
   string certfile = "";
   string keyfile = "";
   string cert_password = "";
+
+  Status UpdateConnectionProperties();
 };
 
 } // namespace tensorflow

@@ -28,9 +28,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-GGFS::GGFS() {
-  LOG(INFO) << "Call GGFS::GGFS";
-
+Status GGFS::UpdateConnectionProperties() {
   const char *env_host = std::getenv("IGNITE_HOST");
   const char *env_port = std::getenv("IGNITE_PORT");
   const char *env_username = std::getenv("IGNITE_USERNAME");
@@ -43,8 +41,8 @@ GGFS::GGFS() {
     host = string(env_host);
 
   if (env_port && !strings::safe_strto32(env_port, &port)) {
-    LOG(ERROR) << "IGNITE_PORT environment variable is not a valid integer: "
-               << env_port;
+    return errors::Unknown(
+        "IGNITE_PORT environment variable is not a valid integer: ", env_port);
   }
 
   if (env_username)
@@ -61,14 +59,16 @@ GGFS::GGFS() {
 
   if (env_cert_password)
     cert_password = string(env_cert_password);
-}
 
-GGFS::~GGFS() { LOG(INFO) << "Call GGFS::~GGFS"; }
+  return Status::OK();
+}
 
 Status GGFS::NewRandomAccessFile(const string &file_name,
                                  std::unique_ptr<RandomAccessFile> *result) {
   LOG(INFO) << "Call GGFS::NewRandomAccessFile [file_name = " << file_name
             << "]";
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   result->reset(new GGFSRandomAccessFile(
       TranslateName(file_name),
@@ -82,6 +82,8 @@ Status GGFS::NewWritableFile(const string &file_name,
                              std::unique_ptr<WritableFile> *result) {
   LOG(INFO) << "Call GGFS::NewWritableFile [file_name = " << file_name << "]";
 
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
+
   result->reset(new GGFSWritableFile(
       TranslateName(file_name),
       std::unique_ptr<GGFSClient>(new GGFSClient(
@@ -93,6 +95,8 @@ Status GGFS::NewWritableFile(const string &file_name,
 Status GGFS::NewAppendableFile(const string &file_name,
                                std::unique_ptr<WritableFile> *result) {
   LOG(INFO) << "Call GGFS::NewAppendableFile [file_name = " << file_name << "]";
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   result->reset(new GGFSWritableFile(
       TranslateName(file_name),
@@ -113,6 +117,8 @@ Status GGFS::NewReadOnlyMemoryRegionFromFile(
 Status GGFS::FileExists(const string &file_name) {
   LOG(INFO) << "Call GGFS::FileExists [file_name = " << file_name << "]";
 
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
+
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
   return client.Exists(TranslateName(file_name));
@@ -120,6 +126,8 @@ Status GGFS::FileExists(const string &file_name) {
 
 Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {
   LOG(INFO) << "Call GGFS::GetChildren [file_name = " << file_name << "]";
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -136,6 +144,8 @@ Status GGFS::GetMatchingPaths(const string &pattern,
 Status GGFS::DeleteFile(const string &file_name) {
   LOG(INFO) << "Call GGFS::DeleteFile [file_name = " << file_name << "]";
 
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
+
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
   return client.Remove(TranslateName(file_name));
@@ -144,6 +154,8 @@ Status GGFS::DeleteFile(const string &file_name) {
 Status GGFS::CreateDir(const string &file_name) {
   LOG(INFO) << "Call GGFS::CreateDir [file_name = " << file_name << "]";
 
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
+
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
   return client.MkDirs(TranslateName(file_name), false);
@@ -151,6 +163,8 @@ Status GGFS::CreateDir(const string &file_name) {
 
 Status GGFS::DeleteDir(const string &file_name) {
   LOG(INFO) << "Call GGFS::DeleteDir [file_name = " << file_name << "]";
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -163,6 +177,8 @@ Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
   bool is_directory;
   int64_t modification_time;
 
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
+
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
   return client.Stat(TranslateName(file_name), &is_directory,
@@ -172,6 +188,8 @@ Status GGFS::GetFileSize(const string &file_name, uint64 *size) {
 Status GGFS::RenameFile(const string &src, const string &dst) {
   LOG(INFO) << "Call GGFS::RenameFile [src = " << src << ", dst = " << dst
             << "]";
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};
@@ -222,6 +240,8 @@ Status GGFS::Stat(const string &file_name, FileStatistics *stats) {
   bool is_directory;
   int64_t modification_time;
   int32_t size;
+
+  TF_RETURN_IF_ERROR(UpdateConnectionProperties());
 
   GGFSClient client = {host,     port,    username,     password,
                        certfile, keyfile, cert_password};

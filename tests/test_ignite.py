@@ -19,9 +19,7 @@ from __future__ import print_function
 
 import os
 
-os.environ["IGNITE_PORT"] = "10801"
-
-import tensorflow as tf                  # pylint: disable=wrong-import-position
+import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes            # pylint: disable=wrong-import-position
@@ -32,7 +30,7 @@ from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-class __TestFS():
+class __TestFS():                        # pylint: disable=invalid-name
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
@@ -265,6 +263,7 @@ class TestGGFS(test.TestCase, __TestFS):
   """
 
   def setUp(self):
+    os.environ["IGNITE_PORT"] = "10801"
     gfile.MkDir("ggfs:///")
 
   def prefix(self):
