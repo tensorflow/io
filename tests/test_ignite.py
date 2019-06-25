@@ -34,7 +34,7 @@ from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-class TestFS(metaclass = ABCMeta):
+class __TestFS(metaclass = ABCMeta):
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
@@ -263,7 +263,7 @@ class TestFS(metaclass = ABCMeta):
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dst_dir_name))
 
-class TestGGFS(test.TestCase, TestFS):
+class TestGGFS(test.TestCase, __TestFS):
   """Test GGFS.
   """
 
@@ -273,7 +273,7 @@ class TestGGFS(test.TestCase, TestFS):
   def prefix(self):
     return "ggfs"
 
-class TestIGFS(test.TestCase, TestFS):
+class TestIGFS(test.TestCase, __TestFS):
   """Test IGFS.
   """
 
