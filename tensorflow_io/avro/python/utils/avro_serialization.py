@@ -19,15 +19,36 @@ from __future__ import print_function
 
 import six
 
-from avro.datafile import DataFileReader
-from avro.io import DatumReader, DatumWriter, BinaryDecoder, BinaryEncoder
 from io import BytesIO
+from avro.io import DatumReader, DatumWriter, BinaryDecoder, BinaryEncoder
+from avro.datafile import DataFileReader, DataFileWriter
 
 if six.PY2:
     from avro.schema import parse as parse
 
 if six.PY3:
     from avro.schema import Parse as parse
+
+
+class AvroRecordsToFile(object):
+    def __init__(self, filename, writer_schema, codec='deflate'):
+        """
+
+        :param filename:
+        :param writer_schema:
+        :param codec:
+        """
+        self.schema = AvroParser(writer_schema).get_schema_object()
+        self.filename = filename
+        self.codec = codec
+
+    def write_records(self, records):
+        with open(self.filename, 'wb') as out:
+            writer = DataFileWriter(
+                out, DatumWriter(), self.schema, codec=self.codec)
+            for record in records:
+                writer.append(record)
+            writer.close()
 
 
 class AvroFileToRecords(object):
