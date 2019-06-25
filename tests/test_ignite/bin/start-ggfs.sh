@@ -15,6 +15,6 @@
 # ==============================================================================
 
 nohup apache-ignite/bin/ignite.sh example-ignite-ml.xml &
-sleep 10 # Wait Apache Ignite to be started
+sleep 20 # Wait Apache Ignite to be started
 
 tail -f nohup.out
