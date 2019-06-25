@@ -21,12 +21,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# TODO(fraudies): See how we can leverage tf.export here for V1/V2 compatibility
+from tensorflow_io.avro.python.ops.avro_dataset import make_avro_dataset_v1, \
+    make_avro_dataset
 from tensorflow_io.avro.python.ops.avro_record_dataset import AvroRecordDataset
 from tensorflow_io.avro.python.ops.parse_avro_record import parse_avro_record
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
+    "make_avro_dataset_v1",
+    "make_avro_dataset",
     "AvroRecordDataset",
     "parse_avro_record",
 ]
