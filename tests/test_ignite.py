@@ -18,8 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from abc import abstractmethod
-from abc import ABCMeta
 
 os.environ["IGNITE_PORT"] = "10801"
 
@@ -34,7 +32,7 @@ from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-class __TestFS(metaclass = ABCMeta):
+class __TestFS():
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
@@ -46,7 +44,6 @@ class __TestFS(metaclass = ABCMeta):
      $ bash stop_ignite.sh
   """
 
-  @abstractmethod
   def prefix(self):
     pass
 
