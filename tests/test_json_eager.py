@@ -28,7 +28,6 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
 from tensorflow_io.core.python.ops import data_ops as data_ops # pylint: disable=wrong-import-position
 
-
 def test_json_dataset():
   """Test case for JSON Dataset.
   """
