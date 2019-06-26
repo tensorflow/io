@@ -43,9 +43,9 @@ def test_json():
   )
 
   d_train = data_ops.Dataset.zip((
-    d_train_feature,
-    d_train_label
-  )) 
+      d_train_feature,
+      d_train_label
+  ))
   model = tf.keras.models.Sequential([
       tf.keras.layers.Dense(2, input_shape=(1,)),
   ])

@@ -45,13 +45,13 @@ from tensorflow_io.core.python.ops import core_ops as json_ops
 # Start with JSON parser in python to add tests.
 def JSONDataset(filenames):
   jsondataset = []
-  jsondataset = jsonParser(filenames)
+  jsondataset = JSONParser(filenames)
   return tf.data.Dataset.from_tensor_slices(jsondataset)
 
 # JSON parser in Python for testing.
 
 
-def jsonParser(filenames):
+def JSONParser(filenames):
   with open(filenames) as json_file:
     data = json.load(json_file)
   dataset = []

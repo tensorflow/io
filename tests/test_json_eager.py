@@ -14,6 +14,8 @@
 # ==============================================================================
 """Tests for JSON Dataset."""
 
+from tensorflow_io.core.python.ops import data_ops as data_ops
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -26,7 +28,6 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops import data_ops as data_ops
 
 def test_json_dataset():
   """Test case for JSON Dataset.
@@ -66,8 +67,8 @@ def test_json_dataset():
   assert i == len(y_test)
 
   dataset = data_ops.Dataset.zip((
-    feature_dataset,
-    label_dataset
+      feature_dataset,
+      label_dataset
   ))
 
   i = 0
