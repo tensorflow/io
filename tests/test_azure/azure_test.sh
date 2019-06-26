@@ -20,6 +20,17 @@ set -o pipefail
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 start|stop <azure container name>" >&2
   exit 1
+
+fi
+if [[ $(uname) == "Darwin" ]]; then
+    ls -la /usr/local/bin/n*
+    curl "https://nodejs.org/dist/latest/node-${VERSION:-$(wget -qO- https://nodejs.org/dist/latest/ | sed -nE 's|.*>node-(.*)\.pkg</a>.*|\1|p')}.pkg" > "$HOME/Downloads/node-latest.pkg" && sudo installer -store -pkg "$HOME/Downloads/node-latest.pkg" -target "/"
+    /usr/local/bin/node --version
+    /usr/local/bin/npm --version
+    sudo rm -rf /Users/travis/.npm
+    /usr/local/bin/npm install -g azurite
+    azurite -l /tmp --blobHost 0.0.0.0
+    exit 0
 fi
 
 action=$1
@@ -28,7 +39,7 @@ if [ "$action" == "start" ]; then
     echo pull arafato/azurite
     docker pull arafato/azurite
     echo pull arafato/azurite successfully
-    docker run -d --rm -p 10000:10000 --name=$container arafato/azurite
+    docker run -d --rm --net=host --name=$container arafato/azurite
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container
