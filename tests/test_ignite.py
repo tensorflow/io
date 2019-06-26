@@ -18,7 +18,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import platform
 
+import pytest
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
@@ -258,6 +260,7 @@ class __TestFS():                        # pylint: disable=invalid-name,old-styl
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dst_dir_name))
 
+@pytest.mark.skipif(platform.uname().system == 'Linux', reason=None)
 class TestGGFS(test.TestCase, __TestFS):
   """Test GGFS.
   """
