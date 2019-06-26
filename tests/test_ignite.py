@@ -260,7 +260,7 @@ class __TestFS():                        # pylint: disable=invalid-name,old-styl
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dst_dir_name))
 
-@pytest.mark.skipif(platform.uname().system == 'Linux', reason=None)
+@pytest.mark.skipif(platform.uname()[0] == 'Darwin', reason=None)
 class TestGGFS(test.TestCase, __TestFS):
   """Test GGFS.
   """
