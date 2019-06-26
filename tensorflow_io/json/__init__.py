@@ -24,13 +24,9 @@ from __future__ import print_function
 from tensorflow.python.util.all_util import remove_undocumented
 
 from tensorflow_io.json.python.ops.json_ops import JSONDataset
-from tensorflow_io.json.python.ops.json_ops import JSONFeatureDataset
-from tensorflow_io.json.python.ops.json_ops import JSONLabelDataset
 
 _allowed_symbols = [
     "JSONDataset",
-    "JSONFeatureDataset",
-    "JSONLabelDataset"
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
