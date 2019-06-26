@@ -26,6 +26,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
+from tensorflow_io.core.python.ops import data_ops as data_ops
 
 def test_json_dataset():
   """Test case for JSON Dataset.
@@ -45,8 +46,8 @@ def test_json_dataset():
       "test_json",
       "label.json")
 
-  feature_dataset = json_io.JSONFeatureDataset(feature_filename)
-  label_dataset = json_io.JSONLabelDataset(label_filename)
+  feature_dataset = json_io.JSONDataset(feature_filename)
+  label_dataset = json_io.JSONDataset(label_filename)
 
   i = 0
   for j_x in feature_dataset:
@@ -64,7 +65,10 @@ def test_json_dataset():
     i += 1
   assert i == len(y_test)
 
-  dataset = json_io.JSONDataset(feature_filename, label_filename)
+  dataset = data_ops.Dataset.zip((
+    feature_dataset,
+    label_dataset
+  ))
 
   i = 0
   for (j_x, j_y) in dataset:

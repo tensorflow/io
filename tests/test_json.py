@@ -22,6 +22,8 @@ import os
 import tensorflow as tf
 import tensorflow_io.json as json_io
 
+from tensorflow_io.core.python.ops import data_ops as data_ops
+
 
 def test_json():
   """test_json"""
@@ -33,12 +35,17 @@ def test_json():
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "label.json")
-  d_train = json_io.JSONDataset(
+  d_train_feature = json_io.JSONDataset(
       feature_filename,
+  )
+  d_train_label = json_io.JSONDataset(
       label_filename,
-    )
-  print(d_train)
+  )
 
+  d_train = data_ops.Dataset.zip((
+    d_train_feature,
+    d_train_label
+  )) 
   model = tf.keras.models.Sequential([
       tf.keras.layers.Dense(2, input_shape=(1,)),
   ])
