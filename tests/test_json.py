@@ -21,8 +21,7 @@ from __future__ import print_function
 import os
 import tensorflow as tf
 import tensorflow_io.json as json_io
-
-from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import data_ops as data_ops # pylint: disable=wrong-import-position
 
 
 def test_json():
