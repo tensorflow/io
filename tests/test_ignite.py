@@ -30,7 +30,7 @@ from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-class __TestFS():                        # pylint: disable=invalid-name
+class __TestFS():                        # pylint: disable=invalid-name,old-style-class,no-init
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
