@@ -262,7 +262,7 @@ class TestGGFS(test.TestCase, __TestFS):
   """Test GGFS.
   """
 
-  def setUp(self):
+  def setUp(self): # pylint: disable=invalid-name
     os.environ["IGNITE_PORT"] = "10801"
     gfile.MkDir("ggfs:///")
 
