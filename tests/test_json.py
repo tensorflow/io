@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 import tensorflow as tf
 import tensorflow_io.json as json_io
-from tensorflow_io.core.python.ops import data_ops as data_ops # pylint: disable=wrong-import-position
 
 
 def test_json():
@@ -41,7 +40,7 @@ def test_json():
       label_filename,
   )
 
-  d_train = data_ops.Dataset.zip((
+  d_train = tf.data.Dataset.zip((
       d_train_feature,
       d_train_label
   ))
