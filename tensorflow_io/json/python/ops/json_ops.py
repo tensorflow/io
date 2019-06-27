@@ -48,16 +48,15 @@ def JSONDataset(filenames):
   jsondataset = JSONParser(filenames)
   return tf.data.Dataset.from_tensor_slices(jsondataset)
 
+
 # JSON parser in Python for testing.
-
-
 def JSONParser(filenames):
   with open(filenames) as json_file:
     data = json.load(json_file)
   dataset = []
   for sample in data:
     sampledata = []
-    for value in sample.values():
-      sampledata.append(value)
+    for key in sorted(sample):
+      sampledata.append(sample[key])
     dataset.append(sampledata)
   return dataset
