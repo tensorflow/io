@@ -384,8 +384,10 @@ class ArrowDatasetTest(test.TestCase):
     server = threading.Thread(target=run_server, args=(num_batches,))
     server.start()
 
+    endpoint = 'unix://{}'.format(host)
+
     dataset = arrow_io.ArrowStreamDataset.from_schema(
-        host, batch.schema, host_type='AF_UNIX')
+        endpoint, batch.schema)
     truth_data_mult = TruthData(
         [d * num_batches for d in truth_data.data],
         truth_data.output_types,
@@ -439,9 +441,10 @@ class ArrowDatasetTest(test.TestCase):
       return server
 
     servers = [start_server(h) for h in hosts]
+    endpoints = ['unix://{}'.format(h) for h in hosts]
 
     dataset = arrow_io.ArrowStreamDataset.from_schema(
-        hosts, batch.schema, host_type='AF_UNIX')
+        endpoints, batch.schema)
     truth_data_mult = TruthData(
         [d * len(hosts) for d in truth_data.data],
         truth_data.output_types,

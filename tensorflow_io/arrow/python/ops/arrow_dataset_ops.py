@@ -364,21 +364,25 @@ class ArrowStreamDataset(ArrowBaseDataset):
   """An Arrow Dataset for reading record batches from an input stream.
   Currently supported input streams are a socket client or stdin.
   """
-  host_types_supported = ('AF_INET', 'AF_UNIX', 'STDIN')
 
   def __init__(self,
-               hosts,
+               endpoints,
                columns,
                output_types,
                output_shapes=None,
                batch_size=None,
-               batch_mode='keep_remainder',
-               host_type='AF_INET'):
+               batch_mode='keep_remainder'):
     """Create an ArrowDataset from an input stream.
 
     Args:
-      hosts: A `tf.string` tensor, Python list or scalar string defining the
-             input stream.
+      endpoints: A `tf.string` tensor, Python list or scalar string defining the
+                 input stream.
+                 `endpoints` could have the following formats:
+                   - "host:port": IPv4 address (default)
+                   - "tcp://<host:port>": IPv4 address,
+                   - "unix://<path>": local path as unix socket address,
+                   - "fd://<number>": STDIN or file descriptor number. For
+                     STDIN, use "fd://0" or "fd://-".
       columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
@@ -391,21 +395,13 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
-      host_type: Type of input stream to connect with:
-                 "AF_INET" (default) IPv4 address host as <HOST_IP>:<PORT>
-                 "AF_UNIX" Local UDS address host as filename
-                 "STDIN" Connect to process stdin stream, host is ignored
     """
-    if host_type not in self.host_types_supported:
-      raise ValueError(
-          "Unsupported host_type: '{}', must be one of {}"
-          .format(host_type, self.host_types_supported))
-    hosts = tf.convert_to_tensor(
-        hosts,
+    endpoints = tf.convert_to_tensor(
+        endpoints,
         dtype=dtypes.string,
-        name="hosts")
+        name="endpoints")
     super(ArrowStreamDataset, self).__init__(
-        partial(arrow_ops.arrow_stream_dataset, hosts, host_type),
+        partial(arrow_ops.arrow_stream_dataset, endpoints),
         columns,
         output_types,
         output_shapes,
@@ -414,19 +410,24 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
   @classmethod
   def from_schema(cls,
-                  hosts,
+                  endpoints,
                   schema,
                   columns=None,
                   batch_size=None,
-                  batch_mode='keep_remainder',
-                  host_type='AF_INET'):
+                  batch_mode='keep_remainder'):
     """Create an Arrow Dataset from an input stream, inferring output types
     and shapes from the given Arrow schema.
     This method requires pyarrow to be installed.
 
     Args:
-      hosts: A `tf.string` tensor, Python list or scalar string defining the
-             input stream.
+      endpoints: A `tf.string` tensor, Python list or scalar string defining the
+                 input stream.
+                 `endpoints` could have the following formats:
+                   - "host:port": IPv4 address (default)
+                   - "tcp://<host:port>": IPv4 address,
+                   - "unix://<path>": local path as unix socket address,
+                   - "fd://<number>": STDIN or file descriptor number. For
+                     STDIN, use "fd://0" or "fd://-".
       schema: Arrow schema defining the record batch data in the stream
       columns: A list of column indicies to use from the schema, None for all
       batch_size: Batch size of output tensors, setting a batch size here
@@ -437,22 +438,17 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
-      host_type: Type of input stream to connect with:
-                 "AF_INET" (default) IPv4 address host as <HOST_IP>:<PORT>
-                 "AF_UNIX" Local UDS address host as filename
-                 "STDIN" Connect to process stdin stream, host is ignored
     """
     if columns is None:
       columns = list(range(len(schema)))
     output_types, output_shapes = arrow_schema_to_tensor_types(schema)
     return cls(
-        hosts,
+        endpoints,
         columns,
         output_types,
         output_shapes,
         batch_size,
-        batch_mode,
-        host_type)
+        batch_mode)
 
   @classmethod
   def from_record_batches(cls,
@@ -461,9 +457,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
                           output_shapes=None,
                           columns=None,
                           batch_size=None,
-                          batch_mode='keep_remainder',
-                          host=None,
-                          host_type=None):
+                          batch_mode='keep_remainder'):
     """Create an ArrowStreamDataset by serving a sequence of Arrow record
     batches in a background thread.
     This constructor requires pyarrow to be installed.
@@ -482,36 +476,26 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
-      host: Optionally specify the host name for serving the record batches
-      host_type: Optionally specify the host_type for the server
     """
     import pyarrow as pa
 
-    # Create a UDS server
-    if host_type == 'AF_UNIX' or (host is None and os.name != "nt"):
-      host_type = 'AF_UNIX'
-      if host is None:
-        host = os.path.join(tempfile.gettempdir(), 'arrow_io_stream')
+    # Create a UDS server by default if not Windows
+    if os.name != "nt":
+      sock_path = os.path.join(tempfile.gettempdir(), 'arrow_io_stream.sock')
+      endpoint = 'unix://{}'.format(sock_path)
       try:
-        os.unlink(host)
+        os.unlink(sock_path)
       except OSError:
-        if os.path.exists(host):
+        if os.path.exists(sock_path):
           raise
       sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-      sock.bind(host)
+      sock.bind(sock_path)
     # Create a TCP server
     else:
-      host_type = 'AF_INET'
       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      if host is not None:
-        host_addr, port_str = host.split(':')
-        port = int(port_str)
-      else:
-        host_addr = '127.0.0.1'
-        port = 0
-      sock.bind((host_addr, port))
+      sock.bind(('127.0.0.1', 0))
       host_addr, port = sock.getsockname()
-      host = "%s:%s" % (host_addr, port)
+      endpoint = '{}:{}'.format(host_addr, port)
     sock.listen(1)
 
     def run_server():
@@ -536,21 +520,19 @@ class ArrowStreamDataset(ArrowBaseDataset):
       columns = list(range(len(output_types)))
 
     return cls(
-        host,
+        endpoint,
         columns,
         output_types,
         output_shapes,
         batch_size,
-        batch_mode,
-        host_type)
+        batch_mode)
 
   @classmethod
   def from_pandas(cls,
                   data_frames,
                   columns=None,
                   preserve_index=True,
-                  batch_size=None,
-                  host=None):
+                  batch_size=None):
     """Create an ArrowStreamDataset by serving a DataFrame, or batches of a
     DataFrame in a background thread.
     This constructor requires pandas and pyarrow to be installed.
@@ -563,7 +545,6 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   will create batched tensors from Arrow memory and can be more
                   efficient than using tf.data.Dataset.batch().
                   NOTE: Currently, only 'keep_remainder' batch mode supported
-      host: Optionally specify the host name to serve the DataFrame
     """
     import pandas as pd
     import pyarrow as pa
@@ -594,5 +575,4 @@ class ArrowStreamDataset(ArrowBaseDataset):
         output_types,
         output_shapes,
         batch_size=batch_size,
-        batch_mode='keep_remainder',
-        host=host)
+        batch_mode='keep_remainder')

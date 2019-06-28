@@ -8,6 +8,8 @@ cc_binary(
         "kernels/arrow_dataset_ops.cc",
         "kernels/arrow_stream_client.h",
         "kernels/arrow_stream_client_unix.cc",
+        "kernels/arrow_util.cc",
+        "kernels/arrow_util.h",
         "ops/dataset_ops.cc",
     ],
     copts = [

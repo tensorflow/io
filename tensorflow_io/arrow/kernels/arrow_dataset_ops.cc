@@ -18,6 +18,7 @@ limitations under the License.
 #include "arrow/ipc/api.h"
 #include "arrow/util/io-util.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
 
@@ -864,49 +865,10 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
   };
 };
 
-
-enum ArrowHostType {
-  AF_INET,
-  AF_UNIX,
-  STDIN,
-};
-
-Status GetHostTypeStr(ArrowHostType host_type, string* host_type_str) {
-  switch (host_type) {
-    case ArrowHostType::AF_INET:
-      *host_type_str = "AF_INET";
-      break;
-    case ArrowHostType::AF_UNIX:
-      *host_type_str = "AF_UNIX";
-      break;
-    case ArrowHostType::STDIN:
-      *host_type_str = "STDIN";
-      break;
-    default:
-      return errors::Internal("Unsupported host_type: " +
-                              std::to_string(host_type));
-  }
-  return Status::OK();
-}
-
-Status GetHostType(string host_type_str, ArrowHostType* host_type ) {
-  if (host_type_str == "AF_INET") {
-    *host_type = ArrowHostType::AF_INET;
-  } else if (host_type_str == "AF_UNIX") {
-    *host_type = ArrowHostType::AF_UNIX;
-  } else if (host_type_str == "STDIN") {
-    *host_type = ArrowHostType::STDIN;
-  } else {
-    return errors::Internal("Unsupported host type: " + host_type_str);
-  }
-  return Status::OK();
-}
-
-
 // Op to create an Arrow Dataset that consumes record batches from an input
-// stream. Currently supported input streams defined by host_type are a
-// POSIX socket client, with host given as "<IP>:<PORT>", a Unix Domain Socket
-// with host given as a pathname, or STDIN.
+// stream. Currently supported endpoints are a POSIX IPv4 socket with endpoint
+// "<IP>:<PORT>" or "tcp://<IP>:<PORT>", a Unix Domain Socket with endpoint
+// "unix://<pathname>", and STDIN with endpoint "fd://0" or "fd://-".
 class ArrowStreamDatasetOp : public ArrowOpKernelBase {
  public:
   explicit ArrowStreamDatasetOp(OpKernelConstruction* ctx)
@@ -920,26 +882,20 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
-    const Tensor* hosts_tensor;
-    OP_REQUIRES_OK(ctx, ctx->input("hosts", &hosts_tensor));
+    const Tensor* endpoints_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("endpoints", &endpoints_tensor));
     OP_REQUIRES(
-        ctx, hosts_tensor->dims() <= 1,
-        errors::InvalidArgument("`hosts` must be a scalar or vector."));
-    std::vector<string> hosts;
-    hosts.reserve(hosts_tensor->NumElements());
-    for (int i = 0; i < hosts_tensor->NumElements(); ++i) {
-      hosts.push_back(hosts_tensor->flat<string>()(i));
+        ctx, endpoints_tensor->dims() <= 1,
+        errors::InvalidArgument("`endpoints` must be a scalar or vector."));
+    std::vector<string> endpoints;
+    endpoints.reserve(endpoints_tensor->NumElements());
+    for (int i = 0; i < endpoints_tensor->NumElements(); ++i) {
+      endpoints.push_back(endpoints_tensor->flat<string>()(i));
     }
-    string host_type_str;
-    OP_REQUIRES_OK(ctx,
-        ParseScalarArgument(ctx, "host_type", &host_type_str));
-    ArrowHostType host_type;
-    OP_REQUIRES_OK(ctx, GetHostType(host_type_str, &host_type));
 
     *output = new Dataset(
         ctx,
-        hosts,
-        host_type,
+        endpoints,
         columns,
         batch_size,
         batch_mode,
@@ -951,8 +907,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   class Dataset : public ArrowDatasetBase {
    public:
     Dataset(OpKernelContext* ctx,
-            const std::vector<string>& hosts,
-            const ArrowHostType host_type,
+            const std::vector<string>& endpoints,
             const std::vector<int32>& columns,
             const int64 batch_size,
             const ArrowBatchMode batch_mode,
@@ -960,7 +915,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
               output_types, output_shapes),
-          hosts_(hosts), host_type_(host_type) {}
+          endpoints_(endpoints) {}
 
     string DebugString() const override {
       return "ArrowStreamDatasetOp::Dataset";
@@ -970,12 +925,8 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b,
                               Node** output) const override {
-      Node* hosts = nullptr;
-      TF_RETURN_IF_ERROR(b->AddVector(hosts_, &hosts));
-      Node* host_type = nullptr;
-      string host_type_str;
-      TF_RETURN_IF_ERROR(GetHostTypeStr(host_type_, &host_type_str));
-      TF_RETURN_IF_ERROR(b->AddScalar(host_type_str, &host_type));
+      Node* endpoints = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(endpoints_, &endpoints));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;
@@ -987,7 +938,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(
           b->AddDataset(
             this,
-            {hosts, host_type, columns, batch_size, batch_mode},
+            {endpoints, columns, batch_size, batch_mode},
             output));
       return Status::OK();
     }
@@ -1007,14 +958,19 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked()
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        const string& host = dataset()->hosts_[current_host_idx_];
-        if (dataset()->host_type_ == ArrowHostType::STDIN) {
+        const string& endpoint = dataset()->endpoints_[current_endpoint_idx_];
+        string endpoint_type;
+        string endpoint_value;
+        TF_RETURN_IF_ERROR(
+            ParseEndpoint(endpoint, &endpoint_type, &endpoint_value));
+
+        // Check if endpoint is STDIN
+        if (endpoint_type == "fd" && (endpoint_value == "0" ||
+                                      endpoint_value == "-")) {
           in_stream_ = std::make_shared<arrow::io::StdinStream>();
         } else {
-          auto socket_stream = std::make_shared<ArrowStreamClient>(
-              host, dataset()->host_type_ == ArrowHostType::AF_UNIX ?
-                  ArrowStreamFamily::AF_UNIX_SOCKET :
-                  ArrowStreamFamily::AF_INET_SOCKET);
+          // Endpoint is a socket, make a client connection
+          auto socket_stream = std::make_shared<ArrowStreamClient>(endpoint);
           CHECK_ARROW(socket_stream->Connect());
           in_stream_ = socket_stream;
         }
@@ -1030,7 +986,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         ArrowBaseIterator<Dataset>::NextStreamLocked();
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
         if (current_batch_ == nullptr &&
-            ++current_host_idx_ < dataset()->hosts_.size()) {
+            ++current_endpoint_idx_ < dataset()->endpoints_.size()) {
           reader_.reset();
           SetupStreamsLocked();
         }
@@ -1039,18 +995,17 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
 
       void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
-        current_host_idx_ = 0;
+        current_endpoint_idx_ = 0;
         reader_.reset();
         in_stream_.reset();
       }
 
-      size_t current_host_idx_ GUARDED_BY(mu_) = 0;
+      size_t current_endpoint_idx_ GUARDED_BY(mu_) = 0;
       std::shared_ptr<arrow::io::InputStream> in_stream_ GUARDED_BY(mu_);
       std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ GUARDED_BY(mu_);
     };
 
-    const std::vector<string> hosts_;
-    const ArrowHostType host_type_;
+    const std::vector<string> endpoints_;
   };
 };
 
