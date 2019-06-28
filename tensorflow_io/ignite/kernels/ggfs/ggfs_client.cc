@@ -15,7 +15,6 @@ limitations under the License.
 
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_client.h"
 #include "tensorflow/core/lib/core/errors.h"
-#include "tensorflow/core/lib/gtl/cleanup.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 
@@ -267,10 +266,9 @@ Status GGFSClient::ReceiveCommonResponseHeader() {
       int32_t err_msg_length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&err_msg_length));
 
-      uint8_t *err_msg_c = new uint8_t[err_msg_length];
-      auto clean = gtl::MakeCleanup([err_msg_c] { delete[] err_msg_c; });
-      TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c, err_msg_length));
-      string err_msg(reinterpret_cast<char *>(err_msg_c), err_msg_length);
+      std::unique_ptr<uint8_t> err_msg_c = std::unique_ptr<uint8_t>(new uint8_t[err_msg_length]);
+      TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), err_msg_length));
+      string err_msg(reinterpret_cast<char *>(err_msg_c.get()), err_msg_length);
 
       return errors::Unknown("Error [status=", status, ", message=", err_msg,
                              "]");
@@ -356,10 +354,9 @@ Status GGFSClient::Handshake() {
       int32_t length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&length));
 
-      uint8_t *err_msg_c = new uint8_t[length];
-      auto clean = gtl::MakeCleanup([err_msg_c] { delete[] err_msg_c; });
-      TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c, length));
-      string err_msg(reinterpret_cast<char *>(err_msg_c), length);
+      std::unique_ptr<uint8_t> err_msg_c = std::unique_ptr<uint8_t>(new uint8_t[length]);
+      TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), length));
+      string err_msg(reinterpret_cast<char *>(err_msg_c.get()), length);
 
       return errors::Unknown("Handshake Error [result=", handshake_res,
                              ", version=", serv_ver_major, ".", serv_ver_minor,
