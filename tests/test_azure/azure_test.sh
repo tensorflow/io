@@ -25,6 +25,7 @@ fi
 action=$1
 container=$2
 if [ "$action" == "start" ]; then
+    nvm use v8.x.x
     npm install -g azurite
     echo starting azurite-blob
     azurite-blob &
