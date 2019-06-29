@@ -1,5 +1,7 @@
 dist: xenial
-language: minimal
+language: generic
+node_js:
+  - "8"
 
 git:
   quiet: true
@@ -14,7 +16,7 @@ install:
     sudo -H python -m pip install --upgrade pip setuptools
 
     # Star this early because I'm selfish and want to see travis results
-    bash -x -e tests/test_azure/azure_test.sh start
+    bash -x -e tests/test_azure/start_azure.sh
     # Ignite probably takes more resource so start it first,
     # otherwise it may run into issues competing with other services.
     bash -x -e tests/test_ignite/start_ignite.sh
