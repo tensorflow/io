@@ -18,18 +18,17 @@ set -e
 set -o pipefail
 
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 start|stop <azure container name>" >&2
+  echo "Usage: $0 start|stop" >&2
   exit 1
 fi
 
 action=$1
 container=$2
 if [ "$action" == "start" ]; then
-    echo pull arafato/azurite
-    docker pull arafato/azurite
-    echo pull arafato/azurite successfully
-    docker run -d --rm -p 10000:10000 --name=$container arafato/azurite
-    echo Container $container started successfully
+    npm install -g azurite
+    echo starting azurite-blob
+    azurite-blob &
+    echo azurite-blob started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container
     echo Container $container removed successfully
