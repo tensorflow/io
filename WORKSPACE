@@ -208,11 +208,11 @@ http_archive(
     patches = [
         "//third_party:azure.patch",
     ],
-    sha256 = "57117f0231e0629d025d9803895186183942894d028b122b355c4d6a24f7c69b",
-    strip_prefix = "azure-storage-cpplite-54bb4cfb0444f65fd9b0f54792237be43a31788a",
+    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
+    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
     urls = [
-        "https://github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
-        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/54bb4cfb0444f65fd9b0f54792237be43a31788a.zip",
+        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
+        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
     ],
 )
 
