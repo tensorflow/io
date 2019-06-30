@@ -47,29 +47,29 @@ Status ParseAzBlobPath(StringPiece fname, bool empty_object_ok,
 std::string errno_to_string() {
   switch (errno) {
     /* common errors */
-    case invalid_parameters: return "invalid_parameters:";
+    case invalid_parameters: return "invalid_parameters";
     /* client level */
-    case client_init_fail: return "client_init_fail:";
-    case client_already_init: return "client_already_init:";
-    case client_not_init: return "client_not_init:";
+    case client_init_fail: return "client_init_fail";
+    case client_already_init: return "client_already_init";
+    case client_not_init: return "client_not_init";
     /* container level */
-    case container_already_exists: return "container_already_exists:";
-    case container_not_exists: return "container_not_exists:";
-    case container_name_invalid: return "container_name_invalid:";
-    case container_create_fail: return "container_create_fail:";
-    case container_delete_fail: return "container_delete_fail:";
+    case container_already_exists: return "container_already_exists";
+    case container_not_exists: return "container_not_exists";
+    case container_name_invalid: return "container_name_invalid";
+    case container_create_fail: return "container_create_fail";
+    case container_delete_fail: return "container_delete_fail";
     /* blob level */
-    case blob__already_exists: return "blob__already_exists:";
-    case blob_not_exists: return "blob_not_exists:";
-    case blob_name_invalid: return "blob_name_invalid:";
-    case blob_delete_fail: return "blob_delete_fail:";
-    case blob_list_fail: return "blob_list_fail:";
-    case blob_copy_fail: return "blob_copy_fail:";
-    case blob_no_content_range: return "blob_no_content_range:";
+    case blob__already_exists: return "blob__already_exists";
+    case blob_not_exists: return "blob_not_exists";
+    case blob_name_invalid: return "blob_name_invalid";
+    case blob_delete_fail: return "blob_delete_fail";
+    case blob_list_fail: return "blob_list_fail";
+    case blob_copy_fail: return "blob_copy_fail";
+    case blob_no_content_range: return "blob_no_content_range";
     /* unknown error */
     case unknown_error:
     default: 
-      return "unknown_error:";
+      return "unknown_error - " + std::to_string(errno);
   }
 }
 
