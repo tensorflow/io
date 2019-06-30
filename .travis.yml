@@ -9,6 +9,9 @@ git:
 services:
 - docker
 
+before_install:
+- nvm install 8
+
 install:
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
 - |

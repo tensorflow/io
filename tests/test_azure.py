@@ -19,9 +19,9 @@ from __future__ import print_function
 
 import os
 
-import tensorflow_io.azure.azfs_ops  # pylint: disable=unused-import
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
+import tensorflow_io.azure.azfs_ops  # pylint: disable=unused-import
 
 class AZFSTest(test.TestCase):
   """[summary]
@@ -31,9 +31,9 @@ class AZFSTest(test.TestCase):
   """
 
   def __init__(self, methodName='runTest'): # pylint: disable=invalid-name
-    self.account = os.environ.get(
-        'TF_AZURE_STORAGE_ACCOUNT', 'devstoreaccount1')
-    self.container = os.environ.get('TF_AZURE_STORAGE_CONTAINER', 'aztest')
+    os.environ['TF_AZURE_USE_DEV_STORAGE'] = '1'
+    self.account = 'devstoreaccount1'
+    self.container = 'aztest'
     self.path_root = 'az://' + os.path.join(self.account, self.container)
     super(AZFSTest, self).__init__(methodName)
 

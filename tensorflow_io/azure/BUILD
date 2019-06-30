@@ -112,20 +112,3 @@ py_library(
     ],
     srcs_version = "PY2AND3",
 )
-
-# This test requires manually running as it requires interaction with an actual storage account
-# bazel test \
-#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
-#   //tensorflow_io/azure:azfs_py_test
-py_test(
-    name = "azfs_py_test",
-    srcs = [
-        "azfs_test.py",
-    ],
-    main = "azfs_test.py",
-    srcs_version = "PY2AND3",
-    deps = [
-        ":azfs_ops_py",
-        "//tensorflow_io:init",
-    ],
-)
