@@ -6,6 +6,3 @@ echo starting azurite-blob
 azurite-blob &
 sleep 10 # Wait for storage emulator to start
 echo azurite-blob started successfully
-
-# Environment variable so azure blob client will use emulator
-export TF_AZURE_USE_DEV_STORAGE=1

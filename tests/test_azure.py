@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+os.environ['TF_AZURE_USE_DEV_STORAGE'] = '1'
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
