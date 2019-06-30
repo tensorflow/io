@@ -8,7 +8,6 @@ run_test() {
   (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_eager.py" -o -iname "test_grpc.py" \) \)))
   (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_*_eager.py" \)))
   (cd tests && $entry -m pytest -v --import-mode=append $(find . -type f \( -iname "test_grpc.py" \)))
-  bazel test --action_env=TF_AZURE_USE_DEV_STORAGE=1 //tensorflow_io/azure/...
 }
 
 PYTHON_VERSION=python
