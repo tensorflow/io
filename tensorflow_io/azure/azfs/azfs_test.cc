@@ -58,7 +58,7 @@ protected:
 
   void SetUp() override {
     // Create container
-    fs.CreateDir(PathTo(""));
+    (void)fs.CreateDir(PathTo(""));
   }
 
   void TearDown() override {
@@ -174,12 +174,12 @@ TEST_F(AzBlobFileSystemTest, DeleteRecursively) {
   for (const auto& ext : { ".txt", ".md" }) {
     for (int i = 0; i < 3; ++i) {
       const auto this_fname = fname + "/" + std::to_string(i) + ext;
-      WriteString(this_fname, "");
+      (void)WriteString(this_fname, "");
     }
   }
 
   std::vector<std::string> txt_files;
-  fs.GetMatchingPaths(fname + "/*.txt", &txt_files);
+  (void)fs.GetMatchingPaths(fname + "/*.txt", &txt_files);
   EXPECT_EQ(3, txt_files.size());
 
   int64 undeleted_files, undeleted_dirs;

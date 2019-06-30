@@ -21,7 +21,7 @@ Status ParseAzBlobPath(StringPiece fname, bool empty_object_ok,
   }
 
   // Consume blob.core.windows.net if it exists
-  str_util::ConsumeSuffix(&accountp, kAzBlobEndpoint);
+  absl::ConsumeSuffix(&accountp, kAzBlobEndpoint);
 
   if (accountp.empty() || accountp.compare(".") == 0) {
     return errors::InvalidArgument(
@@ -30,7 +30,7 @@ Status ParseAzBlobPath(StringPiece fname, bool empty_object_ok,
 
   *account = std::string(accountp);
 
-  str_util::ConsumePrefix(&objectp, "/");
+  absl::ConsumePrefix(&objectp, "/");
 
   auto pos = objectp.find('/');
   if (pos == std::string::npos) {
