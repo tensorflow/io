@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-docker rm -f ignite-plain
-docker rm -f ignite-igfs
-docker rm -f gridgain-ce-ml
+nohup apache-ignite/bin/ignite.sh example-ignite-ml.xml &
+sleep 20 # Wait Apache Ignite to be started
+
+tail -f nohup.out
