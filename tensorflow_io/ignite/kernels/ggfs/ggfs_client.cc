@@ -266,7 +266,7 @@ Status GGFSClient::ReceiveCommonResponseHeader() {
       int32_t err_msg_length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&err_msg_length));
 
-      std::unique_ptr<uint8_t> err_msg_c = std::unique_ptr<uint8_t>(new uint8_t[err_msg_length]);
+      std::unique_ptr<uint8_t[]> err_msg_c = std::unique_ptr<uint8_t[]>(new uint8_t[err_msg_length]);
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), err_msg_length));
       string err_msg(reinterpret_cast<char *>(err_msg_c.get()), err_msg_length);
 
@@ -354,7 +354,7 @@ Status GGFSClient::Handshake() {
       int32_t length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&length));
 
-      std::unique_ptr<uint8_t> err_msg_c = std::unique_ptr<uint8_t>(new uint8_t[length]);
+      std::unique_ptr<uint8_t[]> err_msg_c = std::unique_ptr<uint8_t[]>(new uint8_t[length]);
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), length));
       string err_msg(reinterpret_cast<char *>(err_msg_c.get()), length);
 
