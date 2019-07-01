@@ -343,6 +343,174 @@ class ArrowDatasetTest(test.TestCase):
 
     server.join()
 
+  def test_arrow_unix_socket_dataset(self):
+    """test_arrow_unix_socket_dataset"""
+    if os.name == "nt":
+      self.skipTest("Unix Domain Sockets not supported on Windows")
+
+    truth_data = TruthData(
+        self.scalar_data + self.list_data,
+        self.scalar_dtypes + self.list_dtypes,
+        self.scalar_shapes + self.list_shapes)
+
+    batch = self.make_record_batch(truth_data)
+
+    host = os.path.join(tempfile.gettempdir(), 'arrow_io_stream')
+
+    # Make sure the socket does not already exist
+    try:
+      os.unlink(host)
+    except OSError:
+      if os.path.exists(host):
+        raise
+
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.bind(host)
+    sock.listen(1)
+
+    def run_server(num_batches):
+      conn, _ = sock.accept()
+      outfile = conn.makefile(mode='wb')
+      writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+      for _ in range(num_batches):
+        writer.write_batch(batch)
+      writer.close()
+      outfile.close()
+      conn.close()
+      sock.close()
+
+    # test with multiple batches, construct from schema
+    num_batches = 2
+    server = threading.Thread(target=run_server, args=(num_batches,))
+    server.start()
+
+    endpoint = 'unix://{}'.format(host)
+
+    dataset = arrow_io.ArrowStreamDataset.from_schema(
+        endpoint, batch.schema)
+    truth_data_mult = TruthData(
+        [d * num_batches for d in truth_data.data],
+        truth_data.output_types,
+        truth_data.output_shapes)
+    self.run_test_case(dataset, truth_data_mult)
+
+    server.join()
+
+  def test_multiple_stream_hosts(self):
+    """test_multiple_stream_hosts"""
+    if os.name == "nt":
+      self.skipTest("Unix Domain Sockets not supported on Windows")
+
+    truth_data = TruthData(
+        self.scalar_data + self.list_data,
+        self.scalar_dtypes + self.list_dtypes,
+        self.scalar_shapes + self.list_shapes)
+
+    batch = self.make_record_batch(truth_data)
+
+    hosts = [os.path.join(tempfile.gettempdir(), 'arrow_io_stream_{}'.format(i))
+             for i in range(1, 3)]
+
+    def start_server(host):
+      """start_server"""
+      try:
+        os.unlink(host)
+      except OSError:
+        if os.path.exists(host):
+          raise
+
+      sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+      sock.bind(host)
+      sock.listen(1)
+
+      def run_server(num_batches):
+        """run_server"""
+        conn, _ = sock.accept()
+        outfile = conn.makefile(mode='wb')
+        writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+        for _ in range(num_batches):
+          writer.write_batch(batch)
+        writer.close()
+        outfile.close()
+        conn.close()
+        sock.close()
+
+      # test with multiple batches, construct from schema
+      server = threading.Thread(target=run_server, args=(1,))
+      server.start()
+      return server
+
+    servers = [start_server(h) for h in hosts]
+    endpoints = ['unix://{}'.format(h) for h in hosts]
+
+    dataset = arrow_io.ArrowStreamDataset.from_schema(
+        endpoints, batch.schema)
+    truth_data_mult = TruthData(
+        [d * len(hosts) for d in truth_data.data],
+        truth_data.output_types,
+        truth_data.output_shapes)
+    self.run_test_case(dataset, truth_data_mult)
+
+    for s in servers:
+      s.join()
+
+  def test_stream_from_pandas(self):
+    """test_stream_from_pandas"""
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    batch_size = 2
+
+    # Test preserve index False
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=False)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+    # Test preserve index True and select all but index columns
+    truth_data = TruthData(
+        truth_data.data + [range(len(truth_data.data[0]))],
+        truth_data.output_types + (dtypes.int64,),
+        truth_data.output_shapes + (tf.TensorShape([]),))
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=True)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+  def test_stream_from_pandas_iter(self):
+    """test_stream_from_pandas_iter"""
+
+    batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(batch_data)
+    df = batch.to_pandas()
+
+    batch_size = 2
+    num_iters = 3
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        (df for _ in range(num_iters)),
+        batch_size=batch_size,
+        preserve_index=False)
+
+    truth_data = TruthData(
+        [d * num_iters for d in batch_data.data],
+        batch_data.output_types,
+        batch_data.output_shapes)
+
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
   def test_bool_array_type(self):
     """
     NOTE: need to test this seperately because to_pandas fails with

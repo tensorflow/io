@@ -52,7 +52,7 @@ filenames: One or more file paths.
 )doc");
 
 REGISTER_OP("ArrowStreamDataset")
-    .Input("host: string")
+    .Input("endpoints: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
     .Input("batch_mode: string")
@@ -64,7 +64,7 @@ REGISTER_OP("ArrowStreamDataset")
     .Doc(R"doc(
 Creates a dataset that connects to a host serving Arrow RecordBatches in stream format.
 
-host: A host address that is serving an Arrow stream.
+endpoints: One or more host addresses that are serving an Arrow stream.
 )doc");
 
 }  // namespace tensorflow
