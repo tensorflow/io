@@ -51,8 +51,16 @@ def test_json_dataset():
   i = 0
   for j_x in feature_dataset:
     v_x = x_test[i]
-    print(v_x)
-    print(j_x.numpy())
+    assert np.alltrue(v_x == j_x.numpy())
+    i += 1
+  assert i == len(y_test)
+
+  feature_list = ["integerfeature", "floatfeature"]
+  feature_dataset = json_io.JSONDataset(feature_filename, feature_list)
+
+  i = 0
+  for j_x in feature_dataset:
+    v_x = np.flip(x_test[i])
     assert np.alltrue(v_x == j_x.numpy())
     i += 1
   assert i == len(y_test)
@@ -71,7 +79,7 @@ def test_json_dataset():
 
   i = 0
   for (j_x, j_y) in dataset:
-    v_x = x_test[i]
+    v_x = np.flip(x_test[i])
     v_y = y_test[i]
     assert np.alltrue(v_y == j_y.numpy())
     assert np.alltrue(v_x == j_x.numpy())

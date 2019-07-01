@@ -43,20 +43,25 @@ import tensorflow as tf
 
 
 # Start with JSON parser in python to add tests.
-def JSONDataset(filenames):
+def JSONDataset(filenames, columns=None):
   jsondataset = []
-  jsondataset = JSONParser(filenames)
+  jsondataset = JSONParser(filenames, columns)
   return tf.data.Dataset.from_tensor_slices(jsondataset)
 
 
 # JSON parser in Python for testing.
-def JSONParser(filenames):
+def JSONParser(filenames, columns):
   with open(filenames) as json_file:
     data = json.load(json_file)
   dataset = []
   for sample in data:
     sampledata = []
-    for key in sorted(sample):
-      sampledata.append(sample[key])
+    if columns is None:
+      for key in sorted(sample):
+        sampledata.append(sample[key])
+    else:
+      for key in columns:
+        if  key in sample:
+          sampledata.append(sample[key])
     dataset.append(sampledata)
   return dataset
