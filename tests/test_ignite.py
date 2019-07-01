@@ -18,7 +18,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import platform
 
+import pytest
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
@@ -30,8 +32,7 @@ from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
 
-
-class IGFSTest(test.TestCase):
+class __TestFS():                        # pylint: disable=invalid-name,old-style-class,no-init
   """The Apache Ignite servers have to setup before the test and tear down
 
      after the test manually. The docker engine has to be installed.
@@ -43,12 +44,16 @@ class IGFSTest(test.TestCase):
      $ bash stop_ignite.sh
   """
 
+  def prefix(self):
+    pass
+
   def test_create_file(self):
     """Test create file.
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_create_file/1"
+    gfile.MkDir(self.prefix() + ":///test_create_file")
+    file_name = self.prefix() + ":///test_create_file/1"
     self.assertFalse(gfile.Exists(file_name))
     # Create file.
     with gfile.Open(file_name, mode="w") as w:
@@ -65,8 +70,9 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_write_read_file/1"
-    rows = 10000
+    gfile.MkDir(self.prefix() + ":///test_write_read_file")
+    file_name = self.prefix() + ":///test_write_read_file/1"
+    rows = 10
     self.assertFalse(gfile.Exists(file_name))
     # Write data.
     with gfile.Open(file_name, mode="w") as w:
@@ -89,8 +95,8 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_delete_recursively/"
-    file_name = "igfs:///test_delete_recursively/1"
+    dir_name = self.prefix() + ":///test_delete_recursively"
+    file_name = self.prefix() + ":///test_delete_recursively/1"
     self.assertFalse(gfile.Exists(dir_name))
     self.assertFalse(gfile.Exists(file_name))
     gfile.MkDir(dir_name)
@@ -109,8 +115,9 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    src_file_name = "igfs:///test_copy/1"
-    dst_file_name = "igfs:///test_copy/2"
+    gfile.MkDir(self.prefix() + ":///test_copy")
+    src_file_name = self.prefix() + ":///test_copy/1"
+    dst_file_name = self.prefix() + ":///test_copy/2"
     self.assertFalse(gfile.Exists(src_file_name))
     self.assertFalse(gfile.Exists(dst_file_name))
     with gfile.Open(src_file_name, mode="w") as w:
@@ -137,8 +144,9 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_is_directory/1"
-    file_name = "igfs:///test_is_directory/2"
+    gfile.MkDir(self.prefix() + ":///test_is_directory")
+    dir_name = self.prefix() + ":///test_is_directory/1"
+    file_name = self.prefix() + ":///test_is_directory/2"
     with gfile.Open(file_name, mode="w") as w:
       w.write("")
     gfile.MkDir(dir_name)
@@ -152,12 +160,16 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_list_directory/"
+    gfile.MkDir(self.prefix() + ":///test_list_directory")
+    gfile.MkDir(self.prefix() + ":///test_list_directory/2")
+    gfile.MkDir(self.prefix() + ":///test_list_directory/4")
+    dir_name = self.prefix() + ":///test_list_directory"
     file_names = [
-        "igfs:///test_list_directory/1", "igfs:///test_list_directory/2/3"
+        self.prefix() + ":///test_list_directory/1",
+        self.prefix() + ":///test_list_directory/2/3"
     ]
     ch_dir_names = [
-        "igfs:///test_list_directory/4",
+        self.prefix() + ":///test_list_directory/4",
     ]
     for file_name in file_names:
       with gfile.Open(file_name, mode="w") as w:
@@ -170,14 +182,14 @@ class IGFSTest(test.TestCase):
     # Check that list of files is correct.
     self.assertEqual(len(ls_expected_result), len(ls_result))
     for e in ["1", "2", "4"]:
-      self.assertTrue(e in ls_result)
+      self.assertTrue(e in ls_result, msg="Result doesn't contain '%s'" % e)
 
   def test_make_dirs(self):
     """Test make dirs.
 
     """
     # Setup and check preconditions.
-    dir_name = "igfs:///test_make_dirs/"
+    dir_name = self.prefix() + ":///test_make_dirs/"
     self.assertFalse(gfile.Exists(dir_name))
     # Make directory.
     gfile.MkDir(dir_name)
@@ -193,7 +205,8 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    file_name = "igfs:///test_remove/1"
+    gfile.MkDir(self.prefix() + ":///test_remove")
+    file_name = self.prefix() + ":///test_remove/1"
     self.assertFalse(gfile.Exists(file_name))
     with gfile.Open(file_name, mode="w") as w:
       w.write("")
@@ -208,8 +221,9 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    src_file_name = "igfs:///test_rename_file/1"
-    dst_file_name = "igfs:///test_rename_file/2"
+    gfile.MkDir(self.prefix() + ":///test_rename_file")
+    src_file_name = self.prefix() + ":///test_rename_file/1"
+    dst_file_name = self.prefix() + ":///test_rename_file/2"
     with gfile.Open(src_file_name, mode="w") as w:
       w.write("42")
     self.assertTrue(gfile.Exists(src_file_name))
@@ -231,8 +245,9 @@ class IGFSTest(test.TestCase):
 
     """
     # Setup and check preconditions.
-    src_dir_name = "igfs:///test_rename_dir/1"
-    dst_dir_name = "igfs:///test_rename_dir/2"
+    gfile.MkDir(self.prefix() + ":///test_rename_dir")
+    src_dir_name = self.prefix() + ":///test_rename_dir/1"
+    dst_dir_name = self.prefix() + ":///test_rename_dir/2"
     gfile.MkDir(src_dir_name)
     # Rename directory.
     gfile.Rename(src_dir_name, dst_dir_name)
@@ -245,6 +260,24 @@ class IGFSTest(test.TestCase):
     # Check that directory was removed.
     self.assertFalse(gfile.Exists(dst_dir_name))
 
+@pytest.mark.skipif(platform.uname()[0] == 'Darwin', reason=None)
+class TestGGFS(test.TestCase, __TestFS):
+  """Test GGFS.
+  """
+
+  def setUp(self): # pylint: disable=invalid-name
+    os.environ["IGNITE_PORT"] = '10801'
+    gfile.MkDir("ggfs:///")
+
+  def prefix(self):
+    return "ggfs"
+
+class TestIGFS(test.TestCase, __TestFS):
+  """Test IGFS.
+  """
+
+  def prefix(self):
+    return "igfs"
 
 class IgniteDatasetTest(test.TestCase):
   """The Apache Ignite servers have to setup before the test and tear down
@@ -309,7 +342,6 @@ class IgniteDatasetTest(test.TestCase):
     self.assertEqual({"key": 1, "val": {"NAME": b"TEST1", "VAL": 42}}, rows[0])
     self.assertEqual({"key": 2, "val": {"NAME": b"TEST2", "VAL": 43}}, rows[1])
     self.assertEqual({"key": 3, "val": {"NAME": b"TEST3", "VAL": 44}}, rows[2])
-
 
 if __name__ == "__main__":
   test.main()

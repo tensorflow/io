@@ -114,6 +114,7 @@ cc_binary(
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/cifar:cifar_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
+        "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/prometheus:prometheus_ops",

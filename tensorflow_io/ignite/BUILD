@@ -2,8 +2,8 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "python/ops/_ignite_ops.so",
+cc_library(
+    name = "ignite_ops",
     srcs = [
         "kernels/client/ignite_byte_swapper.h",
         "kernels/client/ignite_client.h",
@@ -18,6 +18,14 @@ cc_binary(
         "kernels/dataset/ignite_dataset_iterator.cc",
         "kernels/dataset/ignite_dataset_iterator.h",
         "kernels/dataset/ignite_dataset_ops.cc",
+        "kernels/ggfs/ggfs.cc",
+        "kernels/ggfs/ggfs.h",
+        "kernels/ggfs/ggfs_client.cc",
+        "kernels/ggfs/ggfs_client.h",
+        "kernels/ggfs/ggfs_random_access_file.cc",
+        "kernels/ggfs/ggfs_random_access_file.h",
+        "kernels/ggfs/ggfs_writable_file.cc",
+        "kernels/ggfs/ggfs_writable_file.h",
         "kernels/igfs/igfs.cc",
         "kernels/igfs/igfs.h",
         "kernels/igfs/igfs_client.cc",
@@ -31,6 +39,7 @@ cc_binary(
         "kernels/igfs/igfs_writable_file.cc",
         "kernels/igfs/igfs_writable_file.h",
         "ops/dataset_ops.cc",
+        "ops/ggfs_ops.cc",
         "ops/igfs_ops.cc",
     ],
     copts = [
@@ -38,7 +47,7 @@ cc_binary(
         "-std=c++11",
         "-DNDEBUG",
     ],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "@boringssl//:ssl",
         "@local_config_tf//:libtensorflow_framework",

@@ -28,8 +28,7 @@ import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-ignite_ops = _load_library("_ignite_ops.so")
+from tensorflow_io.core.python.ops import core_ops as ignite_ops
 
 @six.add_metaclass(abc.ABCMeta) # pylint: disable=useless-object-inheritance
 class Readable(object):

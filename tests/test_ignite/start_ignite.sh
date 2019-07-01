@@ -37,5 +37,9 @@ docker run -itd --name ignite-plain -p 10800:10800 \
 docker run -itd --name ignite-igfs -p 10500:10500 \
 -v ${SCRIPT_PATH}:/data apacheignite/ignite:${IGNITE_VERSION} /data/bin/start-igfs.sh
 
+# Start GridGain CE with GGFS.
+docker run -itd --name gridgain-ce-ml -p 10801:10801 \
+-v ${SCRIPT_PATH}:/data dmitrievanthony/gridgain-ce-ml /data/bin/start-ggfs.sh
+
 # Wait Apache Ignite to be started
-#sleep 10
+sleep 10
