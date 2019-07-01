@@ -42,15 +42,15 @@ import tensorflow as tf
     # batch, dtypes, shapes)
 
 
-# Start with JSON parser in python to add tests.
 def JSONDataset(filenames, columns=None):
+  """Start with JSON parser in python to add tests."""
   jsondataset = []
   jsondataset = JSONParser(filenames, columns)
   return tf.data.Dataset.from_tensor_slices(jsondataset)
 
 
-# JSON parser in Python for testing.
 def JSONParser(filenames, columns):
+  """JSON parser in Python for testing."""
   with open(filenames) as json_file:
     data = json.load(json_file)
   dataset = []

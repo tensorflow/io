@@ -55,6 +55,7 @@ def test_json_dataset():
     i += 1
   assert i == len(y_test)
 
+  ## Test of the reverse order of the columns
   feature_list = ["integerfeature", "floatfeature"]
   feature_dataset = json_io.JSONDataset(feature_filename, feature_list)
 
