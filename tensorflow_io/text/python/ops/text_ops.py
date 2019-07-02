@@ -55,6 +55,16 @@ class TextDataset(data_ops.Dataset):
         data_input,
         batch, dtypes, shapes)
 
+  @staticmethod
+  def save(dataset, filename):
+    """Save Dataset to disk.
+
+    Args:
+      dataset: A TextDataset to be saved.
+      filename: A `tf.string` tensor containing filename.
+    """
+    return text_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+
 
 class TextOutputSequence(object):
   """TextOutputSequence"""
