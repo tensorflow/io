@@ -102,5 +102,30 @@ def test_text_output_sequence():
   for line, prediction in zip(lines, predictions):
     assert line == prediction
 
+def test_text_output():
+  """test_text_output"""
+  text_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(text_filename, 'rb') as f:
+    lines = [line.strip() for line in f]
+  text_filename = "file://" + text_filename
+
+  text_dataset = text_io.TextDataset([text_filename, text_filename], batch=2)
+
+  text_dataset = text_dataset.map(lambda x: tf.strings.join([x[0], x[1]]))
+
+  f, filename = tempfile.mkstemp()
+  os.close(f)
+
+  text_io.TextDataset.save(text_dataset, filename)
+
+  with open(filename, 'rb') as f:
+    saved_lines = [line.strip() for line in f]
+  for i, _ in enumerate(saved_lines):
+    assert saved_lines[i] == lines[
+        (2 * i) % len(lines)] + lines[
+            (2 * i + 1) % len(lines)]
+  assert len(saved_lines) == len(lines)
+
 if __name__ == "__main__":
   test.main()
