@@ -16,8 +16,6 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_BIGQUERY_KERNELS_TEST_KERNELS_BIGTABLE_FAKE_H_
 #define TENSORFLOW_IO_BIGQUERY_KERNELS_TEST_KERNELS_BIGTABLE_FAKE_H_
 
-#include <cstring>
-#include <iostream>
 #include <string>
 #include <vector>
 

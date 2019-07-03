@@ -213,7 +213,7 @@ class ToBigtableOp : public AsyncOpKernel {
       column_families.reserve(column_families_tensor->NumElements());
       std::vector<string> columns;
       columns.reserve(column_families_tensor->NumElements());
-      for (auto i = 0; i < column_families_tensor->NumElements(); ++i) {
+      for (uint64 i = 0; i < column_families_tensor->NumElements(); ++i) {
         column_families.push_back(column_families_tensor->flat<string>()(i));
         columns.push_back(columns_tensor->flat<string>()(i));
       }
