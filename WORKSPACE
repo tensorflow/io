@@ -437,6 +437,17 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "jsoncpp_git",
+    build_file = "//third_party:jsoncpp.BUILD",
+    sha256 = "c49deac9e0933bcb7044f08516861a2d560988540b23de2ac1ad443b219afdb6",
+    strip_prefix = "jsoncpp-1.8.4",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
+        "https://github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
+    ],
+)
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Note: patch is needed as we need to resolve multiple zlib dependencies.
