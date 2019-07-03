@@ -39,7 +39,7 @@ REGISTER_OP("BigQueryReadSession")
     .Output("streams: string")
     .Output("avro_schema: string")
     .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
-      c->set_output(0, c->Vector(1));
+      c->set_output(0, c->Vector(c->UnknownDim()));
       c->set_output(1, c->Scalar());
       return tensorflow::Status::OK();
     });
