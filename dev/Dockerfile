@@ -43,6 +43,7 @@ RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     google-cloud-pubsub==0.39.1 \
     pyarrow==${ARROW_VERSION} \
     pandas \
+    fastavro \
     ${PIP_ADD_PACKAGES} \
     "
 
