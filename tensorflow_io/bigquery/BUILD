@@ -58,11 +58,11 @@ cc_test(
     srcs = ["kernels/test_kernels/bigquery_fake_test.cc"],
     deps = [
         ":bigquery_fake",
+        "@com_google_googletest//:gtest_main",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:bigquerystorage_cc_grpc",
-        "@com_google_googletest//:gtest_main",
         "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
+        "@local_config_tf//:tf_header_lib",           
     ],
 )
 
@@ -80,7 +80,7 @@ cc_library(
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:bigquerystorage_cc_grpc",
         "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
+        "@local_config_tf//:tf_header_lib",        
     ],
 )
 
@@ -103,3 +103,5 @@ cc_library(
         "@local_config_tf//:tf_header_lib",
     ],
 )
+
+
