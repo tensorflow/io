@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "tensorflow_io/bigtable/kernels/test_kernels/bigtable_test_client.h"
 
-#include "external/com_github_googleapis_googleapis/google/bigtable/v2/data.pb.h"
+#include "external/com_google_googleapis/google/bigtable/v2/data.pb.h"
 #include "google/protobuf/wrappers.pb.h"
 #include "re2/re2.h"
 #include "tensorflow/core/lib/strings/stringprintf.h"
@@ -95,7 +95,7 @@ class SampleRowKeysResponse : public grpc::ClientReaderInterface<
 
  private:
   mutex mu_;
-  int64 num_messages_sent_ GUARDED_BY(mu_) = 0;
+  uint64 num_messages_sent_ GUARDED_BY(mu_) = 0;
   BigtableTestClient* client_;  // Not owned.
 };
 
@@ -436,5 +436,26 @@ std::shared_ptr<grpc::Channel> BigtableTestClient::Channel() {
   LOG(WARNING) << "Call to InMemoryDataClient::Channel(); this will likely "
                   "cause a crash!";
   return nullptr;
+}
+
+std::unique_ptr<::grpc::ClientAsyncReaderInterface<
+    ::google::bigtable::v2::ReadRowsResponse>>
+BigtableTestClient::PrepareAsyncReadRows(::grpc::ClientContext* context,
+                       const ::google::bigtable::v2::ReadRowsRequest& request,
+                       ::grpc::CompletionQueue* cq) {
+  LOG(WARNING) << "Call to InMemoryDataClient::Channel(); this will likely "
+                  "cause a crash!";
+  return nullptr;            
+};
+
+std::unique_ptr<::grpc::ClientAsyncReaderInterface<
+    ::google::bigtable::v2::MutateRowsResponse>>
+BigtableTestClient::PrepareAsyncMutateRows(
+      ::grpc::ClientContext* context,
+      const ::google::bigtable::v2::MutateRowsRequest& request,
+      ::grpc::CompletionQueue* cq) {
+  LOG(WARNING) << "Call to InMemoryDataClient::Channel(); this will likely "
+                  "cause a crash!";        
+  return nullptr;            
 }
 }  // namespace tensorflow
