@@ -32,7 +32,9 @@ class KafkaDataset(data.Dataset):
                servers="localhost",
                group="",
                eof=False,
-               timeout=1000):
+               timeout=1000,
+               config_global=None,
+               config_topic=None):
     """Create a KafkaReader.
 
     Args:
@@ -44,6 +46,17 @@ class KafkaDataset(data.Dataset):
       eof: If True, the kafka reader will stop on EOF.
       timeout: The timeout value for the Kafka Consumer to wait
                (in millisecond).
+      config_global: A `tf.string` tensor containing global configuration
+                     properties in [Key=Value] format,
+                     eg. ["enable.auto.commit=false",
+                          "heartbeat.interval.ms=2000"],
+                     please refer to 'Global configuration properties'
+                     in librdkafka doc.
+      config_topic: A `tf.string` tensor containing topic configuration
+                    properties in [Key=Value] format,
+                    eg. ["auto.offset.reset=earliest"],
+                    please refer to 'Topic configuration properties'
+                    in librdkafka doc.
     """
     self._topics = tf.convert_to_tensor(
         topics, dtype=dtypes.string, name="topics")
@@ -54,6 +67,12 @@ class KafkaDataset(data.Dataset):
     self._eof = tf.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
     self._timeout = tf.convert_to_tensor(
         timeout, dtype=dtypes.int64, name="timeout")
+    config_global = config_global if config_global else []
+    self._config_global = tf.convert_to_tensor(
+        config_global, dtype=dtypes.string, name="config_global")
+    config_topic = config_topic if config_topic else []
+    self._config_topic = tf.convert_to_tensor(
+        config_topic, dtype=dtypes.string, name="config_topic")
     super(KafkaDataset, self).__init__()
 
   def _inputs(self):
@@ -61,7 +80,8 @@ class KafkaDataset(data.Dataset):
 
   def _as_variant_tensor(self):
     return kafka_ops.kafka_dataset(self._topics, self._servers,
-                                   self._group, self._eof, self._timeout)
+                                   self._group, self._eof, self._timeout,
+                                   self._config_global, self._config_topic)
 
   @property
   def output_classes(self):

@@ -49,7 +49,25 @@ class KafkaDatasetOp : public DatasetOpKernel {
     OP_REQUIRES(ctx, (timeout > 0),
                 errors::InvalidArgument(
                     "Timeout value should be large than 0, got ", timeout));
-    *output = new Dataset(ctx, std::move(topics), servers, group, eof, timeout);
+
+    const Tensor* config_global_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("config_global", &config_global_tensor));
+    std::vector<string> config_global;
+    config_global.reserve(config_global_tensor->NumElements());
+    for (int i = 0; i < config_global_tensor->NumElements(); ++i) {
+      config_global.push_back(config_global_tensor->flat<string>()(i));
+    }
+
+    const Tensor* config_topic_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("config_topic", &config_topic_tensor));
+    std::vector<string> config_topic;
+    config_topic.reserve(config_topic_tensor->NumElements());
+    for (int i = 0; i < config_topic_tensor->NumElements(); ++i) {
+      config_topic.push_back(config_topic_tensor->flat<string>()(i));
+    }
+
+    *output = new Dataset(ctx, std::move(topics), servers, group, eof, timeout,
+                          std::move(config_global), std::move(config_topic));
   }
 
  private:
@@ -57,13 +75,16 @@ class KafkaDatasetOp : public DatasetOpKernel {
    public:
     Dataset(OpKernelContext* ctx, std::vector<string> topics,
             const string& servers, const string& group, const bool eof,
-            const int64 timeout)
+            const int64 timeout, std::vector<string> config_global,
+            std::vector<string> config_topic)
         : DatasetBase(DatasetContext(ctx)),
           topics_(std::move(topics)),
           servers_(servers),
           group_(group),
           eof_(eof),
-          timeout_(timeout) {}
+          timeout_(timeout),
+          config_global_(std::move(config_global)),
+          config_topic_(std::move(config_topic)) {}
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
@@ -98,12 +119,56 @@ class KafkaDatasetOp : public DatasetOpKernel {
       TF_RETURN_IF_ERROR(b->AddScalar(eof_, &eof));
       Node* timeout = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(timeout_, &timeout));
+      Node* config_global = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(config_global_, &config_global));
+      Node* config_topic = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(config_topic_, &config_topic));
       TF_RETURN_IF_ERROR(
-          b->AddDataset(this, {topics, servers, group, eof, timeout}, output));
+          b->AddDataset(this, {topics, servers, group, eof, timeout,
+                        config_global, config_topic}, output));
       return Status::OK();
     }
 
    private:
+      class KafkaEventCb : public RdKafka::EventCb {
+        public:
+          KafkaEventCb(bool &run):run_(run) {}
+
+          void event_cb (RdKafka::Event &event) {
+            switch (event.type())
+            {
+              case RdKafka::Event::EVENT_ERROR:
+                LOG(ERROR) << "EVENT_ERROR: " << "(" <<
+                  RdKafka::err2str(event.err()) << "): " << event.str();
+                if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN)
+                  run_ = false;
+                break;
+
+              case RdKafka::Event::EVENT_STATS:
+                LOG(ERROR) << "EVENT_STATS: " << event.str();
+                break;
+
+              case RdKafka::Event::EVENT_LOG:
+                LOG(ERROR) << "EVENT_LOG: " << event.severity() <<
+                  "-" << event.fac().c_str() << "-" << event.str().c_str();
+                break;
+
+              case RdKafka::Event::EVENT_THROTTLE:
+                LOG(ERROR) << "EVENT_THROTTLE: " << event.throttle_time() << "ms by "
+                  << event.broker_name() << " id " << (int)event.broker_id();
+                break;
+
+              default:
+                LOG(ERROR) << "EVENT: " << event.type() <<
+                  " (" << RdKafka::err2str(event.err()) << "): " << event.str();
+                break;
+            }
+          }
+
+       private:
+        bool &run_;
+      };
+
     class Iterator : public DatasetIterator<Dataset> {
      public:
       explicit Iterator(const Params& params)
@@ -116,7 +181,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
         do {
           // We are currently processing a topic, so try to read the next line.
           if (consumer_.get()) {
-            while (true) {
+            while (run_) {
               if (limit_ >= 0 &&
                   (topic_partition_->offset() >= limit_ || offset_ >= limit_)) {
                 // EOF current topic
@@ -138,19 +203,27 @@ class KafkaDatasetOp : public DatasetOpKernel {
               }
 
               if (message->err() == RdKafka::ERR__PARTITION_EOF) {
-                  LOG(INFO) << "Partition reach EOF: " << dataset()->topics_[current_topic_index_]
+                  LOG(INFO) << "Partition reach EOF: "
+                    << dataset()->topics_[current_topic_index_]
                     << ", current offset: " << offset_;
 
                   if (dataset()->eof_) break;
               }
-              else {
-                  if (message->err() != RdKafka::ERR__TIMED_OUT) {
-                      return errors::Internal("Failed to consume:",
-                                        message->errstr());
-                  }
+              else if (message->err() == RdKafka::ERR__TRANSPORT) {
+                  // Not return error here because consumer will try re-connect.
+                  LOG(ERROR) << "Broker transport failure: " << message->errstr();
+              }
+              else if (message->err() != RdKafka::ERR__TIMED_OUT) {
+                  LOG(ERROR) << "Failed to consume: " << message->errstr();
+                  return errors::Internal("Failed to consume: ",
+                                          message->errstr());
               }
 
               message.reset(nullptr);
+            }
+
+            if (!run_) {
+              return errors::Internal("Failed to consume due to all brokers down");
             }
 
             // We have reached the end of the current topic, so maybe
@@ -275,13 +348,46 @@ class KafkaDatasetOp : public DatasetOpKernel {
             RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
         std::unique_ptr<RdKafka::Conf> topic_conf(
             RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
+        RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
 
         std::string errstr;
 
-        RdKafka::Conf::ConfResult result =
-            conf->set("default_topic_conf", topic_conf.get(), errstr);
+        for (auto it = dataset()->config_topic_.begin();
+          it != dataset()->config_topic_.end(); it++)
+        {
+          std::vector<string> parts = str_util::Split(*it, "=");
+          if (parts.size() != 2) {
+            return errors::InvalidArgument("Invalid topic configuration: ", *it);
+          }
+          result = topic_conf->set(parts[0], parts[1], errstr);
+          if (result != RdKafka::Conf::CONF_OK) {
+            return errors::Internal("Failed to do topic configuration:", *it,
+                                    "error:", errstr);
+          }
+        }
+
+        result = conf->set("default_topic_conf", topic_conf.get(), errstr);
         if (result != RdKafka::Conf::CONF_OK) {
           return errors::Internal("Failed to set default_topic_conf:", errstr);
+        }
+
+        for (auto it = dataset()->config_global_.begin(); 
+          it != dataset()->config_global_.end(); it++)
+        {
+          std::vector<string> parts = str_util::Split(*it, "=");
+          if (parts.size() != 2) {
+            return errors::InvalidArgument("Invalid global configuration: ", *it);
+          }
+          result = conf->set(parts[0], parts[1], errstr);
+          if (result != RdKafka::Conf::CONF_OK) {
+            return errors::Internal("Failed to do global configuration: ", *it,
+                                    "error:", errstr);
+          }
+        }
+
+        result = conf->set("event_cb", &kafka_event_cb, errstr);
+        if (result != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("Failed to set event_cb:", errstr);
         }
 
         result = conf->set("bootstrap.servers", dataset()->servers_, errstr);
@@ -323,11 +429,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
       }
 
       mutex mu_;
+      bool run_ GUARDED_BY(mu_) = true;
       size_t current_topic_index_ GUARDED_BY(mu_) = 0;
       int64 offset_ GUARDED_BY(mu_) = 0;
       int64 limit_ GUARDED_BY(mu_) = -1;
       std::unique_ptr<RdKafka::TopicPartition> topic_partition_ GUARDED_BY(mu_);
       std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
+      KafkaEventCb kafka_event_cb = KafkaEventCb(run_);
     };
 
     const std::vector<string> topics_;
@@ -335,6 +443,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
     const std::string group_;
     const bool eof_;
     const int64 timeout_;
+    const std::vector<string> config_global_;
+    const std::vector<string> config_topic_;
   };
 };
 
