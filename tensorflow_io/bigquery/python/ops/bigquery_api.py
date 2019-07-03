@@ -212,7 +212,7 @@ class BigQueryReadSession(object):
     streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
     return streams_ds.apply(
         interleave_ops.parallel_interleave(
-            lambda stream: self.read_rows(stream),
+            self.read_rows,
             cycle_length=cycle_length,
             sloppy=sloppy,
             block_length=block_length))
