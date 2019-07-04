@@ -44,11 +44,6 @@ class AZFSTest(test.TestCase):
     if not gfile.IsDirectory(self.path_root):
       gfile.MakeDirs(self.path_root)
 
-  def tearDown(self): # pylint: disable=invalid-name
-    #   Cleanup container
-    if gfile.IsDirectory(self.path_root):
-      gfile.DeleteRecursively(self.path_root)
-
   def test_exists(self):
     self.assertTrue(gfile.IsDirectory(self.path_root))
 

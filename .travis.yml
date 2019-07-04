@@ -7,9 +7,6 @@ git:
 services:
 - docker
 
-env:
-- TF_AZURE_USE_DEV_STORAGE=1
-
 before_install:
 - nvm install 8
 
