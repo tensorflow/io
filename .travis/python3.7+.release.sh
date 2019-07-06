@@ -49,7 +49,7 @@ if [[ "$#" -gt 0 ]]; then
     export TENSORFLOW_INSTALL="${1}"
     shift
 fi
-export BAZEL_VERSION=0.24.1 BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+export BAZEL_VERSION=0.28.1 BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 
 
 
