@@ -77,7 +77,8 @@ class BigtableClientOp : public OpKernel {
                   BigtableClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                 auto client_options =
                     google::cloud::bigtable::ClientOptions()
-                        .set_connection_pool_size(connection_pool_size_);
+                        .set_connection_pool_size(connection_pool_size_)
+                        .set_data_endpoint("batch-bigtable.googleapis.com");
                 auto channel_args = client_options.channel_arguments();
                 channel_args.SetMaxReceiveMessageSize(
                     max_receive_message_size_);
@@ -261,30 +262,31 @@ class ToBigtableOp : public AsyncOpKernel {
           }
           components.clear();
         }
-        grpc::Status mutation_status;
+        ::google::cloud::Status mutation_status;
         std::vector<::google::cloud::bigtable::FailedMutation> failures =
-            resource->table().BulkApply(std::move(mutation), mutation_status);
-        if (!mutation_status.ok()) {
-          LOG(ERROR) << "Failure applying mutation: "
-                     << mutation_status.error_code() << " - "
-                     << mutation_status.error_message() << " ("
-                     << mutation_status.error_details() << ").";
-        }
+            resource->table().BulkApply(mutation);
         if (!failures.empty()) {
+          mutation_status = failures.front().status();
+          if (!mutation_status.ok()) {
+            LOG(ERROR) << "Failure applying mutation: "
+                       << mutation_status.code() << " - "
+                       << mutation_status.message() << ".";
+          }
+          ::google::bigtable::v2::MutateRowsRequest request;
+          mutation.MoveTo(&request);
           for (const auto& failure : failures) {
             LOG(ERROR) << "Failure applying mutation on row ("
-                       << failure.original_index()
-                       << "): " << failure.mutation().row_key()
+                       << failure.original_index() << "): "
+                       << request.entries(failure.original_index()).row_key()
                        << " - error: " << failure.status().message() << ".";
           }
         }
         OP_REQUIRES_ASYNC(
-            ctx, failures.empty() && mutation_status.ok(),
+            ctx, failures.empty(),
             errors::Unknown("Failure while writing to Cloud Bigtable: ",
-                            mutation_status.error_code(), " - ",
-                            mutation_status.error_message(), " (",
-                            mutation_status.error_details(),
-                            "), # of mutation failures: ", failures.size(),
+                            mutation_status.code(), " - ",
+                            mutation_status.message(),
+                            "; # of mutation failures: ", failures.size(),
                             ". See the log for the specific error details."),
             done);
       } while (!end_of_sequence);
@@ -295,7 +297,7 @@ class ToBigtableOp : public AsyncOpKernel {
  private:
   static string SanitizeThreadSuffix(string suffix) {
     string clean;
-    for (int i = 0; i < suffix.size(); ++i) {
+    for (uint i = 0; i < suffix.size(); ++i) {
       const char ch = suffix[i];
       if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
           (ch >= '0' && ch <= '9') || ch == '_' || ch == '-') {
