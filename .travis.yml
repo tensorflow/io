@@ -1,11 +1,14 @@
 dist: xenial
-language: minimal
+language: generic
 
 git:
   quiet: true
 
 services:
 - docker
+
+before_install:
+- nvm install 8
 
 install:
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
@@ -20,6 +23,7 @@ install:
     bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
     bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
     bash -x -e tests/test_prometheus/prometheus_test.sh start
+    bash -x -e tests/test_azure/start_azure.sh
   fi
 - sudo -H python -m pip install -q -U twine --ignore-installed six
 - twine --version

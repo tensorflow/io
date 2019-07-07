@@ -202,6 +202,32 @@ http_archive(
 )
 
 http_archive(
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:azure.patch",
+    ],
+    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
+    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
+    urls = [
+        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
+        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
+    ],
+)
+
+http_archive(
+    name = "util_linux",
+    build_file = "//third_party:uuid.BUILD",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    strip_prefix = "util-linux-2.32.1",
+    urls = [
+        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_github_grpc_grpc",
     sha256 = "1bf082fb3016154d3f806da8eb5876caf05743da4b2e8130fadd000df74b5bb6",
     strip_prefix = "grpc-1.21.1",
@@ -295,11 +321,11 @@ http_archive(
 
 http_archive(
     name = "com_google_googletest",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
+    sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
+    strip_prefix = "googletest-release-1.8.1",
     urls = [
-        "https://mirror.bazel.build/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-        "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
+        "https://mirror.bazel.build/github.com/google/googletest/archive/release-1.8.1.tar.gz",
+        "https://github.com/google/googletest/archive/release-1.8.1.tar.gz",
     ],
 )
 
