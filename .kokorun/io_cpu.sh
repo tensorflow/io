@@ -51,6 +51,7 @@ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
 bash -x -e tests/test_prometheus/prometheus_test.sh start
+bash -x -e tests/test_azure/start_azure.sh
 
 export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
 PYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0]))')
