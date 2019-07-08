@@ -18,8 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
-import pytest
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
