@@ -75,8 +75,6 @@ class AZFSTest(test.TestCase):
 
     gfile.Remove(file_name)
 
-  # TODO: Fix test on Linux.
-  @pytest.mark.skipif(sys.platform != "darwin", reason=None)
   def test_write_read_file(self):
     """Test write/read file.
     """
