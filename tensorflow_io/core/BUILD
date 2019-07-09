@@ -102,7 +102,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflowio.so",
+    name = "python/ops/libtensorflow_io.so",
     copts = [
         "-pthread",
         "-std=c++11",
@@ -126,7 +126,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflowio_ffmpeg_3.4.so",
+    name = "python/ops/libtensorflow_io_ffmpeg_3.4.so",
     copts = [
         "-pthread",
         "-std=c++11",
@@ -139,7 +139,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflowio_ffmpeg_2.8.so",
+    name = "python/ops/libtensorflow_io_ffmpeg_2.8.so",
     copts = [
         "-pthread",
         "-std=c++11",
@@ -152,7 +152,7 @@ cc_binary(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflowio_libav_9.20.so",
+    name = "python/ops/libtensorflow_io_libav_9.20.so",
     copts = [
         "-pthread",
         "-std=c++11",
