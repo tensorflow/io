@@ -46,19 +46,19 @@ def _load_dependency_and_library(p):
   raise NotImplementedError("could not find ffmpeg after search through ", p)
 
 _ffmpeg_ops = _load_dependency_and_library({
-    'libtensorflowio_ffmpeg_3.4.so': [
+    'libtensorflow_io_ffmpeg_3.4.so': [
         "libavformat.so.57",
         "libavformat.so.57",
         "libavutil.so.55",
         "libswscale.so.4",
     ],
-    'libtensorflowio_ffmpeg_2.8.so': [
+    'libtensorflow_io_ffmpeg_2.8.so': [
         "libavformat-ffmpeg.so.56",
         "libavcodec-ffmpeg.so.56",
         "libavutil-ffmpeg.so.54",
         "libswscale-ffmpeg.so.3",
     ],
-    'libtensorflowio_libav_9.20.so': [
+    'libtensorflow_io_libav_9.20.so': [
         "libavformat.so.54",
         "libavcodec.so.54",
         "libavutil.so.52",
