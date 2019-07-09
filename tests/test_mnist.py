@@ -19,8 +19,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+
 import tensorflow as tf
 import tensorflow_io.mnist as mnist_io
+
+import pytest
 
 def test_mnist_tutorial():
   """test_mnist_tutorial"""
@@ -51,6 +55,7 @@ def test_mnist_tutorial():
 
   model.fit(d_train, epochs=5)
 
+@pytest.mark.skipif(sys.platform == "darwin", reason=None)
 def test_mnist_tutorial_uncompressed():
   """test_mnist_tutorial_uncompressed"""
   image_filename = os.path.join(
