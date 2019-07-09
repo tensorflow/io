@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import tempfile
 from six.moves.urllib.request import urlopen
 
@@ -30,9 +31,12 @@ from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
 import tensorflow_io.cifar as cifar_io # pylint: disable=wrong-import-position
 
+import pytest # pylint: disable=wrong-import-position
+
 class CIFARDatasetTest(test.TestCase):
   """CIFARDatasetTest"""
 
+  @pytest.mark.skipif(sys.platform == "darwin", reason=None)
   def test_cifar_10_dataset(self):
     """Test case for CIFARDataset.
     """
