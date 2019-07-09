@@ -204,10 +204,6 @@ http_archive(
 http_archive(
     name = "com_github_azure_azure_storage_cpplite",
     build_file = "//third_party:azure.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:azure.patch",
-    ],
     sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
     strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
     urls = [

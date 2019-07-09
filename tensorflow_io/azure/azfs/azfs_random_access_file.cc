@@ -33,7 +33,9 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
 
   std::ostringstream oss;
   // https://stackoverflow.com/a/12481580
-  // oss.rdbuf()->pubsetbuf(scratch, n);
+#ifndef __APPLE__
+  oss.rdbuf()->pubsetbuf(scratch, n);
+#endif
 
   blob_client.download_blob_to_stream(container_, object_, offset, n, oss);
   if (errno != 0) {
@@ -44,11 +46,15 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
                             " (", errno_to_string(), ")");
   }
 
+#ifndef __APPLE__
+  *result = StringPiece(scratch, n);
+#else
   auto blob_string = oss.str();
   if (scratch != nullptr) {
     std::copy(blob_string.begin(), blob_string.end(), scratch);
   }
   *result = StringPiece(blob_string);
+#endif
 
   return Status::OK();
 }
