@@ -8,18 +8,8 @@ c_opts = [
     "-DNDEBUG",
 ]
 
-cc_binary(
-    name = "_azfs.so",
-    srcs = [],
-    copts = c_opts,
-    linkshared = True,
-    deps = [
-        ":azfs",
-    ],
-)
-
 cc_library(
-    name = "azfs",
+    name = "azfs_ops",
     srcs = [
         "azfs/azfs.cc",
         "azfs/azfs.h",
@@ -101,19 +91,8 @@ cc_test(
     name = "azfs_cc_test",
     srcs = ["azfs/azfs_test.cc"],
     deps = [
-        ":azfs",
+        ":azfs_ops",
         "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
     ],
-)
-
-py_library(
-    name = "azfs_ops_py",
-    srcs = [
-        "azfs_ops.py",
-    ],
-    data = [
-        ":_azfs.so",
-    ],
-    srcs_version = "PY2AND3",
 )
