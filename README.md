@@ -28,6 +28,7 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.grpc`: gRPC server Dataset, support for streaming Numpy input.
 - `tensorflow_io.hdf5`: HDF5 file format support.
 - `tensorflow_io.text`: Text file with archive support.
+- `tensorflow_io.azure`: Microsoft Azure Storage support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/azure/README.md).
 
 ## Installation
 
