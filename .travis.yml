@@ -20,10 +20,11 @@ install:
     # otherwise it may run into issues competing with other services.
     bash -x -e tests/test_ignite/start_ignite.sh
     bash -x -e tests/test_kafka/kafka_test.sh start kafka
-    bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-    bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
-    bash -x -e tests/test_prometheus/prometheus_test.sh start
     bash -x -e tests/test_azure/start_azure.sh
+    # Kinesis, Pubsub, and Prometheus are not supported on macOS yet
+    #bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+    #bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+    #bash -x -e tests/test_prometheus/prometheus_test.sh start
   fi
 - sudo -H python -m pip install -q -U twine --ignore-installed six
 - twine --version
