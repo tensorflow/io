@@ -26,6 +26,7 @@ cc_library(
         "azfs/azfs_ops.cc",
     ],
     copts = c_opts,
+    linkstatic = True,
     deps = [
         ":azfs_random_access_file",
         ":azfs_readonly_memory_region",
@@ -42,6 +43,7 @@ cc_library(
         "azfs/azfs_client.h",
     ],
     copts = c_opts,
+    linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
         "@local_config_tf//:libtensorflow_framework",
@@ -58,6 +60,7 @@ cc_library(
         "azfs/azfs_writable_file.h",
     ],
     copts = c_opts,
+    linkstatic = True,
     deps = [
         ":azfs_client",
     ],
@@ -72,6 +75,7 @@ cc_library(
         "azfs/azfs_random_access_file.h",
     ],
     copts = c_opts,
+    linkstatic = True,
     deps = [
         ":azfs_client",
     ],
@@ -83,6 +87,7 @@ cc_library(
         "azfs/azfs_readonly_memory_region.h",
     ],
     copts = c_opts,
+    linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
