@@ -19,11 +19,11 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class TextInput: public FileInput<io::BufferedInputStream> {
+class TextInput: public FileStreamInput<io::BufferedInputStream> {
  public:
-  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, bool owns_input_stream, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new io::BufferedInputStream(s, 4096));
+      state.reset(new io::BufferedInputStream(s, 4096, owns_input_stream));
     }
     Tensor value_tensor(ctx->allocator({}), DT_STRING, {record_to_read});
     while ((*record_read) < record_to_read) {
@@ -69,5 +69,10 @@ REGISTER_KERNEL_BUILDER(Name("TextInput").Device(DEVICE_CPU),
                         FileInputOp<TextInput>);
 REGISTER_KERNEL_BUILDER(Name("TextDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<TextInput, io::BufferedInputStream>);
+
+REGISTER_KERNEL_BUILDER(Name("TextStreamInput").Device(DEVICE_CPU),
+                        StreamInputOp<TextInput>);
+REGISTER_KERNEL_BUILDER(Name("TextStreamDataset").Device(DEVICE_CPU),
+                        StreamInputDatasetOp<TextInput, io::BufferedInputStream>);
 }  // namespace data
 }  // namespace tensorflow

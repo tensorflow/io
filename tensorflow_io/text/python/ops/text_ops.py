@@ -35,9 +35,14 @@ class TextDataset(data_ops.Dataset):
     shapes = [
         tf.TensorShape([])] if batch == 0 else [
             tf.TensorShape([None])]
+    fn = text_ops.text_stream_dataset if (
+        filename == 'file://-') else text_ops.text_dataset
+    data_input = text_ops.text_stream_input(filename) if (
+        filename == 'file://-') else text_ops.text_input(
+            filename, ["none", "gz"])
     super(TextDataset, self).__init__(
-        text_ops.text_dataset,
-        text_ops.text_input(filename, ["none", "gz"]),
+        fn,
+        data_input,
         batch, dtypes, shapes)
 
 
