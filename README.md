@@ -197,6 +197,11 @@ until_out_of_range({
 * SIG IO [Monthly Meeting Notes](https://docs.google.com/document/d/1CB51yJxns5WA4Ylv89D-a5qReiGTC0GYum6DU-9nKGo/edit)
 * Gitter room: [tensorflow/sig-io](https://gitter.im/tensorflow/sig-io)
 
+## More Information
+
+* [How to build a custom Dataset for Tensorflow](https://towardsdatascience.com/how-to-build-a-custom-dataset-for-tensorflow-1fe3967544d8) - [Ivelin Ivanov](https://github.com/ivelin)
+* [TensorFlow on Apache Ignite](https://medium.com/tensorflow/tensorflow-on-apache-ignite-99f1fc60efeb) - [Anton Dmitriev](https://github.com/dmitrievanthony)
+
 ## License
 
 [Apache License 2.0](LICENSE)
