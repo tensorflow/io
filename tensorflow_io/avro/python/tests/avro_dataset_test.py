@@ -636,6 +636,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     record_data = [
       {"sparse_type": [{"index": 0, "value": 5.0}, {"index": 3, "value": 2.0}]},
       {"sparse_type": [{"index": 2, "value": 7.0}]},
+      {"sparse_type": [{"index": 1, "value": 6.0}]},
+      {"sparse_type": [{"index": 3, "value": 3.0}]}
     ]
     features = {
       "sparse_type": parsing_ops.SparseFeature(index_key="index",
@@ -647,7 +649,11 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       {"sparse_type": sparse_tensor.SparseTensorValue(
           np.asarray([[0, 0], [0, 3], [1, 2]]),
           np.asarray([5.0, 2.0, 7.0]),
-          np.asarray([2, 3]))}
+          np.asarray([2, 3]))},
+      {"sparse_type": sparse_tensor.SparseTensorValue(
+          np.asarray([[0, 1], [1, 3]]),
+          np.asarray([6.0, 3.0]),
+          np.asarray([2, 2]))}
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,

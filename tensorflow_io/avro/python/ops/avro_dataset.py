@@ -87,7 +87,7 @@ class _AvroDataset(DatasetSource):
       for shape in dense_shape_as_shape
     ]
     sparse_output_shapes = [
-      [None]
+      [None, None]  # One for batch and one for length of sparse tensor
       for _ in range(len(sparse_keys))
     ]
 
