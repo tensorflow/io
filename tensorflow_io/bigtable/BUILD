@@ -29,8 +29,8 @@ cc_binary(
     ],
 )
 
-cc_binary(
-    name = "python/ops/_bigtable_test.so",
+cc_library(
+    name = "bigtable_test",
     srcs = [
         "kernels/test_kernels/bigtable_test_client_op.cc",
         "ops/bigtable_test_ops.cc",
@@ -40,7 +40,7 @@ cc_binary(
         "-std=c++11",
         "-DNDEBUG",
     ],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         ":bigtable_lib_cc",
         ":bigtable_test_client",
