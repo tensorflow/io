@@ -18,11 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import pytest
 import tensorflow as tf
 
-from tensorflow_io import gcs
 from tensorflow.python.platform import test
+from tensorflow_io import gcs
 
 tf_v1 = tf.version.VERSION.startswith('1')
 
@@ -32,7 +31,10 @@ class GcsConfigOpsTest(test.TestCase):
     cfg = gcs.BlockCacheParams(max_bytes=1024*1024*1024)
     if tf_v1:
       with tf.Session() as session:
-        gcs.configure_gcs(session, credentials=None, block_cache=cfg, device=None)
+        gcs.configure_gcs(session,
+                          credentials=None,
+                          block_cache=cfg,
+                          device=None)
     else:
       gcs.configure_gcs(block_cache=cfg)
 
