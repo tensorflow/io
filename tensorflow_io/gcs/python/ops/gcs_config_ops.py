@@ -34,11 +34,7 @@ from tensorflow_io import _load_library
 # version instead.
 tf_v1 = tf.version.VERSION.startswith('1')
 
-if tf_v1:
-  from tensorflow.contrib.cloud.python.ops import gen_gcs_config_ops  # pylint: disable=ungrouped-imports
-  gcs_configure_credentials = gen_gcs_config_ops.gcs_configure_credentials
-  gcs_configure_block_cache = gen_gcs_config_ops.gcs_configure_block_cache
-else:
+if not tf_v1:
   _gcs_config_so = _load_library("_gcs_config_ops.so")
   gcs_configure_credentials = _gcs_config_so.gcs_configure_credentials
   gcs_configure_block_cache = _gcs_config_so.gcs_configure_block_cache
@@ -178,47 +174,6 @@ class ConfigureGcsHook(training.SessionRunHook):
     if self._block_cache_op:
       session.run(self._block_cache_op)
 
-
-def _configure_gcs_tfv1(session,
-                        credentials=None,
-                        block_cache=None,
-                        device=None):
-  """Configures the GCS file system for a given a session.
-
-  Warning: GCS `credentials` may be transmitted over the network unencrypted.
-  Please ensure that the network is trusted before using this function. For
-  users running code entirely within Google Cloud, your data is protected by
-  encryption in between data centers. For more information, please take a look
-  at https://cloud.google.com/security/encryption-in-transit/.
-
-  Args:
-    session: A `tf.Session` session that should be used to configure the GCS
-      file system.
-    credentials: [Optional.] A JSON string
-    block_cache: [Optional.] A BlockCacheParams to configure the block cache .
-    device: [Optional.] The device to place the configure ops.
-  """
-  def configure(credentials, block_cache):
-    """Helper function to actually configure GCS."""
-    if credentials:
-      if isinstance(credentials, dict):
-        credentials = json.dumps(credentials)
-      placeholder = array_ops.placeholder(dtypes.string)
-      op = gcs_configure_credentials(placeholder)
-      session.run(op, feed_dict={placeholder: credentials})
-    if block_cache:
-      op = gcs_configure_block_cache(
-          max_cache_size=block_cache.max_bytes,
-          block_size=block_cache.block_size,
-          max_staleness=block_cache.max_staleness)
-      session.run(op)
-
-  if device:
-    with ops.device(device):
-      return configure(credentials, block_cache)
-  return configure(credentials, block_cache)
-
-
 def _configure_gcs_tfv2(credentials=None, block_cache=None, device=None):
   """Configures the GCS file system for a given a session.
 
@@ -265,8 +220,8 @@ def _configure_colab_session_tfv2():
 
 
 if tf_v1:
-  configure_gcs = _configure_gcs_tfv1
-  configure_colab_session = _configure_colab_session_tfv1
+  configure_gcs = tf.contrib.cloud.configure_gcs
+  configure_colab_session = tf.contrib.cloud.configure_colab_session
 else:
   configure_gcs = _configure_gcs_tfv2
   configure_colab_session = _configure_colab_session_tfv2

@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import pytest
 import tensorflow as tf
 
 from tensorflow_io import gcs
@@ -25,14 +26,15 @@ from tensorflow.python.platform import test
 
 tf_v1 = tf.version.VERSION.startswith('1')
 
-if tf_v1:
-  pytest.skip("GCS configuration ops are builtin for TFv1.", allow_module_level=True)
-
 class GcsConfigOpsTest(test.TestCase):
   """GCS Config OPS test"""
   def test_set_block_cache(self):
     cfg = gcs.BlockCacheParams(max_bytes=1024*1024*1024)
-    gcs.configure_gcs(block_cache=cfg)
+    if tf_v1:
+      with tf.Session() as session:
+        gcs.configure_gcs(session, credentials=None, block_cache=cfg, device=None)
+    else:
+      gcs.configure_gcs(block_cache=cfg)
 
 
 if __name__ == '__main__':
