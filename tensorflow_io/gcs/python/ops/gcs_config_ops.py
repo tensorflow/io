@@ -35,13 +35,13 @@ from tensorflow_io import _load_library
 tf_v1 = tf.version.VERSION.startswith('1')
 
 if tf_v1:
-  from tensorflow.contrib.cloud.python.ops import gen_gcs_config_ops
+  from tensorflow.contrib.cloud.python.ops import gen_gcs_config_ops  # pylint: disable=ungrouped-imports
   gcs_configure_credentials = gen_gcs_config_ops.gcs_configure_credentials
-  gcs_configure_block_cache= gen_gcs_config_ops.gcs_configure_block_cache
+  gcs_configure_block_cache = gen_gcs_config_ops.gcs_configure_block_cache
 else:
   _gcs_config_so = _load_library("_gcs_config_ops.so")
   gcs_configure_credentials = _gcs_config_so.gcs_configure_credentials
-  gcs_configure_block_cache= _gcs_config_so.gcs_configure_block_cache
+  gcs_configure_block_cache = _gcs_config_so.gcs_configure_block_cache
 
 class BlockCacheParams(object):  # pylint: disable=useless-object-inheritance
   """BlockCacheParams is a struct used for configuring the GCS Block Cache."""
@@ -179,7 +179,10 @@ class ConfigureGcsHook(training.SessionRunHook):
       session.run(self._block_cache_op)
 
 
-def _configure_gcs_tfv1(session, credentials=None, block_cache=None, device=None):
+def _configure_gcs_tfv1(session,
+                        credentials=None,
+                        block_cache=None,
+                        device=None):
   """Configures the GCS file system for a given a session.
 
   Warning: GCS `credentials` may be transmitted over the network unencrypted.
@@ -261,10 +264,9 @@ def _configure_colab_session_tfv2():
   configure_gcs(credentials=data)
 
 
-if tf_v1: 
+if tf_v1:
   configure_gcs = _configure_gcs_tfv1
   configure_colab_session = _configure_colab_session_tfv1
 else:
   configure_gcs = _configure_gcs_tfv2
   configure_colab_session = _configure_colab_session_tfv2
-
