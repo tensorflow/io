@@ -2,11 +2,10 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
-c_opts = [
-    "-pthread",
-    "-std=c++11",
-    "-DNDEBUG",
-]
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
 
 cc_library(
     name = "azfs_ops",
@@ -15,7 +14,7 @@ cc_library(
         "azfs/azfs.h",
         "azfs/azfs_ops.cc",
     ],
-    copts = c_opts,
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         ":azfs_random_access_file",
@@ -32,7 +31,7 @@ cc_library(
     hdrs = [
         "azfs/azfs_client.h",
     ],
-    copts = c_opts,
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
@@ -49,7 +48,7 @@ cc_library(
     hdrs = [
         "azfs/azfs_writable_file.h",
     ],
-    copts = c_opts,
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         ":azfs_client",
@@ -64,7 +63,7 @@ cc_library(
     hdrs = [
         "azfs/azfs_random_access_file.h",
     ],
-    copts = c_opts,
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         ":azfs_client",
@@ -76,7 +75,7 @@ cc_library(
     srcs = [
         "azfs/azfs_readonly_memory_region.h",
     ],
-    copts = c_opts,
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",

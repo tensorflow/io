@@ -4,6 +4,11 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_binary(
     name = "python/ops/_oss_ops.so",
     srcs = [
@@ -11,11 +16,7 @@ cc_binary(
         "kernels/ossfs/oss_file_system.h",
         "ops/ossfs_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "@aliyun_oss_c_sdk",
