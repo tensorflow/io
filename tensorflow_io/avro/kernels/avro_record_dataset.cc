@@ -30,21 +30,7 @@ limitations under the License.
 // (register op)
 
 namespace tensorflow {
-
-// Register the avro record dataset operator
-REGISTER_OP("AvroRecordDataset")
-    .Input("filenames: string")
-    .Input("schema: string")
-    .Input("buffer_size: int64")
-    .Output("handle: variant")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape)
-    .Doc(R"doc(
-Creates a dataset that emits the avro records from one or more files.
-filenames: A scalar or vector containing the name(s) of the file(s) to be
-  read.
-schema: A string used that is used for schema resolution.
-)doc");
+namespace data {
 
 // This class represents the avro reader options
 class AvroReaderOptions {
@@ -424,4 +410,5 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
 REGISTER_KERNEL_BUILDER(Name("AvroRecordDataset").Device(DEVICE_CPU),
                         AvroRecordDatasetOp);
 
+}  // namespace data
 }  // namespace tensorflow

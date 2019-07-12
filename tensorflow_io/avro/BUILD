@@ -5,9 +5,11 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "avro_ops",
     srcs = [
-        "ops/avro_dataset.cc",
-        "ops/avro_record_dataset.cc",
-        "ops/parse_avro_record.cc",
+        "kernels/avro_input.cc",
+        "kernels/avro_dataset.cc",
+        "kernels/avro_record_dataset.cc",
+        "kernels/parse_avro_record.cc",
+        "ops/avro_ops.cc",
     ],
     copts = [
         "-pthread",
@@ -20,6 +22,7 @@ cc_library(
     linkstatic = True,
     deps = [
         ":avro_utils",
+        "@avro",
     ],
 )
 
@@ -87,7 +90,8 @@ cc_library(
             "utils/value_buffer.h",
             "utils/avro_parser.h",
             "utils/avro_parser_tree.h",
-            "utils/avro_reader.h"],
+            "utils/avro_reader.h",
+            "utils/parse_avro_attrs.h"], # TODO(fraudies): Remove once old implementation is gone
     deps = [
         "//third_party/avro_c",
         "//tensorflow_io/core:dataset_ops",
@@ -102,7 +106,8 @@ cc_library(
             "utils/value_buffer.cc",
             "utils/avro_parser.cc",
             "utils/avro_parser_tree.cc",
-            "utils/avro_reader.cc"],
+            "utils/avro_reader.cc",
+            "utils/parse_avro_attrs.cc"], # TODO(fraudies): Remove once old implementation is gone
     deps = [
         ":avro_utils_api",
     ],
