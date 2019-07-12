@@ -557,12 +557,18 @@ class ArrowStreamDataset(ArrowBaseDataset):
         if columns is not None:
           df = df.iloc[:, list(columns)]
 
-        # Compute step size (round int up) if slicing into batches
-        step = None if batch_size is None else -(-len(df) // batch_size)
-        for start in range(0, 1 if step is None else len(df), step):
-          df_slice = df if step is None else df[start:start + step]
+        # If batching, slice DataFrame and convert to record batches
+        if batch_size is not None:
+          step = -(-len(df) // batch_size)  # Compute step size (round int up)
+          for start in range(0, len(df), step):
+            df_slice = df[start:start + step]
+            batch = pa.RecordBatch.from_pandas(
+                df_slice, preserve_index=preserve_index)
+            yield batch
+        # Not batching, convert entire DataFrame to one record batch
+        else:
           batch = pa.RecordBatch.from_pandas(
-              df_slice, preserve_index=preserve_index)
+              df, preserve_index=preserve_index)
           yield batch
 
     # Get first batch to convert schema to output types and shapes
