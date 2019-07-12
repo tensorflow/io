@@ -511,6 +511,22 @@ class ArrowDatasetTest(test.TestCase):
 
     self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
+  def test_stream_from_pandas_not_batched(self):
+    """test_stream_from_pandas_not_batched"""
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        preserve_index=False)
+    self.run_test_case(dataset, truth_data)
+
   def test_bool_array_type(self):
     """
     NOTE: need to test this seperately because to_pandas fails with
