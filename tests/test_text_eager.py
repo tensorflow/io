@@ -110,22 +110,20 @@ def test_text_output():
     lines = [line.strip() for line in f]
   text_filename = "file://" + text_filename
 
-  text_dataset = text_io.TextDataset([text_filename, text_filename], batch=2)
-
-  text_dataset = text_dataset.map(lambda x: tf.strings.join([x[0], x[1]]))
-
   f, filename = tempfile.mkstemp()
   os.close(f)
 
-  text_io.TextDataset.save(text_dataset, filename)
+  df = text_io.TextDataset(text_filename)
+  df = df.take(5)
+  text_io.save_text(df, filename)
 
   with open(filename, 'rb') as f:
     saved_lines = [line.strip() for line in f]
-  for i, _ in enumerate(saved_lines):
-    assert saved_lines[i] == lines[
-        (2 * i) % len(lines)] + lines[
-            (2 * i + 1) % len(lines)]
-  assert len(saved_lines) == len(lines)
+  i = 0
+  for line in saved_lines:
+    assert lines[i] == line
+    i += 1
+  assert i == 5
 
 if __name__ == "__main__":
   test.main()
