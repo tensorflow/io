@@ -3,6 +3,10 @@ licenses(["notice"])  # Apache 2.0
 package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
 
 genrule(
     name = "endpoint_py",
@@ -44,11 +48,7 @@ cc_binary(
         "kernels/grpc_input.cc",
         "ops/grpc_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = [
         ".",
     ],

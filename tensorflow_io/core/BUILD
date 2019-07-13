@@ -2,16 +2,17 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_library(
     name = "sequence_ops",
     srcs = [
         "kernels/sequence_ops.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = [
         ".",
     ],
@@ -28,11 +29,7 @@ cc_library(
     srcs = [
         "kernels/dataset_ops.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = [
         ".",
     ],
@@ -50,11 +47,7 @@ cc_library(
         "kernels/ffmpeg_reader.cc",
         "kernels/ffmpeg_reader.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
@@ -69,11 +62,7 @@ cc_library(
         "kernels/ffmpeg_reader.cc",
         "kernels/ffmpeg_reader.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
@@ -88,11 +77,7 @@ cc_library(
         "kernels/ffmpeg_reader.cc",
         "kernels/ffmpeg_reader.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
@@ -103,11 +88,7 @@ cc_library(
 
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/audio:audio_ops",
@@ -128,11 +109,7 @@ cc_binary(
 
 cc_binary(
     name = "python/ops/libtensorflow_io_ffmpeg_3.4.so",
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/ffmpeg:ffmpeg_3.4_ops",
@@ -141,11 +118,7 @@ cc_binary(
 
 cc_binary(
     name = "python/ops/libtensorflow_io_ffmpeg_2.8.so",
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/ffmpeg:ffmpeg_2.8_ops",
@@ -154,11 +127,7 @@ cc_binary(
 
 cc_binary(
     name = "python/ops/libtensorflow_io_libav_9.20.so",
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/ffmpeg:libav_9.20_ops",

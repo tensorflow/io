@@ -2,6 +2,11 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_library(
     name = "prometheus_ops",
     srcs = [
@@ -10,11 +15,7 @@ cc_library(
         "kernels/prometheus_input.cc",
         "ops/prometheus_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = [
         ".",
     ],

@@ -2,6 +2,11 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_library(
     name = "ignite_ops",
     srcs = [
@@ -42,11 +47,7 @@ cc_library(
         "ops/ggfs_ops.cc",
         "ops/igfs_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@boringssl//:ssl",
