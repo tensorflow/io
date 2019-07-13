@@ -24,7 +24,7 @@ namespace tensorflow {
 using ::tensorflow::shape_inference::ShapeHandle;
 
 
-REGISTER_OP("AvroInput")
+REGISTER_OP("AvroInput2")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -48,7 +48,7 @@ REGISTER_OP("AvroDataset2")
        return Status::OK();
      });
 
-REGISTER_OP("AvroDataset")
+REGISTER_OP("AvroDatasetC")
     .Input("filenames: string")
     .Input("batch_size: int64")
     .Input("drop_remainder: bool")

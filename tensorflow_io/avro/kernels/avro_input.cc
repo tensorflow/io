@@ -30,7 +30,6 @@ class AvroDataInputStream : public avro::InputStream {
 public:
   AvroDataInputStream(io::InputStreamInterface* s)
     : stream_(s) {}
-  virtual ~AvroDataInputStream() {}
   bool next(const uint8_t** data, size_t* len) override {
     if (*len == 0) {
       *len = kAvroDataInputStreamBufferSize;
@@ -77,18 +76,14 @@ private:
   string buffer_;
 };
 
-class AvroInputStream{
+class AvroInputStream {
 public:
-  explicit AvroInputStream(io::InputStreamInterface* s, const string& schema, const std::vector<string>& columns)
+  explicit AvroInputStream(io::InputStreamInterface* s, const string& schema,
+    const std::vector<string>& columns)
     : stream_(s)
     , schema_(schema)
     , columns_(columns)
-    , reader_(nullptr) {
-   }
-
-  ~AvroInputStream() {
-    reader_.reset(nullptr);
-  }
+    , reader_(nullptr) { }
 
   Status Open() {
     string error;
@@ -96,16 +91,23 @@ public:
     if (!avro::compileJsonSchema(ss, reader_schema_, error)) {
       return errors::Unimplemented("Avro schema error: ", error);
     }
-    std::unique_ptr<avro::InputStream> stream(static_cast<avro::InputStream*>(new AvroDataInputStream(stream_)));
-    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(std::move(stream), reader_schema_));
+    std::unique_ptr<avro::InputStream> stream(
+      static_cast<avro::InputStream*>(new AvroDataInputStream(stream_)));
+
+    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
+      std::move(stream), reader_schema_));
+
     return Status::OK();
   }
+
   const avro::ValidSchema& ReaderSchema() const {
     return reader_schema_;
   }
+
   bool ReadDatum(avro::GenericDatum& datum) {
     return reader_->read(datum);
   }
+
 private:
   io::InputStreamInterface* stream_;
   string schema_;
@@ -114,18 +116,25 @@ private:
   avro::ValidSchema reader_schema_;
 };
 
-class AvroInput: public FileInput<AvroInputStream> {
- public:
-  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<AvroInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+class AvroInput : public FileInput<AvroInputStream> {
+
+public:
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx,
+    std::unique_ptr<AvroInputStream>& state, int64 record_to_read,
+    int64* record_read, std::vector<Tensor>* out_tensors) const override {
+
     if (state.get() == nullptr) {
       state.reset(new AvroInputStream(s, schema(), columns()));
       TF_RETURN_IF_ERROR(state.get()->Open());
     }
+
     avro::GenericDatum datum(state.get()->ReaderSchema());
+
     while ((*record_read) < record_to_read && state.get()->ReadDatum(datum)) {
       const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
       if (*record_read == 0) {
         out_tensors->clear();
+
         // Let's allocate enough space for Tensor, if more than read then slice.
         for (size_t i = 0; i < columns().size(); i++) {
           const string& column = columns()[i];
@@ -166,6 +175,7 @@ class AvroInput: public FileInput<AvroInputStream> {
           out_tensors->emplace_back(std::move(tensor));
         }
       }
+
       for (size_t i = 0; i < columns().size(); i++) {
         const string& column = columns()[i];
         const avro::GenericDatum& field = record.field(column);
@@ -242,7 +252,7 @@ class AvroInput: public FileInput<AvroInputStream> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(AvroInput, "tensorflow::data::AvroInput");
 
-REGISTER_KERNEL_BUILDER(Name("AvroInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("AvroInput2").Device(DEVICE_CPU),
                         FileInputOp<AvroInput>);
 REGISTER_KERNEL_BUILDER(Name("AvroDataset2").Device(DEVICE_CPU),
                         FileInputDatasetOp<AvroInput, AvroInputStream>);

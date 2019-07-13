@@ -106,7 +106,7 @@ class _AvroDataset(DatasetSource):
         output_types, output_shapes, output_classes)
 
   def _as_variant_tensor(self):
-    return avro_ops.avro_dataset(
+    return avro_ops.avro_dataset_c(
         filenames=self._filenames,
         batch_size=self._batch_size,
         drop_remainder=self._drop_remainder,

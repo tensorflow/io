@@ -492,7 +492,7 @@ class AvroDatasetOp : public DatasetOpKernel {
 };  // class AvroDatasetOp
 
 // Register the kernel implementation for AvroDataset.
-REGISTER_KERNEL_BUILDER(Name("AvroDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("AvroDatasetC").Device(DEVICE_CPU),
                         AvroDatasetOp);
 
 }  // namespace data

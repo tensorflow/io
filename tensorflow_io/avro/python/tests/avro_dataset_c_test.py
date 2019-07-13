@@ -24,7 +24,7 @@ from tensorflow.python.ops import parsing_ops
 from tensorflow.python.util import compat
 from tensorflow.python.framework import sparse_tensor
 
-from tensorflow_io.avro.python.tests import avro_dataset_test_base as \
+from tensorflow_io.avro.python.tests import avro_dataset_c_test_base as \
   avro_test_base
 
 

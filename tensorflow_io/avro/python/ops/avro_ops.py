@@ -35,7 +35,7 @@ class AvroDataset(data.Dataset):
       dtypes: A tuple of `tf.DType` objects representing the types of the
         columns returned.
     """
-    self._data_input = avro_ops.avro_input(
+    self._data_input = avro_ops.avro_input2(
         filenames, ["none", "gz"], columns=columns, schema=schema)
     self._columns = columns
     self._schema = schema
