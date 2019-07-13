@@ -52,6 +52,13 @@ def test_text_input():
       i += 1
   assert i == len(lines)
 
+  rebatch_dataset = text_dataset.rebatch(5)
+  i = 0
+  for v in rebatch_dataset:
+    for vv in v.numpy():
+      assert lines[i] == vv
+      i += 1
+  assert i == len(lines)
 
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
