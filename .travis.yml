@@ -89,7 +89,7 @@ jobs:
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
           sha256sum $entry
-          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/release/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
           if [[ "$STATUS" -ne 200 ]] ; then
             echo "Upload to Dropbox: $STATUS"
             exit 1
@@ -107,7 +107,7 @@ jobs:
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
           sha256sum $entry
-          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/release/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
           if [[ "$STATUS" -ne 200 ]] ; then
             echo "Upload to Dropbox: $STATUS"
             exit 1
@@ -127,7 +127,7 @@ jobs:
         twine upload wheelhouse/tensorflow_io_nightly-*.whl
         for entry in wheelhouse/tensorflow_io-*.whl ; do
           shasum -a 256 $entry
-          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/release/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
           if [[ "$STATUS" -ne 200 ]] ; then
             echo "Upload to Dropbox: $STATUS"
             exit 1
