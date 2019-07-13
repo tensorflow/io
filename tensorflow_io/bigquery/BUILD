@@ -4,6 +4,10 @@ licenses(["notice"])  # Apache 2.0
 package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
 
 KERNEL_FILES = [
     "kernels/bigquery_kernels.cc",
@@ -15,11 +19,7 @@ cc_binary(
     srcs = KERNEL_FILES + [
         "ops/bigquery_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         ":bigquery_lib_cc",
@@ -37,11 +37,7 @@ cc_binary(
         "kernels/test_kernels/bigquery_test_client_op.cc",
         "ops/bigquery_test_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         ":bigquery_fake",
@@ -70,11 +66,7 @@ cc_library(
     name = "bigquery_fake",
     srcs = ["kernels/test_kernels/fake_bigquery_storage_service.cc"],
     hdrs = ["kernels/test_kernels/fake_bigquery_storage_service.h"],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@com_github_grpc_grpc//:grpc++",
@@ -89,11 +81,7 @@ cc_library(
     name = "bigquery_lib_cc",
     srcs = ["kernels/bigquery_lib.cc"],
     hdrs = ["kernels/bigquery_lib.h"],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@avro",

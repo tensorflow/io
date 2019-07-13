@@ -2,6 +2,11 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
@@ -13,11 +18,7 @@ cc_library(
         "kernels/video_ffmpeg_reader.h",
         "ops/ffmpeg_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
@@ -36,11 +37,7 @@ cc_library(
         "kernels/video_ffmpeg_reader.h",
         "ops/ffmpeg_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
@@ -59,11 +56,7 @@ cc_library(
         "kernels/video_ffmpeg_reader.h",
         "ops/ffmpeg_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [

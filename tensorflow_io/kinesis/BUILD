@@ -2,17 +2,18 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_binary(
     name = "python/ops/_kinesis_ops.so",
     srcs = [
         "kernels/kinesis_dataset_ops.cc",
         "ops/dataset_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "@aws",
