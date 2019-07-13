@@ -18,6 +18,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+import pytest
+
 import tensorflow as tf
 
 from tensorflow.python.platform import test
@@ -27,7 +30,10 @@ tf_v1 = tf.version.VERSION.startswith('1')
 
 class GcsConfigOpsTest(test.TestCase):
   """GCS Config OPS test"""
+
+  @pytest.mark.skipif(sys.platform == "darwin", reason=None)
   def test_set_block_cache(self):
+    """test_set_block_cache"""
     cfg = gcs.BlockCacheParams(max_bytes=1024*1024*1024)
     if tf_v1:
       with tf.Session() as session:
