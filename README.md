@@ -28,7 +28,11 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.grpc`: gRPC server Dataset, support for streaming Numpy input.
 - `tensorflow_io.hdf5`: HDF5 file format support.
 - `tensorflow_io.text`: Text file with archive support.
+- `tensorflow_io.text`: Pcap network packet capture file support.
 - `tensorflow_io.azure`: Microsoft Azure Storage support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/azure/README.md).
+- `tensorflow_io.bigquery`: Google Cloud BigQuery support.
+- `tensorflow_io.gcs`: GCS Configuration support.
+- `tensorflow_io.prometheus`: Prometheus observation data support.
 
 ## Installation
 
@@ -100,6 +104,7 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.7.0 | 1.14.x | Jul 14, 2019 |
 | 0.6.0 | 1.13.x | May 29, 2019 |
 | 0.5.0 | 1.13.x | Apr 12, 2019 |
 | 0.4.0 | 1.13.x | Mar 01, 2019 |
