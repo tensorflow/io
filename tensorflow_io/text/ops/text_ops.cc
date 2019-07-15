@@ -67,6 +67,14 @@ REGISTER_OP("TextDataset")
        return Status::OK();
      });
 
+REGISTER_OP("TextDatasetOutput")
+    .Input("dataset: variant")
+    .Input("filename: string")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       return Status::OK();
+     });
+
 REGISTER_OP("TextOutputSequence")
     .Input("destination: string")
     .Output("sequence: resource")

@@ -11,6 +11,7 @@ cc_library(
     name = "text_ops",
     srcs = [
         "kernels/text_input.cc",
+        "kernels/text_output.cc",
         "kernels/text_sequence.cc",
         "ops/text_ops.cc",
     ],
