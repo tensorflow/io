@@ -21,6 +21,16 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as text_ops
 
+def save_text(dataset, filename):
+  """Save Dataset to disk.
+
+  Args:
+    dataset: A TextDataset to be saved.
+    filename: A `tf.string` tensor containing filename.
+  """
+  return text_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+
+
 class TextDataset(data_ops.Dataset):
   """A Text Dataset"""
 

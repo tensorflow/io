@@ -16,6 +16,7 @@
 
 @@TextOutputSequence
 @@TextDataset
+@@save_text
 """
 
 from __future__ import absolute_import
@@ -24,12 +25,14 @@ from __future__ import print_function
 
 from tensorflow_io.text.python.ops.text_ops import TextOutputSequence
 from tensorflow_io.text.python.ops.text_ops import TextDataset
+from tensorflow_io.text.python.ops.text_ops import save_text
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "TextOutputSequence",
     "TextDataset",
+    "save_text",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
