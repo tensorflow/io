@@ -31,6 +31,16 @@ def save_text(dataset, filename):
   return text_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
+def save_csv(dataset, filename):
+  """Save Dataset to disk.
+
+  Args:
+    dataset: A Dataset to be saved.
+    filename: A `tf.string` tensor containing filename.
+  """
+  return text_ops.csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+
+
 class TextDataset(data_ops.Dataset):
   """A Text Dataset"""
 

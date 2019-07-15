@@ -75,6 +75,14 @@ REGISTER_OP("TextDatasetOutput")
        return Status::OK();
      });
 
+REGISTER_OP("CsvDatasetOutput")
+    .Input("dataset: variant")
+    .Input("filename: string")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       return Status::OK();
+     });
+
 REGISTER_OP("TextOutputSequence")
     .Input("destination: string")
     .Output("sequence: resource")
