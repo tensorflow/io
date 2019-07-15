@@ -42,6 +42,22 @@ cc_library(
 )
 
 cc_library(
+    name = "output_ops",
+    srcs = [
+        "kernels/output_ops.h",
+    ],
+    copts = tf_io_copts(),
+    includes = [
+        ".",
+    ],
+    linkstatic = True,
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+)
+
+cc_library(
     name = "ffmpeg_3.4",
     srcs = [
         "kernels/ffmpeg_reader.cc",

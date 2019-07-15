@@ -125,5 +125,28 @@ def test_text_output():
     i += 1
   assert i == 5
 
+def test_csv_output():
+  """test_csv_output"""
+  csv_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample.csv")
+  with open(csv_filename, 'rb') as f:
+    lines = [line.strip() for line in f]
+  csv_filename = "file://" + csv_filename
+
+  f, filename = tempfile.mkstemp()
+  os.close(f)
+
+  df = tf.data.experimental.CsvDataset(csv_filename, [0, 0, 0])
+  df = df.take(5)
+  text_io.save_csv(df, filename)
+
+  with open(filename, 'rb') as f:
+    saved_lines = [line.strip() for line in f]
+  i = 0
+  for line in saved_lines:
+    assert lines[i] == line
+    i += 1
+  assert i == 5
+
 if __name__ == "__main__":
   test.main()
