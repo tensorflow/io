@@ -10,6 +10,7 @@ load(
 cc_library(
     name = "text_ops",
     srcs = [
+        "kernels/csv_output.cc",
         "kernels/text_input.cc",
         "kernels/text_output.cc",
         "kernels/text_sequence.cc",
@@ -22,6 +23,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:output_ops",
         "//tensorflow_io/core:sequence_ops",
     ],
 )
