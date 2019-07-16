@@ -167,12 +167,12 @@ def test_from_csv():
        np.int64(10000000000),
        np.float32(3.0),
        np.float64(4.0e30),
-       "col 5 string 1"],
+       b"col 5 string 1"],
       [np.int32(30),
        np.int64(20000000000),
        np.float32(6.0),
        np.float64(8.0e30),
-       "col 5 string 2"]]
+       b"col 5 string 2"]]
 
   sample1 = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_text", "sample1.csv")
@@ -191,9 +191,9 @@ def test_from_csv():
     for records in df:
       assert len(records) == len(expected[line])
       for i, record in enumerate(records):
-        if isinstance(expected[line][i], str):
+        if isinstance(expected[line][i], bytes):
           assert record.dtype == tf.string
-          assert str(record.numpy()) == expected[line][i]
+          assert record.numpy() == expected[line][i]
         else:
           assert record.dtype == expected[line][i].dtype
           assert record.numpy() == expected[line][i]
