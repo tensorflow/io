@@ -191,11 +191,12 @@ def test_from_csv():
     for records in df:
       assert len(records) == len(expected[line])
       for i, record in enumerate(records):
-        assert record.numpy() == expected[line][i]
         if isinstance(expected[line][i], str):
           assert record.dtype == tf.string
+          assert str(record.numpy()) == expected[line][i]
         else:
           assert record.dtype == expected[line][i].dtype
+          assert record.numpy() == expected[line][i]
       line += 1
 
 if __name__ == "__main__":
