@@ -119,9 +119,10 @@ def from_csv(filename, header=0):
       raise NotImplementedError(
           "from_csv only supports header=0 or header=None for now")
     # Read first linea as name
-    columns = list(csv.reader([line.numpy() for line in dataset.take(1)]))[0]
+    columns = list(
+        csv.reader([str(line.numpy()) for line in dataset.take(1)]))[0]
     dataset = dataset.skip(1)
-  entries = list(csv.reader([line.numpy() for line in dataset.take(1)]))[0]
+  entries = list(csv.reader([str(line.numpy()) for line in dataset.take(1)]))[0]
   if columns is None:
     columns = [str(i) for (i, _) in enumerate(entries)]
   dtypes = [_infer_dtype(column) for column in entries]
