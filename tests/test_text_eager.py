@@ -149,7 +149,19 @@ def test_csv_output():
   assert i == 5
 
 def test_from_csv():
-  """test_from_csv"""
+  """test from_csv with sample csv file.
+
+  sample1.csv
+  "col1",col2,"col 3","col 4",col5
+  15,10000000000,3.0,4.0e30,"col 5 string 1"
+  30,20000000000,6.0,8.0e30,"col 5 string 2"
+
+  sample2.csv
+  15,10000000000,3.0,4.0e30,"col 5 string 1"
+  30,20000000000,6.0,8.0e30,"col 5 string 2"
+
+  header=None will use range(width) as column names.
+  """
   expected = [
       [np.int32(15),
        np.int64(10000000000),

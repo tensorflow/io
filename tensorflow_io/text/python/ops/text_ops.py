@@ -111,12 +111,13 @@ def from_csv(filename, header=0):
     filename: A `tf.string` tensor containing filename.
   """
   if not tf.executing_eagerly():
-    raise NotImplementedError("from_csv only support eager mode")
+    raise NotImplementedError("from_csv only supports eager mode")
   dataset = TextDataset(filename)
   columns = None
   if header is not None:
     if header != 0:
-      raise NotImplementedError("from_csv only header=0 or header=None for now")
+      raise NotImplementedError(
+          "from_csv only supports header=0 or header=None for now")
     # Read first linea as name
     columns = list(csv.reader([line.numpy() for line in dataset.take(1)]))[0]
     dataset = dataset.skip(1)
