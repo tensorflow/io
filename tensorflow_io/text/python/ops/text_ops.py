@@ -17,6 +17,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import ast
+import csv
+import numpy as np
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as text_ops
@@ -77,3 +81,56 @@ class TextOutputSequence(object):
 
   def setitem(self, index, item):
     text_ops.text_output_sequence_set_item(self._resource, index, item)
+
+
+def _infer_dtype(val):
+  """_infer_dtype"""
+  try:
+    val = ast.literal_eval(val)
+  except (SyntaxError, ValueError):
+    return tf.string
+  if isinstance(val, int):
+    if np.int32(val) == val:
+      return tf.int32
+    elif np.int64(val) == val:
+      return tf.int64
+  elif isinstance(val, float):
+    if np.float32(val) == val:
+      return tf.float32
+    elif np.float64(val) == val:
+      return tf.float64
+  return tf.string
+
+
+def from_csv(filename, header=0):
+  """Read csv to Dataset
+
+  NOTE: Experimental and eager only!
+
+  Args:
+    filename: A `tf.string` tensor containing filename.
+  """
+  if not tf.executing_eagerly():
+    raise NotImplementedError("from_csv only supports eager mode")
+  dataset = TextDataset(filename)
+  columns = None
+  if header is not None:
+    if header != 0:
+      raise NotImplementedError(
+          "from_csv only supports header=0 or header=None for now")
+    # Read first linea as name
+    columns = list(
+        csv.reader([line.numpy().decode() for line in dataset.take(1)]))[0]
+    dataset = dataset.skip(1)
+  entries = list(
+      csv.reader([line.numpy().decode() for line in dataset.take(1)]))[0]
+  if columns is None:
+    columns = [i for (i, _) in enumerate(entries)]
+  dtypes = [_infer_dtype(column) for column in entries]
+  specs = [
+      tf.TensorSpec(tf.TensorShape([]), dtype, column) for (
+          column, dtype) in zip(columns, dtypes)]
+
+  record_defaults = [tf.zeros(spec.shape, spec.dtype) for spec in specs]
+  return tf.data.experimental.CsvDataset(
+      filename, record_defaults, header=(header is not None)), specs
