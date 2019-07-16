@@ -3,6 +3,10 @@ set -e
 python --version
 python -m pip --version
 if [[ $(uname) == "Darwin" ]]; then
+  if [[ "$1" == "--"* ]]; then
+    shift
+    shift
+  fi
   entry=$1
   if [[ $entry == *"3"* ]]; then
     # If on macOS and building python3 packages
