@@ -3,7 +3,7 @@ set -e
 python --version
 python -m pip --version
 if [[ $(uname) == "Darwin" ]]; then
-  $entry= $1
+  entry=$1
   if [[ $entry == *"3"* ]]; then
     # If on macOS and building python3 packages
     minor=$(echo $entry | cut -d. -f2)
