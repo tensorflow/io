@@ -3,7 +3,7 @@ set -e
 python --version
 python -m pip --version
 if [[ $(uname) == "Darwin" ]]; then
-  for pyVersion in {3.4.6,3.5.3,3.6.2}; do 
+  for pyVersion in {3.5.3,3.6.2}; do
     pyenv install --skip-existing $pyVersion
     pyenv local $pyVersion
     pyPath=$(pyenv which python)
