@@ -20,33 +20,11 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class JSONInputStream{
-public: 
-  explicit JSONInputStream(io::InputStreamInterface* s, const std::vector<string>& columns)
-    : columns_(columns)
-    , input_stream_(nullptr)
-    , buffered_stream_(nullptr)
-    , file_(nullptr) {
-    input_stream_ = dynamic_cast<SizedRandomAccessInputStreamInterface*>(s);
-    if (input_stream_ == nullptr) {
-      buffered_stream_.reset(new SizedRandomAccessBufferedStream(s));
-      input_stream_ = buffered_stream_.get();
-    }
-  }
-
-  Status ReadRecord(IteratorContext* ctx, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) {
-    ##TODO: Implement the mechanism to parse JSON file.
-    return Status::OK();
-  }
-};
-
-
-class JSONInput: public FileInput<JSONInputStream> {
+class JSONInput: public FileInput<io:BufferedInputStream> {
  public:
-  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<JSONInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new JSONInputStream(s, columns()));
-      TF_RETURN_IF_ERROR(state.get()->Open());
+      state.reset(new io::BufferedInputStream(s, 4096));
     }
     return state.get()->ReadRecord(ctx, record_to_read, record_read, out_tensors);
   }
