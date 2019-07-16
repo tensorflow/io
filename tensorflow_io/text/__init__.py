@@ -18,6 +18,7 @@
 @@TextDataset
 @@save_text
 @@save_csv
+@@from_csv
 """
 
 from __future__ import absolute_import
@@ -28,6 +29,7 @@ from tensorflow_io.text.python.ops.text_ops import TextOutputSequence
 from tensorflow_io.text.python.ops.text_ops import TextDataset
 from tensorflow_io.text.python.ops.text_ops import save_text
 from tensorflow_io.text.python.ops.text_ops import save_csv
+from tensorflow_io.text.python.ops.text_ops import from_csv
 
 from tensorflow.python.util.all_util import remove_undocumented
 
@@ -36,6 +38,7 @@ _allowed_symbols = [
     "TextDataset",
     "save_text",
     "save_csv",
+    "from_csv",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

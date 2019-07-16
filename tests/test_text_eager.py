@@ -148,5 +148,56 @@ def test_csv_output():
     i += 1
   assert i == 5
 
+def test_from_csv():
+  """test from_csv with sample csv file.
+
+  sample1.csv
+  "col1",col2,"col 3","col 4",col5
+  15,10000000000,3.0,4.0e30,"col 5 string 1"
+  30,20000000000,6.0,8.0e30,"col 5 string 2"
+
+  sample2.csv
+  15,10000000000,3.0,4.0e30,"col 5 string 1"
+  30,20000000000,6.0,8.0e30,"col 5 string 2"
+
+  header=None will use range(width) as column names.
+  """
+  expected = [
+      [np.int32(15),
+       np.int64(10000000000),
+       np.float32(3.0),
+       np.float64(4.0e30),
+       b"col 5 string 1"],
+      [np.int32(30),
+       np.int64(20000000000),
+       np.float32(6.0),
+       np.float64(8.0e30),
+       b"col 5 string 2"]]
+
+  sample1 = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample1.csv")
+  sample1 = "file://" + sample1
+
+  df1, _ = text_io.from_csv(sample1)
+
+  sample2 = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample2.csv")
+  sample2 = "file://" + sample2
+
+  df2, _ = text_io.from_csv(sample2, header=None)
+
+  for df in [df1, df2]:
+    line = 0
+    for records in df:
+      assert len(records) == len(expected[line])
+      for i, record in enumerate(records):
+        if isinstance(expected[line][i], bytes):
+          assert record.dtype == tf.string
+          assert record.numpy() == expected[line][i]
+        else:
+          assert record.dtype == expected[line][i].dtype
+          assert record.numpy() == expected[line][i]
+      line += 1
+
 if __name__ == "__main__":
   test.main()
