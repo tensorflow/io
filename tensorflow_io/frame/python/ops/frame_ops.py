@@ -23,6 +23,19 @@ import tensorflow as tf
 from tensorflow_io.text.python.ops import text_ops
 from tensorflow_io.core.python.ops import data_ops
 
+class ILocIndexer(object):
+  """_iLocIndexer"""
+  def __init__(self, df):
+    self._df = df
+    return
+
+  def __getitem__(self, item):
+    data = dict(
+        (column, tf.Variable(self._df._data[column][item]) # pylint: disable=protected-access
+        ) for column in self._df.columns)
+    return DataFrame(data, columns=list(self._df.columns))
+
+
 class DataFrame(object):
   """DataFrame
 
@@ -36,6 +49,7 @@ class DataFrame(object):
     self._data = data
     self._columns = columns
     self._index = np.arange(data[columns[0]].shape[0].value)
+    self._iloc = _ILocIndexer(self)
 
   @property
   def columns(self):
@@ -44,6 +58,14 @@ class DataFrame(object):
   @property
   def index(self):
     return self._index
+
+  @property
+  def shape(self):
+    return len(self.index), len(self.columns)
+
+  @property
+  def iloc(self):
+    return self._iloc
 
   def __len__(self):
     return len(self._index)
@@ -54,13 +76,38 @@ class DataFrame(object):
   def __getitem__(self, item):
     return self._data[item]
 
+  def __getattr__(self, name):
+    if name in self._columns:
+      return self.get(name)
+    return object.__getattribute__(self, name)
+
+  def __eq__(self, other):
+    data = dict(
+        (column, tf.Variable(tf.math.equal(self._data[column], other))
+        ) for column in self.columns)
+    return DataFrame(data, columns=list(self.columns))
+
   def keys(self):
     return self._columns
+
+  def get(self, key, default=None):
+    try:
+      return DataFrame({key: tf.Variable(self._data[key])}, columns=[key])
+    except (KeyError, ValueError, IndexError):
+      return default
 
   def pop(self, item):
     e = self._data.pop(item)
     self._columns.remove(item)
     return DataFrame({item: e}, columns=[item])
+
+  def head(self, n=5):
+    return self.iloc[:n]
+
+  def tail(self, n=5):
+    if n == 0:
+      return self.iloc[0:0]
+    return self.iloc[-n:]
 
   def split(self, func):
     indices_x, indices_y = func(self._index)

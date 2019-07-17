@@ -80,5 +80,20 @@ def test_from_csv():
     i += 1
   assert i == len(entries)
 
+# Working-in-Progress
+def _test_from_credit_card():
+  """test from https://www.datascience.com/blog/fraud-detection-with-tensorflow
+  """
+  df = frame_io.DataFrame.from_csv('creditcard.csv')
+  df.head(n=5)
+  print(df.shape)
+
+  # pd.value_counts(df['Class'], sort = True)
+
+  print(df.Class == 1)
+
+  # normal_df = df[df.Class == 0] #save normal_df observations into a separate df
+  # fraud_df = df[df.Class == 1] #do the same for frauds
+
 if __name__ == "__main__":
   test.main()
