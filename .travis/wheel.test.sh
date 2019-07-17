@@ -23,5 +23,17 @@ if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   $PYTHON_VERSION get-pip.py -q
+else
+  if [[ $PYTHON_VERSION != "python" ]]; then
+    entry=$PYTHON_VERSION
+    minor=$(echo $entry | cut -d. -f2)
+    patch=$(echo $entry | cut -d. -f3)
+    # Specify version number for local use
+    pyenv install --skip-existing "3.${minor}.${patch}"
+    pyenv local "3.${minor}.${patch}"
+    # Drop patch number from executable command
+    PYTHON_VERSION=$(pyenv which python)
+    $PYTHON_VERSION -m pip install -U setuptools pip
+  fi
 fi
 run_test $PYTHON_VERSION

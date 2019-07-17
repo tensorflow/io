@@ -115,12 +115,52 @@ jobs:
         done
       fi
   - stage: release
-    name: "Nightly Release Build on macOS"
+    name: "Nightly Release Build on macOS 2.7"
     os: osx
     osx_image: xcode9
     script:
-    - sudo -H bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3.5.3 python3.6.2
-    - sudo -H bash -x -e .travis/wheel.test.sh
+    - sudo -H bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python
+    - sudo -H bash -x -e .travis/wheel.test.sh python
+    after_success:
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          shasum -a 256 $entry
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/release/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
+          if [[ "$STATUS" -ne 200 ]] ; then
+            echo "Upload to Dropbox: $STATUS"
+            exit 1
+          fi
+        done
+      fi
+  - stage: release
+    name: "Nightly Release Build on macOS 3.5"
+    os: osx
+    osx_image: xcode9
+    script:
+    - sudo -H bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.5.3
+    - sudo -H bash -x -e .travis/wheel.test.sh python3.5.3
+    after_success:
+    - |
+      if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+        twine upload wheelhouse/tensorflow_io_nightly-*.whl
+        for entry in wheelhouse/tensorflow_io-*.whl ; do
+          shasum -a 256 $entry
+          STATUS=$(curl --write-out %{http_code} --silent --output /dev/null -X POST https://content.dropboxapi.com/2/files/upload --header "Authorization: Bearer ${DROPBOX_ACCESS_TOKEN}" --header "Dropbox-API-Arg: {\"path\": \"/release/${TRAVIS_BUILD_NUMBER}/$entry\",\"mode\": \"add\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" --header "Content-Type: application/octet-stream" --data-binary @$entry)
+          if [[ "$STATUS" -ne 200 ]] ; then
+            echo "Upload to Dropbox: $STATUS"
+            exit 1
+          fi
+        done
+      fi
+  - stage: release
+    name: "Nightly Release Build on macOS 3.6"
+    os: osx
+    osx_image: xcode9
+    script:
+    - sudo -H bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.6.2
+    - sudo -H bash -x -e .travis/wheel.test.sh python3.6.2
     after_success:
     - |
       if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
