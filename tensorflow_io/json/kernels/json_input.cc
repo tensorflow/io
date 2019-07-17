@@ -17,42 +17,43 @@ limitations under the License.
 #include <fstream>
 #include "kernels/dataset_ops.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
-#include <jsoncpp/json/json.h>
+#include "include/json/json.h"
 
 namespace tensorflow {
 namespace data {
 
 class JSONInputStream {
 public:
-  explicit JSONInputStream(io::InputStreamInterface* s)
-    : ifs_(s){
+  explicit JSONInputStream(io::InputStreamInterface* s, const string& filename)
+    : ifs_(filename){
    }
    
   ~JSONInputStream() {
     ifs_.close();
   }
 
-  bool ParseRecords(json::Value& records){
-    return reader.parse(ifs_, records);
+  bool ParseRecords(Json::Value& records){
+    return reader_.parse(ifs_, records);
   }
 private:
-  ifstream ifs_;
+  std::ifstream ifs_;
   Json::Reader reader_;
 };
 
 class JSONInput: public FileInput<JSONInputStream> {
  public:
-  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+  Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<JSONInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new JSONInputStream(s, columns()));
+      state.reset(new JSONInputStream(s, filename()));
     }
 
-    json::Value& records;
+    Json::Value records;
+    Json::ArrayIndex index = 0;
     if (!state.get()->ParseRecords(records)){
-      return errors::InvalidArgument("JSON parsing error: ", error);
+      return errors::InvalidArgument("JSON parsing error");
     }
-    while ((*record_read) < record_to_read && (*record_read) < records.size()) {
-      const Json::Value& record = records[*record_read];
+    while ((*record_read) < record_to_read && index < records.size()) {
+      const Json::Value& record = records[index];
       if(*record_read == 0){
         out_tensors->clear();
         //allocate enough space for Tensor
@@ -81,7 +82,7 @@ class JSONInput: public FileInput<JSONInputStream> {
             return errors::InvalidArgument("Unsupported data type: ", val.type());
           }
           Tensor tensor(ctx->allocator({}), dtype, {record_to_read});
-          out_tensor->emplace_back(std::move(tensor));
+          out_tensors->emplace_back(std::move(tensor));
         }
       }
       for (size_t i = 0; i < columns().size(); i++) {
@@ -109,6 +110,7 @@ class JSONInput: public FileInput<JSONInputStream> {
         }
       }
       (*record_read)++;
+      index++;
     }
 
     //Slice if needed
@@ -121,7 +123,7 @@ class JSONInput: public FileInput<JSONInputStream> {
         (*out_tensors)[i] = std::move(tensor);
       }
     }
-    return Status::OK()
+    return Status::OK();
   }
   Status FromStream(io::InputStreamInterface* s) override {
     return Status::OK();
@@ -131,6 +133,7 @@ class JSONInput: public FileInput<JSONInputStream> {
   bool DecodeAttributes(const VariantTensorData& data) override {
     return true;
   }
+  protected:
 };
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(JSONInput, "tensorflow::data::JSONInput");
