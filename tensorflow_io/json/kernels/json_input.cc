@@ -24,7 +24,7 @@ namespace data {
 
 class JSONInputStream {
 public:
-  explicit JSONInputStream(io::InputStreamInterface* s, const std::vertor<string>& columns)
+  explicit JSONInputStream(io::InputStreamInterface* s)
     : ifs_(s){
    }
    
@@ -37,7 +37,6 @@ public:
   }
 private:
   ifstream ifs_;
-  std::vector<string> columns_;
   Json::Reader reader_;
 };
 
