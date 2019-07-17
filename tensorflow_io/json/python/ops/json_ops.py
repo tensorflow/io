@@ -40,29 +40,3 @@ class JSONDataset(data_ops.Dataset):
         json_ops.json_dataset,
         json_ops.json_input(filenames, ["none", "gz"], columns),
         batch, dtypes, shapes)
-
-
-
-# def JSONDataset(filenames, columns=None):
-#   """Start with JSON parser in python to add tests."""
-#   jsondataset = []
-#   jsondataset = JSONParser(filenames, columns)
-#   return tf.data.Dataset.from_tensor_slices(jsondataset)
-
-
-# def JSONParser(filenames, columns):
-#   """JSON parser in Python for testing."""
-#   with open(filenames) as json_file:
-#     data = json.load(json_file)
-#   dataset = []
-#   for sample in data:
-#     sampledata = []
-#     if columns is None:
-#       for key in sorted(sample):
-#         sampledata.append(sample[key])
-#     else:
-#       for key in columns:
-#         if  key in sample:
-#           sampledata.append(sample[key])
-#     dataset.append(sampledata)
-#   return dataset
