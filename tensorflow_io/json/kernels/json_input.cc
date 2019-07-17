@@ -33,7 +33,7 @@ public:
   }
 
   bool ParseRecords(json::Value& records){
-    return reader.parse(ifs, records);
+    return reader.parse(ifs_, records);
   }
 private:
   ifstream ifs_;
