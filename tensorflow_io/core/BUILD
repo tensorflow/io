@@ -118,6 +118,7 @@ cc_binary(
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/prometheus:prometheus_ops",
         "//tensorflow_io/text:text_ops",
+        "//tensorflow_io/json:json_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
