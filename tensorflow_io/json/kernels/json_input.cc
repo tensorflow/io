@@ -22,21 +22,36 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class JSONInput: public FileInput<io:BufferedInputStream> {
+class JSONInputStream {
+public:
+  explicit JSONInputStream(io::InputStreamInterface* s, const std::vertor<string>& columns)
+    : ifs_(s){
+   }
+   
+  ~JSONInputStream() {
+    ifs_.close();
+  }
+
+  bool ParseRecords(json::Value& records){
+    return reader.parse(ifs, records);
+  }
+private:
+  ifstream ifs_;
+  std::vector<string> columns_;
+  Json::Reader reader_;
+};
+
+class JSONInput: public FileInput<JSONInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<io::BufferedInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new io::BufferedInputStream(s, 4096));
+      state.reset(new JSONInputStream(s, columns()));
     }
 
-    // Read the json file
-    ifstream ifs(filename());
-    Json::Reader reader;
-    Json::Value records;
-
-    //Parse the json file to the json object
-    reader.parse(ifs, records);
-
+    json::Value& records;
+    if (!state.get()->ParseRecords(records)){
+      return errors::InvalidArgument("JSON parsing error: ", error);
+    }
     while ((*record_read) < record_to_read && (*record_read) < records.size()) {
       const Json::Value& record = records[*record_read];
       if(*record_read == 0){
@@ -124,7 +139,6 @@ REGISTER_UNARY_VARIANT_DECODE_FUNCTION(JSONInput, "tensorflow::data::JSONInput")
 REGISTER_KERNEL_BUILDER(Name("JSONInput").Device(DEVICE_CPU),
                         FileInputOp<JSONInput>);
 REGISTER_KERNEL_BUILDER(Name("JSONDataset").Device(DEVICE_CPU),
-                        FileInputDatasetOp<JSONInput, io::BufferedInputStream>);
-
+                        FileInputDatasetOp<JSONInput, JSONInputStream>); 
 }  // namespace data
 }  // namespace tensorflow
