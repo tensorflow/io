@@ -20,7 +20,7 @@ if [[ $(uname) == "Darwin" ]]; then
     $entry -m pip install -q wheel==0.31.1
   fi
 
-  $entry -m pip install -q delocate
+  python -m pip install -q delocate
   delocate-wheel --version
 else
   apt-get -y -qq update
