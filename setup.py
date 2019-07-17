@@ -94,9 +94,8 @@ setup(
 )
 """
 
-# Note: Change to tensorflow == 1.13.0 once 1.13.0 is released
-package = 'tensorflow>=1.13.0,<1.14.0'
-version = '0.4.0'
+package = 'tensorflow>=1.14.0,<1.15.0'
+version = '0.7.0'
 project = 'tensorflow-io'
 if '--package-version' in sys.argv:
   print(package)
@@ -115,7 +114,7 @@ if '--nightly' in sys.argv:
 if '--preview' in sys.argv:
   preview_idx = sys.argv.index('--preview')
   version = version + ".dev" + sys.argv[preview_idx + 1]
-  package = 'tf-nightly-2.0-preview'
+  package = 'tensorflow==2.0.0b1'
   project = 'tensorflow-io-2.0-preview'
   sys.argv.remove('--preview')
   sys.argv.pop(preview_idx)
@@ -149,7 +148,9 @@ if datapath is not None:
       os.path.join(datapath, "tensorflow_io")):
     if (not fnmatch.fnmatch(rootname, "*test*") and
         not fnmatch.fnmatch(rootname, "*runfiles*")):
-      for filename in fnmatch.filter(filenames, "*.so"):
+      for filename in [
+          f for f in filenames if fnmatch.fnmatch(
+              f, "*.so") or fnmatch.fnmatch(f, "*.py")]:
         src = os.path.join(rootname, filename)
         dst = os.path.join(
             rootpath,

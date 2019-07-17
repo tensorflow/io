@@ -39,9 +39,6 @@ cc_library(
     hdrs = [
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     defines = [
         "PLATFORM_LINUX",
         "ENABLE_CURL_CLIENT",

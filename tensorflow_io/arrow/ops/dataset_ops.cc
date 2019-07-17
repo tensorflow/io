@@ -22,6 +22,8 @@ namespace tensorflow {
 REGISTER_OP("ArrowDataset")
     .Input("serialized_batches: string")
     .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
@@ -36,6 +38,8 @@ serialized_batches: Serialized Arrow RecordBatches.
 REGISTER_OP("ArrowFeatherDataset")
     .Input("filenames: string")
     .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
@@ -48,8 +52,10 @@ filenames: One or more file paths.
 )doc");
 
 REGISTER_OP("ArrowStreamDataset")
-    .Input("host: string")
+    .Input("endpoints: string")
     .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
@@ -58,7 +64,7 @@ REGISTER_OP("ArrowStreamDataset")
     .Doc(R"doc(
 Creates a dataset that connects to a host serving Arrow RecordBatches in stream format.
 
-host: A host address that is serving an Arrow stream.
+endpoints: One or more host addresses that are serving an Arrow stream.
 )doc");
 
 }  // namespace tensorflow

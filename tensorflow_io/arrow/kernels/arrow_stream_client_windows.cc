@@ -29,8 +29,8 @@ limitations under the License.
 
 namespace tensorflow {
 
-ArrowStreamClient::ArrowStreamClient(const std::string& host)
-    : host_(host), sock_(-1), pos_(0) {}
+ArrowStreamClient::ArrowStreamClient(const std::string& endpoint)
+    : endpoint_(endpoint), sock_(-1), pos_(0) {}
 
 ArrowStreamClient::~ArrowStreamClient() {
   if (sock_ != -1) {
@@ -39,13 +39,26 @@ ArrowStreamClient::~ArrowStreamClient() {
 }
 
 arrow::Status ArrowStreamClient::Connect() {
-  size_t sep_pos = host_.find(':');
-  if (sep_pos == std::string::npos || sep_pos == host_.size()) {
+  string socket_family;
+  string host;
+  Status status;
+
+  status = ParseEndpoint(endpoint_, &socket_family, &host);
+  if (!status.ok()) {
     return arrow::Status::Invalid(
-        "Expected host to be in format <host>:<port> but got: " + host_);
+        "Error parsing endpoint string: " + endpoint_);
   }
-  std::string host_str = host_.substr(0, sep_pos);
-  std::string port_str = host_.substr(sep_pos + 1, host_.size() - sep_pos);
+  if (socket_family == "unix") {
+    return arrow::Status::Invalid(
+        "Unsupported socket family: " + socket_family);
+  }
+
+  string addr_str;
+  string port_str;
+  status = ParseHost(host, &addr_str, &port_str);
+  if (!status.ok()) {
+    return arrow::Status::Invalid("Error parsing host string: " + host);
+  }
 
   WSADATA wsaData;
   addrinfo *result = NULL, *ptr = NULL, hints;
@@ -61,7 +74,7 @@ arrow::Status ArrowStreamClient::Connect() {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
 
-  res = getaddrinfo(host_str.c_str(), port_str.c_str(), &hints,
+  res = getaddrinfo(addr_str.c_str(), port_str.c_str(), &hints,
                     &result);
   if (res != 0) {
     return arrow::Status::IOError("Getaddrinfo failed with error: ",

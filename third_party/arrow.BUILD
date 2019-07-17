@@ -90,9 +90,6 @@ cc_library(
     ],
     hdrs = [
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     defines = [
         "ARROW_WITH_SNAPPY",
     ],
@@ -102,8 +99,8 @@ cc_library(
     deps = [
         ":arrow_format",
         "@boost",
+        "@com_github_madler_zlib//:z",
         "@snappy",
         "@thrift",
-        "@zlib",
     ],
 )

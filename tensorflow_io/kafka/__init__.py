@@ -14,6 +14,7 @@
 # ==============================================================================
 """Kafka Dataset.
 
+@@KafkaOutputSequence
 @@KafkaDataset
 @@write_kafka
 """
@@ -22,14 +23,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow_io.kafka.python.ops.kafka_ops import KafkaOutputSequence
 from tensorflow_io.kafka.python.ops.kafka_dataset_ops import KafkaDataset
 from tensorflow_io.kafka.python.ops.kafka_dataset_ops import write_kafka
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
+    "KafkaOutputSequence",
     "KafkaDataset",
     "write_kafka",
 ]
 
-remove_undocumented(__name__)
+remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

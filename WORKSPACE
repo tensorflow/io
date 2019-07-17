@@ -18,7 +18,7 @@ http_archive(
 )
 
 http_archive(
-    name = "zlib",
+    name = "com_github_madler_zlib",
     build_file = "//third_party:zlib.BUILD",
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",
@@ -110,6 +110,7 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
         "https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
+        "https://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz",
     ],
 )
 
@@ -201,32 +202,57 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_grpc_grpc",
-    sha256 = "1d54cd95ed276c42c276e0a3df8ab33ee41968b73af14023c03a19db48f82e73",
-    strip_prefix = "grpc-1.19.0",
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
+    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
     urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.19.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.19.0.tar.gz",
+        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
+        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
     ],
+)
+
+http_archive(
+    name = "util_linux",
+    build_file = "//third_party:uuid.BUILD",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    strip_prefix = "util-linux-2.32.1",
+    urls = [
+        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_grpc_grpc",
+    sha256 = "1bf082fb3016154d3f806da8eb5876caf05743da4b2e8130fadd000df74b5bb6",
+    strip_prefix = "grpc-1.21.1",
+    urls = [
+        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.21.1.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.21.1.tar.gz",
+    ],
+)
+
+# 3.7.1 with a fix to BUILD file
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "1c020fafc84acd235ec81c6aac22d73f23e85a700871466052ff231d69c1b17a",
+    strip_prefix = "protobuf-5902e759108d14ee8e6b0b07653dac2f4e70ac73",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
-
-http_archive(
-    name = "com_google_googleapis",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:googleapis.patch",
-    ],
-    sha256 = "ff903931e738b98418df9e95edeb00abe642007071dc3d579631d57957c3aa13",
-    strip_prefix = "googleapis-c911062bb7a1c41a208957bed923b8750f3b6f28",
-    urls = [
-        "https://mirror.bazel.build/github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
-        "https://github.com/googleapis/googleapis/archive/c911062bb7a1c41a208957bed923b8750f3b6f28.tar.gz",
-    ],
-)
 
 http_archive(
     name = "giflib",
@@ -240,23 +266,43 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_googlecloudplatform_google_cloud_cpp",
-    sha256 = "06bc735a117ec7ea92ea580e7f2ffa4b1cd7539e0e04f847bf500588d7f0fe90",
-    strip_prefix = "google-cloud-cpp-0.7.0",
+    name = "com_github_googleapis_google_cloud_cpp",
+    sha256 = "3abe2cf553ce33ff58d23848ae716cd2fcabfd454b89f6f65a92ed261244c1df",
+    strip_prefix = "google-cloud-cpp-0.11.0",
     urls = [
-        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v0.7.0.tar.gz",
+        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
     ],
 )
 
+# Manually load com_google_googleapis as we need a patch for pubsub
+# The patch file was generated from:
+# diff -Naur a b > third_party/googleapis.patch
 http_archive(
-    name = "com_github_googleapis_googleapis",
-    build_file = "@com_github_googlecloudplatform_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "82ba91a41fb01305de4e8805c0a9270ed2035007161aa5a4ec60f887a499f5e9",
-    strip_prefix = "googleapis-6a3277c0656219174ff7c345f31fb20a90b30b97",
-    urls = [
-        "https://github.com/google/googleapis/archive/6a3277c0656219174ff7c345f31fb20a90b30b97.zip",
+    name = "com_google_googleapis",
+    build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:googleapis.patch",
     ],
+    sha256 = "90bcdf27b41b1c3900838fe4edaf89080ca67026608817946b4ae5e2b925c711",
+    strip_prefix = "googleapis-7152063cb170d23c5c110e243711d8eb6fda6a1c",
+    urls = [
+        "https://github.com/googleapis/googleapis/archive/7152063cb170d23c5c110e243711d8eb6fda6a1c.tar.gz",
+    ],
+)
+
+load("@com_github_googleapis_google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
+
+google_cloud_cpp_deps()
+
+load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+
+# Configure @com_google_googleapis to only compile C++ and gRPC:
+switched_rules_by_language(
+    name = "com_google_googleapis_imports",
+    cc = True,  # C++ support is only "Partially implemented", roll our own.
+    grpc = True,
 )
 
 http_archive(
@@ -271,11 +317,151 @@ http_archive(
 
 http_archive(
     name = "com_google_googletest",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
+    sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
+    strip_prefix = "googletest-release-1.8.1",
     urls = [
-        "https://mirror.bazel.build/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-        "https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
+        "https://mirror.bazel.build/github.com/google/googletest/archive/release-1.8.1.tar.gz",
+        "https://github.com/google/googletest/archive/release-1.8.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libarchive",
+    build_file = "//third_party:libarchive.BUILD",
+    sha256 = "720da414e7aebb255fcdaee106894e4d30e2472ac1390c2c15b70c84c7479658",
+    strip_prefix = "libarchive-3.3.3",
+    urls = [
+        "https://mirror.bazel.build/github.com/libarchive/libarchive/archive/v3.3.3.tar.gz",
+        "https://github.com/libarchive/libarchive/archive/v3.3.3.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libexpat",
+    build_file = "//third_party:libexpat.BUILD",
+    sha256 = "574499cba22a599393e28d99ecfa1e7fc85be7d6651d543045244d5b561cb7ff",
+    strip_prefix = "libexpat-R_2_2_6/expat",
+    urls = [
+        "https://mirror.bazel.build/github.com/libexpat/libexpat/archive/R_2_2_6.tar.gz",
+        "http://github.com/libexpat/libexpat/archive/R_2_2_6.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libapr1",
+    build_file = "//third_party:libapr1.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:libapr1.patch",
+    ],
+    sha256 = "1a0909a1146a214a6ab9de28902045461901baab4e0ee43797539ec05b6dbae0",
+    strip_prefix = "apr-1.6.5",
+    urls = [
+        "https://github.com/apache/apr/archive/1.6.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libaprutil1",
+    build_file = "//third_party:libaprutil1.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:libaprutil1.patch",
+    ],
+    sha256 = "4c9ae319cedc16890fc2776920e7d529672dda9c3a9a9abd53bd80c2071b39af",
+    strip_prefix = "apr-util-1.6.1",
+    urls = [
+        "https://github.com/apache/apr-util/archive/1.6.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "mxml",
+    build_file = "//third_party:mxml.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:mxml.patch",
+    ],
+    sha256 = "4d850d15cdd4fdb9e82817eb069050d7575059a9a2729c82b23440e4445da199",
+    strip_prefix = "mxml-2.12",
+    urls = [
+        "https://github.com/michaelrsweet/mxml/archive/v2.12.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aliyun_oss_c_sdk",
+    build_file = "//third_party:oss_c_sdk.BUILD",
+    sha256 = "6450d3970578c794b23e9e1645440c6f42f63be3f82383097660db5cf2fba685",
+    strip_prefix = "aliyun-oss-c-sdk-3.7.0",
+    urls = [
+        "https://github.com/aliyun/aliyun-oss-c-sdk/archive/3.7.0.tar.gz",
+    ],
+)
+
+# hdf5 header files are generated from:
+#
+# tar xzf hdf5-1.10.5.tar.gz
+# cp -r hdf5-1.10.5 a
+# cp -r hdf5-1.10.5 b
+# docker run -i -t --rm -v $PWD/hdf5-1.10.5:/v -w /v --net=host ubuntu:14.04
+# $ apt-get -y -qq update
+# $ apt-get -y -qq install make gcc g++ libz-dev
+# $ ./configure --enable-cxx --with-zlib
+# $ make
+# $ exit
+# mkdir -p b/linux/src
+# cp hdf5-1.10.5/src/H5pubconf.h b/linux/src/H5pubconf.h
+# cp hdf5-1.10.5/src/H5lib_settings.c b/linux/src/H5lib_settings.c
+# cp hdf5-1.10.5/src/H5Tinit.c b/linux/src/H5Tinit.c
+# diff -Naur a b > hdf5.linux.patch
+#
+# On darwin, change to:
+#
+# mkdir -p b/darwin/src
+# cp hdf5-1.10.5/src/H5pubconf.h b/darwin/src/H5pubconf.h
+# cp hdf5-1.10.5/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
+# cp hdf5-1.10.5/src/H5Tinit.c b/darwin/src/H5Tinit.c
+# diff -Naur a b > hdf5.darwin.patch
+http_archive(
+    name = "hdf5",
+    build_file = "//third_party:hdf5.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:hdf5.linux.patch",
+        "//third_party:hdf5.darwin.patch",
+    ],
+    sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
+    strip_prefix = "hdf5-1.10.5",
+    urls = [
+        "https://mirror.bazel.build/support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
+        "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "avro",
+    build_file = "//third_party:avro.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:avro.patch",
+    ],
+    sha256 = "42fbe407263ec174d448121cd0e20adcd75c43cb9f192b97476d9b99fa69faf3",
+    strip_prefix = "avro-release-1.9.0-rc4/lang/c++",
+    urls = [
+        "https://mirror.bazel.build/github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+        "https://github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "freetype",
+    build_file = "//third_party:freetype.BUILD",
+    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
+    strip_prefix = "freetype-2.10.0",
+    urls = [
+        "https://mirror.bazel.build/download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
     ],
 )
 
@@ -285,7 +471,53 @@ http_archive(
     sha256 = "c49deac9e0933bcb7044f08516861a2d560988540b23de2ac1ad443b219afdb6",
     strip_prefix = "jsoncpp-1.8.4",
     urls = [
-        "https://mirror.bazel.build/github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
+        "http://mirror.tensorflow.org/github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
         "https://github.com/open-source-parsers/jsoncpp/archive/1.8.4.tar.gz",
     ],
+)
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Note: patch is needed as we need to resolve multiple zlib dependencies.
+# Patch was created with:
+# diff -Naur a b > rules_go.patch
+http_archive(
+    name = "io_bazel_rules_go",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:rules_go.patch",
+    ],
+    sha256 = "f04d2373bcaf8aa09bccb08a98a57e721306c8f6043a2a0ee610fd6853dcde3d",
+    urls = [
+        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/0.18.6/rules_go-0.18.6.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/0.18.6/rules_go-0.18.6.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_gazelle",
+    sha256 = "3c681998538231a2d24d0c07ed5a7658cb72bfb5fd4bf9911157c0e9ac6a2687",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.17.0/bazel-gazelle-0.17.0.tar.gz"],
+)
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+
+go_register_toolchains()
+
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+
+gazelle_dependencies()
+
+go_repository(
+    name = "com_github_prometheus_common",
+    importpath = "github.com/prometheus/common",
+    tag = "v0.4.1",
+)
+
+go_repository(
+    name = "com_github_prometheus_client_golang",
+    importpath = "github.com/prometheus/client_golang",
+    tag = "v0.9.3",
 )

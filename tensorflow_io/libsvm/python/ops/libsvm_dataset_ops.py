@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow import sparse
+from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
 gen_libsvm_ops = _load_library('_libsvm_ops.so')
 
@@ -60,18 +61,16 @@ def make_libsvm_dataset(file_names,
       feature batches to prefetch for performance improvement.
       Defaults to auto-tune. Set to 0 to disable prefetching.
   """
-  dataset = core_readers.TextLineDataset(file_names,
-                                         compression_type=compression_type,
-                                         buffer_size=buffer_size)
+  dataset = data.TextLineDataset(
+      file_names,
+      compression_type=compression_type,
+      buffer_size=buffer_size).batch(
+          batch_size, drop_remainder=drop_final_batch)
   def parsing_func(content):
     return decode_libsvm(content, num_features, dtype, label_dtype)
 
-  dataset = dataset.apply(
-      data.experimental.map_and_batch(
-          parsing_func,
-          batch_size,
-          num_parallel_calls=num_parallel_parser_calls,
-          drop_remainder=drop_final_batch))
+  dataset = dataset.map(
+      parsing_func, num_parallel_calls=num_parallel_parser_calls)
   if prefetch_buffer_size == 0:
     return dataset
 

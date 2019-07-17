@@ -15,11 +15,24 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.arrow`: Apache Arrow data format support. Usage guide [here](tensorflow_io/arrow/README.md).
 - `tensorflow_io.image`: WebP and TIFF image format support.
 - `tensorflow_io.libsvm`: LIBSVM file format support.
-- `tensorflow_io.video`: Video file support with FFmpeg.
+- `tensorflow_io.ffmpeg`: Video and Audio file support with FFmpeg.
 - `tensorflow_io.parquet`: Apache Parquet data format support.
 - `tensorflow_io.lmdb`: LMDB file format support.
 - `tensorflow_io.mnist`: MNIST file format support.
+- `tensorflow_io.cifar`: CIFAR file format support.
 - `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
+- `tensorflow_io.bigtable`: Google Cloud Bigtable support.
+- `tensorflow_io.oss`: Alibaba Cloud Object Storage Service (OSS) support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/oss/README.md).
+- `tensorflow_io.avro`: Apache Avro file format support.
+- `tensorflow_io.audio`: WAV file format support.
+- `tensorflow_io.grpc`: gRPC server Dataset, support for streaming Numpy input.
+- `tensorflow_io.hdf5`: HDF5 file format support.
+- `tensorflow_io.text`: Text file with archive support.
+- `tensorflow_io.text`: Pcap network packet capture file support.
+- `tensorflow_io.azure`: Microsoft Azure Storage support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/azure/README.md).
+- `tensorflow_io.bigquery`: Google Cloud BigQuery support.
+- `tensorflow_io.gcs`: GCS Configuration support.
+- `tensorflow_io.prometheus`: Prometheus observation data support.
 
 ## Installation
 
@@ -47,10 +60,10 @@ import tensorflow_io.mnist as mnist_io
 d_train = mnist_io.MNISTDataset(
     'train-images-idx3-ubyte.gz',
     'train-labels-idx1-ubyte.gz',
-    compression_type="GZIP")
+    batch=1)
 
 # By default image data is uint8 so conver to float32.
-d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y)).batch(1)
+d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
@@ -67,7 +80,7 @@ model.fit(d_train, epochs=5, steps_per_epoch=10000)
 
 Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
 files are assumed to have been downloaded and saved to the local directory.
-Compression files could be processed automatically with `compression_type="GZIP"`.
+Compression files (e.g. gzip) could be detected and uncompressed automatically.
 
 ### R Package
 
@@ -84,6 +97,30 @@ if (!require("devtools")) install.packages("devtools")
 devtools::install_github("tensorflow/io", subdir = "R-package")
 ```
 
+### TensorFlow Version Compatibility
+
+To ensure compatibility with TensorFlow, it is recommended to install a matching
+version of TensorFlow I/O according to the table below:
+
+| TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
+| --- | --- | --- |
+| 0.7.0 | 1.14.x | Jul 14, 2019 |
+| 0.6.0 | 1.13.x | May 29, 2019 |
+| 0.5.0 | 1.13.x | Apr 12, 2019 |
+| 0.4.0 | 1.13.x | Mar 01, 2019 |
+| 0.3.0 | 1.12.0 | Feb 15, 2019 |
+| 0.2.0 | 1.12.0 | Jan 29, 2019 |
+| 0.1.0 | 1.12.0 | Dec 16, 2018 |
+
+### Build Status
+
+| Build | Status |
+| --- | --- |
+| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
+| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
+| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
+| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
+
 ## Developing
 
 ### Python
@@ -93,7 +130,7 @@ used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
 $ # Build and run the Docker image
 $ docker build -f dev/Dockerfile -t tfio-dev .
-$ docker run -it -rm --net=host -v ${PWD}:/v -w /v tfio-dev
+$ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 $ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
 $ # Build TensorFlow I/O C++
@@ -121,6 +158,15 @@ to run all tests, execute the following commands:
 $ bash -x -e tests/test_ignite/start_ignite.sh
 $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+```
+
+#### Running Python Style Checks
+
+Style checks for Python can be run with the following commands:
+
+```sh
+$ curl -o .pylint -sSL https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
+$ find . -name '*.py' | xargs pylint --rcfile=.pylint
 ```
 
 ### R
@@ -155,6 +201,11 @@ until_out_of_range({
 * SIG IO [Google Group](https://groups.google.com/a/tensorflow.org/forum/#!forum/io) and mailing list: [io@tensorflow.org](io@tensorflow.org)
 * SIG IO [Monthly Meeting Notes](https://docs.google.com/document/d/1CB51yJxns5WA4Ylv89D-a5qReiGTC0GYum6DU-9nKGo/edit)
 * Gitter room: [tensorflow/sig-io](https://gitter.im/tensorflow/sig-io)
+
+## More Information
+
+* [How to build a custom Dataset for Tensorflow](https://towardsdatascience.com/how-to-build-a-custom-dataset-for-tensorflow-1fe3967544d8) - [Ivelin Ivanov](https://github.com/ivelin)
+* [TensorFlow on Apache Ignite](https://medium.com/tensorflow/tensorflow-on-apache-ignite-99f1fc60efeb) - [Anton Dmitriev](https://github.com/dmitrievanthony)
 
 ## License
 

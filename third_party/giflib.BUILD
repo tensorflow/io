@@ -22,9 +22,6 @@ cc_library(
     hdrs = [
         "lib/gif_lib.h",
     ],
-    copts = [
-        "-D_GLIBCXX_USE_CXX11_ABI=0",
-    ],
     includes = ["lib"],
     visibility = ["//visibility:public"],
 )

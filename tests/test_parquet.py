@@ -20,8 +20,8 @@ from __future__ import print_function
 
 import os
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes  # pylint: disable=wrong-import-position
 from tensorflow import errors  # pylint: disable=wrong-import-position
@@ -51,15 +51,19 @@ class ParquetDatasetTest(test.TestCase):
         os.path.dirname(os.path.abspath(__file__)),
         "test_parquet",
         "parquet_cpp_example.parquet")
-
-    filenames = tensorflow.constant([filename], dtypes.string)
-    columns = [0, 1, 2, 4, 5]
+    filename = "file://" + filename
+    columns = [
+        'boolean_field',
+        'int32_field',
+        'int64_field',
+        'float_field',
+        'double_field']
     output_types = (
         dtypes.bool, dtypes.int32, dtypes.int64, dtypes.float32, dtypes.float64)
     num_repeats = 2
 
     dataset = parquet_io.ParquetDataset(
-        filenames, columns, output_types).repeat(num_repeats)
+        [filename], columns, output_types).repeat(num_repeats)
     iterator = data.make_initializable_iterator(dataset)
     init_op = iterator.initializer
     get_next = iterator.get_next()
@@ -73,9 +77,79 @@ class ParquetDatasetTest(test.TestCase):
           v2 = i * 1000 * 1000 * 1000 * 1000
           v4 = 1.1 * i
           v5 = 1.1111111 * i
-          self.assertAllClose((v0, v1, v2, v4, v5), sess.run(get_next))
+          vv = sess.run(get_next)
+          self.assertAllClose((v0, v1, v2, v4, v5), vv)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+    dataset = parquet_io.ParquetDataset(
+        [filename], columns, output_types, batch=1)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for i in range(500):
+        v0 = ((i % 2) == 0)
+        v1 = i
+        v2 = i * 1000 * 1000 * 1000 * 1000
+        v4 = 1.1 * i
+        v5 = 1.1111111 * i
+        vv = sess.run(get_next)
+        self.assertAllClose(([v0], [v1], [v2], [v4], [v5]), vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+    dataset = parquet_io.ParquetDataset(
+        [filename, filename], columns, output_types, batch=3)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for ii in range(0, 999, 3):
+        v0, v1, v2, v4, v5 = [], [], [], [], []
+        for i in [ii % 500, (ii + 1) % 500, (ii + 2) % 500]:
+          v0.append((i % 2) == 0)
+          v1.append(i)
+          v2.append(i * 1000 * 1000 * 1000 * 1000)
+          v4.append(1.1 * i)
+          v5.append(1.1111111 * i)
+        vv = sess.run(get_next)
+        self.assertAllClose((v0, v1, v2, v4, v5), vv)
+      i = 999 % 500
+      v0 = ((i % 2) == 0)
+      v1 = i
+      v2 = i * 1000 * 1000 * 1000 * 1000
+      v4 = 1.1 * i
+      v5 = 1.1111111 * i
+      vv = sess.run(get_next)
+      self.assertAllClose(([v0], [v1], [v2], [v4], [v5]), vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+    # With compression
+    filename = filename + '.gz'
+    dataset = parquet_io.ParquetDataset(
+        [filename], columns, output_types).repeat(num_repeats)
+    iterator = data.make_initializable_iterator(dataset)
+    init_op = iterator.initializer
+    get_next = iterator.get_next()
+
+    with self.test_session() as sess:
+      sess.run(init_op)
+      for _ in range(num_repeats):  # Dataset is repeated.
+        for i in range(500): # 500 rows.
+          v0 = ((i % 2) == 0)
+          v1 = i
+          v2 = i * 1000 * 1000 * 1000 * 1000
+          v4 = 1.1 * i
+          v5 = 1.1111111 * i
+          vv = sess.run(get_next)
+          self.assertAllClose((v0, v1, v2, v4, v5), vv)
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
 if __name__ == "__main__":
   test.main()
