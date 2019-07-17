@@ -3,12 +3,22 @@ set -e
 python --version
 python -m pip --version
 if [[ $(uname) == "Darwin" ]]; then
-  for pyVersion in {3.5.3,3.6.2}; do
-    pyenv install --skip-existing $pyVersion
-    pyenv local $pyVersion
-    pyPath=$(pyenv which python)
-    $pyPath -m pip install -q wheel==0.31.1
-  done
+  if [[ "$1" == "--"* ]]; then
+    shift
+    shift
+  fi
+  entry=$1
+  if [[ $entry == *"3"* ]]; then
+    # If on macOS and building python3 packages
+    minor=$(echo $entry | cut -d. -f2)
+    patch=$(echo $entry | cut -d. -f3)
+    # Specify version number for local use
+    pyenv install --skip-existing "3.${minor}.${patch}"
+    pyenv local "3.${minor}.${patch}"
+    # Drop patch number from executable command
+    entry=$(pyenv which python)
+    $entry -m pip install -q wheel==0.31.1
+  fi
 
   python -m pip install -q delocate
   delocate-wheel --version
