@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """JSONDataset"""
-import json
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as json_ops
