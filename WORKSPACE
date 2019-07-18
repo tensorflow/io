@@ -521,3 +521,13 @@ go_repository(
     importpath = "github.com/prometheus/client_golang",
     tag = "v0.9.3",
 )
+
+http_archive(
+    name = "dcmtk",
+    build_file = "//third_party:dcmtk.BUILD",
+    sha256 = "a93ff354fae091689a0740a1000cde7d4378fdf733aef9287a70d7091efa42c0",
+    strip_prefix = "dcmtk-3.6.4",
+    urls = [
+        "https://dicom.offis.de/download/dcmtk/dcmtk364/dcmtk-3.6.4.tar.gz",
+    ],
+)
