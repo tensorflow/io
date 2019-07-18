@@ -22,7 +22,9 @@ using namespace tensorflow;
 REGISTER_OP("DecodeDICOMImage")
     .Input("contents: string")
     .Output("output: dtype")
-    .Attr("dtype: {uint8, uint16, uint32, uint64, float16, float, double} = DT_UINT16")
+    .Attr(
+        "dtype: {uint8, uint16, uint32, uint64, float16, float, double} = "
+        "DT_UINT16")
     .Attr("color_dim: bool = true")
     .Attr("on_error: {'strict', 'skip', 'lossy'} = 'skip'")
     .Attr("scale: {'auto', 'preserve'} = 'preserve'")
