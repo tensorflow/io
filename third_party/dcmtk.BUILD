@@ -51,7 +51,16 @@ cc_library(
         "config/math.cc",
     ],
     copts = [],
-    defines = [
+    defines = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "DCMTK_ENABLE_LFS=1",  # DCMTK_LFS=1
+            "HAVE_POINTER_TYPE_PTHREAD_T=1",
+        ],
+        "//conditions:default": [
+            "DCMTK_ENABLE_LFS=2",  # DCMTK_LFS64=2
+            "HAVE_CHARP_STRERROR_R=1",
+        ],
+    }) + [
         "DCMTK_INSIDE_LOG4CPLUS",
     ],
     includes = [
@@ -527,7 +536,7 @@ genrule(
         "/* Define to 1 if you have the `strerror' function. */",
         "#define HAVE_STRERROR 1",
         "/* Define to 1 if `strerror_r' returns a char*. */",
-        "#define HAVE_CHARP_STRERROR_R 1",
+        "/* #undef HAVE_CHARP_STRERROR_R */",
         "/* Define to 1 if you have the <streambuf.h> header file. */",
         "/* #undef HAVE_STREAMBUF_H */",
         "/* Define to 1 if you have the <strings.h> header file. */",
@@ -682,7 +691,7 @@ genrule(
         "#define DCMTK_LFS 1",
         "#define DCMTK_LFS64 2",
         "/* Select LFS mode (defined above) that shall be used or don't define it */",
-        "#define DCMTK_ENABLE_LFS DCMTK_LFS64",
+        "/* #undef DCMTK_ENABLE_LFS */",
         "/* The size of a `char', as computed by sizeof. */",
         "#define SIZEOF_CHAR 1",
         "/* The size of a `double', as computed by sizeof. */",
