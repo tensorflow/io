@@ -51,13 +51,13 @@ class DecodeDICOMImageOp : public OpKernel {
   explicit DecodeDICOMImageOp(OpKernelConstruction *context)
       : OpKernel(context) {
     // Get the on_error
-    OP_REQUIRES_OK(context, context->GetAttr("on_error", &on_error));
+    OP_REQUIRES_OK(context, context->GetAttr("on_error", &on_error_));
 
-    // Get the on_error
-    OP_REQUIRES_OK(context, context->GetAttr("scale", &scale));
+    // Get the scale
+    OP_REQUIRES_OK(context, context->GetAttr("scale", &scale_));
 
     // Get the color_dim
-    OP_REQUIRES_OK(context, context->GetAttr("color_dim", &color_dim));
+    OP_REQUIRES_OK(context, context->GetAttr("color_dim", &color_dim_));
 
     DcmRLEDecoderRegistration::registerCodecs();  // register RLE codecs
     DJDecoderRegistration::registerCodecs();      // register JPEG codecs
@@ -107,11 +107,11 @@ class DecodeDICOMImageOp : public OpKernel {
     unsigned int samples_per_pixel = 0;
 
     if ((image == NULL) || (image->getStatus() != EIS_Normal)) {
-      if (on_error == "strict") {
+      if (on_error_ == "strict") {
         OP_REQUIRES(context, false,
                     errors::InvalidArgument("Error loading image"));
         return;
-      } else if ((on_error == "skip") || (on_error == "lossy")) {
+      } else if ((on_error_ == "skip") || (on_error_ == "lossy")) {
         Tensor *output_tensor = NULL;
         OP_REQUIRES_OK(context,
                        context->allocate_output(0, {0}, &output_tensor));
@@ -129,7 +129,7 @@ class DecodeDICOMImageOp : public OpKernel {
 
     // Create an output tensor shape
     TensorShape out_shape;
-    if ((samples_per_pixel == 1) && (color_dim == false)) {
+    if ((samples_per_pixel == 1) && (color_dim_ == false)) {
       out_shape = TensorShape({static_cast<int64>(frameCount),
                                static_cast<int64>(frameHeight),
                                static_cast<int64>(frameWidth)});
@@ -142,14 +142,14 @@ class DecodeDICOMImageOp : public OpKernel {
 
     // Check if output type is ok for image
     if (pixelDepth > sizeof(dtype) * 8) {
-      if (on_error == "strict") {
+      if (on_error_ == "strict") {
         OP_REQUIRES(
             context, false,
             errors::InvalidArgument(
                 "Input argument dtype size smaller than pixelDepth (bits):",
                 pixelDepth));
         return;
-      } else if (on_error == "skip") {
+      } else if (on_error_ == "skip") {
         Tensor *output_tensor = NULL;
         OP_REQUIRES_OK(context,
                        context->allocate_output(0, {0}, &output_tensor));
@@ -196,10 +196,10 @@ class DecodeDICOMImageOp : public OpKernel {
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits, uint8 *out_value) {
-    if (scale == "auto") {
+    if (scale_ == "auto") {
       in_value = in_value << (64 - n_bits);
       *out_value = (dtype)(in_value >> (64 - 8 * sizeof(uint8)));
-    } else if (scale == "preserve") {
+    } else if (scale_ == "preserve") {
       *out_value = in_value >= ((1ULL << 8 * sizeof(uint8)) - 1)
                        ? (dtype)(((1ULL << 8 * sizeof(uint8)) - 1))
                        : (dtype)(in_value);
@@ -207,10 +207,10 @@ class DecodeDICOMImageOp : public OpKernel {
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits, uint16 *out_value) {
-    if (scale == "auto") {
+    if (scale_ == "auto") {
       in_value = in_value << (64 - n_bits);
       *out_value = (dtype)(in_value >> (64 - 8 * sizeof(uint16)));
-    } else if (scale == "preserve") {
+    } else if (scale_ == "preserve") {
       *out_value = in_value >= ((1ULL << 8 * sizeof(uint16)) - 1)
                        ? (dtype)(((1ULL << 8 * sizeof(uint16)) - 1))
                        : (dtype)(in_value);
@@ -218,10 +218,10 @@ class DecodeDICOMImageOp : public OpKernel {
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits, uint32 *out_value) {
-    if (scale == "auto") {
+    if (scale_ == "auto") {
       in_value = in_value << (64 - n_bits);
       *out_value = (dtype)(in_value >> (64 - 8 * sizeof(uint32)));
-    } else if (scale == "preserve") {
+    } else if (scale_ == "preserve") {
       *out_value = in_value >= ((1ULL << 8 * sizeof(uint32)) - 1)
                        ? (dtype)(((1ULL << 8 * sizeof(uint32)) - 1))
                        : (dtype)(in_value);
@@ -233,31 +233,31 @@ class DecodeDICOMImageOp : public OpKernel {
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits, float *out_value) {
-    if (scale == "auto")
+    if (scale_ == "auto")
       *out_value = (float)(in_value) / (float)((1ULL << n_bits) - 1);
-    else if (scale == "preserve")
+    else if (scale_ == "preserve")
       *out_value = (float)(in_value);
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits,
                    Eigen::half *out_value) {
-    if (scale == "auto")
+    if (scale_ == "auto")
       *out_value = static_cast<Eigen::half>((double)(in_value) /
                                             (double)((1ULL << n_bits) - 1));
-    else if (scale == "preserve")
+    else if (scale_ == "preserve")
       *out_value = static_cast<Eigen::half>(in_value);
   }
 
   void uint64_to_t(uint64 in_value, unsigned int n_bits, double *out_value) {
-    if (scale == "auto")
+    if (scale_ == "auto")
       *out_value = (double)(in_value) / (double)((1ULL << n_bits) - 1);
-    else if (scale == "preserve")
+    else if (scale_ == "preserve")
       *out_value = (double)(in_value);
   }
 
-  string on_error;
-  string scale;
-  bool color_dim;
+  string on_error_;
+  string scale_;
+  bool color_dim_;
 };
 
 // Register the CPU kernels.
