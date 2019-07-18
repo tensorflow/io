@@ -138,11 +138,11 @@ public:
         TensorShape out_shape;
         if ((samples_per_pixel == 1) && (color_dim == false))
         {
-            out_shape = TensorShape({frameCount, frameHeight, frameWidth});
+            out_shape = TensorShape({static_cast<int64>(frameCount), static_cast<int64>(frameHeight), static_cast<int64>(frameWidth)});
         }
         else
         {
-            out_shape = TensorShape({frameCount, frameHeight, frameWidth, samples_per_pixel});
+            out_shape = TensorShape({static_cast<int64>(frameCount), static_cast<int64>(frameHeight), static_cast<int64>(frameWidth), static_cast<int64>(samples_per_pixel)});
         }
 
         // Check if output type is ok for image
