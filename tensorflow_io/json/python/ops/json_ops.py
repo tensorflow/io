@@ -39,3 +39,4 @@ class JSONDataset(data_ops.Dataset):
         json_ops.json_dataset,
         json_ops.json_input(filenames, ["none", "gz"], columns),
         batch, dtypes, shapes)
+        
