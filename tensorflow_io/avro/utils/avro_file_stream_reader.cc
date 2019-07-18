@@ -10,59 +10,68 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/avro/utils/avro_reader.h"
+#include "tensorflow_io/avro/utils/avro_file_stream_reader.h"
 #include "tensorflow/core/framework/tensor_util.h"
+#include "api/DataFile.hh"
+#include "api/Generic.hh"
+#include "api/Compiler.hh"
+#include <sstream>
 
 namespace tensorflow {
 namespace data {
 
-Status AvroReader::OnWorkStartup() {
+Status AvroFileStreamReader::OnWorkStartup() {
 
-  // Allocate memory for the file part
-  data_.reset(new (std::nothrow) char[file_size_]);
-  if (data_.get() == nullptr) {
-    return Status(errors::InvalidArgument("Unable to allocate ", file_size_/1024,
-                                          " kB on memory in avro reader."));
-  }
+  TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(filename_, &file_));
 
-  // Read the file into the memory file
-  StringPiece result;
-  TF_RETURN_IF_ERROR((*file_).Read(0, file_size_, &result, data_.get()));
+  uint64 size = 0;
+  TF_RETURN_IF_ERROR(env_->GetFileSize(filename_, &size));
+  file_stream_.reset(new SizedRandomAccessFileStream(file_.get(), size));
 
-  bool do_resolve;
-  TF_RETURN_IF_ERROR(AvroResolvedMemReader::DoResolve(&do_resolve, data_, file_size_,
-    reader_schema_, filename_));
+  std::unique_ptr<avro::InputStream> stream(
+    static_cast<avro::InputStream*>(new AvroDataInputStream(file_stream_.get())));
 
-  // Create the memory reader
-  if (do_resolve) {
-    AvroResolvedMemReader* resolved_reader = new AvroResolvedMemReader();
-    TF_RETURN_IF_ERROR(AvroResolvedMemReader::Create(resolved_reader, data_, file_size_,
-      reader_schema_, filename_));
-    avro_mem_reader_.reset(resolved_reader);
+  // If the user supplied a reader schema use it
+  if (reader_schema_str_.size() > 0) {
+    string error;
+    std::istringstream ss(reader_schema_str_);
+    if (!avro::compileJsonSchema(ss, reader_schema_, error)) {
+      return errors::InvalidArgument("Avro schema error: ", error);
+    }
+    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
+      std::move(stream), reader_schema_));
+
+  // If the user did not supply a reader schema use the one from the data
   } else {
-    avro_mem_reader_.reset(new AvroMemReader());
-    TF_RETURN_IF_ERROR(AvroMemReader::Create(avro_mem_reader_.get(), data_, file_size_, filename_));
+    LOG(INFO) << "Creating file reader base";
+    std::unique_ptr<avro::DataFileReaderBase> base(new avro::DataFileReaderBase(std::move(stream)));
+    LOG(INFO) << "Creating data file reader";
+    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
+      std::move(base)));
+    //avro::DataFileReader<ComplexDouble> df(std::move(base));
+    //reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
+    //  std::move(stream)));
+    LOG(INFO) << "Reading schema from file reader";
+    reader_schema_ = (*reader_).dataSchema();
   }
+
+  // Get the namespace
+  LOG(INFO) << "Retrieving namespace";
+  string avro_namespace(reader_schema_.root()->hasName() ? reader_schema_.root()->name().ns() : "");
 
   // Create the parser tree
   TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_,
-    (*avro_mem_reader_).GetNamespace(), CreateKeysAndTypesFromConfig()));
+    avro_namespace, CreateKeysAndTypesFromConfig()));
 
   return Status::OK();
 }
 
+Status AvroFileStreamReader::Read(AvroResult* result) {
 
-Status AvroReader::Read(AvroResult* result) {
-
-  // TODO(fraudies): Use callback for performance optimization
-  std::vector<AvroValueSharedPtr> values;
-  TF_RETURN_IF_ERROR((*avro_mem_reader_).ReadBatch(&values, config_.batch_size));
-
-  int64 batch_size = values.size();
-
-  LOG(INFO) << "Batch with " << values.size() << " values";
-
-  TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value_, values));
+  auto read_value = [&](avro::GenericDatum& d) { return reader_->read(d); };
+  uint64 batch_size = 0;
+  TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value_, read_value,
+    reader_schema_, config_.batch_size, &batch_size));
 
   LOG(INFO) << "Done parsing values";
 
@@ -145,7 +154,7 @@ Status AvroReader::Read(AvroResult* result) {
   return Status::OK();
 }
 
-int AvroReader::ResolveDefaultShape(TensorShape* resolved, const PartialTensorShape& default_shape,
+int AvroFileStreamReader::ResolveDefaultShape(TensorShape* resolved, const PartialTensorShape& default_shape,
   int64 batch_size) {
 
   // If default is not given or a scalar, do not resolve nor replicate
@@ -159,7 +168,7 @@ int AvroReader::ResolveDefaultShape(TensorShape* resolved, const PartialTensorSh
 }
 
 // Assumes tensor has been allocated appropriate space -- not checked
-Status AvroReader::ShapeToTensor(Tensor* tensor, const TensorShape& shape) {
+Status AvroFileStreamReader::ShapeToTensor(Tensor* tensor, const TensorShape& shape) {
   auto tensor_flat = (*tensor).flat<int64>();
   size_t n_dim = shape.dims();
   for (size_t i_dim = 0; i_dim < n_dim; ++i_dim) {
@@ -168,7 +177,7 @@ Status AvroReader::ShapeToTensor(Tensor* tensor, const TensorShape& shape) {
   return Status::OK();
 }
 
-std::vector<std::pair<string, DataType>> AvroReader::CreateKeysAndTypesFromConfig() {
+std::vector<std::pair<string, DataType>> AvroFileStreamReader::CreateKeysAndTypesFromConfig() {
   std::vector<std::pair<string, DataType>> keys_and_types;
   for (const AvroParseConfig::Sparse& sparse : config_.sparse) {
     keys_and_types.push_back({sparse.feature_name, sparse.dtype});
@@ -179,7 +188,6 @@ std::vector<std::pair<string, DataType>> AvroReader::CreateKeysAndTypesFromConfi
 
   return keys_and_types;
 }
-
 
 }  // namespace data
 }  // namespace tensorflow

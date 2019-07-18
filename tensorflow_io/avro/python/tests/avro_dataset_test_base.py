@@ -29,7 +29,7 @@ from tensorflow.core.protobuf import config_pb2
 from tensorflow.python.framework import test_util, sparse_tensor
 from tensorflow.python.framework.errors import OpError, OutOfRangeError
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow_io.avro.python.ops import avro_dataset_c
+from tensorflow_io.avro.python.ops import avro_dataset
 from tensorflow_io.avro.python.utils.avro_serialization import \
   AvroRecordsToFile
 
@@ -99,7 +99,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
     filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                  records=record_data)
 
-    actual_dataset = avro_dataset_c.make_avro_dataset_v1(
+    actual_dataset = avro_dataset.make_avro_dataset_v1(
         file_pattern=filenames, features=features, batch_size=batch_size,
         reader_schema=kwargs.get("reader_schema", ""),
         shuffle=kwargs.get("shuffle", None),
@@ -108,13 +108,14 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
     self._verify_output(expected_tensors=expected_tensors,
                         actual_dataset=actual_dataset)
 
-  def _test_fail_dataset(self, writer_schema, record_data, features, batch_size,
-      **kwargs):
+  def _test_fail_dataset(self, writer_schema, record_data, features,
+      batch_size, **kwargs):
     filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                  records=record_data)
 
-    actual_dataset = avro_dataset_c.make_avro_dataset_v1(
-        file_pattern=filenames, features=features, batch_size=batch_size,
+    actual_dataset = avro_dataset.make_avro_dataset_v1(
+        file_pattern=filenames, features=features,
+        batch_size=batch_size,
         reader_schema=kwargs.get("reader_schema", ""),
         shuffle=kwargs.get("shuffle", None),
         num_epochs=kwargs.get("num_epochs", None))

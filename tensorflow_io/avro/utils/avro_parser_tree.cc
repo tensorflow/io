@@ -24,20 +24,52 @@ namespace tensorflow {
 namespace data {
 
 // TODO(fraudies): Change log level from INFO to DEBUG for most items
-Status AvroParserTree::ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
-  const std::vector<AvroValueSharedPtr>& values) {
+Status AvroParserTree::ParseValues(
+  std::map<string, ValueStoreUniquePtr>* key_to_value,
+  const std::function<bool(avro::GenericDatum&)> read_value,
+  const avro::ValidSchema& reader_schema,
+  uint64 values_to_parse,
+  uint64* values_parsed) {
+
+  // See if we have any data in this batch
+  avro::GenericDatum datum(reader_schema);
+  bool has_value = false;
+  // TODO(fraudies): Handle this in a better way, error occurs if reader schema is incompatible
+  // with writer schema
+  try {
+    has_value = read_value(datum);
+  } catch (avro::Exception& e) {
+    return errors::InvalidArgument("Error reading value: ", e.what());
+  }
+  if (!has_value) {
+    return errors::OutOfRange("eof");
+  }
 
   // new assignment of all buffers
   TF_RETURN_IF_ERROR(InitializeValueBuffers(key_to_value));
 
-  // add being marks to all buffers
+  // add being marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddBeginMarks(key_to_value));
 
-  for (auto const& value : values) {
-    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, *value));
+  // Initialize with 1 because we already read one value
+  uint64 values_read = 1;
+  for (; has_value && values_read < values_to_parse; ++values_read) {
+    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+    try {
+      has_value = read_value(datum);
+    } catch (avro::Exception& e) {
+      return errors::InvalidArgument("Error reading value: ", e.what());
+    }
   }
 
-  // add end marks to all buffers
+  // Make sure to add the last value too
+  if (has_value) {
+    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+  }
+
+  *values_parsed = values_read;
+
+  // add end marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddFinishMarks(key_to_value));
 
   return Status::OK();

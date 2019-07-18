@@ -311,12 +311,16 @@ class DataInput {
   friend class FileInput<T>;
   friend class StreamInput<T>;
 };
+
+
 template<typename T>
 class FileInput : public DataInput<T> {
  public:
-  FileInput() {}
-  virtual ~FileInput() {}
-  Status FromInputStream(io::InputStreamInterface* s, const string& filename, const string& entryname, const string& filtername, const string& schema, const std::vector<string>& columns) {
+
+  Status FromInputStream(io::InputStreamInterface* s, const string& filename,
+    const string& entryname, const string& filtername, const string& schema,
+    const std::vector<string>& columns) {
+
     filename_ = filename;
     entryname_ = entryname;
     filtername_ = filtername;
@@ -324,8 +328,13 @@ class FileInput : public DataInput<T> {
     columns_ = columns;
     return FromStream(s);
   }
-  Status ReadBatchRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
-    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(static_cast<void *>(s), ctx, state, batch, count, returned, out_tensors);
+
+  Status ReadBatchRecord(io::InputStreamInterface* s, IteratorContext* ctx,
+    std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned,
+    std::vector<Tensor>* out_tensors) const {
+
+    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(
+      static_cast<void *>(s), ctx, state, batch, count, returned, out_tensors);
   }
   void Encode(VariantTensorData* data) const {
     data->tensors_ = {
@@ -373,10 +382,18 @@ class FileInput : public DataInput<T> {
   }
  protected:
   virtual Status FromStream(io::InputStreamInterface* s) = 0;
-  virtual Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const = 0;
+
+  virtual Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx,
+    std::unique_ptr<T>& state, int64 record_to_read, int64* record_read,
+    std::vector<Tensor>* out_tensors) const = 0;
+
   virtual void EncodeAttributes(VariantTensorData* data) const = 0;
+
   virtual bool DecodeAttributes(const VariantTensorData& data) = 0;
-  Status ReadInputStream(io::InputStreamInterface* s, int64 chunk, int64 count, string* buffer, int64* returned) const {
+
+  Status ReadInputStream(io::InputStreamInterface* s, int64 chunk, int64 count,
+    string* buffer, int64* returned) const {
+
     int64 offset = s->Tell();
     int64 bytes_to_read = count * chunk;
     Status status = (buffer == nullptr) ? s->SkipNBytes(bytes_to_read) : s->ReadNBytes(bytes_to_read, buffer);
@@ -390,8 +407,11 @@ class FileInput : public DataInput<T> {
     *returned = bytes_read / chunk;
     return Status::OK();
   }
-  Status ReadReferenceRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
-    return ReadRecord(static_cast<io::InputStreamInterface*>(s), ctx, state, record_to_read, record_read, out_tensors);
+  Status ReadReferenceRecord(void* s, IteratorContext* ctx, std::unique_ptr<T>& state,
+    int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
+
+    return ReadRecord(static_cast<io::InputStreamInterface*>(s), ctx, state, record_to_read,
+      record_read, out_tensors);
   }
   string filename_;
   string entryname_;
@@ -497,10 +517,13 @@ class FileInputOp: public OpKernel {
   std::vector<string> columns_ GUARDED_BY(mu_);
   string schema_ GUARDED_BY(mu_);
 };
+
 template<typename InputType, typename StateType>
 class FileInputDatasetBase : public DatasetBase {
  public:
-  FileInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const int64 batch, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
+  FileInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input,
+    const int64 batch, const DataTypeVector& output_types,
+    const std::vector<PartialTensorShape>& output_shapes)
       : DatasetBase(DatasetContext(ctx)),
         ctx_(ctx),
         input_(input),
@@ -716,9 +739,9 @@ class FileInputDatasetOp : public DatasetOpKernel {
 template<typename T>
 class StreamInput : public DataInput<T> {
  public:
-  StreamInput() {}
-  virtual ~StreamInput() {}
-  Status FromInputEndpoint(const string& endpoint, const string& schema, const std::vector<string>& columns) {
+  Status FromInputEndpoint(const string& endpoint, const string& schema,
+    const std::vector<string>& columns) {
+
     endpoint_ = endpoint;
     schema_ = schema;
     columns_ = columns;
@@ -754,8 +777,11 @@ class StreamInput : public DataInput<T> {
   const std::vector<string>& columns() const {
     return columns_;
   }
-  Status ReadBatchRecord(IteratorContext* ctx, std::unique_ptr<T>& state, int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
-    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(nullptr, ctx, state, batch, count, returned, out_tensors);
+  Status ReadBatchRecord(IteratorContext* ctx, std::unique_ptr<T>& state,
+    int64 batch, int64 count, int64* returned, std::vector<Tensor>* out_tensors) const {
+
+    return (static_cast<const DataInput<T> *>(this))->ReadReferenceBatchRecord(
+      nullptr, ctx, state, batch, count, returned, out_tensors);
   }
  protected:
   virtual Status FromEndpoint(const string& endpoint) = 0;
@@ -814,7 +840,9 @@ class StreamInputOp: public OpKernel {
 template<typename InputType, typename StateType>
 class StreamInputDatasetBase : public DatasetBase {
  public:
-  StreamInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input, const int64 batch, const DataTypeVector& output_types, const std::vector<PartialTensorShape>& output_shapes)
+  StreamInputDatasetBase(OpKernelContext* ctx, const std::vector<InputType>& input,
+    const int64 batch, const DataTypeVector& output_types,
+    const std::vector<PartialTensorShape>& output_shapes)
       : DatasetBase(DatasetContext(ctx)),
         ctx_(ctx),
         input_(input),
@@ -878,7 +906,9 @@ class StreamInputDatasetBase : public DatasetBase {
       int64 count = dataset()->batch_ == 0 ? 1 : dataset()->batch_;
       while (returned < count) {
         if (current_input_index_ < dataset()->input_.size()) {
-          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadBatchRecord(ctx, current_input_state_, dataset()->batch_, count, &returned, out_tensors));
+          TF_RETURN_IF_ERROR(dataset()->input_[current_input_index_].ReadBatchRecord(
+            ctx, current_input_state_, dataset()->batch_, count, &returned, out_tensors));
+
           if (returned == count) {
             *end_of_sequence = false;
             return Status::OK();

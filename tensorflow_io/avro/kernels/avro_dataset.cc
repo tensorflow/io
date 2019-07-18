@@ -21,7 +21,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 
-#include "tensorflow_io/avro/utils/avro_reader.h"
+#include "tensorflow_io/avro/utils/avro_file_stream_reader.h"
 
 // As boiler plate I used
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/dataset.h  DatasetBase
@@ -56,8 +56,6 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-using ::tensorflow::shape_inference::ShapeHandle;
-
 class AvroDatasetOp : public DatasetOpKernel {
  public:
   explicit AvroDatasetOp(OpKernelConstruction* ctx)
@@ -70,7 +68,7 @@ class AvroDatasetOp : public DatasetOpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_keys", &dense_keys_));
 
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_types", &sparse_types_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("Tdense", &dense_types_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_types", &dense_types_));
 
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_shapes", &dense_shapes_));
 
@@ -270,7 +268,7 @@ class AvroDatasetOp : public DatasetOpKernel {
                                           {"sparse_keys", sparse_keys_attr},
                                           {"dense_keys", dense_keys_attr},
                                           {"sparse_types", sparse_types_attr},
-                                          {"Tdense", dense_attr},
+                                          {"dense_types", dense_attr},
                                           {"dense_shapes", dense_shapes_attr}
                                        }, // non-tensor inputs, attributes
                                        output));
@@ -303,8 +301,7 @@ class AvroDatasetOp : public DatasetOpKernel {
               CHECK(errors::IsOutOfRange(s));
               // We have reached the end of the current file, so maybe
               // move on to next file.
-              reader_.reset();
-              file_.reset();
+              reader_.reset(nullptr);
               ++current_file_index_;
             }
           }
@@ -320,15 +317,7 @@ class AvroDatasetOp : public DatasetOpKernel {
           const string& next_filename =
               dataset()->filenames_[current_file_index_];
 
-          TF_RETURN_IF_ERROR(
-            ctx->env()->NewRandomAccessFile(next_filename, &file_));
-
-          uint64 file_size;
-          TF_RETURN_IF_ERROR(
-            ctx->env()->GetFileSize(next_filename, &file_size));
-
-          reader_.reset(new AvroReader(
-              std::move(file_), file_size, next_filename,
+          reader_.reset(new AvroFileStreamReader(ctx->env(), next_filename,
               dataset()->reader_schema_, dataset()->config_));
 
           // Check status and set reader to nullptr to avoid read on broken reader_
@@ -414,11 +403,7 @@ class AvroDatasetOp : public DatasetOpKernel {
 
       mutex mu_;
       size_t current_file_index_ GUARDED_BY(mu_) = 0;
-
-      // `reader_` will borrow the object that `file_` points to, so
-      // we must destroy `reader_` before `file_`.
-      std::unique_ptr<RandomAccessFile> file_ GUARDED_BY(mu_);
-      std::unique_ptr<AvroReader> reader_ GUARDED_BY(mu_);
+      std::unique_ptr<AvroFileStreamReader> reader_ GUARDED_BY(mu_);
     };                      // class Iterator
 
     static std::vector<PartialTensorShape> PrependBatchDimension(
@@ -492,7 +477,7 @@ class AvroDatasetOp : public DatasetOpKernel {
 };  // class AvroDatasetOp
 
 // Register the kernel implementation for AvroDataset.
-REGISTER_KERNEL_BUILDER(Name("AvroDatasetC").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("AvroDataset").Device(DEVICE_CPU),
                         AvroDatasetOp);
 
 }  // namespace data

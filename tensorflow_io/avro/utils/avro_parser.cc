@@ -91,18 +91,16 @@ string NullValueParser::ToString(int level) const {
 
 BoolValueParser::BoolValueParser(const string& key) : AvroParser(key) { }
 Status BoolValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  // TODO: Check compatibility between value and type or before calling this method--let's see where it fits better
-  int field_value = 0;
-  if (avro_value_get_boolean(&value, &field_value) != 0) {
-    return Status(errors::InvalidArgument("For '", key_, "' could not extract boolean. Error: ",
-      avro_strerror()));
+  if (datum.type() != avro::AVRO_BOOL) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_BOOL,
+      "' but got type '", datum.type(),"'.");
   }
+
   // Assumes the key exists
-  // TODO(fraudies): Redesign to remove this cast
-  (*reinterpret_cast<BoolValueBuffer*>((*values)[key_].get())).Add(field_value ? true : false);
-  //(*(*values)[key_]).Add<bool>(field_value ? true : false);
+  (*reinterpret_cast<BoolValueBuffer*>((*values)[key_].get())).Add(datum.value<bool>());
+
   return Status::OK();
 }
 string BoolValueParser::ToString(int level) const {
@@ -111,15 +109,16 @@ string BoolValueParser::ToString(int level) const {
 
 LongValueParser::LongValueParser(const string& key) : AvroParser(key) { }
 Status LongValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  long field_value = 0;
-  if (avro_value_get_long(&value, &field_value) != 0) {
-    return Status(errors::InvalidArgument("For '", key_, "' could not extract int. Error: ",
-      avro_strerror()));
+  if (datum.type() != avro::AVRO_LONG) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_LONG,
+      "' but got type '", datum.type(),"'.");
   }
+
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<LongValueBuffer*>((*values)[key_].get())).Add(field_value);
+  (*reinterpret_cast<LongValueBuffer*>((*values)[key_].get())).Add(datum.value<long>());
+
   return Status::OK();
 }
 string LongValueParser::ToString(int level) const {
@@ -128,15 +127,16 @@ string LongValueParser::ToString(int level) const {
 
 IntValueParser::IntValueParser(const string& key) : AvroParser(key) { }
 Status IntValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  int field_value = 0;
-  if (avro_value_get_int(&value, &field_value) != 0) {
-    return Status(errors::InvalidArgument("For '", key_, "' could not extract int. Error: ",
-      avro_strerror()));
+  if (datum.type() != avro::AVRO_INT) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_INT,
+      "' but got type '", datum.type(),"'.");
   }
+
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<IntValueBuffer*>((*values)[key_].get())).Add(field_value);
+  (*reinterpret_cast<IntValueBuffer*>((*values)[key_].get())).Add(datum.value<int>());
+
   return Status::OK();
 }
 string IntValueParser::ToString(int level) const {
@@ -145,15 +145,16 @@ string IntValueParser::ToString(int level) const {
 
 DoubleValueParser::DoubleValueParser(const string& key) : AvroParser(key) { }
 Status DoubleValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  double field_value = 0;
-  if (avro_value_get_double(&value, &field_value) != 0) {
-    return Status(errors::InvalidArgument("For '", key_, "' could not extract int. Error: ",
-      avro_strerror()));
+  if (datum.type() != avro::AVRO_DOUBLE) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_DOUBLE,
+      "' but got type '", datum.type(),"'.");
   }
+
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<DoubleValueBuffer*>((*values)[key_].get())).Add(field_value);
+  (*reinterpret_cast<DoubleValueBuffer*>((*values)[key_].get())).Add(datum.value<double>());
+
   return Status::OK();
 }
 string DoubleValueParser::ToString(int level) const {
@@ -162,15 +163,16 @@ string DoubleValueParser::ToString(int level) const {
 
 FloatValueParser::FloatValueParser(const string& key) : AvroParser(key) { }
 Status FloatValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  float field_value = 0;
-  if (avro_value_get_float(&value, &field_value) != 0) {
-    return Status(errors::InvalidArgument("For '", key_, "' could not extract int. Error: ",
-      avro_strerror()));
+  if (datum.type() != avro::AVRO_FLOAT) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_FLOAT,
+      "' but got type '", datum.type(),"'.");
   }
+
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<FloatValueBuffer*>((*values)[key_].get())).Add(field_value);
+  (*reinterpret_cast<FloatValueBuffer*>((*values)[key_].get())).Add(datum.value<float>());
+
   return Status::OK();
 }
 string FloatValueParser::ToString(int level) const {
@@ -179,30 +181,30 @@ string FloatValueParser::ToString(int level) const {
 
 StringOrBytesValueParser::StringOrBytesValueParser(const string& key) : AvroParser(key) { }
 Status StringOrBytesValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  const char* char_field_value = nullptr;  // just a pointer to the data not a copy, no need to free this
-  size_t field_size = 0;
-  if (avro_value_get_string(&value, &char_field_value, &field_size) == 0) {
-
-    LOG(INFO) << "Adding string value " << string(char_field_value, field_size - 1);
-
-    // Assume the key exists
-    (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get())).AddByRef(string(char_field_value, field_size - 1));
-    // (*(*values)[key_]).AddByRef<string>(string(field_value, field_size - 1));
-    return Status::OK();
+  if (datum.type() != avro::AVRO_STRING && datum.type() != avro::AVRO_BYTES) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_STRING,
+      "' or type '", avro::AVRO_BYTES, "' but got type '", datum.type(),"'.");
   }
 
-  const void* bytes_field_value = nullptr;
-  if (avro_value_get_bytes(&value, &bytes_field_value, &field_size) == 0) {
-    // Assume the key exists
-    (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get())).AddByRef(string((const char*)bytes_field_value, field_size));
-    // (*(*values)[key_]).AddByRef<string>(string(field_value, field_size - 1));
-    return Status::OK();
+  string v;
+  if (datum.type() == avro::AVRO_STRING) {
+    v = datum.value<string>();
+  } else {
+    const std::vector<uint8_t>& value = datum.value<std::vector<uint8_t>>();
+    if (value.size() > 0) {
+      v.resize(value.size());
+      memcpy(&v[0], &value[0], value.size());
+    }
   }
 
-  return Status(errors::InvalidArgument("For '", key_, "' could not extract string. Error: ",
-    avro_strerror()));
+  LOG(INFO) << "Parsed string value " << v;
+
+  // Assume the key exists and cast is possible
+  (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get())).AddByRef(v);
+
+  return Status::OK();
 }
 string StringOrBytesValueParser::ToString(int level) const {
   return LevelToString(level) + "|---StringOrBytesValue(" + key_ + ")\n";
@@ -213,42 +215,31 @@ string StringOrBytesValueParser::ToString(int level) const {
 // ------------------------------------------------------------
 ArrayAllParser::ArrayAllParser() : AvroParser("") { }
 Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  size_t n_elements = 0;
-
-  if (avro_value_get_size(&value, &n_elements) != 0) {
-    return errors::InvalidArgument("Unable to find size for array due to error: ",
-      avro_strerror());
+  if (datum.type() != avro::AVRO_ARRAY) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
+      "' but got type '", datum.type(),"'.");
   }
+
+  std::vector<avro::GenericDatum> data = datum.value<avro::GenericArray>().value();
 
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   const std::vector<AvroParserSharedPtr>& final_descendents(GetFinalDescendents());
 
-  LOG(INFO) << "Number of array elements " << n_elements;
+  LOG(INFO) << "Number of array elements " << data.size();
 
   // Add a begin mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
     // Assumes the key exists in the map
-    LOG(INFO) << "Set begin mark for key " << (*value_parser).GetKey();
-
     (*(*values)[(*value_parser).GetKey()]).BeginMark();
   }
 
   // Resolve all the values from the array
-  for (size_t i_elements = 0; i_elements < n_elements; ++i_elements) {
-    AvroValueSharedPtr next_value(new avro_value_t);
-
-    if (avro_value_get_by_index(&value, i_elements, next_value.get(), NULL) != 0) {
-      return errors::InvalidArgument("Unable to find value for index '", i_elements,
-        "' in array due to error: ", avro_strerror());
-    }
-
-    LOG(INFO) << "Parsing children";
-
+  for (const avro::GenericDatum& d : data) {
     // For all children
     for (const AvroParserSharedPtr& child : children) {
-      TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+      TF_RETURN_IF_ERROR((*child).Parse(values, d));
     }
   }
 
@@ -269,20 +260,23 @@ string ArrayAllParser::ToString(int level) const {
 
 ArrayIndexParser::ArrayIndexParser(size_t index) : AvroParser(""), index_(index) { }
 Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
+
+  if (datum.type() != avro::AVRO_ARRAY) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
+      "' but got type '", datum.type(),"'.");
+  }
 
   // Check for valid index
-  size_t n_elements = 0;
-
-  if (avro_value_get_size(&value, &n_elements) != 0) {
-    return errors::InvalidArgument("Unable to find size for array index due to error: ",
-      avro_strerror());
-  }
+  std::vector<avro::GenericDatum> data = datum.value<avro::GenericArray>().value();
+  size_t n_elements = data.size();
 
   if (index_ > n_elements || index_ < 0) {
-    return Status(errors::InvalidArgument("Invalid index ", index_,
-      ". Range [", 0, ", ", n_elements, ")."));
+    return errors::InvalidArgument("Invalid index ", index_,
+      ". Range [", 0, ", ", n_elements, ").");
   }
+  // retrieve datum
+  const avro::GenericDatum& d = data[index_];
 
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   const std::vector<AvroParserSharedPtr>& final_descendents(GetFinalDescendents());
@@ -293,15 +287,9 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     (*(*values)[(*value_parser).GetKey()]).BeginMark();
   }
 
-  AvroValueSharedPtr next_value(new avro_value_t);
-  if (avro_value_get_by_index(&value, index_, next_value.get(), NULL) != 0) {
-    return errors::InvalidArgument("Unable to find value for index '", index_, "' due to error: ",
-      avro_strerror());
-  }
-
-  // For all children same next value
+  // For all children same datum
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+    TF_RETURN_IF_ERROR((*child).Parse(values, d));
   }
 
   // Add a finish mark to all value buffers under this array
@@ -337,23 +325,24 @@ ArrayFilterParser::ArrayFilterType ArrayFilterParser::ToArrayFilterType(
 }
 
 Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
+
+  if (datum.type() != avro::AVRO_ARRAY) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
+      "' but got type '", datum.type(),"'.");
+  }
 
   const std::vector<AvroParserSharedPtr>& final_descendents = GetFinalDescendents();
 
   // Add a begin mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
-    LOG(INFO) << "Find parser for key " << (*value_parser).GetKey();
     // Assumes the key exists in the map
     (*(*values)[(*value_parser).GetKey()]).BeginMark();
   }
 
-  size_t n_elements = 0;
-
-  if (avro_value_get_size(&value, &n_elements) != 0) {
-    return errors::InvalidArgument("Unable to find size for array filter due to error: ",
-      avro_strerror());
-  }
+  // Check for valid index
+  std::vector<avro::GenericDatum> data = datum.value<avro::GenericArray>().value();
+  size_t n_elements = data.size();
 
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
 
@@ -372,15 +361,10 @@ Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     }
 
     if (add_value) {
-      AvroValueSharedPtr next_value(new avro_value_t);
-      if (avro_value_get_by_index(&value, i_elements, next_value.get(), NULL) != 0) {
-        return errors::InvalidArgument("Unable to find value for index '", i_elements, "' due to error: ",
-          avro_strerror());
-      }
-
+      const avro::GenericDatum& d = data[i_elements];
       // For all children
       for (const AvroParserSharedPtr& child : children) {
-        TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+        TF_RETURN_IF_ERROR((*child).Parse(values, d));
       }
     }
   }
@@ -403,17 +387,34 @@ string ArrayFilterParser::ToString(int level) const {
 
 MapKeyParser::MapKeyParser(const string& key) : AvroParser(""), key_(key) { }
 Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  // TODO(fraudies): Code for key/attribute parser almost identical, except for error message
-  AvroValueSharedPtr next_value(new avro_value_t);
-  if (avro_value_get_by_name(&value, key_.c_str(), next_value.get(), NULL) != 0) {
+  if (datum.type() != avro::AVRO_MAP) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_MAP,
+      "' but got type '", datum.type(),"'.");
+  }
+
+  std::vector<std::pair<std::string, avro::GenericDatum> > data = datum.value<avro::GenericMap>().value();
+  size_t n_elements = data.size();
+
+  // TODO(fraudies): Optimize by caching in a map
+  bool found = false;
+  for (size_t i_elements = 0; i_elements < n_elements && !found; ++i_elements) {
+    const auto& keyValue = data[i_elements];
+    found = keyValue.first == key_;
+    if (found) {
+      // For all children
+      const std::vector<AvroParserSharedPtr>& children(GetChildren());
+      for (const AvroParserSharedPtr& child : children) {
+        TF_RETURN_IF_ERROR((*child).Parse(values, keyValue.second));
+      }
+    }
+  }
+
+  if (!found) {
     return errors::InvalidArgument("Unable to find key '", key_, "'.");
   }
-  const std::vector<AvroParserSharedPtr>& children(GetChildren());
-  for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
-  }
+
   return Status::OK();
 }
 string MapKeyParser::ToString(int level) const {
@@ -426,16 +427,30 @@ string MapKeyParser::ToString(int level) const {
 
 RecordParser::RecordParser(const string& name) : AvroParser(""), name_(name) { }
 Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  AvroValueSharedPtr next_value(new avro_value_t);
-  if (avro_value_get_by_name(&value, name_.c_str(), next_value.get(), NULL) != 0) {
+  if (datum.type() != avro::AVRO_RECORD) {
+    return errors::InvalidArgument("Expected type '", avro::AVRO_RECORD,
+      "' but got type '", datum.type(),"'.");
+  }
+
+  // Convert to record
+  const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+
+  // Return error if the field name does not exist
+  if (!record.hasField(name_)) {
     return errors::InvalidArgument("Unable to find name '", name_, "'.");
   }
+
+  // Get datum for field
+  const avro::GenericDatum& d = record.field(name_);
+
+  // Parse all children with this datum
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+    TF_RETURN_IF_ERROR((*child).Parse(values, d));
   }
+
   return Status::OK();
 }
 string RecordParser::ToString(int level) const {
@@ -447,18 +462,17 @@ string RecordParser::ToString(int level) const {
 
 UnionParser::UnionParser(const string& name) : AvroParser(""), name_(name) { }
 Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
-  AvroValueSharedPtr next_value(new avro_value_t);
-  if (avro_value_get_current_branch(&value, next_value.get()) != 0) {
-    return errors::InvalidArgument("Unable to resolve branch '", name_, "'!");
-  }
-  const std::vector<AvroParserSharedPtr>& children(GetChildren());
+  // Note, in this case we don't know the type
+  // 2nd note, we don't need to resolve the branch, it's done already by the read datum
+  avro::Type datum_type = datum.type();
+
   // Find the right child for this type
-  avro_type_t field_type = avro_value_get_type(next_value.get());
+  const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    if ((*child).GetType() == field_type) {
-      TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+    if ((*child).GetType() == datum_type) {
+      TF_RETURN_IF_ERROR((*child).Parse(values, datum));
       return Status::OK();
     }
   }
@@ -475,15 +489,12 @@ string UnionParser::ToString(int level) const {
 
 NamespaceParser::NamespaceParser(const string& name) : AvroParser(""), name_(name) { }
 Status NamespaceParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-  const avro_value_t& value) const {
+  const avro::GenericDatum& datum) const {
 
   // TODO(fraudies): Check namespace match
-  AvroValueSharedPtr next_value(new avro_value_t);
-  avro_value_copy_ref(next_value.get(), &value);
-
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, *next_value));
+    TF_RETURN_IF_ERROR((*child).Parse(values, datum));
   }
   return Status::OK();
 }

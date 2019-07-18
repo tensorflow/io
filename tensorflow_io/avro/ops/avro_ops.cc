@@ -48,20 +48,21 @@ REGISTER_OP("AvroDataset2")
        return Status::OK();
      });
 
-REGISTER_OP("AvroDatasetC")
+REGISTER_OP("AvroDataset")
     .Input("filenames: string")
     .Input("batch_size: int64")
     .Input("drop_remainder: bool")
-    .Input("dense_defaults: Tdense")
+    .Input("dense_defaults: dense_types")
     .Output("handle: variant")
     .Attr("reader_schema: string")
     .Attr("sparse_keys: list(string) >= 0")
     .Attr("dense_keys: list(string) >= 0")
     .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
-    .Attr("Tdense: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("dense_shapes: list(shape) >= 0")
     .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")  // Output components will be
+    .Attr("output_shapes: list(shape) >= 1")
+                                              // Output components will be
                                               // sorted by key (dense_keys and
                                               // sparse_keys combined) here.
     .SetIsStateful()
@@ -72,7 +73,7 @@ REGISTER_OP("AvroDatasetC")
       std::vector<PartialTensorShape> dense_shapes;
 
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_types", &sparse_types));
-      TF_RETURN_IF_ERROR(c->GetAttr("Tdense", &dense_types));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_types", &dense_types));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
 
       num_dense = dense_types.size();
@@ -102,6 +103,7 @@ REGISTER_OP("AvroDatasetC")
 
       return shape_inference::ScalarShape(c);
     });
+
 
 // Register the avro record dataset operator
 REGISTER_OP("AvroRecordDataset")

@@ -49,7 +49,7 @@ from tensorflow_io.core.python.ops import core_ops as avro_ops
 class _AvroDataset(DatasetSource):
   """A `DatasetSource` that reads and parses Avro records from files."""
 
-  def __init__(self, filenames, features, reader_schema="", batch_size=128,
+  def __init__(self, filenames, features, reader_schema, batch_size=128,
       drop_remainder=False, num_parallel_calls=2):
 
     super(_AvroDataset, self).__init__()
@@ -106,7 +106,7 @@ class _AvroDataset(DatasetSource):
         output_types, output_shapes, output_classes)
 
   def _as_variant_tensor(self):
-    return avro_ops.avro_dataset_c(
+    return avro_ops.avro_dataset(
         filenames=self._filenames,
         batch_size=self._batch_size,
         drop_remainder=self._drop_remainder,

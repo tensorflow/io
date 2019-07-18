@@ -141,8 +141,20 @@ public:
 
   // Add a non-primitive value (e.g. string) by reference to the buffer
   inline void AddByRef(const T& value) {
+/*    LOG(INFO) << "Add by ref the value: " << value;
+
+    LOG(INFO) << "Before push the values are:";
+    for (const auto& v : values_) {
+      LOG(INFO) << v;
+    }*/
+
     values_.push_back(value);
     shape_builder_.Increment();
+
+/*    LOG(INFO) << "After push the values are:";
+    for (const auto& v : values_) {
+      LOG(INFO) << v;
+    }*/
   }
 
   // Return the last item in the buffer

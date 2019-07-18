@@ -68,7 +68,10 @@ public:
   // Parses all values in a batch into the map keyed by the user-defined keys that
   // map to value stores
   Status ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
-    const std::vector<AvroValueSharedPtr>& values);
+    const std::function<bool(avro::GenericDatum&)> read_value,
+    const avro::ValidSchema& reader_schema,
+    uint64 values_to_parse,
+    uint64* values_parsed);
 
   // Returns the namespace for this parser
   inline string GetAvroNamespace() const { return avro_namespace_; }
