@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 """Tests for DICOM."""
 
 from __future__ import absolute_import
@@ -20,6 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
+
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
     tf.compat.v1.enable_eager_execution()
 

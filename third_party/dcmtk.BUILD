@@ -58,6 +58,7 @@ cc_library(
         ],
         "//conditions:default": [
             "DCMTK_ENABLE_LFS=2",  # DCMTK_LFS64=2
+            "HAVE_CHARP_STRERROR_R=1",
         ],
     }) + [
         "DCMTK_INSIDE_LOG4CPLUS",
@@ -535,7 +536,7 @@ genrule(
         "/* Define to 1 if you have the `strerror' function. */",
         "#define HAVE_STRERROR 1",
         "/* Define to 1 if `strerror_r' returns a char*. */",
-        "#define HAVE_CHARP_STRERROR_R 1",
+        "/* #undef HAVE_CHARP_STRERROR_R */",
         "/* Define to 1 if you have the <streambuf.h> header file. */",
         "/* #undef HAVE_STREAMBUF_H */",
         "/* Define to 1 if you have the <strings.h> header file. */",
