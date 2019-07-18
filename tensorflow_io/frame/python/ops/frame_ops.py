@@ -23,8 +23,8 @@ import tensorflow as tf
 from tensorflow_io.text.python.ops import text_ops
 from tensorflow_io.core.python.ops import data_ops
 
-class ILocIndexer(object):
-  """_iLocIndexer"""
+class _ILocIndexer(object):
+  """_ILocIndexer"""
   def __init__(self, df):
     self._df = df
     return
@@ -60,6 +60,19 @@ class DataFrame(object):
     return self._index
 
   @property
+  def values(self):
+    """values"""
+    if len(self._columns) == 1:
+      return self._data[self._columns[0]].numpy()
+    l = [tf.int32, tf.int64, tf.float32, tf.float64, tf.string]
+
+    dtype = l[
+        max([l.index(self._data[column].dtype) for column in self.columns])]
+    if dtype == tf.string:
+      raise NotImplementedError("DataFrame does not support to np.object")
+    raise NotImplementedError("DataFrame does not support values yet")
+
+  @property
   def shape(self):
     return len(self.index), len(self.columns)
 
@@ -74,7 +87,26 @@ class DataFrame(object):
     return iter(self._index)
 
   def __getitem__(self, item):
+    if isinstance(item, str):
+      if item in self._columns:
+        return DataFrame({item: tf.Variable(self._data[item])}, columns=[item])
+    if isinstance(item, DataFrame):
+      if len(item.columns) != 1:
+        raise NotImplementedError("DataFrame only supports 0-D or 1-D index")
+      if item._data[item.columns[0]].dtype != tf.bool: # pylint: disable=protected-access
+        raise NotImplementedError("DataFrame only supports bool index now")
+      data = {}
+      for column in self._columns:
+        data[column] = tf.Variable(
+            tf.boolean_mask(self._data[column], item._data[item.columns[0]])) # pylint: disable=protected-access
+      return DataFrame(data, list(self._columns))
     return self._data[item]
+
+  def __setitem__(self, key, value):
+    if key in self.columns:
+      self._data[key] = tf.Variable(value)
+      return
+    raise NotImplementedError("DataFrame only supports setting column")
 
   def __getattr__(self, name):
     if name in self._columns:
