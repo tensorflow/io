@@ -152,6 +152,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_batching(self):
@@ -177,6 +178,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_schema_projection(self):
@@ -315,6 +317,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=6, num_epochs=1)
 
   def test_union_with_null(self):
@@ -359,6 +362,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_fixed_length_list(self):
@@ -390,6 +394,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_fixed_length_with_default_vector(self):
@@ -426,6 +431,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_fixed_length_with_default_scalar(self):
@@ -462,6 +468,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_dense_2d(self):
@@ -514,6 +521,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_dense_3d(self):
@@ -605,6 +613,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=1, num_epochs=1)
 
   def test_sparse_feature(self):
@@ -659,6 +668,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_sparse_3d_feature(self):
@@ -716,6 +726,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_variable_length(self):
@@ -753,6 +764,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
   def test_nesting(self):
@@ -916,48 +928,49 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
-  # def test_parse_int_as_long_fail(self):
-  #   schema = """
-  #         {
-  #            "type": "record",
-  #            "name": "data_row",
-  #            "fields": [
-  #               {
-  #                  "name": "index",
-  #                  "type": "int"
-  #               }
-  #            ]
-  #         }
-  #         """
-  #   record_data = [{"index": 0}]
-  #   features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
-  #   self._test_fail_dataset(schema, record_data, features, schema, 1)
-  #
-  # def test_parse_int_as_sparse_type_fail(self):
-  #   schema = """
-  #     {
-  #        "type": "record",
-  #        "name": "data_row",
-  #        "fields": [
-  #           {
-  #              "name": "index",
-  #              "type": "int"
-  #           }
-  #        ]
-  #     }
-  #     """
-  #   record_data = [{"index": 5}]
-  #   features = {
-  #     "index":
-  #       parsing_ops.SparseFeature(
-  #           index_key="index",
-  #           value_key="value",
-  #           dtype=tf_types.float32,
-  #           size=10)
-  #   }
-  #   self._test_fail_dataset(schema, record_data, features, schema, 1)
+  def test_parse_int_as_long_fail(self):
+    schema = """
+          {
+             "type": "record",
+             "name": "data_row",
+             "fields": [
+                {
+                   "name": "index",
+                   "type": "int"
+                }
+             ]
+          }
+          """
+    record_data = [{"index": 0}]
+    features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
+    self._test_fail_dataset(schema, record_data, features, schema, 1)
+
+  def test_parse_int_as_sparse_type_fail(self):
+    schema = """
+      {
+         "type": "record",
+         "name": "data_row",
+         "fields": [
+            {
+               "name": "index",
+               "type": "int"
+            }
+         ]
+      }
+      """
+    record_data = [{"index": 5}]
+    features = {
+      "index":
+        parsing_ops.SparseFeature(
+            index_key="index",
+            value_key="value",
+            dtype=tf_types.float32,
+            size=10)
+    }
+    self._test_fail_dataset(schema, record_data, features, schema, 1)
 
   def test_parse_float_as_double_fail(self):
     writer_schema = """
@@ -974,7 +987,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       """
     record_data = [{"weight": 0.5}]
     features = {"weight": parsing_ops.FixedLenFeature([], tf_types.float64)}
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_fixed_length_without_proper_default_fail(self):
     writer_schema = """
@@ -1003,7 +1017,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       "int_list_type": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_wrong_spelling_of_feature_name_fail(self):
     writer_schema = """
@@ -1018,7 +1033,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       "wrong_spelling": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_wrong_index(self):
     writer_schema = """
@@ -1054,7 +1070,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "list_of_records[2].name":
         parsing_ops.FixedLenFeature([], tf_types.string)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_filter_with_variable_length(self):
     writer_schema = """
@@ -1144,6 +1161,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_filter_with_empty_result(self):
@@ -1202,6 +1220,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_filter_with_wrong_key_fail(self):
@@ -1238,7 +1257,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[wrong_key='female'].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_filter_with_wrong_pair_fail(self):
     writer_schema = """
@@ -1274,7 +1294,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[forgot_the_separator].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_filter_with_too_many_separators_fail(self):
     writer_schema = """
@@ -1310,7 +1331,8 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[used=too=many=separators].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    self._test_fail_dataset(writer_schema, record_data, features, 1)
+    self._test_fail_dataset(writer_schema, record_data, features,
+                            writer_schema, 1)
 
   def test_filter_for_nested_record(self):
     writer_schema = """
@@ -1397,6 +1419,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_filter_with_bytes_as_type(self):
@@ -1477,6 +1500,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_namespace(self):
@@ -1516,6 +1540,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             record_data=record_data,
                             expected_tensors=expected_tensors,
                             features=features,
+                            reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
   def test_broken_schema_fail(self):
@@ -1541,7 +1566,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       }"""
     features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
     self._test_fail_dataset(writer_schema, record_data, features,
-                            1, reader_schema=broken_schema)
+                            reader_schema=broken_schema, batch_size=1)
 
   # TODO(fraudies): Fixme, returns aa, aa instead of aa, bb
   # def test_some_optimization_breaks_this(self):
@@ -1606,7 +1631,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       }"""
     features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
     self._test_fail_dataset(writer_schema, record_data, features,
-                            1, reader_schema=wrong_schema)
+                            reader_schema=wrong_schema, batch_size=1)
 
   # Not supported for now, will actually provide another dimension for filter
   # that can't be properly coerced

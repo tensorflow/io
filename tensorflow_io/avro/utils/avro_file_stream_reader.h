@@ -87,8 +87,6 @@ public:
   AvroDataInputStream(io::InputStreamInterface* s)
     : stream_(s) {}
   bool next(const uint8_t** data, size_t* len) override {
-    LOG(INFO) << "Next with data: " << data << ",  len: " << *len;
-
     if (*len == 0) {
       *len = kAvroDataInputStreamBufferSize;
     }
@@ -109,16 +107,12 @@ public:
     return (*len != 0);
   }
   void backup(size_t len) override {
-    LOG(INFO) << "Backup with len: " << len;
-
     string chunk = buffer_.substr(buffer_.size() - len);
     chunk.append(prefix_);
     prefix_ = std::move(chunk);
     byte_count_ -= len;
   }
   void skip(size_t len) override {
-    LOG(INFO) << "Skip with len: " << len;
-
     if (len <= prefix_.size()) {
       prefix_ = prefix_.substr(len);
     } else {

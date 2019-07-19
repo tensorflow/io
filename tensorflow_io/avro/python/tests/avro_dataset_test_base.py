@@ -95,13 +95,13 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         sess.run(next_element)
 
   def _test_pass_dataset(self, writer_schema, record_data, expected_tensors,
-                         features, batch_size, **kwargs):
+                         features, reader_schema, batch_size, **kwargs):
     filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                  records=record_data)
 
     actual_dataset = avro_dataset.make_avro_dataset_v1(
-        file_pattern=filenames, features=features, batch_size=batch_size,
-        reader_schema=kwargs.get("reader_schema", ""),
+        file_pattern=filenames, reader_schema=reader_schema,
+        features=features, batch_size=batch_size,
         shuffle=kwargs.get("shuffle", None),
         num_epochs=kwargs.get("num_epochs", None))
 
@@ -109,14 +109,13 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
                         actual_dataset=actual_dataset)
 
   def _test_fail_dataset(self, writer_schema, record_data, features,
-      batch_size, **kwargs):
+                         reader_schema, batch_size, **kwargs):
     filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                  records=record_data)
 
     actual_dataset = avro_dataset.make_avro_dataset_v1(
-        file_pattern=filenames, features=features,
-        batch_size=batch_size,
-        reader_schema=kwargs.get("reader_schema", ""),
+        file_pattern=filenames, reader_schema=reader_schema,
+        features=features, batch_size=batch_size,
         shuffle=kwargs.get("shuffle", None),
         num_epochs=kwargs.get("num_epochs", None))
 

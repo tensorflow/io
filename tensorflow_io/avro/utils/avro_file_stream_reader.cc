@@ -28,35 +28,20 @@ Status AvroFileStreamReader::OnWorkStartup() {
   TF_RETURN_IF_ERROR(env_->GetFileSize(filename_, &size));
   file_stream_.reset(new SizedRandomAccessFileStream(file_.get(), size));
 
+  // If the user supplied a reader schema use it
+  string error;
+  std::istringstream ss(reader_schema_str_);
+  if (!avro::compileJsonSchema(ss, reader_schema_, error)) {
+    return errors::InvalidArgument("Avro schema error: ", error);
+  }
+
   std::unique_ptr<avro::InputStream> stream(
     static_cast<avro::InputStream*>(new AvroDataInputStream(file_stream_.get())));
 
-  // If the user supplied a reader schema use it
-  if (reader_schema_str_.size() > 0) {
-    string error;
-    std::istringstream ss(reader_schema_str_);
-    if (!avro::compileJsonSchema(ss, reader_schema_, error)) {
-      return errors::InvalidArgument("Avro schema error: ", error);
-    }
-    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
-      std::move(stream), reader_schema_));
-
-  // If the user did not supply a reader schema use the one from the data
-  } else {
-    LOG(INFO) << "Creating file reader base";
-    std::unique_ptr<avro::DataFileReaderBase> base(new avro::DataFileReaderBase(std::move(stream)));
-    LOG(INFO) << "Creating data file reader";
-    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
-      std::move(base)));
-    //avro::DataFileReader<ComplexDouble> df(std::move(base));
-    //reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
-    //  std::move(stream)));
-    LOG(INFO) << "Reading schema from file reader";
-    reader_schema_ = (*reader_).dataSchema();
-  }
+  reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
+    std::move(stream), reader_schema_));
 
   // Get the namespace
-  LOG(INFO) << "Retrieving namespace";
   string avro_namespace(reader_schema_.root()->hasName() ? reader_schema_.root()->name().ns() : "");
 
   // Create the parser tree

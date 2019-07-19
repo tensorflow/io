@@ -259,9 +259,9 @@ class _AvroDataset(DatasetSource):
 # @tf_export("tensorflow_io.avro.make_avro_dataset", v1=[])
 def make_avro_dataset(
     file_pattern,
+    reader_schema,
     features,
     batch_size,
-    reader_schema="",
     num_parallel_calls=2,
     label_key=None,
     num_epochs=None,
@@ -278,6 +278,8 @@ def make_avro_dataset(
 
   Args:
     filenames: A `tf.string` tensor containing one or more filenames.
+    reader_schema: A `tf.string` scalar for schema resolution.
+
     features: Is a map of keys that describe a single entry or sparse vector
               in the avro record and map that entry to a tensor. The syntax
               is as follows:
@@ -322,8 +324,6 @@ def make_avro_dataset(
               We assume that sparse features contains an array with records
               that contain an 'index' field that MUST BE LONG and an 'value'
               field with floats (single precision).
-
-    reader_schema: (Optional.) A `tf.string` scalar for schema resolution.
 
     num_parallel_calls: Number of parallel calls
 
@@ -380,9 +380,9 @@ def make_avro_dataset(
 # @tf_export(v1=["tensorflow_io.avro.make_avro_dataset"])
 def make_avro_dataset_v1(
     file_pattern,
+    reader_schema,
     features,
     batch_size,
-    reader_schema="",
     num_parallel_calls=2,
     label_key=None,
     num_epochs=None,
@@ -394,7 +394,7 @@ def make_avro_dataset_v1(
     sloppy=False
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
-      file_pattern, features, batch_size, reader_schema, num_parallel_calls,
+      file_pattern, reader_schema, features, batch_size, num_parallel_calls,
       label_key, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed,
       prefetch_buffer_size, num_parallel_reads, sloppy))
 make_avro_dataset_v1.__doc__ = make_avro_dataset.__doc__
