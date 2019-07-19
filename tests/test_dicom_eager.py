@@ -13,25 +13,23 @@
 # the License.
 # ==============================================================================
 """Tests for DICOM."""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
-
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-    tf.compat.v1.enable_eager_execution()
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
 
 def test_dicom_input():
-    """test_dicom_input
-    """
-    _ = dicom_io.decode_dicom_data
-    _ = dicom_io.decode_dicom_image
-    _ = dicom_io.tags
+  """test_dicom_input
+  """
+  _ = dicom_io.decode_dicom_data
+  _ = dicom_io.decode_dicom_image
+  _ = dicom_io.tags
 
 
 if __name__ == "__main__":
-    test.main()
+  test.main()
