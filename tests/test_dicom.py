@@ -24,8 +24,7 @@ import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 import os
 import pytest
 
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-    tf.compat.v1.enable_eager_execution()
+tf.compat.v1.disable_eager_execution()
 
 
 def test_dicom_input():
@@ -68,15 +67,23 @@ def test_decode_dicom_image():
             "test_dicom",
             fname
         )
-        file_contents = tf.io.read_file(filename=dcm_file)
-        dcm_image = dicom_io.decode_dicom_image(
-            contents=file_contents,
-            dtype=tf.float32,
-            on_error='strict',
-            scale='auto',
-            color_dim=True,
-        )
-        assert dcm_image.numpy().shape == im_shape
+
+        G1 = tf.Graph()
+
+        with G1.as_default():
+            file_contents = tf.io.read_file(filename=dcm_file)
+            dcm_image = dicom_io.decode_dicom_image(
+                contents=file_contents,
+                dtype=tf.float32,
+                on_error='strict',
+                scale='auto',
+                color_dim=True,
+            )
+
+        sess = tf.Session(graph=G1)
+        dcm_image_np = sess.run(dcm_image)
+
+        assert dcm_image_np.shape == im_shape
 
 
 if __name__ == "__main__":
