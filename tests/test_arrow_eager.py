@@ -485,6 +485,24 @@ class ArrowDatasetTest(test.TestCase):
         preserve_index=True)
     self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
+  def test_stream_from_pandas_remainder(self):
+    """Test stream from Pandas that produces partial batch"""
+    batch_size = len(self.scalar_data[0]) - 1
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=False)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
   def test_stream_from_pandas_iter(self):
     """test_stream_from_pandas_iter"""
 

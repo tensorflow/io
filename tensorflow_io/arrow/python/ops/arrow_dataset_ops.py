@@ -514,6 +514,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
     # Run the server in a thread
     server = threading.Thread(target=run_server)
+    server.daemon = True
     server.start()
 
     if columns is None:
@@ -559,9 +560,9 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
         # If batching, slice DataFrame and convert to record batches
         if batch_size is not None:
-          step = -(-len(df) // batch_size)  # Compute step size (round int up)
-          for start in range(0, len(df), step):
-            df_slice = df[start:start + step]
+          # Pandas will produce a partial batch if there is a remainder
+          for i in range(0, len(df), batch_size):
+            df_slice = df[i:i + batch_size]
             batch = pa.RecordBatch.from_pandas(
                 df_slice, preserve_index=preserve_index)
             yield batch
