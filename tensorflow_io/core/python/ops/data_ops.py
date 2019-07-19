@@ -18,7 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import core_ops
 
 # Note: BaseDataset could be used by Dataset implementations
 # that does not utilize DataInput implementation.
@@ -61,12 +60,3 @@ class Dataset(BaseDataset):
         self._batch,
         output_types=self._dtypes,
         output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
-
-def _dataset_to_tensors(dataset):
-  """Returns single element in `dataset` as a nested structure of tensors.
-  """
-  return dataset._element_structure._from_compatible_tensor_list( # pylint: disable=protected-access
-      core_ops.dataset_to_tensors(
-          dataset._variant_tensor,  # pylint: disable=protected-access
-          output_types=dataset._element_structure._flat_types, # pylint: disable=protected-access
-          output_shapes=dataset._element_structure._flat_shapes)) # pylint: disable=protected-access

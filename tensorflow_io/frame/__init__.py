@@ -15,6 +15,7 @@
 """DataFrame
 
 @@DataFrame
+@@Series
 """
 
 from __future__ import absolute_import
@@ -22,11 +23,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.frame.python.ops.frame_ops import DataFrame
+from tensorflow_io.frame.python.ops.frame_ops import Series
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "DataFrame",
+    "Series",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 import csv
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
@@ -29,16 +28,25 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 import tensorflow_io.frame as frame_io # pylint: disable=wrong-import-position
 
 def test_from_csv():
-  """test from https://www.tensorflow.org/beta/tutorials/keras/feature_columns
+  """test from https://www.datascience.com/blog/fraud-detection-with-tensorflow
   """
-  sample = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "heart.csv")
-  with open(sample, "r") as f:
-    entries = [line for line in csv.reader(f)]
-  sample = "file://" + sample
+  df = frame_io.DataFrame.from_csv('creditcard.csv')
+  h5 = df.head(n=5)
+  for c in h5.columns:
+    print("COLUMN ", c, h5._data[c])
 
-  df = frame_io.DataFrame.from_csv(sample)
-
+  s = df.shape
+  print(s)
+  v = df.Class
+  for c in v.columns:
+    print("COLUMN ", c, v._data[c])
+  vv = df.Class == 1
+  for c in vv.columns:
+    print("COLUMN ", c, vv._data[c])
+    for i in range(vv._data[c].shape[0].value):
+      if vv._data[c][i].numpy() == True:
+        print("XX: ", i, vv._data[c][i].numpy())
+  sys.exit(0)
   train, test = df.split(lambda x: train_test_split(x, test_size=0.2))
   train, val = train.split(lambda x: train_test_split(x, test_size=0.2))
 
@@ -80,55 +88,6 @@ def test_from_csv():
     assert entries[i][13] == str(entry['target'].numpy())
     i += 1
   assert i == len(entries)
-
-# Working-in-Progress
-def _test_from_credit_card():
-  """test from https://www.datascience.com/blog/fraud-detection-with-tensorflow
-  """
-  df = frame_io.DataFrame.from_csv('creditcard.csv')
-  df = df.head()
-
-  print(df.shape)
-
-  # pd.value_counts(df['Class'], sort = True)
-
-  print(df.Class == 1)
-  df_norm = df
-  print(df_norm['Time'].values.reshape(-1, 1).dtype)
-  print(StandardScaler().fit_transform(df_norm['Time'].values.reshape(-1, 1)))
-  df_norm['Time'] = StandardScaler().fit_transform(df_norm['Time'].values.reshape(-1, 1))
-  df_norm['Amount'] = StandardScaler().fit_transform(df_norm['Amount'].values.reshape(-1, 1))
-
-  TEST_PCT = 0.2
-  RANDOM_SEED = 314
-  train_x, test_x = df_norm.split(lambda x: train_test_split(x, test_size=TEST_PCT, random_state=RANDOM_SEED))
-  print("TRAIN_X: ", train_x)
-  print("TEST_X: ", test_x)
-
-  train_x = train_x[train_x.Class == 0] #where normal transactions
-  # train_x = train_x.drop(['Class'], axis=1) #drop the class column
-  train_x = train_x.pop('Class')
-
-  test_y = test_x['Class'] #save the class column for the test set
-  # test_x = test_x.drop(['Class'], axis=1) #drop the class column
-  test_x = test_x.pop('Class')
-
-  train_x = train_x.values #transform to ndarray
-  test_x = test_x.values
-  print("TRAIN: ", train_x.shape)
-  nb_epoch = 100
-  batch_size = 128
-  input_dim = train_x.shape[1] #num of columns, 30
-  encoding_dim = 14
-  hidden_dim = int(encoding_dim / 2) #i.e. 7
-  learning_rate = 1e-7
-
-  input_layer = tf.keras.layers.Input(shape=(input_dim, ))
-  encoder = tf.keras.layers.Dense(encoding_dim, activation="tanh", activity_regularizer=regularizers.l1(learning_rate))(input_layer)
-  encoder = tf.keras.layers.Dense(hidden_dim, activation="relu")(encoder)
-  decoder = tf.keras.layers.Dense(hidden_dim, activation='tanh')(encoder)
-  decoder = tf.keras.layers.Dense(input_dim, activation='relu')(decoder)
-  autoencoder = tf.keras.models.Model(inputs=input_layer, outputs=decoder)
 
 if __name__ == "__main__":
   test.main()
