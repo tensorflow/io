@@ -13,15 +13,17 @@
 # the License.
 # ==============================================================================
 """Tests for DICOM."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+import pytest
+
 import tensorflow as tf
 import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
-import os  # pylint: disable=wrong-import-position
-import pytest  # pylint: disable=wrong-import-position
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
