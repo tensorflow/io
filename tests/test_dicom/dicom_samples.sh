@@ -45,6 +45,6 @@ elif [ "$1" == "clean_all" ]; then
 elif [ "$1" == "clean_dcm" ]; then
     rm -f *.dcm
 else
-  echo "Usage: $0 download | extract | clean" >&2
+  echo "Usage: $0 download | extract | clean_{all,dcm}" >&2
   exit 1
 fi
