@@ -58,40 +58,29 @@ class ImageDatasetTest(test.TestCase):
 
       self.assertAllEqual(webp_v, png)
 
-
   def test_webp_file_dataset(self):
     """Test case for WebPDataset.
     """
-    width = 400
-    height = 301
-    channel = 4
-    png_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png")
-    with open(png_file, 'rb') as f:
-      png_contents = f.read()
-    with self.cached_session():
-      image_p = image.decode_png(png_contents, channels=channel)
-      image_v = image_p.eval()
-      self.assertEqual(image_v.shape, (height, width, channel))
-
     filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
 
     num_repeats = 2
 
-    dataset = image_io.WebPDataset([filename]).repeat(
-        num_repeats)
-    iterator = dataset.make_initializable_iterator()
-    init_op = iterator.initializer
-    get_next = iterator.get_next()
-
-    with self.cached_session() as sess:
-      sess.run(init_op)
-      for _ in range(num_repeats):  # Dataset is repeated.
-        v = sess.run(get_next)
-        self.assertAllEqual(image_v, v)
-      with self.assertRaises(errors.OutOfRangeError):
-        sess.run(get_next)
+    dataset = image_io.WebPDataset([filename, filename])
+    # Repeat 2 times (2 * 2 = 4 images)
+    dataset = dataset.repeat(num_repeats)
+    # Drop alpha channel
+    dataset = dataset.map(lambda x: x[:, :, :3])
+    # Resize to 224 * 224
+    dataset = dataset.map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+    # Batch to 3, still have 4 images (3 + 1)
+    dataset = dataset.batch(1)
+    model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
+    y = model.predict(dataset)
+    p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
+    for i in p:
+      assert i[0][1] == 'pineapple' # not truly a pineapple, though
+    assert len(p) == 4
 
   def test_tiff_file_dataset(self):
     """Test case for TIFFDataset.

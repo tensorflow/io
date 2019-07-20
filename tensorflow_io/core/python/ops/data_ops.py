@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import core_ops
 
 # Note: BaseDataset could be used by Dataset implementations
 # that does not utilize DataInput implementation.
@@ -56,6 +57,21 @@ class Dataset(BaseDataset):
     self._dtypes = dtypes
     self._shapes = shapes
     super(Dataset, self).__init__(fn(
+        self._data_input,
+        self._batch,
+        output_types=self._dtypes,
+        output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
+
+class FileDataset(BaseDataset):
+  """A FileDataset that read file content as string"""
+
+  def __init__(self, filename):
+    """Create a FileDataset."""
+    self._data_input = core_ops.file_input(filename)
+    self._batch = 0
+    self._dtypes = [tf.string]
+    self._shapes = [tf.TensorShape([])]
+    super(FileDataset, self).__init__(core_ops.file_dataset(
         self._data_input,
         self._batch,
         output_types=self._dtypes,

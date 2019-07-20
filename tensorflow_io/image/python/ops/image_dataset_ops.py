@@ -21,38 +21,8 @@ import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import data_ops as data_ops
 image_ops = _load_library('_image_ops.so')
-
-
-class WebPDataset(data.Dataset):
-  """A WebP Image File Dataset that reads the WebP file."""
-
-  def __init__(self, filenames):
-    """Create a `WebPDataset`.
-
-      filenames: A `tf.string` tensor containing one or more filenames.
-    """
-    self._filenames = tf.convert_to_tensor(
-        filenames, dtype=dtypes.string, name="filenames")
-    super(WebPDataset, self).__init__()
-
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return image_ops.web_p_dataset(self._filenames)
-
-  @property
-  def output_classes(self):
-    return tf.Tensor
-
-  @property
-  def output_shapes(self):
-    return tf.TensorShape([None, None, None])
-
-  @property
-  def output_types(self):
-    return dtypes.uint8
 
 class TIFFDataset(data.Dataset):
   """A TIFF Image File Dataset that reads the TIFF file."""
@@ -146,3 +116,18 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
     colors = [[]]
   return image_ops.draw_bounding_boxes_v3(
       images, boxes, colors, texts, name=name)
+
+class WebPDataset(data_ops.BaseDataset):
+  """A WebP Image File Dataset that reads the WebP file."""
+
+  def __init__(self, filename):
+    """Create a `WebPDataset`.
+
+      filename: A `tf.string` tensor containing one or more filenames.
+    """
+    self._batch = 0
+    self._dtypes = [dtypes.uint8]
+    self._shapes = [tf.TensorShape([None, None, None])]
+    self._dataset = data_ops.FileDataset(filename).map(decode_webp)
+    super(WebPDataset, self).__init__(
+        self._dataset._variant_tensor, self._batch, self._dtypes, self._shapes) # pylint: disable=protected-access
