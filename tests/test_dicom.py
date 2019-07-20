@@ -161,16 +161,16 @@ def test_decode_dicom_data(fname, tag, exp_value):
       fname
   )
 
-  G1 = tf.Graph()
+  g1 = tf.Graph()
 
-  with G1.as_default():
+  with g1.as_default():
     file_contents = tf.io.read_file(filename=dcm_path)
     dcm_data = dicom_io.decode_dicom_data(
         contents=file_contents,
         tags=tag
     )
 
-  sess = tf.Session(graph=G1)
+  sess = tf.Session(graph=g1)
   dcm_data_np = sess.run(dcm_data)
 
   assert dcm_data_np == exp_value
