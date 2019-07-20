@@ -27,6 +27,18 @@ import pytest
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
     tf.compat.v1.enable_eager_execution()
 
+# The DICOM sample files must be downloaded befor running the tests
+#
+# To download the DICOM samples:
+# $ bash dicom_samples.sh download
+# $ bash dicom_samples.sh extract
+#
+# To remopve the DICOM samples:
+# $ bash dicom_samples.sh clean_dcm
+#
+# To remopve all the downloaded files:
+# $ bash dicom_samples.sh clean_all
+
 
 def test_dicom_input():
     """test_dicom_input
@@ -36,10 +48,9 @@ def test_dicom_input():
     _ = dicom_io.tags
 
 
-def test_decode_dicom_image():
-    """test_decode_dicom_image
-    """
-    files = [
+@pytest.mark.parametrize(
+    'fname, exp_shape',
+    [
         ('OT-MONO2-8-colon.dcm', (1, 512, 512, 1)),
         ('CR-MONO1-10-chest.dcm', (1, 440, 440, 1)),
         ('CT-MONO2-16-ort.dcm', (1, 512, 512, 1)),
@@ -62,21 +73,97 @@ def test_decode_dicom_image():
         ('OT-MONO2-8-a7.dcm', (1, 512, 512, 1)),
         ('US-PAL-8-10x-echo.dcm', (10, 430, 600, 3)),
     ]
-    for fname, im_shape in files:
-        dcm_file = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "test_dicom",
-            fname
-        )
-        file_contents = tf.io.read_file(filename=dcm_file)
-        dcm_image = dicom_io.decode_dicom_image(
-            contents=file_contents,
-            dtype=tf.float32,
-            on_error='strict',
-            scale='auto',
-            color_dim=True,
-        )
-        assert dcm_image.numpy().shape == im_shape
+)
+def test_decode_dicom_image(fname, exp_shape):
+    """test_decode_dicom_image
+    """
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        fname
+    )
+
+    file_contents = tf.io.read_file(filename=dcm_path)
+
+    dcm_image = dicom_io.decode_dicom_image(
+        contents=file_contents,
+        dtype=tf.float32,
+        on_error='strict',
+        scale='auto',
+        color_dim=True,
+    )
+    assert dcm_image.numpy().shape == exp_shape
+
+
+@pytest.mark.parametrize(
+    'fname, tag, exp_value',
+    [
+        (
+            'OT-MONO2-8-colon.dcm',
+            dicom_io.tags.StudyInstanceUID,
+            b'1.3.46.670589.17.1.7.1.1.16'
+        ),
+        (
+            'OT-MONO2-8-colon.dcm',
+            dicom_io.tags.Rows,
+            b'512'
+        ),
+        (
+            'OT-MONO2-8-colon.dcm',
+            dicom_io.tags.Columns,
+            b'512'
+        ),
+        (
+            'OT-MONO2-8-colon.dcm',
+            dicom_io.tags.SamplesperPixel,
+            b'1'
+        ),
+        (
+            'US-PAL-8-10x-echo.dcm',
+            dicom_io.tags.StudyInstanceUID,
+            b'999.999.3859744'
+        ),
+        (
+            'US-PAL-8-10x-echo.dcm',
+            dicom_io.tags.SeriesInstanceUID,
+            b'999.999.94827453'
+        ),
+        (
+            'US-PAL-8-10x-echo.dcm',
+            dicom_io.tags.NumberofFrames,
+            b'10'
+        ),
+        (
+            'US-PAL-8-10x-echo.dcm',
+            dicom_io.tags.Rows,
+            b'430'
+        ),
+        (
+            'US-PAL-8-10x-echo.dcm',
+            dicom_io.tags.Columns,
+            b'600'
+        ),
+    ]
+)
+def test_decode_dicom_data(fname, tag, exp_value):
+    """test_decode_dicom_data
+    """
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        fname
+    )
+
+    file_contents = tf.io.read_file(filename=dcm_path)
+
+    dcm_data = dicom_io.decode_dicom_data(
+        contents=file_contents,
+        tags=tag
+    )
+
+    assert dcm_data.numpy() == exp_value
 
 
 if __name__ == "__main__":
