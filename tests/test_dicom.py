@@ -21,9 +21,8 @@ from __future__ import print_function
 import tensorflow as tf
 import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
-import os
-import sys
-import pytest
+import os  # pylint: disable=wrong-import-position
+import pytest  # pylint: disable=wrong-import-position
 
 tf.compat.v1.disable_eager_execution()
 
@@ -41,11 +40,11 @@ tf.compat.v1.disable_eager_execution()
 
 
 def test_dicom_input():
-    """test_dicom_input
-    """
-    _ = dicom_io.decode_dicom_data
-    _ = dicom_io.decode_dicom_image
-    _ = dicom_io.tags
+  """test_dicom_input
+  """
+  _ = dicom_io.decode_dicom_data
+  _ = dicom_io.decode_dicom_image
+  _ = dicom_io.tags
 
 
 @pytest.mark.parametrize(
@@ -75,31 +74,31 @@ def test_dicom_input():
     ]
 )
 def test_decode_dicom_image(fname, exp_shape):
-    """test_decode_dicom_image
-    """
+  """test_decode_dicom_image
+  """
 
-    dcm_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_dicom",
-        fname
+  dcm_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_dicom",
+      fname
+  )
+
+  g1 = tf.Graph()
+
+  with g1.as_default():
+    file_contents = tf.io.read_file(filename=dcm_path)
+    dcm_image = dicom_io.decode_dicom_image(
+        contents=file_contents,
+        dtype=tf.float32,
+        on_error='strict',
+        scale='auto',
+        color_dim=True,
     )
 
-    G1 = tf.Graph()
+  sess = tf.Session(graph=g1)
+  dcm_image_np = sess.run(dcm_image)
 
-    with G1.as_default():
-        file_contents = tf.io.read_file(filename=dcm_path)
-        dcm_image = dicom_io.decode_dicom_image(
-            contents=file_contents,
-            dtype=tf.float32,
-            on_error='strict',
-            scale='auto',
-            color_dim=True,
-        )
-
-    sess = tf.Session(graph=G1)
-    dcm_image_np = sess.run(dcm_image)
-
-    assert dcm_image_np.shape == exp_shape
+  assert dcm_image_np.shape == exp_shape
 
 
 @pytest.mark.parametrize(
@@ -153,29 +152,29 @@ def test_decode_dicom_image(fname, exp_shape):
     ]
 )
 def test_decode_dicom_data(fname, tag, exp_value):
-    """test_decode_dicom_data
-    """
+  """test_decode_dicom_data
+  """
 
-    dcm_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_dicom",
-        fname
+  dcm_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_dicom",
+      fname
+  )
+
+  G1 = tf.Graph()
+
+  with G1.as_default():
+    file_contents = tf.io.read_file(filename=dcm_path)
+    dcm_data = dicom_io.decode_dicom_data(
+        contents=file_contents,
+        tags=tag
     )
 
-    G1 = tf.Graph()
+  sess = tf.Session(graph=G1)
+  dcm_data_np = sess.run(dcm_data)
 
-    with G1.as_default():
-        file_contents = tf.io.read_file(filename=dcm_path)
-        dcm_data = dicom_io.decode_dicom_data(
-            contents=file_contents,
-            tags=tag
-        )
-
-    sess = tf.Session(graph=G1)
-    dcm_data_np = sess.run(dcm_data)
-
-    assert dcm_data_np == exp_value
+  assert dcm_data_np == exp_value
 
 
 if __name__ == "__main__":
-    test.main()
+  test.main()

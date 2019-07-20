@@ -20,11 +20,11 @@ from __future__ import print_function
 import tensorflow as tf
 import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
-import os
-import pytest
+import os  # pylint: disable=wrong-import-position
+import pytest  # pylint: disable=wrong-import-position
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-    tf.compat.v1.enable_eager_execution()
+  tf.compat.v1.enable_eager_execution()
 
 # The DICOM sample files must be downloaded befor running the tests
 #
@@ -40,11 +40,11 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 
 
 def test_dicom_input():
-    """test_dicom_input
-    """
-    _ = dicom_io.decode_dicom_data
-    _ = dicom_io.decode_dicom_image
-    _ = dicom_io.tags
+  """test_dicom_input
+  """
+  _ = dicom_io.decode_dicom_data
+  _ = dicom_io.decode_dicom_image
+  _ = dicom_io.tags
 
 
 @pytest.mark.parametrize(
@@ -74,25 +74,25 @@ def test_dicom_input():
     ]
 )
 def test_decode_dicom_image(fname, exp_shape):
-    """test_decode_dicom_image
-    """
+  """test_decode_dicom_image
+  """
 
-    dcm_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_dicom",
-        fname
-    )
+  dcm_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_dicom",
+      fname
+  )
 
-    file_contents = tf.io.read_file(filename=dcm_path)
+  file_contents = tf.io.read_file(filename=dcm_path)
 
-    dcm_image = dicom_io.decode_dicom_image(
-        contents=file_contents,
-        dtype=tf.float32,
-        on_error='strict',
-        scale='auto',
-        color_dim=True,
-    )
-    assert dcm_image.numpy().shape == exp_shape
+  dcm_image = dicom_io.decode_dicom_image(
+      contents=file_contents,
+      dtype=tf.float32,
+      on_error='strict',
+      scale='auto',
+      color_dim=True,
+  )
+  assert dcm_image.numpy().shape == exp_shape
 
 
 @pytest.mark.parametrize(
@@ -146,24 +146,24 @@ def test_decode_dicom_image(fname, exp_shape):
     ]
 )
 def test_decode_dicom_data(fname, tag, exp_value):
-    """test_decode_dicom_data
-    """
+  """test_decode_dicom_data
+  """
 
-    dcm_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_dicom",
-        fname
-    )
+  dcm_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_dicom",
+      fname
+  )
 
-    file_contents = tf.io.read_file(filename=dcm_path)
+  file_contents = tf.io.read_file(filename=dcm_path)
 
-    dcm_data = dicom_io.decode_dicom_data(
-        contents=file_contents,
-        tags=tag
-    )
+  dcm_data = dicom_io.decode_dicom_data(
+      contents=file_contents,
+      tags=tag
+  )
 
-    assert dcm_data.numpy() == exp_value
+  assert dcm_data.numpy() == exp_value
 
 
 if __name__ == "__main__":
-    test.main()
+  test.main()
