@@ -21,7 +21,7 @@ import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
-from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import data_ops
 image_ops = _load_library('_image_ops.so')
 
 class TIFFDataset(data.Dataset):

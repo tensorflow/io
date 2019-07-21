@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -42,10 +42,12 @@ class FileContentInput: public FileInput<bool> {
     }
     std::vector<string> entries;
     Status status = Status::OK();
+    int64 total_size = 0;
     while (status.ok()) {
       string buffer;
       status = s->ReadNBytes(chunk_size, &buffer);
       if (status.ok() || errors::IsOutOfRange(status)) {
+        total_size += buffer.size();
         entries.emplace_back(std::move(buffer));
       }
     }
@@ -57,12 +59,8 @@ class FileContentInput: public FileInput<bool> {
       value_tensor.flat<string>()((*record_read)) = std::move(entries[0]);
     } else {
       string buffer;
-      int64 total_size = 0;
-      for (size_t i = 0; i < entries.size(); i++) {
-        total_size += entries[i].size();
-      }
       buffer.reserve(total_size);
-      for (size_t i = 0; i < entries.size(); i++) {
+      for (size_t i = 0; i < entries.size(); ++i) {
         buffer.append(entries[i]);
       }
       value_tensor.flat<string>()((*record_read)) = std::move(buffer);
@@ -79,7 +77,6 @@ class FileContentInput: public FileInput<bool> {
   bool DecodeAttributes(const VariantTensorData& data) override {
     return true;
   }
- protected:
 };
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(FileContentInput, "tensorflow::data::FileContentInput");

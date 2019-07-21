@@ -63,7 +63,7 @@ class Dataset(BaseDataset):
         output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
 
 class FileDataset(BaseDataset):
-  """A FileDataset that read file content as string"""
+  """A FileDataset that reads file content as string"""
 
   def __init__(self, filename):
     """Create a FileDataset."""
