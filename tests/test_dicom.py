@@ -22,10 +22,8 @@ import os
 import pytest
 
 import tensorflow as tf
-import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
-
-
 tf.compat.v1.disable_eager_execution()
+import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
 # The DICOM sample files must be downloaded befor running the tests
 #
