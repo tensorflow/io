@@ -23,7 +23,7 @@ import pytest
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-   tf.compat.v1.enable_eager_execution()
+  tf.compat.v1.enable_eager_execution()
 import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
 # The DICOM sample files must be downloaded befor running the tests
