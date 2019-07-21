@@ -49,6 +49,7 @@ io.dicom.decode_dicom_data(
 A `Tensor` of type `tf.string` and same shape as `tags`.  If a dicom tag is a list of strings, they are combined into one string and seperated by a double backslash `\\`. There is a bug in [DCMTK](https://support.dcmtk.org/docs/) if the tag is a list of numbers, only the zeroth element will be returned as a string.
 
 
+
 # Bibtex
 
 If this package helped, please kindly cite the below:
