@@ -14,6 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
+# change directory to test_dicom folder
+cd "${0%/*}"
+
 set -e
 set -o pipefail
 
