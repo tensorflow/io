@@ -23,7 +23,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.frame.python.ops.frame_ops import DataFrame
-from tensorflow_io.frame.python.ops.frame_ops import Series
+from tensorflow_io.frame.python.ops.series_ops import Series
 
 from tensorflow.python.util.all_util import remove_undocumented
 

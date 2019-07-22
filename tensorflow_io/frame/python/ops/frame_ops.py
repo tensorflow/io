@@ -24,6 +24,19 @@ import tensorflow as tf
 from tensorflow_io.frame.python.ops import series_ops
 from tensorflow_io.text.python.ops import text_ops
 
+class _iLocIndexer(object): # pylint: disable=invalid-name
+  """_iLocIndexer"""
+  def __init__(self, df):
+    self._df = df
+
+  def __getitem__(self, item):
+    indices = self._df.index[item]
+    data = [
+        tf.gather(
+            self._df._data[column]._data, indices # pylint: disable=protected-access
+        ) for column in self._df.columns] # pylint: disable=protected-access
+    return DataFrame(data, list(self._df.columns))
+
 class DataFrame(object):
   """DataFrame
 
@@ -36,6 +49,7 @@ class DataFrame(object):
     self._data = collections.OrderedDict(
         [(k, series_ops.Series(v, name=k)) for (k, v) in zip(columns, data)])
     self._index = np.arange(data[0].shape.as_list()[0])
+    self._iloc = _iLocIndexer(self)
 
   @property
   def columns(self):
@@ -57,6 +71,25 @@ class DataFrame(object):
   def ndim(self):
     return 2
 
+  @property
+  def iloc(self):
+    return self._iloc
+
+  @property
+  def values(self):
+    """values"""
+    if len(self.columns) == 1:
+      return self._data[self.columns[0]].values
+    l = [tf.bool, tf.int32, tf.int64, tf.float32, tf.float64, tf.string]
+    dtype = l[
+        max([l.index(self._data[column].dtype) for column in self.columns])]
+    if dtype != tf.string:
+      data = tf.stack([
+          tf.cast(self._data[column]._data, dtype) for column in self.columns # pylint: disable=protected-access
+      ], axis=1)
+      return data.numpy()
+    raise NotImplementedError
+
   def __len__(self):
     return self.shape[0]
 
@@ -65,9 +98,25 @@ class DataFrame(object):
       yield self._data[key]
 
   def __getitem__(self, item):
+    if isinstance(item, series_ops.Series) and item.dtype == tf.bool:
+      data = [
+          tf.boolean_mask(
+              self._data[column]._data, item._data) for column in self.columns] # pylint: disable=protected-access
+      return DataFrame(data, list(self.columns))
     if item in self.columns:
       return self._data[item]
     raise NotImplementedError
+
+  def __setitem__(self, key, value):
+    if key in self.columns:
+      self._data[key] = series_ops.Series(value, name=key)
+      return
+    raise NotImplementedError
+
+  def __getattr__(self, name):
+    if name in self.columns:
+      return self._data[name]
+    raise AttributeError("'DataFrame' object has no attribute '%s'" % name)
 
   def keys(self):
     return self.columns

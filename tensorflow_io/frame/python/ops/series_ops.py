@@ -28,8 +28,11 @@ class Series(object):
     if not tf.executing_eagerly():
       raise NotImplementedError("Series only supports eager mode")
     self._name = name
+    data = tf.convert_to_tensor(data)
+    if tf.rank(data) > 1:
+      data = tf.squeeze(data, axis=np.arange(1, tf.rank(data)))
     self._data = tf.Variable(data)
-    self._index = np.arange(data.shape.as_list()[0])
+    self._index = np.arange(self._data.shape.as_list()[0])
 
   @property
   def name(self):
@@ -41,7 +44,7 @@ class Series(object):
 
   @property
   def dtype(self):
-    raise NotImplementedError
+    return self._data.dtype
 
   @property
   def shape(self):
@@ -50,6 +53,10 @@ class Series(object):
   @property
   def ndim(self):
     return 1
+
+  @property
+  def values(self):
+    return self._data.numpy()
 
   def __len__(self):
     return len(self.index)
@@ -65,3 +72,7 @@ class Series(object):
   def __setitem__(self, key, value):
     # self._data[key].assign(value)
     raise NotImplementedError
+
+  def __eq__(self, other):
+    data = tf.math.equal(self._data, other)
+    return Series(data, name=self.name)

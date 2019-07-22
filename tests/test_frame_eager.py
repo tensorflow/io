@@ -82,7 +82,7 @@ def test_from_csv():
   assert i == len(entries)
 
 # Working-in-Progress
-def _test_from_credit_card():
+def test_from_credit_card():
   """test from https://www.datascience.com/blog/fraud-detection-with-tensorflow
   """
   df = frame_io.DataFrame.from_csv('creditcard.csv')
@@ -96,39 +96,46 @@ def _test_from_credit_card():
   df_norm = df
   print(df_norm['Time'].values.reshape(-1, 1).dtype)
   print(StandardScaler().fit_transform(df_norm['Time'].values.reshape(-1, 1)))
-  df_norm['Time'] = StandardScaler().fit_transform(df_norm['Time'].values.reshape(-1, 1))
-  df_norm['Amount'] = StandardScaler().fit_transform(df_norm['Amount'].values.reshape(-1, 1))
+  df_norm['Time'] = StandardScaler().fit_transform(
+      df_norm['Time'].values.reshape(-1, 1))
+  df_norm['Amount'] = StandardScaler().fit_transform(
+      df_norm['Amount'].values.reshape(-1, 1))
 
-  TEST_PCT = 0.2
-  RANDOM_SEED = 314
-  train_x, test_x = df_norm.split(lambda x: train_test_split(x, test_size=TEST_PCT, random_state=RANDOM_SEED))
+  train_x, test_x = df_norm.split(lambda x: train_test_split(x, test_size=0.2, random_state=314))
   print("TRAIN_X: ", train_x)
   print("TEST_X: ", test_x)
 
   train_x = train_x[train_x.Class == 0] #where normal transactions
   # train_x = train_x.drop(['Class'], axis=1) #drop the class column
-  train_x = train_x.pop('Class')
+  train_x.pop('Class')
 
-  test_y = test_x['Class'] #save the class column for the test set
+  # test_y = test_x['Class'] #save the class column for the test set
   # test_x = test_x.drop(['Class'], axis=1) #drop the class column
-  test_x = test_x.pop('Class')
+  test_x.pop('Class')
 
   train_x = train_x.values #transform to ndarray
   test_x = test_x.values
-  print("TRAIN: ", train_x.shape)
-  nb_epoch = 100
-  batch_size = 128
+  # nb_epoch = 100
+  # batch_size = 128
   input_dim = train_x.shape[1] #num of columns, 30
   encoding_dim = 14
   hidden_dim = int(encoding_dim / 2) #i.e. 7
   learning_rate = 1e-7
 
-  input_layer = tf.keras.layers.Input(shape=(input_dim, ))
-  encoder = tf.keras.layers.Dense(encoding_dim, activation="tanh", activity_regularizer=regularizers.l1(learning_rate))(input_layer)
-  encoder = tf.keras.layers.Dense(hidden_dim, activation="relu")(encoder)
-  decoder = tf.keras.layers.Dense(hidden_dim, activation='tanh')(encoder)
-  decoder = tf.keras.layers.Dense(input_dim, activation='relu')(decoder)
+  input_layer = tf.keras.layers.Input(shape=(input_dim,))
+  encoder = tf.keras.layers.Dense(
+      encoding_dim,
+      activation="tanh",
+      activity_regularizer=tf.keras.regularizers.l1(learning_rate))(input_layer)
+  encoder = tf.keras.layers.Dense(
+      hidden_dim, activation="relu")(encoder)
+  decoder = tf.keras.layers.Dense(
+      hidden_dim, activation='tanh')(encoder)
+  decoder = tf.keras.layers.Dense(
+      input_dim, activation='relu')(decoder)
   autoencoder = tf.keras.models.Model(inputs=input_layer, outputs=decoder)
+  _ = autoencoder
+
 
 if __name__ == "__main__":
   test.main()
