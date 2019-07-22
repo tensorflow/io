@@ -58,30 +58,6 @@ class ImageDatasetTest(test.TestCase):
 
       self.assertAllEqual(webp_v, png)
 
-  def test_webp_file_dataset(self):
-    """Test case for WebPDataset.
-    """
-    filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
-
-    num_repeats = 2
-
-    dataset = image_io.WebPDataset([filename, filename])
-    # Repeat 2 times (2 * 2 = 4 images)
-    dataset = dataset.repeat(num_repeats)
-    # Drop alpha channel
-    dataset = dataset.map(lambda x: x[:, :, :3])
-    # Resize to 224 * 224
-    dataset = dataset.map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
-    # Batch to 3, still have 4 images (3 + 1)
-    dataset = dataset.batch(1)
-    model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
-    y = model.predict(dataset)
-    p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
-    for i in p:
-      assert i[0][1] == 'pineapple' # not truly a pineapple, though
-    assert len(p) == 4
-
   def test_tiff_file_dataset(self):
     """Test case for TIFFDataset.
     """
@@ -197,6 +173,30 @@ class ImageDatasetTest(test.TestCase):
       # bb_image_v = bb_image_p.eval()
       # self.assertAllEqual(bb_image_v, ex_image_v)
       _ = bb_image_p.eval()
+
+def test_webp_file_dataset():
+  """Test case for WebPDataset.
+  """
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.webp")
+
+  num_repeats = 2
+
+  dataset = image_io.WebPDataset([filename, filename])
+  # Repeat 2 times (2 * 2 = 4 images)
+  dataset = dataset.repeat(num_repeats)
+  # Drop alpha channel
+  dataset = dataset.map(lambda x: x[:, :, :3])
+  # Resize to 224 * 224
+  dataset = dataset.map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  # Batch to 3, still have 4 images (3 + 1)
+  dataset = dataset.batch(1)
+  model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
+  y = model.predict(dataset)
+  p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
+  for i in p:
+    assert i[0][1] == 'pineapple' # not truly a pineapple, though
+  assert len(p) == 4
 
 if __name__ == "__main__":
   test.main()
