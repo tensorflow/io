@@ -94,7 +94,7 @@ def test_decode_dicom_image(fname, exp_shape):
         color_dim=True,
     )
 
-  sess = tf.Session(graph=g1)
+  sess = tf.compat.v1.Session(graph=g1)
   dcm_image_np = sess.run(dcm_image)
 
   assert dcm_image_np.shape == exp_shape
@@ -169,7 +169,7 @@ def test_decode_dicom_data(fname, tag, exp_value):
         tags=tag
     )
 
-  sess = tf.Session(graph=g1)
+  sess = tf.compat.v1.Session(graph=g1)
   dcm_data_np = sess.run(dcm_data)
 
   assert dcm_data_np == exp_value
