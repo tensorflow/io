@@ -82,7 +82,7 @@ def test_decode_dicom_image(fname, exp_shape):
       fname
   )
 
-  g1 = tf.Graph()
+  g1 = tf.compat.v1.Graph()
 
   with g1.as_default():
     file_contents = tf.io.read_file(filename=dcm_path)
@@ -160,7 +160,7 @@ def test_decode_dicom_data(fname, tag, exp_value):
       fname
   )
 
-  g1 = tf.Graph()
+  g1 = tf.compat.v1.Graph()
 
   with g1.as_default():
     file_contents = tf.io.read_file(filename=dcm_path)
