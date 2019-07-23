@@ -457,7 +457,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                           output_shapes=None,
                           columns=None,
                           batch_size=None,
-                          batch_mode='keep_remainder'):
+                          batch_mode='keep_remainder',
+                          record_batch_iter_factory=None):
     """Create an ArrowStreamDataset by serving a sequence of Arrow record
     batches in a background thread.
     This constructor requires pyarrow to be installed.
@@ -476,6 +477,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      record_batch_iter_factory: Optional factory to create additional record
+                                 batch iterators after being consumed.
     """
     import pyarrow as pa
 
@@ -500,16 +503,23 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
     def run_server():
       """serve record batches"""
-      conn, _ = sock.accept()
-      outfile = conn.makefile(mode='wb')
-      writer = None
-      for batch in record_batch_iter:
-        if writer is None:
-          writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
-        writer.write_batch(batch)
-      writer.close()
-      outfile.close()
-      conn.close()
+      curr_iter = record_batch_iter
+      while True:
+        conn, _ = sock.accept()
+        outfile = conn.makefile(mode='wb')
+        writer = None
+        try:
+          for batch in curr_iter:
+            if writer is None:
+              writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+            writer.write_batch(batch)
+          if record_batch_iter_factory is not None:
+            curr_iter = record_batch_iter_factory()
+        finally:
+          if writer is not None:
+            writer.close()
+          outfile.close()
+          conn.close()
       sock.close()
 
     # Run the server in a thread
@@ -582,4 +592,5 @@ class ArrowStreamDataset(ArrowBaseDataset):
         output_types,
         output_shapes,
         batch_size=batch_size,
-        batch_mode='keep_remainder')
+        batch_mode='keep_remainder',
+        record_batch_iter_factory=gen_record_batches)

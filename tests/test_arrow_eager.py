@@ -545,6 +545,34 @@ class ArrowDatasetTest(test.TestCase):
         preserve_index=False)
     self.run_test_case(dataset, truth_data)
 
+  def test_stream_from_pandas_repeat(self):
+    """test_stream_from_pandas_repeat"""
+
+    batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(batch_data)
+    df = batch.to_pandas()
+
+    num_repeat = 10
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=2,
+        preserve_index=False).repeat(num_repeat)
+
+    # patch columns attr so run_test_case can use
+    dataset.columns = list(range(len(batch_data.output_types)))
+
+    truth_data = TruthData(
+        [d * num_repeat for d in batch_data.data],
+        batch_data.output_types,
+        batch_data.output_shapes)
+
+    self.run_test_case(dataset, truth_data, batch_size=2)
+
   def test_bool_array_type(self):
     """
     NOTE: need to test this seperately because to_pandas fails with
