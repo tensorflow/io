@@ -74,10 +74,10 @@ def test_from_csv():
   assert ",".join(entries[0]) == ",".join(df.columns)
   i = 1
   for entry in tf.data.Dataset.from_tensor_slices((dict(df))):
-    assert entries[i][0] == str(entry['age'].numpy())
-    assert entries[i][1] == str(entry['sex'].numpy())
-    assert entries[i][12] == str(entry['thal'].numpy())
-    assert entries[i][13] == str(entry['target'].numpy())
+    assert entries[i][0] == entry['age'].numpy().encode()
+    assert entries[i][1] == entry['sex'].numpy().encode()
+    assert entries[i][12] == entry['thal'].numpy().encode()
+    assert entries[i][13] == entry['target'].numpy().encode()
     i += 1
   assert i == len(entries)
 
