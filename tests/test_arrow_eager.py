@@ -208,7 +208,6 @@ class ArrowDatasetTest(test.TestCase):
     # test all columns selected
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data)
@@ -217,9 +216,9 @@ class ArrowDatasetTest(test.TestCase):
     columns = (1, 3, len(truth_data.output_types) - 1)
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        columns,
         tuple([truth_data.output_types[c] for c in columns]),
-        tuple([truth_data.output_shapes[c] for c in columns]))
+        tuple([truth_data.output_shapes[c] for c in columns]),
+        columns=columns)
     self.run_test_case(dataset, truth_data)
 
     # test construction from pd.DataFrame
@@ -589,9 +588,9 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        (0,),
         truth_data.output_types,
-        truth_data.output_shapes)
+        truth_data.output_shapes,
+        columns=(0,))
     self.run_test_case(dataset, truth_data)
 
   def test_incorrect_column_type(self):
@@ -602,7 +601,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         tuple([dtypes.int32 for _ in truth_data.output_types]),
         truth_data.output_shapes)
     with self.assertRaisesRegex(errors.OpError, 'Arrow type mismatch'):
@@ -619,7 +617,6 @@ class ArrowDatasetTest(test.TestCase):
     batch = self.make_record_batch(truth_data)
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes)
 
@@ -745,7 +742,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_mode='auto')
@@ -776,7 +772,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -808,7 +803,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -836,7 +830,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -859,7 +852,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         [batch],
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -880,7 +872,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         [batch],
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -899,7 +890,6 @@ class ArrowDatasetTest(test.TestCase):
     with self.assertRaisesRegex(ValueError, 'Unsupported batch_mode.*doh'):
       arrow_io.ArrowDataset.from_record_batches(
           [self.make_record_batch(truth_data)],
-          list(range(len(truth_data.output_types))),
           truth_data.output_types,
           truth_data.output_shapes,
           batch_mode='doh')
