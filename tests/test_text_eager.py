@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import tempfile
 import numpy as np
 
@@ -198,6 +199,34 @@ def test_from_csv():
           assert record.dtype == expected[line][i].dtype
           assert record.numpy() == expected[line][i]
       line += 1
+
+def test_re2_extract():
+  """test_text_input
+  """
+  text_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(text_filename, 'rb') as f:
+    lines = [line.strip() for line in f]
+
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
+  filename = "file://" + filename
+
+  dataset = text_io.TextDataset(filename).map(lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+"))
+  i = 0
+  for v in dataset:
+    r, g = v
+    if re.match(".+(ipsum).+(dolor).+".encode(), lines[i]):
+      assert r.numpy()
+      assert g[0].numpy().decode() == "ipsum"
+      assert g[1].numpy().decode() == "dolor"
+    else:
+      assert not r.numpy()
+      assert g[0].numpy().decode() == ""
+      assert g[1].numpy().decode() == ""
+    i += 1
+  assert i == len(lines)
+
 
 if __name__ == "__main__":
   test.main()

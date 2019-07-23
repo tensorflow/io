@@ -16,8 +16,35 @@ limitations under the License.
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
+#include "re2/re2.h"
 
 namespace tensorflow {
+
+REGISTER_OP("RE2FullMatch")
+    .Input("input: string")
+    .Output("output: bool")
+    .Output("groups: string")
+    .Attr("pattern: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      if (!c->RankKnown(c->input(0))) {
+        c->set_output(0, c->UnknownShape());
+        c->set_output(1, c->UnknownShape());
+        return Status::OK();
+      }
+      string pattern;
+      TF_RETURN_IF_ERROR(c->GetAttr("pattern", &pattern));
+      RE2 re(pattern, RE2::Quiet);
+      if (!re.ok()) {
+        return errors::InvalidArgument("unable to compile pattern '", pattern, "': ", re.error());
+      }
+      shape_inference::ShapeHandle shape;
+      TF_RETURN_IF_ERROR(c->WithRankAtLeast(c->input(0), 0, &shape));
+      shape_inference::ShapeHandle output_shape;
+      TF_RETURN_IF_ERROR(c->Concatenate(shape, c->Vector(re.NumberOfCapturingGroups()), &output_shape));
+      c->set_output(0, c->input(0));
+      c->set_output(1, output_shape);
+      return Status::OK();
+    });
 
 REGISTER_OP("TextStreamInput")
     .Input("source: string")
