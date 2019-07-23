@@ -25,19 +25,33 @@ namespace data {
 class JSONInputStream {
 public:
   explicit JSONInputStream(io::InputStreamInterface* s, const string& filename)
-    : ifs_(filename){
-   }
+    : ifs_(filename){}
    
   ~JSONInputStream() {
     ifs_.close();
   }
 
-  bool ParseRecords(Json::Value& records){
-    return reader_.parse(ifs_, records);
+  Status Open(){
+    if (reader_.parse(ifs_, records_)) {
+      return Status::OK();
+    }
+    return errors::InvalidArgument("JSON parsing error: ", reader_.getFormattedErrorMessages());
   }
+
+bool ReadRecord(Json::Value& record){
+  if (index_ < records_.size()){
+    record = records_[index_];
+    index_++;
+    return true;
+  }
+  return false;
+}
+
 private:
   std::ifstream ifs_;
   Json::Reader reader_;
+  Json::Value records_;
+  Json::ArrayIndex index_ = 0;
 };
 
 class JSONInput: public FileInput<JSONInputStream> {
@@ -45,15 +59,11 @@ class JSONInput: public FileInput<JSONInputStream> {
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<JSONInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
       state.reset(new JSONInputStream(s, filename()));
+      TF_RETURN_IF_ERROR(state.get()->Open());
     }
 
-    Json::Value records;
-    Json::ArrayIndex index = 0;
-    if (!state.get()->ParseRecords(records)){
-      return errors::InvalidArgument("JSON parsing error");
-    }
-    while ((*record_read) < record_to_read && index < records.size()) {
-      const Json::Value& record = records[index];
+    Json::Value record;
+    while ((*record_read) < record_to_read && state.get()->ReadRecord(record)) {
       if(*record_read == 0){
         out_tensors->clear();
         //allocate enough space for Tensor
@@ -110,7 +120,6 @@ class JSONInput: public FileInput<JSONInputStream> {
         }
       }
       (*record_read)++;
-      index++;
     }
 
     //Slice if needed

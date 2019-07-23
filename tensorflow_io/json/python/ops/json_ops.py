@@ -21,22 +21,23 @@ class JSONDataset(data_ops.Dataset):
   """A JSONLabelDataset. JSON (JavaScript Object Notation) is a lightweight data-interchange format.
   """
 
-  def __init__(self, filenames, columns=None, batch=None):
+  def __init__(self, filenames, columns, dtypes, batch=None):
     """Create a JSONLabelDataset.
 
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
-      columns: A list of column indices to be used in the Dataset.
+      filenames: A 0-D or 1-D `tf.string` tensor containing one or more
+        filenames.
+      columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
+      dtypes: A tuple of `tf.DType` objects representing the types of the
+        columns returned.
     """
-
+    data_input = json_ops.json_input(
+        filenames, ["none", "gz"], columns=columns) 
+    dtypes = dtypes
     batch = 0 if batch is None else batch
-    # Datatype
-    dtypes = [tf.uint8]
-    shapes = [
-        tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None])]
+    shapes = [tf.TensorShape([]) for _ in columns] if batch == 0 else [tf.TensorShape([None]) for _ in columns]
     super(JSONDataset, self).__init__(
-        json_ops.json_dataset,
-        json_ops.json_input(filenames, ["none", "gz"], columns),
-        batch, dtypes, shapes)
-        
+      json_ops.json_dataset,
+      data_input,
+      batch, dtypes, shapes
+    )
