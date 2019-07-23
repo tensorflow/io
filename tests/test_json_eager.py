@@ -30,8 +30,8 @@ import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
 def test_json_dataset():
   """Test case for JSON Dataset.
   """
-  x_test = [[1.1,2],[2.1,3]]
-  y_test = [[2.2,3],[1.2,3]]
+  x_test = [[1.1, 2], [2.1, 3]]
+  y_test = [[2.2, 3], [1.2, 3]]
   feature_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
@@ -43,34 +43,43 @@ def test_json_dataset():
 
   feature_list = ["floatfeature", "integerfeature"]
   label_list = ["floatlabel", "integerlabel"]
-  feature_dataset = json_io.JSONDataset(feature_filename, columns=feature_list, dtypes=[tf.float64, tf.int64])
-  label_dataset = json_io.JSONDataset(label_filename, columns=label_list, dtypes=[tf.float64, tf.int64])
+  feature_dataset = json_io.JSONDataset(
+      feature_filename,
+      feature_list,
+      [tf.float64, tf.int64])
+  label_dataset = json_io.JSONDataset(
+      label_filename,
+      label_list,
+      [tf.float64, tf.int64])
 
   i = 0
   for record in feature_dataset:
     v_x = x_test[i]
-    for index in range(len(record)):
-      assert v_x[index] == record[index].numpy()
+    for index, val in enumerate(record):
+      assert v_x[index] == val.numpy()
     i += 1
   assert i == len(y_test)
 
   ## Test of the reverse order of the columns
   feature_list = ["integerfeature", "floatfeature"]
-  feature_dataset = json_io.JSONDataset(feature_filename, columns=feature_list, dtypes=[tf.int64, tf.float64])
+  feature_dataset = json_io.JSONDataset(
+      feature_filename,
+      feature_list,
+      [tf.int64, tf.float64])
 
   i = 0
   for record in feature_dataset:
     v_x = np.flip(x_test[i])
-    for index in range(len(record)):
-      assert v_x[index] == record[index].numpy()
+    for index, val in enumerate(record):
+      assert v_x[index] == val.numpy()
     i += 1
   assert i == len(y_test)
 
   i = 0
   for record in label_dataset:
     v_y = y_test[i]
-    for index in range(len(record)):
-      assert v_y[index] == record[index].numpy()
+    for index, val in enumerate(record):
+      assert v_y[index] == val.numpy()
     i += 1
   assert i == len(y_test)
 
@@ -83,10 +92,10 @@ def test_json_dataset():
   for (j_x, j_y) in dataset:
     v_x = np.flip(x_test[i])
     v_y = y_test[i]
-    for index in range(len(j_x)):
-      assert v_x[index] == j_x[index].numpy()
-    for index in range(len(j_y)):
-      assert v_y[index] == j_y[index].numpy()
+    for index, x in enumerate(j_x):
+      assert v_x[index] == x.numpy()
+    for index, y in enumerate(j_y):
+      assert v_y[index] == y.numpy()
     i += 1
   assert i == len(y_test)
 

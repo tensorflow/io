@@ -14,7 +14,7 @@
 # ==============================================================================
 """JSONDataset"""
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.core.python.ops import core_ops as json_ops
 
 class JSONDataset(data_ops.Dataset):
@@ -32,12 +32,14 @@ class JSONDataset(data_ops.Dataset):
         columns returned.
     """
     data_input = json_ops.json_input(
-        filenames, ["none", "gz"], columns=columns) 
+        filenames, ["none", "gz"], columns=columns)
     dtypes = dtypes
     batch = 0 if batch is None else batch
-    shapes = [tf.TensorShape([]) for _ in columns] if batch == 0 else [tf.TensorShape([None]) for _ in columns]
+    shapes = [
+        tf.TensorShape([]) for _ in columns] if batch == 0 else [
+            tf.TensorShape([None]) for _ in columns]
     super(JSONDataset, self).__init__(
-      json_ops.json_dataset,
-      data_input,
-      batch, dtypes, shapes
+        json_ops.json_dataset,
+        data_input,
+        batch, dtypes, shapes
     )

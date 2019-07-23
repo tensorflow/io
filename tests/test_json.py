@@ -19,7 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import numpy as np
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
@@ -28,7 +27,8 @@ from tensorflow import errors  # pylint: disable=wrong-import-position
 from tensorflow import test    # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
-import tensorflow_io.json as json_io
+import tensorflow_io.json as json_io # pylint: disable=wrong-import-position
+
 
 
 class JSONDatasetTest(test.TestCase):
@@ -37,9 +37,9 @@ class JSONDatasetTest(test.TestCase):
   def test_json_dataset(self):
     """Test case for JSONDataset."""
     filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_json",
-      "feature.json")
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_json",
+        "feature.json")
 
     columns = ['floatfeature', 'integerfeature']
     output_types = (dtypes.float64, dtypes.int64)
@@ -51,14 +51,14 @@ class JSONDatasetTest(test.TestCase):
     init_op = iterator.initializer
     get_next = iterator.get_next()
 
-    test = [(1.1,2),(2.1,3)]
+    test_json = [(1.1, 2), (2.1, 3)]
     with self.test_session() as sess:
       sess.run(init_op)
       for _ in range(num_repeats):
         for i in range(2):
-          (im, re) = test[i]
+          (floatf, intf) = test_json[i]
           vv = sess.run(get_next)
-          self.assertAllClose((im, re), vv)
+          self.assertAllClose((floatf, intf), vv)
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
