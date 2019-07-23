@@ -49,7 +49,25 @@ io.dicom.decode_dicom_data(
 A `Tensor` of type `tf.string` and same shape as `tags`.  If a dicom tag is a list of strings, they are combined into one string and seperated by a double backslash `\\`. There is a bug in [DCMTK](https://support.dcmtk.org/docs/) if the tag is a list of numbers, only the zeroth element will be returned as a string.
 
 
+
+# Bibtex
+
+If this package helped, please kindly cite the below:
+
+```
+@misc{marcelo_lerendegui_2019_3337331,
+  author       = {Marcelo Lerendegui and
+                  Ouwen Huang},
+  title        = {Tensorflow Dicom Decoder},
+  month        = jul,
+  year         = 2019,
+  doi          = {10.5281/zenodo.3337331},
+  url          = {https://doi.org/10.5281/zenodo.3337331}
+}
+```
+
 # License
+
 Copyright 2019 Marcelo Lerendegui, Ouwen Huang, Gradient Health Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
