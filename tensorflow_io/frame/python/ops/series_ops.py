@@ -30,7 +30,7 @@ class Series(object):
     self._name = name
     data = tf.convert_to_tensor(data)
     if tf.rank(data) > 1:
-      data = tf.squeeze(data, axis=np.arange(1, tf.rank(data)))
+      data = tf.squeeze(data, axis=np.arange(1, tf.rank(data)).tolist())
     self._data = tf.Variable(data)
     self._index = np.arange(self._data.shape.as_list()[0])
 
