@@ -22,8 +22,7 @@ import os
 import pytest
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
+tf.compat.v1.disable_eager_execution()
 import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 
 # The DICOM sample files must be downloaded befor running the tests
@@ -83,16 +82,22 @@ def test_decode_dicom_image(fname, exp_shape):
       fname
   )
 
-  file_contents = tf.io.read_file(filename=dcm_path)
+  g1 = tf.compat.v1.Graph()
 
-  dcm_image = dicom_io.decode_dicom_image(
-      contents=file_contents,
-      dtype=tf.float32,
-      on_error='strict',
-      scale='auto',
-      color_dim=True,
-  )
-  assert dcm_image.numpy().shape == exp_shape
+  with g1.as_default():
+    file_contents = tf.io.read_file(filename=dcm_path)
+    dcm_image = dicom_io.decode_dicom_image(
+        contents=file_contents,
+        dtype=tf.float32,
+        on_error='strict',
+        scale='auto',
+        color_dim=True,
+    )
+
+  sess = tf.compat.v1.Session(graph=g1)
+  dcm_image_np = sess.run(dcm_image)
+
+  assert dcm_image_np.shape == exp_shape
 
 
 @pytest.mark.parametrize(
@@ -155,14 +160,19 @@ def test_decode_dicom_data(fname, tag, exp_value):
       fname
   )
 
-  file_contents = tf.io.read_file(filename=dcm_path)
+  g1 = tf.compat.v1.Graph()
 
-  dcm_data = dicom_io.decode_dicom_data(
-      contents=file_contents,
-      tags=tag
-  )
+  with g1.as_default():
+    file_contents = tf.io.read_file(filename=dcm_path)
+    dcm_data = dicom_io.decode_dicom_data(
+        contents=file_contents,
+        tags=tag
+    )
 
-  assert dcm_data.numpy() == exp_value
+  sess = tf.compat.v1.Session(graph=g1)
+  dcm_data_np = sess.run(dcm_data)
+
+  assert dcm_data_np == exp_value
 
 
 if __name__ == "__main__":
