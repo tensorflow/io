@@ -85,7 +85,11 @@ def test_from_csv():
 def test_from_credit_card():
   """test from https://www.datascience.com/blog/fraud-detection-with-tensorflow
   """
-  df = frame_io.DataFrame.from_csv('creditcard.csv')
+  sample = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_text",
+      "creditcard.csv")
+  df = frame_io.DataFrame.from_csv(sample)
   df = df.head()
 
   print(df.shape)
