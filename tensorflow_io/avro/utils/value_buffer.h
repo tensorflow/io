@@ -17,7 +17,7 @@ limitations under the License.
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_shape.h"
 
-#define DEBUG_LEVEL -1
+#define DEBUG_LEVEL 5
 
 namespace tensorflow {
 namespace data {

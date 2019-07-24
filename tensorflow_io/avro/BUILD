@@ -14,7 +14,8 @@ cc_library(
     copts = [
         "-pthread",
         "-std=c++11",
-        "-DNDEBUG",
+        "-ggdb", # TODO(fraudies): Remove me once done with debugging
+        # "-DNDEBUG", TODO(fraudies): Put me back
     ],
     includes = [
         ".",

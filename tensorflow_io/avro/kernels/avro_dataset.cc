@@ -23,6 +23,8 @@ limitations under the License.
 
 #include "tensorflow_io/avro/utils/avro_file_stream_reader.h"
 
+#define DEBUG_LEVEL 2
+
 // As boiler plate I used
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/dataset.h  DatasetBase
 //
@@ -373,7 +375,7 @@ class AvroDatasetOp : public DatasetOpKernel {
                 << ").";
           }
 
-          LOG(INFO) << "Output tensor for " << dataset()->dense_keys_[d] << " is " << avro_result.dense_values[d].SummarizeValue(3);
+          VLOG(DEBUG_LEVEL) << "Output tensor for " << dataset()->dense_keys_[d] << " is " << avro_result.dense_values[d].SummarizeValue(3);
           (*out_tensors)[output_index] = avro_result.dense_values[d];
         }
         for (int d = 0; d < dataset()->sparse_keys_.size(); ++d) {

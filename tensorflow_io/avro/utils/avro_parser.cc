@@ -13,6 +13,8 @@ limitations under the License.
 #include <sstream>
 #include "tensorflow_io/avro/utils/avro_parser.h"
 
+#define DEBUG_LEVEL 5
+
 namespace tensorflow {
 namespace data {
 
@@ -199,8 +201,6 @@ Status StringOrBytesValueParser::Parse(std::map<string, ValueStoreUniquePtr>* va
     }
   }
 
-  LOG(INFO) << "Parsed string value " << v;
-
   // Assume the key exists and cast is possible
   (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get())).AddByRef(v);
 
@@ -227,7 +227,7 @@ Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   const std::vector<AvroParserSharedPtr>& final_descendents(GetFinalDescendents());
 
-  LOG(INFO) << "Number of array elements " << data.size();
+  VLOG(DEBUG_LEVEL) << "Number of array elements " << data.size();
 
   // Add a begin mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
@@ -506,5 +506,5 @@ string NamespaceParser::ToString(int level) const {
 }
 
 
-}
-}
+}  // namespace data
+}  // namespace tensorflow

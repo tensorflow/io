@@ -18,7 +18,7 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow_io/avro/utils/avro_parser_tree.h"
 
-#define DEBUG_LEVEL -1
+#define DEBUG_LEVEL 1
 
 namespace tensorflow {
 namespace data {

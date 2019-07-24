@@ -14,16 +14,18 @@ limitations under the License.
 
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
+#include "tensorflow/core/lib/io/random_inputstream.h"
 #include "tensorflow_io/avro/utils/avro_parser_tree.h"
 #include "tensorflow/core/lib/core/status.h"
-#include "kernels/dataset_ops.h"
 #include "api/Stream.hh"
 #include "api/DataFile.hh"
 
 namespace tensorflow {
 namespace data {
 
-static const size_t kAvroDataInputStreamBufferSize = 8192;
+// TODO(fraudies): Expose these constants to the user
+static const size_t kInputStreamBufferSize = 16*1024; // buffer size for stream buffer
+static const size_t kAvroDataBufferSize = 256; // chose closer to chunk size of avro which is 128-256
 
 // Container for the parser configuration that holds
 //    - dense tensor information (name, type, shape, default, variable length)
@@ -82,57 +84,6 @@ struct AvroResult {
   std::vector<Tensor> dense_values;
 };
 
-class AvroDataInputStream : public avro::InputStream {
-public:
-  AvroDataInputStream(io::InputStreamInterface* s)
-    : stream_(s) {}
-  bool next(const uint8_t** data, size_t* len) override {
-    if (*len == 0) {
-      *len = kAvroDataInputStreamBufferSize;
-    }
-    if (*len <= prefix_.size()) {
-      buffer_ = prefix_.substr(0, *len);
-      prefix_ = prefix_.substr(*len);
-    } else {
-      int64 bytes_to_read = *len - prefix_.size();
-      string chunk;
-      stream_->ReadNBytes(bytes_to_read, &chunk);
-      buffer_ = std::move(prefix_);
-      buffer_.append(chunk);
-      prefix_.clear();
-    }
-    *data = (const uint8_t*)buffer_.data();
-    *len =  buffer_.size();
-    byte_count_ += *len;
-    return (*len != 0);
-  }
-  void backup(size_t len) override {
-    string chunk = buffer_.substr(buffer_.size() - len);
-    chunk.append(prefix_);
-    prefix_ = std::move(chunk);
-    byte_count_ -= len;
-  }
-  void skip(size_t len) override {
-    if (len <= prefix_.size()) {
-      prefix_ = prefix_.substr(len);
-    } else {
-      int64 bytes_to_read = len - prefix_.size();
-      stream_->SkipNBytes(bytes_to_read);
-      prefix_.clear();
-    }
-    byte_count_ += len;
-  }
-  size_t byteCount() const override {
-    LOG(INFO) << "byte_count_: " << byte_count_;
-    return byte_count_;
-  }
-private:
-  io::InputStreamInterface* stream_;
-  size_t byte_count_ = 0;
-  string prefix_;
-  string buffer_;
-};
-
 
 // The avro reader does the following
 //    1. streams data from a random access file by blocks
@@ -148,7 +99,8 @@ public:
       reader_schema_str_(reader_schema_str),
       config_(config),
       file_(nullptr),
-      file_stream_(nullptr),
+      input_stream_(nullptr),
+      buffered_input_stream_(nullptr),
       reader_(nullptr),
       allocator_(tensorflow::cpu_allocator()) { }
 
@@ -185,8 +137,11 @@ private:
   // The random access file that we use to load the data
   std::unique_ptr<RandomAccessFile> file_;
 
-  // The sized random access file stream
-  std::unique_ptr<SizedRandomAccessFileStream> file_stream_;
+  // The random access file stream
+  std::unique_ptr<io::RandomAccessInputStream> input_stream_;
+
+  // The buffered input stream as performance optimization
+  std::unique_ptr<io::BufferedInputStream> buffered_input_stream_;
 
   // Avro data file reader to read generic datum from file stream
   std::unique_ptr<avro::DataFileReader<avro::GenericDatum> > reader_;
