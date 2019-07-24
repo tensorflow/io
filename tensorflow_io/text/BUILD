@@ -13,6 +13,7 @@ cc_library(
         "kernels/csv_output.cc",
         "kernels/text_input.cc",
         "kernels/text_output.cc",
+        "kernels/text_re2.cc",
         "kernels/text_sequence.cc",
         "ops/text_ops.cc",
     ],
@@ -25,5 +26,6 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:output_ops",
         "//tensorflow_io/core:sequence_ops",
+        "@com_googlesource_code_re2//:re2",
     ],
 )
