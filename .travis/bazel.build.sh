@@ -9,6 +9,7 @@ if [[ $(uname) == "Darwin" ]]; then
     --noshow_loading_progress \
     --verbose_failures \
     --test_output=errors \
+    --remote_cache=remotebuildexecution.googleapis.com \
     -- //tensorflow_io/...
 else
   bazel build \
@@ -16,5 +17,6 @@ else
     --noshow_loading_progress \
     --verbose_failures \
     --test_output=errors \
+    --remote_cache=remotebuildexecution.googleapis.com \
     -- //tensorflow_io/...
 fi
