@@ -99,6 +99,51 @@ def test_json_dataset():
     i += 1
   assert i == len(y_test)
 
+def test_json_keras():
+  """Test case for JSONDataset with keras."""
+  feature_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "iris.json")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_json",
+      "species.json")
+
+  feature_list = ['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth']
+  label_list = ["species"]
+  feature_types = [tf.float64, tf.float64, tf.float64, tf.float64]
+  label_types = [tf.int64]
+  feature_dataset = json_io.JSONDataset(
+      feature_filename,
+      feature_list,
+      feature_types,
+      batch=32)
+  label_dataset = json_io.JSONDataset(
+      label_filename,
+      label_list,
+      label_types,
+      batch=32)
+  dataset = tf.data.Dataset.zip((
+      feature_dataset,
+      label_dataset
+  ))
+  def pack_features_vector(features, labels):
+    """Pack the features into a single array."""
+    features = tf.stack(list(features), axis=1)
+    return features, labels
+  dataset = dataset.map(pack_features_vector)
+
+  model = tf.keras.Sequential([
+      tf.keras.layers.Dense(10, activation=tf.nn.relu, input_shape=(4,)),  # input shape required
+      tf.keras.layers.Dense(10, activation=tf.nn.relu),
+      tf.keras.layers.Dense(3)
+    ])
+
+  model.compile(optimizer='adam',
+                loss='binary_crossentropy',
+                metrics=['accuracy'])
+  model.fit(dataset, epochs=5)
 
 if __name__ == "__main__":
   test.main()
