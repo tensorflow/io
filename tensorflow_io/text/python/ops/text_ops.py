@@ -45,6 +45,16 @@ def save_csv(dataset, filename):
   return text_ops.csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
+def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
+  """Extract regex groups
+
+  Args:
+    dataset: A `tf.string` tensor
+    pattern: A pattern string.
+  """
+  return text_ops.re2_full_match(input, pattern)
+
+
 class TextDataset(data_ops.Dataset):
   """A Text Dataset"""
 
