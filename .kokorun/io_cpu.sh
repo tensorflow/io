@@ -36,6 +36,8 @@ echo ""
 echo "Bazel will use ${N_JOBS} concurrent job(s)."
 echo ""
 
+bazel build -s --verbose_failures --remote_cache=remotebuildexecution.googleapis.com //tensorflow_io/...
+
 export CC_OPT_FLAGS='-mavx'
 export TF_NEED_CUDA=0 # TODO: Verify this is used in GPU custom-op
 
