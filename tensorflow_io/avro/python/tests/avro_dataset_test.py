@@ -181,6 +181,33 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
+  def test_larger_file_size(self):
+    # Added because of existing implementations had bug if the file
+    # size is larger than the buffer size
+    n_data = 1024
+    writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {
+                     "name": "int_value",
+                     "type": "int"
+                  }
+              ]}"""
+    record_data = [dict([("int_value", datum)]) for datum in range(n_data)]
+    features = {
+      "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
+    }
+    # Add batch dimension
+    expected_tensors = [
+      dict([("int_value", np.asarray([datum]))]) for datum in range(n_data)]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_tensors=expected_tensors,
+                            features=features,
+                            reader_schema=writer_schema,
+                            batch_size=1, num_epochs=1)
+
   def test_schema_projection(self):
     writer_schema = """{
               "type": "record",
@@ -524,7 +551,45 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
 
-  def test_dense_3d(self):
+  def test_dense_array_3d(self):
+    # Here we use arrays directly for the nesting
+    writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {
+                     "name": "int_list",
+                     "type": {
+                        "type": "array",
+                        "items": {
+                            "type": "array",
+                            "items": "int"
+                        }
+                     }
+                  }
+              ]
+              }"""
+    record_data = [
+      {"int_list": [[0, 1, 2], [10, 11, 12], [20, 21, 22]]},
+    ]
+    features = {
+      "int_list[*][*]": parsing_ops.FixedLenFeature([], tf_types.int32)
+    }
+    # Note, the outer dimension is the batch dimension
+    expected_tensors = [
+      {"int_list[*][*]": np.asarray([
+        [[0, 1, 2], [10, 11, 12], [20, 21, 22]]
+      ])},
+    ]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_tensors=expected_tensors,
+                            features=features,
+                            batch_size=1, num_epochs=1,
+                            reader_schema=writer_schema)
+
+  def test_dense_record_3d(self):
+    # Here we use records for the nesting
     writer_schema = """{
               "type": "record",
               "name": "row",

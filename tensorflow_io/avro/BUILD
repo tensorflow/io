@@ -14,8 +14,7 @@ cc_library(
     copts = [
         "-pthread",
         "-std=c++11",
-        "-ggdb", # TODO(fraudies): Remove me once done with debugging
-        # "-DNDEBUG", TODO(fraudies): Put me back
+        "-DNDEBUG",
     ],
     includes = [
         ".",
@@ -31,15 +30,6 @@ cc_library(
 # the future, since there is a comment in tensorflow/core/BUILD and
 # in there it says that //tensorflow/core:test will be removed from
 # the public API
-# cc_test(
-#     name = "avro_mem_reader_test",
-#     srcs = ["utils/avro_mem_reader_test.cc"],
-#     deps = [
-#         ":avro_utils",
-#         "@com_google_googletest//:gtest_main",
-#     ],
-# )
-
 cc_test(
     name = "prefix_tree_test",
     srcs = ["utils/prefix_tree_test.cc"],
@@ -82,7 +72,6 @@ cc_test(
 #    ],
 #)
 
-# TODO(fraudies): Swap avro_c with the c++ implementation
 cc_library(
     name = "avro_utils_api",
     hdrs = ["utils/prefix_tree.h",
@@ -93,7 +82,7 @@ cc_library(
             "utils/avro_file_stream_reader.h",
             ],
     deps = [
-        "//third_party/avro_c",
+        "//third_party/avro_c", # TODO(fraudies): Remove me once the old implementation is gone
         "//tensorflow_io/core:dataset_ops",
         "@com_googlesource_code_re2//:re2",
     ],

@@ -23,10 +23,6 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-// TODO(fraudies): Expose these constants to the user
-static const size_t kInputStreamBufferSize = 16*1024; // buffer size for stream buffer
-static const size_t kAvroDataBufferSize = 256; // chose closer to chunk size of avro which is 128-256
-
 // Container for the parser configuration that holds
 //    - dense tensor information (name, type, shape, default, variable length)
 struct AvroParseConfig {
@@ -69,6 +65,12 @@ struct AvroParseConfig {
 
   // A vector of sparse configuration information
   std::vector<Sparse> sparse;
+
+  // The buffer size for the input stream in By
+  int64 input_stream_buffer_size;
+
+  // The buffer size for the avro data stream in By
+  int64 avro_data_buffer_size;
 };
 
 

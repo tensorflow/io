@@ -13,8 +13,6 @@ limitations under the License.
 #include <sstream>
 #include "tensorflow_io/avro/utils/avro_parser.h"
 
-#define DEBUG_LEVEL 5
-
 namespace tensorflow {
 namespace data {
 
@@ -96,8 +94,8 @@ Status BoolValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_BOOL) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_BOOL,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_BOOL),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Assumes the key exists
@@ -114,8 +112,8 @@ Status LongValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_LONG) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_LONG,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_LONG),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Assume the key exists and cast is possible
@@ -132,8 +130,8 @@ Status IntValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_INT) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_INT,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_INT),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Assume the key exists and cast is possible
@@ -150,8 +148,8 @@ Status DoubleValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_DOUBLE) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_DOUBLE,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_DOUBLE),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Assume the key exists and cast is possible
@@ -168,8 +166,8 @@ Status FloatValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_FLOAT) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_FLOAT,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_FLOAT),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Assume the key exists and cast is possible
@@ -186,8 +184,8 @@ Status StringOrBytesValueParser::Parse(std::map<string, ValueStoreUniquePtr>* va
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_STRING && datum.type() != avro::AVRO_BYTES) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_STRING,
-      "' or type '", avro::AVRO_BYTES, "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_STRING),
+      "' or type '", toString(avro::AVRO_BYTES), "' but got type '", toString(datum.type()), "'.");
   }
 
   string v;
@@ -218,16 +216,14 @@ Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_ARRAY) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_ARRAY),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   std::vector<avro::GenericDatum> data = datum.value<avro::GenericArray>().value();
 
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   const std::vector<AvroParserSharedPtr>& final_descendents(GetFinalDescendents());
-
-  VLOG(DEBUG_LEVEL) << "Number of array elements " << data.size();
 
   // Add a begin mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
@@ -263,8 +259,8 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_ARRAY) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_ARRAY),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Check for valid index
@@ -328,8 +324,8 @@ Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_ARRAY) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_ARRAY,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_ARRAY),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   const std::vector<AvroParserSharedPtr>& final_descendents = GetFinalDescendents();
@@ -390,8 +386,8 @@ Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_MAP) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_MAP,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_MAP),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   std::vector<std::pair<std::string, avro::GenericDatum> > data = datum.value<avro::GenericMap>().value();
@@ -430,8 +426,8 @@ Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
   if (datum.type() != avro::AVRO_RECORD) {
-    return errors::InvalidArgument("Expected type '", avro::AVRO_RECORD,
-      "' but got type '", datum.type(),"'.");
+    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_RECORD),
+      "' but got type '", toString(datum.type()), "'.");
   }
 
   // Convert to record

@@ -26,12 +26,12 @@ namespace data {
 
 static const size_t kAvroDataInputStreamBufferSize = 8192;
 
-class AvroDataInputStreamBuggy : public avro::InputStream {
+class BufferedAvroDataInputStream : public avro::InputStream {
 public:
-  AvroDataInputStreamBuggy(io::InputStreamInterface* s)
+  BufferedAvroDataInputStream(io::InputStreamInterface* s)
     : stream_(s) {}
   bool next(const uint8_t** data, size_t* len) override {
-    if (*len == 0) {
+    if (*len <= 0 || *len > kAvroDataInputStreamBufferSize) {
       *len = kAvroDataInputStreamBufferSize;
     }
     if (*len <= prefix_.size()) {
@@ -92,7 +92,7 @@ public:
       return errors::Unimplemented("Avro schema error: ", error);
     }
     std::unique_ptr<avro::InputStream> stream(
-      static_cast<avro::InputStream*>(new AvroDataInputStreamBuggy(stream_)));
+      static_cast<avro::InputStream*>(new BufferedAvroDataInputStream(stream_)));
 
     reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
       std::move(stream), reader_schema_));

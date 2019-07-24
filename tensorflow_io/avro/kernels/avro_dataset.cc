@@ -23,8 +23,6 @@ limitations under the License.
 
 #include "tensorflow_io/avro/utils/avro_file_stream_reader.h"
 
-#define DEBUG_LEVEL 2
-
 // As boiler plate I used
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/dataset.h  DatasetBase
 //
@@ -149,7 +147,24 @@ class AvroDatasetOp : public DatasetOpKernel {
       it->second = i++;
     }
 
-    *output = new Dataset(ctx, std::move(filenames), batch_size, drop_remainder, reader_schema_,
+    // Get buffer sizes
+    int64 input_stream_buffer_size;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument(ctx, "input_stream_buffer_size",
+                                            &input_stream_buffer_size));
+    OP_REQUIRES(ctx, input_stream_buffer_size > 0,
+                errors::InvalidArgument(
+                    "input_stream_buffer_size must be greater than zero."));
+
+    int64 avro_data_buffer_size;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument(ctx, "avro_data_buffer_size",
+                                            &avro_data_buffer_size));
+    OP_REQUIRES(ctx, avro_data_buffer_size > 0,
+                errors::InvalidArgument(
+                    "avro_data_buffer_size must be greater than zero."));
+
+    *output = new Dataset(ctx, std::move(filenames), batch_size,
+                    drop_remainder, reader_schema_,
+                    input_stream_buffer_size, avro_data_buffer_size,
                     dense_defaults, sparse_keys_, dense_keys_,
                     std::move(key_to_output_index),
                     sparse_types_, dense_types_,
@@ -167,6 +182,8 @@ class AvroDatasetOp : public DatasetOpKernel {
             int64 batch_size,
             bool drop_remainder,
             string reader_schema,
+            int64 input_stream_buffer_size,
+            int64 avro_data_buffer_size,
             std::vector<Tensor> dense_defaults,
             std::vector<string> sparse_keys,
             std::vector<string> dense_keys,
@@ -192,7 +209,8 @@ class AvroDatasetOp : public DatasetOpKernel {
           output_shapes_(output_shapes),
           output_shapes_batched_(PrependBatchDimension(output_shapes, batch_size, drop_remainder, 0,
                                                        dense_keys_.size())),
-          config_(BuildConfig(batch_size, drop_remainder, dense_keys_, dense_types_,
+          config_(BuildConfig(batch_size, drop_remainder, input_stream_buffer_size,
+                              avro_data_buffer_size, dense_keys_, dense_types_,
                               dense_shapes_batched_, dense_defaults_, sparse_keys_,
                               sparse_types_)) { }
 
@@ -242,6 +260,14 @@ class AvroDatasetOp : public DatasetOpKernel {
         dense_defaults_nodes.emplace_back(node);
       }
 
+      Node* input_stream_buffer_size = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(config_.input_stream_buffer_size,
+        &input_stream_buffer_size));
+
+      Node* avro_data_buffer_size = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(config_.avro_data_buffer_size,
+        &avro_data_buffer_size));
+
       AttrValue reader_schema_attr;
       AttrValue sparse_keys_attr;
       AttrValue dense_keys_attr;
@@ -260,7 +286,9 @@ class AvroDatasetOp : public DatasetOpKernel {
                                        {
                                           {0, filenames},
                                           {1, batch_size},
-                                          {2, drop_remainder}
+                                          {2, drop_remainder},
+                                          {4, input_stream_buffer_size},
+                                          {5, avro_data_buffer_size}
                                        }, // single tensor inputs
                                        {
                                           {3, dense_defaults_nodes}
@@ -375,7 +403,7 @@ class AvroDatasetOp : public DatasetOpKernel {
                 << ").";
           }
 
-          VLOG(DEBUG_LEVEL) << "Output tensor for " << dataset()->dense_keys_[d] << " is " << avro_result.dense_values[d].SummarizeValue(3);
+          VLOG(5) << "Dense output tensor for " << dataset()->dense_keys_[d] << " is " << avro_result.dense_values[d].SummarizeValue(3);
           (*out_tensors)[output_index] = avro_result.dense_values[d];
         }
         for (int d = 0; d < dataset()->sparse_keys_.size(); ++d) {
@@ -398,6 +426,11 @@ class AvroDatasetOp : public DatasetOpKernel {
               << " (expected "
               << dataset()->output_shapes_batched_[output_index].DebugString() << ", got "
               << serialized_sparse.shape().DebugString() << ").";
+
+          VLOG(5) << "Sparse output tensor for " << dataset()->sparse_keys_[d] << " has ";
+          VLOG(5) << "Indices " << avro_result.sparse_indices[d].SummarizeValue(3);
+          VLOG(5) << "Values " << avro_result.sparse_values[d].SummarizeValue(3);
+          VLOG(5) << "Shapes " << avro_result.sparse_shapes[d].SummarizeValue(3);
         }
 
         return Status::OK();
@@ -428,6 +461,7 @@ class AvroDatasetOp : public DatasetOpKernel {
     }
 
     static AvroParseConfig BuildConfig(int64 batch_size, bool drop_remainder,
+      size_t input_stream_buffer_size, size_t avro_data_buffer_size,
       const std::vector<string>& dense_keys, const DataTypeVector& dense_types,
       const std::vector<PartialTensorShape>& dense_shapes,
       const std::vector<Tensor>& dense_defaults, const std::vector<string>& sparse_keys,
@@ -437,6 +471,9 @@ class AvroDatasetOp : public DatasetOpKernel {
       // Create the config
       config.batch_size = batch_size;
       config.drop_remainder = drop_remainder;
+      config.input_stream_buffer_size = input_stream_buffer_size;
+      config.avro_data_buffer_size = avro_data_buffer_size;
+
       for (int d = 0; d < dense_keys.size(); ++d) {
         // If the user did not provide shape information and the first dimension is -1 for the batch
         bool variable_length = dense_shapes[d].dims() == 1

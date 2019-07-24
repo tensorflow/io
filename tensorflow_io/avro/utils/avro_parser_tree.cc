@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow_io/avro/utils/avro_parser_tree.h"
 
-#define DEBUG_LEVEL 1
 
 namespace tensorflow {
 namespace data {
@@ -79,7 +78,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
     const std::vector<KeyWithType>& keys_and_types) {
 
   // Check unique keys
-  VLOG(DEBUG_LEVEL) << "Validate keys";
+  VLOG(7) << "Validate keys";
   TF_RETURN_IF_ERROR(ValidateUniqueKeys(keys_and_types));
 
   // TODO: Validate filters etc, no nesting, no name conflict in shorthand
@@ -89,13 +88,8 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
   const string& resolved_avro_namespace = (*parser_tree).ResolveAndSetNamespace(avro_namespace);
 
   // Convert to internal names and order names to handle filters properly through parse order
-  VLOG(DEBUG_LEVEL) << "Order identifiers";
+  VLOG(7) << "Order identifiers";
   std::vector<KeyWithType> ordered_keys_and_types = OrderAndResolveKeyTypes(keys_and_types);
-
-//  LOG(DEBUG_LEVEL) << "\nListing ordered identifiers";
-//  for (const KeyWithType& key_and_type : ordered_keys_and_types) {
-//    LOG(DEBUG_LEVEL) << "Name: '" << key_and_type.first << "' and type '" << DataTypeString(key_and_type.second) << "'";
-//  }
 
   // Parse keys into prefixes and build map from key to type
   std::vector< std::vector<string> > prefixes;
@@ -110,11 +104,11 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
     (*parser_tree).key_to_type_[key_and_type.first] = key_and_type.second;
   }
 
-  VLOG(DEBUG_LEVEL) << "Build prefix tree";
+  VLOG(7) << "Build prefix tree";
   OrderedPrefixTree prefix_tree(resolved_avro_namespace);
   OrderedPrefixTree::Build(&prefix_tree, prefixes);
 
-  VLOG(DEBUG_LEVEL) << "Prefix tree\n" << prefix_tree.ToString();
+  VLOG(7) << "Prefix tree\n" << prefix_tree.ToString();
 
   (*parser_tree).keys_and_types_ = ordered_keys_and_types;
 
@@ -126,7 +120,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
     (*parser_tree).root_.get(),
     (*prefix_tree.GetRoot()).GetChildren()));
 
-  VLOG(DEBUG_LEVEL) << "Parser tree \n" << (*parser_tree).ToString();
+  VLOG(7) << "Parser tree \n" << (*parser_tree).ToString();
 
   return Status::OK();
 }
@@ -143,7 +137,7 @@ string AvroParserTree::ResolveAndSetNamespace(const string& avro_namespace) {
 Status AvroParserTree::Build(AvroParser* parent, const std::vector<PrefixTreeNodeSharedPtr>& children) {
   for (PrefixTreeNodeSharedPtr child : children) {
 
-    VLOG(DEBUG_LEVEL) << "Creating parser for prefix " << (*child).GetPrefix();
+    VLOG(5) << "Creating parser for prefix " << (*child).GetPrefix();
 
     AvroParserUniquePtr avro_parser(nullptr);
 
@@ -161,14 +155,14 @@ Status AvroParserTree::Build(AvroParser* parent, const std::vector<PrefixTreeNod
       if (key_and_type == key_to_type_.end()) {
         return errors::NotFound("Unable to find key '", user_name, "'!");
       }
-      VLOG(DEBUG_LEVEL) << "Create value parser for " << user_name;
+      VLOG(5) << "Create value parser for " << user_name;
 
       TF_RETURN_IF_ERROR(CreateFinalValueParser(avro_value_parser, user_name, (*key_and_type).second));
       (*avro_parser).AddChild(std::move(avro_value_parser));
 
     // Build a parser for all children of this non-terminal node
     } else {
-      VLOG(DEBUG_LEVEL) << "Create parser for " << (*child).GetName(kSeparator);
+      VLOG(5) << "Create parser for " << (*child).GetName(kSeparator);
       TF_RETURN_IF_ERROR(Build(avro_parser.get(), (*child).GetChildren()));
     }
 
@@ -234,12 +228,12 @@ std::vector<KeyWithType> AvroParserTree::OrderAndResolveKeyTypes(
 
       const string& filter_name = lhs_name + "=" + rhs_name;
 
-      VLOG(DEBUG_LEVEL) << "Found filter with lhs '" << lhs_name << "' and rhs '" << rhs_name << "'";
+      VLOG(5) << "Found filter with lhs '" << lhs_name << "' and rhs '" << rhs_name << "'";
 
       if (!IsStringConstant(nullptr, lhs_name)) {
         const string& lhs_resolved_name = ResolveFilterName(user_name, lhs_name, filter_name);
 
-        VLOG(DEBUG_LEVEL) << "  Resolved lhs " << lhs_resolved_name;
+        VLOG(5) << "  Resolved lhs " << lhs_resolved_name;
 
         const KeyWithType& lhs_resolved = std::make_pair(lhs_resolved_name, DT_STRING);
 
@@ -250,7 +244,7 @@ std::vector<KeyWithType> AvroParserTree::OrderAndResolveKeyTypes(
       if (!IsStringConstant(nullptr, rhs_name)) {
         const string& rhs_resolved_name = ResolveFilterName(user_name, rhs_name, filter_name);
 
-        VLOG(DEBUG_LEVEL) << "  Resolved rhs " << rhs_resolved_name;
+        VLOG(5) << "  Resolved rhs " << rhs_resolved_name;
 
         const KeyWithType& rhs_resolved = std::make_pair(rhs_resolved_name, DT_STRING);
 
@@ -285,7 +279,7 @@ Status AvroParserTree::CreateValueParser(AvroParserUniquePtr& avro_parser,
 
   if (IsFilter(&lhs_name, &rhs_name, infix)) {
 
-    VLOG(DEBUG_LEVEL) << "Infix " << infix << " lhs " << lhs_name << " and rhs " << rhs_name;
+    VLOG(5) << "Infix " << infix << " lhs " << lhs_name << " and rhs " << rhs_name;
 
     bool lhs_is_constant = IsStringConstant(&lhs_resolved_name, lhs_name);
     bool rhs_is_constant = IsStringConstant(&rhs_resolved_name, rhs_name);

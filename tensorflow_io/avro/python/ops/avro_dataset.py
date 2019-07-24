@@ -49,8 +49,9 @@ from tensorflow_io.core.python.ops import core_ops as avro_ops
 class _AvroDataset(DatasetSource):
   """A `DatasetSource` that reads and parses Avro records from files."""
 
-  def __init__(self, filenames, features, reader_schema, batch_size=128,
-      drop_remainder=False, num_parallel_calls=2):
+  def __init__(self, filenames, features, reader_schema, batch_size,
+               drop_remainder, num_parallel_calls, input_stream_buffer_size,
+               avro_data_buffer_size):
 
     super(_AvroDataset, self).__init__()
     self._filenames = ops.convert_to_tensor(
@@ -60,6 +61,8 @@ class _AvroDataset(DatasetSource):
     self._batch_size = batch_size
     self._drop_remainder = drop_remainder
     self._num_parallel_calls = num_parallel_calls
+    self._input_stream_buffer_size = input_stream_buffer_size
+    self._avro_data_buffer_size = avro_data_buffer_size
 
     # Copied from _ParseExampleDataset from data/experimental/ops/parsing_ops.py
     (sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
@@ -110,8 +113,10 @@ class _AvroDataset(DatasetSource):
         filenames=self._filenames,
         batch_size=self._batch_size,
         drop_remainder=self._drop_remainder,
-        reader_schema=self._reader_schema,
         dense_defaults=self._dense_defaults,
+        input_stream_buffer_size=self._input_stream_buffer_size,
+        avro_data_buffer_size=self._avro_data_buffer_size,
+        reader_schema=self._reader_schema,
         sparse_keys=self._sparse_keys,
         dense_keys=self._dense_keys,
         sparse_types=self._sparse_types,
@@ -265,6 +270,8 @@ def make_avro_dataset(
     num_parallel_calls=2,
     label_key=None,
     num_epochs=None,
+    input_stream_buffer_size=16*1024,
+    avro_data_buffer_size=256,
     shuffle=True,
     shuffle_buffer_size=10000,
     shuffle_seed=None,
@@ -277,7 +284,7 @@ def make_avro_dataset(
   Reads from avro files and parses the contents into tensors.
 
   Args:
-    filenames: A `tf.string` tensor containing one or more filenames.
+    file_pattern: A `tf.string` tensor containing one or more filenames.
     reader_schema: A `tf.string` scalar for schema resolution.
 
     features: Is a map of keys that describe a single entry or sparse vector
@@ -325,7 +332,17 @@ def make_avro_dataset(
               that contain an 'index' field that MUST BE LONG and an 'value'
               field with floats (single precision).
 
+    batch_size: Items in a batch, must be > 0
+
     num_parallel_calls: Number of parallel calls
+
+    label_key: The label key, if None no label will be returned
+
+    num_epochs: The number of epochs
+
+    input_stream_buffer_size: The size of the input stream buffer in By
+
+    avro_data_buffer_size: The size of the avro data buffer in By
 
   """
   filenames = readers._get_file_names(file_pattern, False)
@@ -344,7 +361,9 @@ def make_avro_dataset(
         reader_schema=reader_schema,
         batch_size=batch_size,
         drop_remainder=num_epochs is None,
-        num_parallel_calls=num_parallel_calls
+        num_parallel_calls=num_parallel_calls,
+        input_stream_buffer_size=input_stream_buffer_size,
+        avro_data_buffer_size=avro_data_buffer_size
     )
 
   # Read files sequentially (if num_parallel_reads=1) or in parallel
@@ -386,6 +405,8 @@ def make_avro_dataset_v1(
     num_parallel_calls=2,
     label_key=None,
     num_epochs=None,
+    input_stream_buffer_size=16*1024,
+    avro_data_buffer_size=256,
     shuffle=True,
     shuffle_buffer_size=10000,
     shuffle_seed=None,
@@ -395,6 +416,7 @@ def make_avro_dataset_v1(
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
       file_pattern, reader_schema, features, batch_size, num_parallel_calls,
-      label_key, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed,
-      prefetch_buffer_size, num_parallel_reads, sloppy))
+      label_key, num_epochs, input_stream_buffer_size, avro_data_buffer_size,
+      shuffle, shuffle_buffer_size, shuffle_seed, prefetch_buffer_size,
+      num_parallel_reads, sloppy))
 make_avro_dataset_v1.__doc__ = make_avro_dataset.__doc__

@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_shape.h"
 
-#define DEBUG_LEVEL 5
 
 namespace tensorflow {
 namespace data {
@@ -256,7 +255,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
   // Honor user defined shape if fully defined
   if (partial_shape.IsFullyDefined()) {
 
-    VLOG(DEBUG_LEVEL) << "Fully defined input shape";
+    VLOG(3) << "Fully defined input shape";
 
     if (!partial_shape.AsTensorShape(shape)) {
       return errors::InvalidArgument("Expected ", partial_shape, " to be convertible"
@@ -266,7 +265,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
   // If the default is not scalar
   } else if (defaultIsNonTrivialTensor) {
 
-    VLOG(DEBUG_LEVEL) << "Default is non trivial tensor";
+    VLOG(3) << "Default is non trivial tensor";
 
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from default
@@ -286,7 +285,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
     TensorShape dense_shape;
     shape_builder_.GetDenseShape(&dense_shape);
 
-    VLOG(DEBUG_LEVEL) << "Get dense shape from data " << dense_shape;
+    VLOG(3) << "Get dense shape from data " << dense_shape;
 
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from data
