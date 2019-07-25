@@ -6,6 +6,9 @@ if [[ $(uname) == "Darwin" ]]; then
   # it is set.
   args+=(--copt=-DGRPC_BAZEL_BUILD)
 fi
+if [[ "${BAZEL_CACHE}" != "" ]]; then
+  args+=(--disk_cache=${BAZEL_CACHE})
+fi
 
 bazel build \
   "${args[@]}" \
