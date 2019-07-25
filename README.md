@@ -134,8 +134,8 @@ $ docker build -f dev/Dockerfile -t tfio-dev .
 $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 $ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
-$ # Build TensorFlow I/O C++
-$ bazel build -s --verbose_failures //tensorflow_io/...
+$ # Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options)
+$ bazel build -c opt --copt=-match=native -s --verbose_failures //tensorflow_io/...
 $ # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
 $ pytest tests/
 $ # Build the TensorFlow I/O package
