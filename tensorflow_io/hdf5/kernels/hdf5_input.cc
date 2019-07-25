@@ -105,7 +105,11 @@ public:
           Tensor tensor(ctx->allocator({}), DT_INT32, shape);
           dataset_[i].read(tensor.flat<int32>().data(), H5::PredType::NATIVE_INT, memoryspace, dataspace_[i]);
           out_tensors->emplace_back(std::move(tensor));
-        } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
+        } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
+          Tensor tensor(ctx->allocator({}), DT_UINT32, shape);
+          dataset_[i].read(tensor.flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memoryspace, dataspace_[i]);
+          out_tensors->emplace_back(std::move(tensor));
+        }else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
           Tensor tensor(ctx->allocator({}), DT_INT64, shape);
           dataset_[i].read(tensor.flat<int64>().data(), H5::PredType::NATIVE_LONG, memoryspace, dataspace_[i]);
           out_tensors->emplace_back(std::move(tensor));
