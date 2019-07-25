@@ -193,9 +193,9 @@ class ArrowDataset(ArrowBaseDataset):
   @classmethod
   def from_record_batches(cls,
                           record_batches,
-                          columns,
                           output_types,
                           output_shapes=None,
+                          columns=None,
                           batch_size=None,
                           batch_mode='keep_remainder'):
     """Create an ArrowDataset directly from Arrow record batches.
@@ -203,7 +203,6 @@ class ArrowDataset(ArrowBaseDataset):
 
     Args:
       record_batches: An Arrow record batch or sequence of record batches
-      columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
@@ -215,6 +214,7 @@ class ArrowDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      columns: A list of column indices to be used in the Dataset
     """
     import pyarrow as pa
     if isinstance(record_batches, pa.RecordBatch):
@@ -272,11 +272,11 @@ class ArrowDataset(ArrowBaseDataset):
     output_types, output_shapes = arrow_schema_to_tensor_types(batch.schema)
     return cls.from_record_batches(
         batch,
-        columns,
         output_types,
         output_shapes,
-        batch_size,
-        batch_mode)
+        columns=columns,
+        batch_size=batch_size,
+        batch_mode=batch_mode)
 
 
 class ArrowFeatherDataset(ArrowBaseDataset):
@@ -457,7 +457,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                           output_shapes=None,
                           columns=None,
                           batch_size=None,
-                          batch_mode='keep_remainder'):
+                          batch_mode='keep_remainder',
+                          record_batch_iter_factory=None):
     """Create an ArrowStreamDataset by serving a sequence of Arrow record
     batches in a background thread.
     This constructor requires pyarrow to be installed.
@@ -476,6 +477,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      record_batch_iter_factory: Optional factory to create additional record
+                                 batch iterators after being consumed.
     """
     import pyarrow as pa
 
@@ -500,16 +503,23 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
     def run_server():
       """serve record batches"""
-      conn, _ = sock.accept()
-      outfile = conn.makefile(mode='wb')
-      writer = None
-      for batch in record_batch_iter:
-        if writer is None:
-          writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
-        writer.write_batch(batch)
-      writer.close()
-      outfile.close()
-      conn.close()
+      curr_iter = record_batch_iter
+      while True:
+        conn, _ = sock.accept()
+        outfile = conn.makefile(mode='wb')
+        writer = None
+        try:
+          for batch in curr_iter:
+            if writer is None:
+              writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+            writer.write_batch(batch)
+          if record_batch_iter_factory is not None:
+            curr_iter = record_batch_iter_factory()
+        finally:
+          if writer is not None:
+            writer.close()
+          outfile.close()
+          conn.close()
       sock.close()
 
     # Run the server in a thread
@@ -582,4 +592,5 @@ class ArrowStreamDataset(ArrowBaseDataset):
         output_types,
         output_shapes,
         batch_size=batch_size,
-        batch_mode='keep_remainder')
+        batch_mode='keep_remainder',
+        record_batch_iter_factory=gen_record_batches)
