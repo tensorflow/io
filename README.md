@@ -135,7 +135,7 @@ $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 $ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
 $ # Build TensorFlow I/O C++
-$ bazel build -s --verbose_failures //tensorflow_io/...
+$ bazel build -c opt --copt=-match=native -s --verbose_failures //tensorflow_io/...
 $ # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
 $ pytest tests/
 $ # Build the TensorFlow I/O package
