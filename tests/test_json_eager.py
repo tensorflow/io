@@ -138,7 +138,7 @@ def test_json_keras():
       tf.keras.layers.Dense(10, activation=tf.nn.relu, input_shape=(4,)),  # input shape required
       tf.keras.layers.Dense(10, activation=tf.nn.relu),
       tf.keras.layers.Dense(3)
-    ])
+  ])
 
   model.compile(optimizer='adam',
                 loss='binary_crossentropy',
