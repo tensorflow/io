@@ -10,7 +10,12 @@ services:
 before_install:
 - nvm install 8
 
+cache:
+  directories:
+  - .cache/bazel
+
 install:
+- export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
 - |
   if [[ $(uname) == "Darwin" ]]; then
@@ -50,14 +55,14 @@ jobs:
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
     - echo "Skip test for now, will fix later"
     after_success: bash -x -e after-sucess-tf20.sh
 
   - stage: release
     name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success: bash -x -e after-sucess-tf20.sh
 
@@ -76,14 +81,14 @@ jobs:
   - stage: release
     name: "Nightly Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
+    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
     - echo "Skip test for nightly build, as it has been covered in install build"
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: release
     name: "Nightly Release Build on Linux with Python 3.7"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER}
+    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER}
     - echo "Skip test for now, will fix later"
     after_success: bash -x -e .travis/after-success.sh
 
