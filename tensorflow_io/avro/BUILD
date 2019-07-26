@@ -6,8 +6,6 @@ cc_library(
     name = "avro_ops",
     srcs = [
         "kernels/avro_dataset.cc",
-        "kernels/avro_record_dataset.cc",
-        "kernels/parse_avro_record.cc",
         "ops/avro_ops.cc",
     ],
     copts = [
@@ -77,11 +75,10 @@ cc_library(
             "utils/value_buffer.h",
             "utils/avro_parser.h",
             "utils/avro_parser_tree.h",
-            "utils/parse_avro_attrs.h", # TODO(fraudies): Remove once old implementation is gone
+            "utils/parse_avro_attrs.h",
             "utils/avro_file_stream_reader.h",
             ],
     deps = [
-        "//third_party/avro_c", # TODO(fraudies): Remove me once the old implementation is gone
         "//tensorflow_io/core:dataset_ops",
         "@com_googlesource_code_re2//:re2",
     ],
@@ -93,7 +90,7 @@ cc_library(
             "utils/value_buffer.cc",
             "utils/avro_parser.cc",
             "utils/avro_parser_tree.cc",
-            "utils/parse_avro_attrs.cc", # TODO(fraudies): Remove once old implementation is gone
+            "utils/parse_avro_attrs.cc",
             "utils/avro_file_stream_reader.cc",
             ],
     deps = [
