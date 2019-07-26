@@ -15,6 +15,7 @@ limitations under the License.
 #include <vector>
 #include <map>
 #include <queue>
+#include <set>
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow_io/avro/utils/value_buffer.h"
 #include "api/Generic.hh"
@@ -50,8 +51,8 @@ public:
   // Get the key for this avro parser -- this key can be used to map to values
   inline const string& GetKey() const { return key_; }
 
-  // Get the avro type for this parser
-  virtual avro::Type GetType() const = 0;
+  // Get the supported avro types for this parser
+  virtual std::set<avro::Type> GetSupportedTypes() const = 0;
 
 protected:
   // Get the final descendents for this avro parser
@@ -62,6 +63,9 @@ protected:
 
   // Convert the level into a string
   string LevelToString(int level) const;
+
+  // Convert the supported types into a string representation
+  string SupportedTypesToString(char separator) const;
 
   // The key for this avro parser
   string key_;
@@ -88,7 +92,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro_value_t& value) const override;
   virtual string ToString(int level = 0) const;
-  inline avro_type_t GetType() const override { return AVRO_NULL; }
+  inline avro_type_t GetSupportedTypes() const override { return AVRO_NULL; }
 };
 */
 
@@ -99,7 +103,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_BOOL; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_BOOL}; }
 };
 
 // Parser for long values
@@ -109,7 +113,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_LONG; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_LONG}; }
 };
 
 // Parser for integer values
@@ -119,7 +123,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_INT; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_INT}; }
 };
 
 // Parser for double values
@@ -129,7 +133,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_DOUBLE; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_DOUBLE}; }
 };
 
 // Parser for float values
@@ -139,18 +143,19 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_FLOAT; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_FLOAT}; }
 };
 
 // Parser for string or byte values
 // Tries to parse a string first and if this fails will try to parse bytes second
-class StringOrBytesValueParser : public AvroParser {
+class StringBytesEnumFixedValueParser : public AvroParser {
 public:
-  StringOrBytesValueParser(const string& key);
+  StringBytesEnumFixedValueParser(const string& key);
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_STRING; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_STRING,
+    avro::AVRO_BYTES, avro::AVRO_ENUM, avro::AVRO_FIXED}; }
 };
 
 // Parser for an array -- parses all elements
@@ -160,7 +165,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_ARRAY; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_ARRAY}; }
 };
 
 // Parser for an array -- parses one index out of the array
@@ -170,7 +175,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_ARRAY; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_ARRAY}; }
 private:
   size_t index_;
 };
@@ -184,7 +189,7 @@ public:
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
   static ArrayFilterType ToArrayFilterType(bool lhs_is_constant, bool rhs_is_constant);
-  inline avro::Type GetType() const override { return avro::AVRO_ARRAY; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_ARRAY}; }
 private:
   string lhs_;
   string rhs_;
@@ -198,9 +203,9 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_MAP; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_MAP}; }
 private:
-  string key_;
+  string key_; // key for map
 };
 
 // Parser for a record -- parses all attributes
@@ -213,7 +218,7 @@ public:
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_RECORD; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_RECORD}; }
 private:
   string name_;
 };
@@ -221,13 +226,13 @@ private:
 // Parser for a union in a record
 class UnionParser : public AvroParser {
 public:
-  UnionParser(const string& name);
+  UnionParser(const string& type_name);
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
-  inline avro::Type GetType() const override { return avro::AVRO_UNION; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_UNION}; }
 private:
-  string name_;
+  string type_name_;
 };
 
 // Parses the namespace
@@ -241,7 +246,7 @@ public:
     const avro::GenericDatum& datum) const override;
   virtual string ToString(int level = 0) const;
   // Note, abuse of unknown symbol
-  inline avro::Type GetType() const override { return avro::AVRO_UNKNOWN; }
+  inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_UNKNOWN}; }
 private:
   string name_;
 };

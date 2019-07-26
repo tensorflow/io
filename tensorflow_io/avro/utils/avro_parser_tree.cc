@@ -316,7 +316,7 @@ Status AvroParserTree::CreateValueParser(AvroParserUniquePtr& avro_parser,
   }
 
   if (IsBranch(infix)) {
-    avro_parser.reset(new UnionParser(user_name));
+    avro_parser.reset(new UnionParser(infix));
     return Status::OK();
   }
 
@@ -344,7 +344,7 @@ Status AvroParserTree::CreateFinalValueParser(AvroParserUniquePtr& value_parser,
       value_parser.reset(new DoubleValueParser(user_name));
       break;
     case DT_STRING:
-      value_parser.reset(new StringOrBytesValueParser(user_name));
+      value_parser.reset(new StringBytesEnumFixedValueParser(user_name));
       break;
     default:
       return errors::Unimplemented("Unable to build avro value parser for name '",

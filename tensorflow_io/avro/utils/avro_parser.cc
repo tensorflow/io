@@ -73,6 +73,16 @@ string AvroParser::LevelToString(int level) const {
   return ss.str();
 }
 
+string AvroParser::SupportedTypesToString(char separator) const {
+  std::stringstream ss;
+  for (avro::Type t : GetSupportedTypes()) {
+    ss << toString(t) << separator << " ";
+  }
+  const string supported_types = ss.str();
+  // strip off the last 2 chars from string
+  return supported_types.substr(0, supported_types.size() - 2);
+}
+
 // ------------------------------------------------------------
 // Concrete implementations of avro value parsers
 // ------------------------------------------------------------
@@ -179,24 +189,39 @@ string FloatValueParser::ToString(int level) const {
   return LevelToString(level) + "|---FloatValue(" + key_ + ")\n";
 }
 
-StringOrBytesValueParser::StringOrBytesValueParser(const string& key) : AvroParser(key) { }
-Status StringOrBytesValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
+StringBytesEnumFixedValueParser::StringBytesEnumFixedValueParser(const string& key) : AvroParser(key) { }
+Status StringBytesEnumFixedValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
-  if (datum.type() != avro::AVRO_STRING && datum.type() != avro::AVRO_BYTES) {
-    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_STRING),
-      "' or type '", toString(avro::AVRO_BYTES), "' but got type '", toString(datum.type()), "'.");
-  }
-
   string v;
-  if (datum.type() == avro::AVRO_STRING) {
-    v = datum.value<string>();
-  } else {
-    const std::vector<uint8_t>& value = datum.value<std::vector<uint8_t>>();
-    if (value.size() > 0) {
-      v.resize(value.size());
-      memcpy(&v[0], &value[0], value.size());
-    }
+  switch (datum.type()) {
+    case avro::AVRO_STRING:
+      v = datum.value<string>();
+      break;
+    case avro::AVRO_BYTES:
+      {
+        const std::vector<uint8_t>& value = datum.value<std::vector<uint8_t>>();
+        if (value.size() > 0) {
+          v.resize(value.size());
+          memcpy(&v[0], &value[0], value.size());
+        }
+      }
+      break;
+    case avro::AVRO_ENUM:
+      v = datum.value<avro::GenericEnum>().symbol();
+      break;
+    case avro::AVRO_FIXED:
+      {
+        const std::vector<uint8_t>& value = datum.value<avro::GenericFixed>().value();
+        if (value.size() > 0) {
+          v.resize(value.size());
+          memcpy(&v[0], &value[0], value.size());
+        }
+      }
+      break;
+    default:
+      return errors::Internal("Expected one of these types ", SupportedTypesToString(','),
+        " but got type '", datum.type(),"'.");
   }
 
   // Assume the key exists and cast is possible
@@ -204,8 +229,8 @@ Status StringOrBytesValueParser::Parse(std::map<string, ValueStoreUniquePtr>* va
 
   return Status::OK();
 }
-string StringOrBytesValueParser::ToString(int level) const {
-  return LevelToString(level) + "|---StringOrBytesValue(" + key_ + ")\n";
+string StringBytesEnumFixedValueParser::ToString(int level) const {
+  return LevelToString(level) + "|---StringBytesEnumFixedValue(" + key_ + ")\n";
 }
 
 // ------------------------------------------------------------
@@ -456,7 +481,7 @@ string RecordParser::ToString(int level) const {
   return ss.str();
 }
 
-UnionParser::UnionParser(const string& name) : AvroParser(""), name_(name) { }
+UnionParser::UnionParser(const string& type_name) : AvroParser(""), type_name_(type_name) { }
 Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const avro::GenericDatum& datum) const {
 
@@ -467,7 +492,9 @@ Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Find the right child for this type
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    if ((*child).GetType() == datum_type) {
+    // Check if the child parser supports the data type
+    const std::set<avro::Type>& supported_types = (*child).GetSupportedTypes();
+    if (supported_types.find(datum_type) != supported_types.end()) {
       TF_RETURN_IF_ERROR((*child).Parse(values, datum));
       return Status::OK();
     }
@@ -478,7 +505,7 @@ Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 }
 string UnionParser::ToString(int level) const {
   std::stringstream ss;
-  ss << LevelToString(level) << "|---UnionParser(" << name_ << ")" << std::endl;
+  ss << LevelToString(level) << "|---UnionParser(" << type_name_ << ")" << std::endl;
   ss << ChildrenToString(level);
   return ss.str();
 }

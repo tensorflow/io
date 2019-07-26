@@ -155,6 +155,69 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
 
+  def test_fixed_enum_types(self):
+    writer_schema = """{
+              "type": "record",
+              "name": "dataTypes",
+              "fields": [
+                  {
+                     "name":"fixed_value",
+                     "type": {
+                        "name": "TenBytes",
+                        "type": "fixed",
+                        "size": 10
+                     }
+                  },
+                  {
+                     "name":"enum_value",
+                     "type":{
+                        "name": "Color",
+                        "type": "enum",
+                        "symbols": ["BLUE", "GREEN", "BROWN"]
+                     }
+                  }
+              ]}"""
+    record_data = [
+      {
+        "fixed_value": b"0123456789",
+        "enum_value": "BLUE"
+      },
+      {
+        "fixed_value": b"1234567890",
+        "enum_value": "GREEN"
+      },
+      {
+        "fixed_value": b"2345678901",
+        "enum_value": "BROWN"
+      }
+    ]
+    features = {
+      "fixed_value": parsing_ops.FixedLenFeature([], tf_types.string),
+      "enum_value": parsing_ops.FixedLenFeature([], tf_types.string)
+    }
+    expected_tensors = [
+      {
+        "fixed_value":
+          np.asarray([
+            compat.as_bytes("0123456789"),
+            compat.as_bytes("1234567890"),
+            compat.as_bytes("2345678901")
+          ]),
+        "enum_value":
+          np.asarray([
+            b"BLUE",
+            b"GREEN",
+            b"BROWN"
+          ])
+      }
+    ]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_tensors=expected_tensors,
+                            features=features,
+                            reader_schema=writer_schema,
+                            batch_size=3, num_epochs=1)
+
   def test_batching(self):
     writer_schema = """{
               "type": "record",
@@ -786,6 +849,80 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
           np.asarray([[0, 0, 1], [0, 3, 5], [1, 0, 1]]),
           np.asarray([5.0, 2.0, 7.0]),
           np.asarray([2, 3]))}
+    ]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_tensors=expected_tensors,
+                            features=features,
+                            reader_schema=writer_schema,
+                            batch_size=2, num_epochs=1)
+
+  def test_type_reuse(self):
+    writer_schema = """
+      {
+        "type": "record",
+        "name": "row",
+        "fields": [
+          {
+            "name": "first_value",
+            "type": {
+              "type": "array",
+              "items": {
+                 "type": "record",
+                 "name": "Tuple",
+                 "fields": [
+                    {
+                       "name":"index",
+                       "type":"long"
+                    },
+                    {
+                       "name":"value",
+                       "type":"float"
+                    }
+                 ]
+              }
+          }
+        },
+        {
+          "name": "second_value",
+          "type": {
+            "type": "array",
+            "items": "Tuple"
+          }
+        }
+      ]
+      }"""
+    record_data = [
+      {
+        "first_value": [{"index": 0, "value": 5.0}, {"index": 3, "value": 2.0}],
+        "second_value": [{"index": 2, "value": 7.0}]
+      },
+      {
+        "first_value": [{"index": 0, "value": 2.0}],
+        "second_value": [{"index": 1, "value": 2.0}]
+      }
+    ]
+    features = {
+      "first_value": parsing_ops.SparseFeature(index_key="index",
+                                               value_key="value",
+                                               dtype=tf_types.float32,
+                                               size=4),
+      "second_value": parsing_ops.SparseFeature(index_key="index",
+                                                value_key="value",
+                                                dtype=tf_types.float32,
+                                                size=3)
+    }
+    expected_tensors = [
+      {
+        "first_value": sparse_tensor.SparseTensorValue(
+            np.asarray([[0, 0], [0, 3], [1, 0]]),
+            np.asarray([5.0, 2.0, 2.0]),
+            np.asarray([2, 3])),
+        "second_value": sparse_tensor.SparseTensorValue(
+            np.asarray([[0, 2], [1, 1]]),
+            np.asarray([7.0, 2.0]),
+            np.asarray([2, 2]))
+      }
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
@@ -1659,7 +1796,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
   #   ]
   #   expected_tensors = [
   #     {
-  #       "com.test.string_value":
+  #       "string_value":
   #         np.asarray([
   #           compat.as_bytes("aa"),
   #           compat.as_bytes("bb")
