@@ -5,7 +5,6 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "avro_ops",
     srcs = [
-        "kernels/avro_input.cc",
         "kernels/avro_dataset.cc",
         "kernels/avro_record_dataset.cc",
         "kernels/parse_avro_record.cc",
