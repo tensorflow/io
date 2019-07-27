@@ -30,3 +30,7 @@ wheelhouse
 
 # Lint
 .pylint
+
+# Prometheus
+.coredns
+.prometheus

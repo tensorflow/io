@@ -17,7 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io import _load_library
@@ -52,7 +52,7 @@ class SequenceFileDataset(data.Dataset):
     Args:
       filenames: A `tf.string` tensor containing one or more filenames.
     """
-    self._filenames = tensorflow.convert_to_tensor(
+    self._filenames = tf.convert_to_tensor(
         filenames, dtype=dtypes.string, name="filenames")
     super(SequenceFileDataset, self).__init__()
 
@@ -65,11 +65,11 @@ class SequenceFileDataset(data.Dataset):
 
   @property
   def output_classes(self):
-    return tensorflow.Tensor, tensorflow.Tensor
+    return tf.Tensor, tf.Tensor
 
   @property
   def output_shapes(self):
-    return (tensorflow.TensorShape([]), tensorflow.TensorShape([]))
+    return (tf.TensorShape([]), tf.TensorShape([]))
 
   @property
   def output_types(self):

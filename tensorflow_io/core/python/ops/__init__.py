@@ -18,4 +18,4 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io import _load_library
-core_ops = _load_library('libtensorflowio.so')
+core_ops = _load_library('libtensorflow_io.so')

@@ -17,47 +17,43 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-audio_ops = _load_library('_audio_ops.so')
+import tensorflow as tf
+from tensorflow_io.core.python.ops import data_ops as data_ops
+from tensorflow_io.core.python.ops import core_ops as audio_ops
 
-class WAVDataset(data.Dataset):
-  """A WAV Dataset
-  """
+class WAVDataset(data_ops.Dataset):
+  """A WAV Dataset"""
 
-  def __init__(self, filenames, batch=None):
+  def __init__(self, filename, batch=None):
     """Create a WAVDataset.
 
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = audio_ops.wav_input(filenames)
-    self._batch = 0 if batch is None else batch
-    super(WAVDataset, self).__init__()
+    batch = 0 if batch is None else batch
+    dtypes = [tf.int16]
+    shapes = [
+        tf.TensorShape([None])] if batch == 0 else [
+            tf.TensorShape([None, None])]
+    super(WAVDataset, self).__init__(
+        audio_ops.wav_dataset,
+        audio_ops.wav_input(filename),
+        batch, dtypes, shapes)
 
-  def _inputs(self):
-    return []
+class AudioDataset(data_ops.Dataset):
+  """A Audio File Dataset that reads the audio file."""
 
-  def _as_variant_tensor(self):
-    return audio_ops.wav_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_shapes(self):
-    return tuple([
-        tensorflow.TensorShape([])]) if self._batch == 0 else tuple([
-            tensorflow.TensorShape([None])])
-
-  @property
-  def output_classes(self):
-    return tensorflow.Tensor
-
-
-  @property
-  def output_types(self):
-    return tuple([dtypes.int16])
+  def __init__(self, filename, batch=None):
+    """Create a `AudioDataset`.
+    Args:
+      filename: A `tf.string` tensor containing one or more filenames.
+    """
+    batch = 0 if batch is None else batch
+    dtypes = [tf.int16]
+    shapes = [
+        tf.TensorShape([None])] if batch == 0 else [
+            tf.TensorShape([None, None])]
+    super(AudioDataset, self).__init__(
+        ffmpeg_ops.audio_dataset,
+        ffmpeg_ops.audio_input(filename),
+        batch, dtypes, shapes)

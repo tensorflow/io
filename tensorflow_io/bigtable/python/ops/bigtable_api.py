@@ -582,7 +582,7 @@ class _BigtableKeyDataset(dataset_ops.DatasetSource):  # pylint: disable=abstrac
       table: a Bigtable class.
       variant_tensor: DT_VARIANT representation of the dataset.
     """
-    super(_BigtableKeyDataset, self).__init__()
+    super(_BigtableKeyDataset, self).__init__(variant_tensor)
     self._table = table
     self._variant_tensor_attr = variant_tensor
     print('BASE: {}'.format(dataset_ops.DatasetSource.__bases__))
@@ -686,7 +686,8 @@ class _BigtableScanDataset(dataset_ops.DatasetSource):  # pylint: disable=abstra
         column_families=self._column_families,
         columns=self._columns,
         probability=self._probability)
-    super(_BigtableScanDataset, self).__init__(variant_tensor)
+    super(_BigtableScanDataset, self).__init__()
+    self._variant_tensor_attr = variant_tensor
 
   @property
   def _element_structure(self):

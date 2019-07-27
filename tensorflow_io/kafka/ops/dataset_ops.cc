@@ -25,6 +25,8 @@ REGISTER_OP("KafkaDataset")
     .Input("group: string")
     .Input("eof: bool")
     .Input("timeout: int64")
+    .Input("config_global: string")
+    .Input("config_topic: string")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape)
@@ -39,6 +41,13 @@ group: The consumer group id.
 eof: If True, the kafka reader will stop on EOF.
 timeout: The timeout value for the Kafka Consumer to wait
   (in millisecond).
+config_global: A `tf.string` tensor containing global configuration
+  properties in [Key=Value] format,
+  eg. ["enable.auto.commit=false", "heartbeat.interval.ms=2000"],
+  please refer to 'Global configuration properties' in librdkafka doc.
+config_topic: A `tf.string` tensor containing topic configuration
+  properties in [Key=Value] format, eg. ["auto.offset.reset=earliest"],
+  please refer to 'Topic configuration properties' in librdkafka doc.
 )doc");
 
 REGISTER_OP("WriteKafka")

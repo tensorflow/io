@@ -21,7 +21,7 @@ import os
 import sys
 import inspect
 
-import tensorflow
+import tensorflow as tf
 from tensorflow import errors
 
 def _load_library(filename, lib="op"):
@@ -42,8 +42,8 @@ def _load_library(filename, lib="op"):
     filenames.append(f)
 
   # Function to load the library, return True if file system library is loaded
-  load_fn = tensorflow.load_op_library if lib == "op" \
-      else lambda f: tensorflow.compat.v1.load_file_system_library(f) is None
+  load_fn = tf.load_op_library if lib == "op" \
+      else lambda f: tf.compat.v1.load_file_system_library(f) is None
 
   # Try to load all paths for file, fail if none succeed
   errs = []

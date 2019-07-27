@@ -18,11 +18,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import tempfile
 from six.moves.urllib.request import urlopen
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import errors         # pylint: disable=wrong-import-position
 from tensorflow import test           # pylint: disable=wrong-import-position
@@ -30,9 +31,12 @@ from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
 import tensorflow_io.cifar as cifar_io # pylint: disable=wrong-import-position
 
+import pytest # pylint: disable=wrong-import-position
+
 class CIFARDatasetTest(test.TestCase):
   """CIFARDatasetTest"""
 
+  @pytest.mark.skipif(sys.platform == "darwin", reason=None)
   def test_cifar_10_dataset(self):
     """Test case for CIFARDataset.
     """
@@ -42,7 +46,7 @@ class CIFARDatasetTest(test.TestCase):
     os.write(f, filedata.read())
     os.close(f)
     (x_train, y_train), (
-        x_test, y_test) = tensorflow.keras.datasets.cifar10.load_data()
+        x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
     num_repeats = 2
 
@@ -97,7 +101,7 @@ class CIFARDatasetTest(test.TestCase):
     os.write(f, filedata.read())
     os.close(f)
     (x_train, y_train), (
-        x_test, y_test) = tensorflow.keras.datasets.cifar100.load_data(
+        x_test, y_test) = tf.keras.datasets.cifar100.load_data(
             label_mode='coarse')
 
     num_repeats = 2

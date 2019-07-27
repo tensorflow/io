@@ -21,8 +21,8 @@ from __future__ import print_function
 import time
 import pytest
 
-import tensorflow
-tensorflow.compat.v1.disable_eager_execution()
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
 
 from tensorflow import dtypes          # pylint: disable=wrong-import-position
 from tensorflow import errors          # pylint: disable=wrong-import-position
@@ -46,9 +46,9 @@ class KafkaDatasetTest(test.TestCase):
 
   def test_kafka_dataset(self):
     """Tests for KafkaDataset."""
-    topics = tensorflow.compat.v1.placeholder(dtypes.string, shape=[None])
-    num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
-    batch_size = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
 
     repeat_dataset = kafka_io.KafkaDataset(
         topics, group="test", eof=True).repeat(num_epochs)
@@ -119,23 +119,23 @@ class KafkaDatasetTest(test.TestCase):
 
 
   @pytest.mark.skipif(
-      (hasattr(tensorflow, "version") and
-       tensorflow.version.VERSION.startswith("2.0.")), reason=None)
+      (hasattr(tf, "version") and
+       tf.version.VERSION.startswith("2.0.")), reason=None)
   def test_kafka_dataset_save_and_restore(self):
     """Tests for KafkaDataset save and restore."""
-    g = tensorflow.Graph()
+    g = tf.Graph()
     with g.as_default():
-      topics = tensorflow.compat.v1.placeholder(dtypes.string, shape=[None])
-      num_epochs = tensorflow.compat.v1.placeholder(dtypes.int64, shape=[])
+      topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+      num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
 
       repeat_dataset = kafka_io.KafkaDataset(
           topics, group="test", eof=True).repeat(num_epochs)
       iterator = repeat_dataset.make_initializable_iterator()
       get_next = iterator.get_next()
 
-      it = tensorflow.data.experimental.make_saveable_from_iterator(iterator)
-      g.add_to_collection(tensorflow.GraphKeys.SAVEABLE_OBJECTS, it)
-      saver = tensorflow.train.Saver()
+      it = tf.data.experimental.make_saveable_from_iterator(iterator)
+      g.add_to_collection(tf.GraphKeys.SAVEABLE_OBJECTS, it)
+      saver = tf.train.Saver()
 
       model_file = "/tmp/test-kafka-model"
       with self.cached_session() as sess:
@@ -154,6 +154,92 @@ class KafkaDatasetTest(test.TestCase):
           self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
 
 
+  def test_kafka_topic_configuration(self):
+    """Tests for KafkaDataset topic configuration properties."""
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    cfg_list = ["auto.offset.reset=earliest"]
+
+    repeat_dataset = kafka_io.KafkaDataset(
+        topics, group="test", eof=True,
+        config_topic=cfg_list).repeat(num_epochs)
+
+    iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+    init_op = iterator.make_initializer(repeat_dataset)
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      # Use a wrong offset 100 here to make sure
+      # configuration 'auto.offset.reset=earliest' works.
+      sess.run(init_op, feed_dict={topics: ["test:0:100:-1"], num_epochs: 1})
+      for i in range(5):
+        self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
+
+
+  def test_kafka_global_configuration(self):
+    """Tests for KafkaDataset global configuration properties."""
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    cfg_list = ["debug=generic", "enable.auto.commit=false"]
+
+    repeat_dataset = kafka_io.KafkaDataset(
+        topics, group="test", eof=True,
+        config_global=cfg_list).repeat(num_epochs)
+
+    iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+    init_op = iterator.make_initializer(repeat_dataset)
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
+      for i in range(5):
+        self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
+
+  def test_kafka_wrong_global_configuration_failed(self):
+    """Tests for KafkaDataset worng global configuration properties."""
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+
+    # Add wrong configuration
+    wrong_cfg = ["debug=al"]
+    repeat_dataset = kafka_io.KafkaDataset(
+        topics, group="test", eof=True,
+        config_global=wrong_cfg).repeat(num_epochs)
+
+    iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+    init_op = iterator.make_initializer(repeat_dataset)
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
+      with self.assertRaises(errors.InternalError):
+        sess.run(get_next)
+
+
+  def test_kafka_wrong_topic_configuration_failed(self):
+    """Tests for KafkaDataset wrong topic configuration properties."""
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+
+    # Add wrong configuration
+    wrong_cfg = ["auto.offset.reset=arliest"]
+    repeat_dataset = kafka_io.KafkaDataset(
+        topics, group="test", eof=True,
+        config_topic=wrong_cfg).repeat(num_epochs)
+
+    iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+    init_op = iterator.make_initializer(repeat_dataset)
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
+      with self.assertRaises(errors.InternalError):
+        sess.run(get_next)
+
+
   def test_write_kafka(self):
     """test_write_kafka"""
     channel = "e{}e".format(time.time())
@@ -164,7 +250,7 @@ class KafkaDatasetTest(test.TestCase):
         topics=["test:0:0:4"], group="test", eof=True)
     dataset = dataset.map(
         lambda x: kafka_io.write_kafka(
-            tensorflow.strings.regex_replace(x, "D", channel),
+            tf.strings.regex_replace(x, "D", channel),
             topic="test_"+channel))
     iterator = dataset.make_initializable_iterator()
     init_op = iterator.initializer

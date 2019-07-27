@@ -2,10 +2,12 @@ FROM tensorflow/tensorflow:custom-op
 
 RUN apt-get update && \
     apt-get install -y \
+    git \
     curl \
     nano \
     unzip \
-    ffmpeg
+    ffmpeg \
+    dnsutils
 
 ARG BAZEL_VERSION=0.24.1
 ARG BAZEL_OS=linux
@@ -41,6 +43,7 @@ RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     google-cloud-pubsub==0.39.1 \
     pyarrow==${ARROW_VERSION} \
     pandas \
+    fastavro \
     ${PIP_ADD_PACKAGES} \
     "
 

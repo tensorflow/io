@@ -108,10 +108,8 @@ class LMDBInput: public FileInput<LMDBInputStream> {
       // using filename() (instead of stream/s) here is fine.
       state.reset(new LMDBInputStream(filename()));
     }
-    std::vector<string> keys;
-    keys.reserve(record_to_read);
-    std::vector<string> vals;
-    vals.reserve(record_to_read);
+    Tensor key_tensor(ctx->allocator({}), DT_STRING, {record_to_read});
+    Tensor val_tensor(ctx->allocator({}), DT_STRING, {record_to_read});
     while ((*record_read) < record_to_read) {
       string key, val;
       Status status = state.get()->ReadRecord(&key, &val);
@@ -121,17 +119,11 @@ class LMDBInput: public FileInput<LMDBInputStream> {
       if (!status.ok()) {
         break;
       }
-      keys.emplace_back(std::move(key));
-      vals.emplace_back(std::move(val));
+      key_tensor.flat<string>()(*record_read) = std::move(key);
+      val_tensor.flat<string>()(*record_read) = std::move(val);
       (*record_read)++;
     }
     if (*record_read > 0) {
-      Tensor key_tensor(ctx->allocator({}), DT_STRING, {*record_read});
-      Tensor val_tensor(ctx->allocator({}), DT_STRING, {*record_read});
-      for (size_t i = 0; i < (*record_read); i++) {
-        key_tensor.flat<string>()(i) = std::move(keys[i]);
-        val_tensor.flat<string>()(i) = std::move(vals[i]);
-      }
       out_tensors->emplace_back(std::move(key_tensor));
       out_tensors->emplace_back(std::move(val_tensor));
     }

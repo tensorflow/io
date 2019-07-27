@@ -1,6 +1,11 @@
 # Cloud Bigtable client for TensorFlow
 licenses(["notice"])  # Apache 2.0
 
+load(
+    "//tensorflow_io:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
 cc_binary(
     name = "python/ops/_bigtable.so",
     srcs = [
@@ -15,36 +20,28 @@ cc_binary(
         "kernels/bigtable_scan_dataset_op.cc",
         "ops/bigtable_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         ":bigtable_lib_cc",
-        "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
+        "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
 )
 
-cc_binary(
-    name = "python/ops/_bigtable_test.so",
+cc_library(
+    name = "bigtable_test",
     srcs = [
         "kernels/test_kernels/bigtable_test_client_op.cc",
         "ops/bigtable_test_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
-    linkshared = 1,
+    copts = tf_io_copts(),
+    linkstatic = True,
     deps = [
         ":bigtable_lib_cc",
         ":bigtable_test_client",
-        "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
+        "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
@@ -72,14 +69,10 @@ cc_library(
     hdrs = [
         "kernels/test_kernels/bigtable_test_client.h",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
+        "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@com_googlesource_code_re2//:re2",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
@@ -91,14 +84,10 @@ cc_library(
     name = "bigtable_lib_cc",
     srcs = ["kernels/bigtable_lib.cc"],
     hdrs = ["kernels/bigtable_lib.h"],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@com_github_googlecloudplatform_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
+        "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],

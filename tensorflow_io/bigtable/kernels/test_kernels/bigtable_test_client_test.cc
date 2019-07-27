@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "tensorflow_io/bigtable/kernels/test_kernels/bigtable_test_client.h"
 
-#include "google/cloud/bigtable/internal/table.h"
+#include "google/cloud/bigtable/table.h"
 #include "gtest/gtest.h"
 
 namespace tensorflow {
@@ -23,7 +23,7 @@ namespace {
 
 void WriteCell(const string& row, const string& family, const string& column,
                const string& value,
-               ::google::cloud::bigtable::noex::Table* table) {
+               ::google::cloud::bigtable::Table* table) {
   ::google::cloud::bigtable::SingleRowMutation mut(row);
   mut.emplace_back(::google::cloud::bigtable::SetCell(family, column, value));
   table->Apply(std::move(mut));
@@ -32,7 +32,7 @@ void WriteCell(const string& row, const string& family, const string& column,
 TEST(BigtableTestClientTest, EmptyRowRead) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   ::google::cloud::bigtable::RowSet rowset;
   rowset.Append("r1");
@@ -45,7 +45,7 @@ TEST(BigtableTestClientTest, EmptyRowRead) {
 TEST(BigtableTestClientTest, SingleRowWriteAndRead) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
 
@@ -69,7 +69,7 @@ TEST(BigtableTestClientTest, SingleRowWriteAndRead) {
 TEST(BigtableTestClientTest, MultiRowWriteAndSingleRowRead) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -96,7 +96,7 @@ TEST(BigtableTestClientTest, MultiRowWriteAndSingleRowRead) {
 TEST(BigtableTestClientTest, MultiRowWriteAndRead) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -143,7 +143,7 @@ TEST(BigtableTestClientTest, MultiRowWriteAndRead) {
 TEST(BigtableTestClientTest, MultiRowWriteAndPrefixRead) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -190,7 +190,7 @@ TEST(BigtableTestClientTest, MultiRowWriteAndPrefixRead) {
 TEST(BigtableTestClientTest, ColumnFiltering) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -244,7 +244,7 @@ TEST(BigtableTestClientTest, ColumnFiltering) {
 TEST(BigtableTestClientTest, RowKeys) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -297,7 +297,7 @@ TEST(BigtableTestClientTest, RowKeys) {
 TEST(BigtableTestClientTest, SampleKeys) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
@@ -305,48 +305,45 @@ TEST(BigtableTestClientTest, SampleKeys) {
   WriteCell("r4", "f1", "c1", "v4", &table);
   WriteCell("r5", "f1", "c1", "v5", &table);
 
-  grpc::Status status;
-  auto resp = table.SampleRows(status);
-  EXPECT_TRUE(status.ok());
-  EXPECT_EQ(3, resp.size());
-  EXPECT_EQ("r1", string(resp[0].row_key));
-  EXPECT_EQ(0, resp[0].offset_bytes);
-  EXPECT_EQ("r3", string(resp[1].row_key));
-  EXPECT_EQ(100, resp[1].offset_bytes);
-  EXPECT_EQ("r5", string(resp[2].row_key));
-  EXPECT_EQ(200, resp[2].offset_bytes);
+  auto resp = table.SampleRows();
+  EXPECT_TRUE(resp.ok());
+  EXPECT_EQ(3, resp->size());
+  EXPECT_EQ("r1", string((*resp)[0].row_key));
+  EXPECT_EQ(0, (*resp)[0].offset_bytes);
+  EXPECT_EQ("r3", string((*resp)[1].row_key));
+  EXPECT_EQ(100, (*resp)[1].offset_bytes);
+  EXPECT_EQ("r5", string((*resp)[2].row_key));
+  EXPECT_EQ(200, (*resp)[2].offset_bytes);
 }
 
 TEST(BigtableTestClientTest, SampleKeysShort) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
 
-  grpc::Status status;
-  auto resp = table.SampleRows(status);
-  EXPECT_TRUE(status.ok());
-  EXPECT_EQ(1, resp.size());
-  EXPECT_EQ("r1", string(resp[0].row_key));
+  auto resp = table.SampleRows();
+  EXPECT_TRUE(resp.ok());
+  EXPECT_EQ(1, resp->size());
+  EXPECT_EQ("r1", string((*resp)[0].row_key));
 }
 
 TEST(BigtableTestClientTest, SampleKeysEvenNumber) {
   std::shared_ptr<::google::cloud::bigtable::DataClient> client_ptr =
       std::make_shared<BigtableTestClient>();
-  ::google::cloud::bigtable::noex::Table table(client_ptr, "test_table");
+  ::google::cloud::bigtable::Table table(client_ptr, "test_table");
 
   WriteCell("r1", "f1", "c1", "v1", &table);
   WriteCell("r2", "f1", "c1", "v2", &table);
   WriteCell("r3", "f1", "c1", "v3", &table);
   WriteCell("r4", "f1", "c1", "v4", &table);
 
-  grpc::Status status;
-  auto resp = table.SampleRows(status);
-  EXPECT_TRUE(status.ok());
-  EXPECT_EQ(2, resp.size());
-  EXPECT_EQ("r1", string(resp[0].row_key));
-  EXPECT_EQ("r3", string(resp[1].row_key));
+  auto resp = table.SampleRows();
+  EXPECT_TRUE(resp.ok());
+  EXPECT_EQ(2, resp->size());
+  EXPECT_EQ("r1", string((*resp)[0].row_key));
+  EXPECT_EQ("r3", string((*resp)[1].row_key));
 }
 
 }  // namespace
