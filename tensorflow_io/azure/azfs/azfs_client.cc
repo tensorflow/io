@@ -1,5 +1,6 @@
 #include "tensorflow_io/azure/azfs/azfs_client.h"
 #include "logging.h"
+#include "absl/strings/strip.h"
 
 namespace tensorflow {
 
@@ -69,7 +70,7 @@ std::string errno_to_string() {
     case blob_no_content_range: return "blob_no_content_range";
     /* unknown error */
     case unknown_error:
-    default: 
+    default:
       return "unknown_error - " + std::to_string(errno);
   }
 }
