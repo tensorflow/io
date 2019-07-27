@@ -6,7 +6,7 @@ package(
 )
 
 load(
-    "//tensorflow_io:tensorflow_io.bzl",
+    "//third_party/tf:tensorflow_io.bzl",
     "tf_io_copts",
 )
 
