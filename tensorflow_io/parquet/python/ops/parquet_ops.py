@@ -18,68 +18,68 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-parquet_ops = _load_library('_parquet_ops.so')
+from tensorflow_io.core.python.ops import core_ops as parquet_ops
+from tensorflow_io.core.python.ops import data_ops
 
-class ParquetDataset(data.Dataset):
+def read_parquet_specs(filename):
+  """read_parquet_specs"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("read_parquet_spect only support eager mode")
+  columns, dtypes, shapes = parquet_ops.read_parquet_specs(filename)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes), tf.unstack(shapes))
+  return dict([(column.numpy(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy(), column.numpy())) for (
+          column, dtype, shape) in entries])
+
+def read_parquet(filename, spec, start=0, **kwargs):
+  """read_parquet"""
+  memory = kwargs.get("memory", "")
+  return parquet_ops.read_parquet(
+      filename, spec.name,
+      start=start, count=spec.shape[0] - start, dtype=spec.dtype,
+      memory=memory)
+
+class ParquetDataset(data_ops.BaseDataset):
   """A Parquet Dataset that reads the parquet file."""
 
-  def __init__(self, filename, columns, dtypes=None, batch=None):
+  def __init__(self, filename, column, batch=None, **kwargs):
     """Create a `ParquetDataset`.
 
     `ParquetDataset` allows a user to read data from a parquet file.
-    For example:
-
-    ```python
-    dataset = tf.contrib.parquet.ParquetDataset(
-        "/foo/bar.parquet", [0, 1], (tf.bool, tf.int32))
-    iterator = dataset.make_one_shot_iterator()
-    next_element = iterator.get_next()
-    # Prints the rows of the result set of the column [0, 1].
-    while True:
-      try:
-        print(sess.run(next_element))
-      except tf.errors.OutOfRangeError:
-        break
-    ```
 
     Args:
-      filename: A 0-D or 1-D `tf.string` tensor containing one or more
-        filenames.
-      columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
-      dtypes: A tuple of `tf.DType` objects representing the types of the
-        columns returned.
+      filename: filename of the parquet file to read.
+      column: column name to read.
     """
-    self._data_input = parquet_ops.parquet_input(
-        filename, ["none", "gz"], columns=columns)
-    self._columns = columns
-    self._dtypes = dtypes
-    self._batch = 0 if batch is None else batch
-    super(ParquetDataset, self).__init__()
+    # Note: count and dtype could be in kwargs if in graph mode.
+    if not tf.executing_eagerly():
+      count = kwargs.get("count")
+      dtype = kwargs.get("dtype")
+    else:
+      specs = read_parquet_specs(filename)
+      count = specs[column].shape[0]
+      dtype = specs[column].dtype
 
-  def _inputs(self):
-    return []
+    batch = 0 if batch is None else batch
+    shape = tf.TensorShape([]) if (
+        batch is None or batch == 0) else tf.TensorShape([None])
 
-  def _as_variant_tensor(self):
-    return parquet_ops.parquet_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
+    # capacity is the rough count for each chunk in dataset
+    # not directly related to batch, will be padded to batch though
+    capacity = kwargs.get("capacity", 65536)
+    if batch is not None and batch != 0 and capacity > batch:
+      capacity = (capacity // batch) * batch
+    entry_start = range(0, count, capacity)
+    entry_count = [min(capacity, count - start) for start in entry_start]
+    dataset = data_ops.BaseDataset.from_tensor_slices(
+        (tf.constant(entry_start, tf.int64), tf.constant(entry_count, tf.int64))
+    ).map(lambda start, count: parquet_ops.read_parquet(
+        filename, column, start, count, dtype=dtype, memory=""))
+    if batch is None or batch == 0:
+      self._dataset = dataset.unbatch()
+    else:
+      # TODO: convert to rebatch for performance
+      self._dataset = dataset.unbatch().batch(batch)
 
-  @property
-  def output_classes(self):
-    return tuple([tf.Tensor for _ in self._columns])
-
-  @property
-  def output_shapes(self):
-    return tuple(
-        [tf.TensorShape([]) for _ in self._columns]
-    ) if self._batch is None else tuple(
-        [tf.TensorShape([None]) for _ in self._columns]
-    )
-
-  @property
-  def output_types(self):
-    return self._dtypes
+    super(ParquetDataset, self).__init__(
+        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
