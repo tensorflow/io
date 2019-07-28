@@ -81,9 +81,10 @@ def authenticate_with_device_code(account_name):
       storage_accounts = json.load(f)
 
     storage_accounts = storage_accounts['value']
-    storage_account_by_name = [s for s in storage_accounts if s.get('name') == account_name]
-    if any(storage_account_by_name):
-      storage_account = storage_account_by_name[0]
+    account_by_name = [s for s in storage_accounts
+                       if s.get('name') == account_name]
+    if any(account_by_name):
+      storage_account = account_by_name[0]
       break
 
   if storage_account is None:
