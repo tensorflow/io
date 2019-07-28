@@ -17,13 +17,17 @@ cache:
 before_cache:
   - |
     if [[ $TRAVIS_TEST_RESULT = 0 ]]; then
-      echo "success"
-    else
-      sudo rm -rf .cache/bazel
+      echo "Travis CI Success"
+      sudo rm -rf .cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
+      sudo cp -r .cache_bazel .cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
     fi
 
 install:
-- export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
+- |
+  if [[ -d ".cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')" ]]; then
+    cp -r .cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}') .cache_bazel
+  fi
+- export BAZEL_CACHE=.cache_bazel
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
 - |
   if [[ $(uname) == "Darwin" ]]; then
