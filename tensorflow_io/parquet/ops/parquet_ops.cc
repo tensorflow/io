@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ReadParquetColumns")
+REGISTER_OP("ListParquetColumns")
     .Input("filename: string")
     .Input("memory: string")
     .Output("columns: string")

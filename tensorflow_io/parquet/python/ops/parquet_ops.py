@@ -21,12 +21,12 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops as parquet_ops
 from tensorflow_io.core.python.ops import data_ops
 
-def read_parquet_columns(filename, **kwargs):
-  """read_parquet_columns"""
+def list_parquet_columns(filename, **kwargs):
+  """list_parquet_columns"""
   if not tf.executing_eagerly():
     raise NotImplementedError("read_parquet_spect only support eager mode")
   memory = kwargs.get("memory", "")
-  columns, dtypes, shapes = parquet_ops.read_parquet_columns(
+  columns, dtypes, shapes = parquet_ops.list_parquet_columns(
       filename, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes), tf.unstack(shapes))
   return dict([(column.numpy().decode(), tf.TensorSpec(
@@ -58,7 +58,7 @@ class ParquetDataset(data_ops.BaseDataset):
       count = kwargs.get("count")
       dtype = kwargs.get("dtype")
     else:
-      columns = read_parquet_columns(filename)
+      columns = list_parquet_columns(filename)
       count = columns[column].shape[0]
       dtype = columns[column].dtype
 

@@ -125,9 +125,9 @@ private:
   int64 size_;
 };
 
-class ReadParquetColumnsOp : public OpKernel {
+class ListParquetColumnsOp : public OpKernel {
  public:
-  explicit ReadParquetColumnsOp(OpKernelConstruction* context) : OpKernel(context) {
+  explicit ListParquetColumnsOp(OpKernelConstruction* context) : OpKernel(context) {
     env_ = context->env();
   }
 
@@ -309,8 +309,8 @@ class ReadParquetOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ReadParquetColumns").Device(DEVICE_CPU),
-                        ReadParquetColumnsOp);
+REGISTER_KERNEL_BUILDER(Name("ListParquetColumns").Device(DEVICE_CPU),
+                        ListParquetColumnsOp);
 REGISTER_KERNEL_BUILDER(Name("ReadParquet").Device(DEVICE_CPU),
                         ReadParquetOp);
 
