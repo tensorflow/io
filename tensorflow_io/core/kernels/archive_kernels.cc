@@ -175,7 +175,7 @@ class ReadArchiveEntriesOp : public OpKernel {
     format_tensor->scalar<string>()() = format;
 
     Tensor* entries_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({entries.size()}), &entries_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({static_cast<int64>(entries.size())}), &entries_tensor));
 
     for (size_t i = 0; i < entries.size(); i++) {
         entries_tensor->flat<string>()(i) = entries[i];
@@ -211,7 +211,7 @@ class ReadArchiveOp : public OpKernel {
     const string memory = memory_tensor.scalar<string>()();
 
     Tensor* output_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({entries.size()}), &output_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({static_cast<int64>(entries.size())}), &output_tensor));
 
     std::unique_ptr<ArchiveRandomAccessFile> file(new ArchiveRandomAccessFile(env_, filename, memory));
     uint64 size;
