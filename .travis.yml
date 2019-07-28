@@ -24,10 +24,10 @@ install:
     # Ignite probably takes more resource so start it first,
     # otherwise it may run into issues competing with other services.
     bash -x -e tests/test_ignite/start_ignite.sh
-    # bash -x -e tests/test_kafka/kafka_test.sh start kafka
-    # bash -x -e tests/test_azure/start_azure.sh
-    # bash -x -e tests/test_dicom/dicom_samples.sh download
-    # bash -x -e tests/test_dicom/dicom_samples.sh extract
+    bash -x -e tests/test_kafka/kafka_test.sh start kafka
+    bash -x -e tests/test_azure/start_azure.sh
+    bash -x -e tests/test_dicom/dicom_samples.sh download
+    bash -x -e tests/test_dicom/dicom_samples.sh extract
     # Kinesis, Pubsub, and Prometheus are not supported on macOS yet
     #bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
     #bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
@@ -72,7 +72,7 @@ jobs:
     osx_image: xcode9
     script:
     - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER} python
-    - echo sudo -H bash -x -e .travis/wheel.test.sh
+    - sudo -H bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e after-sucess-tf20.sh
 
   # Release Builds are for nightly release.
@@ -98,7 +98,7 @@ jobs:
     osx_image: xcode9
     script:
     - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python
-    - echo sudo -H bash -x -e .travis/wheel.test.sh python
+    - sudo -H bash -x -e .travis/wheel.test.sh python
     after_success: bash -x -e .travis/after-success.sh
     
   - stage: release
@@ -107,7 +107,7 @@ jobs:
     osx_image: xcode9
     script:
     - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.5.3
-    - echo sudo -H bash -x -e .travis/wheel.test.sh python3.5.3
+    - sudo -H bash -x -e .travis/wheel.test.sh python3.5.3
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: release
@@ -116,7 +116,7 @@ jobs:
     osx_image: xcode9
     script:
     - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.6.2
-    - echo sudo -H bash -x -e .travis/wheel.test.sh python3.6.2
+    - sudo -H bash -x -e .travis/wheel.test.sh python3.6.2
     after_success: bash -x -e .travis/after-success.sh
 
 notifications:

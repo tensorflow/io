@@ -28,5 +28,5 @@ fi
 
 bash -x -e .travis/bazel.configure.sh "${TENSORFLOW_INSTALL}"
 bash -x -e .travis/bazel.build.sh
-echo bash -x -e .travis/wheel.configure.sh ${PYTHON_VERSION}
-echo bash -x -e .travis/wheel.build.sh ${PYTHON_VERSION}
+bash -x -e .travis/wheel.configure.sh ${PYTHON_VERSION}
+bash -x -e .travis/wheel.build.sh ${PYTHON_VERSION}
