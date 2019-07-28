@@ -19,16 +19,16 @@ from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops
 
-def read_archive_entries(filename, filters, **kwargs):
-  """read_archive_entries"""
+def list_archive_entries(filename, filters, **kwargs):
+  """list_archive_entries"""
   memory = kwargs.get("memory", "")
   if not isinstance(filters, list):
     filters = [filters]
-  return core_ops.read_archive_entries(
+  return core_ops.list_archive_entries(
       filename, filters=filters, memory=memory)
 
 def read_archive(filename, format, entries, **kwargs): # pylint: disable=redefined-builtin
-  """read_archive_entries"""
+  """read_archive"""
   memory = kwargs.get("memory", "")
   return core_ops.read_archive(
       filename, format, entries, memory=memory)

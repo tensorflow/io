@@ -8,24 +8,6 @@ load(
 )
 
 cc_library(
-    name = "core_ops",
-    srcs = [
-        "kernels/archive_kernels.cc",
-        "ops/core_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
-    linkstatic = True,
-    deps = [
-        "@libarchive",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
-    ],
-)
-
-cc_library(
     name = "sequence_ops",
     srcs = [
         "kernels/sequence_ops.h",
@@ -79,6 +61,7 @@ cc_library(
 cc_library(
     name = "core_ops",
     srcs = [
+        "kernels/archive_kernels.cc",
         "kernels/rebatch_dataset_op.cc",
         "ops/core_ops.cc",
     ],

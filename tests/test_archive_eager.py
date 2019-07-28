@@ -32,7 +32,7 @@ def test_gz():
       "parquet_cpp_example.parquet.gz")
   filename = "file://" + filename
 
-  format, entries = archive_io.read_archive_entries(filename, ["gz", "tar.gz"]) # pylint: disable=redefined-builtin
+  format, entries = archive_io.list_archive_entries(filename, ["gz", "tar.gz"]) # pylint: disable=redefined-builtin
   assert format.numpy().decode() == "gz"
   assert entries.shape == [1]
 
@@ -55,7 +55,7 @@ def test_none():
       "parquet_cpp_example.parquet")
   filename = "file://" + filename
 
-  format, entries = archive_io.read_archive_entries(filename, ["none", "gz"]) # pylint: disable=redefined-builtin
+  format, entries = archive_io.list_archive_entries(filename, ["none", "gz"]) # pylint: disable=redefined-builtin
   assert format.numpy().decode() == "none"
   assert entries.shape == [1]
 
@@ -72,7 +72,7 @@ def test_tar_gz():
       "parquet_cpp_example.parquet.tar.gz")
   filename = "file://" + filename
 
-  format, entries = archive_io.read_archive_entries(filename, ["gz", "tar.gz"]) # pylint: disable=redefined-builtin
+  format, entries = archive_io.list_archive_entries(filename, ["gz", "tar.gz"]) # pylint: disable=redefined-builtin
   assert format.numpy().decode() == "tar.gz"
   assert entries.shape == [2]
   assert entries[0].numpy().decode() == "parquet_cpp_example.parquet.1"
@@ -100,7 +100,7 @@ def test_dataset():
 
   # This is a demo implementation of ArchiveDataset
   dataset = tf.compat.v2.data.Dataset.from_tensor_slices(([filename])).map(
-      lambda f: () + (f,) + archive_io.read_archive_entries(f, "tar.gz")
+      lambda f: () + (f,) + archive_io.list_archive_entries(f, "tar.gz")
   ).map(
       lambda f, format, e: (tf.broadcast_to(f, tf.shape(e)), tf.broadcast_to(format, tf.shape(e)), e)
   ).apply(tf.data.experimental.unbatch()).map(archive_io.read_archive)

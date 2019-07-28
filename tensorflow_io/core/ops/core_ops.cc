@@ -34,7 +34,7 @@ REGISTER_OP("AdjustBatchDataset")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
       return shape_inference::ScalarShape(c);
     });
-REGISTER_OP("ReadArchiveEntries")
+REGISTER_OP("ListArchiveEntries")
     .Input("filename: string")
     .Input("memory: string")
     .Output("format: string")
