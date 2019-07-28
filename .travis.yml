@@ -14,6 +14,14 @@ cache:
   directories:
   - .cache/bazel
 
+before_cache:
+  - |
+    if [[ $TRAVIS_TEST_RESULT = 0 ]]; then
+      echo "success"
+    else
+      sudo rm -rf .cache/bazel
+    fi
+
 install:
 - export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
 - curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
