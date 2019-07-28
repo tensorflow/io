@@ -70,6 +70,7 @@ def authenticate_with_device_code(account_name):
     subscriptions = json.load(f)
   subscriptions = subscriptions['value']
 
+  storage_account = None
   for subscription in subscriptions:
     url = 'https://management.azure.com/subscriptions/{}/providers/Microsoft.Storage/storageAccounts?api-version=2019-04-01'.format(subscription['subscriptionId'])
     storage_account_list_req = urllib.request.Request(
@@ -80,8 +81,9 @@ def authenticate_with_device_code(account_name):
       storage_accounts = json.load(f)
 
     storage_accounts = storage_accounts['value']
-    storage_account = next(filter(lambda s: s['name'] == account_name, storage_accounts))
-    if storage_account is not None:
+    storage_account_by_name = [s for s in storage_accounts if s.get('name') == account_name]
+    if any(storage_account_by_name):
+      storage_account = storage_account_by_name[0]
       break
 
   if storage_account is None:
