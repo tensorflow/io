@@ -21,22 +21,24 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops as parquet_ops
 from tensorflow_io.core.python.ops import data_ops
 
-def read_parquet_specs(filename):
-  """read_parquet_specs"""
+def read_parquet_columns(filename, **kwargs):
+  """read_parquet_columns"""
   if not tf.executing_eagerly():
     raise NotImplementedError("read_parquet_spect only support eager mode")
-  columns, dtypes, shapes = parquet_ops.read_parquet_specs(filename)
+  memory = kwargs.get("memory", "")
+  columns, dtypes, shapes = parquet_ops.read_parquet_columns(
+      filename, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes), tf.unstack(shapes))
-  return dict([(column.numpy(), tf.TensorSpec(
-      shape.numpy(), dtype.numpy(), column.numpy())) for (
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
           column, dtype, shape) in entries])
 
-def read_parquet(filename, spec, start=0, **kwargs):
+def read_parquet(filename, column, start=0, **kwargs):
   """read_parquet"""
   memory = kwargs.get("memory", "")
   return parquet_ops.read_parquet(
-      filename, spec.name,
-      start=start, count=spec.shape[0] - start, dtype=spec.dtype,
+      filename, column.name,
+      start=start, count=column.shape[0] - start, dtype=column.dtype,
       memory=memory)
 
 class ParquetDataset(data_ops.BaseDataset):
@@ -56,9 +58,9 @@ class ParquetDataset(data_ops.BaseDataset):
       count = kwargs.get("count")
       dtype = kwargs.get("dtype")
     else:
-      specs = read_parquet_specs(filename)
-      count = specs[column].shape[0]
-      dtype = specs[column].dtype
+      columns = read_parquet_columns(filename)
+      count = columns[column].shape[0]
+      dtype = columns[column].dtype
 
     batch = 0 if batch is None else batch
     shape = tf.TensorShape([]) if (
@@ -76,10 +78,10 @@ class ParquetDataset(data_ops.BaseDataset):
     ).map(lambda start, count: parquet_ops.read_parquet(
         filename, column, start, count, dtype=dtype, memory=""))
     if batch is None or batch == 0:
-      self._dataset = dataset.unbatch()
+      self._dataset = dataset.apply(tf.data.experimental.unbatch())
     else:
       # TODO: convert to rebatch for performance
-      self._dataset = dataset.unbatch().batch(batch)
+      self._dataset = dataset.apply(tf.data.experimental.unbatch()).batch(batch)
 
     super(ParquetDataset, self).__init__(
         self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access

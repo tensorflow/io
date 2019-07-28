@@ -47,7 +47,7 @@ def test_parquet():
       "parquet_cpp_example.parquet")
   filename = "file://" + filename
 
-  specs = parquet_io.read_parquet_specs(filename)
+  specs = parquet_io.read_parquet_columns(filename)
   columns = [
       'boolean_field',
       'int32_field',

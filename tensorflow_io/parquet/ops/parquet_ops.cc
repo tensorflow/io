@@ -19,8 +19,9 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ReadParquetSpecs")
+REGISTER_OP("ReadParquetColumns")
     .Input("filename: string")
+    .Input("memory: string")
     .Output("columns: string")
     .Output("dtypes: string")
     .Output("shapes: int64")
