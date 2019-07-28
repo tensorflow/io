@@ -15,6 +15,8 @@
 """HDF5 Dataset.
 
 @@HDF5Dataset
+@@list_hdf5_datasets
+@@read_hdf5
 """
 
 from __future__ import absolute_import
@@ -22,11 +24,15 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.hdf5.python.ops.hdf5_ops import HDF5Dataset
+from tensorflow_io.hdf5.python.ops.hdf5_ops import list_hdf5_datasets
+from tensorflow_io.hdf5.python.ops.hdf5_ops import read_hdf5
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "HDF5Dataset",
+    "list_hdf5_datasets",
+    "read_hdf5",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

@@ -11,6 +11,7 @@ cc_library(
     name = "hdf5_ops",
     srcs = [
         "kernels/hdf5_input.cc",
+        "kernels/hdf5_kernels.cc",
         "ops/hdf5_ops.cc",
     ],
     copts = tf_io_copts(),

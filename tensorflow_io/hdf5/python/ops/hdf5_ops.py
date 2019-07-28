@@ -18,10 +18,37 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import core_ops as hdf5_ops
 
-class HDF5Dataset(data.Dataset):
+from tensorflow_io.core.python.ops import core_ops
+
+def list_hdf5_datasets(filename, **kwargs):
+  """list_hdf5_datasets"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_hdf5_datasets only support eager mode")
+  memory = kwargs.get("memory", "")
+  datasets, dtypes, shapes = core_ops.list_hdf5_datasets(
+      filename, memory=memory)
+  entries = zip(tf.unstack(datasets), tf.unstack(dtypes), tf.unstack(shapes))
+  entries = [
+      (dataset, dtype, tf.boolean_mask(
+          shape, tf.math.greater_equal(shape, 0))) for (
+              dataset, dtype, shape) in entries]
+  return dict([(dataset.numpy().decode(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), dataset.numpy().decode())) for (
+          dataset, dtype, shape) in entries])
+
+def read_hdf5(filename, dataset, start=0, **kwargs):
+  """read_hdf5"""
+  memory = kwargs.get("memory", "")
+  return core_ops.read_hdf5(
+      filename,
+      dataset.name,
+      start=start,
+      count=tf.convert_to_tensor(dataset.shape, tf.int64) - start,
+      dtype=dataset.dtype,
+      memory=memory)
+
+class HDF5Dataset(tf.compat.v1.data.Dataset):
   """A HDF5 Dataset that reads the hdf5 file."""
 
   def __init__(self, filenames, columns, dtypes=None, shapes=None, batch=None):
@@ -34,7 +61,7 @@ class HDF5Dataset(data.Dataset):
       dtypes: A tuple of `tf.DType` objects representing the types of the
         columns returned.
     """
-    self._data_input = hdf5_ops.hdf5_input(
+    self._data_input = core_ops.hdf5_input(
         filenames, ["none", "gz"], columns=columns)
     self._columns = columns
     self._dtypes = dtypes
@@ -46,7 +73,7 @@ class HDF5Dataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return hdf5_ops.hdf5_dataset(
+    return core_ops.hdf5_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,
