@@ -24,16 +24,14 @@ from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
 
-bucket = None
 get_oss_path = None
+access_id = os.environ.get("OSS_ACCESS_ID")
+bucket = os.environ.get("OSS_BUCKET")
+access_key = os.environ.get("OSS_ACCESS_KEY")
+host = os.environ.get("OSS_HOST")
 
-access_id = None
-access_key = None
-host = None
-
-_msg = ("OSS tests skipped. To enable them, set access_id, access_key, "
-        "host and bucket variable "
-        "to its real value")
+_msg = ("OSS tests skipped. To enable them, set the OSS-related "
+        "environment variables.")
 def _check_oss_variable():
   return access_id is not None and access_key is not None \
          and host is not None and bucket is not None
