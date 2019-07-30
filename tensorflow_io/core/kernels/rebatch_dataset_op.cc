@@ -150,7 +150,7 @@ class RebatchDatasetOp : public UnaryDatasetOpKernel {
             int64 chunk_to_read = (current_batch_size_ - current_index_) < (dataset()->batch_size_ - chunk_read) ? (current_batch_size_ - current_index_) : (dataset()->batch_size_ - chunk_read);
             for (int i = 0; i < tensors_.size(); ++i) {
               // TODO: concurrent copy?
-              for (int64 r = 0; r < chunk_to_read; r++) {
+              for (int64 r = 0; r < chunk_to_read; ++r) {
                 TF_RETURN_IF_ERROR(batch_util::MaybeMoveSliceToElement(
                     &tensors_[i], &elements[i], current_index_ + r));
                 TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(
@@ -190,18 +190,28 @@ class RebatchDatasetOp : public UnaryDatasetOpKernel {
         // Finally, resize if needed
         if (chunk_read > 0) {
           if (chunk_read < dataset()->batch_size_) {
-            for (int i = 0; i < out_tensors->size(); ++i) {
-              TensorShape shape = (*out_tensors)[i].shape();
-              shape.set_dim(0, chunk_read);
-              Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
-              for (int64 r = 0; r < chunk_read; r++) {
-                TF_RETURN_IF_ERROR(batch_util::MaybeMoveSliceToElement(
-                    &(*out_tensors)[i], &elements[i], r));
-                TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(
-                    elements[i], &value_tensor, r));
+            // "keep" reminder will need to resize
+            if (dataset()->batch_mode_ == "" || dataset()->batch_mode_ == "keep") {
+              for (int i = 0; i < out_tensors->size(); ++i) {
+                TensorShape shape = (*out_tensors)[i].shape();
+                shape.set_dim(0, chunk_read);
+                Tensor value_tensor(ctx->allocator({}), (*out_tensors)[i].dtype(), shape);
+                for (int64 r = 0; r < chunk_read; r++) {
+                  TF_RETURN_IF_ERROR(batch_util::MaybeMoveSliceToElement(
+                      &(*out_tensors)[i], &elements[i], r));
+                  TF_RETURN_IF_ERROR(batch_util::CopyElementToSlice(
+                      elements[i], &value_tensor, r));
+                }
+                (*out_tensors)[i] = std::move(value_tensor);
               }
-              (*out_tensors)[i] = std::move(value_tensor);
+            // "drop" the reminder
+            } else if (dataset()->batch_mode_ == "drop") {
+              out_tensors->clear();
+              input_impl_.reset();
+              *end_of_sequence = true;
+              return Status::OK();
             }
+            // otherwise "pad" means keep the size
           }
           *end_of_sequence = false;
           return Status::OK();

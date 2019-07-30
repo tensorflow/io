@@ -54,13 +54,33 @@ def test_text_input():
       i += 1
   assert i == len(lines)
 
-  rebatch_dataset = text_dataset.apply(core_io.rebatch(5))
+  for batch in [1, 2, 3, 4, 5]:
+    rebatch_dataset = text_dataset.apply(core_io.rebatch(batch))
+    i = 0
+    for v in rebatch_dataset:
+      for vv in v.numpy():
+        assert lines[i] == vv
+        i += 1
+    assert i == len(lines)
+
+  rebatch_dataset = text_dataset.apply(core_io.rebatch(5, "drop"))
   i = 0
   for v in rebatch_dataset:
     for vv in v.numpy():
       assert lines[i] == vv
       i += 1
-  assert i == len(lines)
+  assert i == 145
+
+  rebatch_dataset = text_dataset.apply(core_io.rebatch(5, "pad"))
+  i = 0
+  for v in rebatch_dataset:
+    for vv in v.numpy():
+      if i < len(lines):
+        assert lines[i] == vv
+      else:
+        assert vv.decode() == ""
+      i += 1
+  assert i == 150
 
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
