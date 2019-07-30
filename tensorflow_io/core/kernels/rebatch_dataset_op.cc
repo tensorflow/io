@@ -44,7 +44,7 @@ class AdjustBatchDatasetOp : public UnaryDatasetOpKernel {
     OP_REQUIRES_OK(ctx,
                    ParseScalarArgument<string>(ctx, "batch_mode", &batch_mode));
     OP_REQUIRES(
-        ctx, !(batch_mode == "" ||
+        ctx, (batch_mode == "" ||
              batch_mode == "keep" ||
              batch_mode == "drop" ||
              batch_mode == "pad"), errors::InvalidArgument("invalid batch_mode: ", batch_mode));
