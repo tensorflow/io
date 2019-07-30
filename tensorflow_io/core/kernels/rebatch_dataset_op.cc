@@ -63,9 +63,13 @@ class AdjustBatchDatasetOp : public UnaryDatasetOpKernel {
       output_shapes_.reserve(input_shapes.size());
       // Always set the first dim as None unless batch_mode is specified.
       for (const auto& input_shape : input_shapes) {
-        output_shapes_.emplace_back(
-            PartialTensorShape({-1}).Concatenate(input_shape));
-        output_shapes_.back().RemoveDim(1);
+        if (!input_shape.unknown_rank()) {
+          output_shapes_.emplace_back(
+              PartialTensorShape({-1}).Concatenate(input_shape));
+          output_shapes_.back().RemoveDim(1);
+        } else {
+          output_shapes_.emplace_back();
+        }
       }
     }
 
