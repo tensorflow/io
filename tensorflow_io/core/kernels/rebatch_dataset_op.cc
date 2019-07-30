@@ -43,6 +43,12 @@ class AdjustBatchDatasetOp : public UnaryDatasetOpKernel {
     string batch_mode = "";
     OP_REQUIRES_OK(ctx,
                    ParseScalarArgument<string>(ctx, "batch_mode", &batch_mode));
+    OP_REQUIRES(
+        ctx, !(batch_mode == "" ||
+             batch_mode == "keep" ||
+             batch_mode == "drop" ||
+             batch_mode == "pad"), errors::InvalidArgument("invalid batch_mode: ", batch_mode));
+
 
     *output =
         new Dataset(ctx, batch_size, batch_mode, input);
@@ -216,6 +222,10 @@ class AdjustBatchDatasetOp : public UnaryDatasetOpKernel {
               return Status::OK();
             }
             // otherwise "pad" means keep the size
+            // TODO:  at the moment the remining of the Tensor will
+            // be filled with default values, so there is nothing
+            // needs to be done. If non-default values are needed
+            // then it will need to be filled.
           }
           *end_of_sequence = false;
           return Status::OK();
