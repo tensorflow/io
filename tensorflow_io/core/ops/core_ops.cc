@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("RebatchDataset")
+REGISTER_OP("AdjustBatchDataset")
     .Input("input_dataset: variant")
     .Input("batch_size: int64")
     .Input("batch_mode: string")

@@ -25,9 +25,9 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-class RebatchDatasetOp : public UnaryDatasetOpKernel {
+class AdjustBatchDatasetOp : public UnaryDatasetOpKernel {
  public:
-  explicit RebatchDatasetOp(OpKernelConstruction* ctx)
+  explicit AdjustBatchDatasetOp(OpKernelConstruction* ctx)
       : UnaryDatasetOpKernel(ctx) {
   }
 
@@ -86,7 +86,7 @@ class RebatchDatasetOp : public UnaryDatasetOpKernel {
     }
 
     string DebugString() const override {
-      return strings::StrCat("RebatchDatasetOp(", batch_size_, ")::Dataset");
+      return strings::StrCat("AdjustBatchDatasetOp(", batch_size_, ")::Dataset");
     }
 
    protected:
@@ -252,8 +252,8 @@ class RebatchDatasetOp : public UnaryDatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("RebatchDataset").Device(DEVICE_CPU),
-                        RebatchDatasetOp);
+REGISTER_KERNEL_BUILDER(Name("AdjustBatchDataset").Device(DEVICE_CPU),
+                        AdjustBatchDatasetOp);
 
 }  // namespace
 }  // namespace data
