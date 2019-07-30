@@ -29,6 +29,36 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
 import tensorflow_io.core.python.ops.data_ops as core_io # pylint: disable=wrong-import-position
 
+def test_read_text():
+  """test_read_text"""
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(filename, 'rb') as f:
+    lines = [line for line in f]
+  filename = "file://" + filename
+
+  filesize = tf.io.gfile.GFile(filename).size()
+
+  offset = 0
+  offsets = []
+  for line in lines:
+    offsets.append(offset)
+    offset += len(line)
+
+  lines = zip(offsets, lines)
+
+  for offset, length in [
+      (0, -1), (1, -1), (1000, -1), (100, 1000), (1000, 10000)]:
+    entries = text_io.read_text(filename, offset=offset, length=length)
+    if length < 0:
+      length = filesize - offset
+    expected = [
+        line for (k, line) in lines if k >= offset and k < offset + length]
+    assert entries.shape == len(expected)
+    for k, v in enumerate(expected):
+      assert entries[k].numpy().decode() + "\n" == v.decode()
+
+
 def test_text_input():
   """test_text_input
   """

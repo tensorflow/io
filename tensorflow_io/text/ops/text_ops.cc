@@ -46,6 +46,17 @@ REGISTER_OP("RE2FullMatch")
       return Status::OK();
     });
 
+REGISTER_OP("ReadText")
+    .Input("filename: string")
+    .Input("offset: int64")
+    .Input("length: int64")
+    .Input("memory: string")
+    .Output("output: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       return Status::OK();
+     });
+
 REGISTER_OP("TextStreamInput")
     .Input("source: string")
     .Output("handle: variant")

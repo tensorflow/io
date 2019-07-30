@@ -25,6 +25,14 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops as data_ops
 from tensorflow_io.core.python.ops import core_ops as text_ops
 
+def read_text(filename, **kwargs):
+  """read_text"""
+  offset = kwargs.get("offset", 0)
+  length = kwargs.get("length", -1)
+  memory = kwargs.get("memory", "")
+  return text_ops.read_text(
+      filename, offset=offset, length=length, memory=memory)
+
 def save_text(dataset, filename):
   """Save Dataset to disk.
 
