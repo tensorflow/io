@@ -19,7 +19,6 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.parquet`: Apache Parquet data format support.
 - `tensorflow_io.lmdb`: LMDB file format support.
 - `tensorflow_io.mnist`: MNIST file format support.
-- `tensorflow_io.cifar`: CIFAR file format support.
 - `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
 - `tensorflow_io.bigtable`: Google Cloud Bigtable support.
 - `tensorflow_io.oss`: Alibaba Cloud Object Storage Service (OSS) support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/oss/README.md).
