@@ -22,10 +22,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 from tensorflow_io.cifar.python.ops.cifar_ops import CIFAR10Dataset
 from tensorflow_io.cifar.python.ops.cifar_ops import CIFAR100Dataset
 
 from tensorflow.python.util.all_util import remove_undocumented
+
+warnings.warn(
+    "CIFAR Dataset is deprecated and will be removed in the next release",
+    DeprecationWarning)
 
 _allowed_symbols = [
     "CIFAR10Dataset",
