@@ -35,42 +35,14 @@ REGISTER_OP("ListHDF5Datasets")
 REGISTER_OP("ReadHDF5")
     .Input("filename: string")
     .Input("dataset: string")
-    .Input("start: int64")
-    .Input("count: int64")
     .Input("memory: string")
+    .Input("start: int64")
+    .Input("stop: int64")
     .Attr("dtype: type")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-      if (c->RankKnown(c->input(3))) {
-        c->set_output(0, c->UnknownShapeOfRank(c->Rank(c->input(3))));
-      } else {
-        c->set_output(0, c->UnknownShape());
-      }
+      c->set_output(0, c->UnknownShape());
       return Status::OK();
     });
-
-REGISTER_OP("HDF5Input")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
-REGISTER_OP("HDF5Dataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
 
 }  // namespace tensorflow

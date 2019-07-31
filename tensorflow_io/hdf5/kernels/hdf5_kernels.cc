@@ -224,35 +224,35 @@ class ReadHDF5Op : public OpKernel {
     const Tensor& dataset_tensor = context->input(1);
     const string& dataset = dataset_tensor.scalar<string>()();
 
-    const Tensor& start_tensor = context->input(2);
-
-    const Tensor& count_tensor = context->input(3);
-
-    const Tensor& memory_tensor = context->input(4);
+    const Tensor& memory_tensor = context->input(2);
     const string& memory = memory_tensor.scalar<string>()();
+
+    const Tensor& start_tensor = context->input(3);
+
+    const Tensor& stop_tensor = context->input(4);
 
     HDF5FileImage file_image(env_, filename, memory);
     H5::H5File *file = file_image.GetFile();
     OP_REQUIRES(context, file != nullptr, errors::InvalidArgument("unable to open hdf5 file: ", filename));
+    try {
+      H5::DataSet data_set = file->openDataSet(dataset);
 
-    H5::DataSet data_set = file->openDataSet(dataset);
-
-    H5::DataSpace data_space = data_set.getSpace();
-    int rank = data_space.getSimpleExtentNdims();
-    absl::InlinedVector<hsize_t, 4> dims(rank);
-    data_space.getSimpleExtentDims(dims.data());
+      H5::DataSpace data_space = data_set.getSpace();
+      int rank = data_space.getSimpleExtentNdims();
+      absl::InlinedVector<hsize_t, 4> dims(rank);
+      data_space.getSimpleExtentDims(dims.data());
 
     std::vector<int64> start(dims.size(), 0);
-    std::vector<int64> count(dims.size(), -1);
+    std::vector<int64> stop(dims.size(), -1);
     for (size_t i = 0; i < start_tensor.NumElements(); i++) {
       start[i] = start_tensor.flat<int64>()(i);
     }
-    for (size_t i = 0; i < count_tensor.NumElements(); i++) {
-      count[i] = count_tensor.flat<int64>()(i);
+    for (size_t i = 0; i < stop_tensor.NumElements(); i++) {
+      stop[i] = stop_tensor.flat<int64>()(i);
     }
-    for (size_t i = 0; i < count.size(); i++) {
-      if (count[i] < 0) {
-        count[i] = dims[i];
+    for (size_t i = 0; i < stop.size(); i++) {
+      if (stop[i] < 0) {
+        stop[i] = dims[i];
       }
     }
 
@@ -264,7 +264,7 @@ class ReadHDF5Op : public OpKernel {
     // Find the border of the dims final
     absl::InlinedVector<hsize_t, 4> dims_final(dims);
     for (int64 i = 0; i < dims_final.size(); i++) {
-      dims_final[i] = (dims_start[i] + count[i] < dims[i]) ? (dims_start[i] + count[i]) : (dims[i]);
+      dims_final[i] = (stop[i] < dims[i]) ? (stop[i]) : (dims[i]);
     }
     // Find the area of the dims = [start...final]
     absl::InlinedVector<int64, 4> dims_shape(dims.size());
@@ -303,6 +303,9 @@ class ReadHDF5Op : public OpKernel {
       data_set.read(output_tensor->flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memory_space, data_space);
     } else {
       OP_REQUIRES(context, false, errors::Unimplemented("data type not supported yet: ", data_set.getTypeClass()));
+    }
+    } catch(H5::FileIException e){
+      OP_REQUIRES(context, false, errors::InvalidArgument("unable to open dataset", e.getCDetailMsg()));
     }
   }
  private:

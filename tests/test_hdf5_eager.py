@@ -61,6 +61,14 @@ def test_hdf5_read_dataset():
       vv = list([np.asarray([v for v in range(i, i + 20)])])
       assert np.all(p1[i].numpy() == vv)
 
+  dataset = hdf5_io.HDF5Dataset(filename, '/dset1').apply(
+      tf.data.experimental.unbatch())
+  i = 0
+  for p in dataset:
+    vv = list([np.asarray([v for v in range(i, i + 20)])])
+    assert np.all(p.numpy() == vv)
+    i += 1
+
 
 if __name__ == "__main__":
   test.main()

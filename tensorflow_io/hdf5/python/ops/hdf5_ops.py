@@ -18,8 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
 from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import data_ops
 
 def list_hdf5_datasets(filename, **kwargs):
   """list_hdf5_datasets"""
@@ -39,56 +39,48 @@ def list_hdf5_datasets(filename, **kwargs):
 
 def read_hdf5(filename, dataset, **kwargs):
   """read_hdf5"""
-  start = kwargs.get("start", 0)
-  count = kwargs.get("count", -1)
   memory = kwargs.get("memory", "")
+  start = kwargs.get("start", 0)
+  stop = kwargs.get("stop", None)
+  if stop is None and dataset.shape[0] is not None:
+    stop = dataset.shape[0] - start
+  if stop is None:
+    stop = -1
   return core_ops.read_hdf5(
-      filename,
-      dataset.name,
-      start=start,
-      count=count,
-      dtype=dataset.dtype,
-      memory=memory)
+      filename, dataset.name, memory=memory,
+      start=start, stop=stop, dtype=dataset.dtype)
 
-class HDF5Dataset(tf.compat.v1.data.Dataset):
+class HDF5Dataset(data_ops.BaseDataset):
   """A HDF5 Dataset that reads the hdf5 file."""
 
-  def __init__(self, filenames, columns, dtypes=None, shapes=None, batch=None):
+  def __init__(self, filename, dataset, **kwargs):
     """Create a `HDF5Dataset`.
 
     Args:
-      filenames: A 0-D or 1-D `tf.string` tensor containing one or more
-        filenames.
-      columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
-      dtypes: A tuple of `tf.DType` objects representing the types of the
-        columns returned.
+      filename: A string of th hdf5 filename.
+      dataset: A string of the dataset name.
     """
-    self._data_input = core_ops.hdf5_input(
-        filenames, ["none", "gz"], columns=columns)
-    self._columns = columns
-    self._dtypes = dtypes
-    self._shapes = shapes
-    self._batch = 0 if batch is None else batch
-    super(HDF5Dataset, self).__init__()
+    if not tf.executing_eagerly():
+      start = kwargs.get("start")
+      stop = kwargs.get("stop")
+      dtype = kwargs.get("dtype")
+      shape = kwargs.get("shape")
+    else:
+      datasets = list_hdf5_datasets(filename)
+      start = 0
+      stop = datasets[dataset].shape[0]
+      dtype = datasets[dataset].dtype
+      shape = tf.TensorShape(
+          [None if i == 0 else e for i, e in enumerate(
+              datasets[dataset].shape.as_list())])
 
-  def _inputs(self):
-    return []
-
-  def _as_variant_tensor(self):
-    return core_ops.hdf5_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_classes(self):
-    return tuple([tf.Tensor for _ in self._columns])
-
-  @property
-  def output_shapes(self):
-    return tuple([tf.TensorShape([]) for _ in self._shapes])
-
-  @property
-  def output_types(self):
-    return tuple([dtype for dtype in self._dtypes])
+    # capacity is the rough count for each chunk in dataset
+    capacity = kwargs.get("capacity", 65536)
+    entry_start = list(range(start, stop, capacity))
+    entry_stop = entry_start[1:] + [stop]
+    self._dataset = data_ops.BaseDataset.from_tensor_slices(
+        (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
+    ).map(lambda start, stop: core_ops.read_hdf5(
+        filename, dataset, memory="", start=start, stop=stop, dtype=dtype))
+    super(HDF5Dataset, self).__init__(
+        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
