@@ -27,15 +27,17 @@ REGISTER_OP("ListParquetColumns")
     .Output("shapes: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(1, c->MakeShape({c->UnknownDim()}));
+       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
 
 REGISTER_OP("ReadParquet")
     .Input("filename: string")
     .Input("column: string")
-    .Input("start: int64")
-    .Input("count: int64")
     .Input("memory: string")
+    .Input("start: int64")
+    .Input("stop: int64")
     .Attr("dtype: type")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {

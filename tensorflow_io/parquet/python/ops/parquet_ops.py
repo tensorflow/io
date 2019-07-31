@@ -24,7 +24,7 @@ from tensorflow_io.core.python.ops import data_ops
 def list_parquet_columns(filename, **kwargs):
   """list_parquet_columns"""
   if not tf.executing_eagerly():
-    raise NotImplementedError("read_parquet_spect only support eager mode")
+    raise NotImplementedError("list_parquet_columns only support eager mode")
   memory = kwargs.get("memory", "")
   columns, dtypes, shapes = parquet_ops.list_parquet_columns(
       filename, memory=memory)
@@ -33,18 +33,23 @@ def list_parquet_columns(filename, **kwargs):
       shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
           column, dtype, shape) in entries])
 
-def read_parquet(filename, column, start=0, **kwargs):
+def read_parquet(filename, column, **kwargs):
   """read_parquet"""
   memory = kwargs.get("memory", "")
+  start = kwargs.get("start", 0)
+  stop = kwargs.get("stop", None)
+  if stop is None and column.shape[0] is not None:
+    stop = column.shape[0] - start
+  if stop is None:
+    stop = -1
   return parquet_ops.read_parquet(
-      filename, column.name,
-      start=start, count=column.shape[0] - start, dtype=column.dtype,
-      memory=memory)
+      filename, column.name, memory=memory,
+      start=start, stop=-1, dtype=column.dtype)
 
 class ParquetDataset(data_ops.BaseDataset):
   """A Parquet Dataset that reads the parquet file."""
 
-  def __init__(self, filename, column, batch=None, **kwargs):
+  def __init__(self, filename, column, **kwargs):
     """Create a `ParquetDataset`.
 
     `ParquetDataset` allows a user to read data from a parquet file.
@@ -53,35 +58,28 @@ class ParquetDataset(data_ops.BaseDataset):
       filename: filename of the parquet file to read.
       column: column name to read.
     """
-    # Note: count and dtype could be in kwargs if in graph mode.
+    # Note: start, stop and dtype could be in kwargs if in graph mode.
     if not tf.executing_eagerly():
-      count = kwargs.get("count")
+      start = kwargs.get("start")
+      stop = kwargs.get("stop")
       dtype = kwargs.get("dtype")
     else:
       columns = list_parquet_columns(filename)
-      count = columns[column].shape[0]
+      start = 0
+      stop = columns[column].shape[0]
       dtype = columns[column].dtype
 
-    batch = 0 if batch is None else batch
-    shape = tf.TensorShape([]) if (
-        batch is None or batch == 0) else tf.TensorShape([None])
+    shape = tf.TensorShape([None])
 
     # capacity is the rough count for each chunk in dataset
-    # not directly related to batch, will be padded to batch though
     capacity = kwargs.get("capacity", 65536)
-    if batch is not None and batch != 0 and capacity > batch:
-      capacity = (capacity // batch) * batch
-    entry_start = range(0, count, capacity)
-    entry_count = [min(capacity, count - start) for start in entry_start]
+    entry_start = list(range(start, stop, capacity))
+    entry_stop = entry_start[1:] + [stop]
     dataset = data_ops.BaseDataset.from_tensor_slices(
-        (tf.constant(entry_start, tf.int64), tf.constant(entry_count, tf.int64))
-    ).map(lambda start, count: parquet_ops.read_parquet(
-        filename, column, start, count, dtype=dtype, memory=""))
-    if batch is None or batch == 0:
-      self._dataset = dataset.apply(tf.data.experimental.unbatch())
-    else:
-      # TODO: convert to rebatch for performance
-      self._dataset = dataset.apply(tf.data.experimental.unbatch()).batch(batch)
+        (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
+    ).map(lambda start, stop: parquet_ops.read_parquet(
+        filename, column, memory="", start=start, stop=stop, dtype=dtype))
+    self._dataset = dataset
 
     super(ParquetDataset, self).__init__(
         self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access

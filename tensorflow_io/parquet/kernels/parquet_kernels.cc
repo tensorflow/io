@@ -13,63 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#define EIGEN_USE_THREADS
-
-#include "kernels/dataset_ops.h"
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/stream.h"
 #include "parquet/api/reader.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
-
-// Note: This SizedRandomAccessFile should only lives within Compute()
-// of the kernel as buffer could be released by outside.
-class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
- public:
-  SizedRandomAccessFile(Env* env, const string& filename, const string& optional_memory)
-  : file_(nullptr)
-  , size_status_(Status::OK())
-  , size_(optional_memory.size())
-  , buffer_(optional_memory) {
-    if (size_ == 0) {
-      size_status_ = env->GetFileSize(filename, &size_);
-      if (size_status_.ok()) {
-        size_status_ = env->NewRandomAccessFile(filename, &file_);
-      }
-    }
-  }
-
-  virtual ~SizedRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
-    if (file_.get() != nullptr) {
-      return file_.get()->Read(offset, n, result, scratch);
-    }
-    size_t bytes_to_read = 0;
-    if (offset < size_) {
-      bytes_to_read = (offset + n < size_) ? n : (size_ - offset);
-    }
-    if (bytes_to_read > 0) {
-      memcpy(scratch, buffer_.data(), bytes_to_read);
-    }
-    *result = StringPiece(scratch, bytes_to_read);
-    if (bytes_to_read < n) {
-      return errors::OutOfRange("EOF reached");
-    }
-    return Status::OK();
-  }
-  Status GetFileSize(uint64* size) {
-    if (size_status_.ok()) {
-      *size = size_;
-    }
-    return size_status_;
-  }
- private:
-  std::unique_ptr<tensorflow::RandomAccessFile> file_;
-  Status size_status_;
-  uint64 size_;
-  const string& buffer_;
-};
 
 class ParquetRandomAccessFile : public ::arrow::io::RandomAccessFile {
 public:
@@ -138,7 +88,7 @@ class ListParquetColumnsOp : public OpKernel {
     const Tensor& memory_tensor = context->input(1);
     const string& memory = memory_tensor.scalar<string>()();
 
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
@@ -218,16 +168,16 @@ class ReadParquetOp : public OpKernel {
     const Tensor& column_tensor = context->input(1);
     const string& column = column_tensor.scalar<string>()();
 
-    const Tensor& start_tensor = context->input(2);
-    const int64 start = start_tensor.scalar<int64>()();
-
-    const Tensor& count_tensor = context->input(3);
-    int64 count = count_tensor.scalar<int64>()();
-
-    const Tensor& memory_tensor = context->input(4);
+    const Tensor& memory_tensor = context->input(2);
     const string& memory = memory_tensor.scalar<string>()();
 
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+    const Tensor& start_tensor = context->input(3);
+    int64 start = start_tensor.scalar<int64>()();
+
+    const Tensor& stop_tensor = context->input(4);
+    int64 stop = stop_tensor.scalar<int64>()();
+
+    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
@@ -243,11 +193,17 @@ class ReadParquetOp : public OpKernel {
     }
     OP_REQUIRES(context, (column_index < file_metadata->num_columns()), errors::InvalidArgument("unable to find column: ", column));
 
-    if (start + count > file_metadata->num_rows()) {
-        count = file_metadata->num_rows() - start;
+    if (start > file_metadata->num_rows()) {
+      start = file_metadata->num_rows();
+    }
+    if (stop < 0) {
+        stop = file_metadata->num_rows();
+    }
+    if (stop > file_metadata->num_rows()) {
+        stop = file_metadata->num_rows();
     }
 
-    TensorShape output_shape({count});
+    TensorShape output_shape({stop - start});
 
     Tensor* output_tensor;
     OP_REQUIRES_OK(context, context->allocate_output(0, output_shape, &output_tensor));
@@ -255,14 +211,14 @@ class ReadParquetOp : public OpKernel {
     int64 row_group_offset = 0;
     for (int row_group = 0; row_group < file_metadata->num_row_groups(); row_group++) {
       std::shared_ptr<parquet::RowGroupReader> row_group_reader = parquet_reader->RowGroup(row_group);
-      // Skip if row group is not within [start..start+count]
-      if ((row_group_offset + row_group_reader->metadata()->num_rows() < start) || (start + count <= row_group_offset)) {
+      // Skip if row group is not within [start..stop]
+      if ((row_group_offset + row_group_reader->metadata()->num_rows() < start) || (stop <= row_group_offset)) {
         row_group_offset += row_group_reader->metadata()->num_rows();
         continue;
       }
       // Find row_to_read range
       int64 row_to_read_start = row_group_offset > start ? row_group_offset : start;
-      int64 row_to_read_final = (row_group_offset + row_group_reader->metadata()->num_rows()) < (start + count) ? (row_group_offset + row_group_reader->metadata()->num_rows()) : (start + count);
+      int64 row_to_read_final = (row_group_offset + row_group_reader->metadata()->num_rows()) < (stop) ? (row_group_offset + row_group_reader->metadata()->num_rows()) : (stop);
       int64 row_to_read_count = row_to_read_final - row_to_read_start;
 
       std::shared_ptr<parquet::ColumnReader> column_reader = row_group_reader->Column(column_index);
