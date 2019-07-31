@@ -242,17 +242,29 @@ class ReadHDF5Op : public OpKernel {
     absl::InlinedVector<hsize_t, 4> dims(rank);
     data_space.getSimpleExtentDims(dims.data());
 
-    OP_REQUIRES(context, dims.size() == count_tensor.NumElements(), errors::Unimplemented("spec for dataset does not match: ", dims.size(), " vs. ", count_tensor.NumElements()));
+    std::vector<int64> start(dims.size(), 0);
+    std::vector<int64> count(dims.size(), -1);
+    for (size_t i = 0; i < start_tensor.NumElements(); i++) {
+      start[i] = start_tensor.flat<int64>()(i);
+    }
+    for (size_t i = 0; i < count_tensor.NumElements(); i++) {
+      count[i] = count_tensor.flat<int64>()(i);
+    }
+    for (size_t i = 0; i < count.size(); i++) {
+      if (count[i] < 0) {
+        count[i] = dims[i];
+      }
+    }
 
     // Find the border of the dims start
     absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
-    for (int64 i = 0; i < start_tensor.NumElements() && i < dims_start.size(); i++) {
-      dims_start[i] = (start_tensor.flat<int64>()(i) < dims[i]) ? (start_tensor.flat<int64>()(i)) : (dims[i]);
+    for (int64 i = 0; i < dims_start.size(); i++) {
+      dims_start[i] = (start[i] < dims[i]) ? (start[i]) : (dims[i]);
     }
     // Find the border of the dims final
     absl::InlinedVector<hsize_t, 4> dims_final(dims);
-    for (int64 i = 0; i < count_tensor.NumElements() && i < dims_final.size(); i++) {
-      dims_final[i] = (dims_start[i] + count_tensor.flat<int64>()(i) < dims[i]) ? (dims_start[i] + count_tensor.flat<int64>()(i)) : (dims[i]);
+    for (int64 i = 0; i < dims_final.size(); i++) {
+      dims_final[i] = (dims_start[i] + count[i] < dims[i]) ? (dims_start[i] + count[i]) : (dims[i]);
     }
     // Find the area of the dims = [start...final]
     absl::InlinedVector<int64, 4> dims_shape(dims.size());

@@ -37,14 +37,16 @@ def list_hdf5_datasets(filename, **kwargs):
       shape.numpy(), dtype.numpy().decode(), dataset.numpy().decode())) for (
           dataset, dtype, shape) in entries])
 
-def read_hdf5(filename, dataset, start=0, **kwargs):
+def read_hdf5(filename, dataset, **kwargs):
   """read_hdf5"""
+  start = kwargs.get("start", 0)
+  count = kwargs.get("count", -1)
   memory = kwargs.get("memory", "")
   return core_ops.read_hdf5(
       filename,
       dataset.name,
       start=start,
-      count=tf.convert_to_tensor(dataset.shape, tf.int64) - start,
+      count=count,
       dtype=dataset.dtype,
       memory=memory)
 
