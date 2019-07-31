@@ -45,7 +45,7 @@ def test_read_text():
     offsets.append(offset)
     offset += len(line)
 
-  lines = zip(offsets, lines)
+  lines = list(zip(offsets, lines))
 
   for offset, length in [
       (0, -1), (1, -1), (1000, -1), (100, 1000), (1000, 10000)]:
@@ -68,7 +68,8 @@ def test_text_input():
     lines = [line.strip() for line in f]
   text_filename = "file://" + text_filename
 
-  text_dataset = text_io.TextDataset(text_filename).unbatch().batch(2)
+  text_dataset = text_io.TextDataset(text_filename).apply(
+      tf.data.experimental.unbatch()).batch(2)
   i = 0
   for v in text_dataset:
     assert lines[i] == v.numpy()[0]
@@ -166,7 +167,8 @@ def test_text_output():
   f, filename = tempfile.mkstemp()
   os.close(f)
 
-  df = text_io.TextDataset(text_filename).unbatch()
+  df = text_io.TextDataset(text_filename).apply(
+      tf.data.experimental.unbatch())
   df = df.take(5)
   text_io.save_text(df, filename)
 
@@ -261,7 +263,9 @@ def test_re2_extract():
     lines = [line.strip() for line in f]
   filename = "file://" + filename
 
-  dataset = text_io.TextDataset(filename).map(lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+")).unbatch()
+  dataset = text_io.TextDataset(filename).map(
+      lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+")).apply(
+          tf.data.experimental.unbatch())
   i = 0
   for v in dataset:
     r, g = v

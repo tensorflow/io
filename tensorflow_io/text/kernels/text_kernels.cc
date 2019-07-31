@@ -15,58 +15,12 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
+#include "tensorflow_io/core/kernels/stream.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
 
-// Note: This SizedRandomAccessFile should only lives within Compute()
-// of the kernel as buffer could be released by outside.
-class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
- public:
-  SizedRandomAccessFile(Env* env, const string& filename, const string& optional_memory)
-  : file_(nullptr)
-  , size_status_(Status::OK())
-  , size_(optional_memory.size())
-  , buffer_(optional_memory) {
-    if (size_ == 0) {
-      size_status_ = env->GetFileSize(filename, &size_);
-      if (size_status_.ok()) {
-        size_status_ = env->NewRandomAccessFile(filename, &file_);
-      }
-    }
-  }
-
-  virtual ~SizedRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
-    if (file_.get() != nullptr) {
-      return file_.get()->Read(offset, n, result, scratch);
-    }
-    size_t bytes_to_read = 0;
-    if (offset < size_) {
-      bytes_to_read = (offset + n < size_) ? n : (size_ - offset);
-    }
-    if (bytes_to_read > 0) {
-      memcpy(scratch, buffer_.data(), bytes_to_read);
-    }
-    *result = StringPiece(scratch, bytes_to_read);
-    if (bytes_to_read < n) {
-      return errors::OutOfRange("EOF reached");
-    }
-    return Status::OK();
-  }
-  Status GetFileSize(uint64* size) {
-    if (size_status_.ok()) {
-      *size = size_;
-    }
-    return size_status_;
-  }
- private:
-  std::unique_ptr<tensorflow::RandomAccessFile> file_;
-  Status size_status_;
-  uint64 size_;
-  const string& buffer_;
-};
 class FilenoInputStream : public io::InputStreamInterface {
  public:
   FilenoInputStream(int fileno) : fileno_(fileno) {}
@@ -129,14 +83,14 @@ class ReadTextOp : public OpKernel {
     const Tensor& filename_tensor = context->input(0);
     const string& filename = filename_tensor.scalar<string>()();
 
-    const Tensor& offset_tensor = context->input(1);
+    const Tensor& memory_tensor = context->input(1);
+    const string& memory = memory_tensor.scalar<string>()();
+
+    const Tensor& offset_tensor = context->input(2);
     const int64 offset = offset_tensor.scalar<int64>()();
 
-    const Tensor& length_tensor = context->input(2);
+    const Tensor& length_tensor = context->input(3);
     int64 length = length_tensor.scalar<int64>()();
-
-    const Tensor& memory_tensor = context->input(3);
-    const string& memory = memory_tensor.scalar<string>()();
 
     std::vector<string> lines;
 
@@ -160,7 +114,7 @@ class ReadTextOp : public OpKernel {
         lines.emplace_back(line);
       }
     } else {
-      std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+      std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
       uint64 size;
       OP_REQUIRES_OK(context, file->GetFileSize(&size));
       if (length < 0) {

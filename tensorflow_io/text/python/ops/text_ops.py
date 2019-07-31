@@ -27,9 +27,9 @@ from tensorflow_io.core.python.ops import core_ops
 
 def read_text(filename, **kwargs):
   """read_text"""
+  memory = kwargs.get("memory", "")
   offset = kwargs.get("offset", 0)
   length = kwargs.get("length", -1)
-  memory = kwargs.get("memory", "")
   return core_ops.read_text(
       filename, offset=offset, length=length, memory=memory)
 
@@ -79,7 +79,7 @@ class TextDataset(data_ops.BaseDataset):
 
     if filename.startswith("file://-") or filename.startswith("file://0"):
       dataset = data_ops.BaseDataset.range(1).map(
-          lambda length: core_ops.read_text(filename, offset=0, length=length, memory="")
+          lambda length: core_ops.read_text(filename, memory="", offset=0, length=length)
       )
     else:
       filesize = tf.io.gfile.GFile(filename).size()
@@ -93,8 +93,8 @@ class TextDataset(data_ops.BaseDataset):
               tf.constant(entry_length, tf.int64)
           )
       ).map(lambda offset, length: core_ops.read_text(
-          filename,
-          offset=offset, length=length, memory=""))
+          filename, memory="",
+          offset=offset, length=length))
     self._dataset = dataset
 
     super(TextDataset, self).__init__(
@@ -142,7 +142,7 @@ def from_csv(filename, header=0):
   """
   if not tf.executing_eagerly():
     raise NotImplementedError("from_csv only supports eager mode")
-  dataset = TextDataset(filename).unbatch()
+  dataset = TextDataset(filename).apply(tf.data.experimental.unbatch())
   columns = None
   if header is not None:
     if header != 0:

@@ -48,9 +48,9 @@ REGISTER_OP("RE2FullMatch")
 
 REGISTER_OP("ReadText")
     .Input("filename: string")
+    .Input("memory: string")
     .Input("offset: int64")
     .Input("length: int64")
-    .Input("memory: string")
     .Output("output: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
