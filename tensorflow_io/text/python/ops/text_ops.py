@@ -22,15 +22,15 @@ import csv
 import numpy as np
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as text_ops
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import core_ops
 
 def read_text(filename, **kwargs):
   """read_text"""
   offset = kwargs.get("offset", 0)
   length = kwargs.get("length", -1)
   memory = kwargs.get("memory", "")
-  return text_ops.read_text(
+  return core_ops.read_text(
       filename, offset=offset, length=length, memory=memory)
 
 def save_text(dataset, filename):
@@ -40,7 +40,7 @@ def save_text(dataset, filename):
     dataset: A TextDataset to be saved.
     filename: A `tf.string` tensor containing filename.
   """
-  return text_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+  return core_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
 def save_csv(dataset, filename):
@@ -50,7 +50,7 @@ def save_csv(dataset, filename):
     dataset: A Dataset to be saved.
     filename: A `tf.string` tensor containing filename.
   """
-  return text_ops.csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+  return core_ops.csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
 def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
@@ -60,33 +60,45 @@ def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
     dataset: A `tf.string` tensor
     pattern: A pattern string.
   """
-  return text_ops.re2_full_match(input, pattern)
+  return core_ops.re2_full_match(input, pattern)
 
 
-class TextDataset(data_ops.Dataset):
+class TextDataset(data_ops.BaseDataset):
   """A Text Dataset"""
 
-  def __init__(self, filename, batch=None):
+  def __init__(self, filename, **kwargs):
     """Create a Text Reader.
 
     Args:
-      filename: A `tf.string` tensor containing one or more filenames.
+      filename: A string containing filename to read.
     """
-    batch = 0 if batch is None else batch
-    dtypes = [tf.string]
-    shapes = [
-        tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None])]
-    fn = text_ops.text_stream_dataset if (
-        filename == 'file://-') else text_ops.text_dataset
-    data_input = text_ops.text_stream_input(filename) if (
-        filename == 'file://-') else text_ops.text_input(
-            filename, ["none", "gz"])
-    super(TextDataset, self).__init__(
-        fn,
-        data_input,
-        batch, dtypes, shapes)
+    dtype = tf.string
+    shape = tf.TensorShape([None])
 
+    capacity = kwargs.get("capacity", 65536)
+
+    if filename.startswith("file://-") or filename.startswith("file://0"):
+      dataset = data_ops.BaseDataset.range(1).map(
+          lambda length: core_ops.read_text(filename, offset=0, length=length, memory="")
+      )
+    else:
+      filesize = tf.io.gfile.GFile(filename).size()
+      # capacity is the rough length for each split
+      entry_offset = list(range(0, filesize, capacity))
+      entry_length = [
+          min(capacity, filesize - offset) for offset in entry_offset]
+      dataset = data_ops.BaseDataset.from_tensor_slices(
+          (
+              tf.constant(entry_offset, tf.int64),
+              tf.constant(entry_length, tf.int64)
+          )
+      ).map(lambda offset, length: core_ops.read_text(
+          filename,
+          offset=offset, length=length, memory=""))
+    self._dataset = dataset
+
+    super(TextDataset, self).__init__(
+        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
 
 class TextOutputSequence(object):
   """TextOutputSequence"""
@@ -95,10 +107,10 @@ class TextOutputSequence(object):
     """Create a `TextOutputSequence`.
     """
     self._filenames = filenames
-    self._resource = text_ops.text_output_sequence(destination=filenames)
+    self._resource = core_ops.text_output_sequence(destination=filenames)
 
   def setitem(self, index, item):
-    text_ops.text_output_sequence_set_item(self._resource, index, item)
+    core_ops.text_output_sequence_set_item(self._resource, index, item)
 
 
 def _infer_dtype(val):
@@ -130,7 +142,7 @@ def from_csv(filename, header=0):
   """
   if not tf.executing_eagerly():
     raise NotImplementedError("from_csv only supports eager mode")
-  dataset = TextDataset(filename)
+  dataset = TextDataset(filename).unbatch()
   columns = None
   if header is not None:
     if header != 0:

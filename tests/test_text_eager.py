@@ -68,13 +68,7 @@ def test_text_input():
     lines = [line.strip() for line in f]
   text_filename = "file://" + text_filename
 
-  gzip_text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
-  gzip_text_filename = "file://" + gzip_text_filename
-
-  lines = lines * 3
-  filenames = [text_filename, gzip_text_filename, text_filename]
-  text_dataset = text_io.TextDataset(filenames, batch=2)
+  text_dataset = text_io.TextDataset(text_filename).unbatch().batch(2)
   i = 0
   for v in text_dataset:
     assert lines[i] == v.numpy()[0]
@@ -99,7 +93,7 @@ def test_text_input():
     for vv in v.numpy():
       assert lines[i] == vv
       i += 1
-  assert i == 145
+  assert i == 45
 
   rebatch_dataset = text_dataset.apply(core_io.rebatch(5, "pad"))
   i = 0
@@ -110,7 +104,7 @@ def test_text_input():
       else:
         assert vv.decode() == ""
       i += 1
-  assert i == 150
+  assert i == 50
 
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
@@ -172,7 +166,7 @@ def test_text_output():
   f, filename = tempfile.mkstemp()
   os.close(f)
 
-  df = text_io.TextDataset(text_filename)
+  df = text_io.TextDataset(text_filename).unbatch()
   df = df.take(5)
   text_io.save_text(df, filename)
 
@@ -261,16 +255,13 @@ def test_from_csv():
 def test_re2_extract():
   """test_text_input
   """
-  text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-
   filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(filename, 'rb') as f:
+    lines = [line.strip() for line in f]
   filename = "file://" + filename
 
-  dataset = text_io.TextDataset(filename).map(lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+"))
+  dataset = text_io.TextDataset(filename).map(lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+")).unbatch()
   i = 0
   for v in dataset:
     r, g = v

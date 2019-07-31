@@ -67,6 +67,57 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
   uint64 size_;
   const string& buffer_;
 };
+class FilenoInputStream : public io::InputStreamInterface {
+ public:
+  FilenoInputStream(int fileno) : fileno_(fileno) {}
+  virtual ~FilenoInputStream() {}
+
+  virtual Status ReadNBytes(int64 bytes_to_read, string* result) override {
+    if (bytes_to_read < 0) {
+      return errors::InvalidArgument("Can't read a negative number of bytes: ", bytes_to_read);
+    }
+
+    result->clear();
+    if (final_) {
+      return errors::OutOfRange("EOF reached");
+    }
+
+
+    string buffer;
+    result->resize(bytes_to_read);
+    int64 bytes_read = 0;
+    while (bytes_read <  bytes_to_read) {
+      size_t chunk = bytes_to_read - bytes_read;
+      ssize_t returned = read(fileno_, &(*result)[bytes_read], chunk);
+      if (returned < 0) {
+        result->resize(bytes_read);
+        return errors::Internal("read fileno ", fileno_, " error: ", returned);
+      }
+      if (returned == 0) {
+        break;
+      }
+      bytes_read += returned;
+    }
+    offset_ += bytes_read;
+    result->resize(bytes_read);
+    if (bytes_read < bytes_to_read) {
+      return errors::OutOfRange("EOF reached");
+    }
+    return Status::OK();
+  }
+
+  virtual int64 Tell() const override {
+    return offset_;
+  }
+
+  virtual Status Reset() override {
+    return errors::Unimplemented("Reset fileno stream is not implemented");
+  }
+ private:
+  int fileno_ = -1;
+  int64 offset_ = 0;
+  bool final_ = false;
+};
 
 class ReadTextOp : public OpKernel {
  public:
@@ -87,38 +138,59 @@ class ReadTextOp : public OpKernel {
     const Tensor& memory_tensor = context->input(3);
     const string& memory = memory_tensor.scalar<string>()();
 
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
-    uint64 size;
-    OP_REQUIRES_OK(context, file->GetFileSize(&size));
-
-    if (length < 0) {
-      length = size;
-    }
-
-    // This ReadText is a splittable version so that it is possible to read Text from a chunk of a file,
-    // much like Hadoop. We use the following method to decide if a line belongs to the chunk or not:
-    // 1) offset = 0: read lines and stop after length is reached.
-    // 2) offset > 0: back off 1 and skip one line to start with the next line, stop after length is reached.
-    //
-    // Note: We use BufferedInputStream which is only able to process separator of "\n", though it could
-    // be expanded to more than "\n" in the future.
-
-    std::unique_ptr<tensorflow::io::BufferedInputStream> stream(new tensorflow::io::BufferedInputStream(file.get(), 65536));
-    if (offset > 0) {
-      OP_REQUIRES_OK(context, stream->SkipNBytes(offset - 1));
-      string line;
-      OP_REQUIRES_OK(context, stream->ReadLine(&line));
-    }
-
     std::vector<string> lines;
-    while (stream->Tell() < offset + length) {
-      string line;
-      Status status = stream->ReadLine(&line);
-      OP_REQUIRES(context, (status.ok() || errors::IsOutOfRange(status)), status);
-      if (!status.ok()) {
-        break;
+
+    if (filename == "file://-" || filename == "file://0") {
+      // If we read from stdin then let's read until EOF is reached
+      // Note: It is possible to read data in large slices. However,
+      // BufferedInputStream takes a cached buffer which complicates
+      // the data read from stream. Will need to implement a no-cache
+      // version of ReadLine() in order to read chunks.
+      std::unique_ptr<FilenoInputStream> input_stream(new FilenoInputStream(STDIN_FILENO));
+      std::unique_ptr<tensorflow::io::BufferedInputStream> stream(new tensorflow::io::BufferedInputStream(input_stream.get(), 4096));
+
+      Status status = Status::OK();
+      while (status.ok()) {
+        string line;
+        status = stream->ReadLine(&line);
+        OP_REQUIRES(context, (status.ok() || errors::IsOutOfRange(status)), status);
+        if (!status.ok()) {
+          break;
+        }
+        lines.emplace_back(line);
       }
-      lines.emplace_back(line);
+    } else {
+      std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+      uint64 size;
+      OP_REQUIRES_OK(context, file->GetFileSize(&size));
+      if (length < 0) {
+        length = size;
+      }
+
+      // This ReadText is a splittable version so that it is possible to read Text from a chunk of a file,
+      // much like Hadoop. We use the following method to decide if a line belongs to the chunk or not:
+      // 1) offset = 0: read lines and stop after length is reached.
+      // 2) offset > 0: back off 1 and skip one line to start with the next line, stop after length is reached.
+      //
+      // Note: We use BufferedInputStream which is only able to process separator of "\n", though it could
+      // be expanded to more than "\n" in the future.
+
+      std::unique_ptr<tensorflow::io::BufferedInputStream> stream(new tensorflow::io::BufferedInputStream(file.get(), 65536));
+      if (offset > 0) {
+        OP_REQUIRES_OK(context, stream->SkipNBytes(offset - 1));
+        string line;
+        OP_REQUIRES_OK(context, stream->ReadLine(&line));
+      }
+
+      while (stream->Tell() < offset + length) {
+        string line;
+        Status status = stream->ReadLine(&line);
+        OP_REQUIRES(context, (status.ok() || errors::IsOutOfRange(status)), status);
+        if (!status.ok()) {
+          break;
+        }
+        lines.emplace_back(line);
+      }
     }
 
     TensorShape output_shape({static_cast<int64>(lines.size())});

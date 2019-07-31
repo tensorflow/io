@@ -26,7 +26,7 @@ import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
 #  tshark -T fields -e frame.number -e ip.dst -e ip.proto -r attack-trace.pcap | python stdin_test.py
 
 def f(v):
-  frame_number, ip_dst, ip_proto = tf.decode_csv(
+  frame_number, ip_dst, ip_proto = tf.io.decode_csv(
       v, [[0], [''], [0]], field_delim='\t')
   return frame_number, ip_dst, ip_proto
 
