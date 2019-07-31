@@ -58,9 +58,8 @@ def rebatch(batch_size, batch_mode=""):
 class BaseDataset(tf.compat.v2.data.Dataset):
   """A Base Dataset"""
 
-  def __init__(self, variant, batch, dtypes, shapes):
+  def __init__(self, variant, dtypes, shapes):
     """Create a Base Dataset."""
-    self._batch = 0 if batch is None else batch
     self._dtypes = dtypes
     self._shapes = shapes
     super(BaseDataset, self).__init__(variant)
@@ -93,4 +92,4 @@ class Dataset(BaseDataset):
         self._data_input,
         self._batch,
         output_types=self._dtypes,
-        output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
+        output_shapes=self._shapes), self._dtypes, self._shapes)
