@@ -58,6 +58,22 @@ cc_library(
 )
 
 cc_library(
+    name = "core_ops",
+    srcs = [
+        "kernels/rebatch_dataset_op.cc",
+        "ops/core_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    includes = [
+        ".",
+    ],
+    linkstatic = True,
+    deps = [
+        ":dataset_ops",
+    ],
+)
+
+cc_library(
     name = "ffmpeg_3.4",
     srcs = [
         "kernels/ffmpeg_reader.cc",
@@ -107,6 +123,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
+        ":core_ops",
         "//tensorflow_io/audio:audio_ops",
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
