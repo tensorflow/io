@@ -11,6 +11,7 @@ cc_binary(
     name = "python/ops/_arrow_ops.so",
     srcs = [
         "kernels/arrow_dataset_ops.cc",
+        "kernels/arrow_kernels.cc",
         "kernels/arrow_stream_client.h",
         "kernels/arrow_stream_client_unix.cc",
         "kernels/arrow_util.cc",

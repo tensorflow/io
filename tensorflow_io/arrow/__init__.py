@@ -17,6 +17,7 @@
 @@ArrowDataset
 @@ArrowFeatherDataset
 @@ArrowStreamDataset
+@@list_feather_columns
 """
 
 from __future__ import absolute_import
@@ -26,6 +27,7 @@ from __future__ import print_function
 from tensorflow_io.arrow.python.ops.arrow_dataset_ops import ArrowDataset
 from tensorflow_io.arrow.python.ops.arrow_dataset_ops import ArrowFeatherDataset
 from tensorflow_io.arrow.python.ops.arrow_dataset_ops import ArrowStreamDataset
+from tensorflow_io.arrow.python.ops.arrow_dataset_ops import list_feather_columns
 
 from tensorflow.python.util.all_util import remove_undocumented
 
@@ -33,6 +35,7 @@ _allowed_symbols = [
     "ArrowDataset",
     "ArrowFeatherDataset",
     "ArrowStreamDataset",
+    "list_feather_columns",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

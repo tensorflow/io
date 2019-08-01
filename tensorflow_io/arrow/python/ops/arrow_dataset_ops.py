@@ -594,3 +594,15 @@ class ArrowStreamDataset(ArrowBaseDataset):
         batch_size=batch_size,
         batch_mode='keep_remainder',
         record_batch_iter_factory=gen_record_batches)
+
+def list_feather_columns(filename, **kwargs):
+  """list_feather_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_feather_columns only support eager mode")
+  memory = kwargs.get("memory", "")
+  columns, dtypes_, shapes = arrow_ops.list_feather_columns(
+      filename, memory=memory)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes_), tf.unstack(shapes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
+          column, dtype, shape) in entries])
