@@ -377,7 +377,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     Args:
       endpoints: A `tf.string` tensor, Python list or scalar string defining the
                  input stream.
-                 `endpoints` could have the following formats:
+                 `endpoints` supports the following formats:
                    - "host:port": IPv4 address (default)
                    - "tcp://<host:port>": IPv4 address,
                    - "unix://<path>": local path as unix socket address,
@@ -422,7 +422,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     Args:
       endpoints: A `tf.string` tensor, Python list or scalar string defining the
                  input stream.
-                 `endpoints` could have the following formats:
+                 `endpoints` supports the following formats:
                    - "host:port": IPv4 address (default)
                    - "tcp://<host:port>": IPv4 address,
                    - "unix://<path>": local path as unix socket address,
@@ -478,7 +478,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
       record_batch_iter_factory: Optional factory to create additional record
-                                 batch iterators after being consumed.
+                                 batch iterators for multiple iterations.
     """
     import pyarrow as pa
 
@@ -549,7 +549,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     This constructor requires pandas and pyarrow to be installed.
 
     Args:
-      df: A Pandas DataFrame or sequence of DataFrames
+      data_frames: A Pandas DataFrame or sequence of DataFrames
       columns: Optional column indices to use, if None all are used
       preserve_index: Flag to include the DataFrame index as the last column
       batch_size: Batch size of output tensors, setting a batch size here
