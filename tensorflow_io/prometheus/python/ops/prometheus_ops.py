@@ -18,29 +18,37 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as prometheus_ops
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import core_ops
 
-class PrometheusDataset(data_ops.Dataset):
-  """A Prometheus Dataset
-  """
+def read_prometheus(endpoint, query):
+  """read_prometheus"""
+  return core_ops.read_prometheus(endpoint, query)
 
-  def __init__(self, endpoint, schema=None, batch=None):
-    """Create a Prometheus Reader.
+class PrometheusDataset(data_ops.BaseDataset):
+  """A Prometheus Dataset"""
+
+  def __init__(self, endpoint, query):
+    """Create a Prometheus Dataset
 
     Args:
       endpoint: A `tf.string` tensor containing address of
         the prometheus server.
-      schema: A `tf.string` tensor containing the query
+      query: A `tf.string` tensor containing the query
         string.
-      batch: Size of the batch.
     """
-    batch = 0 if batch is None else batch
     dtypes = [tf.int64, tf.float64]
-    shapes = [
-        tf.TensorShape([]), tensorflow.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None]), tf.TensorShape([None])]
+    shapes = [tf.TensorShape([None]), tf.TensorShape([None])]
+    # TODO: It could be possible to improve the performance
+    # by reading a small chunk of the data while at the same
+    # time allowing reuse of read_prometheus. Essentially
+    # read_prometheus could take a timestamp and read small chunk
+    # at a time until running out of data.
+    timestamp, value = read_prometheus(endpoint, query)
+    timestamp_dataset = data_ops.BaseDataset.from_tensors(timestamp)
+    value_dataset = data_ops.BaseDataset.from_tensors(value)
+    dataset = data_ops.BaseDataset.zip((timestamp_dataset, value_dataset))
+
+    self._dataset = dataset
     super(PrometheusDataset, self).__init__(
-        prometheus_ops.prometheus_dataset,
-        prometheus_ops.prometheus_input(endpoint, schema=schema),
-        batch, dtypes, shapes)
+        self._dataset._variant_tensor, dtypes, shapes) # pylint: disable=protected-access
