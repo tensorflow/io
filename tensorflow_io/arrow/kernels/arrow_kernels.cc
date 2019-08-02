@@ -16,15 +16,9 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "arrow/io/api.h"
 #include "arrow/ipc/feather.h"
-#include "arrow/table.h"
+#include "arrow/ipc/feather_generated.h"
+#include "arrow/buffer.h"
 
-namespace arrow {
-namespace adapters {
-namespace tensorflow {
-Status GetTensorFlowType(std::shared_ptr<DataType> dtype, ::tensorflow::DataType* out);
-}
-}
-}
 namespace tensorflow {
 namespace data {
 namespace {
@@ -150,75 +144,93 @@ class ListFeatherColumnsOp : public OpKernel {
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
-    std::shared_ptr<ArrowRandomAccessFile> feather_file(new ArrowRandomAccessFile(file.get(), size));
+    // FEA1.....[metadata][uint32 metadata_length]FEA1
+    static constexpr const char* kFeatherMagicBytes = "FEA1";
 
-    std::unique_ptr<arrow::ipc::feather::TableReader> reader;
-    arrow::Status s = arrow::ipc::feather::TableReader::Open(feather_file, &reader);
-    OP_REQUIRES(context, s.ok(), errors::Internal(s.ToString()));
+    size_t header_length = strlen(kFeatherMagicBytes);
+    size_t footer_length = sizeof(uint32) + strlen(kFeatherMagicBytes);
+
+    string buffer;
+    buffer.resize(header_length > footer_length ? header_length : footer_length);
+
+    StringPiece result;
+
+    OP_REQUIRES_OK(context, file->Read(0, header_length, &result, &buffer[0]));
+    OP_REQUIRES(context, !memcmp(buffer.data(), kFeatherMagicBytes, header_length), errors::InvalidArgument("not a feather file"));
+
+    OP_REQUIRES_OK(context, file->Read(size - footer_length, footer_length, &result, &buffer[0]));
+    OP_REQUIRES(context, !memcmp(buffer.data() + sizeof(uint32), kFeatherMagicBytes, footer_length - sizeof(uint32)), errors::InvalidArgument("incomplete feather file"));
+
+    uint32 metadata_length = *reinterpret_cast<const uint32*>(buffer.data());
+
+    buffer.resize(metadata_length);
+
+    OP_REQUIRES_OK(context, file->Read(size - footer_length - metadata_length, metadata_length, &result, &buffer[0]));
+
+    const ::arrow::ipc::feather::fbs::CTable* table = ::arrow::ipc::feather::fbs::GetCTable(buffer.data());
+
+    OP_REQUIRES(context, (table->version() >= ::arrow::ipc::feather::kFeatherVersion), errors::InvalidArgument("feather file is old: ", table->version(), " vs. ", ::arrow::ipc::feather::kFeatherVersion));
 
     std::vector<string> columns;
     std::vector<string> dtypes;
     std::vector<int64> counts;
-    columns.reserve(reader->num_columns());
-    dtypes.reserve(reader->num_columns());
-    counts.reserve(reader->num_columns());
-    for (int i = 0; i < reader->num_columns(); i++) {
-      std::shared_ptr<arrow::Column> column;
-      s = reader->GetColumn(i, &column);
-      OP_REQUIRES(context, s.ok(), errors::Internal(s.ToString()));
+    columns.reserve(table->columns()->size());
+    dtypes.reserve(table->columns()->size());
+    counts.reserve(table->columns()->size());
 
-      ::tensorflow::DataType data_type;
-      s = ::arrow::adapters::tensorflow::GetTensorFlowType(column->type(), &data_type);
-      if (!s.ok()) {
-        continue;
-      }
+    for (int64 i = 0; i < table->columns()->size(); i++) {
       string dtype = "";
-      switch (data_type) {
-      case ::tensorflow::DT_BOOL:
+      switch (table->columns()->Get(i)->values()->type()) {
+      case ::arrow::ipc::feather::fbs::Type_BOOL:
         dtype = "bool";
         break;
-      case ::tensorflow::DT_UINT8:
-        dtype = "uint8";
-        break;
-      case ::tensorflow::DT_INT8:
+      case ::arrow::ipc::feather::fbs::Type_INT8:
         dtype = "int8";
         break;
-      case ::tensorflow::DT_UINT16:
-        dtype = "uint16";
-        break;
-      case ::tensorflow::DT_INT16:
+      case ::arrow::ipc::feather::fbs::Type_INT16:
         dtype = "int16";
         break;
-      case ::tensorflow::DT_UINT32:
-        dtype = "uint32";
-        break;
-      case ::tensorflow::DT_INT32:
+      case ::arrow::ipc::feather::fbs::Type_INT32:
         dtype = "int32";
         break;
-      case ::tensorflow::DT_UINT64:
-        dtype = "uint64";
-        break;
-      case ::tensorflow::DT_INT64:
+      case ::arrow::ipc::feather::fbs::Type_INT64:
         dtype = "int64";
         break;
-      case ::tensorflow::DT_HALF:
-        dtype = "half";
+      case ::arrow::ipc::feather::fbs::Type_UINT8:
+        dtype = "uint8";
         break;
-      case ::tensorflow::DT_FLOAT:
+      case ::arrow::ipc::feather::fbs::Type_UINT16:
+        dtype = "uint16";
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT32:
+        dtype = "uint32";
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT64:
+        dtype = "uint64";
+        break;
+      case ::arrow::ipc::feather::fbs::Type_FLOAT:
         dtype = "float";
         break;
-      case ::tensorflow::DT_DOUBLE:
+      case ::arrow::ipc::feather::fbs::Type_DOUBLE:
         dtype = "double";
         break;
+      case ::arrow::ipc::feather::fbs::Type_UTF8:
+      case ::arrow::ipc::feather::fbs::Type_BINARY:
+      case ::arrow::ipc::feather::fbs::Type_CATEGORY:
+      case ::arrow::ipc::feather::fbs::Type_TIMESTAMP:
+      case ::arrow::ipc::feather::fbs::Type_DATE:
+      case ::arrow::ipc::feather::fbs::Type_TIME:
+      // case ::arrow::ipc::feather::fbs::Type_LARGE_UTF8:
+      // case ::arrow::ipc::feather::fbs::Type_LARGE_BINARY:
       default:
-       break; 
+        break;
       }
       if (dtype == "") {
         continue;
       }
-      columns.push_back(reader->GetColumnName(i));
+      columns.push_back(table->columns()->Get(i)->name()->str());
       dtypes.push_back(dtype);
-      counts.push_back(reader->num_rows());
+      counts.push_back(table->num_rows());
     }
 
     TensorShape output_shape = filename_tensor.shape();
@@ -234,7 +246,7 @@ class ListFeatherColumnsOp : public OpKernel {
     Tensor* shapes_tensor;
     OP_REQUIRES_OK(context, context->allocate_output(2, output_shape, &shapes_tensor));
 
-    for (int i = 0; i < columns.size(); i++) {
+    for (size_t i = 0; i < columns.size(); i++) {
       columns_tensor->flat<string>()(i) = columns[i];
       dtypes_tensor->flat<string>()(i) = dtypes[i];
       shapes_tensor->flat<int64>()(i) = counts[i];
