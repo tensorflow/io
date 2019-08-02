@@ -36,17 +36,30 @@ def test_audio_dataset():
 
   f = lambda x: float(x) / (1 << 15)
 
-  audio_dataset = audio_io.WAVDataset([audio_path])
-  i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v.numpy())
-    i += 1
-  assert i == 5760
+  for capacity in [10, 100, 500]:
+    audio_dataset = audio_io.WAVDataset(audio_path, capacity=capacity).apply(
+        tf.data.experimental.unbatch()).map(tf.squeeze)
+    i = 0
+    for v in audio_dataset:
+      assert audio_v.audio[i].numpy() == f(v.numpy())
+      i += 1
+    assert i == 5760
 
-  audio_dataset = audio_io.WAVDataset([audio_path], batch=2)
-  i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v[0].numpy())
-    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
-    i += 2
-  assert i == 5760
+  for capacity in [10, 100, 500]:
+    audio_dataset = audio_io.WAVDataset(audio_path, capacity=capacity).apply(
+        tf.data.experimental.unbatch()).batch(2).map(tf.squeeze)
+    i = 0
+    for v in audio_dataset:
+      assert audio_v.audio[i].numpy() == f(v[0].numpy())
+      assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
+      i += 2
+    assert i == 5760
+
+  spec, rate = audio_io.list_wav_info(audio_path)
+  assert spec.dtype == tf.int16
+  assert spec.shape == [5760, 1]
+  assert rate.numpy() == audio_v.sample_rate.numpy()
+
+  samples = audio_io.read_wav(audio_path, spec)
+  assert samples.dtype == tf.int16
+  assert samples.shape == [5760, 1]
