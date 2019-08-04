@@ -29,6 +29,36 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
 import tensorflow_io.core.python.ops.data_ops as core_io # pylint: disable=wrong-import-position
 
+def test_read_text():
+  """test_read_text"""
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(filename, 'rb') as f:
+    lines = [line for line in f]
+  filename = "file://" + filename
+
+  filesize = tf.io.gfile.GFile(filename).size()
+
+  offset = 0
+  offsets = []
+  for line in lines:
+    offsets.append(offset)
+    offset += len(line)
+
+  lines = list(zip(offsets, lines))
+
+  for offset, length in [
+      (0, -1), (1, -1), (1000, -1), (100, 1000), (1000, 10000)]:
+    entries = text_io.read_text(filename, offset=offset, length=length)
+    if length < 0:
+      length = filesize - offset
+    expected = [
+        line for (k, line) in lines if k >= offset and k < offset + length]
+    assert entries.shape == len(expected)
+    for k, v in enumerate(expected):
+      assert entries[k].numpy().decode() + "\n" == v.decode()
+
+
 def test_text_input():
   """test_text_input
   """
@@ -38,13 +68,8 @@ def test_text_input():
     lines = [line.strip() for line in f]
   text_filename = "file://" + text_filename
 
-  gzip_text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
-  gzip_text_filename = "file://" + gzip_text_filename
-
-  lines = lines * 3
-  filenames = [text_filename, gzip_text_filename, text_filename]
-  text_dataset = text_io.TextDataset(filenames, batch=2)
+  text_dataset = text_io.TextDataset(text_filename).apply(
+      tf.data.experimental.unbatch()).batch(2)
   i = 0
   for v in text_dataset:
     assert lines[i] == v.numpy()[0]
@@ -69,7 +94,7 @@ def test_text_input():
     for vv in v.numpy():
       assert lines[i] == vv
       i += 1
-  assert i == 145
+  assert i == 45
 
   rebatch_dataset = text_dataset.apply(core_io.rebatch(5, "pad"))
   i = 0
@@ -80,7 +105,7 @@ def test_text_input():
       else:
         assert vv.decode() == ""
       i += 1
-  assert i == 150
+  assert i == 50
 
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
@@ -142,7 +167,8 @@ def test_text_output():
   f, filename = tempfile.mkstemp()
   os.close(f)
 
-  df = text_io.TextDataset(text_filename)
+  df = text_io.TextDataset(text_filename).apply(
+      tf.data.experimental.unbatch())
   df = df.take(5)
   text_io.save_text(df, filename)
 
@@ -231,16 +257,15 @@ def test_from_csv():
 def test_re2_extract():
   """test_text_input
   """
-  text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-
   filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(filename, 'rb') as f:
+    lines = [line.strip() for line in f]
   filename = "file://" + filename
 
-  dataset = text_io.TextDataset(filename).map(lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+"))
+  dataset = text_io.TextDataset(filename).map(
+      lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+")).apply(
+          tf.data.experimental.unbatch())
   i = 0
   for v in dataset:
     r, g = v

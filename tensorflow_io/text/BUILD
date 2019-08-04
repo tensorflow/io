@@ -11,7 +11,7 @@ cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_output.cc",
-        "kernels/text_input.cc",
+        "kernels/text_kernels.cc",
         "kernels/text_output.cc",
         "kernels/text_re2.cc",
         "kernels/text_sequence.cc",
