@@ -7,8 +7,8 @@ load(
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_arrow_ops.so",
+cc_library(
+    name = "arrow_ops",
     srcs = [
         "kernels/arrow_dataset_ops.cc",
         "kernels/arrow_kernels.cc",
@@ -20,7 +20,7 @@ cc_binary(
         "ops/dataset_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
