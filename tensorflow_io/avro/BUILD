@@ -10,7 +10,7 @@ load(
 cc_library(
     name = "avro_ops",
     srcs = [
-        "kernels/avro_input.cc",
+        "kernels/avro_kernels.cc",
         "ops/avro_ops.cc",
     ],
     copts = tf_io_copts(),

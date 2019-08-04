@@ -18,53 +18,64 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import core_ops as avro_ops
+from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import data_ops
 
-class AvroDataset(data.Dataset):
+def list_avro_columns(filename, schema, **kwargs):
+  """list_avro_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_avro_columns only support eager mode")
+  memory = kwargs.get("memory", "")
+  columns, dtypes = core_ops.list_avro_columns(
+      filename, schema=schema, memory=memory)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      tf.TensorShape([None]),
+      dtype.numpy().decode(),
+      column.numpy().decode())) for (
+          column, dtype) in entries])
+
+def read_avro(filename, schema, column, **kwargs):
+  """read_avro"""
+  memory = kwargs.get("memory", "")
+  offset = kwargs.get("offset", 0)
+  length = kwargs.get("length", -1)
+  return core_ops.read_avro(
+      filename, schema, column.name, memory=memory,
+      offset=offset, length=length, dtype=column.dtype)
+
+class AvroDataset(data_ops.BaseDataset):
   """A Avro Dataset that reads the avro file."""
 
-  def __init__(self, filenames, columns, schema, dtypes=None, batch=None):
+  def __init__(self, filename, schema, column, **kwargs):
     """Create a `AvroDataset`.
 
     Args:
-      filenames: A 0-D or 1-D `tf.string` tensor containing one or more
-        filenames.
-      columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
+      filenames: A string containing one or more filename.
       schema: A string containing the avro schema.
-      dtypes: A tuple of `tf.DType` objects representing the types of the
-        columns returned.
+      column: A string containing the column to extract.
     """
-    self._data_input = avro_ops.avro_input(
-        filenames, ["none", "gz"], columns=columns, schema=schema)
-    self._columns = columns
-    self._schema = schema
-    self._dtypes = dtypes
-    self._batch = 0 if batch is None else batch
-    super(AvroDataset, self).__init__()
+    if not tf.executing_eagerly():
+      dtype = kwargs.get("dtype")
+    else:
+      columns = list_avro_columns(filename, schema)
+      dtype = columns[column].dtype
+    shape = tf.TensorShape([None])
 
-  def _inputs(self):
-    return []
+    filesize = tf.io.gfile.GFile(filename).size()
+    # capacity is the rough length for each split
+    capacity = kwargs.get("capacity", 65536)
+    entry_offset = list(range(0, filesize, capacity))
+    entry_length = [min(capacity, filesize - offset) for offset in entry_offset]
+    dataset = data_ops.BaseDataset.from_tensor_slices(
+        (
+            tf.constant(entry_offset, tf.int64),
+            tf.constant(entry_length, tf.int64)
+        )
+    ).map(lambda offset, length: core_ops.read_avro(
+        filename, schema, column, memory="",
+        offset=offset, length=length, dtype=dtype))
+    self._dataset = dataset
 
-  def _as_variant_tensor(self):
-    return avro_ops.avro_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
-
-  @property
-  def output_classes(self):
-    return tuple([tf.Tensor for _ in self._columns])
-
-  @property
-  def output_shapes(self):
-    return tuple(
-        [tf.TensorShape([]) for _ in self._columns]
-    ) if self._batch is None else tuple(
-        [tf.TensorShape([None]) for _ in self._columns]
-    )
-
-  @property
-  def output_types(self):
-    return self._dtypes
+    super(AvroDataset, self).__init__(
+        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access

@@ -15,6 +15,8 @@
 """Avro Dataset.
 
 @@AvroDataset
+@@list_avro_columns
+@@read_avro
 """
 
 from __future__ import absolute_import
@@ -22,11 +24,15 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.avro.python.ops.avro_ops import AvroDataset
+from tensorflow_io.avro.python.ops.avro_ops import list_avro_columns
+from tensorflow_io.avro.python.ops.avro_ops import read_avro
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "AvroDataset",
+    "list_avro_columns",
+    "read_avro_",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
