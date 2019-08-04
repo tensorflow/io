@@ -19,28 +19,30 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("HDF5Input")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
+REGISTER_OP("ListHDF5Datasets")
+    .Input("filename: string")
+    .Input("memory: string")
+    .Output("datasets: string")
+    .Output("dtypes: string")
+    .Output("shapes: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(1, c->MakeShape({c->UnknownDim()}));
+       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
 
-REGISTER_OP("HDF5Dataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
+REGISTER_OP("ReadHDF5")
+    .Input("filename: string")
+    .Input("dataset: string")
+    .Input("memory: string")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Attr("dtype: type")
+    .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
+      c->set_output(0, c->UnknownShape());
+      return Status::OK();
+    });
 
 }  // namespace tensorflow
