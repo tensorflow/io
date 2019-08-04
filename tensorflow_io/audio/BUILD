@@ -10,7 +10,7 @@ load(
 cc_library(
     name = "audio_ops",
     srcs = [
-        "kernels/audio_input.cc",
+        "kernels/audio_kernels.cc",
         "ops/audio_ops.cc",
     ],
     copts = tf_io_copts(),
