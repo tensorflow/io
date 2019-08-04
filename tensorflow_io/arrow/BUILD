@@ -12,6 +12,7 @@ cc_binary(
     srcs = [
         "kernels/arrow_dataset_ops.cc",
         "kernels/arrow_kernels.cc",
+        "kernels/arrow_kernels.h",
         "kernels/arrow_stream_client.h",
         "kernels/arrow_stream_client_unix.cc",
         "kernels/arrow_util.cc",
@@ -21,8 +22,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "@arrow",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )

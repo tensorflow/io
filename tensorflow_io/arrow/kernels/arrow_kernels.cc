@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "arrow/io/api.h"
 #include "arrow/ipc/feather.h"
 #include "arrow/ipc/feather_generated.h"
@@ -22,111 +23,6 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 namespace {
-
-// NOTE: Both SizedRandomAccessFile and ArrowRandomAccessFile overlap
-// with another PR. Will remove duplicate once PR merged
-
-// Note: This SizedRandomAccessFile should only lives within Compute()
-// of the kernel as buffer could be released by outside.
-class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
- public:
-  SizedRandomAccessFile(Env* env, const string& filename, const string& optional_memory)
-  : file_(nullptr)
-  , size_status_(Status::OK())
-  , size_(optional_memory.size())
-  , buffer_(optional_memory) {
-    if (size_ == 0) {
-      size_status_ = env->GetFileSize(filename, &size_);
-      if (size_status_.ok()) {
-        size_status_ = env->NewRandomAccessFile(filename, &file_);
-      }
-    }
-  }
-
-  virtual ~SizedRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
-    if (file_.get() != nullptr) {
-      return file_.get()->Read(offset, n, result, scratch);
-    }
-    size_t bytes_to_read = 0;
-    if (offset < size_) {
-      bytes_to_read = (offset + n < size_) ? n : (size_ - offset);
-    }
-    if (bytes_to_read > 0) {
-      memcpy(scratch, &buffer_.data()[offset], bytes_to_read);
-    }
-    *result = StringPiece(scratch, bytes_to_read);
-    if (bytes_to_read < n) {
-      return errors::OutOfRange("EOF reached");
-    }
-    return Status::OK();
-  }
-  Status GetFileSize(uint64* size) {
-    if (size_status_.ok()) {
-      *size = size_;
-    }
-    return size_status_;
-  }
- private:
-  std::unique_ptr<tensorflow::RandomAccessFile> file_;
-  Status size_status_;
-  uint64 size_;
-  const string& buffer_;
-};
-
-class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
-public:
-  explicit ArrowRandomAccessFile(tensorflow::RandomAccessFile *file, int64 size)
-    : file_(file)
-    , size_(size) { }
-
-  ~ArrowRandomAccessFile() {}
-  arrow::Status Close() override {
-    return arrow::Status::OK();
-  }
-  arrow::Status Tell(int64_t* position) const override {
-    return arrow::Status::NotImplemented("Tell");
-  }
-  arrow::Status Seek(int64_t position) override {
-    return arrow::Status::NotImplemented("Seek");
-  }
-  arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override {
-    return arrow::Status::NotImplemented("Read (void*)");
-  }
-  arrow::Status Read(int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
-    return arrow::Status::NotImplemented("Read (Buffer*)");
-  }
-  arrow::Status GetSize(int64_t* size) override {
-    *size = size_;
-    return arrow::Status::OK();
-  }
-  bool supports_zero_copy() const override {
-    return false;
-  }
-  arrow::Status ReadAt(int64_t position, int64_t nbytes, int64_t* bytes_read, void* out) override {
-    StringPiece result;
-    Status status = file_->Read(position, nbytes, &result, (char*)out);
-    if (!(status.ok() || errors::IsOutOfRange(status))) {
-        return arrow::Status::IOError(status.error_message());
-    }
-    *bytes_read = result.size();
-    return arrow::Status::OK();
-  }
-  arrow::Status ReadAt(int64_t position, int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
-    string buffer;
-    buffer.resize(nbytes);
-    StringPiece result;
-    Status status = file_->Read(position, nbytes, &result, (char*)(&buffer[0]));
-    if (!(status.ok() || errors::IsOutOfRange(status))) {
-        return arrow::Status::IOError(status.error_message());
-    }
-    buffer.resize(result.size());
-    return arrow::Buffer::FromString(buffer, out);
-  }
-private:
-  tensorflow::RandomAccessFile* file_;
-  int64 size_;
-};
 
 class ListFeatherColumnsOp : public OpKernel {
  public:
@@ -140,7 +36,7 @@ class ListFeatherColumnsOp : public OpKernel {
 
     const Tensor& memory_tensor = context->input(1);
     const string& memory = memory_tensor.scalar<string>()();
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
@@ -179,40 +75,40 @@ class ListFeatherColumnsOp : public OpKernel {
     counts.reserve(table->columns()->size());
 
     for (int64 i = 0; i < table->columns()->size(); i++) {
-      string dtype = "";
+      DataType dtype = ::tensorflow::DataType::DT_INVALID;
       switch (table->columns()->Get(i)->values()->type()) {
       case ::arrow::ipc::feather::fbs::Type_BOOL:
-        dtype = "bool";
+        dtype = ::tensorflow::DataType::DT_BOOL;
         break;
       case ::arrow::ipc::feather::fbs::Type_INT8:
-        dtype = "int8";
+        dtype = ::tensorflow::DataType::DT_INT8;
         break;
       case ::arrow::ipc::feather::fbs::Type_INT16:
-        dtype = "int16";
+        dtype = ::tensorflow::DataType::DT_INT16;
         break;
       case ::arrow::ipc::feather::fbs::Type_INT32:
-        dtype = "int32";
+        dtype = ::tensorflow::DataType::DT_INT32;
         break;
       case ::arrow::ipc::feather::fbs::Type_INT64:
-        dtype = "int64";
+        dtype = ::tensorflow::DataType::DT_INT64;
         break;
       case ::arrow::ipc::feather::fbs::Type_UINT8:
-        dtype = "uint8";
+        dtype = ::tensorflow::DataType::DT_UINT8;
         break;
       case ::arrow::ipc::feather::fbs::Type_UINT16:
-        dtype = "uint16";
+        dtype = ::tensorflow::DataType::DT_UINT16;
         break;
       case ::arrow::ipc::feather::fbs::Type_UINT32:
-        dtype = "uint32";
+        dtype = ::tensorflow::DataType::DT_UINT32;
         break;
       case ::arrow::ipc::feather::fbs::Type_UINT64:
-        dtype = "uint64";
+        dtype = ::tensorflow::DataType::DT_UINT64;
         break;
       case ::arrow::ipc::feather::fbs::Type_FLOAT:
-        dtype = "float";
+        dtype = ::tensorflow::DataType::DT_FLOAT;
         break;
       case ::arrow::ipc::feather::fbs::Type_DOUBLE:
-        dtype = "double";
+        dtype = ::tensorflow::DataType::DT_DOUBLE;
         break;
       case ::arrow::ipc::feather::fbs::Type_UTF8:
       case ::arrow::ipc::feather::fbs::Type_BINARY:
@@ -225,11 +121,8 @@ class ListFeatherColumnsOp : public OpKernel {
       default:
         break;
       }
-      if (dtype == "") {
-        continue;
-      }
       columns.push_back(table->columns()->Get(i)->name()->str());
-      dtypes.push_back(dtype);
+      dtypes.push_back(::tensorflow::DataTypeString(dtype));
       counts.push_back(table->num_rows());
     }
 
