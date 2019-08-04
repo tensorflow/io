@@ -32,17 +32,17 @@ if sys.platform == "darwin":
   pytest.skip(
       "prometheus is not supported on macOS yet", allow_module_level=True)
 
-def test_prometheus_input():
-  """test_prometheus_input
-  """
+def test_prometheus():
+  """test_prometheus"""
   for _ in range(6):
     subprocess.call(["dig", "@localhost", "-p", "1053", "www.google.com"])
     time.sleep(1)
   time.sleep(2)
   prometheus_dataset = prometheus_io.PrometheusDataset(
       "http://localhost:9090",
-      schema="coredns_dns_request_count_total[5s]",
-      batch=2)
+      "coredns_dns_request_count_total[5s]").apply(
+          tf.data.experimental.unbatch()).batch(2)
+
   i = 0
   for k, v in prometheus_dataset:
     print("K, V: ", k.numpy(), v.numpy())
@@ -51,6 +51,12 @@ def test_prometheus_input():
       assert v.numpy() == 6.0
     i += 2
   assert i == 6
+
+  timestamp, value = prometheus_io.read_prometheus(
+      "http://localhost:9090",
+      "coredns_dns_request_count_total[5s]")
+  assert timestamp.shape == [5]
+  assert value.shape == [5]
 
 if __name__ == "__main__":
   test.main()

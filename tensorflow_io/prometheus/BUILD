@@ -10,9 +10,7 @@ load(
 cc_library(
     name = "prometheus_ops",
     srcs = [
-        #"//tensorflow_io/prometheus/go:prometheus.a",
-        #"//tensorflow_io/prometheus/go:prometheus.h",
-        "kernels/prometheus_input.cc",
+        "kernels/prometheus_kernels.cc",
         "ops/prometheus_ops.cc",
     ],
     copts = tf_io_copts(),
