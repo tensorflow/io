@@ -34,9 +34,9 @@ REGISTER_OP("ListWAVInfo")
 
 REGISTER_OP("ReadWAV")
     .Input("filename: string")
-    .Input("start: int64")
-    .Input("count: int64")
     .Input("memory: string")
+    .Input("start: int64")
+    .Input("stop: int64")
     .Attr("dtype: type")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {

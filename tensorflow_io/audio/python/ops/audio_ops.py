@@ -32,17 +32,16 @@ def list_wav_info(filename, **kwargs):
 
 def read_wav(filename, spec, **kwargs):
   """read_wav"""
-  start = kwargs.get("start", 0)
-  count = kwargs.get("count", None)
   memory = kwargs.get("memory", "")
-  if count is None and spec.shape[0] is not None:
-    count = spec.shape[0] - start
-  if count is None:
-    count = -1
+  start = kwargs.get("start", 0)
+  stop = kwargs.get("stop", None)
+  if stop is None and spec.shape[0] is not None:
+    stop = spec.shape[0] - start
+  if stop is None:
+    stop = -1
   return core_ops.read_wav(
-      filename,
-      start=start, count=count, dtype=spec.dtype,
-      memory=memory)
+      filename, memory=memory,
+      start=start, stop=stop, dtype=spec.dtype)
 
 class WAVDataset(data_ops.BaseDataset):
   """A WAV Dataset"""
@@ -54,23 +53,27 @@ class WAVDataset(data_ops.BaseDataset):
       filename: A string containing filename.
     """
     if not tf.executing_eagerly():
-      count = kwargs.get("count")
+      start = kwargs.get("start")
+      stop = kwargs.get("stop")
       dtype = kwargs.get("dtype")
       shape = kwargs.get("shape")
     else:
       spec, _ = list_wav_info(filename)
-      count = spec.shape[0]
+      start = 0
+      stop = spec.shape[0]
       dtype = spec.dtype
-      shape = tf.TensorShape([None])
+      shape = tf.TensorShape(
+          [dim if i != 0 else None for i, dim in enumerate(
+              spec.shape.as_list())])
 
     # capacity is the rough count for each chunk in dataset
     capacity = kwargs.get("capacity", 65536)
-    entry_start = list(range(0, count, capacity))
-    entry_count = [min(capacity, count - start) for start in entry_start]
+    entry_start = list(range(start, stop, capacity))
+    entry_stop = entry_start[1:] + [stop]
     dataset = data_ops.BaseDataset.from_tensor_slices(
-        (tf.constant(entry_start, tf.int64), tf.constant(entry_count, tf.int64))
-    ).map(lambda start, count: core_ops.read_wav(
-        filename, start, count, dtype=dtype, memory=""))
+        (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
+    ).map(lambda start, stop: core_ops.read_wav(
+        filename, memory="", start=start, stop=stop, dtype=dtype))
     self._dataset = dataset
 
     super(WAVDataset, self).__init__(

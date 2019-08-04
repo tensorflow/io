@@ -14,61 +14,12 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/stream.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
 
-// NOTE: Both SizedRandomAccessFile and ArrowRandomAccessFile overlap
-// with another PR. Will remove duplicate once PR merged
-
-// Note: This SizedRandomAccessFile should only lives within Compute()
-// of the kernel as buffer could be released by outside.
-class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
- public:
-  SizedRandomAccessFile(Env* env, const string& filename, const string& optional_memory)
-  : file_(nullptr)
-  , size_status_(Status::OK())
-  , size_(optional_memory.size())
-  , buffer_(optional_memory) {
-    if (size_ == 0) {
-      size_status_ = env->GetFileSize(filename, &size_);
-      if (size_status_.ok()) {
-        size_status_ = env->NewRandomAccessFile(filename, &file_);
-      }
-    }
-  }
-
-  virtual ~SizedRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
-    if (file_.get() != nullptr) {
-      return file_.get()->Read(offset, n, result, scratch);
-    }
-    size_t bytes_to_read = 0;
-    if (offset < size_) {
-      bytes_to_read = (offset + n < size_) ? n : (size_ - offset);
-    }
-    if (bytes_to_read > 0) {
-      memcpy(scratch, &buffer_.data()[offset], bytes_to_read);
-    }
-    *result = StringPiece(scratch, bytes_to_read);
-    if (bytes_to_read < n) {
-      return errors::OutOfRange("EOF reached");
-    }
-    return Status::OK();
-  }
-  Status GetFileSize(uint64* size) {
-    if (size_status_.ok()) {
-      *size = size_;
-    }
-    return size_status_;
-  }
- private:
-  std::unique_ptr<tensorflow::RandomAccessFile> file_;
-  Status size_status_;
-  uint64 size_;
-  const string& buffer_;
-};
 struct WAVHeader {
   char riff[4]; // "RIFF"
   int32 size; // Size after (file size - 8)
@@ -120,7 +71,7 @@ class ListWAVInfoOp : public OpKernel {
 
     const Tensor& memory_tensor = context->input(1);
     const string& memory = memory_tensor.scalar<string>()();
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
@@ -196,16 +147,16 @@ class ReadWAVOp : public OpKernel {
     const Tensor& filename_tensor = context->input(0);
     const string& filename = filename_tensor.scalar<string>()();
 
-    const Tensor& start_tensor = context->input(1);
-    int64 start = start_tensor.scalar<int64>()();
-
-    const Tensor& count_tensor = context->input(2);
-    int64 count = count_tensor.scalar<int64>()();
-
-    const Tensor& memory_tensor = context->input(3);
+    const Tensor& memory_tensor = context->input(1);
     const string& memory = memory_tensor.scalar<string>()();
 
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory));
+    const Tensor& start_tensor = context->input(2);
+    const int64 start = start_tensor.scalar<int64>()();
+
+    const Tensor& stop_tensor = context->input(3);
+    const int64 stop = stop_tensor.scalar<int64>()();
+
+    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
@@ -240,19 +191,25 @@ class ReadWAVOp : public OpKernel {
     // bytes = NumSamples * NumChannels * BitsPerSample/8
     int64 num_samples = bytes / header.num_channels / (header.bit_depth / 8);
 
-    if (start > num_samples) {
-      start = num_samples;
+    int64 sample_start = start;
+    int64 sample_stop = stop;
+    if (sample_start > num_samples) {
+      sample_start = num_samples;
     }
-    if (count < 0) {
-      count = num_samples - start;
+    if (sample_stop < 0) {
+      sample_stop = num_samples;
     }
+    if (sample_stop < sample_start) {
+      sample_stop = sample_start;
+    }
+    
 
     Tensor* output_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({count, header.num_channels}), &output_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({sample_stop - sample_start, header.num_channels}), &output_tensor));
 
     int64 read_offset = 0;
-    int64 start_bytes = start * header.num_channels * (header.bit_depth / 8);
-    int64 final_bytes = start_bytes + count * header.num_channels * (header.bit_depth / 8);
+    int64 start_bytes = sample_start * header.num_channels * (header.bit_depth / 8);
+    int64 final_bytes = sample_stop * header.num_channels * (header.bit_depth / 8);
 
     bytes = 0;
 
