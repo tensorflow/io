@@ -40,6 +40,7 @@ class JSONDatasetTest(test.TestCase):
         os.path.dirname(os.path.abspath(__file__)),
         "test_json",
         "feature.json")
+    filename = "file://" + filename
 
     columns = ['floatfeature', 'integerfeature']
     output_types = (dtypes.float64, dtypes.int64)
