@@ -67,4 +67,18 @@ Creates a dataset that connects to a host serving Arrow RecordBatches in stream 
 endpoints: One or more host addresses that are serving an Arrow stream.
 )doc");
 
+
+REGISTER_OP("ListFeatherColumns")
+    .Input("filename: string")
+    .Input("memory: string")
+    .Output("columns: string")
+    .Output("dtypes: string")
+    .Output("shapes: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(1, c->MakeShape({c->UnknownDim()}));
+       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+       return Status::OK();
+     });
+
 }  // namespace tensorflow
