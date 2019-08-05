@@ -31,7 +31,7 @@ limitations under the License.
   } while (false)
 
 namespace tensorflow {
-
+namespace data {
 enum ArrowBatchMode {
   BATCH_KEEP_REMAINDER,
   BATCH_DROP_REMAINDER,
@@ -1017,5 +1017,5 @@ REGISTER_KERNEL_BUILDER(Name("ArrowFeatherDataset").Device(DEVICE_CPU),
 
 REGISTER_KERNEL_BUILDER(Name("ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
-
+}  // namespace data
 }  // namespace tensorflow

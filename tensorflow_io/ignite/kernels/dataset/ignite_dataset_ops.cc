@@ -21,7 +21,7 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/numbers.h"
 
 namespace tensorflow {
-namespace {
+namespace data {
 
 Status SchemaToTypes(const std::vector<int32>& schema, DataTypeVector* dtypes) {
   for (auto e : schema) {
@@ -194,5 +194,5 @@ class IgniteDatasetOp : public DatasetOpKernel {
 REGISTER_KERNEL_BUILDER(Name("IgniteDataset").Device(DEVICE_CPU),
                         IgniteDatasetOp);
 
-}  // namespace
+}  // namespace data
 }  // namespace tensorflow

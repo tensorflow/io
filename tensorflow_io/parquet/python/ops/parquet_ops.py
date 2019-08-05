@@ -68,8 +68,8 @@ class ParquetDataset(data_ops.BaseDataset):
       start = 0
       stop = columns[column].shape[0]
       dtype = columns[column].dtype
-
     shape = tf.TensorShape([None])
+    self._spec = tf.TensorSpec([None], dtype)
 
     # capacity is the rough count for each chunk in dataset
     capacity = kwargs.get("capacity", 65536)
@@ -83,3 +83,7 @@ class ParquetDataset(data_ops.BaseDataset):
 
     super(ParquetDataset, self).__init__(
         self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+
+  @property
+  def element_spec(self):
+    return self._spec

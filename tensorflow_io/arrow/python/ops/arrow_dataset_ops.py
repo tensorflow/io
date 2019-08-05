@@ -28,7 +28,6 @@ import tempfile
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v2 import data
-from tensorflow.python.data.ops.dataset_ops import flat_structure
 from tensorflow.python.data.util import structure as structure_lib
 from tensorflow_io.core.python.ops import core_ops
 
@@ -122,13 +121,15 @@ class ArrowBaseDataset(data.Dataset):
         name="batch_mode")
     if batch_size is not None or batch_mode == 'auto':
       # pylint: disable=protected-access
-      self._structure = self._structure._batch(
-          batch_size if batch_mode == 'drop_remainder' else None)
+      self._structure = nest.map_structure(
+          lambda component_spec: component_spec._batch(
+              batch_size if batch_mode == 'drop_remainder' else None),
+          self._structure)
     variant_tensor = make_variant_fn(
         columns=self._columns,
         batch_size=self._batch_size,
         batch_mode=self._batch_mode,
-        **flat_structure(self))
+        **self._flat_structure)
     super(ArrowBaseDataset, self).__init__(variant_tensor)
 
   def _inputs(self):
@@ -136,6 +137,10 @@ class ArrowBaseDataset(data.Dataset):
 
   @property
   def _element_structure(self):
+    return self._structure
+
+  @property
+  def element_spec(self):
     return self._structure
 
   @property

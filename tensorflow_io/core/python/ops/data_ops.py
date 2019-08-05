@@ -47,6 +47,10 @@ class _AdjustBatchDataset(tf.compat.v2.data.Dataset):
   def _element_structure(self):
     return self._structure
 
+  @property
+  def element_spec(self):
+    return self._structure
+
 def rebatch(batch_size, batch_mode=""):
   def _apply_fn(dataset):
     return _AdjustBatchDataset(dataset, batch_size, batch_mode)
@@ -77,6 +81,17 @@ class BaseDataset(tf.compat.v2.data.Dataset):
     if len(e) == 1:
       return e[0]
     return tf.data.experimental.NestedStructure(tuple(e))
+
+  @property
+  def element_spec(self):
+    e = [
+        tf.TensorSpec(
+            p.as_list(), q) for (p, q) in zip(
+                self._shapes, self._dtypes)
+    ]
+    if len(e) == 1:
+      return e[0]
+    return tuple(e)
 
 class Dataset(BaseDataset):
   """A Dataset that takes DataInput"""

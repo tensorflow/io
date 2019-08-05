@@ -59,7 +59,7 @@ def test_read_text():
       assert entries[k].numpy().decode() + "\n" == v.decode()
 
 
-def test_text_input():
+def _test_text_input():
   """test_text_input
   """
   text_filename = os.path.join(
@@ -156,7 +156,7 @@ def test_text_output_sequence():
   for line, prediction in zip(lines, predictions):
     assert line == prediction
 
-def test_text_output():
+def _test_text_output():
   """test_text_output"""
   text_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
@@ -180,7 +180,7 @@ def test_text_output():
     i += 1
   assert i == 5
 
-def test_csv_output():
+def _test_csv_output():
   """test_csv_output"""
   csv_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_text", "sample.csv")
