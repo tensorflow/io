@@ -25,7 +25,7 @@ namespace data {
 
 class JSONInputStream {
 public:
-  explicit JSONInputStream(io::InputStreamInterface* s, const string& filename) {
+  explicit JSONInputStream(const string& filename) {
       Env* env = Env::Default();
       uint64 size = 0;
       Status status = env->GetFileSize(filename, &size);
@@ -69,7 +69,7 @@ class JSONInput: public FileInput<JSONInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<JSONInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new JSONInputStream(s, filename()));
+      state.reset(new JSONInputStream(filename()));
       TF_RETURN_IF_ERROR(state.get()->Open());
     }
 
