@@ -19,27 +19,29 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ParquetInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
+REGISTER_OP("ListParquetColumns")
+    .Input("filename: string")
+    .Input("memory: string")
+    .Output("columns: string")
+    .Output("dtypes: string")
+    .Output("shapes: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
+       c->set_output(1, c->MakeShape({c->UnknownDim()}));
+       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
 
-REGISTER_OP("ParquetDataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
+REGISTER_OP("ReadParquet")
+    .Input("filename: string")
+    .Input("column: string")
+    .Input("memory: string")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Attr("dtype: type")
+    .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
+       c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
 
