@@ -30,8 +30,7 @@ from tensorflow import dtypes
 from tensorflow.compat.v2 import data
 from tensorflow.python.data.ops.dataset_ops import flat_structure
 from tensorflow.python.data.util import structure as structure_lib
-from tensorflow_io import _load_library
-arrow_ops = _load_library('_arrow_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 if hasattr(tf, "nest"):
   from tensorflow import nest # pylint: disable=ungrouped-imports
@@ -183,7 +182,7 @@ class ArrowDataset(ArrowBaseDataset):
                   "auto" (size to number of records in Arrow record batch)
     """
     super(ArrowDataset, self).__init__(
-        partial(arrow_ops.arrow_dataset, serialized_batches),
+        partial(core_ops.arrow_dataset, serialized_batches),
         columns,
         output_types,
         output_shapes,
@@ -316,7 +315,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="filenames")
     super(ArrowFeatherDataset, self).__init__(
-        partial(arrow_ops.arrow_feather_dataset, filenames),
+        partial(core_ops.arrow_feather_dataset, filenames),
         columns,
         output_types,
         output_shapes,
@@ -401,7 +400,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="endpoints")
     super(ArrowStreamDataset, self).__init__(
-        partial(arrow_ops.arrow_stream_dataset, endpoints),
+        partial(core_ops.arrow_stream_dataset, endpoints),
         columns,
         output_types,
         output_shapes,
@@ -594,3 +593,15 @@ class ArrowStreamDataset(ArrowBaseDataset):
         batch_size=batch_size,
         batch_mode='keep_remainder',
         record_batch_iter_factory=gen_record_batches)
+
+def list_feather_columns(filename, **kwargs):
+  """list_feather_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_feather_columns only support eager mode")
+  memory = kwargs.get("memory", "")
+  columns, dtypes_, shapes = core_ops.list_feather_columns(
+      filename, memory=memory)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes_), tf.unstack(shapes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
+          column, dtype, shape) in entries])

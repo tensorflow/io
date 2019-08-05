@@ -894,6 +894,40 @@ class ArrowDatasetTest(test.TestCase):
           truth_data.output_shapes,
           batch_mode='doh')
 
+  def test_arrow_list_feather_columns(self):
+    """test_arrow_list_feather_columns"""
+    # Feather files currently do not support columns of list types
+    truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
+                           self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    # Create a tempfile that is deleted after tests run
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      write_feather(df, f)
+
+    # test single file
+    # prefix "file://" to test scheme file system (e.g., s3, gcs, azfs, ignite)
+    columns = arrow_io.list_feather_columns("file://" + f.name)
+    for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
+      assert columns[name].name == name
+      assert columns[name].dtype == dtype
+      assert columns[name].shape == [4]
+
+    # test memory
+    with open(f.name, 'rb') as ff:
+      memory = ff.read()
+    # when memory is provided filename doesn't matter:
+    columns = arrow_io.list_feather_columns("file:///non_exist", memory=memory)
+    for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
+      assert columns[name].name == name
+      assert columns[name].dtype == dtype
+      assert columns[name].shape == [4]
+
+    os.unlink(f.name)
+
+
 
 if __name__ == "__main__":
   test.main()
