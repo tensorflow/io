@@ -36,10 +36,12 @@ def test_json_dataset():
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "feature.json")
+  feature_filename = "file://" + feature_filename
   label_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "label.json")
+  label_filename = "file://" + label_filename
 
   feature_list = ["floatfeature", "integerfeature"]
   label_list = ["floatlabel", "integerlabel"]
@@ -105,10 +107,12 @@ def test_json_keras():
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "iris.json")
+  feature_filename = "file://" + feature_filename
   label_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "species.json")
+  label_filename = "file://" + label_filename
 
   feature_list = ['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth']
   label_list = ["species"]

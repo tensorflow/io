@@ -17,6 +17,7 @@ limitations under the License.
 #include <fstream>
 #include "kernels/dataset_ops.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
+#include "tensorflow/core/platform/env.h"
 #include "include/json/json.h"
 
 namespace tensorflow {
@@ -24,15 +25,24 @@ namespace data {
 
 class JSONInputStream {
 public:
-  explicit JSONInputStream(io::InputStreamInterface* s, const string& filename)
-    : ifs_(filename){}
+  explicit JSONInputStream(const string& filename) {
+      Env* env = Env::Default();
+      uint64 size = 0;
+      Status status = env->GetFileSize(filename, &size);
+      if (status.ok()) {
+        std::unique_ptr<tensorflow::RandomAccessFile> file;
+        status = env->NewRandomAccessFile(filename, &file);
+        if (status.ok()) {
+          StringPiece result;
+          buffer_memory_.resize(size);
+          status = file->Read(0, size, &result, &buffer_memory_[0]);
+        }
+      }
+    }
    
-  ~JSONInputStream() {
-    ifs_.close();
-  }
-
+  ~JSONInputStream() {}
   Status Open(){
-    if (reader_.parse(ifs_, records_)) {
+    if (reader_.parse(buffer_memory_, records_)) {
       return Status::OK();
     }
     return errors::InvalidArgument("JSON parsing error: ", reader_.getFormattedErrorMessages());
@@ -48,7 +58,8 @@ bool ReadRecord(Json::Value& record){
 }
 
 private:
-  std::ifstream ifs_;
+  string buffer_memory_;
+  string filename_;
   Json::Reader reader_;
   Json::Value records_;
   Json::ArrayIndex index_ = 0;
@@ -58,7 +69,7 @@ class JSONInput: public FileInput<JSONInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<JSONInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
     if (state.get() == nullptr) {
-      state.reset(new JSONInputStream(s, filename()));
+      state.reset(new JSONInputStream(filename()));
       TF_RETURN_IF_ERROR(state.get()->Open());
     }
 
