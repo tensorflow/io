@@ -16,7 +16,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
+        "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/core:dataset_ops",
-        "@arrow",
     ],
 )

@@ -14,66 +14,12 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/stream.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "parquet/api/reader.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
-
-class ParquetRandomAccessFile : public ::arrow::io::RandomAccessFile {
-public:
-  explicit ParquetRandomAccessFile(tensorflow::RandomAccessFile *file, int64 size)
-    : file_(file)
-    , size_(size) { }
-
-  ~ParquetRandomAccessFile() {}
-  arrow::Status Close() override {
-    return arrow::Status::OK();
-  }
-  arrow::Status Tell(int64_t* position) const override {
-    return arrow::Status::NotImplemented("Tell");
-  }
-  arrow::Status Seek(int64_t position) override {
-    return arrow::Status::NotImplemented("Seek");
-  }
-  arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override {
-    return arrow::Status::NotImplemented("Read (void*)");
-  }
-  arrow::Status Read(int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
-    return arrow::Status::NotImplemented("Read (Buffer*)");
-  }
-  arrow::Status GetSize(int64_t* size) override {
-    *size = size_;
-    return arrow::Status::OK();
-  }
-  bool supports_zero_copy() const override {
-    return false;
-  }
-  arrow::Status ReadAt(int64_t position, int64_t nbytes, int64_t* bytes_read, void* out) override {
-    StringPiece result;
-    Status status = file_->Read(position, nbytes, &result, (char*)out);
-    if (!(status.ok() || errors::IsOutOfRange(status))) {
-        return arrow::Status::IOError(status.error_message());
-    }
-    *bytes_read = result.size();
-    return arrow::Status::OK();
-  }
-  arrow::Status ReadAt(int64_t position, int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
-    string buffer;
-    buffer.resize(nbytes);
-    StringPiece result;
-    Status status = file_->Read(position, nbytes, &result, (char*)(&buffer[0]));
-    if (!(status.ok() || errors::IsOutOfRange(status))) {
-        return arrow::Status::IOError(status.error_message());
-    }
-    buffer.resize(result.size());
-    return arrow::Buffer::FromString(buffer, out);
-  }
-private:
-  tensorflow::RandomAccessFile* file_;
-  int64 size_;
-};
 
 class ListParquetColumnsOp : public OpKernel {
  public:
@@ -92,7 +38,7 @@ class ListParquetColumnsOp : public OpKernel {
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
-    std::shared_ptr<ParquetRandomAccessFile> parquet_file(new ParquetRandomAccessFile(file.get(), size));
+    std::shared_ptr<ArrowRandomAccessFile> parquet_file(new ArrowRandomAccessFile(file.get(), size));
     std::shared_ptr<::parquet::FileMetaData> metadata = ::parquet::ReadMetaData(parquet_file);
 
     std::vector<string> columns;
@@ -181,7 +127,7 @@ class ReadParquetOp : public OpKernel {
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
 
-    std::shared_ptr<ParquetRandomAccessFile> parquet_file(new ParquetRandomAccessFile(file.get(), size));
+    std::shared_ptr<ArrowRandomAccessFile> parquet_file(new ArrowRandomAccessFile(file.get(), size));
     std::unique_ptr<::parquet::ParquetFileReader> parquet_reader = parquet::ParquetFileReader::Open(parquet_file);
     std::shared_ptr<::parquet::FileMetaData> file_metadata = parquet_reader->metadata();
     int column_index = 0;
