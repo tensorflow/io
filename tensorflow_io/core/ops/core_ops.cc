@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,4 +34,27 @@ REGISTER_OP("AdjustBatchDataset")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
       return shape_inference::ScalarShape(c);
     });
+REGISTER_OP("ListArchiveEntries")
+    .Input("filename: string")
+    .Input("memory: string")
+    .Output("format: string")
+    .Output("entries: string")
+    .Attr("filters: list(string) = []")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
+REGISTER_OP("ReadArchive")
+    .Input("filename: string")
+    .Input("format: string")
+    .Input("entries: string")
+    .Input("memory: string")
+    .Output("output: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 }  // namespace tensorflow
