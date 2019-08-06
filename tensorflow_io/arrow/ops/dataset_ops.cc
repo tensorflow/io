@@ -19,7 +19,26 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ArrowDataset")
+REGISTER_OP("ArrowZeroCopyDataset")
+    .Input("buffer_address: uint64")
+    .Input("buffer_size: int64")
+    .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a dataset that zero-copy reads data from an Arrow Buffer.
+
+buffer_address: Buffer address as long int with contents as Arrow RecordBatches
+in file format.
+buffer_size: Buffer size in bytes
+)doc");
+
+REGISTER_OP("ArrowSerializedDataset")
     .Input("serialized_batches: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
