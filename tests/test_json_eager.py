@@ -19,12 +19,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import numpy as np
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
 
 def test_json_dataset():
@@ -43,47 +41,49 @@ def test_json_dataset():
       "label.json")
   label_filename = "file://" + label_filename
 
-  feature_list = ["floatfeature", "integerfeature"]
-  label_list = ["floatlabel", "integerlabel"]
-  feature_dataset = json_io.JSONDataset(
+  feature_cols = json_io.list_json_columns(feature_filename)
+  assert feature_cols["floatfeature"].dtype == tf.float64
+  assert feature_cols["integerfeature"].dtype == tf.int64
+
+  label_cols = json_io.list_json_columns(label_filename)
+  assert label_cols["floatlabel"].dtype == tf.float64
+  assert label_cols["integerlabel"].dtype == tf.int64
+
+  float_feature = json_io.read_json(
       feature_filename,
-      feature_list,
-      [tf.float64, tf.int64])
-  label_dataset = json_io.JSONDataset(
+      feature_cols["floatfeature"])
+  integer_feature = json_io.read_json(
+      feature_filename,
+      feature_cols["integerfeature"])
+  float_label = json_io.read_json(
       label_filename,
-      label_list,
-      [tf.float64, tf.int64])
+      label_cols["floatlabel"])
+  integer_label = json_io.read_json(
+      label_filename,
+      label_cols["integerlabel"])
 
-  i = 0
-  for record in feature_dataset:
+  for i in range(2):
     v_x = x_test[i]
-    for index, val in enumerate(record):
-      assert v_x[index] == val.numpy()
-    i += 1
-  assert i == len(y_test)
-
-  ## Test of the reverse order of the columns
-  feature_list = ["integerfeature", "floatfeature"]
-  feature_dataset = json_io.JSONDataset(
-      feature_filename,
-      feature_list,
-      [tf.int64, tf.float64])
-
-  i = 0
-  for record in feature_dataset:
-    v_x = np.flip(x_test[i])
-    for index, val in enumerate(record):
-      assert v_x[index] == val.numpy()
-    i += 1
-  assert i == len(y_test)
-
-  i = 0
-  for record in label_dataset:
     v_y = y_test[i]
-    for index, val in enumerate(record):
-      assert v_y[index] == val.numpy()
-    i += 1
-  assert i == len(y_test)
+    assert v_x[0] == float_feature[i].numpy()
+    assert v_x[1] == integer_feature[i].numpy()
+    assert v_y[0] == float_label[i].numpy()
+    assert v_y[1] == integer_label[i].numpy()
+
+  feature_dataset = tf.compat.v2.data.Dataset.zip(
+      (
+          json_io.JSONDataset(feature_filename, "floatfeature"),
+          json_io.JSONDataset(feature_filename, "integerfeature")
+      )
+  ).apply(tf.data.experimental.unbatch())
+
+  label_dataset = tf.compat.v2.data.Dataset.zip(
+      (
+          json_io.JSONDataset(label_filename, "floatlabel"),
+          json_io.JSONDataset(label_filename, "integerlabel")
+      )
+  ).apply(tf.data.experimental.unbatch())
+
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,
@@ -92,7 +92,7 @@ def test_json_dataset():
 
   i = 0
   for (j_x, j_y) in dataset:
-    v_x = np.flip(x_test[i])
+    v_x = x_test[i]
     v_y = y_test[i]
     for index, x in enumerate(j_x):
       assert v_x[index] == x.numpy()
@@ -114,20 +114,28 @@ def test_json_keras():
       "species.json")
   label_filename = "file://" + label_filename
 
-  feature_list = ['sepalLength', 'sepalWidth', 'petalLength', 'petalWidth']
-  label_list = ["species"]
-  feature_types = [tf.float64, tf.float64, tf.float64, tf.float64]
-  label_types = [tf.int64]
-  feature_dataset = json_io.JSONDataset(
-      feature_filename,
-      feature_list,
-      feature_types,
-      batch=32)
-  label_dataset = json_io.JSONDataset(
-      label_filename,
-      label_list,
-      label_types,
-      batch=32)
+  feature_cols = json_io.list_json_columns(feature_filename)
+  label_cols = json_io.list_json_columns(label_filename)
+
+  feature_tensors = []
+  for feature in feature_cols:
+    dataset = json_io.JSONDataset(feature_filename, feature)
+    feature_tensors.append(dataset)
+
+  label_tensors = []
+  for label in label_cols:
+    dataset = json_io.JSONDataset(label_filename, label)
+    label_tensors.append(dataset)
+
+
+  feature_dataset = tf.compat.v2.data.Dataset.zip(
+      tuple(feature_tensors)
+  )
+
+  label_dataset = tf.compat.v2.data.Dataset.zip(
+      tuple(label_tensors)
+  )
+
   dataset = tf.data.Dataset.zip((
       feature_dataset,
       label_dataset

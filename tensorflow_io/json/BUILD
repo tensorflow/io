@@ -10,7 +10,7 @@ load(
 cc_library(
     name = "json_ops",
     srcs = [
-        "kernels/json_input.cc",
+        "kernels/json_kernels.cc",
         "ops/json_ops.cc",
     ],
     copts = tf_io_copts(),

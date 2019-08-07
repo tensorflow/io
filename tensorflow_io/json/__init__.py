@@ -15,6 +15,8 @@
 """JSONDataset.
 
 @@JSONDataset
+@@list_json_columns
+@@read_json
 """
 
 from __future__ import absolute_import
@@ -24,9 +26,13 @@ from __future__ import print_function
 from tensorflow.python.util.all_util import remove_undocumented
 
 from tensorflow_io.json.python.ops.json_ops import JSONDataset
+from tensorflow_io.json.python.ops.json_ops import list_json_columns
+from tensorflow_io.json.python.ops.json_ops import read_json
 
 _allowed_symbols = [
     "JSONDataset",
+    "list_json_columns",
+    "read_json",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

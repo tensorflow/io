@@ -13,33 +13,52 @@
 # limitations under the License.
 # ==============================================================================
 """JSONDataset"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.core.python.ops import core_ops as json_ops
+from tensorflow_io.core.python.ops import core_ops
 
-class JSONDataset(data_ops.Dataset):
+def list_json_columns(filename):
+  """list_json_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_json_columns only support eager mode")
+  columns, dtypes = core_ops.list_json_columns(filename)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      tf.TensorShape([None]),
+      dtype.numpy().decode(),
+      column.numpy().decode())) for (
+          column, dtype) in entries])
+
+def read_json(filename, column):
+  """read_json"""
+  return core_ops.read_json(
+      filename, column.name, dtype=column.dtype)
+
+class JSONDataset(data_ops.BaseDataset):
   """A JSONLabelDataset. JSON (JavaScript Object Notation) is a lightweight data-interchange format.
   """
 
-  def __init__(self, filenames, columns, dtypes, batch=None):
+  def __init__(self, filename, column, **kwargs):
     """Create a JSONLabelDataset.
 
     Args:
-      filenames: A 0-D or 1-D `tf.string` tensor containing one or more
-        filenames.
-      columns: A 0-D or 1-D `tf.int32` tensor containing the columns to extract.
-      dtypes: A tuple of `tf.DType` objects representing the types of the
-        columns returned.
+      filename: A string containing one or more filenames.
+      column: A string containing the column to extract.
     """
-    data_input = json_ops.json_input(
-        filenames, ["none", "gz"], columns=columns)
-    dtypes = dtypes
-    batch = 0 if batch is None else batch
-    shapes = [
-        tf.TensorShape([]) for _ in columns] if batch == 0 else [
-            tf.TensorShape([None]) for _ in columns]
+    if not tf.executing_eagerly():
+      dtype = kwargs.get("dtype")
+    else:
+      columns = list_json_columns(filename)
+      dtype = columns[column].dtype
+    shape = tf.TensorShape([None])
+
+    dataset = data_ops.BaseDataset.from_tensors(
+        core_ops.read_json(filename, column, dtype=dtype))
+    self._dataset = dataset
+
     super(JSONDataset, self).__init__(
-        json_ops.json_dataset,
-        data_input,
-        batch, dtypes, shapes
-    )
+        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
