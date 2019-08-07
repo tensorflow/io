@@ -13,6 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#ifndef TENSORFLOW_IO_ARROW_KERNELS_H_
+#define TENSORFLOW_IO_ARROW_KERNELS_H_
+
 #include "kernels/stream.h"
 #include "arrow/io/api.h"
 #include "arrow/buffer.h"
@@ -78,3 +81,5 @@ private:
 };
 }  // namespace data
 }  // namespace tensorflow
+
+#endif  // TENSORFLOW_IO_ARROW_KERNELS_H_
