@@ -63,13 +63,4 @@ rm -rf build && mkdir -p build
 
 cp -r bazel-bin/tensorflow_io  build/tensorflow_io
 
-if [[ $(uname) == "Linux" ]]; then
-  TF_SHARED_LIBRARY_DIR=$(grep TF_SHARED_LIBRARY_DIR .bazelrc  | awk -F= '{print $2}')
-  TF_SHARED_LIBRARY_NAME=$(grep TF_SHARED_LIBRARY_NAME .bazelrc  | awk -F= '{print $2}')
-
-  echo ${TF_SHARED_LIBRARY_DIR:1:$((${#TF_SHARED_LIBRARY_DIR}-2))}/${TF_SHARED_LIBRARY_NAME:1:$((${#TF_SHARED_LIBRARY_NAME}-2))}
-
-  cp ${TF_SHARED_LIBRARY_DIR:1:$((${#TF_SHARED_LIBRARY_DIR}-2))}/${TF_SHARED_LIBRARY_NAME:1:$((${#TF_SHARED_LIBRARY_NAME}-2))} build
-fi
-
 exit 0
