@@ -57,3 +57,7 @@ def _load_library(filename, lib="op"):
   raise NotImplementedError(
       "unable to open file: " +
       "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))
+
+from tensorflow_io.core.python.ops import dataset_ops # pylint: disable=wrong-import-position
+
+Dataset = dataset_ops.create_dataste_class()

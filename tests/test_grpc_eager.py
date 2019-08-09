@@ -22,7 +22,9 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_io.grpc as grpc_io
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io.grpc as grpc_io # pylint: disable=wrong-import-position
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
