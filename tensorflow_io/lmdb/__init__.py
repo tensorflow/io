@@ -15,6 +15,7 @@
 """LMDB Dataset.
 
 @@LMDBDataset
+@@read_lmdb
 """
 
 from __future__ import absolute_import
@@ -22,11 +23,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.lmdb.python.ops.lmdb_ops import LMDBDataset
+from tensorflow_io.lmdb.python.ops.lmdb_ops import read_lmdb
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "LMDBDataset",
+    "read_lmdb",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

@@ -19,28 +19,39 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("LMDBInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("InitLMDB")
+  .Input("input: string")
+  .Input("memory: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("LMDBDataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
+REGISTER_OP("NextLMDB")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Output("output: dtypes")
+  .Attr("dtypes: list(type) >= 1")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    for (int64 i = 0; i < c->num_outputs(); i++) {
+      c->set_output(i, c->MakeShape({c->UnknownDim()}));
+    }
+    return Status::OK();
+   });
 
+REGISTER_OP("ReadLMDB")
+  .Input("input: string")
+  .Input("memory: string")
+  .Input("metadata: string")
+  .Output("output: dtypes")
+  .Attr("dtypes: list(type) >= 1")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    for (int64 i = 0; i < c->num_outputs(); i++) {
+      c->set_output(i, c->MakeShape({c->UnknownDim()}));
+    }
+    return Status::OK();
+   });
 }  // namespace tensorflow

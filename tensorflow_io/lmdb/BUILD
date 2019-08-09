@@ -10,7 +10,7 @@ load(
 cc_library(
     name = "lmdb_ops",
     srcs = [
-        "kernels/lmdb_input.cc",
+        "kernels/lmdb_kernels.cc",
         "ops/lmdb_ops.cc",
     ],
     copts = tf_io_copts(),

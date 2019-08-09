@@ -17,14 +17,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as lmdb_ops
+import sys
 
-class LMDBDataset(data_ops.Dataset):
+import tensorflow as tf
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import core_ops
+
+def read_lmdb(filename):
+  """read_lmdb"""
+  return core_ops.read_lmdb(
+      filename, memory="", metadata="", dtypes=[tf.string, tf.string])
+
+class LMDBDataset(data_ops.BaseDataset):
   """A LMDB Dataset that reads the lmdb file."""
 
-  def __init__(self, filename, batch=None):
+  def __init__(self, filename, **kwargs):
     """Create a `LMDBDataset`.
 
     `LMDBDataset` allows a user to read data from a mdb file as
@@ -39,14 +46,18 @@ class LMDBDataset(data_ops.Dataset):
       print(key, value)
     ```
     Args:
-      filename: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing filename.
     """
-    batch = 0 if batch is None else batch
     dtypes = [tf.string, tf.string]
-    shapes = [
-        tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None]), tf.TensorShape([None])]
+    shapes = [tf.TensorShape([None]), tf.TensorShape([None])]
+    capacity = kwargs.get("capacity", 65536)
+    lmdb = core_ops.init_lmdb(filename, memory="", metadata="")
+    dataset = data_ops.BaseDataset.range(
+        0, sys.maxsize, capacity).map(
+            lambda i: core_ops.next_lmdb(lmdb, capacity, dtypes=dtypes)).apply(
+                tf.data.experimental.take_while(lambda x, y: tf.shape(x)[0] > 0))
+    self._lmdb = lmdb
+    self._dataset = dataset
+
     super(LMDBDataset, self).__init__(
-        lmdb_ops.lmdb_dataset,
-        lmdb_ops.lmdb_input(filename),
-        batch, dtypes, shapes)
+        self._dataset._variant_tensor, dtypes, shapes) # pylint: disable=protected-access
