@@ -10,7 +10,7 @@ load(
 cc_library(
     name = "mnist_ops",
     srcs = [
-        "kernels/mnist_input.cc",
+        "kernels/mnist_kernels.cc",
         "ops/mnist_ops.cc",
     ],
     copts = tf_io_copts(),

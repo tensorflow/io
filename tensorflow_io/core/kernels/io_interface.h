@@ -28,13 +28,31 @@ class IOIterableInterface : public ResourceBase {
   virtual Status GetShape(std::vector<TensorShape>& shapes) = 0;
 };
 
-class IOIndexableInterface : public ResourceBase {
+class IOIndexableInterface : public IOIterableInterface {
  public:
-  virtual Status Init(const string& input, const void* memory_data, const int64 memory_size, const string& metadata) = 0;
   virtual Status GetItem(const int64 start, const int64 stop, std::vector<Tensor>& tensors) = 0;
   virtual Status Len(int64 *len) = 0;
 
-  virtual Status GetShape(std::vector<TensorShape>& shapes) = 0;
+ protected:
+  virtual ~IOIndexableInterface() {}
+ private:
+  Status Next(const int64 record_to_read, std::vector<Tensor>& tensors, int64* record_read) override {
+    int64 end;
+    TF_RETURN_IF_ERROR(Len(&end));
+    int64 start = record_offset_;
+    if (start > end) {
+      start = end;
+    }
+    int64 stop = start + record_to_read;
+    if (stop > end) {
+      stop = end;
+    }
+    TF_RETURN_IF_ERROR(GetItem(start, stop, tensors));
+    (*record_read) = stop - start;
+    record_offset_ += (*record_read);
+  }
+  int64 record_offset_ = 0;
+  
 };
 
 template<typename Type>

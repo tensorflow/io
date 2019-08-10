@@ -18,48 +18,79 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as mnist_ops
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import archive_ops
 
-class MNISTLabelDataset(data_ops.Dataset):
+class MNISTLabelDataset(data_ops.BaseDataset):
   """A MNISTLabelDataset
   """
 
   def __init__(self, filename, batch=None):
     """Create a MNISTLabelDataset.
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing filename.
     """
+    f, entries = archive_ops.list_archive_entries(
+        filename, ["none", "gz"])
+    memory = archive_ops.read_archive(filename, f, entries)
+    labels, = core_ops.read_mnist_label(
+        filename, memory=memory, metadata="",
+        start=0, stop=-1, dtypes=[tf.uint8])
+
+    dataset = data_ops.BaseDataset.from_tensors(labels)
+
     batch = 0 if batch is None else batch
     dtypes = [tf.uint8]
     shapes = [
         tf.TensorShape([])] if batch == 0 else [
             tf.TensorShape([None])]
-    super(MNISTLabelDataset, self).__init__(
-        mnist_ops.mnist_label_dataset,
-        mnist_ops.mnist_label_input(filename, ["none", "gz"]),
-        batch, dtypes, shapes)
+    if batch == 0:
+      dataset = dataset.apply(tf.data.experimental.unbatch())
+    else:
+      dataset = dataset.apply(data_ops.rebatch(batch))
 
-class MNISTImageDataset(data_ops.Dataset):
+    super(MNISTLabelDataset, self).__init__(
+        dataset._variant_tensor, dtypes, shapes) # pylint: disable=protected-access
+
+class MNISTImageDataset(data_ops.BaseDataset):
   """A MNISTImageDataset
   """
 
   def __init__(self, filename, batch=None):
     """Create a MNISTImageDataset.
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing filename.
     """
+    f, entries = archive_ops.list_archive_entries(
+        filename, ["none", "gz"])
+    memory = archive_ops.read_archive(filename, f, entries)
+    images, = core_ops.read_mnist_image(
+        filename, memory=memory, metadata="",
+        start=0, stop=-1, dtypes=[tf.uint8])
+
+    dataset = data_ops.BaseDataset.from_tensors(images)
+
     batch = 0 if batch is None else batch
     dtypes = [tf.uint8]
     shapes = [
         tf.TensorShape([None, None])] if batch == 0 else [
             tf.TensorShape([None, None, None])]
+    if batch == 0:
+      dataset = dataset.apply(tf.data.experimental.unbatch())
+    else:
+      dataset = dataset.apply(data_ops.rebatch(batch))
+
     super(MNISTImageDataset, self).__init__(
-        mnist_ops.mnist_image_dataset,
-        mnist_ops.mnist_image_input(filename, ["none", "gz"]),
-        batch, dtypes, shapes)
+        dataset._variant_tensor, dtypes, shapes) # pylint: disable=protected-access
 
 def MNISTDataset(image_filename, label_filename, batch=None):
-  return data_ops.Dataset.zip((
-      MNISTImageDataset(image_filename, batch),
-      MNISTLabelDataset(label_filename, batch)))
+  batch = 0 if batch is None else batch
+  dataset = data_ops.Dataset.zip((
+      MNISTImageDataset(image_filename, 10000),
+      MNISTLabelDataset(label_filename, 10000)))
+  if batch != 0:
+    dataset = dataset.apply(data_ops.rebatch(batch))
+  else:
+    dataset = dataset.apply(tf.data.experimental.unbatch())
+  return dataset
