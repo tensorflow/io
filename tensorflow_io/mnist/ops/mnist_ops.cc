@@ -19,6 +19,44 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("InitMNIST")
+  .Input("input: string")
+  .Input("memory: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("dtype: int64")
+  .Output("shape: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->Scalar());
+    c->set_output(2, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("GetItemMNIST")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Output("output: uint8")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->UnknownShape());
+    return Status::OK();
+   });
+
+REGISTER_OP("LenMNIST")
+  .Input("input: resource")
+  .Output("output: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
+
+
+
 REGISTER_OP("ReadMNISTLabel")
   .Input("input: string")
   .Input("memory: string")

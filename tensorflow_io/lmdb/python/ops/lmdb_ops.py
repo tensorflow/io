@@ -25,8 +25,9 @@ from tensorflow_io.core.python.ops import core_ops
 
 def read_lmdb(filename):
   """read_lmdb"""
-  return core_ops.read_lmdb(
-      filename, memory="", metadata="", dtypes=[tf.string, tf.string])
+  resource, _, _ = core_ops.init_lmdb(filename, memory="", metadata="")
+  value, key = core_ops.next_lmdb(resource, -1)
+  return key, value
 
 class LMDBDataset(data_ops.BaseDataset):
   """A LMDB Dataset that reads the lmdb file."""
@@ -51,12 +52,14 @@ class LMDBDataset(data_ops.BaseDataset):
     dtypes = [tf.string, tf.string]
     shapes = [tf.TensorShape([None]), tf.TensorShape([None])]
     capacity = kwargs.get("capacity", 65536)
-    lmdb = core_ops.init_lmdb(filename, memory="", metadata="")
+    resource, _, _ = core_ops.init_lmdb(filename, memory="", metadata="")
     dataset = data_ops.BaseDataset.range(
         0, sys.maxsize, capacity).map(
-            lambda i: core_ops.next_lmdb(lmdb, capacity, dtypes=dtypes)).apply(
-                tf.data.experimental.take_while(lambda x, y: tf.shape(x)[0] > 0))
-    self._lmdb = lmdb
+            lambda i: core_ops.next_lmdb(resource, capacity)).apply(
+                tf.data.experimental.take_while(
+                    lambda (v, k): tf.shape(v)[0] > 0)).map(
+                        lambda (v, k): (k, v))
+    self._resource = resource
     self._dataset = dataset
 
     super(LMDBDataset, self).__init__(

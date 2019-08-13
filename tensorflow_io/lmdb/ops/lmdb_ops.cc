@@ -24,34 +24,28 @@ REGISTER_OP("InitLMDB")
   .Input("memory: string")
   .Input("metadata: string")
   .Output("output: resource")
+  .Output("dtype: int64")
+  .Output("shape: int64")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetIsStateful()
-  .SetShapeFn(shape_inference::ScalarShape);
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->Scalar());
+    c->set_output(2, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
 
 REGISTER_OP("NextLMDB")
   .Input("input: resource")
   .Input("capacity: int64")
-  .Output("output: dtypes")
-  .Attr("dtypes: list(type) >= 1")
+  .Output("value: string")
+  .Output("key: string")
   .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    for (int64 i = 0; i < c->num_outputs(); i++) {
-      c->set_output(i, c->MakeShape({c->UnknownDim()}));
-    }
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
     return Status::OK();
    });
 
-REGISTER_OP("ReadLMDB")
-  .Input("input: string")
-  .Input("memory: string")
-  .Input("metadata: string")
-  .Output("output: dtypes")
-  .Attr("dtypes: list(type) >= 1")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    for (int64 i = 0; i < c->num_outputs(); i++) {
-      c->set_output(i, c->MakeShape({c->UnknownDim()}));
-    }
-    return Status::OK();
-   });
 }  // namespace tensorflow

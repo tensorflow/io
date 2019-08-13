@@ -41,7 +41,7 @@ class LMDBIterable : public IOIterableInterface {
     }
   }
 
-  Status Init(const string& input, const void* memory_data, const int64 memory_size, const string& metadata) override {
+  Status Init(const string& input, const void* memory_data, const int64 memory_size, const string& metadata, DataType *dtype, PartialTensorShape* shape) override {
     int status = mdb_env_create(&mdb_env_);
     if (status != MDB_SUCCESS) {
       return errors::InvalidArgument("error on mdb_env_create: ", status);
@@ -69,32 +69,32 @@ class LMDBIterable : public IOIterableInterface {
     if (status != MDB_SUCCESS) {
       return errors::InvalidArgument("error on mdb_cursor_open: ", status);
     }
+    *dtype = DT_STRING;
+    *shape = PartialTensorShape({-1});
     return Status::OK();
   }
-  Status Next(const int64 record_to_read, std::vector<Tensor>& tensors, int64* record_read) override {
-    (*record_read) = 0;
-    while ((*record_read) < record_to_read) {
+  Status Next(const int64 record_to_read, Tensor* value, Tensor* key) override {
+    std::vector<string> value_entries, key_entries;
+    int64 record_read = 0;
+    while (record_read < record_to_read || record_to_read < 0) {
       MDB_val mdb_key;
       MDB_val mdb_value;
       int status = mdb_cursor_get(mdb_cursor_, &mdb_key, &mdb_value, MDB_NEXT);
       if (status != MDB_SUCCESS) {
-        return Status::OK();
+        break;
       }
-      tensors[0].flat<string>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
-      tensors[1].flat<string>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_value.mv_data), mdb_value.mv_size));
-      (*record_read)++;
+      value_entries.emplace_back(std::move(string(static_cast<const char*>(mdb_value.mv_data), mdb_value.mv_size)));
+      key_entries.emplace_back(std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size)));
+      record_read++;
+    }
+    *value = Tensor(DT_STRING, TensorShape({record_read}));
+    *key = Tensor(DT_STRING, TensorShape({record_read}));
+    for (int64 i = 0; i < record_read; i++) {
+      value->flat<string>()(i) = std::move(value_entries[i]);
+      key->flat<string>()(i) = std::move(key_entries[i]);
     }
     return Status::OK();
   }
-
-  Status GetShape(std::vector<TensorShape>& shapes) override {
-    shapes.clear();
-    shapes.push_back(TensorShape({}));
-    shapes.push_back(TensorShape({}));
-
-    return Status::OK();
-  }
-
   string DebugString() const override {
     mutex_lock l(mu_);
     return strings::StrCat("LMDBIterable[]");
@@ -110,12 +110,12 @@ class LMDBIterable : public IOIterableInterface {
 };
 
 REGISTER_KERNEL_BUILDER(Name("InitLMDB").Device(DEVICE_CPU),
-                        IOIterableInitOp<LMDBIterable>);
+                        IOInterfaceInitOp<LMDBIterable>);
 REGISTER_KERNEL_BUILDER(Name("NextLMDB").Device(DEVICE_CPU),
                         IOIterableNextOp<LMDBIterable>);
 
-REGISTER_KERNEL_BUILDER(Name("ReadLMDB").Device(DEVICE_CPU),
-                        IOIterableReadOp<LMDBIterable>);
+//REGISTER_KERNEL_BUILDER(Name("ReadLMDB").Device(DEVICE_CPU),
+//                        IOIterableReadOp<LMDBIterable>);
 
 }  // namespace data
 }  // namespace tensorflow
