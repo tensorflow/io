@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 kinesis_ops = _load_library('_kinesis_ops.so')
 
 class KinesisDataset(data.Dataset):

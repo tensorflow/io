@@ -36,7 +36,7 @@ from tensorflow.python.data.util import nest
 from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import tensor_shape
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 
 _bigtable_so = _load_library("_bigtable.so")
 

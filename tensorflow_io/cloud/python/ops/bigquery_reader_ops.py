@@ -20,7 +20,7 @@ from __future__ import print_function
 
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import io_ops
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 
 _bigquery_reader_so = _load_library("_bigquery_reader_ops.so")
 
