@@ -161,13 +161,14 @@ class ArrowDataset(ArrowBaseDataset):
                output_types,
                output_shapes=None,
                batch_size=None,
-               batch_mode='keep_remainder'):
+               batch_mode='keep_remainder',
+               arrow_buffer=None):
     """Create an ArrowDataset from a Tensor of serialized batches.
     This constructor requires pyarrow to be installed.
 
     Args:
       serialized_batches: A string Tensor as a serialized buffer containing
-                          Arrow record batches as Arrow file format
+                          Arrow record batches in Arrow File format
       columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
@@ -180,9 +181,39 @@ class ArrowDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      arrow_buffer: Optional Arrow Buffer containing Arrow record batches in
+                    Arrow File format. This will share the Arrow buffer with
+                    the C++ kernel by address for zero-copy. Only supported if
+                    the kernel process is local, with TensorFlow in eager mode.
+                    If this is used, set `serialized_batches` to `None`.
     """
+    if serialized_batches is not None:
+      make_variant_fn = partial(
+          core_ops.arrow_serialized_dataset,
+          serialized_batches)
+    elif arrow_buffer is None:
+      raise ValueError("Must set either serialzied_batches or arrow_buffer")
+    elif not tf.executing_eagerly():
+      raise ValueError("Using arrow_buffer for zero-copy only supported in "
+                       "TensorFlow Eager mode.")
+    else:
+      address_int = arrow_buffer.address
+      buffer_address = tf.convert_to_tensor(
+          address_int,
+          dtype=dtypes.uint64,
+          name="buffer_address")
+      buffer_size = tf.convert_to_tensor(
+          arrow_buffer.size,
+          dtype=dtypes.int64,
+          name="buffer_size")
+      make_variant_fn = partial(
+          core_ops.arrow_zero_copy_dataset,
+          buffer_address,
+          buffer_size)
+      # Keep a reference to the arrow buffers used
+      self._arrow_buffer_refs = [arrow_buffer]
     super(ArrowDataset, self).__init__(
-        partial(core_ops.arrow_dataset, serialized_batches),
+        make_variant_fn,
         columns,
         output_types,
         output_shapes,
@@ -221,22 +252,33 @@ class ArrowDataset(ArrowBaseDataset):
     if columns is None:
       columns = tuple(range(record_batches[0].num_columns))
     assert record_batches
-    buf = io.BytesIO()
-    writer = pa.RecordBatchFileWriter(buf, record_batches[0].schema)
-    for batch in record_batches:
-      writer.write_batch(batch)
-    writer.close()
-    serialized_batches = tf.convert_to_tensor(
-        buf.getvalue(),
-        dtype=dtypes.string,
-        name="serialized_batches")
+    if tf.executing_eagerly():
+      sink = pa.BufferOutputStream()
+      writer = pa.RecordBatchFileWriter(sink, record_batches[0].schema)
+      for batch in record_batches:
+        writer.write_batch(batch)
+      writer.close()
+      serialized_batches = None
+      arrow_buffer = sink.getvalue()
+    else:
+      buf = io.BytesIO()
+      writer = pa.RecordBatchFileWriter(buf, record_batches[0].schema)
+      for batch in record_batches:
+        writer.write_batch(batch)
+      writer.close()
+      serialized_batches = tf.convert_to_tensor(
+          buf.getvalue(),
+          dtype=dtypes.string,
+          name="serialized_batches")
+      arrow_buffer = None
     return cls(
         serialized_batches,
         columns,
         output_types,
         output_shapes,
-        batch_size,
-        batch_mode)
+        batch_size=batch_size,
+        batch_mode=batch_mode,
+        arrow_buffer=arrow_buffer)
 
   @classmethod
   def from_pandas(cls,
