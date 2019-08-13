@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import numpy as np
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
@@ -63,3 +64,24 @@ def test_audio_dataset():
   samples = audio_io.read_wav(audio_path, spec)
   assert samples.dtype == tf.int16
   assert samples.shape == [5760, 1]
+
+  audio_24bit_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "example_0.5s.wav")
+  # raw was geenrated from:
+  # $ sox example_0.5s.wav example_0.5s.s32
+  audio_24bit_raw_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "example_0.5s.s32")
+  expected = np.fromfile(audio_24bit_raw_path, np.int32)
+  expected = np.reshape(expected, [22050, 2])
+
+  spec, rate = audio_io.list_wav_info(audio_24bit_path)
+  assert spec.dtype == tf.int32
+  assert spec.shape == [22050, 2]
+  assert rate.numpy() == 44100
+
+  samples = audio_io.read_wav(audio_24bit_path, spec)
+  assert samples.dtype == tf.int32
+  assert samples.shape == [22050, 2]
+  assert np.all(samples.numpy() == expected)
