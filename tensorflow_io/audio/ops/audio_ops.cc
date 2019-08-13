@@ -19,29 +19,35 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ListWAVInfo")
-    .Input("filename: string")
-    .Input("memory: string")
-    .Output("dtype: string")
-    .Output("shape: int64")
-    .Output("rate: int32")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       c->set_output(1, c->MakeShape({2}));
-       c->set_output(2, c->MakeShape({}));
-       return Status::OK();
-     });
+REGISTER_OP("WAVIndexableInit")
+  .Input("input: string")
+  .Input("memory: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Output("rate: int32")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(3, c->Scalar());
+    return Status::OK();
+   });
 
-REGISTER_OP("ReadWAV")
-    .Input("filename: string")
-    .Input("memory: string")
-    .Input("start: int64")
-    .Input("stop: int64")
-    .Attr("dtype: type")
-    .Output("output: dtype")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("WAVIndexableGetItem")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Output("output: dtype")
+  .Attr("dtype: {int8, int16, int32}")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->UnknownShape());
+    return Status::OK();
+   });
 
 }  // namespace tensorflow

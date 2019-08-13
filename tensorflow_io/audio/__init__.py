@@ -15,8 +15,6 @@
 """Audio Dataset.
 
 @@WAVDataset
-@@list_wav_info
-@@read_wav
 """
 
 from __future__ import absolute_import
@@ -24,15 +22,11 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.audio.python.ops.audio_ops import WAVDataset
-from tensorflow_io.audio.python.ops.audio_ops import list_wav_info
-from tensorflow_io.audio.python.ops.audio_ops import read_wav
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "WAVDataset",
-    "list_wav_info",
-    "read_wav",
 ]
 
 remove_undocumented(__name__)

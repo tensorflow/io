@@ -16,6 +16,7 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_CORE_KERNELS_STREAM_H_
 #define TENSORFLOW_IO_CORE_KERNELS_STREAM_H_
 
+#include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/inputstream_interface.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 

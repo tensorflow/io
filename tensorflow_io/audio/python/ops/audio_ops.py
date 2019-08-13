@@ -19,52 +19,27 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.core.python.ops import core_ops
-
-def list_wav_info(filename, **kwargs):
-  """list_wav_info"""
-  if not tf.executing_eagerly():
-    raise NotImplementedError("list_wav_info only support eager mode")
-  memory = kwargs.get("memory", "")
-  dtype, shape, rate = core_ops.list_wav_info(
-      filename, memory=memory)
-  return tf.TensorSpec(shape.numpy(), dtype.numpy().decode()), rate
-
-def read_wav(filename, spec, **kwargs):
-  """read_wav"""
-  memory = kwargs.get("memory", "")
-  start = kwargs.get("start", 0)
-  stop = kwargs.get("stop", None)
-  if stop is None and spec.shape[0] is not None:
-    stop = spec.shape[0] - start
-  if stop is None:
-    stop = -1
-  return core_ops.read_wav(
-      filename, memory=memory,
-      start=start, stop=stop, dtype=spec.dtype)
+from tensorflow_io.core.python.ops import io_tensor
 
 class WAVDataset(data_ops.BaseDataset):
   """A WAV Dataset"""
 
-  def __init__(self, filename, **kwargs):
+  def __init__(self, filename, batch=None, **kwargs):
     """Create a WAVDataset.
 
     Args:
       filename: A string containing filename.
     """
+    batch = 0 if batch is None else batch
     if not tf.executing_eagerly():
-      start = kwargs.get("start")
-      stop = kwargs.get("stop")
-      dtype = kwargs.get("dtype")
-      shape = kwargs.get("shape")
-    else:
-      spec, _ = list_wav_info(filename)
-      start = 0
-      stop = spec.shape[0]
-      dtype = spec.dtype
-      shape = tf.TensorShape(
-          [dim if i != 0 else None for i, dim in enumerate(
-              spec.shape.as_list())])
+      raise NotImplementedError("WAVDataset only support eager mode")
+
+    self._wav = io_tensor.IOTensor.from_audio(filename)
+
+    dtype = self._wav.dtype
+    shape = self._wav.shape[1:]
+    start = 0
+    stop = self._wav.shape[0]
 
     # capacity is the rough count for each chunk in dataset
     capacity = kwargs.get("capacity", 65536)
@@ -72,10 +47,14 @@ class WAVDataset(data_ops.BaseDataset):
     entry_stop = entry_start[1:] + [stop]
     dataset = data_ops.BaseDataset.from_tensor_slices(
         (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
-    ).map(lambda start, stop: core_ops.read_wav(
-        filename, memory="", start=start, stop=stop, dtype=dtype))
-    self._dataset = dataset
+    ).map(lambda start, stop: self._wav.__getitem__(slice(start, stop)))
 
+    dataset = dataset.apply(tf.data.experimental.unbatch())
+    if batch != 0:
+      dataset = dataset.batch(batch)
+      shape = tf.TensorShape([None]).concatenate(shape)
+
+    self._dataset = dataset
     super(WAVDataset, self).__init__(
         self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
 
