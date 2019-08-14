@@ -13,6 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#ifndef TENSORFLOW_IO_CORE_KERNELS_STREAM_H_
+#define TENSORFLOW_IO_CORE_KERNELS_STREAM_H_
+
 #include "tensorflow/core/lib/io/inputstream_interface.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 
@@ -69,3 +72,5 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
 
 }  // namespace data
 }  // namespace tensorflow
+
+#endif  // TENSORFLOW_IO_CORE_KERNELS_STREAM_H_

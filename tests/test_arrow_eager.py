@@ -282,6 +282,14 @@ class ArrowDatasetTest(test.TestCase):
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data)
 
+    # test single file with 'file://' prefix
+    dataset = arrow_io.ArrowFeatherDataset(
+        "file://{}".format(f.name),
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes)
+    self.run_test_case(dataset, truth_data)
+
     # test multiple files
     dataset = arrow_io.ArrowFeatherDataset(
         [f.name, f.name],
