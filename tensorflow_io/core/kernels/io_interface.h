@@ -94,6 +94,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     *resource = new Type(env_);
     return Status::OK();
   }
+  mutex mu_;
   Env* env_;
 };
 
