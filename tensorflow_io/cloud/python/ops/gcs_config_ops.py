@@ -25,7 +25,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.training import training
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 
 _gcs_config_so = _load_library("_gcs_config_ops.so")
 

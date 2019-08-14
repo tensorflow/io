@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import ctypes
 
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 
 import _ctypes
 

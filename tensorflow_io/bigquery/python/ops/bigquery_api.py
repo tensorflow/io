@@ -31,7 +31,7 @@ from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 
 
 _bigquery_so = _load_library("_bigquery.so")
