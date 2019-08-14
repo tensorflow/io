@@ -81,7 +81,7 @@ class IOTensor(object):
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")) as scope:
       resource, dtypes, shapes, rate = core_ops.wav_indexable_init(
-          filename, memory="", metadata="",
+          filename,
           container=scope, shared_name=filename)
       return AudioIOTensor(
           resource, dtypes[0], shapes[0], rate, internal=True)

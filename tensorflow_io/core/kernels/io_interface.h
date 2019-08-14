@@ -46,16 +46,31 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
-    const Tensor& input_tensor = context->input(0);
-    const string& input = input_tensor.scalar<string>()();
 
-    const Tensor& memory_tensor = context->input(1);
-    const string& memory = memory_tensor.scalar<string>()();
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+    const string& input = input_tensor->scalar<string>()();
 
-    const Tensor& metadata_tensor = context->input(2);
-    const string& metadata = metadata_tensor.scalar<string>()();
+    Status status;
 
-    OP_REQUIRES_OK(context, this->resource_->Init(input, memory.data(), memory.size(), metadata));
+    const void *memory_data = nullptr;
+    size_t memory_size = 0;
+
+    const Tensor* memory_tensor;
+    status = context->input("memory", &memory_tensor);
+    if (status.ok()) {
+      memory_data = memory_tensor->scalar<string>()().data();
+      memory_size = memory_tensor->scalar<string>()().size();
+    }
+
+    string metadata;
+    const Tensor* metadata_tensor;
+    status = context->input("metadata", &metadata_tensor);
+    if (status.ok()) {
+      metadata = metadata_tensor->scalar<string>()();
+    }
+
+    OP_REQUIRES_OK(context, this->resource_->Init(input, memory_data, memory_size, metadata));
 
     std::vector<DataType> dtypes;
     std::vector<PartialTensorShape> shapes;
@@ -110,14 +125,17 @@ class IOIndexableGetItemOp : public OpKernel {
     OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
-    const Tensor& start_tensor = context->input(1);
-    int64 start = start_tensor.scalar<int64>()();
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    int64 start = start_tensor->scalar<int64>()();
 
-    const Tensor& stop_tensor = context->input(2);
-    int64 stop = stop_tensor.scalar<int64>()();
+    const Tensor* stop_tensor;
+    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    int64 stop = stop_tensor->scalar<int64>()();
 
-    const Tensor& step_tensor = context->input(3);
-    int64 step = step_tensor.scalar<int64>()();
+    const Tensor* step_tensor;
+    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
+    int64 step = step_tensor->scalar<int64>()();
 
     OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
 

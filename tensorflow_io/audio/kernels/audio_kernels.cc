@@ -213,6 +213,7 @@ class WAVIndexable : public IOIndexableInterface {
       position += head.size;
     } while (position < filesize);
 
+    return Status::OK();
   }
 
   string DebugString() const override {

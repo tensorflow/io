@@ -21,8 +21,6 @@ namespace tensorflow {
 
 REGISTER_OP("WAVIndexableInit")
   .Input("input: string")
-  .Input("memory: string")
-  .Input("metadata: string")
   .Output("output: resource")
   .Output("dtypes: int64")
   .Output("shapes: int64")
