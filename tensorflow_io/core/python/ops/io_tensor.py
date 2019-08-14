@@ -79,8 +79,7 @@ class IOTensor(object):
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", None), "IOFromAudio",
-                       [filename]) as scope:
+    with tf.name_scope(kwargs.get("name", "IOFromAudio")) as scope:
       resource, dtypes, shapes, rate = core_ops.wav_indexable_init(
           filename, memory="", metadata="",
           container=scope, shared_name=filename)
@@ -129,7 +128,8 @@ class IOTensor(object):
 
   @classmethod
   def from_tensor(cls,
-                  tensor):
+                  tensor,
+                  **kwargs):
     """Converts a `tf.Tensor` into a `IOTensor`.
 
     Examples:
@@ -146,7 +146,8 @@ class IOTensor(object):
     Raises:
       ValueError: If tensor is not a `Tensor`.
     """
-    with tf.name_scope(name, "IOFromTensor", [tensor]):
+    with tf.name_scope(kwargs.get("name", "IOFromTensor")):
+      _ = tensor
       raise NotImplementedError()
 
   def to_tensor(self, **kwargs):
@@ -163,8 +164,7 @@ class IOTensor(object):
     Returns:
       A `Tensor` with value obtained from this `IOTensor`.
     """
-    with tf.name_scope(kwargs.get("name", None), "IOToTensor",
-                       [self]):
+    with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
 
   #=============================================================================

@@ -12,10 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow-io"""
+"""Dataset"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.core.python.ops.io_tensor import IOTensor
-from tensorflow_io.core.python.ops.dataset_ops import Dataset
+import tensorflow as tf
+from tensorflow_io.audio.python.ops import audio_ops
+
+def create_dataset_class():
+  """create_dataset_class"""
+  dataset_class = tf.compat.v2.data.Dataset
+
+  def from_audio(_, filename, **kwargs):
+    return audio_ops.WAVDataset(filename, **kwargs)
+
+  setattr(dataset_class, "from_audio", classmethod(from_audio))
+
+  return dataset_class
+
+Dataset = create_dataset_class() # pylint: disable=invalid-name
