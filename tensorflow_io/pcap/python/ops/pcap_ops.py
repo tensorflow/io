@@ -14,8 +14,8 @@
 # ==============================================================================
 """PcapDataset"""
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import _load_library
 pcap_ops = _load_library('_pcap_ops.so')
 
 

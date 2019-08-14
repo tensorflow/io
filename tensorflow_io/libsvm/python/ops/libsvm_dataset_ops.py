@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from tensorflow import sparse
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
+from tensorflow_io.core.python.ops import _load_library
 gen_libsvm_ops = _load_library('_libsvm_ops.so')
 
 
