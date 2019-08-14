@@ -20,8 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-kafka_ops = _load_library('_kafka_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 class KafkaDataset(data.Dataset):
   """A Kafka Dataset that consumes the message.
@@ -79,9 +78,9 @@ class KafkaDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return kafka_ops.kafka_dataset(self._topics, self._servers,
-                                   self._group, self._eof, self._timeout,
-                                   self._config_global, self._config_topic)
+    return core_ops.kafka_dataset(self._topics, self._servers,
+                                  self._group, self._eof, self._timeout,
+                                  self._config_global, self._config_topic)
 
   @property
   def output_classes(self):
@@ -109,5 +108,5 @@ def write_kafka(message,
   Returns:
       A `Tensor` of type `string`. 0-D.
   """
-  return kafka_ops.write_kafka(
+  return core_ops.write_kafka(
       message=message, topic=topic, servers=servers, name=name)
