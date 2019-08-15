@@ -21,6 +21,7 @@ import collections
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.kafka.python.ops.kafka_ops import kafka_ops
 
 class _IOBaseTensor(object):
@@ -260,6 +261,48 @@ class IOTensor(_IOBaseTensor):
     """
     with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
+
+  #=============================================================================
+  # Dataset Conversions
+  #=============================================================================
+
+  def to_dataset(self):
+    """Converts this `IOTensor` into a `tf.data.Dataset`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+      A `tf.data.Dataset` with value obtained from this `IOTensor`.
+    """
+    class _IOTensorDataset(data_ops.BaseDataset):
+      """_IOTensorDataset"""
+
+      def __init__(self, dtype, shape, resource, function):
+        start = 0
+        stop = shape[0]
+        capacity = 4096
+        entry_start = list(range(start, stop, capacity))
+        entry_stop = entry_start[1:] + [stop]
+        dataset = data_ops.BaseDataset.from_tensor_slices((
+            tf.constant(entry_start, tf.int64),
+            tf.constant(entry_stop, tf.int64))).map(
+                lambda start, stop: function(
+                    resource, start, stop, 1, dtype=dtype)).apply(
+                        tf.data.experimental.unbatch())
+        self._dataset = dataset
+        self._resource = resource
+        self._function = function
+        shape = shape[1:]
+        super(_IOTensorDataset, self).__init__(
+            self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+
+    return _IOTensorDataset(
+        self._dtype, self._shape, self._resource, self._function)
 
 class IOIterableTensor(_IOBaseTensor):
   """IOIterableTensor"""

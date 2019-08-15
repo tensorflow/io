@@ -24,6 +24,7 @@ import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
+import tensorflow_io.audio as audio_io # pylint: disable=wrong-import-position
 
 audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -37,14 +38,14 @@ def test_audio_dataset():
 
   f = lambda x: float(x) / (1 << 15)
 
-  audio_dataset = tfio.Dataset.from_audio(audio_path)
+  audio_dataset = audio_io.WAVDataset(audio_path)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v.numpy())
     i += 1
   assert i == 5760
 
-  audio_dataset = tfio.Dataset.from_audio(audio_path).batch(2)
+  audio_dataset = tfio.IOTensor.from_audio(audio_path).to_dataset().batch(2)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v[0].numpy())
