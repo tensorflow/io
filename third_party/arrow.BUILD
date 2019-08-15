@@ -42,6 +42,7 @@ cc_library(
             "cpp/src/arrow/adapters/tensorflow/convert.h",
             "cpp/src/arrow/array/*.cc",
             "cpp/src/arrow/array/*.h",
+            "cpp/src/arrow/dataset/*.h",
             "cpp/src/arrow/io/*.cc",
             "cpp/src/arrow/io/*.h",
             "cpp/src/arrow/ipc/*.cc",
