@@ -6,6 +6,7 @@ load(
     "//third_party/tf:tensorflow_io.bzl",
     "tf_io_copts",
 )
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 cc_library(
     name = "sequence_ops",
@@ -118,6 +119,32 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@libav_9_20//:libav",
     ],
+)
+
+go_binary(
+    name = "prometheus_go",
+    srcs = ["go/prometheus.go"],
+    out = "python/ops/libtensorflow_io_prometheus.so",
+    cgo = True,
+    linkmode = "c-shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_prometheus_client_golang//api:go_default_library",
+        "@com_github_prometheus_client_golang//api/prometheus/v1:go_default_library",
+        "@com_github_prometheus_common//model:go_default_library",
+    ],
+)
+
+cc_library(
+    name = "prometheus_go_ops",
+    srcs = [
+        "prometheus_go.h",
+    ],
+    copts = tf_io_copts(),
+    data = [
+        "//tensorflow_io/core:prometheus_go.h",
+    ],
+    linkstatic = True,
 )
 
 cc_binary(

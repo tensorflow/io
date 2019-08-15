@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import ctypes
 import sys
 import inspect
 
@@ -45,8 +46,12 @@ def _load_library(filename, lib="op"):
         os.path.relpath(f, os.path.dirname(filename)))
     filenames.append(f)
   # Function to load the library, return True if file system library is loaded
-  load_fn = tf.load_op_library if lib == "op" \
-      else lambda f: tf.compat.v1.load_file_system_library(f) is None
+  if lib == "op":
+    load_fn = tf.load_op_library
+  elif lib == "dependency":
+    load_fn = lambda f: ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
+  else:
+    load_fn = lambda f: tf.compat.v1.load_file_system_library(f) is None
 
   # Try to load all paths for file, fail if none succeed
   errs = []
@@ -55,10 +60,11 @@ def _load_library(filename, lib="op"):
       l = load_fn(f)
       if l is not None:
         return l
-    except tf.errors.NotFoundError as e:
+    except (tf.errors.NotFoundError, OSError) as e:
       errs.append(str(e))
   raise NotImplementedError(
       "unable to open file: " +
       "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))
 
+_load_library("libtensorflow_io_prometheus.so", "dependency")
 core_ops = _load_library('libtensorflow_io.so')
