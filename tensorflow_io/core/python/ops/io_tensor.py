@@ -17,102 +17,29 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.kafka.python.ops.kafka_ops import kafka_ops
 
-class IOTensor(object):
-  """IOTensor"""
+class _IOBaseTensor(object):
+  """_IOBaseTensor"""
 
-  #=============================================================================
-  # Constructor (private)
-  #=============================================================================
   def __init__(self,
                dtype,
                shape,
+               properties,
                internal=False):
-    """Creates an `IOTensor`.
-
-    This constructor is private -- please use one of the following ops to
-    build `IOTensor`s:
-
-      * `tfio.IOTensor.from_tensor`
-      * `tfio.IOTensor.from_audio`
-
-    Args:
-      dtype: The type of the tensor.
-      shape: The shape of the tensor.
-      internal: True if the constructor is being called by one of the factory
-        methods.  If false, an exception will be raised.
-
-    Raises:
-      TypeError:
-    """
     if not internal:
       raise ValueError("IOTensor constructor is private; please use one "
                        "of the factory methods instead (e.g., "
                        "IOTensor.from_tensor())")
     self._dtype = dtype
     self._shape = shape
-    super(IOTensor, self).__init__()
-
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
-
-  @classmethod
-  def from_audio(cls,
-                 filename,
-                 **kwargs):
-    """Creates an `IOTensor` from an audio file.
-
-    The following audio file formats are supported:
-    - WAV
-
-    Args:
-      filename: A string, the filename of an audio file.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A `IOTensor`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return AudioIOTensor(filename, internal=True)
-
-  @classmethod
-  def from_kafka(cls,
-                 subscription,
-                 servers=None,
-                 timeout=None,
-                 eof=False,
-                 conf=None,
-                 **kwargs):
-    """Creates an `IOTensor` from a Kafka stream.
-
-    Args:
-      subscription: A string specifying the topic and partition for
-        Kafka stream server. The subscription is in the format
-        of [topic:partition:start:end], where start is
-        the start offset and end is the end offset.
-        By default start will be 0 and end will be -1.
-      servers: A string specifying bootstrap severs of the Kafka.
-        The default is `localhost:9092`.
-      timeout: An int64 for consumer timeout (in milliseconds).
-      eof: If True, the kafka reader will stop on EOF.
-      conf: A list of strings to specify the configurations.
-        All topic configurations will be prefixed with `topic.`.
-        e.g., `topic.compression.type=gzip`.
-        Global configurations will remain intact.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A `IOTensor`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
-      return KafkaIOTensor(
-          subscription, servers, timeout, eof, conf, internal=True)
+    self._properties = collections.OrderedDict(
+        {} if properties is None else properties)
+    super(_IOBaseTensor, self).__init__()
 
   #=============================================================================
   # Accessors
@@ -149,6 +76,145 @@ class IOTensor(object):
     """
     return tf.rank(self._shape)
 
+  @property
+  def properties(self):
+    """The properties associated with this tensor.
+
+    Returns:
+      A ordered dict with name and properties associated with this tensor.
+    """
+    return self._properties
+
+  #=============================================================================
+  # String Encoding
+  #=============================================================================
+  def __repr__(self):
+    props = "".join([
+        ", %s: %s" % (k, repr(v)) for (k, v) in self.properties.items()])
+    return "<%s: shape=%s, dtype=%s%s>" % (
+        type(self).__name__, self.shape, self.dtype.name, props)
+
+
+class IOTensor(_IOBaseTensor):
+  """IOTensor"""
+
+  #=============================================================================
+  # Constructor (private)
+  #=============================================================================
+  def __init__(self,
+               dtype,
+               shape,
+               resource,
+               function,
+               properties,
+               internal=False):
+    """Creates an `IOTensor`.
+
+    This constructor is private -- please use one of the following ops to
+    build `IOTensor`s:
+
+      * `tfio.IOTensor.from_tensor`
+      * `tfio.IOTensor.from_audio`
+
+    Args:
+      dtype: The type of the tensor.
+      shape: The shape of the tensor.
+      resource: The resource associated with the IO.
+      function: The function for indexing and accessing items with resource.
+      properties: An ordered dict of properties to be printed.
+      internal: True if the constructor is being called by one of the factory
+        methods.  If false, an exception will be raised.
+
+    Raises:
+      TypeError:
+    """
+    self._resource = resource
+    self._function = function
+    super(IOTensor, self).__init__(dtype, shape, properties, internal=internal)
+
+  #=============================================================================
+  # Indexing & Slicing
+  #=============================================================================
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    if isinstance(key, slice):
+      start = key.start
+      stop = key.stop
+      step = key.step
+      if start is None:
+        start = 0
+      if stop is None:
+        stop = -1
+      if step is None:
+        step = 1
+    else:
+      start = key
+      stop = key + 1
+      step = 1
+    return self._function(
+        self._resource, start, stop, step, dtype=self.dtype)
+
+  def __len__(self):
+    """Returns the total number of items of this IOTensor."""
+    return abs(self.shape[0])
+
+  #=============================================================================
+  # Factory Methods
+  #=============================================================================
+
+  @classmethod
+  def from_audio(cls,
+                 filename,
+                 **kwargs):
+    """Creates an `IOTensor` from an audio file.
+
+    The following audio file formats are supported:
+    - WAV
+
+    Args:
+      filename: A string, the filename of an audio file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+      return AudioIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_kafka(cls,
+                 subscription,
+                 servers=None,
+                 timeout=None,
+                 eof=True,
+                 conf=None,
+                 **kwargs):
+    """Creates an `IOTensor` from a Kafka stream.
+
+    Args:
+      subscription: A string specifying the topic and partition for
+        Kafka stream server. The subscription is in the format
+        of [topic:partition:start:end], where start is
+        the start offset and end is the end offset.
+        By default start will be 0 and end will be -1.
+      servers: A string specifying bootstrap severs of the Kafka.
+        The default is `localhost:9092`.
+      timeout: An int64 for consumer timeout (in milliseconds).
+      eof: If True, the kafka reader will stop on EOF.
+      conf: A list of strings to specify the configurations.
+        All topic configurations will be prefixed with `topic.`.
+        e.g., `topic.compression.type=gzip`.
+        Global configurations will remain intact.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
+      return KafkaIOTensor(
+          subscription, servers, timeout, eof, conf, internal=True)
 
   #=============================================================================
   # Tensor Type Conversions
@@ -195,14 +261,7 @@ class IOTensor(object):
     with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
 
-  #=============================================================================
-  # String Encoding
-  #=============================================================================
-  def __repr__(self):
-    return "<%s: shape=%s, dtype=%s>" % (
-        type(self).__name__, self.shape, self.dtype.name)
-
-class IOIterableTensor(IOTensor):
+class IOIterableTensor(_IOBaseTensor):
   """IOIterableTensor"""
 
   #=============================================================================
@@ -211,62 +270,21 @@ class IOIterableTensor(IOTensor):
   def __init__(self,
                dtype,
                shape,
-               iter_func,
+               function,
+               properties,
                internal=False):
     """Creates an `IOIterableTensor`. """
-    self._iter_func = iter_func
-    super(IOIterableTensor, self).__init__(dtype, shape, internal=internal)
+    self._function = function
+    super(IOIterableTensor, self).__init__(
+        dtype, shape, properties, internal=internal)
 
   #=============================================================================
   # Iterator
   #=============================================================================
   def __iter__(self):
-    return self._iter_func()
+    return self._function()
 
-class IOIndexableTensor(IOTensor):
-  """IOIndexableTensor"""
-
-  #=============================================================================
-  # Constructor (private)
-  #=============================================================================
-  def __init__(self,
-               dtype,
-               shape,
-               resource,
-               getitem_func,
-               internal=False):
-    """Creates an `IOIndexableTensor`. """
-    self._resource = resource
-    self._getitem_func = getitem_func
-    super(IOIndexableTensor, self).__init__(dtype, shape, internal=internal)
-
-  #=============================================================================
-  # Indexing & Slicing
-  #=============================================================================
-  def __getitem__(self, key):
-    """Returns the specified piece of this IOTensor."""
-    if isinstance(key, slice):
-      start = key.start
-      stop = key.stop
-      step = key.step
-      if start is None:
-        start = 0
-      if stop is None:
-        stop = -1
-      if step is None:
-        step = 1
-    else:
-      start = key
-      stop = key + 1
-      step = 1
-    return self._getitem_func(
-        self._resource, start, stop, step, dtype=self.dtype)
-
-  def __len__(self):
-    """Returns the total number of items of this IOTensor."""
-    return abs(self.shape[0])
-
-class AudioIOTensor(IOIndexableTensor):
+class AudioIOTensor(IOTensor):
   """AudioIOTensor"""
 
   #=============================================================================
@@ -281,10 +299,12 @@ class AudioIOTensor(IOIndexableTensor):
       dtype = tf.as_dtype(dtypes[0].numpy())
       shape = tf.TensorShape([
           None if dim < 0 else dim for dim in shapes[0].numpy() if dim != 0])
+      properties = collections.OrderedDict({"rate": rate.numpy()})
       self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
           dtype, shape,
           resource, core_ops.wav_indexable_get_item,
+          properties,
           internal=internal)
 
   #=============================================================================
@@ -295,14 +315,6 @@ class AudioIOTensor(IOIndexableTensor):
   def rate(self):
     """The sampel `rate` of the audio stream"""
     return self._rate
-
-  #=============================================================================
-  # String Encoding
-  #=============================================================================
-  def __repr__(self):
-    return "<%s: shape=%s, dtype=%s, rate=%s>" % (
-        type(self).__name__, self.shape, self.dtype.name, self.rate)
-
 
 class KafkaIOTensor(IOIterableTensor):
   """KafkaIOTensor"""
@@ -317,7 +329,7 @@ class KafkaIOTensor(IOIterableTensor):
       dtype = tf.string
       shape = tf.TensorShape([None])
 
-      def _iter_func():
+      def function():
         """_iter_func"""
         metadata = []
         if servers is not None:
@@ -326,8 +338,9 @@ class KafkaIOTensor(IOIterableTensor):
           metadata.append("conf.timeout=%d" % timeout)
         if eof is not None:
           metadata.append("conf.eof=%d" % (1 if eof else 0))
-        for e in conf:
-          metadata.append(e)
+        if conf is not None:
+          for e in conf:
+            metadata.append(e)
         resource, _, _ = kafka_ops.kafka_iterable_init(
             subscription, metadata=metadata,
             container=scope, shared_name=subscription)
@@ -339,4 +352,4 @@ class KafkaIOTensor(IOIterableTensor):
           yield value
 
       super(KafkaIOTensor, self).__init__(
-          dtype, shape, _iter_func, internal=internal)
+          dtype, shape, function, properties=None, internal=internal)
