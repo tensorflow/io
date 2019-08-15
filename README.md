@@ -169,6 +169,16 @@ $ curl -o .pylint -sSL https://raw.githubusercontent.com/tensorflow/tensorflow/m
 $ find . -name '*.py' | xargs pylint --rcfile=.pylint
 ```
 
+#### Running Bazel Style Checks
+
+Style checks for Bazel files can be run with the following Docker command:
+
+```sh
+$ docker run -i -t --rm -v $PWD:/v -w /v --net=host golang:1.12 bash -x -e -c 'go get github.com/bazelbuild/buildtools/buildifier && buildifier $(find . -type f \( -name WORKSPACE -or -name BUILD -or -name *.BUILD \))'
+```
+
+After the command is run, any Bazel files with style issues will have been modified and corrected.
+
 ### R
 
 We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
