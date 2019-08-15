@@ -70,3 +70,45 @@ float_feature = json_io.read_json(
     feature_filename,
     feature_cols["floatfeature"])
 ```
+
+## JSON Datasets with Keras
+Here is an example of how to use JSON Datasets to parse records from JSON file and
+pass it into tf.Keras for training.
+
+This example uses the same dataset but in JSON format as this 
+[TensorFlow Custom Training Walkthrough](https://www.tensorflow.org/tutorials/eager/custom_training_walkthrough) 
+does, and ties
+to solve the classic [Iris classification problem](https://en.wikipedia.org/wiki/Iris_flower_data_set) 
+by using the `tf.Keras`.
+
+The dataset are as following:
+The `iris.json` contains 4-feature records of the flower measurements.
+```json
+[
+  {"sepalLength": 6.9, "sepalWidth": 3.1, "petalLength": 5.1, "petalWidth": 2.3},
+  {"sepalLength": 5.8, "sepalWidth": 2.7, "petalLength": 5.1, "petalWidth": 1.9},
+  {"sepalLength": 6.8, "sepalWidth": 3.2, "petalLength": 5.9, "petalWidth": 2.3},
+  {"sepalLength": 6.7, "sepalWidth": 3.3, "petalLength": 5.7, "petalWidth": 2.5},
+  {"sepalLength": 6.7, "sepalWidth": 3.0, "petalLength": 5.2, "petalWidth": 2.3},
+  ...
+  {"sepalLength": 6.3, "sepalWidth": 2.5, "petalLength": 5.0, "petalWidth": 1.9},
+  {"sepalLength": 6.5, "sepalWidth": 3.0, "petalLength": 5.2, "petalWidth": 2.0},
+  {"sepalLength": 6.2, "sepalWidth": 3.4, "petalLength": 5.4, "petalWidth": 2.3},
+  {"sepalLength": 5.9, "sepalWidth": 3.0, "petalLength": 5.1, "petalWidth": 1.8}
+]
+```
+The `species.json` contains the label: it's an integer value of 0, 1, or 2 that corresponds to a flower name.
+```json
+[
+  {"species":1},
+  {"species":1},
+  {"species":1},
+  {"species":2},
+  {"species":2},
+  {"species":2},
+  ...
+  {"species":3},
+  {"species":3},
+  {"species":3}
+]
+```
