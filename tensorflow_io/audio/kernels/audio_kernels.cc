@@ -73,8 +73,12 @@ class WAVIndexable : public IOIndexableInterface {
   : env_(env) {}
 
   ~WAVIndexable() {}
-  Status Init(const string& input, const void* memory_data, const int64 memory_size, const string& metadata) override {
-    file_.reset(new SizedRandomAccessFile(env_, input, memory_data, memory_size));
+    Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     StringPiece result;

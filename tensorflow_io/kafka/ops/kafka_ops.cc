@@ -19,6 +19,31 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("KafkaIterableInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("KafkaIterableNext")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Output("output: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->UnknownShape());
+    return Status::OK();
+   });
+
 REGISTER_OP("KafkaOutputSequence")
     .Input("topic: string")
     .Input("servers: string")

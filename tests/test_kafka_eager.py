@@ -23,7 +23,16 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_io.kafka as kafka_io
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
+import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
+
+def test_kafka_io_tensor():
+  kafka = tfio.IOTensor.from_kafka("test", eof=True)
+  assert np.all([
+      e.numpy() for e in kafka] == [
+          ("D" + str(i)).encode() for i in range(10)])
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and

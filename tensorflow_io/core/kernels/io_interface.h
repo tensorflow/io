@@ -22,13 +22,18 @@ namespace data {
 
 class IOInterface : public ResourceBase {
  public:
-  virtual Status Init(const string& input, const void* memory_data, const int64 memory_size, const string& metadata) = 0;
+  virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) = 0;
 
   virtual Status Extra(std::vector<Tensor>* extra) {
     // This is the chance to provide additional extra information which should be appended to extra.
     return Status::OK();
   }
+};
+
+class IOIterableInterface : public IOInterface {
+ public:
+  virtual Status Next(const int64 capacity, std::vector<Tensor>& tensors, int64* record_read) = 0;
 };
 
 class IOIndexableInterface : public IOInterface {
@@ -47,11 +52,23 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
 
+    std::vector<string> input;
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    for (int64 i = 0; i < input_tensor->NumElements(); i++) {
+        input.push_back(input_tensor->flat<string>()(i));
+    }
 
     Status status;
+
+    std::vector<string> metadata;
+    const Tensor* metadata_tensor;
+    status = context->input("metadata", &metadata_tensor);
+    if (status.ok()) {
+      for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
+        metadata.push_back(metadata_tensor->flat<string>()(i));
+      }
+    }
 
     const void *memory_data = nullptr;
     size_t memory_size = 0;
@@ -63,21 +80,18 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       memory_size = memory_tensor->scalar<string>()().size();
     }
 
-    string metadata;
-    const Tensor* metadata_tensor;
-    status = context->input("metadata", &metadata_tensor);
-    if (status.ok()) {
-      metadata = metadata_tensor->scalar<string>()();
-    }
-
-    OP_REQUIRES_OK(context, this->resource_->Init(input, memory_data, memory_size, metadata));
+    OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
 
     std::vector<DataType> dtypes;
     std::vector<PartialTensorShape> shapes;
     OP_REQUIRES_OK(context, this->resource_->Spec(dtypes, shapes));
     int64 maxrank = 0;
     for (size_t component = 0; component < shapes.size(); component++) {
-      for (int64 i = 0; i < shapes[component].dims(); i++) {
+      if (dynamic_cast<IOIndexableInterface *>(this->resource_) != nullptr) {
+        int64 i = 0;
+        OP_REQUIRES(context, (shapes[component].dim_size(i) > 0), errors::InvalidArgument("component (", component, ")'s shape[", i, "] should not be None, received: ", shapes[component]));
+      }
+      for (int64 i = 1; i < shapes[component].dims(); i++) {
         OP_REQUIRES(context, (shapes[component].dim_size(i) > 0), errors::InvalidArgument("component (", component, ")'s shape[", i, "] should not be None, received: ", shapes[component]));
       }
       maxrank = maxrank > shapes[component].dims() ? maxrank : shapes[component].dims();
@@ -113,6 +127,50 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
   Env* env_;
 };
 
+template<typename Type>
+class IOIterableNextOp : public OpKernel {
+ public:
+  explicit IOIterableNextOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* capacity_tensor;
+    OP_REQUIRES_OK(context, context->input("capacity", &capacity_tensor));
+    const int64 capacity = capacity_tensor->scalar<int64>()();
+
+    OP_REQUIRES(context, (capacity > 0), errors::InvalidArgument("capacity <= 0 is not supported: ", capacity));
+
+    std::vector<DataType> dtypes;
+    std::vector<PartialTensorShape> shapes;
+    OP_REQUIRES_OK(context, resource->Spec(dtypes, shapes));
+
+    std::vector<Tensor> tensors;
+    for (size_t i = 0; i < dtypes.size(); i++) {
+      gtl::InlinedVector<int64, 4> dims = shapes[i].dim_sizes();
+      dims[0] = capacity;
+      tensors.emplace_back(Tensor(dtypes[i], TensorShape(dims)));
+    }
+
+    int64 record_read;
+    OP_REQUIRES_OK(context, resource->Next(capacity, tensors, &record_read));
+    for (size_t i = 0; i < tensors.size(); i++) {
+      if (record_read < capacity) {
+        gtl::InlinedVector<int64, 4> dims = shapes[i].dim_sizes();
+        dims[0] = record_read;
+        Tensor value;
+        value.CopyFrom(tensors[i], TensorShape(dims));
+        context->set_output(i, value);
+      } else {
+        context->set_output(i, tensors[i]);
+      }
+    }
+  }
+};
 template<typename Type>
 class IOIndexableGetItemOp : public OpKernel {
  public:
