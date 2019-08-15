@@ -48,6 +48,10 @@ cc_library(
             "cpp/src/arrow/ipc/*.h",
             "cpp/src/arrow/util/*.cc",
             "cpp/src/arrow/util/*.h",
+            "cpp/src/arrow/vendored/**/*.cpp",
+            "cpp/src/arrow/vendored/**/*.c",
+            "cpp/src/arrow/vendored/**/*.hpp",
+            "cpp/src/arrow/vendored/**/*.h",
         ],
         exclude = [
             "cpp/src/arrow/**/*-test.cc",
