@@ -115,6 +115,7 @@ cc_library(
     ],
     includes = [
         "cpp/src",
+        "cpp/src/arrow/vendored/xxhash",
     ],
     deps = [
         ":arrow_format",
