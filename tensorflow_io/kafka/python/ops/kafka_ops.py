@@ -17,8 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.core.python.ops import _load_library
-kafka_ops = _load_library('_kafka_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 
 class KafkaOutputSequence(object):
@@ -28,11 +27,11 @@ class KafkaOutputSequence(object):
     """Create a `KafkaOutputSequence`.
     """
     self._topic = topic
-    self._resource = kafka_ops.kafka_output_sequence(
+    self._resource = core_ops.kafka_output_sequence(
         topic=topic, servers=servers)
 
   def setitem(self, index, item):
-    kafka_ops.kafka_output_sequence_set_item(self._resource, index, item)
+    core_ops.kafka_output_sequence_set_item(self._resource, index, item)
 
   def flush(self):
-    kafka_ops.kafka_output_sequence_flush(self._resource)
+    core_ops.kafka_output_sequence_flush(self._resource)

@@ -14,12 +14,12 @@ cc_library(
         "ops/prometheus_ops.cc",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "//tensorflow_io/prometheus/go:prometheus.cc",
+        "//tensorflow_io/core:prometheus_go_ops",
     ],
+    #data = [
+    #    "//tensorflow_io/core:prometheus_go.h",
+    #]
 )

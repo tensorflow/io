@@ -7,8 +7,8 @@ load(
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_kafka_ops.so",
+cc_library(
+    name = "kafka_ops",
     srcs = [
         "kernels/kafka_dataset_ops.cc",
         "kernels/kafka_sequence.cc",
@@ -16,11 +16,10 @@ cc_binary(
         "ops/kafka_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:sequence_ops",
         "@kafka",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
     ],
 )
