@@ -34,6 +34,11 @@ def test_kafka_io_tensor():
       e.numpy() for e in kafka] == [
           ("D" + str(i)).encode() for i in range(10)])
 
+  dataset = kafka.to_dataset().batch(2)
+  assert np.all([
+      e.numpy().tolist() for e in dataset] == np.asarray([
+          ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
+
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
          tf.version.VERSION.startswith("2.0.")), reason=None)

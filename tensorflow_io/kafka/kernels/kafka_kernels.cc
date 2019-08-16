@@ -179,12 +179,13 @@ class KafkaIterable : public IOIterableInterface {
   }
   Status Next(const int64 capacity, std::vector<Tensor>& tensors, int64* record_read) override {
     *record_read = 0;
-    while ((*record_read) < capacity) {
+    while (consumer_.get() != nullptr && (*record_read) < capacity) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal("failed to consume due to all brokers down");
       }
       if (range_.second >= 0 && (subscription_->offset() >= range_.second || offset_ >= range_.second)) {
         // EOF of topic
+        consumer_.reset(nullptr);
         return Status::OK();
       }
 
@@ -200,6 +201,7 @@ class KafkaIterable : public IOIterableInterface {
       if (message->err() == RdKafka::ERR__PARTITION_EOF) {
         LOG(INFO) << "Partition reach EOF, current offset: " << offset_;
         if (eof_) {
+          consumer_.reset(nullptr);
           return Status::OK();
         }
       }

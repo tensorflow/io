@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import collections
 
 import tensorflow as tf
@@ -325,7 +326,55 @@ class IOIterableTensor(_IOBaseTensor):
   # Iterator
   #=============================================================================
   def __iter__(self):
-    return self._function()
+    resource = self._function["init"](self._function["data"])
+    capacity = 1
+    while True:
+      value = self._function["next"](resource, capacity=capacity)
+      if tf.shape(value)[0].numpy() < capacity:
+        return
+      yield value
+
+  #=============================================================================
+  # Dataset Conversions
+  #=============================================================================
+
+  def to_dataset(self):
+    """Converts this `IOIterableTensor` into a `tf.data.Dataset`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+      A `tf.data.Dataset` with value obtained from this `IOIterableTensor`.
+    """
+    class _IOIterableTensorDataset(data_ops.BaseDataset):
+      """_IOIterableTensorDataset"""
+
+      def __init__(self, dtype, shape, function):
+        func_init = function["init"]
+        func_next = function["next"]
+        func_data = function["data"]
+        resource = func_init(func_data)
+        capacity = 4096
+        dataset = data_ops.BaseDataset.range(
+            0, sys.maxsize, capacity).map(
+                lambda i: func_next(resource, capacity)).apply(
+                    tf.data.experimental.take_while(
+                        lambda v: tf.greater(tf.shape(v)[0], 0))).apply(
+                            tf.data.experimental.unbatch())
+        self._dataset = dataset
+        self._resource = resource
+        self._function = function
+        shape = shape[1:]
+        super(_IOIterableTensorDataset, self).__init__(
+            self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+
+    return _IOIterableTensorDataset(
+        self._dtype, self._shape, self._function)
 
 class AudioIOTensor(IOTensor):
   """AudioIOTensor"""
@@ -369,30 +418,31 @@ class KafkaIOTensor(IOIterableTensor):
                subscription, servers, timeout, eof, conf,
                internal=False):
     with tf.name_scope("KafkaIOTensor") as scope:
+
+      metadata = []
+      if servers is not None:
+        metadata.append("bootstrap.servers=%s" % servers)
+      if timeout is not None:
+        metadata.append("conf.timeout=%d" % timeout)
+      if eof is not None:
+        metadata.append("conf.eof=%d" % (1 if eof else 0))
+      if conf is not None:
+        for e in conf:
+          metadata.append(e)
+
+      func_data = {"subscription": subscription, "metadata": metadata}
+      def func_init(data):
+        """func_init"""
+        resource, _, _ = kafka_ops.kafka_iterable_init(
+            data["subscription"], metadata=data["metadata"],
+            container=scope, shared_name=subscription)
+        return resource
+      func_next = kafka_ops.kafka_iterable_next
+
       dtype = tf.string
       shape = tf.TensorShape([None])
 
-      def function():
-        """_iter_func"""
-        metadata = []
-        if servers is not None:
-          metadata.append("bootstrap.servers=%s" % servers)
-        if timeout is not None:
-          metadata.append("conf.timeout=%d" % timeout)
-        if eof is not None:
-          metadata.append("conf.eof=%d" % (1 if eof else 0))
-        if conf is not None:
-          for e in conf:
-            metadata.append(e)
-        resource, _, _ = kafka_ops.kafka_iterable_init(
-            subscription, metadata=metadata,
-            container=scope, shared_name=subscription)
-        capacity = 1
-        while True:
-          value = kafka_ops.kafka_iterable_next(resource, capacity=capacity)
-          if tf.shape(value)[0].numpy() < capacity:
-            return
-          yield value
-
       super(KafkaIOTensor, self).__init__(
-          dtype, shape, function, properties=None, internal=internal)
+          dtype, shape,
+          {"init": func_init, "next": func_next, "data": func_data},
+          properties=None, internal=internal)

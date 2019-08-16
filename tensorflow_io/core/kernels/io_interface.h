@@ -160,11 +160,7 @@ class IOIterableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, resource->Next(capacity, tensors, &record_read));
     for (size_t i = 0; i < tensors.size(); i++) {
       if (record_read < capacity) {
-        gtl::InlinedVector<int64, 4> dims = shapes[i].dim_sizes();
-        dims[0] = record_read;
-        Tensor value;
-        value.CopyFrom(tensors[i], TensorShape(dims));
-        context->set_output(i, value);
+        context->set_output(i, tensors[i].Slice(0, record_read));
       } else {
         context->set_output(i, tensors[i]);
       }
