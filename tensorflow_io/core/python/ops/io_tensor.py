@@ -23,7 +23,6 @@ import collections
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.kafka.python.ops.kafka_ops import kafka_ops
 
 class _IOBaseTensor(object):
   """_IOBaseTensor"""
@@ -433,11 +432,11 @@ class KafkaIOTensor(IOIterableTensor):
       func_data = {"subscription": subscription, "metadata": metadata}
       def func_init(data):
         """func_init"""
-        resource, _, _ = kafka_ops.kafka_iterable_init(
+        resource, _, _ = core_ops.kafka_iterable_init(
             data["subscription"], metadata=data["metadata"],
             container=scope, shared_name=subscription)
         return resource
-      func_next = kafka_ops.kafka_iterable_next
+      func_next = core_ops.kafka_iterable_next
 
       dtype = tf.string
       shape = tf.TensorShape([None])
