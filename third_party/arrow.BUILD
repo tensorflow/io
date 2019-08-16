@@ -72,6 +72,7 @@ cc_library(
         ],
     ) + [
         "cpp/src/parquet/api/io.h",
+        "cpp/src/parquet/windows_compatibility.h",
         "cpp/src/parquet/api/reader.h",
         "cpp/src/parquet/api/schema.h",
         "cpp/src/parquet/deprecated_io.cc",

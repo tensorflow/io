@@ -11,6 +11,7 @@ cc_library(
     name = "boost",
     srcs = glob([
         "boost/**/*.hpp",
+        "boost/**/*.ipp",
     ]) + glob([
         "boost/predef/**/*.h",
     ]) + [
