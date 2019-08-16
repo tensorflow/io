@@ -14,11 +14,12 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
-#include "go/prometheus.h"
+#include "tensorflow_io/core/prometheus_go.h"
 
 namespace tensorflow {
 namespace data {
 namespace {
+
 
 class ReadPrometheusOp : public OpKernel {
  public:
