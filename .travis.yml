@@ -18,8 +18,7 @@ before_install:
   set -x -e ;
   if [[ $(uname) == "Darwin" ]]; then
     export PYVER=$(echo $TRAVIS_JOB_NAME | awk '{print $NF}') ;
-    pyenv commands ;
-    pyenv versions ;
+    echo pyenv install --list ;
     pyenv install $PYVER ;
     pyenv global $PYVER ;
     export PATH=$(dirname $(pyenv which python)):$PATH ;
@@ -39,7 +38,7 @@ cache:
   - .cache/bazel
 
 install:
-- export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NAME | awk -F. '{print $1}')
+- export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NAME | awk '{print $1}')
 - echo $BAZEL_CACHE
 - |
   if [[ $(uname) == "Darwin" ]]; then
@@ -80,7 +79,7 @@ jobs:
     after_success: bash -x -e .travis/after-success-tf20.sh
 
   - stage: build
-    name: "macOS TensorFlow 2.0 Preview Release Build Python 2.7"
+    name: "macOS TensorFlow 2.0 Preview Release Build Python 2.7.13"
     os: osx
     osx_image: xcode9
     script:
@@ -106,7 +105,7 @@ jobs:
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
-    name: "macOS Nightly Release Build Python 2.7"
+    name: "macOS Nightly Release Build Python 2.7.13"
     os: osx
     osx_image: xcode9
     script:
