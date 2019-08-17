@@ -100,13 +100,17 @@ arrow::Status ArrowStreamClient::Connect() {
 
 arrow::Status ArrowStreamClient::Close() {
   int status = close(sock_);
-  sock_ = 1;
+  sock_ = -1;
 
   if (status != 0) {
     return arrow::Status::IOError("Failed to correctly close connection");
   }
 
   return arrow::Status::OK();
+}
+
+bool ArrowStreamClient::closed() const {
+  return sock_ == -1;
 }
 
 arrow::Status ArrowStreamClient::Tell(int64_t* position) const {

@@ -36,6 +36,9 @@ public:
   arrow::Status Close() override {
     return arrow::Status::OK();
   }
+  bool closed() const override {
+    return false;
+  }
   arrow::Status Tell(int64_t* position) const override {
     return arrow::Status::NotImplemented("Tell");
   }

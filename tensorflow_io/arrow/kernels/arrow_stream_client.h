@@ -28,6 +28,7 @@ class ArrowStreamClient : public arrow::io::InputStream {
 
   arrow::Status Connect();
   arrow::Status Close() override;
+  bool closed() const override;
   arrow::Status Tell(int64_t* position) const override;
   arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override;
   arrow::Status Read(int64_t nbytes,

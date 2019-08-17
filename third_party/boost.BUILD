@@ -11,10 +11,18 @@ cc_library(
     name = "boost",
     srcs = glob([
         "boost/**/*.hpp",
+        "boost/**/*.ipp",
     ]) + glob([
         "boost/predef/**/*.h",
     ]) + [
         "boost/predef.h",
+        "libs/filesystem/src/codecvt_error_category.cpp",
+        "libs/filesystem/src/operations.cpp",
+        "libs/filesystem/src/path.cpp",
+        "libs/filesystem/src/path_traits.cpp",
+        "libs/filesystem/src/portability.cpp",
+        "libs/filesystem/src/unique_path.cpp",
+        "libs/filesystem/src/utf8_codecvt_facet.cpp",
         "libs/iostreams/src/gzip.cpp",
         "libs/iostreams/src/zlib.cpp",
         "libs/regex/src/c_regex_traits.cpp",
@@ -35,6 +43,7 @@ cc_library(
         "libs/regex/src/wc_regex_traits.cpp",
         "libs/regex/src/wide_posix_api.cpp",
         "libs/regex/src/winstances.cpp",
+        "libs/system/src/error_code.cpp",
     ],
     includes = [
         ".",
