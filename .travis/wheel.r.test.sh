@@ -7,7 +7,7 @@ python get-pip.py -q
 
 CPYTHON_VERSION=$(python -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
 (cd wheelhouse && python -m pip install *-cp${CPYTHON_VERSION}-*.whl)
-python -m pip install -q pytest boto3 google-cloud-pubsub==0.39.1 pyarrow==0.11.1 pandas==0.19.2
+python -m pip install -q pytest boto3 google-cloud-pubsub==0.39.1 pyarrow==0.14.1 pandas==0.24.2
 
 set +e
 DEBIAN_FRONTEND=noninteractive apt-get -y -qq install software-properties-common apt-transport-https

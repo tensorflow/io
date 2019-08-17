@@ -94,11 +94,11 @@ http_archive(
     patches = [
         "//third_party:parquet.patch",
     ],
-    sha256 = "3219c4e87e7cf979017f0cc5bc5dd6a3611d0fc750e821911fab998599dc125b",
-    strip_prefix = "arrow-apache-arrow-0.11.1",
+    sha256 = "69d9de9ec60a3080543b28a5334dbaf892ca34235b8bd8f8c1c01a33253926c1",
+    strip_prefix = "arrow-apache-arrow-0.14.1",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz",
+        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
     ],
 )
 
@@ -117,11 +117,11 @@ http_archive(
 http_archive(
     name = "thrift",
     build_file = "//third_party:thrift.BUILD",
-    sha256 = "0e324569321a1b626381baabbb98000c8dd3a59697292dbcc71e67135af0fefd",
-    strip_prefix = "thrift-0.11.0",
+    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
+    strip_prefix = "thrift-0.12.0",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.11.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.11.0.tar.gz",
+        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
+        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
     ],
 )
 
@@ -529,5 +529,16 @@ http_archive(
     strip_prefix = "dcmtk-3.6.4",
     urls = [
         "https://dicom.offis.de/download/dcmtk/dcmtk364/dcmtk-3.6.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "double_conversion",
+    build_file = "//third_party:double_conversion.BUILD",
+    sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
+    strip_prefix = "double-conversion-3992066a95b823efc8ccc1baf82a1cfc73f6e9b8",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
+        "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
     ],
 )
