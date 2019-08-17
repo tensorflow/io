@@ -16,4 +16,4 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  //tensorflow_io/...
+  -- //tensorflow_io/grpc:all
