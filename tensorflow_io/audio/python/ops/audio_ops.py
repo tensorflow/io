@@ -21,10 +21,10 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.core.python.ops import io_tensor
 
-class WAVDataset(data_ops.BaseDataset):
+class WAVDataset(tf.compat.v2.data.Dataset):
   """A WAV Dataset"""
 
-  def __init__(self, filename, batch=None, **kwargs):
+  def __init__(self, filename, batch=None):
     """Create a WAVDataset.
 
     Args:
@@ -35,28 +35,16 @@ class WAVDataset(data_ops.BaseDataset):
       raise NotImplementedError("WAVDataset only support eager mode")
 
     self._wav = io_tensor.IOTensor.from_audio(filename)
-
-    dtype = self._wav.dtype
-    shape = self._wav.shape[1:]
-    start = 0
-    stop = self._wav.shape[0]
-
-    # capacity is the rough count for each chunk in dataset
-    capacity = kwargs.get("capacity", 65536)
-    entry_start = list(range(start, stop, capacity))
-    entry_stop = entry_start[1:] + [stop]
-    dataset = data_ops.BaseDataset.from_tensor_slices(
-        (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
-    ).map(lambda start, stop: self._wav.__getitem__(slice(start, stop)))
-
-    dataset = dataset.apply(tf.data.experimental.unbatch())
-    if batch != 0:
-      dataset = dataset.batch(batch)
-      shape = tf.TensorShape([None]).concatenate(shape)
-
-    self._dataset = dataset
+    self._dataset = self._wav.to_dataset()
     super(WAVDataset, self).__init__(
-        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+        self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def _element_structure(self):
+    return self._dataset._element_structure # pylint: disable=protected-access
 
 class AudioDataset(data_ops.Dataset):
   """A Audio File Dataset that reads the audio file."""

@@ -38,9 +38,20 @@ REGISTER_OP("KafkaIterableInit")
 REGISTER_OP("KafkaIterableNext")
   .Input("input: resource")
   .Input("capacity: int64")
-  .Output("output: string")
+  .Output("output: dtype")
+  .Attr("dtype: list(type) >= 1")
+  .Attr("shape: list(shape) >= 1")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->UnknownShape());
+    std::vector<PartialTensorShape> shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    if (shape.size() != c->num_outputs()) {
+      return errors::InvalidArgument("`shape` must be the same length as `types` (", shape.size(), " vs. ", c->num_outputs());
+    }
+    for (size_t i = 0; i < shape.size(); ++i) {
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape[i], &entry));
+      c->set_output(static_cast<int64>(i), entry);
+    }
     return Status::OK();
    });
 

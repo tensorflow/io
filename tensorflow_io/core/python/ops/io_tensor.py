@@ -22,22 +22,19 @@ import collections
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import data_ops
 
 class _IOBaseTensor(object):
   """_IOBaseTensor"""
 
   def __init__(self,
-               dtype,
-               shape,
+               spec,
                properties,
                internal=False):
     if not internal:
       raise ValueError("IOTensor constructor is private; please use one "
                        "of the factory methods instead (e.g., "
                        "IOTensor.from_tensor())")
-    self._dtype = dtype
-    self._shape = shape
+    self._spec = spec
     self._properties = collections.OrderedDict(
         {} if properties is None else properties)
     super(_IOBaseTensor, self).__init__()
@@ -47,9 +44,14 @@ class _IOBaseTensor(object):
   #=============================================================================
 
   @property
+  def spec(self):
+    """The `TensorSpec` of values in this tensor."""
+    return self._spec
+
+  @property
   def dtype(self):
     """The `DType` of values in this tensor."""
-    return self._dtype
+    return tf.nest.map_structure(lambda e: e.dtype, self._spec)
 
   @property
   def shape(self):
@@ -65,7 +67,7 @@ class _IOBaseTensor(object):
       ```python
       ```
     """
-    return self._shape
+    return tf.nest.map_structure(lambda e: e.shape, self._spec)
 
   @property
   def rank(self):
@@ -92,8 +94,8 @@ class _IOBaseTensor(object):
   def __repr__(self):
     props = "".join([
         ", %s: %s" % (k, repr(v)) for (k, v) in self.properties.items()])
-    return "<%s: shape=%s, dtype=%s%s>" % (
-        type(self).__name__, self.shape, self.dtype.name, props)
+    return "<%s: spec=%s%s>" % (
+        type(self).__name__, self.spec, props)
 
 
 class IOTensor(_IOBaseTensor):
@@ -103,8 +105,7 @@ class IOTensor(_IOBaseTensor):
   # Constructor (private)
   #=============================================================================
   def __init__(self,
-               dtype,
-               shape,
+               spec,
                resource,
                function,
                properties,
@@ -118,8 +119,7 @@ class IOTensor(_IOBaseTensor):
       * `tfio.IOTensor.from_audio`
 
     Args:
-      dtype: The type of the tensor.
-      shape: The shape of the tensor.
+      spec: The `TensorSpec` of the tensor.
       resource: The resource associated with the IO.
       function: The function for indexing and accessing items with resource.
       properties: An ordered dict of properties to be printed.
@@ -131,7 +131,7 @@ class IOTensor(_IOBaseTensor):
     """
     self._resource = resource
     self._function = function
-    super(IOTensor, self).__init__(dtype, shape, properties, internal=internal)
+    super(IOTensor, self).__init__(spec, properties, internal=internal)
 
   #=============================================================================
   # Indexing & Slicing
@@ -152,12 +152,20 @@ class IOTensor(_IOBaseTensor):
       start = key
       stop = key + 1
       step = 1
-    return self._function(
-        self._resource, start, stop, step, dtype=self.dtype)
+    dtype = tf.nest.flatten(
+        tf.nest.map_structure(lambda e: e.dtype, self.spec))
+    shape = tf.nest.flatten(
+        tf.nest.map_structure(lambda e: e.shape, self.spec))
+    return tf.nest.pack_sequence_as(self.spec, self._function(
+        self._resource,
+        start, stop, step,
+        dtype=dtype,
+        shape=shape))
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
-    return abs(self.shape[0])
+    return tf.nest.flatten(
+        tf.nest.map_structure(lambda e: e.shape, self.spec))[0][0]
 
   #=============================================================================
   # Factory Methods
@@ -182,6 +190,23 @@ class IOTensor(_IOBaseTensor):
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
       return AudioIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_json(cls,
+                filename,
+                **kwargs):
+    """Creates an `IOTensor` from an json file.
+
+    Args:
+      filename: A string, the filename of an json file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromJSON")):
+      return JSONIOTensor(filename, internal=True)
 
   @classmethod
   def from_kafka(cls,
@@ -279,30 +304,51 @@ class IOTensor(_IOBaseTensor):
     Returns:
       A `tf.data.Dataset` with value obtained from this `IOTensor`.
     """
-    class _IOTensorDataset(data_ops.BaseDataset):
+    class _IOTensorDataset(tf.compat.v2.data.Dataset):
       """_IOTensorDataset"""
 
-      def __init__(self, dtype, shape, resource, function):
+      def __init__(self, spec, resource, function):
         start = 0
-        stop = shape[0]
+        stop = tf.nest.flatten(
+            tf.nest.map_structure(lambda e: e.shape, spec))[0][0]
         capacity = 4096
         entry_start = list(range(start, stop, capacity))
         entry_stop = entry_start[1:] + [stop]
-        dataset = data_ops.BaseDataset.from_tensor_slices((
+
+        dtype = tf.nest.flatten(
+            tf.nest.map_structure(lambda e: e.dtype, spec))
+        shape = tf.nest.flatten(
+            tf.nest.map_structure(
+                lambda e: tf.TensorShape(
+                    [None]).concatenate(e.shape[1:]), spec))
+
+        dataset = tf.compat.v2.data.Dataset.from_tensor_slices((
             tf.constant(entry_start, tf.int64),
-            tf.constant(entry_stop, tf.int64))).map(
-                lambda start, stop: function(
-                    resource, start, stop, 1, dtype=dtype)).apply(
-                        tf.data.experimental.unbatch())
+            tf.constant(entry_stop, tf.int64)))
+        dataset = dataset.map(
+            lambda start, stop: function(
+                resource, start, stop, 1, dtype=dtype, shape=shape))
+        # Note: tf.data.Dataset consider tuple `(e, )` as one element
+        # instead of a sequence. So next `unbatch()` will not work.
+        # The tf.stack() below is necessary.
+        if len(dtype) == 1:
+          dataset = dataset.map(tf.stack)
+        dataset = dataset.apply(tf.data.experimental.unbatch())
         self._dataset = dataset
         self._resource = resource
         self._function = function
-        shape = shape[1:]
         super(_IOTensorDataset, self).__init__(
-            self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+            self._dataset._variant_tensor) # pylint: disable=protected-access
+
+      def _inputs(self):
+        return []
+
+      @property
+      def _element_structure(self):
+        return self._dataset._element_structure # pylint: disable=protected-access
 
     return _IOTensorDataset(
-        self._dtype, self._shape, self._resource, self._function)
+        self.spec, self._resource, self._function)
 
 class IOIterableTensor(_IOBaseTensor):
   """IOIterableTensor"""
@@ -311,27 +357,32 @@ class IOIterableTensor(_IOBaseTensor):
   # Constructor (private)
   #=============================================================================
   def __init__(self,
-               dtype,
-               shape,
+               spec,
                function,
                properties,
                internal=False):
     """Creates an `IOIterableTensor`. """
     self._function = function
     super(IOIterableTensor, self).__init__(
-        dtype, shape, properties, internal=internal)
+        spec, properties, internal=internal)
 
   #=============================================================================
   # Iterator
   #=============================================================================
   def __iter__(self):
+    dtype = tf.nest.flatten(
+        tf.nest.map_structure(lambda e: e.dtype, self.spec))
+    shape = tf.nest.flatten(
+        tf.nest.map_structure(lambda e: e.shape, self.spec))
     resource = self._function["init"](self._function["data"])
     capacity = 1
     while True:
-      value = self._function["next"](resource, capacity=capacity)
-      if tf.shape(value)[0].numpy() < capacity:
+      value = self._function["next"](
+          resource, capacity=capacity, dtype=dtype, shape=shape)
+      if tf.shape(value[0])[0].numpy() < capacity:
         return
-      yield value
+      yield tf.nest.pack_sequence_as(self.spec, value)
+
 
   #=============================================================================
   # Dataset Conversions
@@ -350,30 +401,50 @@ class IOIterableTensor(_IOBaseTensor):
     Returns:
       A `tf.data.Dataset` with value obtained from this `IOIterableTensor`.
     """
-    class _IOIterableTensorDataset(data_ops.BaseDataset):
+    class _IOIterableTensorDataset(tf.compat.v2.data.Dataset):
       """_IOIterableTensorDataset"""
 
-      def __init__(self, dtype, shape, function):
+      def __init__(self, spec, function):
         func_init = function["init"]
         func_next = function["next"]
         func_data = function["data"]
+
+        dtype = tf.nest.flatten(
+            tf.nest.map_structure(lambda e: e.dtype, spec))
+        shape = tf.nest.flatten(
+            tf.nest.map_structure(
+                lambda e: tf.TensorShape(
+                    [None]).concatenate(e.shape[1:]), spec))
+
         resource = func_init(func_data)
         capacity = 4096
-        dataset = data_ops.BaseDataset.range(
-            0, sys.maxsize, capacity).map(
-                lambda i: func_next(resource, capacity)).apply(
-                    tf.data.experimental.take_while(
-                        lambda v: tf.greater(tf.shape(v)[0], 0))).apply(
-                            tf.data.experimental.unbatch())
+        dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
+        dataset = dataset.map(
+            lambda i: func_next(resource, capacity, dtype=dtype, shape=shape))
+        dataset = dataset.apply(
+            tf.data.experimental.take_while(
+                lambda v: tf.greater(tf.shape(v)[0], 0)))
+        # Note: tf.data.Dataset consider tuple `(e, )` as one element
+        # instead of a sequence. So next `unbatch()` will not work.
+        # The tf.stack() below is necessary.
+        if len(dtype) == 1:
+          dataset = dataset.map(tf.stack)
+        dataset = dataset.apply(tf.data.experimental.unbatch())
         self._dataset = dataset
         self._resource = resource
         self._function = function
-        shape = shape[1:]
         super(_IOIterableTensorDataset, self).__init__(
-            self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+            self._dataset._variant_tensor) # pylint: disable=protected-access
+
+      def _inputs(self):
+        return []
+
+      @property
+      def _element_structure(self):
+        return self._dataset._element_structure # pylint: disable=protected-access
 
     return _IOIterableTensorDataset(
-        self._dtype, self._shape, self._function)
+        self.spec, self._function)
 
 class AudioIOTensor(IOTensor):
   """AudioIOTensor"""
@@ -387,14 +458,21 @@ class AudioIOTensor(IOTensor):
     with tf.name_scope("AudioIOTensor") as scope:
       resource, dtypes, shapes, rate = core_ops.wav_indexable_init(
           filename, container=scope, shared_name=filename)
-      dtype = tf.as_dtype(dtypes[0].numpy())
-      shape = tf.TensorShape([
-          None if dim < 0 else dim for dim in shapes[0].numpy() if dim != 0])
+      shapes = [
+          tf.TensorShape(
+              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
+          ) for e in tf.unstack(shapes)]
+      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
+      spec = [tf.TensorSpec(shape, dtype) for (
+          shape, dtype) in zip(shapes, dtypes)]
+      if len(spec) == 1:
+        spec = spec[0]
+      else:
+        spec = tuple(spec)
       properties = collections.OrderedDict({"rate": rate.numpy()})
       self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
-          dtype, shape,
-          resource, core_ops.wav_indexable_get_item,
+          spec, resource, core_ops.wav_indexable_get_item,
           properties,
           internal=internal)
 
@@ -406,6 +484,35 @@ class AudioIOTensor(IOTensor):
   def rate(self):
     """The sampel `rate` of the audio stream"""
     return self._rate
+
+class JSONIOTensor(IOTensor):
+  """JSONIOTensor"""
+
+  #=============================================================================
+  # Constructor (private)
+  #=============================================================================
+  def __init__(self,
+               filename,
+               internal=False):
+    with tf.name_scope("JSONIOTensor") as scope:
+      resource, dtypes, shapes, columns = core_ops.json_indexable_init(
+          filename, container=scope, shared_name=filename)
+      shapes = [
+          tf.TensorShape(
+              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
+          ) for e in tf.unstack(shapes)]
+      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
+      spec = [tf.TensorSpec(shape, dtype) for (
+          shape, dtype) in zip(shapes, dtypes)]
+      if len(spec) == 1:
+        spec = spec[0]
+      else:
+        spec = tuple(spec)
+      columns = [e.numpy() for e in tf.unstack(columns)]
+      super(JSONIOTensor, self).__init__(
+          spec, resource, core_ops.json_indexable_get_item,
+          None,
+          internal=internal)
 
 class KafkaIOTensor(IOIterableTensor):
   """KafkaIOTensor"""
@@ -438,10 +545,7 @@ class KafkaIOTensor(IOIterableTensor):
         return resource
       func_next = core_ops.kafka_iterable_next
 
-      dtype = tf.string
-      shape = tf.TensorShape([None])
-
       super(KafkaIOTensor, self).__init__(
-          dtype, shape,
+          tf.TensorSpec(tf.TensorShape([None]), tf.string),
           {"init": func_init, "next": func_next, "data": func_data},
           properties=None, internal=internal)
