@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import sys
 import collections
+import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -457,7 +458,9 @@ class AudioIOTensor(IOTensor):
                internal=False):
     with tf.name_scope("AudioIOTensor") as scope:
       resource, dtypes, shapes, rate = core_ops.wav_indexable_init(
-          filename, container=scope, shared_name=filename)
+          filename,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       shapes = [
           tf.TensorShape(
               [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
@@ -493,26 +496,45 @@ class JSONIOTensor(IOTensor):
   #=============================================================================
   def __init__(self,
                filename,
+               columns=None,
                internal=False):
     with tf.name_scope("JSONIOTensor") as scope:
+      metadata = []
+      if columns is not None:
+        metadata.extend(["column: "+column for column in columns])
       resource, dtypes, shapes, columns = core_ops.json_indexable_init(
-          filename, container=scope, shared_name=filename)
+          filename, metadata=metadata,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       shapes = [
           tf.TensorShape(
               [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
           ) for e in tf.unstack(shapes)]
       dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-      spec = [tf.TensorSpec(shape, dtype) for (
-          shape, dtype) in zip(shapes, dtypes)]
+      columns = [e.numpy() for e in tf.unstack(columns)]
+      spec = [tf.TensorSpec(shape, dtype, column) for (
+          shape, dtype, column) in zip(shapes, dtypes, columns)]
       if len(spec) == 1:
         spec = spec[0]
       else:
         spec = tuple(spec)
-      columns = [e.numpy() for e in tf.unstack(columns)]
+      self._filename = filename
       super(JSONIOTensor, self).__init__(
           spec, resource, core_ops.json_indexable_get_item,
           None,
           internal=internal)
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  def column(self, name):
+    """The `TensorSpec` of column named `name`"""
+    return next(e for e in tf.nest.flatten(self.spec) if e.name == name)
+
+  def __call__(self, column):
+    """Return a new JSONIOTensor with column named `column`"""
+    return JSONIOTensor(self._filename, columns=[column], internal=True)
 
 class KafkaIOTensor(IOIterableTensor):
   """KafkaIOTensor"""
@@ -541,7 +563,8 @@ class KafkaIOTensor(IOIterableTensor):
         """func_init"""
         resource, _, _ = core_ops.kafka_iterable_init(
             data["subscription"], metadata=data["metadata"],
-            container=scope, shared_name=subscription)
+            container=scope,
+            shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
         return resource
       func_next = core_ops.kafka_iterable_next
 

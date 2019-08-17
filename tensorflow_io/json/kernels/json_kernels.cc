@@ -234,12 +234,35 @@ class JSONIndexable : public IOIndexableInterface {
       return errors::InvalidArgument("unable to read table: ", status);
     }
 
+    std::vector<string> columns;
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("column: ") == 0) {
+        columns.emplace_back(metadata[i].substr(8));
+      }
+    }
+
+    columns_index_.clear();
+    if (columns.size() == 0) {
+      for (int i = 0; i < table_->num_columns(); i++) {
+        columns_index_.push_back(i);
+      }
+    } else {
+      std::unordered_map<string, int> columns_map;
+      for (int i = 0; i < table_->num_columns(); i++) {
+        columns_map[table_->column(i)->name()] = i;
+      }
+      for (size_t i = 0; i < columns.size(); i++) {
+        columns_index_.push_back(columns_map[columns[i]]);
+      }
+    }
+
     dtypes_.clear();
     shapes_.clear();
     columns_.clear();
-    for (int i = 0; i < table_->num_columns(); i++) {
+    for (size_t i = 0; i < columns_index_.size(); i++) {
+      int column_index = columns_index_[i];
       ::tensorflow::DataType dtype;
-      switch (table_->column(i)->type()->id()) {
+      switch (table_->column(column_index)->type()->id()) {
       case ::arrow::Type::BOOL:
         dtype = ::tensorflow::DT_BOOL;
         break;
@@ -296,7 +319,7 @@ class JSONIndexable : public IOIndexableInterface {
       }
       dtypes_.push_back(dtype);
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
-      columns_.push_back(table_->column(i)->name());
+      columns_.push_back(table_->column(column_index)->name());
     }
 
     return Status::OK();
@@ -329,7 +352,8 @@ class JSONIndexable : public IOIndexableInterface {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
     for (size_t i = 0; i < tensors.size(); i++) {
-      std::shared_ptr<::arrow::Column> slice = table_->column(i)->Slice(start, stop);
+      int column_index = columns_index_[i];
+      std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
 
       #define PROCESS_TYPE(TTYPE,ATYPE) { \
           int64 curr_index = 0; \
@@ -398,6 +422,7 @@ class JSONIndexable : public IOIndexableInterface {
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;
   std::vector<string> columns_;
+  std::vector<int> columns_index_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("JSONIndexableInit").Device(DEVICE_CPU),

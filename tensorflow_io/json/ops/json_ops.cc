@@ -21,6 +21,7 @@ namespace tensorflow {
 
 REGISTER_OP("JSONIndexableInit")
   .Input("input: string")
+  .Input("metadata: string")
   .Output("output: resource")
   .Output("dtypes: int64")
   .Output("shapes: int64")
