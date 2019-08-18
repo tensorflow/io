@@ -144,7 +144,7 @@ REGISTER_UNARY_VARIANT_DECODE_FUNCTION(LMDBInput, "tensorflow::data::LMDBInput")
 
 REGISTER_KERNEL_BUILDER(Name("LMDBInput").Device(DEVICE_CPU),
                         FileInputOp<LMDBInput>);
-REGISTER_KERNEL_BUILDER(Name("LMDBDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("LMDBDatasetV2").Device(DEVICE_CPU),
                         FileInputDatasetOp<LMDBInput, LMDBInputStream>);
 }  // namespace data
 }  // namespace tensorflow
