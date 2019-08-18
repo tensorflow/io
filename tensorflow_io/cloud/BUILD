@@ -42,6 +42,7 @@ cc_library(
     srcs = [
         "ops/bigquery_reader_ops.cc",
     ],
+    linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
@@ -53,6 +54,7 @@ cc_library(
     srcs = [
         "ops/gcs_config_ops.cc",
     ],
+    linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",

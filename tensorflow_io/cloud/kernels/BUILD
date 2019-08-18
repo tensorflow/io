@@ -10,6 +10,7 @@ licenses(["notice"])  # Apache 2.0
 cc_library(
     name = "bigquery_reader_ops",
     srcs = ["bigquery_reader_ops.cc"],
+    linkstatic = True,
     deps = [
         ":bigquery_table_accessor",
         ":bigquery_table_partition_proto_cc",
@@ -22,7 +23,7 @@ cc_library(
     name = "bigquery_table_accessor",
     srcs = ["bigquery_table_accessor.cc"],
     hdrs = ["bigquery_table_accessor.h"],
-    linkstatic = 1,
+    linkstatic = True,
     deps = [
         ":bigquery_table_partition_proto_cc",
         "@curl",
@@ -46,6 +47,7 @@ proto_library(
 cc_library(
     name = "gcs_config_ops",
     srcs = ["gcs_config_ops.cc"],
+    linkstatic = True,
     deps = [
         "@curl",
         "@jsoncpp_git//:jsoncpp",
