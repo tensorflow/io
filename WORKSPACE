@@ -18,7 +18,7 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_madler_zlib",
+    name = "zlib",
     build_file = "//third_party:zlib.BUILD",
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",
@@ -225,22 +225,22 @@ http_archive(
 
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "1bf082fb3016154d3f806da8eb5876caf05743da4b2e8130fadd000df74b5bb6",
-    strip_prefix = "grpc-1.21.1",
+    sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
+    strip_prefix = "grpc-1.22.0",
     urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.21.1.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.21.1.tar.gz",
+        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.22.0.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.22.0.tar.gz",
     ],
 )
 
-# 3.7.1 with a fix to BUILD file
+# 3.8.0 with a fix to BUILD file
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "1c020fafc84acd235ec81c6aac22d73f23e85a700871466052ff231d69c1b17a",
-    strip_prefix = "protobuf-5902e759108d14ee8e6b0b07653dac2f4e70ac73",
+    sha256 = "b9e92f9af8819bbbc514e2902aec860415b70209f31dfc8c4fa72515a5df9d59",
+    strip_prefix = "protobuf-310ba5ee72661c081129eb878c1bbcec936b20f0",
     urls = [
-        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/310ba5ee72661c081129eb878c1bbcec936b20f0.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/310ba5ee72661c081129eb878c1bbcec936b20f0.tar.gz",
     ],
 )
 

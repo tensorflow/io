@@ -21,4 +21,4 @@ else
     pip install tensorflow
 fi
 python -m pip install grpcio-tools
-python config_helper.py
+python third_party/tf/configure.py
