@@ -16,4 +16,4 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/grpc:all //tensorflow_io/oss:all //tensorflow_io/pcap:all //tensorflow_io/pubsub:all //tensorflow_io/image:all //tensorflow_io/cloud:all //tensorflow_io/kinesis:all
+  -- //tensorflow_io/grpc:all //tensorflow_io/oss:all //tensorflow_io/pcap:all //tensorflow_io/pubsub:all //tensorflow_io/image:all //tensorflow_io/cloud:all //tensorflow_io/kinesis:all //tensorflow_io/core:all
