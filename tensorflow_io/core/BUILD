@@ -63,7 +63,6 @@ cc_library(
     name = "core_ops",
     srcs = [
         "kernels/archive_kernels.cc",
-        "kernels/rebatch_dataset_op.cc",
         "ops/core_ops.cc",
     ],
     copts = tf_io_copts(),
