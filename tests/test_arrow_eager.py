@@ -35,6 +35,8 @@ from tensorflow import dtypes # pylint: disable=wrong-import-position
 from tensorflow import errors # pylint: disable=wrong-import-position
 from tensorflow import test   # pylint: disable=wrong-import-position
 
+pytest.skip(
+    "arrow test is disabled temporarily", allow_module_level=True)
 import tensorflow_io.arrow as arrow_io # pylint: disable=wrong-import-position
 
 if sys.version_info == (3, 4):
