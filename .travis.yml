@@ -59,11 +59,8 @@ stages:
 jobs:
   include:
   - stage: build
-    name: "Lint Bazel"
-    script: bash -x -e .travis/lint.bazel.sh
-  - stage: build
-    name: "Lint Python"
-    script: docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
+    name: "Lint (Python+Bazel)"
+    script: bash -x -e .travis/lint.sh
 
   - stage: build
     name: "Nightly Release Build on Linux"

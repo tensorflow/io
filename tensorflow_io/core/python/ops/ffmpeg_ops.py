@@ -18,10 +18,10 @@ from __future__ import division
 from __future__ import print_function
 
 import ctypes
+import _ctypes
 
 from tensorflow_io.core.python.ops import _load_library
 
-import _ctypes
 
 def _load_dependency_and_library(p):
   """load_dependency_and_library"""
