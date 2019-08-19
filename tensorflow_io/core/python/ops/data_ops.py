@@ -34,15 +34,15 @@ class BaseDataset(tf.compat.v2.data.Dataset):
     return []
 
   @property
-  def _element_structure(self):
+  def element_spec(self):
     e = [
-        tf.data.experimental.TensorStructure(
-            p, q.as_list()) for (p, q) in zip(
-                self._dtypes, self._shapes)
+        tf.TensorSpec(
+            p.as_list(), q) for (p, q) in zip(
+                self._shapes, self._dtypes)
     ]
     if len(e) == 1:
       return e[0]
-    return tf.data.experimental.NestedStructure(tuple(e))
+    return tuple(e)
 
 class Dataset(BaseDataset):
   """A Dataset that takes DataInput"""

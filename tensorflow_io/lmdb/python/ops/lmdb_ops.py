@@ -47,6 +47,6 @@ class LMDBDataset(data_ops.Dataset):
         tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
             tf.TensorShape([None]), tf.TensorShape([None])]
     super(LMDBDataset, self).__init__(
-        lmdb_ops.lmdb_dataset,
+        lmdb_ops.lmdb_dataset_v2,
         lmdb_ops.lmdb_input(filename),
         batch, dtypes, shapes)
