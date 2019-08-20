@@ -15,6 +15,7 @@
 """Config Utility to write .bazelrc based on tensorflow."""
 from __future__ import print_function
 import re
+import sys
 import tensorflow as tf
 
 def write_config():
@@ -78,6 +79,8 @@ def write_config():
       library_name = library_list[0][2:]
       if library_name.startswith(":"):
         library_name = library_name[1:]
+      elif sys.platform == "darwin":
+        library_name = "lib" + library_name + ".dylib"
       else:
         library_name = "lib" + library_name + ".so"
       bazel_rc.write('build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'

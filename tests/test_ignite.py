@@ -24,6 +24,9 @@ import pytest
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
+pytest.skip(
+    "ignite test is disabled temporarily", allow_module_level=True)
+
 from tensorflow import dtypes            # pylint: disable=wrong-import-position
 from tensorflow import errors            # pylint: disable=wrong-import-position
 from tensorflow import test              # pylint: disable=wrong-import-position

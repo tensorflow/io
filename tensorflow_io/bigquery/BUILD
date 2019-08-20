@@ -52,6 +52,10 @@ cc_binary(
 cc_test(
     name = "bigquery_fake_test",
     srcs = ["kernels/test_kernels/bigquery_fake_test.cc"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": ["-lrt"],
+    }),
     deps = [
         ":bigquery_fake",
         "@com_github_grpc_grpc//:grpc++",

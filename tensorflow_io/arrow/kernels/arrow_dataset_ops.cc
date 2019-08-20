@@ -788,13 +788,16 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
                               DatasetGraphDefBuilder* b,
                               Node** output) const override {
       Node* batches = nullptr;
-      if (ctx->optimization_only()) {
-        TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
-        DCHECK_NE(ctx->input_list(), nullptr);
-        ctx->input_list()->emplace_back(batches->name(), batches_);
-      } else {
-        TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
-      }
+      // optimization_only has been removed in
+      // https://github.com/tensorflow/tensorflow/commit/6d8f05acd72df61e5f4e5b4c72837b7caed3e942#diff-5eac6c133a3a701a696767960e796bd3
+      //if (ctx->optimization_only()) {
+      //  TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
+      //  DCHECK_NE(ctx->input_list(), nullptr);
+      //  ctx->input_list()->emplace_back(batches->name(), batches_);
+      //} else {
+      //  TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
+      //}
+      TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;

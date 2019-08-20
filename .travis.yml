@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 language: generic
 
 git:
@@ -7,116 +7,74 @@ git:
 services:
 - docker
 
+addons:
+  apt:
+    packages:
+    - python-pip
+
 before_install:
-- nvm install 8
+- nohup docker pull python:2.7-slim >/dev/null 2>&1 </dev/null &
+- nohup docker pull python:3.5-slim >/dev/null 2>&1 </dev/null &
+- nohup docker pull python:3.6-slim >/dev/null 2>&1 </dev/null &
+- nohup docker pull python:3.7-slim >/dev/null 2>&1 </dev/null &
+- nohup docker pull quay.io/pypa/manylinux2010_x86_64 >/dev/null 2>&1 </dev/null &
+- nohup docker pull ubuntu:16.04 >/dev/null 2>&1 </dev/null &
+- if [[ $(uname) == "Darwin" ]]; then nvm install 8 ; fi
+- |
+  set -x -e ;
+  if [[ $(uname) == "Darwin" ]]; then
+    export PYVER=$(echo $TRAVIS_JOB_NAME | awk '{print $NF}') ;
+    echo pyenv install --list ;
+    pyenv install $PYVER ;
+    pyenv global $PYVER ;
+    export PATH=$(dirname $(pyenv which python)):$PATH ;
+    echo $PATH ;
+    python --version ;
+    python -c "import site; print(site.getsitepackages())" ;
+    python -m pip install --user -U twine delocate ;
+    delocate-wheel --version ;
+  else
+    python -m pip install --user -U twine ;
+  fi
+- twine --version
 
 cache:
   directories:
   - .cache/bazel
 
 install:
-- export BAZEL_CACHE=.cache/bazel/$(echo $TRAVIS_JOB_NUMBER | awk -F. '{print $2}')
-- curl https://bootstrap.pypa.io/get-pip.py | sudo -H python
+- export BAZEL_CACHE=.cache/bazel
 - |
   if [[ $(uname) == "Darwin" ]]; then
-    sudo -H python -m pip install --upgrade pip setuptools
-
-    # Ignite probably takes more resource so start it first,
-    # otherwise it may run into issues competing with other services.
-    bash -x -e tests/test_ignite/start_ignite.sh
-    bash -x -e tests/test_kafka/kafka_test.sh start kafka
-    bash -x -e tests/test_azure/start_azure.sh
-    bash -x -e tests/test_dicom/dicom_samples.sh download
-    bash -x -e tests/test_dicom/dicom_samples.sh extract
-    # Kinesis, Pubsub, and Prometheus are not supported on macOS yet
-    #bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-    #bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
-    #bash -x -e tests/test_prometheus/prometheus_test.sh start
+    bash -x -e tests/test_ignite/start_ignite.sh ;
+    bash -x -e tests/test_kafka/kafka_test.sh start kafka ;
+    bash -x -e tests/test_azure/start_azure.sh ;
+    bash -x -e tests/test_dicom/dicom_samples.sh download ;
+    bash -x -e tests/test_dicom/dicom_samples.sh extract ;
   fi
-- sudo -H python -m pip install -q -U twine --ignore-installed six
-- twine --version
-- export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
 
 stages:
-- lint
-- release
+- build
 
 jobs:
   include:
-  - stage: lint
-    name: Lint Bazel
-    script: bash -x -e .travis/lint.bazel.sh
-  - stage: lint
-    name: Lint Python
-    script: docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 bash -x -e .travis/lint.python.sh
+  - stage: build
+    name: "Lint (Python+Bazel)"
+    script: bash -x -e .travis/lint.sh
 
-  # Preview Release Builds are for TensorFlow 2.0 Preview release.
-  # Note only Linux (Ubuntu 18.04) and macOS are supported.
-  - stage: release
-    name: "TensorFlow 2.0 Preview Release Build on Linux"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER} python python3.4 python3.5 python3.6
-    - echo "Skip test for now, will fix later"
-    after_success: bash -x -e after-sucess-tf20.sh
-
-  - stage: release
-    name: "TensorFlow 2.0 Preview Release Build on Linux with Python 3.7"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER}
-    - echo "Skip test for now, will fix later"
-    after_success: bash -x -e after-sucess-tf20.sh
-
-  - stage: release
-    name: "TensorFlow 2.0 Preview Release Build on macOS"
-    os: osx
-    osx_image: xcode9
-    script:
-    - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh tensorflow==2.0.0b1 --preview ${TRAVIS_BUILD_NUMBER} python
-    - sudo -H bash -x -e .travis/wheel.test.sh
-    after_success: bash -x -e after-sucess-tf20.sh
-
-  # Release Builds are for nightly release.
-  # Note Python 2.7, 3.4, 3.5, 3.6, 3.7 are supported on Linux
-  # for Ubuntu 14.04/16.04/18.04, and Python 2.7 for macOS.
-  - stage: release
+  - stage: build
     name: "Nightly Release Build on Linux"
     script:
-    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host buildpack-deps:14.04 bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python python3 python3.5 python3.6
-    - echo "Skip test for nightly build, as it has been covered in install build"
+    - bash -x -e .travis/python.release.sh
     after_success: bash -x -e .travis/after-success.sh
 
-  - stage: release
-    name: "Nightly Release Build on Linux with Python 3.7"
-    script:
-    - docker run -i -t --rm -v $PWD:/v -w /v -e BAZEL_CACHE=${BAZEL_CACHE} --net=host ubuntu:16.04 bash -x -e .travis/python3.7+.release.sh python3.7 "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER}
-    - echo "Skip test for now, will fix later"
-    after_success: bash -x -e .travis/after-success.sh
-
-  - stage: release
-    name: "Nightly Release Build on macOS 2.7"
+  - stage: build
+    name: "Nightly Release Build on macOS 2.7.13"
     os: osx
     osx_image: xcode9
     script:
-    - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python
-    - sudo -H bash -x -e .travis/wheel.test.sh python
-    after_success: bash -x -e .travis/after-success.sh
-    
-  - stage: release
-    name: "Nightly Release Build on macOS 3.5"
-    os: osx
-    osx_image: xcode9
-    script:
-    - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.5.3
-    - sudo -H bash -x -e .travis/wheel.test.sh python3.5.3
-    after_success: bash -x -e .travis/after-success.sh
-
-  - stage: release
-    name: "Nightly Release Build on macOS 3.6"
-    os: osx
-    osx_image: xcode9
-    script:
-    - sudo -H BAZEL_CACHE=${BAZEL_CACHE} bash -x -e .travis/python.release.sh "${TENSORFLOW_INSTALL}" --nightly ${TRAVIS_BUILD_NUMBER} python3.6.2
-    - sudo -H bash -x -e .travis/wheel.test.sh python3.6.2
+    - bash -x -e .travis/python.release.sh
+    - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
 
 notifications:
