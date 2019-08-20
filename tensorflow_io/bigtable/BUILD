@@ -76,6 +76,10 @@ cc_binary(
         "-std=c++11",
         "-DNDEBUG",
     ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": ["-lrt"],
+    }),
     deps = [
         ":bigtable_lib_cc",
         ":bigtable_test_client",

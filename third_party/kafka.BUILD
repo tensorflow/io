@@ -155,6 +155,6 @@ cc_library(
     deps = [
         "@arrow",
         "@boringssl//:ssl",
-        "@com_github_madler_zlib//:z",
+        "@zlib",
     ],
 )

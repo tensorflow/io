@@ -19,7 +19,7 @@ limitations under the License.
 #include "rdkafkacpp.h"
 
 namespace tensorflow {
-
+namespace data {
 class KafkaDatasetOp : public DatasetOpKernel {
  public:
   using DatasetOpKernel::DatasetOpKernel;
@@ -530,5 +530,5 @@ private:
 };
 
 REGISTER_KERNEL_BUILDER(Name("WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
-
+}  // namespace data
 }  // namespace tensorflow

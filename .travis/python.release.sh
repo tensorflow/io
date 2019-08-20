@@ -13,20 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-set -e -x
 
 # Release:
-# docker run -i -t --rm -v $PWD:/v -w /v --net=host buildpack-deps:14.04 /v/.travis/python.release.sh
+if [[ $(uname) == "Darwin" ]]; then
+  bash -x -e .travis/bazel.build.sh $@
 
-export TENSORFLOW_INSTALL="$(python setup.py --package-version)"
-export PYTHON_VERSION="python2.7 python3.4 python3.5 python3.6"
-if [[ "$#" -gt 0 ]]; then
-    export TENSORFLOW_INSTALL="${1}"
-    shift
-    PYTHON_VERSION="$@"
+  python setup.py --data build -q bdist_wheel
+
+  ls dist/*
+  for f in dist/*.whl; do
+    delocate-wheel -w wheelhouse  $f
+  done
+  ls wheelhouse/*
+else
+  docker run -i --rm -v $PWD:/v -w /v --net=host -e BAZEL_CACHE=${BAZEL_CACHE} gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.travis/bazel.build.sh $@
+  sudo chown -R $(id -nu):$(id -ng) .
+
+  for entry in 2.7 3.5 3.6 3.7; do
+    docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${entry}-slim python setup.py --data build -q bdist_wheel
+  done
+
+  ls dist/*
+  for f in dist/*.whl; do
+    docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/third_party/tf/auditwheel repair --plat manylinux2010_x86_64 $f
+  done
+  sudo chown -R $(id -nu):$(id -ng) .
+  ls wheelhouse/*
 fi
-
-bash -x -e .travis/bazel.configure.sh "${TENSORFLOW_INSTALL}"
-bash -x -e .travis/bazel.build.sh
-bash -x -e .travis/wheel.configure.sh ${PYTHON_VERSION}
-bash -x -e .travis/wheel.build.sh ${PYTHON_VERSION}

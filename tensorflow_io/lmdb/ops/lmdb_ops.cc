@@ -30,7 +30,7 @@ REGISTER_OP("LMDBInput")
        return Status::OK();
      });
 
-REGISTER_OP("LMDBDataset")
+REGISTER_OP("LMDBDatasetV2")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")

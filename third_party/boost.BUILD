@@ -49,6 +49,6 @@ cc_library(
         ".",
     ],
     deps = [
-        "@com_github_madler_zlib//:z",
+        "@zlib",
     ],
 )

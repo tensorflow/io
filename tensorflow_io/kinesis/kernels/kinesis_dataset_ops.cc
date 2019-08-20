@@ -252,6 +252,8 @@ void ShutdownClient(Aws::Kinesis::KinesisClient* client) {
   }
 }
 }
+
+namespace data {
 class KinesisDatasetOp : public DatasetOpKernel {
  public:
   using DatasetOpKernel::DatasetOpKernel;
@@ -466,5 +468,5 @@ class KinesisDatasetOp : public DatasetOpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("KinesisDataset").Device(DEVICE_CPU),
                         KinesisDatasetOp);
-
+}  // namespace data
 }  // namespace tensorflow
