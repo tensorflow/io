@@ -1,12 +1,12 @@
-# TensorFlow i/o JSON Datasets
+# TensorFlow I/O JSON Datasets
 
 [JSON (JavaScript Object Notation)](https://www.json.org/) is an open-standard
 file format that uses human-readable text to transmit data objects consisting
 of key–value pairs and array data types (or any other serializable value). JSON
 format is widely used in machine learning and data science.
 
-TensorFlow i/o JSON support mainly focuses on the **record** array in JSON, here
-is an example:
+TensorFlow I/O JSON dataset supports the **record** arrays in JSON, here
+is an example with 3 columns and 2 records:
 
 ```json
 [
@@ -54,8 +54,8 @@ cols = json_io.list_json_columns(filename)
 
 ### `read_json`
 
-`read_json` can be used to read a specified column of the JSON file into a
-Tensor. Here is an example:
+`read_json` can be used to read a single column of the JSON file into a
+Tensor by specifying column name. Here is an example:
 
 ```python
 from __future__ import absolute_import
@@ -72,7 +72,7 @@ import tensorflow_io.json as json_io
 # Assume `example.json` is a JSON format file that contains the content of the
 # example above.
 filename = "example.json"
-cols = json_io.read_json(filename)
+cols = json_io.list_json_columns(filename)
 float_feature = json_io.read_json(
     feature_filename,
     feature_cols["floatfeature"])
