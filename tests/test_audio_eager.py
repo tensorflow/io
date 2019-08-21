@@ -23,7 +23,7 @@ import numpy as np
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-import tensorflow_io.audio as audio_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -37,33 +37,25 @@ def test_audio_dataset():
 
   f = lambda x: float(x) / (1 << 15)
 
-  for capacity in [10, 100, 500]:
-    audio_dataset = audio_io.WAVDataset(audio_path, capacity=capacity).apply(
-        tf.data.experimental.unbatch()).map(tf.squeeze)
-    i = 0
-    for v in audio_dataset:
-      assert audio_v.audio[i].numpy() == f(v.numpy())
-      i += 1
-    assert i == 5760
+  audio_dataset = tfio.IOTensor.from_audio(audio_path).to_dataset()
+  i = 0
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v.numpy())
+    i += 1
+  assert i == 5760
 
-  for capacity in [10, 100, 500]:
-    audio_dataset = audio_io.WAVDataset(audio_path, capacity=capacity).apply(
-        tf.data.experimental.unbatch()).batch(2).map(tf.squeeze)
-    i = 0
-    for v in audio_dataset:
-      assert audio_v.audio[i].numpy() == f(v[0].numpy())
-      assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
-      i += 2
-    assert i == 5760
+  audio_dataset = tfio.IOTensor.from_audio(audio_path).to_dataset().batch(2)
+  i = 0
+  for v in audio_dataset:
+    assert audio_v.audio[i].numpy() == f(v[0].numpy())
+    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
+    i += 2
+  assert i == 5760
 
-  spec, rate = audio_io.list_wav_info(audio_path)
-  assert spec.dtype == tf.int16
-  assert spec.shape == [5760, 1]
-  assert rate.numpy() == audio_v.sample_rate.numpy()
-
-  samples = audio_io.read_wav(audio_path, spec)
+  samples = tfio.IOTensor.from_audio(audio_path)
   assert samples.dtype == tf.int16
   assert samples.shape == [5760, 1]
+  assert samples.rate == audio_v.sample_rate.numpy()
 
   audio_24bit_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
@@ -76,12 +68,8 @@ def test_audio_dataset():
   expected = np.fromfile(audio_24bit_raw_path, np.int32)
   expected = np.reshape(expected, [22050, 2])
 
-  spec, rate = audio_io.list_wav_info(audio_24bit_path)
-  assert spec.dtype == tf.int32
-  assert spec.shape == [22050, 2]
-  assert rate.numpy() == 44100
-
-  samples = audio_io.read_wav(audio_24bit_path, spec)
+  samples = tfio.IOTensor.from_audio(audio_24bit_path)
   assert samples.dtype == tf.int32
   assert samples.shape == [22050, 2]
-  assert np.all(samples.numpy() == expected)
+  assert samples.rate == 44100
+  assert np.all(samples.to_tensor().numpy() == expected)

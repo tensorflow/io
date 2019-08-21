@@ -47,6 +47,8 @@ cc_library(
             "cpp/src/arrow/io/*.h",
             "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/ipc/*.h",
+            "cpp/src/arrow/json/*.cc",
+            "cpp/src/arrow/json/*.h",
             "cpp/src/arrow/util/*.cc",
             "cpp/src/arrow/util/*.h",
             "cpp/src/arrow/vendored/**/*.cpp",
@@ -120,9 +122,10 @@ cc_library(
     deps = [
         ":arrow_format",
         "@boost",
+        "@zlib",
         "@double_conversion//:double-conversion",
+        "@rapidjson",
         "@snappy",
         "@thrift",
-        "@zlib",
     ],
 )

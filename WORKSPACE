@@ -542,3 +542,13 @@ http_archive(
         "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
     ],
 )
+
+http_archive(
+    name = "rapidjson",
+    build_file = "//third_party:rapidjson.BUILD",
+    sha256 = "bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e",
+    strip_prefix = "rapidjson-1.1.0",
+    urls = [
+        "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
+    ],
+)

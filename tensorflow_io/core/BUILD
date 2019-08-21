@@ -29,6 +29,7 @@ cc_library(
     name = "dataset_ops",
     srcs = [
         "kernels/dataset_ops.h",
+        "kernels/io_interface.h",
         "kernels/stream.h",
     ],
     copts = tf_io_copts(),

@@ -30,7 +30,8 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
 public:
   explicit ArrowRandomAccessFile(tensorflow::RandomAccessFile *file, int64 size)
     : file_(file)
-    , size_(size) { }
+    , size_(size)
+    , position_(0) { }
 
   ~ArrowRandomAccessFile() {}
   arrow::Status Close() override {
@@ -40,13 +41,21 @@ public:
     return false;
   }
   arrow::Status Tell(int64_t* position) const override {
-    return arrow::Status::NotImplemented("Tell");
+    *position = position_;
+    return arrow::Status::OK();
   }
   arrow::Status Seek(int64_t position) override {
     return arrow::Status::NotImplemented("Seek");
   }
   arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override {
-    return arrow::Status::NotImplemented("Read (void*)");
+    StringPiece result;
+    Status status = file_->Read(position_, nbytes, &result, (char*)out);
+    if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return arrow::Status::IOError(status.error_message());
+    }
+    *bytes_read = result.size();
+    position_ += (*bytes_read);
+    return arrow::Status::OK();
   }
   arrow::Status Read(int64_t nbytes, std::shared_ptr<arrow::Buffer>* out) override {
     return arrow::Status::NotImplemented("Read (Buffer*)");
@@ -81,6 +90,7 @@ public:
 private:
   tensorflow::RandomAccessFile* file_;
   int64 size_;
+  int64 position_;
 };
 }  // namespace data
 }  // namespace tensorflow
