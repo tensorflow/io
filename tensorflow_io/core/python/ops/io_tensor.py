@@ -34,11 +34,7 @@ class IOTensor(io_tensor_ops._BaseIOTensor):
   `KafkaIOTensor` is a tensor with data from reading the messages of a Kafka
   stream server.
 
-  There are two types of `IOTensor`, a normal `IOTensor` which itself is
-  indexable, or a degenerated `IOIterableTensor`  which only supports
-  accessing the tensor iteratively.
-
-  Since `IOTensor` is indexable, it support `__getitem__()` and
+  The `IOTensor` is indexable, supporting `__getitem__()` and
   `__len__()` methods in Python. In other words, it is a subclass of
   `collections.abc.Sequence`.
 
@@ -57,25 +53,6 @@ class IOTensor(io_tensor_ops._BaseIOTensor):
   ...  [-5]], shape=(5, 1), dtype=int16)
   ```
 
-  A `IOIterableTensor` is really a subclass of `collections.abc.Iterable`.
-  It provides a `__iter__()` method that could be used (through `iter`
-  indirectly) to access data in an iterative fashion.
-
-  Example:
-
-  ```python
-  >>> import tensorflow_io as tfio
-  >>>
-  >>> kafka = tfio.IOTensor.from_kafka("test", eof=True)
-  >>> for message in kafka:
-  >>>   print(message)
-  ... tf.Tensor(['D0'], shape=(1,), dtype=string)
-  ... tf.Tensor(['D1'], shape=(1,), dtype=string)
-  ... tf.Tensor(['D2'], shape=(1,), dtype=string)
-  ... tf.Tensor(['D3'], shape=(1,), dtype=string)
-  ... tf.Tensor(['D4'], shape=(1,), dtype=string)
-  ```
-
   ### Indexable vs. Iterable
 
   While many IO formats are natually considered as iterable only, in most
@@ -89,7 +66,7 @@ class IOTensor(io_tensor_ops._BaseIOTensor):
   TBs), it may not be realistic (or necessarily) to save the index of every
   packet in memory. We could consider PCAP format as iterable only.
 
-  As we could see the availability of memory size could be a factor to decide
+  As we could see the, availability of memory size could be a factor to decide
   if a format is indexable or not. However, this factor could also be blurred
   as well in distributed computing. One common case is the file format that
   might be splittable where a file could be split into multiple chunks
@@ -172,10 +149,10 @@ class IOTensor(io_tensor_ops._BaseIOTensor):
   >>> import tensorflow_io as tfio
   >>>
   >>> features = tfio.IOTensor.from_json("feature.json")
-  >>> print(features.shape)
-  ... (TensorShape([Dimension(2)]), TensorShape([Dimension(2)]))
-  >>> print(features.dtype)
-  ... (tf.float64, tf.int64)
+  >>> print(features.shape("floatfeature"))
+  ... (2,)
+  >>> print(features.dtype("floatfeature"))
+  ... <dtype: 'float64'>
   >>>
   >>> print(features("floatfeature").shape)
   ... (2,)
