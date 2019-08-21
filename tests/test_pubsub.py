@@ -19,12 +19,13 @@ from __future__ import print_function
 
 import os
 import time
-import sys
 import pytest
 from google.cloud import pubsub_v1
 
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
+
+pytest.skip("pubsub is skipped for now", allow_module_level=True)
 
 from tensorflow import dtypes         # pylint: disable=wrong-import-position
 from tensorflow import errors         # pylint: disable=wrong-import-position
@@ -32,9 +33,6 @@ from tensorflow import test           # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import data # pylint: disable=wrong-import-position
 
 from tensorflow_io.pubsub.python.ops import pubsub_dataset_ops # pylint: disable=wrong-import-position
-
-if sys.platform == "darwin":
-  pytest.skip("pubsub is not supported on macOS yet", allow_module_level=True)
 
 class PubSubDatasetTest(test.TestCase):
   """Tests for PubSubDataset."""
