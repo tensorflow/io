@@ -15,10 +15,21 @@
 # ==============================================================================
 
 # Release:
+
+if [[ "$1" == "--nightly" ]]; then
+  NIGHTLY_NUMBER=$2
+  shift
+  shift
+fi
+
 if [[ $(uname) == "Darwin" ]]; then
   bash -x -e .travis/bazel.build.sh $@
 
   python setup.py --data build -q bdist_wheel
+
+  if [[ "$NIGHTLY_NUMBER" != "" ]]; then
+    python setup.py --data build -q bdist_wheel --nightly $NIGHTLY_NUMBER
+  fi
 
   ls dist/*
   for f in dist/*.whl; do
@@ -31,6 +42,9 @@ else
 
   for entry in 2.7 3.5 3.6 3.7; do
     docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${entry}-slim python setup.py --data build -q bdist_wheel
+    if [[ "$NIGHTLY_NUMBER" != "" ]]; then
+      docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${entry}-slim python setup.py --data build -q bdist_wheel --nightly $NIGHTLY_NUMBER
+    fi
   done
 
   ls dist/*
