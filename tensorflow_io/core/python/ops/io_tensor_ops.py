@@ -256,7 +256,7 @@ class _TableIOTensor(_BaseIOTensor):
             [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
         ) for e in tf.unstack(shapes)]
     dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-    columns = [e.numpy() for e in tf.unstack(columns)]
+    columns = [e.numpy().decode() for e in tf.unstack(columns)]
     spec = [tf.TensorSpec(shape, dtype, column) for (
         shape, dtype, column) in zip(shapes, dtypes, columns)]
     if len(spec) == 1:
