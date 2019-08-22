@@ -73,7 +73,7 @@ class WAVIndexable : public IOIndexableInterface {
   : env_(env) {}
 
   ~WAVIndexable() {}
-    Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
     }

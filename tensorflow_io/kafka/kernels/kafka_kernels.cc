@@ -244,7 +244,10 @@ REGISTER_KERNEL_BUILDER(Name("KafkaIterableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<KafkaIterable>);
 REGISTER_KERNEL_BUILDER(Name("KafkaIterableNext").Device(DEVICE_CPU),
                         IOIterableNextOp<KafkaIterable>);
-
+REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<IOIndexableImplementation<KafkaIterable>>);
+REGISTER_KERNEL_BUILDER(Name("KafkaIndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<IOIndexableImplementation<KafkaIterable>>);
 
 }  // namespace data
 }  // namespace tensorflow

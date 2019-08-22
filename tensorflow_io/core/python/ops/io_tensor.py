@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
+from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 
 class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -225,3 +226,41 @@ class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromJSON")):
       return json_io_tensor_ops.JSONIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_kafka(cls,
+                 subscription,
+                 **kwargs):
+    """Creates an `IOTensor` from a Kafka stream.
+
+    Args:
+      subscription: A `tf.string` tensor containing subscription,
+        in the format of [topic:partition:offset:length],
+        by default length is -1 for unlimited.
+      servers: An optional list of bootstrap servers, by default
+         `localhost:9092`.
+      configuration: An optional `tf.string` tensor containing
+        configurations in [Key=Value] format. There are three
+        types of configurations:
+        Global configuration: please refer to 'Global configuration properties'
+          in librdkafka doc. Examples include
+          ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
+        Topic configuration: please refer to 'Topic configuration properties'
+          in librdkafka doc. Note all topic configurations should be
+          prefixed with `configuration.topic.`. Examples include
+          ["conf.topic.auto.offset.reset=earliest"]
+        Dataset configuration: there are two configurations available,
+          `conf.eof=0|1`: if True, the KafkaDaset will stop on EOF (default).
+          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
+      return kafka_io_tensor_ops.KafkaIOTensor(
+        subscription,
+        servers=kwargs.get("servers", None),
+        configuration=kwargs.get("configuration", None),
+        internal=True)

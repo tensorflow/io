@@ -42,6 +42,122 @@ class IOIndexableInterface : public IOInterface {
 };
 
 template<typename Type>
+class IOIndexableImplementation : public IOIndexableInterface {
+ public:
+  IOIndexableImplementation<Type>(Env* env)
+  : env_(env)
+  , iterable_(new Type(env)) {}
+
+  ~IOIndexableImplementation<Type>() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+
+    TF_RETURN_IF_ERROR(iterable_->Init(input, metadata, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(iterable_->Spec(dtypes_, shapes_));
+
+    const int64 capacity = 4096;
+    std::vector<TensorShape> chunk_shapes;
+    for (size_t component = 0; component < shapes_.size(); component++) {
+      gtl::InlinedVector<int64, 4> dims = shapes_[component].dim_sizes();
+      dims[0] = capacity;
+      chunk_shapes.push_back(TensorShape(dims));
+    }
+
+    int64 total = 0;
+
+    int64 record_read = 0;
+    do {
+      tensors_.push_back(std::vector<Tensor>());
+      for (size_t component = 0; component < shapes_.size(); component++) {
+        tensors_.back().push_back(Tensor(dtypes_[component], chunk_shapes[component]));
+      }
+      TF_RETURN_IF_ERROR(iterable_->Next(capacity, tensors_.back(), &record_read));
+      if (record_read == 0) {
+        tensors_.pop_back();
+        break;
+      }
+      if (record_read < capacity) {
+        for (size_t component = 0; component < shapes_.size(); component++) {
+          tensors_.back()[component] = tensors_.back()[component].Slice(0, record_read);
+        }
+      }
+      total += record_read;
+    } while (record_read != 0);
+    for (size_t component = 0; component < shapes_.size(); component++) {
+      shapes_[component].set_dim(0, total);
+    }
+    return Status::OK();
+  }
+  virtual Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
+    for (size_t component = 0; component < dtypes_.size(); component++) {
+      dtypes.push_back(dtypes_[component]);
+    }
+    for (size_t component = 0; component < shapes_.size(); component++) {
+      shapes.push_back(shapes_[component]);
+    }
+    return Status::OK();
+  }
+
+  Status Extra(std::vector<Tensor>* extra) override {
+    return iterable_->Extra(extra);
+  }
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("IOIndexableImplementation<", iterable_->DebugString(), ">[]");
+  }
+
+  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step != 1 is not supported: ", step);
+    }
+    // Find first chunk
+
+    int64 chunk_index = 0;
+    int64 chunk_element = -1;
+    int64 current_element = 0;
+    while (chunk_index < tensors_.size()) {
+      if (current_element <= start && start < current_element + tensors_[chunk_index][0].shape().dim_size(0)) {
+        chunk_element = start - current_element;
+        current_element = start;
+        break;
+      }
+      current_element += tensors_[chunk_index][0].shape().dim_size(0);
+      chunk_index++;
+    }
+    if (chunk_element < 0) {
+      return errors::InvalidArgument("start is out of range: ", start);
+    }
+    std::vector<Tensor> elements;
+    for (size_t component = 0; component < shapes_.size(); component++) {
+      TensorShape shape(shapes_[component].dim_sizes());
+      shape.RemoveDim(0);
+      elements.push_back(Tensor(dtypes_[component], shape));
+    }
+
+    while (current_element < stop) {
+      for (size_t component = 0; component < shapes_.size(); component++) {
+        batch_util::CopySliceToElement(tensors_[chunk_index][component], &elements[component], chunk_element);
+        batch_util::CopyElementToSlice(elements[component], &tensors[component], (current_element - start));
+      }
+      chunk_element++;
+      if (chunk_element == tensors_[chunk_index][0].shape().dim_size(0)) {
+        chunk_index++;
+        chunk_element = 0;
+      }
+      current_element++;
+    }
+    return Status::OK();
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<Type> iterable_ GUARDED_BY(mu_);
+  std::vector<DataType> dtypes_ GUARDED_BY(mu_);
+  std::vector<PartialTensorShape> shapes_ GUARDED_BY(mu_);
+  std::vector<std::vector<Tensor>> tensors_;
+};
+
+
+template<typename Type>
 class IOInterfaceInitOp : public ResourceOpKernel<Type> {
  public:
   explicit IOInterfaceInitOp<Type>(OpKernelConstruction* context)
