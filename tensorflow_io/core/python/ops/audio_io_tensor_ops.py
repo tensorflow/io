@@ -17,15 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-import collections
 import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class AudioIOTensor(io_tensor_ops._ColumnIOTensor):
+class AudioIOTensor(io_tensor_ops._ColumnIOTensor): # pylint: disable=protected-access
   """AudioIOTensor"""
 
   #=============================================================================

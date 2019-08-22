@@ -122,10 +122,10 @@ cc_library(
     deps = [
         ":arrow_format",
         "@boost",
-        "@zlib",
         "@double_conversion//:double-conversion",
         "@rapidjson",
         "@snappy",
         "@thrift",
+        "@zlib",
     ],
 )

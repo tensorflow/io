@@ -17,12 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-import collections
-import uuid
-
 import tensorflow as tf
-from tensorflow_io.core.python.ops import core_ops
 
 class _BaseIOTensorDataset(tf.compat.v2.data.Dataset):
   """_IOTensorDataset"""
@@ -283,4 +278,4 @@ class _TableIOTensor(_BaseIOTensor):
 
   def __call__(self, column):
     """Return a new IOTensor with column named `column`"""
-    return self.__class__(self._filename, columns=[column], internal=True)
+    return self.__class__(self._filename, columns=[column], internal=True) # pylint: disable=no-value-for-parameter
