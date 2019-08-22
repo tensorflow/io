@@ -260,7 +260,7 @@ class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_io_tensor_ops.KafkaIOTensor(
-        subscription,
-        servers=kwargs.get("servers", None),
-        configuration=kwargs.get("configuration", None),
-        internal=True)
+          subscription,
+          servers=kwargs.get("servers", None),
+          configuration=kwargs.get("configuration", None),
+          internal=True)

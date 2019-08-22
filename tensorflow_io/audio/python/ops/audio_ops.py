@@ -17,8 +17,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
+
+warnings.warn(
+    "The tensorflow_io.audio.WAVDataset is "
+    "deprecated. Please look for tfio.IOTensor.from_audio "
+    "for reading WAV files into tensorflow.",
+    DeprecationWarning)
+
 
 class AudioDataset(data_ops.Dataset):
   """A Audio File Dataset that reads the audio file."""

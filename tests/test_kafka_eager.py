@@ -39,7 +39,7 @@ def test_kafka_io_tensor():
   assert kafka.dtype == tf.string
   assert kafka.shape == [10]
   assert np.all(kafka.to_tensor().numpy() == [
-          ("D" + str(i)).encode() for i in range(10)])
+      ("D" + str(i)).encode() for i in range(10)])
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
