@@ -23,7 +23,16 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_io.kafka as kafka_io
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
+from tensorflow_io.core.python.ops import kafka_dataset_ops # pylint: disable=wrong-import-position
+
+def test_kafka_dataset():
+  dataset = kafka_dataset_ops.KafkaDataset("test").batch(2)
+  assert np.all([
+      e.numpy().tolist() for e in dataset] == np.asarray([
+          ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
