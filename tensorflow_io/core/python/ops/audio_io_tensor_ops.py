@@ -46,7 +46,7 @@ class AudioIOTensor(io_tensor_ops._ColumnIOTensor): # pylint: disable=protected-
   # Accessors
   #=============================================================================
 
-  @property
+  @io_tensor_ops._BaseIOTensorMeta # pylint: disable=protected-access
   def rate(self):
-    """The sampel `rate` of the audio stream"""
+    """The sample `rate` of the audio stream"""
     return self._rate

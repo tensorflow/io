@@ -19,6 +19,10 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+class _BaseIOTensorMeta(property):
+  """_BaseIOTensorMeta is a decorator that is viewable to __repr__"""
+  pass
+
 class _BaseIOTensorDataset(tf.compat.v2.data.Dataset):
   """_IOTensorDataset"""
 
@@ -92,8 +96,11 @@ class _BaseIOTensor(object):
   # String Encoding
   #=============================================================================
   def __repr__(self):
-    return "<%s: spec=%s>" % (
-        self.__class__.__name__, self.spec)
+    meta = "".join([", %s=%s" % (
+        k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
+            ) if isinstance(v, _BaseIOTensorMeta)])
+    return "<%s: spec=%s%s>" % (
+        self.__class__.__name__, self.spec, meta)
 
 
   #=============================================================================
