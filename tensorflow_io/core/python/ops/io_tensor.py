@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
+from tensorflow_io.core.python.ops import hdf5_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
@@ -346,3 +347,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
       return lmdb_io_tensor_ops.LMDBIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_hdf5(cls,
+                filename,
+                **kwargs):
+    """Creates an `IOTensor` from an hdf5 file.
+
+    Args:
+      filename: A string, the filename of an hdf5 file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
+      return hdf5_io_tensor_ops.HDF5IOTensor(filename, internal=True)

@@ -14,6 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/stream.h"
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
@@ -320,5 +322,156 @@ REGISTER_KERNEL_BUILDER(Name("ReadHDF5").Device(DEVICE_CPU),
 
 
 }  // namespace
+
+
+class HDF5Indexable : public IOIndexableInterface {
+ public:
+  HDF5Indexable(Env* env)
+  : env_(env) {}
+
+  ~HDF5Indexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    file_image_.reset(new HDF5FileImage(env_, filename, ""));
+    H5::H5File *file = file_image_->GetFile();
+    if (file == nullptr) {
+      return errors::InvalidArgument("unable to open hdf5 file: ", filename);
+    }
+
+    H5O_info_t info;
+    file->getObjinfo(info);
+    HDF5Iterate data(info.addr);
+    herr_t err = H5Literate(file->getId(), H5_INDEX_NAME, H5_ITER_NATIVE, NULL, HDF5Iterate::Iterate, (void *)&data);
+    for (size_t i = 0; i < data.datasets_.size(); i++) {
+      columns_.emplace_back(data.datasets_[i]);
+      columns_index_[data.datasets_[i]] = i;
+    }
+
+    for (size_t i = 0; i < columns_.size(); i++) {
+      ::tensorflow::DataType dtype;
+      string dataset = columns_[i];
+      H5::DataSet data_set = file->openDataSet(dataset);
+
+      H5::DataSpace data_space = data_set.getSpace();
+      int rank = data_space.getSimpleExtentNdims();
+      absl::InlinedVector<hsize_t, 4> dims(rank);
+      data_space.getSimpleExtentDims(dims.data());
+
+      H5::DataType data_type = data_set.getDataType();
+      hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
+      if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+        dtype = DT_INT32;
+      } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
+        dtype = DT_UINT32;
+      } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
+        dtype = DT_INT64;
+      } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
+        dtype = DT_FLOAT;
+      } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
+        dtype = DT_DOUBLE;
+      } else {
+        return errors::InvalidArgument("unsupported data type: ", native_type);
+      }
+      dtypes_.emplace_back(dtype);
+      absl::InlinedVector<int64, 4> shape_dims(rank);
+      for (int r = 0; r < rank; r++) {
+        shape_dims[r] = dims[r];
+      }
+      shapes_.emplace_back(TensorShape(shape_dims));
+    }
+    return Status::OK();
+  }
+  Status Component(Tensor* component) override {
+    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+    for (size_t i = 0; i < columns_.size(); i++) {
+      component->flat<string>()(i) = columns_[i];
+    }
+    return Status::OK();
+  }
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    const int64 column_index = columns_index_[component.scalar<string>()()];
+    *shape = shapes_[column_index];
+    *dtype = dtypes_[column_index];
+    return Status::OK();
+  }
+
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
+    }
+    const string& column = component.scalar<string>()();
+
+    H5::H5File *file = file_image_->GetFile();
+    try {
+      H5::DataSet data_set = file->openDataSet(column);
+      H5::DataSpace data_space = data_set.getSpace();
+
+      int rank = data_space.getSimpleExtentNdims();
+      absl::InlinedVector<hsize_t, 4> dims(rank);
+      data_space.getSimpleExtentDims(dims.data());
+
+      if (start > dims[0] || stop > dims[0]) {
+        return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+      }
+      // Find the border of the dims start and dims
+      absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
+      dims_start[0] = start;
+      dims[0] = stop - start;
+
+      H5::DataSpace memory_space(dims.size(), dims.data());
+
+      data_space.selectHyperslab(H5S_SELECT_SET, dims.data(), dims_start.data());
+
+      H5::DataType data_type = data_set.getDataType();
+      hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
+      if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+        data_set.read(tensor->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
+        data_set.read(tensor->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
+        data_set.read(tensor->flat<int64>().data(), H5::PredType::NATIVE_LONG, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
+        data_set.read(tensor->flat<float>().data(), H5::PredType::NATIVE_FLOAT, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
+        data_set.read(tensor->flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memory_space, data_space);
+      } else {
+        return errors::Unimplemented("data type not supported yet: ", data_set.getTypeClass());
+      }
+    } catch(H5::FileIException e){
+      return errors::InvalidArgument("unable to open dataset", e.getCDetailMsg());
+    } 
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("HDF5Indexable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  std::unique_ptr<HDF5FileImage> file_image_;
+
+  std::vector<DataType> dtypes_;
+  std::vector<TensorShape> shapes_;
+  std::vector<string> columns_;
+  std::unordered_map<string, int64> columns_index_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("HDF5IndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<HDF5Indexable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5IndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<HDF5Indexable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5IndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<HDF5Indexable>);
 }  // namespace data
 }  // namespace tensorflow
