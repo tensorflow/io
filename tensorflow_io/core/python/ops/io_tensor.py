@@ -22,6 +22,7 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
+from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 
 class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -264,3 +265,27 @@ class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
           servers=kwargs.get("servers", None),
           configuration=kwargs.get("configuration", None),
           internal=True)
+
+  @classmethod
+  def from_prometheus(cls,
+                      query,
+                      **kwargs):
+    """Creates an `IOTensor` from a prometheus query.
+
+    Args:
+      query: A string, the query string for prometheus.
+      endpoint: A string, the server address of prometheus, by default
+       `http://localhost:9090`.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A (`IOTensor`, `IOTensor`) tuple that represents `timestamp`
+        and `value`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromPrometheus")):
+      return prometheus_io_tensor_ops.PrometheusTimestampIOTensor(
+          query, endpoint=kwargs.get("endpoint", None), internal=True,
+      ), prometheus_io_tensor_ops.PrometheusValueIOTensor(
+          query, endpoint=kwargs.get("endpoint", None), internal=True,
+      )

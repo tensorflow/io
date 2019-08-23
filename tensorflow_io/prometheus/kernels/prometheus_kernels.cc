@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/prometheus_go.h"
 
 namespace tensorflow {
@@ -74,5 +75,138 @@ REGISTER_KERNEL_BUILDER(Name("ReadPrometheus").Device(DEVICE_CPU),
 
 
 }  // namespace
+
+
+class PrometheusIndexable : public IOIndexableInterface {
+ public:
+  PrometheusIndexable(Env* env)
+  : env_(env) {}
+
+  ~PrometheusIndexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 query is not supported");
+    }
+    const string& query = input[0];
+
+    string endpoint = "http://localhost:9090";
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("endpoint: ") == 0) {
+        endpoint = metadata[i].substr(8);
+      }
+    }
+
+    int64 ts = time(NULL);
+
+    GoString endpoint_go = {endpoint.c_str(), static_cast<int64>(endpoint.size())};
+    GoString query_go = {query.c_str(), static_cast<int64>(query.size())};
+
+    GoSlice timestamp_go = {0, 0, 0};
+    GoSlice value_go = {0, 0, 0};
+
+    GoInt returned = Query(endpoint_go, query_go, ts, timestamp_go, value_go);
+    if (returned < 0) {
+      return errors::InvalidArgument("unable to query prometheus");
+    }
+
+    timestamp_.resize(returned);
+    value_.resize(returned);
+
+    if (returned > 0) {
+      timestamp_go.data = &timestamp_[0];
+      timestamp_go.len = returned;
+      timestamp_go.cap = returned;
+      value_go.data = &value_[0];
+      value_go.len = returned;
+      value_go.cap = returned;
+
+      returned = Query(endpoint_go, query_go, ts, timestamp_go, value_go);
+      if (returned < 0) {
+        return errors::InvalidArgument("unable to query prometheus to get the value");
+      }
+    }
+
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("column: ") == 0) {
+        columns_.emplace_back(metadata[i].substr(8));
+      }
+    }
+    if (columns_.size() == 0) {
+      columns_.emplace_back("timestamp");
+      columns_.emplace_back("value");
+    }
+
+    for (size_t i = 0; i < columns_.size(); i++) {
+      if (columns_[i] == "timestamp") {
+        dtypes_.emplace_back(DT_INT64);
+        shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
+      } else if (columns_[i] == "value") {
+        dtypes_.emplace_back(DT_DOUBLE);
+        shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
+      } else {
+        return errors::InvalidArgument("column name other than `timestamp` or `value` is not supported: ", columns_[i]);
+      }
+    }
+
+    return Status::OK();
+  }
+  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
+    dtypes.clear();
+    for (size_t i = 0; i < dtypes_.size(); i++) {
+      dtypes.push_back(dtypes_[i]);
+    }
+    shapes.clear();
+    for (size_t i = 0; i < shapes_.size(); i++) {
+      shapes.push_back(shapes_[i]);
+    }
+    return Status::OK();
+  }
+
+  Status Extra(std::vector<Tensor>* extra) override {
+    // Expose columns
+    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+    for (size_t i = 0; i < columns_.size(); i++) {
+      columns.flat<string>()(i) = columns_[i];
+    }
+    extra->push_back(columns);
+    return Status::OK();
+  }
+
+  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
+    }
+    for (size_t i = 0; i < columns_.size(); i++) {
+      if (columns_[i] == "timestamp") {
+        memcpy(&tensors[i].flat<int64>().data()[start], &timestamp_[0], sizeof(int64) * (stop - start));
+      } else {
+        memcpy(&tensors[i].flat<double>().data()[start], &value_[0], sizeof(double) * (stop - start));
+      }
+    }
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("PrometheusIndexable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+
+  std::vector<DataType> dtypes_;
+  std::vector<TensorShape> shapes_;
+  std::vector<string> columns_;
+
+  std::vector<int64> timestamp_;
+  std::vector<double> value_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<PrometheusIndexable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<PrometheusIndexable>);
+
 }  // namespace data
 }  // namespace tensorflow
