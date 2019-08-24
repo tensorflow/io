@@ -18,7 +18,7 @@ rm -f .bazelrc
 if python -c "import tensorflow as tf" &> /dev/null; then
     echo 'using installed tensorflow'
 else
-    pip install tensorflow
+    python -m pip install $(python setup.py --package-version)
 fi
 python -m pip install grpcio-tools
 python third_party/tf/configure.py
