@@ -47,6 +47,8 @@ cc_library(
             "cpp/src/arrow/io/*.h",
             "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/ipc/*.h",
+            "cpp/src/arrow/csv/*.cc",
+            "cpp/src/arrow/csv/*.h",
             "cpp/src/arrow/json/*.cc",
             "cpp/src/arrow/json/*.h",
             "cpp/src/arrow/util/*.cc",
