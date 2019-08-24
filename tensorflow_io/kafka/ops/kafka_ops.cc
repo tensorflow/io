@@ -19,6 +19,81 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("KafkaIndexableInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("KafkaIndexableGetItem")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Output("output: dtype")
+  .Attr("dtype: list(type) >= 1")
+  .Attr("shape: list(shape) >= 1")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    std::vector<PartialTensorShape> shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    if (shape.size() != c->num_outputs()) {
+      return errors::InvalidArgument("`shape` must be the same length as `types` (", shape.size(), " vs. ", c->num_outputs());
+    }
+    for (size_t i = 0; i < shape.size(); ++i) {
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape[i], &entry));
+      c->set_output(static_cast<int64>(i), entry);
+    }
+    return Status::OK();
+   });
+
+REGISTER_OP("KafkaIterableInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("KafkaIterableNext")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Output("output: dtype")
+  .Attr("dtype: list(type) >= 1")
+  .Attr("shape: list(shape) >= 1")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    std::vector<PartialTensorShape> shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    if (shape.size() != c->num_outputs()) {
+      return errors::InvalidArgument("`shape` must be the same length as `types` (", shape.size(), " vs. ", c->num_outputs());
+    }
+    for (size_t i = 0; i < shape.size(); ++i) {
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape[i], &entry));
+      c->set_output(static_cast<int64>(i), entry);
+    }
+    return Status::OK();
+   });
+
+
 REGISTER_OP("KafkaOutputSequence")
     .Input("topic: string")
     .Input("servers: string")

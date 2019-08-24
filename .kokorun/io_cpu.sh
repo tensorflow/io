@@ -45,6 +45,8 @@ python --version
 python -m pip --version
 docker  --version
 
+PYTHON_VERSION=$(python -c 'import sys; print(sys.version_info[0])')
+
 ## Set test services
 bash -x -e tests/test_ignite/start_ignite.sh
 bash -x -e tests/test_kafka/kafka_test.sh start kafka

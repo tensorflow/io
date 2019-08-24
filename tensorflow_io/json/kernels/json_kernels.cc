@@ -21,6 +21,12 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/env.h"
 #include "include/json/json.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/stream.h"
+#include "arrow/memory_pool.h"
+#include "arrow/json/reader.h"
+#include "arrow/table.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 
 namespace tensorflow {
 namespace data {
@@ -199,5 +205,174 @@ REGISTER_KERNEL_BUILDER(Name("ReadJSON").Device(DEVICE_CPU),
                         ReadJSONOp);
 
 }  // namespace
+
+
+class JSONIndexable : public IOIndexableInterface {
+ public:
+  JSONIndexable(Env* env)
+  : env_(env) {}
+
+  ~JSONIndexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    json_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
+
+    ::arrow::Status status;
+
+    status = ::arrow::json::TableReader::Make(::arrow::default_memory_pool(), json_file_, ::arrow::json::ReadOptions::Defaults(), ::arrow::json::ParseOptions::Defaults(), &reader_);
+    if (!status.ok()) {
+      return errors::InvalidArgument("unable to make a TableReader: ", status);
+    }
+    status = reader_->Read(&table_);
+    if (!status.ok()) {
+      return errors::InvalidArgument("unable to read table: ", status);
+    }
+
+    std::vector<string> columns;
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("column: ") == 0) {
+        columns.emplace_back(metadata[i].substr(8));
+      }
+    }
+
+    columns_index_.clear();
+    if (columns.size() == 0) {
+      for (int i = 0; i < table_->num_columns(); i++) {
+        columns_index_.push_back(i);
+      }
+    } else {
+      std::unordered_map<string, int> columns_map;
+      for (int i = 0; i < table_->num_columns(); i++) {
+        columns_map[table_->column(i)->name()] = i;
+      }
+      for (size_t i = 0; i < columns.size(); i++) {
+        columns_index_.push_back(columns_map[columns[i]]);
+      }
+    }
+
+    dtypes_.clear();
+    shapes_.clear();
+    columns_.clear();
+    for (size_t i = 0; i < columns_index_.size(); i++) {
+      int column_index = columns_index_[i];
+      ::tensorflow::DataType dtype;
+      TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(column_index)->type(), &dtype));
+      dtypes_.push_back(dtype);
+      shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
+      columns_.push_back(table_->column(column_index)->name());
+    }
+
+    return Status::OK();
+  }
+  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
+    dtypes.clear();
+    for (size_t i = 0; i < dtypes_.size(); i++) {
+      dtypes.push_back(dtypes_[i]);
+    }
+    shapes.clear();
+    for (size_t i = 0; i < shapes_.size(); i++) {
+      shapes.push_back(shapes_[i]);
+    }
+    return Status::OK();
+  }
+
+  Status Extra(std::vector<Tensor>* extra) override {
+    // Expose columns
+    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+    for (size_t i = 0; i < columns_.size(); i++) {
+      columns.flat<string>()(i) = columns_[i];
+    }
+    extra->push_back(columns);
+    return Status::OK();
+  }
+
+  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
+    }
+    for (size_t i = 0; i < tensors.size(); i++) {
+      int column_index = columns_index_[i];
+      std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
+
+      #define PROCESS_TYPE(TTYPE,ATYPE) { \
+          int64 curr_index = 0; \
+          for (auto chunk : slice->data()->chunks()) { \
+            for (int64_t item = 0; item < chunk->length(); item++) { \
+              tensors[i].flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
+              curr_index++; \
+            } \
+          } \
+        }
+      switch (tensors[i].dtype()) {
+      case DT_BOOL:
+        PROCESS_TYPE(bool, ::arrow::BooleanArray);
+        break;
+      case DT_INT8:
+        PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
+        break;
+      case DT_UINT8:
+        PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
+        break;
+      case DT_INT16:
+        PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
+        break;
+      case DT_UINT16:
+        PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
+        break;
+      case DT_INT32:
+        PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
+        break;
+      case DT_UINT32:
+        PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
+        break;
+      case DT_INT64:
+        PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
+        break;
+      case DT_UINT64:
+        PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
+        break;
+      case DT_FLOAT:
+        PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
+        break;
+      case DT_DOUBLE:
+        PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
+        break;
+      default:
+        return errors::InvalidArgument("data type is not supported: ", DataTypeString(tensors[i].dtype()));
+      }
+    }
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("JSONIndexable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  std::shared_ptr<ArrowRandomAccessFile> json_file_;
+  std::shared_ptr<::arrow::json::TableReader> reader_;
+  std::shared_ptr<::arrow::Table> table_;
+
+  std::vector<DataType> dtypes_;
+  std::vector<TensorShape> shapes_;
+  std::vector<string> columns_;
+  std::vector<int> columns_index_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("JSONIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<JSONIndexable>);
+REGISTER_KERNEL_BUILDER(Name("JSONIndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<JSONIndexable>);
 }  // namespace data
 }  // namespace tensorflow

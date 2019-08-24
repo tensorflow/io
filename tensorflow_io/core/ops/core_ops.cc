@@ -19,21 +19,6 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("AdjustBatchDataset")
-    .Input("input_dataset: variant")
-    .Input("batch_size: int64")
-    .Input("batch_mode: string")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      shape_inference::ShapeHandle unused;
-      // batch_size should be a scalar.
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
-      // batch_mode should be a scalar.
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
-      return shape_inference::ScalarShape(c);
-    });
 REGISTER_OP("ListArchiveEntries")
     .Input("filename: string")
     .Input("memory: string")
