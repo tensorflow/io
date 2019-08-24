@@ -42,7 +42,6 @@ class KafkaIOTensor(io_tensor_ops._ColumnIOTensor): # pylint: disable=protected-
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      print("VVV: ", dtypes, shapes)
       super(KafkaIOTensor, self).__init__(
           shapes, dtypes, resource, core_ops.kafka_indexable_get_item,
           internal=internal)
