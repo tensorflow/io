@@ -112,7 +112,7 @@ version of TensorFlow I/O according to the table below:
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
 
-### Build Status
+### Build Status and CI
 
 | Build | Status |
 | --- | --- |
@@ -121,22 +121,87 @@ version of TensorFlow I/O according to the table below:
 | Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
 | Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
 
+Because of manylinux2010 requirement, TensorFlow I/O is built with
+Ubuntu:16.04 + Developer Toolset 7 (GCC 7.3) on Linux. Configuration
+with Ubuntu 16.04 with Developer Toolset 7 is not exactly straightforward.
+If the system have docker installed, then the following command
+will automatically build manylinux2010 compatible whl package:
+
+```sh
+bash -x -e .travis/python.release.sh
+```
+
+It takes some time to build, but once complete, there will be python
+`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
+directory.
+
+On macOS, the same command could be used though the script expect `python` in shell
+and will only generate a whl package that matches the version of `python` in shell. If
+you want to build a whl package for a specific python then you have to alias this version
+of python to `python` in shell.
+
+Note the above command is also the command we use when releasing packages for Linux and macOS.
+
+TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
+Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
+Again, because of the manylinux2010 requirement, on Linux whl packages are always
+built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
+with different python version to ensure a good coverage:
+
+| Python | Ubuntu 16.04| Ubuntu 18.04 | macOS + osx9 |
+| ------- | ----- | ------- | ------- |
+| 2.7 |  :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| 3.5 |  :heavy_check_mark: | N/A | :heavy_check_mark: |
+| 3.6 |  N/A | :heavy_check_mark: | :heavy_check_mark: |
+| 3.7 |  N/A | :heavy_check_mark: | N/A |
+
+
+TensorFlow I/O has integrations with may systems and cloud vendors such as
+Prometheus, Apache Kafka, Apache Ignite, Google Cloud PubSub, AWS Kinesis,
+Microsoft Azure Storage, Alibaba Cloud OSS etc.
+
+We tried our best to test against those systems in our continuous integration
+whenever possible. Some tests such as Prometheus, Kafka, and Ignite
+are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
+the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
+through official or non-official emulators. Offline tests are also performed whenever
+possible, though systems covered through offine tests may not have the same
+level of coverage as live systems or emulators.
+
+
+|  | Live System | Emulator| CI Integration |  Offline |
+| ------- | ----- | ----- | ----- | ----- |
+| Apache Kafka | :heavy_check_mark:  | | :heavy_check_mark:| |
+| Apache Ignite |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Prometheus |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Google PubSub |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Azure Storage |   | :heavy_check_mark: |:heavy_check_mark:| |
+| AWS Kinesis |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Alibaba Cloud OSS |   | | |  :heavy_check_mark: |
+| Google BigTable/BigQuery |   | to be added | | |
+
+Note:
+- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
+- Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
+- None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
+
+
 ## Developing
 
 ### Python
 
-For Python development, a reference Dockerfile [here](dev/Dockerfile) can be
+For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
 $ # Build and run the Docker image
-$ docker build -f dev/Dockerfile -t tfio-dev .
+$ docker build -f tools/dev/Dockerfile -t tfio-dev .
 $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 $ # In Docker, configure will install TensorFlow or use existing install
 $ ./configure.sh
 $ # Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options)
 $ bazel build -c opt --copt=-march=native --copt=-fPIC -s --verbose_failures //tensorflow_io/...
 $ # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
-$ pytest tests/
+$ pytest -s -v tests/
 $ # Build the TensorFlow I/O package
 $ python setup.py bdist_wheel
 ```
@@ -149,6 +214,11 @@ libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
 `setup.py` can also accept `--data [path]` as an argument, for example
 `python setup.py --data bazel-bin bdist_wheel`.
 
+NOTE: While the tfio-dev container gives developers an easy to work with
+environment, the released whl packages are build differently due to manylinux2010
+requirements. Please check [Build Status and CI] section for more details
+on how the released whl packages are generated.
+
 #### Starting Test Containers
 
 Some tests require launching a test container before running. In order
@@ -160,18 +230,17 @@ $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 ```
 
-#### Running Python Style Checks
+#### Running Python and Bazel Style Checks
 
-Style checks for Python can be run with the following commands:
+Style checks for Python and Bazel can be run with the following commands
+(docker has to be available):
 
 ```sh
-$ curl -o .pylint -sSL https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/tools/ci_build/pylintrc
-$ find . -name '*.py' | xargs pylint --rcfile=.pylint
+$ bash -x -e .travis/lint.sh
 ```
 
-#### Running Bazel Style Checks
-
-Style checks for Bazel files can be run with the following Docker command:
+In case there are any Bazel style errors, the following command could be invoked 
+to fix and Bazel style issues:
 
 ```sh
 $ docker run -i -t --rm -v $PWD:/v -w /v --net=host golang:1.12 bash -x -e -c 'go get github.com/bazelbuild/buildtools/buildifier && buildifier $(find . -type f \( -name WORKSPACE -or -name BUILD -or -name *.BUILD \))'
