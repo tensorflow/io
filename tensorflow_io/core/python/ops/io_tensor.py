@@ -23,6 +23,7 @@ from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
+from tensorflow_io.core.python.ops import feather_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -287,3 +288,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromPrometheus")):
       return prometheus_io_tensor_ops.PrometheusIOTensor(
           query, endpoint=kwargs.get("endpoint", None), internal=True)
+
+  @classmethod
+  def from_feather(cls,
+                   filename,
+                   **kwargs):
+    """Creates an `IOTensor` from an feather file.
+
+    Args:
+      filename: A string, the filename of an feather file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromFeather")):
+      return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
