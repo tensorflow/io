@@ -19,9 +19,13 @@ limitations under the License.
 #include "kernels/stream.h"
 #include "arrow/io/api.h"
 #include "arrow/buffer.h"
+#include "arrow/type.h"
 
 namespace tensorflow {
 namespace data {
+
+Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out);
+Status GetArrowType(::tensorflow::DataType dtype, std::shared_ptr<::arrow::DataType>* out);
 
 // NOTE: Both SizedRandomAccessFile and ArrowRandomAccessFile overlap
 // with another PR. Will remove duplicate once PR merged
@@ -92,6 +96,8 @@ private:
   int64 size_;
   int64 position_;
 };
+
+
 }  // namespace data
 }  // namespace tensorflow
 

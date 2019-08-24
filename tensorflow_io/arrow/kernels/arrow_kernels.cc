@@ -19,9 +19,27 @@ limitations under the License.
 #include "arrow/ipc/feather.h"
 #include "arrow/ipc/feather_generated.h"
 #include "arrow/buffer.h"
+#include "arrow/adapters/tensorflow/convert.h"
 
 namespace tensorflow {
 namespace data {
+
+Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out) {
+  ::arrow::Status status = ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
+  if (!status.ok()) {
+    return errors::InvalidArgument("arrow data type ", dtype, " is not supported: ", status);
+  }
+  return Status::OK();
+}
+
+Status GetArrowType(::tensorflow::DataType dtype, std::shared_ptr<::arrow::DataType>* out) {
+  ::arrow::Status status = ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
+  if (!status.ok()) {
+    return errors::InvalidArgument("tensorflow data type ", dtype, " is not supported: ", status);
+  }
+  return Status::OK();
+}
+
 namespace {
 
 class ListFeatherColumnsOp : public OpKernel {

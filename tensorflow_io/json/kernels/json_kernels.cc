@@ -262,61 +262,7 @@ class JSONIndexable : public IOIndexableInterface {
     for (size_t i = 0; i < columns_index_.size(); i++) {
       int column_index = columns_index_[i];
       ::tensorflow::DataType dtype;
-      switch (table_->column(column_index)->type()->id()) {
-      case ::arrow::Type::BOOL:
-        dtype = ::tensorflow::DT_BOOL;
-        break;
-      case ::arrow::Type::UINT8:
-        dtype= ::tensorflow::DT_UINT8;
-        break;
-      case ::arrow::Type::INT8:
-        dtype= ::tensorflow::DT_INT8;
-        break;
-      case ::arrow::Type::UINT16:
-        dtype= ::tensorflow::DT_UINT16;
-        break;
-      case ::arrow::Type::INT16:
-        dtype= ::tensorflow::DT_INT16;
-        break;
-      case ::arrow::Type::UINT32:
-        dtype= ::tensorflow::DT_UINT32;
-        break;
-      case ::arrow::Type::INT32:
-        dtype= ::tensorflow::DT_INT32;
-        break;
-      case ::arrow::Type::UINT64:
-        dtype= ::tensorflow::DT_UINT64;
-        break;
-      case ::arrow::Type::INT64:
-        dtype= ::tensorflow::DT_INT64;
-        break;
-      case ::arrow::Type::HALF_FLOAT:
-        dtype= ::tensorflow::DT_HALF;
-        break;
-      case ::arrow::Type::FLOAT:
-        dtype= ::tensorflow::DT_FLOAT;
-        break;
-      case ::arrow::Type::DOUBLE:
-        dtype= ::tensorflow::DT_DOUBLE;
-        break;
-      case ::arrow::Type::STRING:
-      case ::arrow::Type::BINARY:
-      case ::arrow::Type::FIXED_SIZE_BINARY:
-      case ::arrow::Type::DATE32:
-      case ::arrow::Type::DATE64:
-      case ::arrow::Type::TIMESTAMP:
-      case ::arrow::Type::TIME32:
-      case ::arrow::Type::TIME64:
-      case ::arrow::Type::INTERVAL:
-      case ::arrow::Type::DECIMAL:
-      case ::arrow::Type::LIST:
-      case ::arrow::Type::STRUCT:
-      case ::arrow::Type::UNION:
-      case ::arrow::Type::DICTIONARY:
-      case ::arrow::Type::MAP:
-      default:
-        return errors::InvalidArgument("arrow data type is not supported: ", table_->column(i)->type()->ToString());
-      }
+      TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(column_index)->type(), &dtype));
       dtypes_.push_back(dtype);
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       columns_.push_back(table_->column(column_index)->name());
@@ -347,7 +293,6 @@ class JSONIndexable : public IOIndexableInterface {
   }
 
   Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
-    Tensor& output_tensor = tensors[0];
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
