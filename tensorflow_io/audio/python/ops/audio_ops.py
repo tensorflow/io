@@ -17,67 +17,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.core.python.ops import core_ops
 
-def list_wav_info(filename, **kwargs):
-  """list_wav_info"""
-  if not tf.executing_eagerly():
-    raise NotImplementedError("list_wav_info only support eager mode")
-  memory = kwargs.get("memory", "")
-  dtype, shape, rate = core_ops.list_wav_info(
-      filename, memory=memory)
-  return tf.TensorSpec(shape.numpy(), dtype.numpy().decode()), rate
+warnings.warn(
+    "The tensorflow_io.audio.WAVDataset is "
+    "deprecated. Please look for tfio.IOTensor.from_audio "
+    "for reading WAV files into tensorflow.",
+    DeprecationWarning)
 
-def read_wav(filename, spec, **kwargs):
-  """read_wav"""
-  memory = kwargs.get("memory", "")
-  start = kwargs.get("start", 0)
-  stop = kwargs.get("stop", None)
-  if stop is None and spec.shape[0] is not None:
-    stop = spec.shape[0] - start
-  if stop is None:
-    stop = -1
-  return core_ops.read_wav(
-      filename, memory=memory,
-      start=start, stop=stop, dtype=spec.dtype)
-
-class WAVDataset(data_ops.BaseDataset):
-  """A WAV Dataset"""
-
-  def __init__(self, filename, **kwargs):
-    """Create a WAVDataset.
-
-    Args:
-      filename: A string containing filename.
-    """
-    if not tf.executing_eagerly():
-      start = kwargs.get("start")
-      stop = kwargs.get("stop")
-      dtype = kwargs.get("dtype")
-      shape = kwargs.get("shape")
-    else:
-      spec, _ = list_wav_info(filename)
-      start = 0
-      stop = spec.shape[0]
-      dtype = spec.dtype
-      shape = tf.TensorShape(
-          [dim if i != 0 else None for i, dim in enumerate(
-              spec.shape.as_list())])
-
-    # capacity is the rough count for each chunk in dataset
-    capacity = kwargs.get("capacity", 65536)
-    entry_start = list(range(start, stop, capacity))
-    entry_stop = entry_start[1:] + [stop]
-    dataset = data_ops.BaseDataset.from_tensor_slices(
-        (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
-    ).map(lambda start, stop: core_ops.read_wav(
-        filename, memory="", start=start, stop=stop, dtype=dtype))
-    self._dataset = dataset
-
-    super(WAVDataset, self).__init__(
-        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
 
 class AudioDataset(data_ops.Dataset):
   """A Audio File Dataset that reads the audio file."""

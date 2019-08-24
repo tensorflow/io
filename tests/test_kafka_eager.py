@@ -23,7 +23,23 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_io.kafka as kafka_io
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
+from tensorflow_io.core.python.ops import kafka_dataset_ops # pylint: disable=wrong-import-position
+
+def test_kafka_dataset():
+  dataset = kafka_dataset_ops.KafkaDataset("test").batch(2)
+  assert np.all([
+      e.numpy().tolist() for e in dataset] == np.asarray([
+          ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
+
+def test_kafka_io_tensor():
+  kafka = tfio.IOTensor.from_kafka("test")
+  assert kafka.dtype == tf.string
+  assert kafka.shape == [10]
+  assert np.all(kafka.to_tensor().numpy() == [
+      ("D" + str(i)).encode() for i in range(10)])
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
@@ -55,7 +71,7 @@ def test_kafka_output_sequence():
   class OutputCallback(tf.keras.callbacks.Callback):
     """KafkaOutputCallback"""
     def __init__(self, batch_size, topic, servers):
-      self._sequence = kafka_io.KafkaOutputSequence(
+      self._sequence = tfio.kafka.KafkaOutputSequence(
           topic=topic, servers=servers)
       self._batch_size = batch_size
     def on_predict_batch_end(self, batch, logs=None):
@@ -78,6 +94,6 @@ def test_kafka_output_sequence():
   predictions = [class_names[v] for v in np.argmax(predictions, axis=1)]
 
   # Reading from `test_e(time)e` we should get the same result
-  dataset = kafka_io.KafkaDataset(topics=[topic], group="test", eof=True)
+  dataset = tfio.kafka.KafkaDataset(topics=[topic], group="test", eof=True)
   for entry, prediction in zip(dataset, predictions):
     assert entry.numpy() == prediction.encode()

@@ -13,12 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/stream.h"
 
 namespace tensorflow {
 namespace data {
-namespace {
 
 // See http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
 struct WAVHeader {
@@ -68,189 +67,140 @@ Status ValidateWAVHeader(struct WAVHeader *header) {
   return Status::OK();
 }
 
-class ListWAVInfoOp : public OpKernel {
+class WAVIndexable : public IOIndexableInterface {
  public:
-  explicit ListWAVInfoOp(OpKernelConstruction* context) : OpKernel(context) {
-    env_ = context->env();
-  }
+  WAVIndexable(Env* env)
+  : env_(env) {}
 
-  void Compute(OpKernelContext* context) override {
-    const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
-
-    const Tensor& memory_tensor = context->input(1);
-    const string& memory = memory_tensor.scalar<string>()();
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
-    uint64 size;
-    OP_REQUIRES_OK(context, file->GetFileSize(&size));
+  ~WAVIndexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     StringPiece result;
-    struct WAVHeader header;
-    OP_REQUIRES_OK(context, file->Read(0, sizeof(header), &result, (char *)(&header)));
+    TF_RETURN_IF_ERROR(file_->Read(0, sizeof(header_), &result, (char *)(&header_)));
 
-    OP_REQUIRES_OK(context, ValidateWAVHeader(&header));
-    if (header.riff_size + 8 != size) {
+    TF_RETURN_IF_ERROR(ValidateWAVHeader(&header_));
+    if (header_.riff_size + 8 != file_size_) {
       // corrupted file?
     }
-    int64 filesize = header.riff_size + 8;
+    int64 filesize = header_.riff_size + 8;
 
     int64 position = result.size();
 
-    if (header.fmt_size != 16) {
-      position += header.fmt_size - 16;
+    if (header_.fmt_size != 16) {
+      position += header_.fmt_size - 16;
     }
 
     int64 nSamples = 0;
     do {
       struct DataHeader head;
-      OP_REQUIRES_OK(context, file->Read(position, sizeof(head), &result, (char *)(&head)));
+      TF_RETURN_IF_ERROR(file_->Read(position, sizeof(head), &result, (char *)(&head)));
       position += result.size();
       if (memcmp(head.mark, "data", 4) == 0) {
         // Data should be block aligned
         // bytes = nSamples * nBlockAlign
-        OP_REQUIRES(context, (head.size % header.nBlockAlign == 0), errors::InvalidArgument("data chunk should be block aligned (", header.nBlockAlign, "), received: ", head.size));
-        nSamples += head.size / header.nBlockAlign;
+        if (head.size % header_.nBlockAlign != 0) {
+          return errors::InvalidArgument("data chunk should be block aligned (", header_.nBlockAlign, "), received: ", head.size);
+        }
+        nSamples += head.size / header_.nBlockAlign;
       }
       position += head.size;
     } while (position < filesize);
 
-    string dtype;
-    switch (header.wBitsPerSample) {
+    switch (header_.wBitsPerSample) {
     case 8:
-      dtype = "int8";
+      dtype_ = DT_INT8;
       break;
     case 16:
-      dtype = "int16";
+      dtype_ = DT_INT16;
       break;
     case 24:
-      dtype = "int32";
+      dtype_ = DT_INT32;
       break;
     default:
-      OP_REQUIRES(context, false, errors::InvalidArgument("unsupported wBitsPerSample: ", header.wBitsPerSample));
+      return errors::InvalidArgument("unsupported wBitsPerSample: ", header_.wBitsPerSample);
     }
 
-    Tensor* dtype_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}), &dtype_tensor));
-    Tensor* shape_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({2}), &shape_tensor));
-    Tensor* rate_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(2, TensorShape({}), &rate_tensor));
+    shape_ = TensorShape({nSamples, header_.nChannels});
 
-    dtype_tensor->scalar<string>()() = std::move(dtype);
-    shape_tensor->flat<int64>()(0) = nSamples;
-    shape_tensor->flat<int64>()(1) = header.nChannels;
-    rate_tensor->scalar<int32>()() = header.nSamplesPerSec;
+    return Status::OK();
   }
- private:
-  mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-};
-
-class ReadWAVOp : public OpKernel {
- public:
-  explicit ReadWAVOp(OpKernelConstruction* context) : OpKernel(context) {
-    env_ = context->env();
+  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
+    dtypes.clear();
+    dtypes.push_back(dtype_);
+    shapes.clear();
+    shapes.push_back(shape_);
+    return Status::OK();
   }
 
-  void Compute(OpKernelContext* context) override {
-    const Tensor& filename_tensor = context->input(0);
-    const string& filename = filename_tensor.scalar<string>()();
+  Status Extra(std::vector<Tensor>* extra) override {
+    // Expose a sample `rate`
+    Tensor rate(DT_INT32, TensorShape({}));
+    rate.scalar<int32>()() = header_.nSamplesPerSec;
+    extra->push_back(rate);
+    return Status::OK();
+  }
 
-    const Tensor& memory_tensor = context->input(1);
-    const string& memory = memory_tensor.scalar<string>()();
-
-    const Tensor& start_tensor = context->input(2);
-    const int64 start = start_tensor.scalar<int64>()();
-
-    const Tensor& stop_tensor = context->input(3);
-    const int64 stop = stop_tensor.scalar<int64>()();
-
-    std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
-    uint64 size;
-    OP_REQUIRES_OK(context, file->GetFileSize(&size));
-
-    StringPiece result;
-    struct WAVHeader header;
-    OP_REQUIRES_OK(context, file->Read(0, sizeof(header), &result, (char *)(&header)));
-
-    OP_REQUIRES_OK(context, ValidateWAVHeader(&header));
-    if (header.riff_size + 8 != size) {
-      // corrupted file?
-    }
-    int64 filesize = header.riff_size + 8;
-
-    int64 position = result.size();
-    if (header.fmt_size != 16) {
-      position += header.fmt_size - 16;
+  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
+    Tensor& output_tensor = tensors[0];
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
     }
 
-    int64 nSamples = 0;
-    do {
-      struct DataHeader head;
-      OP_REQUIRES_OK(context, file->Read(position, sizeof(head), &result, (char *)(&head)));
-      position += result.size();
-      if (memcmp(head.mark, "data", 4) == 0) {
-        // Data should be block aligned
-        // bytes = nSamples * nBlockAlign
-        OP_REQUIRES(context, (head.size % header.nBlockAlign == 0), errors::InvalidArgument("data chunk should be block aligned (", header.nBlockAlign, "), received: ", head.size));
-        nSamples += head.size / header.nBlockAlign;
-      }
-      position += head.size;
-    } while (position < filesize);
-
-
-    int64 sample_start = start;
-    int64 sample_stop = stop;
-    if (sample_start > nSamples) {
-      sample_start = nSamples;
-    }
-    if (sample_stop < 0) {
-      sample_stop = nSamples;
-    }
-    if (sample_stop < sample_start) {
-      sample_stop = sample_start;
-    }
-    
-
-    Tensor* output_tensor;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({sample_stop - sample_start, header.nChannels}), &output_tensor));
+    const int64 sample_start = start;
+    const int64 sample_stop = stop;
 
     int64 sample_offset = 0;
-
-    position = sizeof(header) + header.fmt_size - 16;
+    if (header_.riff_size + 8 != file_size_) {
+      // corrupted file?
+    }
+    int64 filesize = header_.riff_size + 8;
+    int64 position = sizeof(header_) + header_.fmt_size - 16;
     do {
+      StringPiece result;
       struct DataHeader head;
-      OP_REQUIRES_OK(context, file->Read(position, sizeof(head), &result, (char *)(&head)));
+      TF_RETURN_IF_ERROR(file_->Read(position, sizeof(head), &result, (char *)(&head)));
       position += result.size();
       if (memcmp(head.mark, "data", 4) == 0) {
         // Already checked the alignment
         int64 block_sample_start = sample_offset;
-        int64 block_sample_stop = sample_offset + head.size / header.nBlockAlign;
+        int64 block_sample_stop = sample_offset + head.size / header_.nBlockAlign;
         // only read if block_sample_start and block_sample_stop within range
         if (sample_start < block_sample_stop && sample_stop > block_sample_start) {
           int64 read_sample_start = (block_sample_start > sample_start ? block_sample_start : sample_start);
           int64 read_sample_stop = (block_sample_stop < sample_stop ? block_sample_stop : sample_stop);
-          int64 read_bytes_start = position + (read_sample_start - block_sample_start) * header.nBlockAlign;
-          int64 read_bytes_stop = position + (read_sample_stop - block_sample_start) * header.nBlockAlign;
+          int64 read_bytes_start = position + (read_sample_start - block_sample_start) * header_.nBlockAlign;
+          int64 read_bytes_stop = position + (read_sample_stop - block_sample_start) * header_.nBlockAlign;
           string buffer;
           buffer.resize(read_bytes_stop - read_bytes_start);
-          OP_REQUIRES_OK(context, file->Read(read_bytes_start, read_bytes_stop - read_bytes_start, &result, &buffer[0]));
-          switch (header.wBitsPerSample) {
+          TF_RETURN_IF_ERROR(file_->Read(read_bytes_start, read_bytes_stop - read_bytes_start, &result, &buffer[0]));
+          switch (header_.wBitsPerSample) {
           case 8:
-            OP_REQUIRES(context, (header.wBitsPerSample * header.nChannels == header.nBlockAlign * 8), errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header.wBitsPerSample, ", ", header.nBlockAlign));
-            memcpy((char *)(output_tensor->flat<int8>().data()) + ((read_sample_start - sample_start) * header.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
+            if (header_.wBitsPerSample * header_.nChannels != header_.nBlockAlign * 8) {
+              return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
+            }
+            memcpy((char *)(output_tensor.flat<int8>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
             break;
           case 16:
-            OP_REQUIRES(context, (header.wBitsPerSample * header.nChannels == header.nBlockAlign * 8), errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header.wBitsPerSample, ", ", header.nBlockAlign));
-            memcpy((char *)(output_tensor->flat<int16>().data()) + ((read_sample_start - sample_start) * header.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
+            if (header_.wBitsPerSample * header_.nChannels != header_.nBlockAlign * 8) {
+              return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
+            }
+            memcpy((char *)(output_tensor.flat<int16>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
             break;
           case 24:
             // NOTE: The conversion is from signed integer 24 to signed integer 32 (left shift 8 bits)
-            OP_REQUIRES(context, (header.wBitsPerSample * header.nChannels == header.nBlockAlign * 8), errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header.wBitsPerSample, ", ", header.nBlockAlign));
+            if (header_.wBitsPerSample * header_.nChannels != header_.nBlockAlign * 8) {
+              return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
+            }
             for (int64 i = read_sample_start; i < read_sample_stop; i++) {
-              for (int64 j = 0; j < header.nChannels; j++) {
-                char *data_p = (char *)(output_tensor->flat<int32>().data() + ((i - sample_start) * header.nChannels + j));
-                char *read_p = (char *)(&buffer[((i - read_sample_start) * header.nBlockAlign)]) + 3 * j;
+              for (int64 j = 0; j < header_.nChannels; j++) {
+                char *data_p = (char *)(output_tensor.flat<int32>().data() + ((i - sample_start) * header_.nChannels + j));
+                char *read_p = (char *)(&buffer[((i - read_sample_start) * header_.nBlockAlign)]) + 3 * j;
                 data_p[3] = read_p[2];
                 data_p[2] = read_p[1];
                 data_p[1] = read_p[0];
@@ -259,25 +209,36 @@ class ReadWAVOp : public OpKernel {
             }
             break;
           default:
-            OP_REQUIRES(context, false, errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header.wBitsPerSample, ", ", header.nBlockAlign));
+            return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
           }
         }
         sample_offset = block_sample_stop;
       }
       position += head.size;
     } while (position < filesize);
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("WAVIndexable");
   }
  private:
-  mutex mu_;
+  mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  DataType dtype_;
+  TensorShape shape_;
+  struct WAVHeader header_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("ListWAVInfo").Device(DEVICE_CPU),
-                        ListWAVInfoOp);
-REGISTER_KERNEL_BUILDER(Name("ReadWAV").Device(DEVICE_CPU),
-                        ReadWAVOp);
+REGISTER_KERNEL_BUILDER(Name("WAVIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<WAVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("WAVIndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<WAVIndexable>);
 
 
-}  // namespace
 }  // namespace data
 }  // namespace tensorflow

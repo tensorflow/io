@@ -17,10 +17,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
+
+warnings.warn(
+    "implementation of existing tensorflow_io.kafka.KafkaDataset is "
+    "deprecated and will be replaced with the implementation in "
+    "tensorflow_io.core.python.ops.kafka_dataset_ops.KafkaDataset, "
+    "please check the doc of new implementation for API changes",
+    DeprecationWarning)
+
 
 class KafkaDataset(data.Dataset):
   """A Kafka Dataset that consumes the message.

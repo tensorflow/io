@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "arrow/api.h"
-#include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io-util.h"
 #include "tensorflow/core/framework/dataset.h"
@@ -99,8 +98,10 @@ class ArrowColumnTypeChecker : public arrow::TypeVisitor {
   // Check scalar types with arrow::adapters::tensorflow
   arrow::Status CheckScalarType(std::shared_ptr<arrow::DataType> scalar_type) {
     DataType converted_type;
-    ARROW_RETURN_NOT_OK(arrow::adapters::tensorflow::GetTensorFlowType(
-        scalar_type, &converted_type));
+    ::tensorflow::Status status = GetTensorFlowType(scalar_type, &converted_type);
+    if (!status.ok()) {
+      return ::arrow::Status::Invalid(status);
+    }
     if (converted_type != expected_type_) {
       return arrow::Status::TypeError(
           "Arrow type mismatch: expected dtype=" +
@@ -523,11 +524,7 @@ class ArrowOpKernelBase : public DatasetOpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_shapes", &output_shapes_));
     for (const DataType& dt : output_types_) {
       std::shared_ptr<arrow::DataType> arrow_type;
-      auto status = arrow::adapters::tensorflow::GetArrowType(dt, &arrow_type);
-      OP_REQUIRES(ctx, status.ok(),
-                  errors::InvalidArgument(
-                      "Arrow type is unsupported for output_type dtype=" +
-                      std::to_string(dt)));
+      OP_REQUIRES_OK(ctx, GetArrowType(dt, &arrow_type));
     }
     for (const PartialTensorShape& pts : output_shapes_) {
       OP_REQUIRES(ctx, -1 <= pts.dims() && pts.dims() <= 2,
