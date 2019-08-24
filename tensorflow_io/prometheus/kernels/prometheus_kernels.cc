@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
-#include "tensorflow_io/core/prometheus_go.h"
+#include "tensorflow_io/core/golang_ops.h"
 
 namespace tensorflow {
 namespace data {
