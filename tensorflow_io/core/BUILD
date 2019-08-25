@@ -122,9 +122,9 @@ cc_library(
 )
 
 go_binary(
-    name = "prometheus_go",
+    name = "golang_ops",
     srcs = ["go/prometheus.go"],
-    out = "python/ops/libtensorflow_io_prometheus.so",
+    out = "python/ops/libtensorflow_io_golang.so",
     cgo = True,
     linkmode = "c-shared",
     visibility = ["//visibility:public"],
@@ -138,11 +138,11 @@ go_binary(
 cc_library(
     name = "prometheus_go_ops",
     srcs = [
-        "prometheus_go.h",
+        "golang_ops.h",
     ],
     copts = tf_io_copts(),
     data = [
-        "//tensorflow_io/core:prometheus_go.h",
+        "//tensorflow_io/core:golang_ops.h",
     ],
     linkstatic = True,
 )

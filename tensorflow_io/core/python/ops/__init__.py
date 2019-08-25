@@ -66,5 +66,5 @@ def _load_library(filename, lib="op"):
       "unable to open file: " +
       "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))
 
-_load_library("libtensorflow_io_prometheus.so", "dependency")
+_load_library("libtensorflow_io_golang.so", "dependency")
 core_ops = _load_library('libtensorflow_io.so')

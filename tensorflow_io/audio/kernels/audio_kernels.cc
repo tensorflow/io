@@ -130,11 +130,11 @@ class WAVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
-    dtypes.clear();
-    dtypes.push_back(dtype_);
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
     shapes.clear();
     shapes.push_back(shape_);
+    dtypes.clear();
+    dtypes.push_back(dtype_);
     return Status::OK();
   }
 
@@ -146,8 +146,7 @@ class WAVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
-    Tensor& output_tensor = tensors[0];
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
@@ -184,13 +183,13 @@ class WAVIndexable : public IOIndexableInterface {
             if (header_.wBitsPerSample * header_.nChannels != header_.nBlockAlign * 8) {
               return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
             }
-            memcpy((char *)(output_tensor.flat<int8>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
+            memcpy((char *)(tensor->flat<int8>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
             break;
           case 16:
             if (header_.wBitsPerSample * header_.nChannels != header_.nBlockAlign * 8) {
               return errors::InvalidArgument("unsupported wBitsPerSample and header.nBlockAlign: ", header_.wBitsPerSample, ", ", header_.nBlockAlign);
             }
-            memcpy((char *)(output_tensor.flat<int16>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
+            memcpy((char *)(tensor->flat<int16>().data()) + ((read_sample_start - sample_start) * header_.nBlockAlign), &buffer[0], (read_bytes_stop - read_bytes_start));
             break;
           case 24:
             // NOTE: The conversion is from signed integer 24 to signed integer 32 (left shift 8 bits)
@@ -199,7 +198,7 @@ class WAVIndexable : public IOIndexableInterface {
             }
             for (int64 i = read_sample_start; i < read_sample_stop; i++) {
               for (int64 j = 0; j < header_.nChannels; j++) {
-                char *data_p = (char *)(output_tensor.flat<int32>().data() + ((i - sample_start) * header_.nChannels + j));
+                char *data_p = (char *)(tensor->flat<int32>().data() + ((i - sample_start) * header_.nChannels + j));
                 char *read_p = (char *)(&buffer[((i - read_sample_start) * header_.nBlockAlign)]) + 3 * j;
                 data_p[3] = read_p[2];
                 data_p[2] = read_p[1];
