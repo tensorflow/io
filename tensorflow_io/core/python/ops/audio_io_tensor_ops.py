@@ -40,7 +40,7 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
                filename,
                internal=False):
     with tf.name_scope("AudioIOTensor") as scope:
-      resource, dtypes, shapes, rate = core_ops.wav_indexable_init(
+      resource, shapes, dtypes, rate = core_ops.wav_indexable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))

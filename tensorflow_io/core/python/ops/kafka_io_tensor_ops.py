@@ -38,7 +38,7 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource, dtypes, shapes = core_ops.kafka_indexable_init(
+      resource, shapes, dtypes = core_ops.kafka_indexable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))

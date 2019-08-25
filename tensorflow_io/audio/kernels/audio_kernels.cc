@@ -130,11 +130,11 @@ class WAVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
-    dtypes.clear();
-    dtypes.push_back(dtype_);
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
     shapes.clear();
     shapes.push_back(shape_);
+    dtypes.clear();
+    dtypes.push_back(dtype_);
     return Status::OK();
   }
 

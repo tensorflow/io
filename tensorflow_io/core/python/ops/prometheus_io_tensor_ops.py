@@ -35,7 +35,7 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
                internal=False):
     with tf.name_scope("PrometheusIOTensor") as scope:
       metadata = [] if endpoint is None else ["endpoint: %s" % endpoint]
-      resource, dtypes, shapes = core_ops.prometheus_indexable_init(
+      resource, shapes, dtypes = core_ops.prometheus_indexable_init(
           query, metadata=metadata,
           container=scope, shared_name="%s/%s" % (query, uuid.uuid4().hex))
       shapes = [

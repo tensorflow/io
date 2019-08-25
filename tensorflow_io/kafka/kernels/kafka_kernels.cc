@@ -216,11 +216,11 @@ class KafkaIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
-    dtypes.clear();
-    dtypes.push_back(DT_STRING);
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
     shapes.clear();
     shapes.push_back(PartialTensorShape({-1}));
+    dtypes.clear();
+    dtypes.push_back(DT_STRING);
     return Status::OK();
   }
 

@@ -134,14 +134,14 @@ class PrometheusIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
-    dtypes.clear();
-    for (size_t i = 0; i < dtypes_.size(); i++) {
-      dtypes.push_back(dtypes_[i]);
-    }
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
     shapes.clear();
     for (size_t i = 0; i < shapes_.size(); i++) {
       shapes.push_back(shapes_[i]);
+    }
+    dtypes.clear();
+    for (size_t i = 0; i < dtypes_.size(); i++) {
+      dtypes.push_back(dtypes_[i]);
     }
     return Status::OK();
   }

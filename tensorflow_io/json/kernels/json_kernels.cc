@@ -234,27 +234,27 @@ class JSONIndexable : public IOIndexableInterface {
       return errors::InvalidArgument("unable to read table: ", status);
     }
 
-    dtypes_.clear();
     shapes_.clear();
+    dtypes_.clear();
     columns_.clear();
     for (int i = 0; i < table_->num_columns(); i++) {
+      shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       ::tensorflow::DataType dtype;
       TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(i)->type(), &dtype));
       dtypes_.push_back(dtype);
-      shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       columns_.push_back(table_->column(i)->name());
     }
 
     return Status::OK();
   }
-  Status Spec(std::vector<DataType>& dtypes, std::vector<PartialTensorShape>& shapes) override {
-    dtypes.clear();
-    for (size_t i = 0; i < dtypes_.size(); i++) {
-      dtypes.push_back(dtypes_[i]);
-    }
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
     shapes.clear();
     for (size_t i = 0; i < shapes_.size(); i++) {
       shapes.push_back(shapes_[i]);
+    }
+    dtypes.clear();
+    for (size_t i = 0; i < dtypes_.size(); i++) {
+      dtypes.push_back(dtypes_[i]);
     }
     return Status::OK();
   }
