@@ -126,27 +126,11 @@ class PrometheusIndexable : public IOIndexableInterface {
       }
     }
 
-    for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("column: ") == 0) {
-        columns_.emplace_back(metadata[i].substr(8));
-      }
-    }
-    if (columns_.size() == 0) {
-      columns_.emplace_back("timestamp");
-      columns_.emplace_back("value");
-    }
-
-    for (size_t i = 0; i < columns_.size(); i++) {
-      if (columns_[i] == "timestamp") {
-        dtypes_.emplace_back(DT_INT64);
-        shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
-      } else if (columns_[i] == "value") {
-        dtypes_.emplace_back(DT_DOUBLE);
-        shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
-      } else {
-        return errors::InvalidArgument("column name other than `timestamp` or `value` is not supported: ", columns_[i]);
-      }
-    }
+    // timestamp, value
+    dtypes_.emplace_back(DT_INT64);
+    shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
+    dtypes_.emplace_back(DT_DOUBLE);
+    shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
 
     return Status::OK();
   }
@@ -162,26 +146,14 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Extra(std::vector<Tensor>* extra) override {
-    // Expose columns
-    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
-    for (size_t i = 0; i < columns_.size(); i++) {
-      columns.flat<string>()(i) = columns_[i];
-    }
-    extra->push_back(columns);
-    return Status::OK();
-  }
-
-  Status GetItem(const int64 start, const int64 stop, const int64 step, std::vector<Tensor>& tensors) override {
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
-    for (size_t i = 0; i < columns_.size(); i++) {
-      if (columns_[i] == "timestamp") {
-        memcpy(&tensors[i].flat<int64>().data()[start], &timestamp_[0], sizeof(int64) * (stop - start));
-      } else {
-        memcpy(&tensors[i].flat<double>().data()[start], &value_[0], sizeof(double) * (stop - start));
-      }
+    if (component == 0) {
+      memcpy(&tensor->flat<int64>().data()[start], &timestamp_[0], sizeof(int64) * (stop - start));
+    } else {
+      memcpy(&tensor->flat<double>().data()[start], &value_[0], sizeof(double) * (stop - start));
     }
 
     return Status::OK();
@@ -197,7 +169,6 @@ class PrometheusIndexable : public IOIndexableInterface {
 
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;
-  std::vector<string> columns_;
 
   std::vector<int64> timestamp_;
   std::vector<double> value_;

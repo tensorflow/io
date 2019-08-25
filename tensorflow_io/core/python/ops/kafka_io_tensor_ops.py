@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class KafkaIOTensor(io_tensor_ops._ColumnIOTensor): # pylint: disable=protected-access
+class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
   """KafkaIOTensor"""
 
   #=============================================================================
@@ -42,6 +42,17 @@ class KafkaIOTensor(io_tensor_ops._ColumnIOTensor): # pylint: disable=protected-
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
+      shapes = [
+          tf.TensorShape(
+              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
+          ) for e in tf.unstack(shapes)]
+      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
+      assert len(shapes) == 1
+      assert len(dtypes) == 1
+      shape = shapes[0]
+      dtype = dtypes[0]
+      spec = tf.TensorSpec(shape, dtype)
+
       super(KafkaIOTensor, self).__init__(
-          shapes, dtypes, resource, core_ops.kafka_indexable_get_item,
+          spec, resource, core_ops.kafka_indexable_get_item,
           internal=internal)

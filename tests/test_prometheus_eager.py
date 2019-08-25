@@ -38,14 +38,14 @@ def test_prometheus():
     subprocess.call(["dig", "@localhost", "-p", "1053", "www.google.com"])
     time.sleep(1)
   time.sleep(2)
-  timestamp, value = tfio.IOTensor.from_prometheus(
+  prometheus = tfio.IOTensor.from_prometheus(
       "coredns_dns_request_count_total[5s]")
-  assert timestamp.shape == [5]
-  assert timestamp.dtype == tf.int64
-  assert value.shape == [5]
-  assert value.dtype == tf.float64
+  assert prometheus.index.shape == [5]
+  assert prometheus.index.dtype == tf.int64
+  assert prometheus.value.shape == [5]
+  assert prometheus.value.dtype == tf.float64
   # last value should be 6.0
-  assert value.to_tensor().numpy()[4] == 6.0
+  assert prometheus.value.to_tensor().numpy()[4] == 6.0
 
 if __name__ == "__main__":
   test.main()

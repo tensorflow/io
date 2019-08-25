@@ -42,12 +42,12 @@ def test_io_tensor_json():
   label_filename = "file://" + label_filename
 
   features = tfio.IOTensor.from_json(feature_filename)
-  assert features.dtype("floatfeature") == tf.float64
-  assert features.dtype("integerfeature") == tf.int64
+  assert features("floatfeature").dtype == tf.float64
+  assert features("integerfeature").dtype == tf.int64
 
   labels = tfio.IOTensor.from_json(label_filename)
-  assert labels.dtype("floatlabel") == tf.float64
-  assert labels.dtype("integerlabel") == tf.int64
+  assert labels("floatlabel").dtype == tf.float64
+  assert labels("integerlabel").dtype == tf.int64
 
   float_feature = features("floatfeature")
   integer_feature = features("integerfeature")

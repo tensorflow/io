@@ -41,20 +41,16 @@ REGISTER_OP("WAVIndexableGetItem")
   .Input("start: int64")
   .Input("stop: int64")
   .Input("step: int64")
+  .Input("component: int64")
   .Output("output: dtype")
-  .Attr("dtype: list(type) >= 1")
-  .Attr("shape: list(shape) >= 1")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    std::vector<PartialTensorShape> shape;
+    PartialTensorShape shape;
     TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    if (shape.size() != c->num_outputs()) {
-      return errors::InvalidArgument("`shape` must be the same length as `types` (", shape.size(), " vs. ", c->num_outputs());
-    }
-    for (size_t i = 0; i < shape.size(); ++i) {
-      shape_inference::ShapeHandle entry;
-      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape[i], &entry));
-      c->set_output(static_cast<int64>(i), entry);
-    }
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
     return Status::OK();
    });
 

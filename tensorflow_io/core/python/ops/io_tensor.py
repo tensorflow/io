@@ -24,7 +24,7 @@ from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 
-class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
+class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
 
   An `IOTensor` is a tensor with data backed by IO operations. For example,
@@ -284,8 +284,5 @@ class IOTensor(io_tensor_ops._BaseIOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromPrometheus")):
-      return prometheus_io_tensor_ops.PrometheusTimestampIOTensor(
-          query, endpoint=kwargs.get("endpoint", None), internal=True,
-      ), prometheus_io_tensor_ops.PrometheusValueIOTensor(
-          query, endpoint=kwargs.get("endpoint", None), internal=True,
-      )
+      return prometheus_io_tensor_ops.PrometheusIOTensor(
+          query, endpoint=kwargs.get("endpoint", None), internal=True)
