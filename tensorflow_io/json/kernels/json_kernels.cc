@@ -27,6 +27,7 @@ limitations under the License.
 #include "arrow/json/reader.h"
 #include "arrow/table.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "rapidjson/document.h"
 
 namespace tensorflow {
 namespace data {
@@ -221,6 +222,55 @@ class JSONIndexable : public IOIndexableInterface {
     file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
+    mode_ = "ndjson";
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("mode: ") == 0) {
+        mode_ = metadata[i].substr(6);
+      }
+    }
+
+    if (mode_ == "records") {
+      string buffer;
+      buffer.resize(file_size_);
+      StringPiece result;
+      TF_RETURN_IF_ERROR(file_->Read(0, file_size_, &result, &buffer[0]));
+
+      rapidjson::Document d;
+      d.Parse(buffer.c_str());
+      // Check the first element only
+      const rapidjson::Value& a = d.GetArray();
+      const rapidjson::Value& o = a[0];
+      for (rapidjson::Value::ConstMemberIterator oi = o.MemberBegin(); oi != o.MemberEnd(); ++oi) {
+        DataType dtype;
+        if (oi->value.IsInt64()) {
+          dtype = DT_INT64;
+        } else if (oi->value.IsDouble()) {
+          dtype = DT_DOUBLE;
+        } else {
+          return errors::InvalidArgument("invalid data type: ", oi->name.GetString());
+        }
+        shapes_.push_back(TensorShape({static_cast<int64>(a.MemberCount())}));
+        dtypes_.push_back(dtype);
+        columns_.push_back(oi->name.GetString());
+        tensors_.emplace_back(Tensor(dtype, TensorShape({static_cast<int64>(a.MemberCount())})));
+      }
+      // Fill in the values
+      for (size_t i = 0; i < a.MemberCount(); i++) {
+        const rapidjson::Value& o = a[i];
+        for (size_t column_index = 0; column_index < columns_.size(); column_index++) {
+          const rapidjson::Value& v = o[columns_[column_index].c_str()];
+          if (dtypes_[column_index] == DT_INT64) {
+            tensors_[column_index].flat<int64>()(i) = v.GetInt64();
+          } else if (dtypes_[column_index] == DT_DOUBLE) {
+            tensors_[column_index].flat<double>()(i) = v.GetDouble();
+          }
+        }
+      }
+      
+      return Status::OK();
+    }
+
+
     json_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
 
     ::arrow::Status status;
@@ -273,6 +323,18 @@ class JSONIndexable : public IOIndexableInterface {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
+    if (mode_ == "records") {
+      if (dtypes_[component] == DT_INT64) {
+        memcpy(&tensor->flat<int64>().data()[0], &tensors_[component].flat<int64>().data()[start], sizeof(int64) * (stop - start));
+      } else if (dtypes_[component] == DT_DOUBLE) {
+        memcpy(&tensor->flat<double>().data()[0], &tensors_[component].flat<double>().data()[start], sizeof(double) * (stop - start));
+      } else {
+        return errors::InvalidArgument("invalid data type: ", dtypes_[component]);
+      }
+
+      return Status::OK();
+    }
+
     std::shared_ptr<::arrow::Column> slice = table_->column(component)->Slice(start, stop);
 
     #define PROCESS_TYPE(TTYPE,ATYPE) { \
@@ -337,6 +399,9 @@ class JSONIndexable : public IOIndexableInterface {
   std::shared_ptr<ArrowRandomAccessFile> json_file_;
   std::shared_ptr<::arrow::json::TableReader> reader_;
   std::shared_ptr<::arrow::Table> table_;
+
+  std::vector<Tensor> tensors_;
+  string mode_;
 
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;

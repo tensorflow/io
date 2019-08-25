@@ -31,10 +31,13 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
   #=============================================================================
   def __init__(self,
                filename,
+               mode=None,
                internal=False):
     with tf.name_scope("JSONIOTensor") as scope:
+      metadata = [] if mode is None else ["mode: %s" % mode]
       resource, shapes, dtypes, columns = core_ops.json_indexable_init(
           filename,
+          metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       shapes = [

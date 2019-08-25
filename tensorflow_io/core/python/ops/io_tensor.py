@@ -226,7 +226,8 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromJSON")):
-      return json_io_tensor_ops.JSONIOTensor(filename, internal=True)
+      return json_io_tensor_ops.JSONIOTensor(
+          filename, mode=kwargs.get('mode', None), internal=True)
 
   @classmethod
   def from_kafka(cls,
