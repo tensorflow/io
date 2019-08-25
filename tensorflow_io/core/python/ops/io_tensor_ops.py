@@ -17,6 +17,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+import uuid
+
 import tensorflow as tf
 
 class _IOTensorMeta(property):
@@ -289,3 +292,115 @@ class _SeriesIOTensor(_IOTensor):
     return BaseIOTensor(
         self.spec[1], self._resource, self._function,
         component=1, internal=True)
+
+class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
+  """_KeyValueIOTensorDataset"""
+
+  def __init__(self,
+               filename,
+               iterable_init, iterable_next,
+               mapping_resource, mapping_function):
+    with tf.name_scope("IterableIOTensorDataset") as scope:
+      resource, _, _ = iterable_init(
+          filename,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+
+      capacity = 4096
+      dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
+      def func(_):
+        k = iterable_next(
+            resource, capacity, component=0,
+            dtype=tf.string, shape=tf.TensorShape([None]))
+        v = mapping_function(mapping_resource, k)
+        return (k, v)
+      dataset = dataset.map(func)
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda k, v: tf.greater(tf.shape(k)[0], 0)))
+      dataset = dataset.unbatch()
+
+      self._filename = filename
+      self._iterable_init = iterable_init
+      self._iterable_next = iterable_next
+
+      self._mapping_resource = mapping_resource
+      self._mapping_function = mapping_function
+
+      self._resource = resource
+      self._dataset = dataset
+      super(_KeyValueIOTensorDataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class _KeyValueIOTensor(_IOTensor):
+  """_KeyValueIOTensor"""
+
+  def __init__(self,
+               spec,
+               resource,
+               function,
+               filename,
+               iterable_init,
+               iterable_next,
+               internal=False):
+    self._resource = resource
+    self._function = function
+    self._filename = filename
+    self._iterable_init = iterable_init
+    self._iterable_next = iterable_next
+    super(_KeyValueIOTensor, self).__init__(
+        spec, internal=internal)
+
+  #=============================================================================
+  # Dataset Conversions
+  #=============================================================================
+
+  def to_dataset(self):
+    """Converts this `IOTensor` into a `tf.data.Dataset`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+      A `tf.data.Dataset` with value obtained from this `IOTensor`.
+    """
+    return _KeyValueIOTensorDataset(
+        self._filename,
+        self._iterable_init, self._iterable_next,
+        self._resource, self._function)
+
+  #=============================================================================
+  # Iterator
+  #=============================================================================
+  def __iter__(self):
+    with tf.name_scope("KeyValueIOTensorIter") as scope:
+      resource, _, _ = self._iterable_init(
+          self._filename,
+          container=scope,
+          shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))
+      capacity = 1
+      while True:
+        value = self._iterable_next(
+            resource, capacity, component=0,
+            dtype=tf.string, shape=tf.TensorShape([None]))
+        if tf.shape(value)[0].numpy() < capacity:
+          return
+        yield value[0]
+
+  #=============================================================================
+  # Indexing
+  #=============================================================================
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    return self._function(self._resource, key)

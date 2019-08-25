@@ -43,4 +43,59 @@ REGISTER_OP("LMDBDatasetV2")
        return Status::OK();
      });
 
+REGISTER_OP("LMDBIterableInit")
+  .Input("input: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("LMDBIterableNext")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Input("component: int64")
+  .Output("output: dtype")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
+
+REGISTER_OP("LMDBMappingInit")
+  .Input("input: string")
+  .Output("output: resource")
+  .Output("dtypes: int64")
+  .Output("shapes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("LMDBMappingGetItem")
+  .Input("input: resource")
+  .Input("key: string")
+  .Output("output: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->input(1));
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

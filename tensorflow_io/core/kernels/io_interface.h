@@ -41,6 +41,11 @@ class IOIndexableInterface : public IOInterface {
   virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) = 0;
 };
 
+class IOMappingInterface : public IOInterface {
+ public:
+  virtual Status GetItem(const std::vector<string>& key, Tensor* tensor) = 0;
+};
+
 template<typename Type>
 class IOIndexableImplementation : public IOIndexableInterface {
  public:
@@ -329,6 +334,31 @@ class IOIndexableGetItemOp : public OpKernel {
     dims[0] = stop - start;
     Tensor tensor(dtypes[component], TensorShape(dims));
     OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, component, &tensor));
+    context->set_output(0, tensor);
+  }
+};
+template<typename Type>
+class IOMappingGetItemOp : public OpKernel {
+ public:
+  explicit IOMappingGetItemOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* key_tensor;
+    OP_REQUIRES_OK(context, context->input("key", &key_tensor));
+    std::vector<string> key;
+    key.reserve(key_tensor->NumElements());
+    for (int64 i = 0; i < key_tensor->NumElements(); i++) {
+      key.emplace_back(key_tensor->flat<string>()(i));
+    }
+
+    Tensor tensor(DT_STRING, TensorShape({key_tensor->NumElements()}));
+    OP_REQUIRES_OK(context, resource->GetItem(key, &tensor));
     context->set_output(0, tensor);
   }
 };
