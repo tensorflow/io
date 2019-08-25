@@ -19,7 +19,4 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:prometheus_go_ops",
     ],
-    #data = [
-    #    "//tensorflow_io/core:prometheus_go.h",
-    #]
 )

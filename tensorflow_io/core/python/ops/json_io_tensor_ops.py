@@ -31,18 +31,24 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
   #=============================================================================
   def __init__(self,
                filename,
-               columns=None,
+               mode=None,
                internal=False):
     with tf.name_scope("JSONIOTensor") as scope:
-      metadata = []
-      if columns is not None:
-        metadata.extend(["column: "+column for column in columns])
-      resource, dtypes, shapes, columns = core_ops.json_indexable_init(
-          filename, metadata=metadata,
+      metadata = [] if mode is None else ["mode: %s" % mode]
+      resource, shapes, dtypes, columns = core_ops.json_indexable_init(
+          filename,
+          metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      self._filename = filename
+      shapes = [
+          tf.TensorShape(
+              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
+          ) for e in tf.unstack(shapes)]
+      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
+      columns = [e.numpy().decode() for e in tf.unstack(columns)]
+      spec = tuple([tf.TensorSpec(shape, dtype, column) for (
+          shape, dtype, column) in zip(shapes, dtypes, columns)])
       super(JSONIOTensor, self).__init__(
-          shapes, dtypes, columns, filename,
+          spec, columns,
           resource, core_ops.json_indexable_get_item,
           internal=internal)

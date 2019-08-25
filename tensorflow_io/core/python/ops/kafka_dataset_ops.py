@@ -61,14 +61,12 @@ class KafkaDataset(tf.compat.v2.data.Dataset):
       capacity = 4096
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
-          lambda i: core_ops.kafka_iterable_next(resource, capacity, dtype=[tf.string], shape=[tf.TensorShape([None])]))
+          lambda i: core_ops.kafka_iterable_next(
+              resource, capacity, component=0,
+              dtype=tf.string, shape=tf.TensorShape([None])))
       dataset = dataset.apply(
           tf.data.experimental.take_while(
               lambda v: tf.greater(tf.shape(v)[0], 0)))
-      # Note: tf.data.Dataset consider tuple `(e, )` as one element
-      # instead of a sequence. So next `unbatch()` will not work.
-      # The tf.stack() below is necessary.
-      dataset = dataset.map(tf.stack)
       dataset = dataset.unbatch()
 
       self._resource = resource

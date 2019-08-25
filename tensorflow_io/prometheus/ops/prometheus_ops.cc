@@ -19,6 +19,40 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("PrometheusIndexableInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Output("shapes: int64")
+  .Output("dtypes: int64")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("PrometheusIndexableGetItem")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Input("component: int64")
+  .Output("output: dtype")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
+
 REGISTER_OP("ReadPrometheus")
     .Input("endpoint: string")
     .Input("query: string")

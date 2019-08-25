@@ -12,51 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""_BaseIOTensor"""
+"""_IOTensor"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
 
-class _BaseIOTensorMeta(property):
-  """_BaseIOTensorMeta is a decorator that is viewable to __repr__"""
+class _IOTensorMeta(property):
+  """_IOTensorMeta is a decorator that is viewable to __repr__"""
   pass
 
-class _BaseIOTensorDataset(tf.compat.v2.data.Dataset):
+class _IOTensorDataset(tf.compat.v2.data.Dataset):
   """_IOTensorDataset"""
 
   def __init__(self, spec, resource, function):
+    components = tf.nest.flatten(spec)
+
     start = 0
-    stop = tf.nest.flatten(
-        tf.nest.map_structure(lambda e: e.shape, spec))[0][0]
+    stop = components[0].shape[0]
     capacity = 4096
     entry_start = list(range(start, stop, capacity))
     entry_stop = entry_start[1:] + [stop]
 
-    dtype = tf.nest.flatten(
-        tf.nest.map_structure(lambda e: e.dtype, spec))
-    shape = tf.nest.flatten(
-        tf.nest.map_structure(
-            lambda e: tf.TensorShape(
-                [None]).concatenate(e.shape[1:]), spec))
-
     dataset = tf.compat.v2.data.Dataset.from_tensor_slices((
         tf.constant(entry_start, tf.int64),
         tf.constant(entry_stop, tf.int64)))
-    dataset = dataset.map(
-        lambda start, stop: function(
-            resource, start, stop, 1, dtype=dtype, shape=shape))
-    # Note: tf.data.Dataset consider tuple `(e, )` as one element
-    # instead of a sequence. So next `unbatch()` will not work.
-    # The tf.stack() below is necessary.
-    if len(dtype) == 1:
-      dataset = dataset.map(tf.stack)
-    dataset = dataset.apply(tf.data.experimental.unbatch())
+
+    components = [(component, e) for component, e in enumerate(components)]
+    components = [
+        dataset.map(
+            lambda start, stop: function(
+                resource,
+                start, stop, 1,
+                component=component,
+                shape=e.shape,
+                dtype=e.dtype)) for (component, e) in components]
+    dataset = tf.compat.v2.data.Dataset.zip(
+        tf.nest.pack_sequence_as(spec, components))
+    dataset = dataset.unbatch()
+
     self._dataset = dataset
     self._resource = resource
     self._function = function
-    super(_BaseIOTensorDataset, self).__init__(
+    super(_IOTensorDataset, self).__init__(
         self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -66,22 +65,18 @@ class _BaseIOTensorDataset(tf.compat.v2.data.Dataset):
   def element_spec(self):
     return self._dataset.element_spec
 
-class _BaseIOTensor(object):
-  """_BaseIOTensor"""
+class _IOTensor(object):
+  """_IOTensor"""
 
   def __init__(self,
                spec,
-               resource,
-               function,
                internal=False):
     if not internal:
       raise ValueError("IOTensor constructor is private; please use one "
                        "of the factory methods instead (e.g., "
                        "IOTensor.from_tensor())")
     self._spec = spec
-    self._resource = resource
-    self._function = function
-    super(_BaseIOTensor, self).__init__()
+    super(_IOTensor, self).__init__()
 
   #=============================================================================
   # Accessors
@@ -98,10 +93,71 @@ class _BaseIOTensor(object):
   def __repr__(self):
     meta = "".join([", %s=%s" % (
         k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
-            ) if isinstance(v, _BaseIOTensorMeta)])
+            ) if isinstance(v, _IOTensorMeta)])
     return "<%s: spec=%s%s>" % (
         self.__class__.__name__, self.spec, meta)
 
+  #=============================================================================
+  # Dataset Conversions
+  #=============================================================================
+
+  def to_dataset(self):
+    """Converts this `IOTensor` into a `tf.data.Dataset`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+      A `tf.data.Dataset` with value obtained from this `IOTensor`.
+    """
+    return _IOTensorDataset(
+        self.spec, self._resource, self._function)
+
+class BaseIOTensor(_IOTensor):
+  """BaseIOTensor
+
+  A `BaseIOTensor` is a basic `IOTensor` with only one component.
+  It is associated with a `Tensor` of `shape` and `dtype`, with
+  data backed by IO. It is the building block for `IOTensor`.
+  For example, a `CSVIOTensor` consists of multiple `BaseIOTensor`
+  where each one is a column of the CSV.
+
+  All `IOTensor` types are either a subclass of `BaseIOTensor`,
+  or are a composite of a collection of `BaseIOTensor`.
+
+  The additional properties exposed by `BaseIOTensor` are `shape`
+  and `dtype` associated with counterparts in `Tensor`.
+  """
+
+  def __init__(self,
+               spec,
+               resource,
+               function,
+               component=0,
+               internal=False):
+    self._resource = resource
+    self._function = function
+    self._component = component
+    super(BaseIOTensor, self).__init__(
+        spec, internal=internal)
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  @property
+  def shape(self):
+    """Returns the `TensorShape` that represents the shape of the tensor."""
+    return self.spec.shape
+
+  @property
+  def dtype(self):
+    """Returns the `dtype` of elements in the tensor."""
+    return self.spec.dtype
 
   #=============================================================================
   # Indexing & Slicing
@@ -122,20 +178,15 @@ class _BaseIOTensor(object):
       start = key
       stop = key + 1
       step = 1
-    dtype = tf.nest.flatten(
-        tf.nest.map_structure(lambda e: e.dtype, self.spec))
-    shape = tf.nest.flatten(
-        tf.nest.map_structure(lambda e: e.shape, self.spec))
-    return tf.nest.pack_sequence_as(self.spec, self._function(
+    return self._function(
         self._resource,
         start, stop, step,
-        dtype=dtype,
-        shape=shape))
+        component=self._component,
+        shape=self.spec.shape, dtype=self.spec.dtype)
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
-    return tf.nest.flatten(
-        tf.nest.map_structure(lambda e: e.shape, self.spec))[0][0]
+    return self.shape[0]
 
   #=============================================================================
   # Tensor Type Conversions
@@ -182,107 +233,66 @@ class _BaseIOTensor(object):
     with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
 
-  #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    return _BaseIOTensorDataset(
-        self.spec, self._resource, self._function)
-
-class _ColumnIOTensor(_BaseIOTensor):
-  """_ColumnIOTensor"""
-
-  def __init__(self,
-               shapes,
-               dtypes,
-               resource,
-               function,
-               internal=False):
-    shapes = [
-        tf.TensorShape(
-            [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
-        ) for e in tf.unstack(shapes)]
-    dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-    spec = [tf.TensorSpec(shape, dtype) for (
-        shape, dtype) in zip(shapes, dtypes)]
-    assert len(spec) == 1
-    spec = spec[0]
-
-    self._shape = spec.shape
-    self._dtype = spec.dtype
-    super(_ColumnIOTensor, self).__init__(
-        spec, resource, function, internal=internal)
-
-  #=============================================================================
-  # Accessors
-  #=============================================================================
-
-  @property
-  def shape(self):
-    """Returns the `TensorShape` that represents the shape of the tensor."""
-    return self._shape
-
-  @property
-  def dtype(self):
-    """Returns the `dtype` of elements in the tensor."""
-    return self._dtype
-
-class _TableIOTensor(_BaseIOTensor):
+class _TableIOTensor(_IOTensor):
   """_TableIOTensor"""
 
   def __init__(self,
-               shapes,
-               dtypes,
+               spec,
                columns,
-               filename,
                resource,
                function,
                internal=False):
-    shapes = [
-        tf.TensorShape(
-            [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
-        ) for e in tf.unstack(shapes)]
-    dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-    columns = [e.numpy().decode() for e in tf.unstack(columns)]
-    spec = [tf.TensorSpec(shape, dtype, column) for (
-        shape, dtype, column) in zip(shapes, dtypes, columns)]
-    if len(spec) == 1:
-      spec = spec[0]
-    else:
-      spec = tuple(spec)
-    self._filename = filename
+    self._columns = columns
+    self._resource = resource
+    self._function = function
     super(_TableIOTensor, self).__init__(
-        spec, resource, function, internal=internal)
+        spec, internal=internal)
 
   #=============================================================================
   # Accessors
   #=============================================================================
 
+  @property
   def columns(self):
-    """The `TensorSpec` of column named `name`"""
-    return [e.name for e in tf.nest.flatten(self.spec)]
-
-  def shape(self, column):
-    """Returns the `TensorShape` shape of `column` in the tensor."""
-    return next(e.shape for e in tf.nest.flatten(self.spec) if e.name == column)
-
-  def dtype(self, column):
-    """Returns the `dtype` of `column` in the tensor."""
-    return next(e.dtype for e in tf.nest.flatten(self.spec) if e.name == column)
+    """The names of columns"""
+    return self._columns
 
   def __call__(self, column):
-    """Return a new IOTensor with column named `column`"""
-    return self.__class__(self._filename, columns=[column], internal=True) # pylint: disable=no-value-for-parameter
+    """Return a BaseIOTensor with column named `column`"""
+    component = self.columns.index(
+        next(e for e in self.columns if e == column))
+    spec = tf.nest.flatten(self.spec)[component]
+    return BaseIOTensor(
+        spec, self._resource, self._function,
+        component=component, internal=True)
+
+class _SeriesIOTensor(_IOTensor):
+  """_SeriesIOTensor"""
+
+  def __init__(self,
+               spec,
+               resource,
+               function,
+               internal=False):
+    self._resource = resource
+    self._function = function
+    super(_SeriesIOTensor, self).__init__(
+        spec, internal=internal)
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  @property
+  def index(self):
+    """The index column of the series"""
+    return BaseIOTensor(
+        self.spec[0], self._resource, self._function,
+        component=0, internal=True)
+
+  @property
+  def value(self):
+    """The value column of the series"""
+    return BaseIOTensor(
+        self.spec[1], self._resource, self._function,
+        component=1, internal=True)
