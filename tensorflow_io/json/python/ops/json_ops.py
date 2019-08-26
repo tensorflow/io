@@ -47,7 +47,7 @@ class JSONDataset(data_ops.BaseDataset):
 
     Args:
       filename: A string containing one or more filenames.
-      columns: A string containing the columns to extract.
+      columns: A list of strings containing the columns to extract.
     """
     if not tf.executing_eagerly():
       self._dtypes = kwargs.get("dtype")
