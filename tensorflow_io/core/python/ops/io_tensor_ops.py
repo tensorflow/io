@@ -170,18 +170,12 @@ class BaseIOTensor(_IOTensor):
     (start, stop, step) = index.indices(self.shape[0])
     if start >= self.shape[0]:
       raise IndexError("index %s is out of range" % key)
-    if stop == start + 1:
-      return tf.squeeze(self._function(
-          self._resource,
-          start, stop, step,
-          component=self._component,
-          shape=self.spec.shape, dtype=self.spec.dtype), axis=[0])
-    return self._function(
+    item = self._function(
         self._resource,
         start, stop, step,
         component=self._component,
         shape=self.spec.shape, dtype=self.spec.dtype)
-
+    return tf.squeeze(item, axis=[0]) if (stop == start + 1) else item
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
