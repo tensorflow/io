@@ -164,20 +164,12 @@ class BaseIOTensor(_IOTensor):
   #=============================================================================
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
-    if isinstance(key, slice):
-      start = key.start
-      stop = key.stop
-      step = key.step
-      if start is None:
-        start = 0
-      if stop is None:
-        stop = -1
-      if step is None:
-        step = 1
-    else:
-      start = key
-      stop = key + 1
-      step = 1
+    # Find out the indices based on length and key,
+    # based on python slice()'s indices method:
+    index = key if isinstance(key, slice) else slice(key, key + 1)
+    (start, stop, step) = index.indices(self.shape[0])
+    if start >= self.shape[0]:
+      raise IndexError("index %s is out of range" % key)
     return self._function(
         self._resource,
         start, stop, step,
