@@ -82,19 +82,19 @@ class DecodeDICOMImageOp : public OpKernel {
     const auto in_contents_scalar = in_contents.scalar<string>()();
 
     // Load Dicom Image
-    DcmInputBufferStream dataBuf;
-    dataBuf.setBuffer(in_contents_scalar.data(), in_contents_scalar.length());
-    dataBuf.setEos();
+    DcmInputBufferStream data_buf;
+    data_buf.setBuffer(in_contents_scalar.data(), in_contents_scalar.length());
+    data_buf.setEos();
 
-    DcmFileFormat *dfile = new DcmFileFormat();
-    dfile->transferInit();
-    OFCondition cond = dfile->read(dataBuf);
-    dfile->transferEnd();
+    DcmFileFormat dicom_file;
+    dicom_file.transferInit();
+    OFCondition cond = dicom_file.read(data_buf);
+    dicom_file.transferEnd();
 
     DicomImage *image = NULL;
     try {
       image =
-          new DicomImage(dfile, EXS_Unknown, CIF_DecompressCompletePixelData);
+          new DicomImage(&dicom_file, EXS_Unknown, CIF_DecompressCompletePixelData);
     } catch (...) {
       image = NULL;
     }
