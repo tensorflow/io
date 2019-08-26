@@ -23,6 +23,27 @@ is an example with 3 columns and 2 records:
 ]
 ```
 
+## JSONDataset and tf.data
+
+JSON Dataset is a subclass of tf.data, so it fully conforms to TensorFlow's data
+pipeline (without any intermediate conversion), especially for TF 2.0.
+
+```python
+import tensorflow as tf
+import tensorflow_io.json as json_io
+
+dataset = json_io.JSONDataset(
+    filename, ["floatfeature", "integerfeature"], dtype=[tf.float64, tf.int64]
+).apply(tf.data.experimental.unbatch())
+
+iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
+next_element = iterator.get_next()
+
+with tf.Session() as sess:
+  for i in range(2):
+    print(sess.run(next_element))
+```
+
 ## Custom Ops
 
 There are 2 different custom operators (
@@ -80,6 +101,7 @@ float_feature = json_io.read_json(
 
 ## JSON Datasets with Keras
 
+JSON Dataset could be used directly with tf.keras, which is the recommended high level API for TF 2.0.
 Here is an example of how to use JSON Datasets to parse records from JSON file
 and pass them into tf.Keras for training machine learning models.
 
@@ -149,29 +171,12 @@ import tensorflow_io.json as json_io
       "test_json",
       "species.json")
 
-  ## Read columns.
-  feature_cols = json_io.list_json_columns(feature_filename)
-  label_cols = json_io.list_json_columns(label_filename)
+  feature_cols = ["sepalLength", "sepalWidth", "petalLength", "petalWidth"]
+  label_cols = ["species"]
 
-  ## Build tensors.
-  feature_tensors = []
-  for feature in feature_cols:
-    dataset = json_io.JSONDataset(feature_filename, feature)
-    feature_tensors.append(dataset)
+  feature_dataset = json_io.JSONDataset(feature_filename, feature_cols)
 
-  label_tensors = []
-  for label in label_cols:
-    dataset = json_io.JSONDataset(label_filename, label)
-    label_tensors.append(dataset)
-
-  ## Build datasets.
-  feature_dataset = tf.compat.v2.data.Dataset.zip(
-      tuple(feature_tensors)
-  )
-
-  label_dataset = tf.compat.v2.data.Dataset.zip(
-      tuple(label_tensors)
-  )
+  label_dataset = json_io.JSONDataset(label_filename, label_cols)
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,
@@ -180,10 +185,10 @@ import tensorflow_io.json as json_io
 
   dataset = dataset.map(pack_features_vector)
 
-  def pack_features_vector(features, labels):
-  """Pack the features into a single array."""
-  features = tf.stack(list(features), axis=1)
-  return features, labels
+    def pack_features_vector(features, labels):
+    """Pack the features into a single array."""
+    features = tf.stack(list(features), axis=1)
+    return features, labels
 
 ```
 

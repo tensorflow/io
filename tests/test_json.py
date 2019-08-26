@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 
 import tensorflow as tf
-# tf.compat.v1.disable_eager_execution()
+tf.compat.v1.disable_eager_execution()
 import tensorflow_io.json as json_io # pylint: disable=wrong-import-position
 
 
