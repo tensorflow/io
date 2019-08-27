@@ -100,4 +100,38 @@ REGISTER_OP("ListFeatherColumns")
        return Status::OK();
      });
 
+REGISTER_OP("FeatherIndexableInit")
+  .Input("input: string")
+  .Output("output: resource")
+  .Output("shapes: int64")
+  .Output("dtypes: int64")
+  .Output("columns: string")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetIsStateful()
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(3, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("FeatherIndexableGetItem")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Input("component: int64")
+  .Output("output: dtype")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
 }  // namespace tensorflow

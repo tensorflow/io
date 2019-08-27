@@ -15,11 +15,13 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
 #include "arrow/io/api.h"
 #include "arrow/ipc/feather.h"
 #include "arrow/ipc/feather_generated.h"
 #include "arrow/buffer.h"
 #include "arrow/adapters/tensorflow/convert.h"
+#include "arrow/table.h"
 
 namespace tensorflow {
 namespace data {
@@ -173,5 +175,223 @@ REGISTER_KERNEL_BUILDER(Name("ListFeatherColumns").Device(DEVICE_CPU),
 
 
 }  // namespace
+
+
+class FeatherIndexable : public IOIndexableInterface {
+ public:
+  FeatherIndexable(Env* env)
+  : env_(env) {}
+
+  ~FeatherIndexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    // FEA1.....[metadata][uint32 metadata_length]FEA1
+    static constexpr const char* kFeatherMagicBytes = "FEA1";
+
+    size_t header_length = strlen(kFeatherMagicBytes);
+    size_t footer_length = sizeof(uint32) + strlen(kFeatherMagicBytes);
+
+    string buffer;
+    buffer.resize(header_length > footer_length ? header_length : footer_length);
+
+    StringPiece result;
+
+    TF_RETURN_IF_ERROR(file_->Read(0, header_length, &result, &buffer[0]));
+    if (memcmp(buffer.data(), kFeatherMagicBytes, header_length) != 0) {
+      return errors::InvalidArgument("not a feather file");
+    }
+
+    TF_RETURN_IF_ERROR(file_->Read(file_size_ - footer_length, footer_length, &result, &buffer[0]));
+    if (memcmp(buffer.data() + sizeof(uint32), kFeatherMagicBytes, footer_length - sizeof(uint32)) != 0) {
+      return errors::InvalidArgument("incomplete feather file");
+    }
+
+    uint32 metadata_length = *reinterpret_cast<const uint32*>(buffer.data());
+
+    buffer.resize(metadata_length);
+
+    TF_RETURN_IF_ERROR(file_->Read(file_size_ - footer_length - metadata_length, metadata_length, &result, &buffer[0]));
+
+    const ::arrow::ipc::feather::fbs::CTable* table = ::arrow::ipc::feather::fbs::GetCTable(buffer.data());
+
+    if (table->version() < ::arrow::ipc::feather::kFeatherVersion) {
+      return errors::InvalidArgument("feather file is old: ", table->version(), " vs. ", ::arrow::ipc::feather::kFeatherVersion);
+    }
+
+    for (int i = 0; i < table->columns()->size(); i++) {
+      ::tensorflow::DataType dtype = ::tensorflow::DataType::DT_INVALID;
+      switch (table->columns()->Get(i)->values()->type()) {
+      case ::arrow::ipc::feather::fbs::Type_BOOL:
+        dtype = ::tensorflow::DataType::DT_BOOL;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_INT8:
+        dtype = ::tensorflow::DataType::DT_INT8;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_INT16:
+        dtype = ::tensorflow::DataType::DT_INT16;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_INT32:
+        dtype = ::tensorflow::DataType::DT_INT32;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_INT64:
+        dtype = ::tensorflow::DataType::DT_INT64;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT8:
+        dtype = ::tensorflow::DataType::DT_UINT8;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT16:
+        dtype = ::tensorflow::DataType::DT_UINT16;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT32:
+        dtype = ::tensorflow::DataType::DT_UINT32;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UINT64:
+        dtype = ::tensorflow::DataType::DT_UINT64;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_FLOAT:
+        dtype = ::tensorflow::DataType::DT_FLOAT;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_DOUBLE:
+        dtype = ::tensorflow::DataType::DT_DOUBLE;
+        break;
+      case ::arrow::ipc::feather::fbs::Type_UTF8:
+      case ::arrow::ipc::feather::fbs::Type_BINARY:
+      case ::arrow::ipc::feather::fbs::Type_CATEGORY:
+      case ::arrow::ipc::feather::fbs::Type_TIMESTAMP:
+      case ::arrow::ipc::feather::fbs::Type_DATE:
+      case ::arrow::ipc::feather::fbs::Type_TIME:
+      // case ::arrow::ipc::feather::fbs::Type_LARGE_UTF8:
+      // case ::arrow::ipc::feather::fbs::Type_LARGE_BINARY:
+      default:
+        break;
+      }
+      shapes_.push_back(TensorShape({static_cast<int64>(table->num_rows())}));
+      dtypes_.push_back(dtype);
+      columns_.push_back(table->columns()->Get(i)->name()->str());
+    }
+
+    return Status::OK();
+  }
+  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
+    shapes.clear();
+    for (size_t i = 0; i < shapes_.size(); i++) {
+      shapes.push_back(shapes_[i]);
+    }
+    dtypes.clear();
+    for (size_t i = 0; i < dtypes_.size(); i++) {
+      dtypes.push_back(dtypes_[i]);
+    }
+    return Status::OK();
+  }
+
+  Status Extra(std::vector<Tensor>* extra) override {
+    // Expose columns
+    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+    for (size_t i = 0; i < columns_.size(); i++) {
+      columns.flat<string>()(i) = columns_[i];
+    }
+    extra->push_back(columns);
+    return Status::OK();
+  }
+
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
+    }
+
+    if (feather_file_.get() == nullptr) {
+      feather_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
+      arrow::Status s = arrow::ipc::feather::TableReader::Open(feather_file_, &reader_);
+      if (!s.ok()) {
+        return errors::Internal(s.ToString());
+      }
+    }
+
+    std::shared_ptr<arrow::Column> column;
+    arrow::Status s = reader_->GetColumn(component, &column);
+    if (!s.ok()) {
+      return errors::Internal(s.ToString());
+    }
+
+    std::shared_ptr<::arrow::Column> slice = column->Slice(start, stop);
+
+    #define FEATHER_PROCESS_TYPE(TTYPE,ATYPE) { \
+        int64 curr_index = 0; \
+        for (auto chunk : slice->data()->chunks()) { \
+         for (int64_t item = 0; item < chunk->length(); item++) { \
+            tensor->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
+            curr_index++; \
+          } \
+        } \
+      }
+    switch (tensor->dtype()) {
+    case DT_BOOL:
+      FEATHER_PROCESS_TYPE(bool, ::arrow::BooleanArray);
+      break;
+    case DT_INT8:
+      FEATHER_PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
+      break;
+    case DT_UINT8:
+      FEATHER_PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
+      break;
+    case DT_INT16:
+      FEATHER_PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
+      break;
+    case DT_UINT16:
+      FEATHER_PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
+      break;
+    case DT_INT32:
+      FEATHER_PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
+      break;
+    case DT_UINT32:
+      FEATHER_PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
+      break;
+    case DT_INT64:
+      FEATHER_PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
+      break;
+    case DT_UINT64:
+      FEATHER_PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
+      break;
+    case DT_FLOAT:
+      FEATHER_PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
+      break;
+    case DT_DOUBLE:
+      FEATHER_PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
+      break;
+    default:
+      return errors::InvalidArgument("data type is not supported: ", DataTypeString(tensor->dtype()));
+    }
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("FeatherIndexable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  std::shared_ptr<ArrowRandomAccessFile> feather_file_ GUARDED_BY(mu_);
+  std::unique_ptr<arrow::ipc::feather::TableReader> reader_ GUARDED_BY(mu_);
+
+  std::vector<DataType> dtypes_;
+  std::vector<TensorShape> shapes_;
+  std::vector<string> columns_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("FeatherIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<FeatherIndexable>);
+REGISTER_KERNEL_BUILDER(Name("FeatherIndexableGetItem").Device(DEVICE_CPU),
+                        IOIndexableGetItemOp<FeatherIndexable>);
 }  // namespace data
 }  // namespace tensorflow
