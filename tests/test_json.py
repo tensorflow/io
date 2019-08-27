@@ -36,11 +36,9 @@ def test_json_dataset():
   filename = "file://" + filename
 
   num_repeats = 2
-  dataset = tf.compat.v2.data.Dataset.zip(
-      (
-          json_io.JSONDataset(filename, "floatfeature", dtype=tf.float64),
-          json_io.JSONDataset(filename, "integerfeature", dtype=tf.int64)
-      )).repeat(num_repeats).apply(tf.data.experimental.unbatch())
+  dataset = json_io.JSONDataset(
+      filename, ["floatfeature", "integerfeature"], dtype=[tf.float64, tf.int64]
+  ).repeat(num_repeats).apply(tf.data.experimental.unbatch())
 
   iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
   init_op = iterator.initializer

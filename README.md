@@ -33,6 +33,7 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.gcs`: GCS Configuration support.
 - `tensorflow_io.prometheus`: Prometheus observation data support.
 - `tensorflow_io.dicom`: DICOM Image file format support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/dicom/README.md).
+- `tensorflow_io.json`: JSON file support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/json/README.md).
 
 ## Installation
 
