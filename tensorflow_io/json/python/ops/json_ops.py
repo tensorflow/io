@@ -42,23 +42,31 @@ class JSONDataset(data_ops.BaseDataset):
   """A JSONLabelDataset. JSON (JavaScript Object Notation) is a lightweight data-interchange format.
   """
 
-  def __init__(self, filename, column, **kwargs):
+  def __init__(self, filename, columns, **kwargs):
     """Create a JSONLabelDataset.
 
     Args:
       filename: A string containing one or more filenames.
-      column: A string containing the column to extract.
+      columns: A list of strings containing the columns to extract.
     """
     if not tf.executing_eagerly():
-      dtype = kwargs.get("dtype")
+      self._dtypes = kwargs.get("dtype")
     else:
-      columns = list_json_columns(filename)
-      dtype = columns[column].dtype
-    shape = tf.TensorShape([None])
+      all_columns = list_json_columns(filename)
+      for column in columns:
+        if column not in all_columns:
+          raise ValueError(
+              "There is no column named {} in the {}".format(filename, column))
+      self._dtypes = [all_columns[column].dtype for column in columns]
 
-    dataset = data_ops.BaseDataset.from_tensors(
-        core_ops.read_json(filename, column, dtype=dtype))
-    self._dataset = dataset
+    self._shapes = [tf.TensorShape([None])] * len(columns)
+
+    datasets = []
+    for i, column in enumerate(columns):
+      datasets.append(data_ops.Dataset.from_tensors(
+          core_ops.read_json(filename, column, dtype=self._dtypes[i])))
+
+    self._dataset = tf.compat.v2.data.Dataset.zip(tuple(datasets))
 
     super(JSONDataset, self).__init__(
-        self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access
+        self._dataset._variant_tensor, self._dtypes, self._shapes) # pylint: disable=protected-access
