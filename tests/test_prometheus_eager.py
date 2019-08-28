@@ -22,6 +22,8 @@ import time
 import subprocess
 import sys
 import pytest
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
@@ -42,10 +44,25 @@ def test_prometheus():
       "coredns_dns_request_count_total[5s]")
   assert prometheus.index.shape == [5]
   assert prometheus.index.dtype == tf.int64
-  assert prometheus.value.shape == [5]
+  assert prometheus.value.shape == [5, 1]
   assert prometheus.value.dtype == tf.float64
   # last value should be 6.0
   assert prometheus.value.to_tensor().numpy()[4] == 6.0
+
+  # test with sklearn.preprocessing, and expect the same as with numpy
+  numpy_data = prometheus.value.to_tensor().numpy()
+
+  prometheus_scaler = MinMaxScaler()
+  prometheus_scaler.fit(prometheus.value)
+  prometheus_transformed = prometheus_scaler.transform(prometheus.value)
+
+  numpy_scaler = MinMaxScaler()
+  numpy_scaler.fit(numpy_data)
+  numpy_transformed = numpy_scaler.transform(numpy_data)
+
+  assert prometheus_scaler.data_max_ == numpy_scaler.data_max_
+  assert prometheus_scaler.data_min_ == numpy_scaler.data_min_
+  assert np.all(prometheus_transformed == numpy_transformed)
 
 if __name__ == "__main__":
   test.main()

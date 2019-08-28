@@ -188,30 +188,6 @@ class BaseIOTensor(_IOTensor):
   # Tensor Type Conversions
   #=============================================================================
 
-  @classmethod
-  def from_tensor(cls,
-                  tensor,
-                  **kwargs):
-    """Converts a `tf.Tensor` into a `IOTensor`.
-
-    Examples:
-
-    ```python
-    ```
-
-    Args:
-      tensor: The `Tensor` to convert.
-
-    Returns:
-      A `IOTensor`.
-
-    Raises:
-      ValueError: If tensor is not a `Tensor`.
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromTensor")):
-      _ = tensor
-      raise NotImplementedError()
-
   def to_tensor(self, **kwargs):
     """Converts this `IOTensor` into a `tf.Tensor`.
 
@@ -228,6 +204,59 @@ class BaseIOTensor(_IOTensor):
     """
     with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
+
+class TensorIOTensor(BaseIOTensor):
+  """TensorIOTensor
+
+  A `TensorIOTensor` is an `IOTensor` from a regular `Tensor`.
+  """
+
+  def __init__(self,
+               tensor,
+               internal=False):
+    tensor = tf.convert_to_tensor(tensor)
+
+    self._base_start = [0 for _ in tensor.shape.as_list()]
+    self._base_size = [-1 for _ in tensor.shape.as_list()]
+    def function(resource, start, stop, step, component, shape, dtype): # pylint: disable=unused-argument
+      slice_start = self._base_start
+      slice_size = self._base_size
+      slice_start[0] = start
+      slice_size[0] = stop - start
+      return tf.slice(resource, slice_start, slice_size)
+    self._tensor = tensor
+
+    super(TensorIOTensor, self).__init__(
+        tf.TensorSpec(tensor.shape, tensor.dtype),
+        tensor, function, internal=internal)
+
+  #=============================================================================
+  # Indexing & Slicing
+  #=============================================================================
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    return self._tensor.__getitem__(key)
+
+  #=============================================================================
+  # Tensor Type Conversions
+  #=============================================================================
+
+  def to_tensor(self, **kwargs):
+    """Converts this `IOTensor` into a `tf.Tensor`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+      name: A name prefix for the returned tensors (optional).
+
+    Returns:
+      A `Tensor` with value obtained from this `IOTensor`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOToTensor")):
+      return self._tensor
 
 class _TableIOTensor(_IOTensor):
   """_TableIOTensor"""

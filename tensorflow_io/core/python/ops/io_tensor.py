@@ -194,6 +194,29 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   #=============================================================================
 
   @classmethod
+  def from_tensor(cls,
+                  tensor,
+                  **kwargs):
+    """Converts a `tf.Tensor` into a `IOTensor`.
+
+    Examples:
+
+    ```python
+    ```
+
+    Args:
+      tensor: The `Tensor` to convert.
+
+    Returns:
+      A `IOTensor`.
+
+    Raises:
+      ValueError: If tensor is not a `Tensor`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromTensor")):
+      return io_tensor_ops.TensorIOTensor(tensor, internal=True)
+
+  @classmethod
   def from_audio(cls,
                  filename,
                  **kwargs):
