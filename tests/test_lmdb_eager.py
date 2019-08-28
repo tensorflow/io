@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for LMDBDataset."""
+"""Tests for LMDBIOTensor."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -25,7 +25,7 @@ import numpy as np
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-import tensorflow_io.lmdb as lmdb_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 
 def test_lmdb_read_from_file():
@@ -37,8 +37,15 @@ def test_lmdb_read_from_file():
   filename = os.path.join(tmp_path, "data.mdb")
   shutil.copy(path, filename)
 
-  num_repeats = 2
-  lmdb_dataset = lmdb_io.LMDBDataset([filename]).repeat(num_repeats)
+  lmdb = tfio.IOTensor.from_lmdb(filename)
+
+  assert np.all(
+      [key.numpy() for key in lmdb] == [str(i).encode() for i in range(10)])
+
+  for key in lmdb:
+    assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
+
+  lmdb_dataset = lmdb.to_dataset()
   ii = 0
   for vv in lmdb_dataset:
     i = ii % 10
@@ -46,18 +53,9 @@ def test_lmdb_read_from_file():
     assert k.numpy() == str(i).encode()
     assert v.numpy() == str(chr(ord("a") + i)).encode()
     ii += 1
-  shutil.rmtree(tmp_path)
+  assert ii == 10
 
-def test_lmdb_read_from_file_with_batch():
-  """test_read_from_file"""
-  # Copy database out because we need the path to be writable to use locks.
-  path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
-  tmp_path = tempfile.mkdtemp()
-  filename = os.path.join(tmp_path, "data.mdb")
-  shutil.copy(path, filename)
-
-  lmdb_dataset = lmdb_io.LMDBDataset([filename], batch=3)
+  lmdb_dataset = lmdb.to_dataset().batch(3)
   i = 0
   for vv in lmdb_dataset:
     k, v = vv
@@ -74,6 +72,8 @@ def test_lmdb_read_from_file_with_batch():
       assert k.numpy() == str(9).encode()
       assert v.numpy() == str('j').encode()
     i += 3
+  assert i == 12
+
   shutil.rmtree(tmp_path)
 
 if __name__ == "__main__":

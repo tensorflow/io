@@ -22,6 +22,7 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
+from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
 
@@ -305,3 +306,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromFeather")):
       return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_lmdb(cls,
+                filename,
+                **kwargs):
+    """Creates an `IOTensor` from a LMDB key/value store.
+
+    Args:
+      filename: A string, the filename of a LMDB file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
+      return lmdb_io_tensor_ops.LMDBIOTensor(filename, internal=True)
