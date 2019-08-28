@@ -45,7 +45,7 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
       dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
       assert len(shapes) == 2
       assert len(dtypes) == 2
-      assert shapes[0] == shapes[1]
+      assert shapes[0].concatenate(1) == shapes[1]
       spec = (tf.TensorSpec(shapes[0], dtypes[0]),
               tf.TensorSpec(shapes[1], dtypes[1]))
       super(PrometheusIOTensor, self).__init__(

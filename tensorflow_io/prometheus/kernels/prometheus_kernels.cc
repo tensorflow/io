@@ -130,7 +130,7 @@ class PrometheusIndexable : public IOIndexableInterface {
     dtypes_.emplace_back(DT_INT64);
     shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
     dtypes_.emplace_back(DT_DOUBLE);
-    shapes_.emplace_back(TensorShape({static_cast<int64>(returned)}));
+    shapes_.emplace_back(TensorShape({static_cast<int64>(returned), 1}));
 
     return Status::OK();
   }
@@ -147,13 +147,14 @@ class PrometheusIndexable : public IOIndexableInterface {
   }
 
   Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
     if (component == 0) {
-      memcpy(&tensor->flat<int64>().data()[start], &timestamp_[0], sizeof(int64) * (stop - start));
+      memcpy(&tensor->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
     } else {
-      memcpy(&tensor->flat<double>().data()[start], &value_[0], sizeof(double) * (stop - start));
+      memcpy(&tensor->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
     }
 
     return Status::OK();
