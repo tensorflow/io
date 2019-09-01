@@ -533,6 +533,61 @@ http_archive(
 )
 
 http_archive(
+	name = "org_tensorflow", 
+	strip_prefix = "tensorflow-2.0.0-rc0",
+	urls = [
+		"https://github.com/tensorflow/tensorflow/archive/v2.0.0-rc0.zip",
+	], 
+	repo_mapping = {"@zlib_archive": "@zlib"}
+)
+
+http_archive(
+    name = "nucleus", 
+    sha256 = "aa865d3509ba8f3527392303bd95a11f48f19e68197b3d1d0bae9fab004bee87",
+    strip_prefix = "nucleus-0.4.1",
+    urls = [
+        "https://github.com/google/nucleus/archive/0.4.1.tar.gz",
+    ],
+    repo_mapping = {"@protobuf_archive": "@com_google_protobuf"}
+)
+
+http_archive(
+    name = "com_googlesource_code_cctz",
+    strip_prefix = "cctz-master",
+    urls = ["https://github.com/google/cctz/archive/master.zip"],
+)
+
+# This is the 1.9 release of htslib.
+http_archive(
+    name = "htslib",
+    build_file = "@nucleus//:third_party/htslib.BUILD",
+    sha256 = "c4d3ae84014f8a80f5011521f391e917bc3b4f6ebd78e97f238472e95849ec14",
+    strip_prefix = "htslib-1.9",
+    urls = [
+        "https://github.com/samtools/htslib/archive/1.9.zip"
+    ],
+)
+
+
+http_archive(
+    name = "io_bazel_rules_closure",
+    sha256 = "43c9b882fa921923bcba764453f4058d102bece35a37c9f6383c713004aacff1",
+    strip_prefix = "rules_closure-9889e2348259a5aad7e805547c1a0cf311cfcd91",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",  # 2018-12-21
+    ],
+)
+
+# bazel_skylib is now a required dependency of protobuf_archive.
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
+    strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
+)
+
+http_archive(
     name = "double_conversion",
     build_file = "//third_party:double_conversion.BUILD",
     sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
@@ -552,3 +607,6 @@ http_archive(
         "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
     ],
 )
+load("@org_tensorflow//tensorflow:workspace.bzl", "tf_workspace")
+tf_workspace(tf_repo_name = "org_tensorflow")
+
