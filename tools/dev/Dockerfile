@@ -1,10 +1,11 @@
-FROM ubuntu:16.04
+FROM tensorflow/tensorflow:custom-op-ubuntu16
 
 RUN apt-get update && \
     apt-get install -y \
     git \
     gcc \
     g++ \
+    gdb \
     make \
     patch \
     curl \
