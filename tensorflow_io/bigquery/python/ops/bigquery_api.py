@@ -29,8 +29,8 @@ from __future__ import print_function
 
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import tensor_spec
 from tensorflow_io.core.python.ops import _load_library
 
 
@@ -223,8 +223,8 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
 
   def __init__(self, client_resource, selected_fields, output_types,
                avro_schema, stream):
-    self._structure = structure.NestedStructure(
-        tuple(structure.TensorStructure(dtype, []) for dtype in output_types))
+    self._element_spec = tuple(
+        tensor_spec.TensorSpec([], dtype) for dtype in output_types)
 
     variant_tensor = _bigquery_so.big_query_dataset(
         client=client_resource,
@@ -235,5 +235,5 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
     super(_BigQueryDataset, self).__init__(variant_tensor)
 
   @property
-  def _element_structure(self):
-    return self._structure
+  def element_spec(self):
+    return self._element_spec
