@@ -184,6 +184,37 @@ class BaseIOTensor(_IOTensor):
     """Returns the total number of items of this IOTensor."""
     return self.shape[0]
 
+
+  #=============================================================================
+  # Windowing
+  #=============================================================================
+  def window(self, size):
+    """Returns the sliding window of this IOTensor."""
+    spec = tf.TensorSpec(
+        tf.TensorShape(self.shape.dims[0] - size + 1).concatenate(size),
+        self.dtype)
+    def function(resource, start, stop, step, component, shape, dtype):
+      _, _, _, _ = resource, component, shape, dtype
+      return tf.reshape(
+          tf.image.extract_patches(
+              tf.reshape(
+                  self._function(
+                      self._resource,
+                      start, stop + size - 1, step,
+                      component=self._component,
+                      shape=[stop + size - 1 - start, 1], dtype=self.dtype),
+                  [1, 1, self.shape.dims[0], 1]),
+              sizes=[1, 1, size, 1],
+              strides=[1, 1, 1, 1],
+              rates=[1, 1, 1, 1],
+              padding='VALID'),
+          spec.shape)
+    return BaseIOTensor(spec,
+                        self._resource,
+                        function,
+                        component=self._component,
+                        internal=True)
+
   #=============================================================================
   # Tensor Type Conversions
   #=============================================================================
