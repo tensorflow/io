@@ -81,7 +81,19 @@ cc_library(
     ],
     hdrs = glob(["src/**/*.h"]) + ["config.h"],
     copts = ["-std=c99"],
-    defines = [
+    defines = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "TUKLIB_CPUCORES_SYSCTL=1",
+        ],
+        "//conditions:default": [
+            "TUKLIB_CPUCORES_SCHED_GETAFFINITY=1",
+            "HAVE_BSWAP_16=1",
+            "HAVE_BSWAP_32=1",
+            "HAVE_BSWAP_64=1",
+            "HAVE_BYTESWAP_H=1",
+            "HAVE_PTHREAD_CONDATTR_SETCLOCK=1",
+        ],
+    }) + [
         "HAVE_CONFIG_H",
     ],
     includes = [
@@ -110,10 +122,6 @@ genrule(
         "",
         "#define ASSUME_RAM 128",
         "#define ENABLE_NLS 1",
-        "#define HAVE_BSWAP_16 1",
-        "#define HAVE_BSWAP_32 1",
-        "#define HAVE_BSWAP_64 1",
-        "#define HAVE_BYTESWAP_H 1",
         "#define HAVE_CHECK_CRC32 1",
         "#define HAVE_CHECK_CRC64 1",
         "#define HAVE_CHECK_SHA256 1",
@@ -158,7 +166,6 @@ genrule(
         "#define HAVE_MF_HC3 1",
         "#define HAVE_MF_HC4 1",
         "#define HAVE_POSIX_FADVISE 1",
-        "#define HAVE_PTHREAD_CONDATTR_SETCLOCK 1",
         "#define HAVE_PTHREAD_PRIO_INHERIT 1",
         "#define HAVE_STDBOOL_H 1",
         "#define HAVE_STDINT_H 1",
@@ -188,7 +195,6 @@ genrule(
         "#define PACKAGE_VERSION \"5.2.4\"",
         "#define SIZEOF_SIZE_T 8",
         "#define STDC_HEADERS 1",
-        "#define TUKLIB_CPUCORES_SCHED_GETAFFINITY 1",
         "#define TUKLIB_FAST_UNALIGNED_ACCESS 1",
         "#define TUKLIB_PHYSMEM_SYSCONF 1",
         "#ifndef _ALL_SOURCE",
