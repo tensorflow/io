@@ -8,6 +8,16 @@ tf_configure(
 )
 
 http_archive(
+    name = "com_google_absl",
+    sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
+    strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+        "https://github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+    ],
+)
+
+http_archive(
     name = "boringssl",
     sha256 = "1188e29000013ed6517168600fc35a010d58c5d321846d6a6dfee74e4c788b45",
     strip_prefix = "boringssl-7f634429a04abc48e2eb041c81c5235816c96514",
@@ -533,22 +543,27 @@ http_archive(
 )
 
 http_archive(
-	name = "org_tensorflow", 
-	strip_prefix = "tensorflow-2.0.0-rc0",
-	urls = [
-		"https://github.com/tensorflow/tensorflow/archive/v2.0.0-rc0.zip",
-	], 
-	repo_mapping = {"@zlib_archive": "@zlib"}
-)
-
-http_archive(
-    name = "nucleus", 
+    name = "nucleus",
+    build_file = "//third_party:nucleus.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:nucleus.patch",
+    ],
     sha256 = "aa865d3509ba8f3527392303bd95a11f48f19e68197b3d1d0bae9fab004bee87",
     strip_prefix = "nucleus-0.4.1",
     urls = [
         "https://github.com/google/nucleus/archive/0.4.1.tar.gz",
     ],
-    repo_mapping = {"@protobuf_archive": "@com_google_protobuf"}
+)
+
+http_archive(
+    name = "bzip2",
+    build_file = "//third_party:bzip2.BUILD",
+    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
+    strip_prefix = "bzip2-1.0.8",
+    urls = [
+        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+    ],
 )
 
 http_archive(
@@ -560,14 +575,13 @@ http_archive(
 # This is the 1.9 release of htslib.
 http_archive(
     name = "htslib",
-    build_file = "@nucleus//:third_party/htslib.BUILD",
+    build_file = "//third_party:htslib.BUILD",
     sha256 = "c4d3ae84014f8a80f5011521f391e917bc3b4f6ebd78e97f238472e95849ec14",
     strip_prefix = "htslib-1.9",
     urls = [
-        "https://github.com/samtools/htslib/archive/1.9.zip"
+        "https://github.com/samtools/htslib/archive/1.9.zip",
     ],
 )
-
 
 http_archive(
     name = "io_bazel_rules_closure",
@@ -607,6 +621,13 @@ http_archive(
         "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
     ],
 )
-load("@org_tensorflow//tensorflow:workspace.bzl", "tf_workspace")
-tf_workspace(tf_repo_name = "org_tensorflow")
 
+http_archive(
+    name = "xz",
+    build_file = "//third_party:xz.BUILD",
+    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
+    strip_prefix = "xz-5.2.4",
+    urls = [
+        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
+    ],
+)

@@ -23,17 +23,24 @@ class FastqOp : public OpKernel {
 
       const Tensor& filename_tensor = context->input(0);
       const std::string& filename = filename_tensor.scalar<string>()();
+
       std::unique_ptr<FastqReader> reader = std::move(
         FastqReader::FromFile(filename,
                               nucleus::genomics::v1::FastqReaderOptions())
             .ValueOrDie());
 
       std::vector<std::string> nucleotides;
-      for (const nucleus::StatusOr<nucleus::genomics::v1::FastqRecord*> maybe_record : reader->Iterate().ValueOrDie()) {
-        if (maybe_record.ok()) {
-          nucleotides.push_back(maybe_record.ValueOrDie()->sequence()); 
+
+      std::shared_ptr<nucleus::FastqIterable> iterable = reader->Iterate().ValueOrDie();
+      do {
+        nucleus::genomics::v1::FastqRecord record;
+        nucleus::StatusOr<bool> more = iterable->Next(&record);
+        OP_REQUIRES(context, more.ok(), errors::Internal("internal error: ", more.error_message()));
+        if (!more.ValueOrDie()) {
+          break;
         }
-      }   
+        nucleotides.push_back(record.sequence());
+      } while (true);
 
       TensorShape output_shape({static_cast<int64>(nucleotides.size())});
       Tensor* output_tensor;
@@ -42,7 +49,6 @@ class FastqOp : public OpKernel {
       for (size_t i = 0; i < nucleotides.size(); i++) {
         output_tensor->flat<string>()(i) = std::move(nucleotides[i]);
       }
-
     }
 };
 
