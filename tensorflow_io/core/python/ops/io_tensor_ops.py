@@ -262,13 +262,6 @@ class TensorIOTensor(BaseIOTensor):
         tensor, function, internal=internal)
 
   #=============================================================================
-  # Indexing & Slicing
-  #=============================================================================
-  def __getitem__(self, key):
-    """Returns the specified piece of this IOTensor."""
-    return self._tensor.__getitem__(key)
-
-  #=============================================================================
   # Tensor Type Conversions
   #=============================================================================
 
