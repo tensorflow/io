@@ -45,7 +45,7 @@ def test_genome_fastq_reader():
       b'CGTTAGCGCAGGGGGCATCTTCACACTGGTGACAGGTAACCGCCGTAGTAAAGGTTCCGCCTTTCACT',
       b'CGGCTGGTCAGGCTGACATCGCCGCCGGCCTGCAGCGAGCCGCTGC',
       b'CGG']
-  assert np.all(data_np == data_expected)
+  assert np.all(data_np.sequences == data_expected)
 
 if __name__ == "__main__":
   test.main()

@@ -13,6 +13,7 @@
 namespace tensorflow {
 
 using nucleus::FastqReader;
+using nucleus::genomics::v1::FastqRecord;
 
 class FastqOp : public OpKernel {
   public:
@@ -29,32 +30,33 @@ class FastqOp : public OpKernel {
                               nucleus::genomics::v1::FastqReaderOptions())
             .ValueOrDie());
 
-      std::vector<std::string> nucleotides;
+      std::vector<std::string> sequences;
+      std::vector<std::string> quality;
 
       std::shared_ptr<nucleus::FastqIterable> iterable = reader->Iterate().ValueOrDie();
-      do {
-        nucleus::genomics::v1::FastqRecord record;
-        nucleus::StatusOr<bool> more = iterable->Next(&record);
-        OP_REQUIRES(context, more.ok(), errors::Internal("internal error: ", more.error_message()));
-        if (!more.ValueOrDie()) {
-          break;
-        }
-        nucleotides.push_back(record.sequence());
-      } while (true);
+      for (const nucleus::StatusOr<FastqRecord*> maybe_sequence : iterable) {
+        OP_REQUIRES(context, maybe_sequence.ok(), errors::Internal("internal error: ", maybe_sequence.error_message()));
+        sequences.push_back(maybe_sequence.ValueOrDie()->sequence());
+        quality.push_back(maybe_sequence.ValueOrDie()->quality());
+      }
 
-      TensorShape output_shape({static_cast<int64>(nucleotides.size())});
+      TensorShape output_shape({static_cast<int64>(sequences.size())});
       Tensor* output_tensor;
+      Tensor* quality_tensor;
       OP_REQUIRES_OK(context, context->allocate_output(0, output_shape, &output_tensor));
+      OP_REQUIRES_OK(context, context->allocate_output(1, output_shape, &quality_tensor));
 
-      for (size_t i = 0; i < nucleotides.size(); i++) {
-        output_tensor->flat<string>()(i) = std::move(nucleotides[i]);
+      for (size_t i = 0; i < sequences.size(); i++) {
+        output_tensor->flat<string>()(i) = std::move(sequences[i]);
+        quality_tensor->flat<string>()(i) = std::move(quality[i]);
       }
     }
 };
 
 REGISTER_OP("FastqOp")
     .Input("filename: string")
-    .Output("output: string")
+    .Output("sequences: string")
+    .Output("raw_quality: string")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
