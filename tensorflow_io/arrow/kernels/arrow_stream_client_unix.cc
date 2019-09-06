@@ -21,11 +21,13 @@ limitations under the License.
 #include "arrow/api.h"
 #include "arrow/io/api.h"
 
+#include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
+namespace data {
 
 ArrowStreamClient::ArrowStreamClient(const std::string& endpoint)
   : endpoint_(endpoint), sock_(-1), pos_(0) {}
@@ -41,7 +43,7 @@ arrow::Status ArrowStreamClient::Connect() {
   string host;
   Status status;
 
-  status = ParseEndpoint(endpoint_, &socket_family, &host);
+  status = ArrowUtil::ParseEndpoint(endpoint_, &socket_family, &host);
   if (!status.ok()) {
     return arrow::Status::Invalid(
         "Error parsing endpoint string: " + endpoint_);
@@ -50,7 +52,7 @@ arrow::Status ArrowStreamClient::Connect() {
   if (socket_family.empty() || socket_family == "tcp") {
     std::string addr_str;
     std::string port_str;
-    status = ParseHost(host, &addr_str, &port_str);
+    status = ArrowUtil::ParseHost(host, &addr_str, &port_str);
     if (!status.ok()) {
       return arrow::Status::Invalid("Error parsing host string: " + host);
     }
@@ -144,4 +146,5 @@ arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(int64_t nb
   return buffer;
 }
 
+}  // namespace data
 }  // namespace tensorflow

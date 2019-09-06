@@ -31,6 +31,7 @@ from tensorflow_io.core.python.ops import avro_io_tensor_ops
 from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
 from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 from tensorflow_io.core.python.ops import tiff_io_tensor_ops
+from tensorflow_io.core.python.ops import arrow_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -330,6 +331,23 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromFeather")):
       return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_arrow(cls,
+                 table,
+                 **kwargs):
+    """Creates an `IOTensor` from a pyarrow.Table.
+
+    Args:
+      table: An instance of a `pyarrow.Table`.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromArrow")):
+      return arrow_io_tensor_ops.ArrowIOTensor(table, internal=True)
 
   @classmethod
   def from_lmdb(cls,
