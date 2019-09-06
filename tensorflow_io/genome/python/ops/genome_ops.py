@@ -19,4 +19,4 @@ from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops
 
-fastq_op = core_ops.fastq_op
+read_fastq = core_ops.read_fastq

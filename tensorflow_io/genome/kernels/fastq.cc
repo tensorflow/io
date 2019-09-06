@@ -11,9 +11,10 @@
 #include <utility> 
 
 namespace tensorflow {
-
+namespace { 
 using nucleus::FastqReader;
 using nucleus::genomics::v1::FastqRecord;
+} // namespace
 
 class FastqOp : public OpKernel {
   public:
@@ -53,14 +54,6 @@ class FastqOp : public OpKernel {
     }
 };
 
-REGISTER_OP("FastqOp")
-    .Input("filename: string")
-    .Output("sequences: string")
-    .Output("raw_quality: string")
-    .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
-      c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
-    });
-REGISTER_KERNEL_BUILDER(Name("FastqOp").Device(DEVICE_CPU), FastqOp);
+REGISTER_KERNEL_BUILDER(Name("ReadFastq").Device(DEVICE_CPU), FastqOp);
 
 } // tensorflow

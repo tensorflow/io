@@ -34,7 +34,7 @@ def test_genome_fastq_reader():
   g1 = tf.compat.v1.Graph()
 
   with g1.as_default():
-    data = genome_io.fastq_op(filename=fastq_path)
+    data = genome_io.read_fastq(filename=fastq_path)
 
   sess = tf.compat.v1.Session(graph=g1)
   data_np = sess.run(data)

@@ -11,6 +11,7 @@ cc_library(
     name = "genome_ops",
     srcs = [
         "kernels/fastq.cc",
+        "ops/read_fastq.cc",
     ],
     copts = tf_io_copts(),
     includes = [

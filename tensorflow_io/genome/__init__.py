@@ -21,12 +21,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.genome.python.ops.genome_ops import fastq_op
+from tensorflow_io.genome.python.ops.genome_ops import read_fastq
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
-    "fastq_op",
+    "read_fastq",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
