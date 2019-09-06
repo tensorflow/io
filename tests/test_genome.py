@@ -46,10 +46,10 @@ def test_genome_fastq_reader():
       b'CGG']
 
   quality_expected = [
-          b'BB>B@FA',
-          b'AAAAABF@BBBDGGGG?FFGFGHBFBFBFABBBHGGGFHHCEFGGGGG?FGFFHEDG3EFGGGHEGHG',
-          b'FAFAF;F/9;.:/;999B/9A.DFFF;-->.AAB/FC;9-@-=;=.',
-          b'FAD']
+      b'BB>B@FA',
+      b'AAAAABF@BBBDGGGG?FFGFGHBFBFBFABBBHGGGFHHCEFGGGGG?FGFFHEDG3EFGGGHEGHG',
+      b'FAFAF;F/9;.:/;999B/9A.DFFF;-->.AAB/FC;9-@-=;=.',
+      b'FAD']
 
   assert np.all(data_np.sequences == data_expected)
   assert np.all(data_np.raw_quality == quality_expected)
