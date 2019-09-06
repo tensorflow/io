@@ -42,8 +42,8 @@ BigQuery dataset.
 ```python
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
-from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryClient
-from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryReadSession
+from tensorflow_io.bigquery import BigQueryClient
+from tensorflow_io.bigquery import BigQueryReadSession
 
 GCP_PROJECT_ID = '<FILL_ME_IN>'
 DATASET_GCP_PROJECT_ID = "bigquery-public-data"
