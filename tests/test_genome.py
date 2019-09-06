@@ -38,14 +38,21 @@ def test_genome_fastq_reader():
 
   sess = tf.compat.v1.Session(graph=g1)
   data_np = sess.run(data)
-  print(data_np)
 
   data_expected = [
       b'GATTACA',
       b'CGTTAGCGCAGGGGGCATCTTCACACTGGTGACAGGTAACCGCCGTAGTAAAGGTTCCGCCTTTCACT',
       b'CGGCTGGTCAGGCTGACATCGCCGCCGGCCTGCAGCGAGCCGCTGC',
       b'CGG']
+
+  quality_expected = [
+          b'BB>B@FA',
+          b'AAAAABF@BBBDGGGG?FFGFGHBFBFBFABBBHGGGFHHCEFGGGGG?FGFFHEDG3EFGGGHEGHG',
+          b'FAFAF;F/9;.:/;999B/9A.DFFF;-->.AAB/FC;9-@-=;=.',
+          b'FAD']
+
   assert np.all(data_np.sequences == data_expected)
+  assert np.all(data_np.raw_quality == quality_expected)
 
 if __name__ == "__main__":
   test.main()
