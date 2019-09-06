@@ -3,43 +3,28 @@ licenses(["notice"])  # Apache 2.0
 package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 load(
     "//third_party/tf:tensorflow_io.bzl",
     "tf_io_copts",
 )
 
-genrule(
-    name = "endpoint_py",
-    srcs = [
-        "endpoint.proto",
-    ],
-    outs = [
-        "python/ops/__init__.py",
-        "python/ops/endpoint_pb2.py",
-        "python/ops/endpoint_pb2_grpc.py",
-    ],
-    cmd = "python -m grpc_tools.protoc -Itensorflow_io/grpc --python_out=$(BINDIR)/tensorflow_io/grpc/python/ops/ --grpc_python_out=$(BINDIR)/tensorflow_io/grpc/python/ops/ $< ; touch $(BINDIR)/tensorflow_io/grpc/python/ops/__init__.py",
-    output_to_bindir = True,
-)
-
 proto_library(
-    name = "_any_proto_only",
+    name = "endpoint_proto",
+    srcs = ["endpoint.proto"],
     deps = ["@com_google_protobuf//:any_proto"],
 )
 
 cc_proto_library(
-    name = "any_proto",
-    deps = ["@com_google_protobuf//:any_proto"],
+    name = "endpoint_cc_proto",
+    deps = [":endpoint_proto"],
 )
 
 cc_grpc_library(
-    name = "endpoint_cc",
-    srcs = [
-        "endpoint.proto",
-    ],
-    proto_only = False,
-    well_known_protos = True,
-    deps = [":any_proto"],
+    name = "endpoint_cc_grpc",
+    srcs = [":endpoint_proto"],
+    grpc_only = True,
+    deps = [":endpoint_cc_proto"],
 )
 
 cc_binary(
@@ -54,12 +39,22 @@ cc_binary(
     ],
     linkshared = 1,
     deps = [
-        ":endpoint_cc",
+        ":endpoint_cc_grpc",
         "//tensorflow_io/core:dataset_ops",
         "@com_github_grpc_grpc//:grpc++",
-        "@com_google_protobuf//:protobuf",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+)
+
+py_proto_library(
+    name = "endpoint_py_pb2",
+    deps = [":endpoint_proto"],
+)
+
+py_grpc_library(
+    name = "endpoint_py_pb2_grpc",
+    srcs = [":endpoint_proto"],
+    deps = [":endpoint_py_pb2"],
 )

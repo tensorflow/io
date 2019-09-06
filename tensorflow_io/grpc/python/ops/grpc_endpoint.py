@@ -30,9 +30,22 @@ import tensorflow as tf
 datapath = os.environ.get('TFIO_DATAPATH')
 sys.path.append(os.path.abspath(
     os.path.dirname(__file__) if datapath is None else os.path.join(
-        datapath, "tensorflow_io", "grpc", "python", "ops")))
-import endpoint_pb2      # pylint: disable=wrong-import-position,unused-import
-import endpoint_pb2_grpc # pylint: disable=wrong-import-position,unused-import
+        datapath, "tensorflow_io", "grpc")))
+import endpoint_pb2      # pylint: disable=wrong-import-position
+# For some reason generated code in grpc uses:
+# from tensorflow_io.grpc import endpoint_pb2
+# so below is needed
+class MetaPathFinder(object):
+  def find_module(self, fullname, _):
+    if fullname == "tensorflow_io.grpc.endpoint_pb2":
+      return self
+    return None
+  def load_module(self, fullname):
+    if fullname == "tensorflow_io.grpc.endpoint_pb2":
+      return endpoint_pb2
+    return None
+sys.meta_path.append(MetaPathFinder())
+import endpoint_pb2_grpc # pylint: disable=wrong-import-position
 
 class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
   """GRPCEndpoint"""
