@@ -101,17 +101,17 @@ float_feature = json_io.read_json(
 
 ## JSON Datasets with Keras
 
-JSON Dataset could be used directly with tf.keras, which is the recommended high level API for TF 2.0.
+JSON Dataset could be used directly with tf.keras, which is the recommended high-level API for TF 2.0.
 Here is an example of how to use JSON Datasets to parse records from JSON file
 and pass them into tf.Keras for training machine learning models.
 
-This example uses the same dataset but in JSON format as this
+This example uses the same datasets but in JSON format as this
 [TensorFlow Custom Training Walkthrough](https://www.tensorflow.org/tutorials/eager/custom_training_walkthrough)
-does, and ties to solve the classic
+does, and tries to solve the classic
 [Iris classification problem](https://en.wikipedia.org/wiki/Iris_flower_data_set)
 by using the `tf.Keras`.
 
-The dataset are as following:
+The datasets are as following:
 The `iris.json` contains 4-feature records of the flower measurements.
 
 ```json
