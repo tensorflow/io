@@ -12,10 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow-io"""
+"""IOServer"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.core.python.ops.io_server import IOServer
-from tensorflow_io.core.python.ops.io_tensor import IOTensor
+import uuid
+
+import tensorflow as tf
+from tensorflow_io.core.python.ops import core_ops
+
+class IOServer(object):
+  """IOServer
+  """
+  def __init__(self,
+               address="localhost:50001"):
+    with tf.name_scope("IOServer") as scope:
+      server = "GRPCIterable[%s]" % address
+      metadata = ["server.address=%s" % address]
+      resource = core_ops.grpcio_server_init(
+          server, metadata=metadata,
+          container=scope,
+          shared_name="%s/%s" % (server, uuid.uuid4().hex))
+
+      self._resource = resource
+      super(IOServer, self).__init__()

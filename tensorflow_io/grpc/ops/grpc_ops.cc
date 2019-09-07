@@ -19,6 +19,33 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("GRPCIOServerInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("output: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
+
+REGISTER_OP("GRPCIOServerIterableNext")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Input("component: string")
+  .Output("output: dtype")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
+
 REGISTER_OP("GRPCInput")
     .Input("source: string")
     .Output("handle: variant")

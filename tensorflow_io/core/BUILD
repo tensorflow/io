@@ -164,6 +164,7 @@ cc_binary(
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
+        "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/parquet:parquet_ops",

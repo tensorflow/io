@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+service GRPCIOServer {
+  rpc Next(stream Request) returns (Response){}
+}
+
+message Request {
+  // google.protobuf.Any item = 1;
+  string item = 1;
+}
+
+message Response {
+  string message= 1;
+}
+
+
+

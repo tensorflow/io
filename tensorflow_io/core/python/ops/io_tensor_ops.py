@@ -21,6 +21,7 @@ import sys
 import uuid
 
 import tensorflow as tf
+from tensorflow_io.grpc.python.ops import grpc_io_server_client
 
 class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
@@ -121,6 +122,26 @@ class _IOTensor(object):
     """
     return _IOTensorDataset(
         self.spec, self._component, self._resource, self._function)
+
+  #=============================================================================
+  # IOServer Streaming
+  #=============================================================================
+
+  def to_server(self, component):
+    """Streaming this `IOTensor` to an `IOServer`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+    """
+    client = grpc_io_server_client.GRPCIOServerClient()
+    data = self.to_tensor().numpy().tolist()
+    return client.send(data, component)
 
 class BaseIOTensor(_IOTensor):
   """BaseIOTensor

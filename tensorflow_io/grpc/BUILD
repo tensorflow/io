@@ -58,3 +58,47 @@ py_grpc_library(
     srcs = [":endpoint_proto"],
     deps = [":endpoint_py_pb2"],
 )
+
+proto_library(
+    name = "server_proto",
+    srcs = ["server.proto"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+py_proto_library(
+    name = "server_py_pb2",
+    deps = [":server_proto"],
+)
+
+py_grpc_library(
+    name = "server_py_pb2_grpc",
+    srcs = [":server_proto"],
+    deps = [":server_py_pb2"],
+)
+
+cc_proto_library(
+    name = "server_cc_proto",
+    deps = [":server_proto"],
+)
+
+cc_grpc_library(
+    name = "server_cc_grpc",
+    srcs = [":server_proto"],
+    grpc_only = True,
+    deps = [":server_cc_proto"],
+)
+
+cc_library(
+    name = "grpc_ops",
+    srcs = [
+        "kernels/grpc_kernels.cc",
+        "ops/grpc_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        ":server_cc_grpc",
+        "//tensorflow_io/core:dataset_ops",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
