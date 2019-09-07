@@ -15,6 +15,7 @@
 # ==============================================================================
 
 rm -f .bazelrc
+python -m pip install h5py==2.9.0
 if python -c "import tensorflow as tf" &> /dev/null; then
     echo 'using installed tensorflow'
 else
