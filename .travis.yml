@@ -71,7 +71,7 @@ jobs:
   - stage: build
     name: "Nightly Release Build on macOS 2.7.13"
     os: osx
-    osx_image: xcode9
+    osx_image: xcode10
     script:
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
@@ -80,7 +80,7 @@ jobs:
   - stage: build
     name: "Nightly Release Build on macOS 3.5.3"
     os: osx
-    osx_image: xcode9
+    osx_image: xcode10
     script:
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
@@ -89,7 +89,7 @@ jobs:
   - stage: build
     name: "Nightly Release Build on macOS 3.6.2"
     os: osx
-    osx_image: xcode9
+    osx_image: xcode10
     script:
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
