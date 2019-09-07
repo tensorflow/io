@@ -24,13 +24,16 @@ import grpc
 import google.protobuf.any_pb2
 
 import tensorflow as tf
-# Incase test is done with TFIO_DATAPATH specified, the
-# import path need to be extended to capture generated
-# grpc files:
+
+# In case test is done with TFIO_DATAPATH specified, the
+# import path need to be extended to capture generated grpc files:
+grpcpath = os.path.join(os.path.dirname(__file__), "..", "..")
 datapath = os.environ.get('TFIO_DATAPATH')
-sys.path.append(os.path.abspath(
-    os.path.dirname(__file__) if datapath is None else os.path.join(
-        datapath, "tensorflow_io", "grpc")))
+if datapath is not None:
+  grpcpath = os.path.join(datapath, "tensorflow_io", "grpc")
+grpcpath = os.path.abspath(grpcpath)
+sys.path.append(grpcpath)
+
 import endpoint_pb2      # pylint: disable=wrong-import-position
 # For some reason generated code in grpc uses:
 # from tensorflow_io.grpc import endpoint_pb2
