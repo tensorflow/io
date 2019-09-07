@@ -1,6 +1,6 @@
 diff -Naur a/nucleus/protos/BUILD b/nucleus/protos/BUILD
---- a/nucleus/protos/BUILD	2019-09-04 16:59:20.127090030 +0000
-+++ b/nucleus/protos/BUILD	2019-09-04 20:47:28.198750222 +0000
+--- a/nucleus/protos/BUILD	2019-09-07 15:31:09.625067415 +0000
++++ b/nucleus/protos/BUILD	2019-09-07 15:32:35.368864263 +0000
 @@ -1,62 +1,6 @@
 -load("//:third_party/clif.bzl", "py_clif_cc", "pyclif_proto_library")
 -load("@protobuf_archive//:protobuf.bzl", "py_proto_library")
@@ -466,3 +466,12 @@ diff -Naur a/nucleus/protos/BUILD b/nucleus/protos/BUILD
 +    visibility = ["//visibility:public"],
 +    deps = [":fastq_proto"],
  )
+diff -Naur a/nucleus/vendor/BUILD b/nucleus/vendor/BUILD
+--- a/nucleus/vendor/BUILD	2019-09-07 15:31:09.629067403 +0000
++++ b/nucleus/vendor/BUILD	2019-09-07 15:38:30.184079565 +0000
+@@ -1,4 +1,4 @@
+-load("//:third_party/clif.bzl", "py_clif_cc")
++#load("//:third_party/clif.bzl", "py_clif_cc")
+ 
+ package(
+     default_visibility = [
