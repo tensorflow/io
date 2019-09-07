@@ -2,6 +2,7 @@ workspace(name = "org_tensorflow_io")
 
 load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 tf_configure(
     name = "local_config_tf",
@@ -235,34 +236,47 @@ http_archive(
 
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
-    strip_prefix = "grpc-1.22.0",
-    urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.22.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.22.0.tar.gz",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:grpc.patch",
     ],
-)
-
-# 3.8.0 with a fix to BUILD file
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "b9e92f9af8819bbbc514e2902aec860415b70209f31dfc8c4fa72515a5df9d59",
-    strip_prefix = "protobuf-310ba5ee72661c081129eb878c1bbcec936b20f0",
+    sha256 = "6dc4f122527670099124a71d8a180b0b074a18efa939173d6c3a0673229f57d3",
+    strip_prefix = "grpc-e68ce1164b49529de12fbba63d53f081aef5c90e",
     urls = [
-        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/310ba5ee72661c081129eb878c1bbcec936b20f0.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/310ba5ee72661c081129eb878c1bbcec936b20f0.tar.gz",
+        "https://github.com/grpc/grpc/archive/e68ce1164b49529de12fbba63d53f081aef5c90e.tar.gz",
     ],
-)
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
-    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+)
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
+pip_repositories()
+
+pip_install()
+
+# TODO(https://github.com/grpc/grpc/issues/19835): Remove.
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+
+upb_deps()
+
+load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
+
+apple_rules_dependencies()
+
+load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+
+apple_support_dependencies()
 
 http_archive(
     name = "giflib",
@@ -277,28 +291,21 @@ http_archive(
 
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    sha256 = "3abe2cf553ce33ff58d23848ae716cd2fcabfd454b89f6f65a92ed261244c1df",
-    strip_prefix = "google-cloud-cpp-0.11.0",
+    sha256 = "35058ff14e4f9f49f78da2f1bbf1c03f27e8e40ec65c51f62720346e99803392",
+    strip_prefix = "google-cloud-cpp-0.13.0",
     urls = [
-        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
+        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
     ],
 )
 
-# Manually load com_google_googleapis as we need a patch for pubsub
-# The patch file was generated from:
-# diff -Naur a b > third_party/googleapis.patch
 http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:googleapis.patch",
-    ],
-    sha256 = "90bcdf27b41b1c3900838fe4edaf89080ca67026608817946b4ae5e2b925c711",
-    strip_prefix = "googleapis-7152063cb170d23c5c110e243711d8eb6fda6a1c",
+    sha256 = "cb531e445115e28054a33ad968c2d7d8ade4693721866ce1b9adf9a78762c032",
+    strip_prefix = "googleapis-960b76b1f0c46d12610088977d1129cc7405f3dc",
     urls = [
-        "https://github.com/googleapis/googleapis/archive/7152063cb170d23c5c110e243711d8eb6fda6a1c.tar.gz",
+        "https://github.com/googleapis/googleapis/archive/960b76b1f0c46d12610088977d1129cc7405f3dc.tar.gz",
     ],
 )
 

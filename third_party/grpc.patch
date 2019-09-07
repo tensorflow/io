@@ -1,0 +1,12 @@
+diff -Naur a/bazel/python_rules.bzl b/bazel/python_rules.bzl
+--- a/bazel/python_rules.bzl	2019-09-06 22:12:25.994442366 +0000
++++ b/bazel/python_rules.bzl	2019-09-06 22:13:05.638367699 +0000
+@@ -175,7 +175,7 @@
+         srcs = [
+             ":{}".format(codegen_grpc_target),
+         ],
+-        deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
++        #deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
+         **kwargs
+     )
+ 
