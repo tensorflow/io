@@ -20,7 +20,7 @@ if [[ "$#" -gt 0 ]]; then
     export TENSORFLOW_INSTALL="${1}"
 fi
 
-export BAZEL_VERSION=0.24.1 BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+export BAZEL_VERSION=0.29.0 BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bazel version
@@ -30,9 +30,9 @@ if [[ $(uname) == "Linux" ]]; then
   python get-pip.py -q
   python -m pip --version
 fi
-python -m pip install -q ${TENSORFLOW_INSTALL}
 
-python -m pip install -q grpcio-tools
+python -m pip install -q h5py==2.9.0
+python -m pip install -q ${TENSORFLOW_INSTALL}
 
 python third_party/tf/configure.py
 
@@ -57,7 +57,7 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/...
+  -- //tensorflow_io/core:all
 
 rm -rf build && mkdir -p build
 
