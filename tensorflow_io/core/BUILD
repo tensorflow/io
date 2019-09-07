@@ -159,6 +159,7 @@ cc_binary(
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/cifar:cifar_ops",
         "//tensorflow_io/dicom:dicom_ops",
+        "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
@@ -171,6 +172,7 @@ cc_binary(
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
+        "@xz//:lzma",
     ],
 )
 
