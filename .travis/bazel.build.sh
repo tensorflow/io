@@ -56,7 +56,7 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/core:all
+  -- //tensorflow_io/...
 
 rm -rf build && mkdir -p build
 
