@@ -8,6 +8,16 @@ tf_configure(
 )
 
 http_archive(
+    name = "com_google_absl",
+    sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
+    strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+        "https://github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+    ],
+)
+
+http_archive(
     name = "boringssl",
     sha256 = "1188e29000013ed6517168600fc35a010d58c5d321846d6a6dfee74e4c788b45",
     strip_prefix = "boringssl-7f634429a04abc48e2eb041c81c5235816c96514",
@@ -533,6 +543,65 @@ http_archive(
 )
 
 http_archive(
+    name = "nucleus",
+    build_file = "//third_party:nucleus.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:nucleus.patch",
+    ],
+    sha256 = "aa865d3509ba8f3527392303bd95a11f48f19e68197b3d1d0bae9fab004bee87",
+    strip_prefix = "nucleus-0.4.1",
+    urls = [
+        "https://github.com/google/nucleus/archive/0.4.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bzip2",
+    build_file = "//third_party:bzip2.BUILD",
+    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
+    strip_prefix = "bzip2-1.0.8",
+    urls = [
+        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_googlesource_code_cctz",
+    strip_prefix = "cctz-master",
+    urls = ["https://github.com/google/cctz/archive/master.zip"],
+)
+
+# This is the 1.9 release of htslib.
+http_archive(
+    name = "htslib",
+    build_file = "//third_party:htslib.BUILD",
+    sha256 = "c4d3ae84014f8a80f5011521f391e917bc3b4f6ebd78e97f238472e95849ec14",
+    strip_prefix = "htslib-1.9",
+    urls = [
+        "https://github.com/samtools/htslib/archive/1.9.zip",
+    ],
+)
+
+http_archive(
+    name = "io_bazel_rules_closure",
+    sha256 = "43c9b882fa921923bcba764453f4058d102bece35a37c9f6383c713004aacff1",
+    strip_prefix = "rules_closure-9889e2348259a5aad7e805547c1a0cf311cfcd91",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",  # 2018-12-21
+    ],
+)
+
+# bazel_skylib is now a required dependency of protobuf_archive.
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
+    strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
+)
+
+http_archive(
     name = "double_conversion",
     build_file = "//third_party:double_conversion.BUILD",
     sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
@@ -550,5 +619,15 @@ http_archive(
     strip_prefix = "rapidjson-1.1.0",
     urls = [
         "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "xz",
+    build_file = "//third_party:xz.BUILD",
+    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
+    strip_prefix = "xz-5.2.4",
+    urls = [
+        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
     ],
 )
