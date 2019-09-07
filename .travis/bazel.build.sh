@@ -30,6 +30,8 @@ if [[ $(uname) == "Linux" ]]; then
   python get-pip.py -q
   python -m pip --version
 fi
+python -m pip install h5py==2.9.0
+
 python -m pip install -q ${TENSORFLOW_INSTALL}
 
 python -m pip install -q grpcio-tools
