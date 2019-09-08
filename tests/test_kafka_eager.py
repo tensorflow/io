@@ -27,6 +27,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 from tensorflow_io.core.python.ops import kafka_dataset_ops # pylint: disable=wrong-import-position
+from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 
 def test_kafka_dataset():
   dataset = kafka_dataset_ops.KafkaDataset("test").batch(2)
@@ -71,7 +72,7 @@ def test_kafka_output_sequence():
   class OutputCallback(tf.keras.callbacks.Callback):
     """KafkaOutputCallback"""
     def __init__(self, batch_size, topic, servers):
-      self._sequence = tfio.kafka.KafkaOutputSequence(
+      self._sequence = kafka_ops.KafkaOutputSequence(
           topic=topic, servers=servers)
       self._batch_size = batch_size
     def on_predict_batch_end(self, batch, logs=None):
