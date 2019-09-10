@@ -167,7 +167,7 @@ cc_binary(
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/parquet:parquet_ops",
-        #"//tensorflow_io/prometheus:prometheus_ops",
+        "//tensorflow_io/prometheus:prometheus_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",

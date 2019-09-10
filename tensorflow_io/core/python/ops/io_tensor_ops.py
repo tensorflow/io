@@ -325,7 +325,7 @@ class _SeriesIOTensor(_IOTensor):
     self._resource = resource
     self._function = function
     super(_SeriesIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, ["index", "value"], internal=internal)
 
   #=============================================================================
   # Accessors
@@ -336,14 +336,14 @@ class _SeriesIOTensor(_IOTensor):
     """The index column of the series"""
     return BaseIOTensor(
         self.spec[0], self._resource, self._function,
-        component=0, internal=True)
+        component="index", internal=True)
 
   @property
   def value(self):
     """The value column of the series"""
     return BaseIOTensor(
         self.spec[1], self._resource, self._function,
-        component=1, internal=True)
+        component="value", internal=True)
 
 class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
   """_KeyValueIOTensorDataset"""
