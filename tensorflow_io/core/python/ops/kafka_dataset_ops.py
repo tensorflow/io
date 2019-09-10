@@ -53,7 +53,7 @@ class KafkaDataset(tf.compat.v2.data.Dataset):
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource, _, _ = core_ops.kafka_iterable_init(
+      resource = core_ops.kafka_iterable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))

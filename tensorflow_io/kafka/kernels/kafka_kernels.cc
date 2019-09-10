@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/core/kernels/io_interface.h"
-//#include "tensorflow/core/platform/logging.h"
 
 #include "rdkafkacpp.h"
 
@@ -177,7 +176,7 @@ class KafkaIterable : public IOIterableInterface {
 
     return Status::OK();
   }
-  Status Next(const int64 capacity, const int64 component, Tensor* tensor, int64* record_read) override {
+  Status Next(const int64 capacity, const Tensor& component, Tensor* tensor, int64* record_read) override {
     *record_read = 0;
     while (consumer_.get() != nullptr && (*record_read) < capacity) {
       if (!kafka_event_cb_.run()) {
@@ -216,11 +215,9 @@ class KafkaIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    shapes.push_back(PartialTensorShape({-1}));
-    dtypes.clear();
-    dtypes.push_back(DT_STRING);
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    *shape = PartialTensorShape({-1});
+    *dtype = DT_STRING;
     return Status::OK();
   }
 
@@ -246,6 +243,8 @@ REGISTER_KERNEL_BUILDER(Name("KafkaIterableNext").Device(DEVICE_CPU),
                         IOIterableNextOp<KafkaIterable>);
 REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<IOIndexableImplementation<KafkaIterable>>);
+REGISTER_KERNEL_BUILDER(Name("KafkaIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<IOIndexableImplementation<KafkaIterable>>);
 REGISTER_KERNEL_BUILDER(Name("KafkaIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<IOIndexableImplementation<KafkaIterable>>);
 

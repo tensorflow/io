@@ -33,6 +33,10 @@ class IOInterface : public ResourceBase {
     // This is the chance to provide additional extra information which should be appended to extra.
     return errors::Unimplemented("Extra");
   }
+  virtual Status Context(OpKernelContext* context) {
+    // This is the time to attach another resource to this interface.
+    return errors::Unimplemented("Context");
+  }
 };
 
 class IOIterableInterface : public IOInterface {
@@ -55,98 +59,97 @@ class IOIndexableImplementation : public IOIndexableInterface {
  public:
   IOIndexableImplementation<Type>(Env* env)
   : env_(env)
-  , iterable_(new Type(env)) {}
+  , iterable_(nullptr) {}
 
-  ~IOIndexableImplementation<Type>() {}
+  ~IOIndexableImplementation<Type>() {
+    if (iterable_) {
+      iterable_->Unref();
+    }
+  }
+
+  virtual Status Context(OpKernelContext* context) {
+    return GetResourceFromContext(context, "iterable", &iterable_);
+  }
+
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     TF_RETURN_IF_ERROR(iterable_->Init(input, metadata, memory_data, memory_size));
-    TF_RETURN_IF_ERROR(iterable_->Spec(shapes_, dtypes_));
+    // We assume only one component at the moment.
+    Tensor component(DT_INT64, TensorShape({}));
+    component.scalar<int64>()() = 0;
+    TF_RETURN_IF_ERROR(iterable_->Spec(component, &shape_, &dtype_));
 
     const int64 capacity = 4096;
-    std::vector<TensorShape> chunk_shapes;
-    for (size_t component = 0; component < shapes_.size(); component++) {
-      gtl::InlinedVector<int64, 4> dims = shapes_[component].dim_sizes();
-      dims[0] = capacity;
-      chunk_shapes.push_back(TensorShape(dims));
-    }
+    gtl::InlinedVector<int64, 4> dims = shape_.dim_sizes();
+    dims[0] = capacity;
+    TensorShape chunk_shape(dims);
 
     int64 total = 0;
 
     int64 record_read = 0;
     do {
-      chunk_tensors_.push_back(std::vector<Tensor>());
-      for (size_t component = 0; component < shapes_.size(); component++) {
-        chunk_tensors_.back().push_back(Tensor(dtypes_[component], chunk_shapes[component]));
-        int64 chunk_record_read = 0;
-        TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &chunk_tensors_.back()[component], &chunk_record_read));
-        if (component != 0 && record_read != chunk_record_read) {
-          return errors::Internal("component ", component, " has differtnt chunk size: ", chunk_record_read, " vs. ", record_read);
-        }
-        record_read = chunk_record_read;
-      }
+      chunk_tensors_.push_back(Tensor(dtype_, chunk_shape));
+      int64 chunk_record_read = 0;
+      TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &chunk_tensors_.back(), &record_read));
       if (record_read == 0) {
         chunk_tensors_.pop_back();
         break;
       }
       if (record_read < capacity) {
-        for (size_t component = 0; component < shapes_.size(); component++) {
-          chunk_tensors_.back()[component] = chunk_tensors_.back()[component].Slice(0, record_read);
-        }
+        chunk_tensors_.back() = chunk_tensors_.back().Slice(0, record_read);
       }
       total += record_read;
     } while (record_read != 0);
-    for (size_t component = 0; component < shapes_.size(); component++) {
-      shapes_[component].set_dim(0, total);
-    }
+    shape_.set_dim(0, total);
     return Status::OK();
   }
-  virtual Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    for (size_t component = 0; component < shapes_.size(); component++) {
-      shapes.push_back(shapes_[component]);
+  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    // We assume only one component at the moment.
+    if (component.scalar<int64>()() != 0) {
+        return errors::InvalidArgument("component ", component.scalar<int64>()(), " not supported");
     }
-    for (size_t component = 0; component < dtypes_.size(); component++) {
-      dtypes.push_back(dtypes_[component]);
-    }
+    *shape = shape_;
+    *dtype = dtype_;
     return Status::OK();
   }
 
-  Status Extra(std::vector<Tensor>* extra) override {
-    return iterable_->Extra(extra);
-  }
   string DebugString() const override {
     mutex_lock l(mu_);
     return strings::StrCat("IOIndexableImplementation<", iterable_->DebugString(), ">[]");
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step != 1 is not supported: ", step);
+    }
+    // We assume only one component at the moment.
+    if (component.scalar<int64>()() != 0) {
+        return errors::InvalidArgument("component ", component.scalar<int64>()(), " not supported");
     }
     // Find first chunk
     int64 chunk_index = 0;
     int64 chunk_element = -1;
     int64 current_element = 0;
     while (chunk_index < chunk_tensors_.size()) {
-      if (current_element <= start && start < current_element + chunk_tensors_[chunk_index][component].shape().dim_size(0)) {
+      if (current_element <= start && start < current_element + chunk_tensors_[chunk_index].shape().dim_size(0)) {
         chunk_element = start - current_element;
         current_element = start;
         break;
       }
-      current_element += chunk_tensors_[chunk_index][component].shape().dim_size(0);
+      current_element += chunk_tensors_[chunk_index].shape().dim_size(0);
       chunk_index++;
     }
     if (chunk_element < 0) {
       return errors::InvalidArgument("start is out of range: ", start);
     }
-    TensorShape shape(shapes_[component].dim_sizes());
+    TensorShape shape(shape_.dim_sizes());
     shape.RemoveDim(0);
-    Tensor element(dtypes_[component], shape);
+    Tensor element(dtype_, shape);
 
     while (current_element < stop) {
-      batch_util::CopySliceToElement(chunk_tensors_[chunk_index][component], &element, chunk_element);
+      batch_util::CopySliceToElement(chunk_tensors_[chunk_index], &element, chunk_element);
       batch_util::CopyElementToSlice(element, tensor, (current_element - start));
       chunk_element++;
-      if (chunk_element == chunk_tensors_[chunk_index][component].shape().dim_size(0)) {
+      if (chunk_element == chunk_tensors_[chunk_index].shape().dim_size(0)) {
         chunk_index++;
         chunk_element = 0;
       }
@@ -157,10 +160,10 @@ class IOIndexableImplementation : public IOIndexableInterface {
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<Type> iterable_ GUARDED_BY(mu_);
-  std::vector<PartialTensorShape> shapes_ GUARDED_BY(mu_);
-  std::vector<DataType> dtypes_ GUARDED_BY(mu_);
-  std::vector<std::vector<Tensor>> chunk_tensors_;
+  Type* iterable_ GUARDED_BY(mu_);
+  PartialTensorShape shape_ GUARDED_BY(mu_);
+  DataType dtype_ GUARDED_BY(mu_);
+  std::vector<Tensor> chunk_tensors_;
 };
 
 
@@ -174,14 +177,18 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
+
+    Status status = this->resource_->Context(context);
+    if (!errors::IsUnimplemented(status)) {
+      OP_REQUIRES_OK(context, status);
+    }
+
     std::vector<string> input;
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
     for (int64 i = 0; i < input_tensor->NumElements(); i++) {
         input.push_back(input_tensor->flat<string>()(i));
     }
-
-    Status status;
 
     std::vector<string> metadata;
     const Tensor* metadata_tensor;
