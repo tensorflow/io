@@ -23,9 +23,9 @@ namespace data {
 class IOInterface : public ResourceBase {
  public:
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
-  virtual Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) = 0;
+  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) = 0;
 
-  virtual Status Extra(std::vector<Tensor>* extra) {
+  virtual Status Extra(const Tensor& component, std::vector<Tensor>* extra) {
     // This is the chance to provide additional extra information which should be appended to extra.
     return Status::OK();
   }
@@ -33,12 +33,12 @@ class IOInterface : public ResourceBase {
 
 class IOIterableInterface : public IOInterface {
  public:
-  virtual Status Next(const int64 capacity, const int64 component, Tensor* tensor, int64* record_read) = 0;
+  virtual Status Next(const int64 capacity, const Tensor& component, Tensor* tensor, int64* record_read) = 0;
 };
 
 class IOIndexableInterface : public IOInterface {
  public:
-  virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) = 0;
+  virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
 };
 
 class IOMappingInterface : public IOInterface {
@@ -200,42 +200,6 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
 
     OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
-
-    std::vector<PartialTensorShape> shapes;
-    std::vector<DataType> dtypes;
-    OP_REQUIRES_OK(context, this->resource_->Spec(shapes, dtypes));
-    int64 maxrank = 0;
-    for (size_t component = 0; component < shapes.size(); component++) {
-      if (dynamic_cast<IOIndexableInterface *>(this->resource_) != nullptr) {
-        int64 i = 0;
-        OP_REQUIRES(context, (shapes[component].dim_size(i) > 0), errors::InvalidArgument("component (", component, ")'s shape[", i, "] should not be None, received: ", shapes[component]));
-      }
-      for (int64 i = 1; i < shapes[component].dims(); i++) {
-        OP_REQUIRES(context, (shapes[component].dim_size(i) > 0), errors::InvalidArgument("component (", component, ")'s shape[", i, "] should not be None, received: ", shapes[component]));
-      }
-      maxrank = maxrank > shapes[component].dims() ? maxrank : shapes[component].dims();
-    }
-    Tensor shapes_tensor(DT_INT64, TensorShape({static_cast<int64>(dtypes.size()), maxrank}));
-    for (size_t component = 0; component < shapes.size(); component++) {
-      for (int64 i = 0; i < shapes[component].dims(); i++) {
-        shapes_tensor.tensor<int64, 2>()(component, i) = shapes[component].dim_size(i);
-      }
-      for (int64 i = shapes[component].dims(); i < maxrank; i++) {
-        shapes_tensor.tensor<int64, 2>()(component, i) = 0;
-      }
-    }
-    Tensor dtypes_tensor(DT_INT64, TensorShape({static_cast<int64>(dtypes.size())}));
-    for (size_t i = 0; i < dtypes.size(); i++) {
-      dtypes_tensor.flat<int64>()(i) = dtypes[i];
-    }
-    context->set_output(1, shapes_tensor);
-    context->set_output(2, dtypes_tensor);
-
-    std::vector<Tensor> extra;
-    OP_REQUIRES_OK(context, this->resource_->Extra(&extra));
-    for (size_t i = 0; i < extra.size(); i++) {
-      context->set_output(3 + i, extra[i]);
-    }
   }
   Status CreateResource(Type** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -244,6 +208,42 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
   }
   mutex mu_;
   Env* env_;
+};
+
+template<typename Type>
+class IOInterfaceSpecOp : public OpKernel {
+ public:
+  explicit IOInterfaceSpecOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* component;
+    OP_REQUIRES_OK(context, context->input("component", &component));
+
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
+
+    Tensor shape_tensor(DT_INT64, TensorShape({shape.dims()}));
+    for (int64 i = 0; i < shape.dims(); i++) {
+      shape_tensor.flat<int64>()(i) = shape.dim_size(i);
+    }
+    Tensor dtype_tensor(DT_INT64, TensorShape({}));
+    dtype_tensor.scalar<int64>()() = dtype;
+    context->set_output(0, shape_tensor);
+    context->set_output(1, dtype_tensor);
+
+    std::vector<Tensor> extra;
+    OP_REQUIRES_OK(context, resource->Extra(*component, &extra));
+    for (size_t i = 0; i < extra.size(); i++) {
+      context->set_output(2 + i, extra[i]);
+    }
+  }
 };
 
 template<typename Type>
@@ -309,17 +309,16 @@ class IOIndexableGetItemOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("step", &step_tensor));
     int64 step = step_tensor->scalar<int64>()();
 
-    const Tensor* component_tensor;
-    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    const int64 component = component_tensor->scalar<int64>()();
+    const Tensor* component;
+    OP_REQUIRES_OK(context, context->input("component", &component));
 
     OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
 
-    std::vector<PartialTensorShape> shapes;
-    std::vector<DataType> dtypes;
-    OP_REQUIRES_OK(context, resource->Spec(shapes, dtypes));
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
 
-    int64 count = shapes[component].dim_size(0);
+    int64 count = shape.dim_size(0);
     if (start > count) {
       start = count;
     }
@@ -330,10 +329,10 @@ class IOIndexableGetItemOp : public OpKernel {
       stop = start;
     }
 
-    gtl::InlinedVector<int64, 4> dims = shapes[component].dim_sizes();
+    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = stop - start;
-    Tensor tensor(dtypes[component], TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, component, &tensor));
+    Tensor tensor(dtype, TensorShape(dims));
+    OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, *component, &tensor));
     context->set_output(0, tensor);
   }
 };
