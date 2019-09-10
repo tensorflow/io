@@ -353,7 +353,7 @@ class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
                iterable_init, iterable_next,
                mapping_resource, mapping_function):
     with tf.name_scope("IterableIOTensorDataset") as scope:
-      resource, _, _ = iterable_init(
+      resource = iterable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
@@ -408,7 +408,7 @@ class _KeyValueIOTensor(_IOTensor):
     self._iterable_init = iterable_init
     self._iterable_next = iterable_next
     super(_KeyValueIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, component=0, internal=internal)
 
   #=============================================================================
   # Dataset Conversions
@@ -437,7 +437,7 @@ class _KeyValueIOTensor(_IOTensor):
   #=============================================================================
   def __iter__(self):
     with tf.name_scope("KeyValueIOTensorIter") as scope:
-      resource, _, _ = self._iterable_init(
+      resource = self._iterable_init(
           self._filename,
           container=scope,
           shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))

@@ -47,7 +47,7 @@ class IOIndexableInterface : public IOInterface {
 
 class IOMappingInterface : public IOInterface {
  public:
-  virtual Status GetItem(const std::vector<string>& key, Tensor* tensor) = 0;
+  virtual Status GetItem(const Tensor& key, Tensor* tensor) = 0;
 };
 
 template<typename Type>
@@ -174,7 +174,6 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
-
     std::vector<string> input;
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
@@ -275,22 +274,21 @@ class IOIterableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("capacity", &capacity_tensor));
     const int64 capacity = capacity_tensor->scalar<int64>()();
 
-    const Tensor* component_tensor;
-    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    const int64 component = component_tensor->scalar<int64>()();
+    const Tensor* component;
+    OP_REQUIRES_OK(context, context->input("component", &component));
 
     OP_REQUIRES(context, (capacity > 0), errors::InvalidArgument("capacity <= 0 is not supported: ", capacity));
 
-    std::vector<PartialTensorShape> shapes;
-    std::vector<DataType> dtypes;
-    OP_REQUIRES_OK(context, resource->Spec(shapes, dtypes));
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
 
-    gtl::InlinedVector<int64, 4> dims = shapes[component].dim_sizes();
+    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = capacity;
-    Tensor tensor(dtypes[component], TensorShape(dims));
+    Tensor tensor(dtype, TensorShape(dims));
 
     int64 record_read;
-    OP_REQUIRES_OK(context, resource->Next(capacity, component, &tensor, &record_read));
+    OP_REQUIRES_OK(context, resource->Next(capacity, *component, &tensor, &record_read));
     if (record_read < capacity) {
       context->set_output(0, tensor.Slice(0, record_read));
     } else {
@@ -361,16 +359,11 @@ class IOMappingGetItemOp : public OpKernel {
     OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
-    const Tensor* key_tensor;
-    OP_REQUIRES_OK(context, context->input("key", &key_tensor));
-    std::vector<string> key;
-    key.reserve(key_tensor->NumElements());
-    for (int64 i = 0; i < key_tensor->NumElements(); i++) {
-      key.emplace_back(key_tensor->flat<string>()(i));
-    }
+    const Tensor* key;
+    OP_REQUIRES_OK(context, context->input("key", &key));
 
-    Tensor tensor(DT_STRING, TensorShape({key_tensor->NumElements()}));
-    OP_REQUIRES_OK(context, resource->GetItem(key, &tensor));
+    Tensor tensor(DT_STRING, TensorShape({key->NumElements()}));
+    OP_REQUIRES_OK(context, resource->GetItem(*key, &tensor));
     context->set_output(0, tensor);
   }
 };
