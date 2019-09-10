@@ -252,6 +252,7 @@ class JSONIndexable : public IOIndexableInterface {
         shapes_.push_back(TensorShape({static_cast<int64>(a.MemberCount())}));
         dtypes_.push_back(dtype);
         columns_.push_back(oi->name.GetString());
+        columns_index_[oi->name.GetString()] = static_cast<int64>(columns_.size() - 1);
         tensors_.emplace_back(Tensor(dtype, TensorShape({static_cast<int64>(a.MemberCount())})));
       }
       // Fill in the values
@@ -293,49 +294,50 @@ class JSONIndexable : public IOIndexableInterface {
       TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(i)->type(), &dtype));
       dtypes_.push_back(dtype);
       columns_.push_back(table_->column(i)->name());
+      columns_index_[table_->column(i)->name()] = i;
     }
 
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    for (size_t i = 0; i < shapes_.size(); i++) {
-      shapes.push_back(shapes_[i]);
-    }
-    dtypes.clear();
-    for (size_t i = 0; i < dtypes_.size(); i++) {
-      dtypes.push_back(dtypes_[i]);
-    }
-    return Status::OK();
-  }
-
-  Status Extra(std::vector<Tensor>* extra) override {
-    // Expose columns
-    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Component(Tensor* component) override {
+    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
-      columns.flat<string>()(i) = columns_[i];
+      component->flat<string>()(i) = columns_[i];
     }
-    extra->push_back(columns);
+    return Status::OK();
+  }
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+    *shape = shapes_[column_index];
+    *dtype = dtypes_[column_index];
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+
     if (mode_ == "records") {
-      if (dtypes_[component] == DT_INT64) {
-        memcpy(&tensor->flat<int64>().data()[0], &tensors_[component].flat<int64>().data()[start], sizeof(int64) * (stop - start));
-      } else if (dtypes_[component] == DT_DOUBLE) {
-        memcpy(&tensor->flat<double>().data()[0], &tensors_[component].flat<double>().data()[start], sizeof(double) * (stop - start));
+      if (dtypes_[column_index] == DT_INT64) {
+        memcpy(&tensor->flat<int64>().data()[0], &tensors_[column_index].flat<int64>().data()[start], sizeof(int64) * (stop - start));
+      } else if (dtypes_[column_index] == DT_DOUBLE) {
+        memcpy(&tensor->flat<double>().data()[0], &tensors_[column_index].flat<double>().data()[start], sizeof(double) * (stop - start));
       } else {
-        return errors::InvalidArgument("invalid data type: ", dtypes_[component]);
+        return errors::InvalidArgument("invalid data type: ", dtypes_[column_index]);
       }
 
       return Status::OK();
     }
 
-    std::shared_ptr<::arrow::Column> slice = table_->column(component)->Slice(start, stop);
+    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
 
     #define PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
@@ -406,10 +408,13 @@ class JSONIndexable : public IOIndexableInterface {
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;
   std::vector<string> columns_;
+  std::unordered_map<string, int64> columns_index_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("JSONIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<JSONIndexable>);
+REGISTER_KERNEL_BUILDER(Name("JSONIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<JSONIndexable>);
 REGISTER_KERNEL_BUILDER(Name("JSONIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<JSONIndexable>);
 }  // namespace data
