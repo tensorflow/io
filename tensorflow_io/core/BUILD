@@ -153,7 +153,7 @@ cc_binary(
     linkshared = 1,
     deps = [
         ":core_ops",
-        #"//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/audio:audio_ops",
         #"//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
@@ -166,7 +166,7 @@ cc_binary(
         #"//tensorflow_io/kafka:kafka_ops",
         #"//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
-        #"//tensorflow_io/parquet:parquet_ops",
+        "//tensorflow_io/parquet:parquet_ops",
         #"//tensorflow_io/prometheus:prometheus_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",

@@ -275,36 +275,36 @@ class FeatherIndexable : public IOIndexableInterface {
       shapes_.push_back(TensorShape({static_cast<int64>(table->num_rows())}));
       dtypes_.push_back(dtype);
       columns_.push_back(table->columns()->Get(i)->name()->str());
+      columns_index_[table->columns()->Get(i)->name()->str()] = i;
     }
 
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    for (size_t i = 0; i < shapes_.size(); i++) {
-      shapes.push_back(shapes_[i]);
-    }
-    dtypes.clear();
-    for (size_t i = 0; i < dtypes_.size(); i++) {
-      dtypes.push_back(dtypes_[i]);
-    }
-    return Status::OK();
-  }
-
-  Status Extra(std::vector<Tensor>* extra) override {
-    // Expose columns
-    Tensor columns(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Component(Tensor* component) override {
+    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
-      columns.flat<string>()(i) = columns_[i];
+      component->flat<string>()(i) = columns_[i];
     }
-    extra->push_back(columns);
+    return Status::OK();
+  }
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+    *shape = shapes_[column_index];
+    *dtype = dtypes_[column_index];
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
 
     if (feather_file_.get() == nullptr) {
       feather_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
@@ -315,7 +315,7 @@ class FeatherIndexable : public IOIndexableInterface {
     }
 
     std::shared_ptr<arrow::Column> column;
-    arrow::Status s = reader_->GetColumn(component, &column);
+    arrow::Status s = reader_->GetColumn(column_index, &column);
     if (!s.ok()) {
       return errors::Internal(s.ToString());
     }
@@ -387,10 +387,13 @@ class FeatherIndexable : public IOIndexableInterface {
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;
   std::vector<string> columns_;
+  std::unordered_map<string, int64> columns_index_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("FeatherIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<FeatherIndexable>);
+REGISTER_KERNEL_BUILDER(Name("FeatherIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<FeatherIndexable>);
 REGISTER_KERNEL_BUILDER(Name("FeatherIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<FeatherIndexable>);
 }  // namespace data

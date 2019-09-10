@@ -308,12 +308,12 @@ class _TableIOTensor(_IOTensor):
 
   def __call__(self, column):
     """Return a BaseIOTensor with column named `column`"""
-    component = self.columns.index(
+    column_index = self.columns.index(
         next(e for e in self.columns if e == column))
-    spec = tf.nest.flatten(self.spec)[component]
+    spec = tf.nest.flatten(self.spec)[column_index]
     return BaseIOTensor(
         spec, self._resource, self._function,
-        component=component, internal=True)
+        component=column, internal=True)
 
 class _SeriesIOTensor(_IOTensor):
   """_SeriesIOTensor"""

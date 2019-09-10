@@ -40,7 +40,7 @@ REGISTER_OP("WAVIndexableSpec")
     c->set_output(1, c->MakeShape({}));
     c->set_output(2, c->Scalar());
      return Status::OK();
-    });
+   });
 
 REGISTER_OP("WAVIndexableGetItem")
   .Input("input: resource")

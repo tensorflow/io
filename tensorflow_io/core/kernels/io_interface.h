@@ -25,9 +25,13 @@ class IOInterface : public ResourceBase {
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) = 0;
 
+  virtual Status Component(Tensor* component) {
+    // By default there is only one component: Unimplemented
+    return errors::Unimplemented("Component");
+  }
   virtual Status Extra(const Tensor& component, std::vector<Tensor>* extra) {
     // This is the chance to provide additional extra information which should be appended to extra.
-    return Status::OK();
+    return errors::Unimplemented("Extra");
   }
 };
 
@@ -200,6 +204,12 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
 
     OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
+    Tensor component_tensor;
+    status = this->resource_->Component(&component_tensor);
+    if (!errors::IsUnimplemented(status)) {
+      OP_REQUIRES_OK(context, status);
+      context->set_output(1, component_tensor);
+    }
   }
   Status CreateResource(Type** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -239,9 +249,12 @@ class IOInterfaceSpecOp : public OpKernel {
     context->set_output(1, dtype_tensor);
 
     std::vector<Tensor> extra;
-    OP_REQUIRES_OK(context, resource->Extra(*component, &extra));
-    for (size_t i = 0; i < extra.size(); i++) {
-      context->set_output(2 + i, extra[i]);
+    Status status = resource->Extra(*component, &extra);
+    if (!errors::IsUnimplemented(status)) {
+      OP_REQUIRES_OK(context, status);
+      for (size_t i = 0; i < extra.size(); i++) {
+        context->set_output(2 + i, extra[i]);
+      }
     }
   }
 };
