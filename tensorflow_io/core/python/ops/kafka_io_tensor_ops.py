@@ -51,5 +51,5 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
 
       self._iterable = iterable
       super(KafkaIOTensor, self).__init__(
-          spec, resource, core_ops.kafka_indexable_get_item, component=0, 
+          spec, resource, core_ops.kafka_indexable_get_item, component=0,
           internal=internal)

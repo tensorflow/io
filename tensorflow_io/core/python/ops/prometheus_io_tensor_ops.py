@@ -38,10 +38,14 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
       resource = core_ops.prometheus_indexable_init(
           query, metadata=metadata,
           container=scope, shared_name="%s/%s" % (query, uuid.uuid4().hex))
-      index_shape, index_dtype = core_ops.prometheus_indexable_spec(resource, "index")
-      value_shape, value_dtype = core_ops.prometheus_indexable_spec(resource, "value")
-      spec = tuple([tf.TensorSpec(tf.TensorShape(index_shape), tf.as_dtype(index_dtype.numpy())),
-                    tf.TensorSpec(tf.TensorShape(value_shape), tf.as_dtype(value_dtype.numpy()))])
+      index_shape, index_dtype = core_ops.prometheus_indexable_spec(
+          resource, "index")
+      value_shape, value_dtype = core_ops.prometheus_indexable_spec(
+          resource, "value")
+      spec = tuple([tf.TensorSpec(tf.TensorShape(index_shape),
+                                  tf.as_dtype(index_dtype.numpy())),
+                    tf.TensorSpec(tf.TensorShape(value_shape),
+                                  tf.as_dtype(value_dtype.numpy()))])
       super(PrometheusIOTensor, self).__init__(
           spec, resource, core_ops.prometheus_indexable_get_item,
           internal=internal)

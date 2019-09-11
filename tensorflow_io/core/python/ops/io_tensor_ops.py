@@ -40,7 +40,9 @@ class _IOTensorDataset(tf.compat.v2.data.Dataset):
         tf.constant(entry_start, tf.int64),
         tf.constant(entry_stop, tf.int64)))
 
-    components = [(component, e) for component, e in zip(tf.nest.flatten(component), tf.nest.flatten(spec))]
+    components = [
+        (component, e) for component, e in zip(
+            tf.nest.flatten(component), tf.nest.flatten(spec))]
     components = [
         dataset.map(
             lambda start, stop: function(
