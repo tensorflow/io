@@ -76,9 +76,9 @@ def test_io_tensor_json_recods_mode():
     v_x = x_test[i]
     v_y = y_test[i]
     for index, x in enumerate(j_x):
-      assert v_x[index] == x.numpy()
+      assert v_x[index] == x
     for index, y in enumerate(j_y):
-      assert v_y[index] == y.numpy()
+      assert v_y[index] == y
     i += 1
   assert i == len(y_test)
 

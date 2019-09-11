@@ -40,19 +40,13 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
                filename,
                internal=False):
     with tf.name_scope("AudioIOTensor") as scope:
-      resource, shapes, dtypes, rate = core_ops.wav_indexable_init(
+      resource = core_ops.wav_indexable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shapes = [
-          tf.TensorShape(
-              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
-          ) for e in tf.unstack(shapes)]
-      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-      assert len(shapes) == 1
-      assert len(dtypes) == 1
-      shape = shapes[0]
-      dtype = dtypes[0]
+      shape, dtype, rate = core_ops.wav_indexable_spec(resource, component=0)
+      shape = tf.TensorShape(shape.numpy())
+      dtype = tf.as_dtype(dtype.numpy())
       spec = tf.TensorSpec(shape, dtype)
 
       self._rate = rate.numpy()

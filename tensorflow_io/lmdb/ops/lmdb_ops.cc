@@ -46,15 +46,10 @@ REGISTER_OP("LMDBDatasetV2")
 REGISTER_OP("LMDBIterableInit")
   .Input("input: string")
   .Output("output: resource")
-  .Output("dtypes: int64")
-  .Output("shapes: int64")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
-  .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
     return Status::OK();
    });
 
@@ -77,15 +72,11 @@ REGISTER_OP("LMDBIterableNext")
 REGISTER_OP("LMDBMappingInit")
   .Input("input: string")
   .Output("output: resource")
-  .Output("dtypes: int64")
-  .Output("shapes: int64")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
     return Status::OK();
    });
 

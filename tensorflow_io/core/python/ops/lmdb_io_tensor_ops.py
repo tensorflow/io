@@ -33,7 +33,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
                filename,
                internal=False):
     with tf.name_scope("LMDBIOTensor") as scope:
-      resource, _, _ = core_ops.lmdb_mapping_init(
+      resource = core_ops.lmdb_mapping_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))

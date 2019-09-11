@@ -130,15 +130,13 @@ class WAVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    shapes.push_back(shape_);
-    dtypes.clear();
-    dtypes.push_back(dtype_);
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    *shape = shape_;
+    *dtype = dtype_;
     return Status::OK();
   }
 
-  Status Extra(std::vector<Tensor>* extra) override {
+  Status Extra(const Tensor& component, std::vector<Tensor>* extra) override {
     // Expose a sample `rate`
     Tensor rate(DT_INT32, TensorShape({}));
     rate.scalar<int32>()() = header_.nSamplesPerSec;
@@ -146,7 +144,7 @@ class WAVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
@@ -235,6 +233,8 @@ class WAVIndexable : public IOIndexableInterface {
 
 REGISTER_KERNEL_BUILDER(Name("WAVIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<WAVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("WAVIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<WAVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("WAVIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<WAVIndexable>);
 

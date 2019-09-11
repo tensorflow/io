@@ -134,27 +134,31 @@ class PrometheusIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    for (size_t i = 0; i < shapes_.size(); i++) {
-      shapes.push_back(shapes_[i]);
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    int64 column_index;
+    if (component.scalar<string>()() == "index") {
+      column_index = 0;
+    } else if (component.scalar<string>()() == "value") {
+      column_index = 1;
+    } else {
+      return errors::InvalidArgument("component ", component.scalar<string>()() , " is not supported");
     }
-    dtypes.clear();
-    for (size_t i = 0; i < dtypes_.size(); i++) {
-      dtypes.push_back(dtypes_[i]);
-    }
+
+    *shape = shapes_[column_index];
+    *dtype = dtypes_[column_index];
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const int64 component, Tensor* tensor) override {
-
+  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
-    if (component == 0) {
+    if (component.scalar<string>()() == "index") {
       memcpy(&tensor->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
-    } else {
+    } else if (component.scalar<string>()() == "value") {
       memcpy(&tensor->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
+    } else {
+      return errors::InvalidArgument("component ", component.scalar<string>()() , " is not supported");
     }
 
     return Status::OK();
@@ -177,6 +181,8 @@ class PrometheusIndexable : public IOIndexableInterface {
 
 REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<PrometheusIndexable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<PrometheusIndexable>);
 REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<PrometheusIndexable>);
 

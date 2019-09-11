@@ -35,19 +35,19 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
                internal=False):
     with tf.name_scope("JSONIOTensor") as scope:
       metadata = [] if mode is None else ["mode: %s" % mode]
-      resource, shapes, dtypes, columns = core_ops.json_indexable_init(
+      resource, columns = core_ops.json_indexable_init(
           filename,
           metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shapes = [
-          tf.TensorShape(
-              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
-          ) for e in tf.unstack(shapes)]
-      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-      columns = [e.numpy().decode() for e in tf.unstack(columns)]
-      spec = tuple([tf.TensorSpec(shape, dtype, column) for (
-          shape, dtype, column) in zip(shapes, dtypes, columns)])
+      columns = [column.decode() for column in columns.numpy().tolist()]
+      spec = []
+      for column in columns:
+        shape, dtype = core_ops.json_indexable_spec(resource, column)
+        shape = tf.TensorShape(shape)
+        dtype = tf.as_dtype(dtype.numpy())
+        spec.append(tf.TensorSpec(shape, dtype, column))
+      spec = tuple(spec)
       super(JSONIOTensor, self).__init__(
           spec, columns,
           resource, core_ops.json_indexable_get_item,

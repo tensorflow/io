@@ -29,11 +29,9 @@ class _IOTensorMeta(property):
 class _IOTensorDataset(tf.compat.v2.data.Dataset):
   """_IOTensorDataset"""
 
-  def __init__(self, spec, resource, function):
-    components = tf.nest.flatten(spec)
-
+  def __init__(self, spec, component, resource, function):
     start = 0
-    stop = components[0].shape[0]
+    stop = tf.nest.flatten(spec)[0].shape[0]
     capacity = 4096
     entry_start = list(range(start, stop, capacity))
     entry_stop = entry_start[1:] + [stop]
@@ -42,7 +40,9 @@ class _IOTensorDataset(tf.compat.v2.data.Dataset):
         tf.constant(entry_start, tf.int64),
         tf.constant(entry_stop, tf.int64)))
 
-    components = [(component, e) for component, e in enumerate(components)]
+    components = [
+        (component, e) for component, e in zip(
+            tf.nest.flatten(component), tf.nest.flatten(spec))]
     components = [
         dataset.map(
             lambda start, stop: function(
@@ -73,12 +73,14 @@ class _IOTensor(object):
 
   def __init__(self,
                spec,
+               component,
                internal=False):
     if not internal:
       raise ValueError("IOTensor constructor is private; please use one "
                        "of the factory methods instead (e.g., "
                        "IOTensor.from_tensor())")
     self._spec = spec
+    self._component = component
     super(_IOTensor, self).__init__()
 
   #=============================================================================
@@ -118,7 +120,7 @@ class _IOTensor(object):
       A `tf.data.Dataset` with value obtained from this `IOTensor`.
     """
     return _IOTensorDataset(
-        self.spec, self._resource, self._function)
+        self.spec, self._component, self._resource, self._function)
 
 class BaseIOTensor(_IOTensor):
   """BaseIOTensor
@@ -144,9 +146,8 @@ class BaseIOTensor(_IOTensor):
                internal=False):
     self._resource = resource
     self._function = function
-    self._component = component
     super(BaseIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, component=component, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -295,7 +296,7 @@ class _TableIOTensor(_IOTensor):
     self._resource = resource
     self._function = function
     super(_TableIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, columns, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -308,12 +309,12 @@ class _TableIOTensor(_IOTensor):
 
   def __call__(self, column):
     """Return a BaseIOTensor with column named `column`"""
-    component = self.columns.index(
+    column_index = self.columns.index(
         next(e for e in self.columns if e == column))
-    spec = tf.nest.flatten(self.spec)[component]
+    spec = tf.nest.flatten(self.spec)[column_index]
     return BaseIOTensor(
         spec, self._resource, self._function,
-        component=component, internal=True)
+        component=column, internal=True)
 
 class _SeriesIOTensor(_IOTensor):
   """_SeriesIOTensor"""
@@ -326,7 +327,7 @@ class _SeriesIOTensor(_IOTensor):
     self._resource = resource
     self._function = function
     super(_SeriesIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, ["index", "value"], internal=internal)
 
   #=============================================================================
   # Accessors
@@ -337,14 +338,14 @@ class _SeriesIOTensor(_IOTensor):
     """The index column of the series"""
     return BaseIOTensor(
         self.spec[0], self._resource, self._function,
-        component=0, internal=True)
+        component="index", internal=True)
 
   @property
   def value(self):
     """The value column of the series"""
     return BaseIOTensor(
         self.spec[1], self._resource, self._function,
-        component=1, internal=True)
+        component="value", internal=True)
 
 class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
   """_KeyValueIOTensorDataset"""
@@ -354,7 +355,7 @@ class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
                iterable_init, iterable_next,
                mapping_resource, mapping_function):
     with tf.name_scope("IterableIOTensorDataset") as scope:
-      resource, _, _ = iterable_init(
+      resource = iterable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
@@ -409,7 +410,7 @@ class _KeyValueIOTensor(_IOTensor):
     self._iterable_init = iterable_init
     self._iterable_next = iterable_next
     super(_KeyValueIOTensor, self).__init__(
-        spec, internal=internal)
+        spec, component=0, internal=internal)
 
   #=============================================================================
   # Dataset Conversions
@@ -438,7 +439,7 @@ class _KeyValueIOTensor(_IOTensor):
   #=============================================================================
   def __iter__(self):
     with tf.name_scope("KeyValueIOTensorIter") as scope:
-      resource, _, _ = self._iterable_init(
+      resource = self._iterable_init(
           self._filename,
           container=scope,
           shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))
