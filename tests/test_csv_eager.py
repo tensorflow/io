@@ -37,7 +37,7 @@ def test_csv_format():
       'double': np.asarray(range(100), np.float64),
   }
   df = pd.DataFrame(data).sort_index(axis=1)
-  with tempfile.NamedTemporaryFile(delete=False) as f:
+  with tempfile.NamedTemporaryFile(delete=False, mode="w") as f:
     df.to_csv(f, index=False)
 
   df = pd.read_csv(f.name)
