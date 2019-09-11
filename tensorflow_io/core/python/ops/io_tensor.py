@@ -26,6 +26,7 @@ from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
+from tensorflow_io.core.python.ops import csv_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -364,3 +365,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
       return hdf5_io_tensor_ops.HDF5IOTensor(filename, internal=True)
+
+  @classmethod
+  def from_csv(cls,
+               filename,
+               **kwargs):
+    """Creates an `IOTensor` from an csv file.
+
+    Args:
+      filename: A string, the filename of an csv file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromCSV")):
+      return csv_io_tensor_ops.CSVIOTensor(filename, internal=True)
