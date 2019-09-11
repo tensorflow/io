@@ -316,6 +316,48 @@ class _TableIOTensor(_IOTensor):
         spec, self._resource, self._function,
         component=column, internal=True)
 
+class _CollectionIOTensor(_IOTensor):
+  """_CollectionIOTensor
+
+  `CollectionIOTensor` is differnt from `TableIOTensor` in that each
+  component could have different shapes. While additional table-wide
+  operations are planned to be supported for `TableIOTensor` so that
+  the same operations could be applied to every column, there is no plan
+  to support the same in `CollectionIOTensor`. In other words,
+  `CollectionIOTensor` is only a dictionary with values consisting
+  of `BaseIOTensor`.
+  """
+
+  def __init__(self,
+               spec,
+               keys,
+               resource,
+               function,
+               internal=False):
+    self._keys = keys
+    self._resource = resource
+    self._function = function
+    super(_CollectionIOTensor, self).__init__(
+        spec, keys, internal=internal)
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  @property
+  def keys(self):
+    """The names of columns"""
+    return self._keys
+
+  def __call__(self, key):
+    """Return a BaseIOTensor with key named `key`"""
+    key_index = self.keys.index(
+        next(e for e in self.keys if e == key))
+    spec = tf.nest.flatten(self.spec)[key_index]
+    return BaseIOTensor(
+        spec, self._resource, self._function,
+        component=key, internal=True)
+
 class _SeriesIOTensor(_IOTensor):
   """_SeriesIOTensor"""
 

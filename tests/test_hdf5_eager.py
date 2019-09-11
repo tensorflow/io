@@ -24,7 +24,7 @@ import numpy as np
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-import tensorflow_io.hdf5 as hdf5_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 def test_hdf5_list_dataset():
   """test_hdf5_list_dataset"""
@@ -35,11 +35,11 @@ def test_hdf5_list_dataset():
   # Without file:// file will be opened directly, otherwise
   # file will be opened in memory.
   for filename in [filename, "file://" + filename]:
-    specs = hdf5_io.list_hdf5_datasets(filename)
-    assert specs['/group1/dset1'].dtype == tf.int32
-    assert specs['/group1/dset1'].shape == tf.TensorShape([1, 1])
-    assert specs['/group1/group3/dset2'].dtype == tf.int32
-    assert specs['/group1/group3/dset2'].shape == tf.TensorShape([1, 1])
+    hdf5 = tfio.IOTensor.from_hdf5(filename)
+    assert hdf5('/group1/dset1').dtype == tf.int32
+    assert hdf5('/group1/dset1').shape == [1, 1]
+    assert hdf5('/group1/group3/dset2').dtype == tf.int32
+    assert hdf5('/group1/group3/dset2').shape == [1, 1]
 
 def test_hdf5_read_dataset():
   """test_hdf5_list_dataset"""
@@ -48,21 +48,18 @@ def test_hdf5_read_dataset():
       "test_hdf5", "tdset.h5")
 
   for filename in [filename, "file://" + filename]:
-    specs = hdf5_io.list_hdf5_datasets(filename)
-    assert specs['/dset1'].dtype == tf.int32
-    assert specs['/dset1'].shape == tf.TensorShape([10, 20])
-    assert specs['/dset2'].dtype == tf.float64
-    assert specs['/dset2'].shape == tf.TensorShape([30, 20])
+    hdf5 = tfio.IOTensor.from_hdf5(filename)
+    assert hdf5('/dset1').dtype == tf.int32
+    assert hdf5('/dset1').shape == [10, 20]
+    assert hdf5('/dset2').dtype == tf.float64
+    assert hdf5('/dset2').shape == [30, 20]
 
-    p1 = hdf5_io.read_hdf5(filename, specs['/dset1'])
-    assert p1.dtype == tf.int32
-    assert p1.shape == tf.TensorShape([10, 20])
+    p1 = hdf5('/dset1')
     for i in range(10):
       vv = list([np.asarray([v for v in range(i, i + 20)])])
       assert np.all(p1[i].numpy() == vv)
 
-  dataset = hdf5_io.HDF5Dataset(filename, '/dset1').apply(
-      tf.data.experimental.unbatch())
+  dataset = tfio.IOTensor.from_hdf5(filename)('/dset1').to_dataset()
   i = 0
   for p in dataset:
     vv = list([np.asarray([v for v in range(i, i + 20)])])

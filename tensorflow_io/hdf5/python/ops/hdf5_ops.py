@@ -17,9 +17,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import data_ops
+
+warnings.warn(
+    "The tensorflow_io.hdf5.HDF5Dataset is "
+    "deprecated. Please look for tfio.IOTensor.from_hdf5 "
+    "for reading HDF5 files into tensorflow.",
+    DeprecationWarning)
 
 def list_hdf5_datasets(filename, **kwargs):
   """list_hdf5_datasets"""
