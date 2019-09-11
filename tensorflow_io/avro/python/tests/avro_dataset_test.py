@@ -102,7 +102,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_value": parsing_ops.FixedLenFeature([], tf_types.int32),
       "boolean_value": parsing_ops.FixedLenFeature([], tf_types.bool)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "string_value":
           np.asarray([
@@ -150,7 +150,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -195,7 +195,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "fixed_value": parsing_ops.FixedLenFeature([], tf_types.string),
       "enum_value": parsing_ops.FixedLenFeature([], tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "fixed_value":
           np.asarray([
@@ -213,7 +213,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -233,16 +233,52 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_value": np.asarray([0, 1])},
       {"int_value": np.asarray([2])}
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
+
+  def test_labels(self):
+    writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "feature1", "type": "int"},
+                  {"name": "label1", "type": "int"},
+                  {"name": "label2", "type": "int"}
+              ]}"""
+    record_data = [
+      {"feature1": 10, "label1": 0, "label2": 5},
+      {"feature1": 20, "label1": 1, "label2": 6},
+      {"feature1": 30, "label1": 2, "label2": 7}
+    ]
+    features = {
+      "feature1": parsing_ops.FixedLenFeature([], tf_types.int32),
+      "label1": parsing_ops.FixedLenFeature([], tf_types.int32),
+      "label2": parsing_ops.FixedLenFeature([], tf_types.int32)
+    }
+    expected_data = [
+      (
+        {"feature1": np.asarray([10, 20, 30])},
+        {"label1": np.asarray([0, 1, 2]), "label2": np.asarray([5, 6, 7])}
+      )
+    ]
+    label_keys = ["label1", "label2"]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_data=expected_data,
+                            features=features,
+                            reader_schema=writer_schema,
+                            batch_size=3,
+                            num_epochs=1,
+                            label_keys=label_keys)
+
 
   def test_larger_file_size(self):
     # Added because of existing implementations had bug if the file
@@ -262,11 +298,11 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
     # Add batch dimension
-    expected_tensors = [
+    expected_data = [
       dict([("int_value", np.asarray([datum]))]) for datum in range(n_data)]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=1, num_epochs=1)
@@ -292,12 +328,12 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_value": np.asarray([0, 1])}
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=reader_schema,
                             batch_size=2, num_epochs=1)
@@ -325,7 +361,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_value": parsing_ops.FixedLenFeature([], tf_types.int64),
       "long_value": parsing_ops.FixedLenFeature([], tf_types.double)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "int_value": np.asarray([0, 1]),
         "long_value": np.asarray([111.0, 222.0])
@@ -333,7 +369,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=reader_schema,
                             batch_size=2, num_epochs=1)
@@ -387,7 +423,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "multi_type:double": parsing_ops.FixedLenFeature([], tf_types.float64),
       "multi_type:string": parsing_ops.FixedLenFeature([], tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "multi_type:boolean":
           np.asarray([]),
@@ -405,7 +441,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=6, num_epochs=1)
@@ -443,14 +479,14 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     }
     # TODO(fraudies): If we have a default, then we use that in the place of
     #  the None
-    expected_tensors = [
+    expected_data = [
       {
         "possible_float_type:float": np.asarray([1.0, -1.0])
       }
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -476,13 +512,13 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       "int_list[*]": parsing_ops.FixedLenFeature([3], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*]": np.asarray([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
     ]
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -509,7 +545,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_list[*]": parsing_ops.FixedLenFeature([3], tf_types.int32,
                                                  default_value=[0, 1, 2])
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*]": np.asarray([
         [0, 1, 2],
         [3, 1, 2],
@@ -519,7 +555,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -546,7 +582,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_list[*]": parsing_ops.FixedLenFeature([], tf_types.int32,
                                                  default_value=0)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*]": np.asarray([
         [0, 1, 2],
         [3, 0, 0],
@@ -556,7 +592,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -602,14 +638,14 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_list[*].nested_int_list[*]":
         parsing_ops.FixedLenFeature([2, 3], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*].nested_int_list[*]":
          np.asarray([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])}
     ]
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -639,14 +675,14 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_list[*][*]": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
     # Note, the outer dimension is the batch dimension
-    expected_tensors = [
+    expected_data = [
       {"int_list[*][*]": np.asarray([
         [[0, 1, 2], [10, 11, 12], [20, 21, 22]]
       ])},
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             batch_size=1, num_epochs=1,
                             reader_schema=writer_schema)
@@ -718,7 +754,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "int_list[*].nested_int_list[*].nested_nested_int_list[*]":
         parsing_ops.FixedLenFeature([3, 2, 4], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*].nested_int_list[*].nested_nested_int_list[*]": np.asarray(
           [[
             [
@@ -734,12 +770,12 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
               [21, 22, 23, 24]
             ]
           ]]
-          )},
+      )},
     ]
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=1, num_epochs=1)
@@ -782,7 +818,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                                                dtype=tf_types.float32,
                                                size=4)
     }
-    expected_tensors = [
+    expected_data = [
       {"sparse_type": sparse_tensor.SparseTensorValue(
           np.asarray([[0, 0], [0, 3], [1, 2]]),
           np.asarray([5.0, 2.0, 7.0]),
@@ -794,7 +830,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -844,7 +880,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                                                dtype=tf_types.float32,
                                                size=[4, 6])
     }
-    expected_tensors = [
+    expected_data = [
       {"sparse_type": sparse_tensor.SparseTensorValue(
           np.asarray([[0, 0, 1], [0, 3, 5], [1, 0, 1]]),
           np.asarray([5.0, 2.0, 7.0]),
@@ -852,7 +888,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -912,7 +948,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                                                 dtype=tf_types.float32,
                                                 size=3)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "first_value": sparse_tensor.SparseTensorValue(
             np.asarray([[0, 0], [0, 3], [1, 0]]),
@@ -926,7 +962,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -952,19 +988,19 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     features = {
       'int_list[*]': parsing_ops.VarLenFeature(tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {"int_list[*]":
-         sparse_tensor.SparseTensorValue(
-             np.asarray([[0, 0], [0, 1], [1, 0], [1, 1], [1, 2], [2, 0]]),
-             np.asarray([1, 2, 3, 4, 5, 6]),
-             np.asarray([2, 6])
-         )
+        sparse_tensor.SparseTensorValue(
+            np.asarray([[0, 0], [0, 1], [1, 0], [1, 1], [1, 2], [2, 0]]),
+            np.asarray([1, 2, 3, 4, 5, 6]),
+            np.asarray([2, 6])
+        )
       }
     ]
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -1014,7 +1050,78 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                        ]
                     }
                  }
-              },
+              }
+           ]
+        }
+        """
+    record_data = [
+      {
+        "nested_record": {
+          "nested_int": 0,
+          "nested_float_list": [0.0, 10.0]
+        },
+        "list_of_records": [{
+          "first_name": "Herbert",
+          "age": 70
+        }]
+      },
+      {
+        "nested_record": {
+          "nested_int": 5,
+          "nested_float_list": [-2.0, 7.0]
+        },
+        "list_of_records": [{
+          "first_name": "Doug",
+          "age": 55
+        }, {
+          "first_name": "Jess",
+          "age": 66
+        }, {
+          "first_name": "Julia",
+          "age": 30
+        }]
+      },
+      {
+        "nested_record": {
+          "nested_int": 7,
+          "nested_float_list": [3.0, 4.0]
+        },
+        "list_of_records": [{
+          "first_name": "Karl",
+          "age": 32
+        }]
+      }
+    ]
+    features = {
+      "nested_record.nested_int": parsing_ops.FixedLenFeature([], tf_types.int32),
+      "nested_record.nested_float_list[*]": parsing_ops.FixedLenFeature([2], tf_types.float32),
+      "list_of_records[0].first_name": parsing_ops.FixedLenFeature([1], tf_types.string)
+    }
+    expected_data = [
+      {
+        "nested_record.nested_int":
+          np.asarray([0, 5, 7]),
+        "nested_record.nested_float_list[*]":
+          np.asarray([[0.0, 10.0], [-2.0, 7.0], [3.0, 4.0]]),
+        "list_of_records[0].first_name":
+          np.asarray([[compat.as_bytes("Herbert")],
+                      [compat.as_bytes("Doug")],
+                      [compat.as_bytes("Karl")]])
+      }
+    ]
+    self._test_pass_dataset(writer_schema=writer_schema,
+                            record_data=record_data,
+                            expected_data=expected_data,
+                            features=features,
+                            reader_schema=writer_schema,
+                            batch_size=3, num_epochs=1)
+
+  def test_parse_map_entry(self):
+    writer_schema = """
+        {
+           "type": "record",
+           "name": "nesting",
+           "fields": [
               {
                  "name": "map_of_records",
                  "type": {
@@ -1040,14 +1147,6 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
         """
     record_data = [
       {
-        "nested_record": {
-          "nested_int": 0,
-          "nested_float_list": [0.0, 10.0]
-        },
-        "list_of_records": [{
-          "first_name": "Herbert",
-          "age": 70
-        }],
         "map_of_records": {
           "first": {
             "first_name": "Herbert",
@@ -1060,20 +1159,6 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
         }
       },
       {
-        "nested_record": {
-          "nested_int": 5,
-          "nested_float_list": [-2.0, 7.0]
-        },
-        "list_of_records": [{
-          "first_name": "Doug",
-          "age": 55
-        }, {
-          "first_name": "Jess",
-          "age": 66
-        }, {
-          "first_name": "Julia",
-          "age": 30
-        }],
         "map_of_records": {
           "first": {
             "first_name": "Doug",
@@ -1086,14 +1171,6 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
         }
       },
       {
-        "nested_record": {
-          "nested_int": 7,
-          "nested_float_list": [3.0, 4.0]
-        },
-        "list_of_records": [{
-          "first_name": "Karl",
-          "age": 32
-        }],
         "map_of_records": {
           "first": {
             "first_name": "Karl",
@@ -1106,29 +1183,18 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
         }
       }
     ]
+    # TODO(fraudies): Using FixedLenFeature([1], tf_types.int32) this segfaults
     features = {
-      "nested_record.nested_int": parsing_ops.FixedLenFeature([], tf_types.int32),
-      "nested_record.nested_float_list[*]": parsing_ops.FixedLenFeature([2], tf_types.float32),
-      "list_of_records[0].first_name": parsing_ops.FixedLenFeature([1], tf_types.string),
-      "map_of_records['second'].age": parsing_ops.FixedLenFeature([1], tf_types.int32)
+      "map_of_records['second'].age": parsing_ops.FixedLenFeature([], tf_types.int32)
     }
-    expected_tensors = [
+    expected_data = [
       {
-        "nested_record.nested_int":
-          np.asarray([0, 5, 7]),
-        "nested_record.nested_float_list[*]":
-          np.asarray([[0.0, 10.0], [-2.0, 7.0], [3.0, 4.0]]),
-        "list_of_records[0].first_name":
-          np.asarray([[compat.as_bytes("Herbert")],
-                      [compat.as_bytes("Doug")],
-                      [compat.as_bytes("Karl")]]),
-        "map_of_records['second'].age":
-          np.asarray([30, 66, 21])
+        "map_of_records['second'].age": np.asarray([30, 66, 21])
       }
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=3, num_epochs=1)
@@ -1342,7 +1408,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[gender='female'].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "guests[gender='male'].name":
           sparse_tensor.SparseTensorValue(
@@ -1361,7 +1427,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
 
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -1410,7 +1476,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[gender='wrong_value'].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "guests[gender='wrong_value'].name":
           sparse_tensor.SparseTensorValue(
@@ -1420,7 +1486,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -1609,7 +1675,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[gender='female'].address.street":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "guests[gender='female'].address.street":
           sparse_tensor.SparseTensorValue(
@@ -1619,7 +1685,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -1682,7 +1748,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
       "guests[gender='female'].name":
         parsing_ops.VarLenFeature(tf_types.string)
     }
-    expected_tensors = [
+    expected_data = [
       {
         "guests[gender='male'].name":
           sparse_tensor.SparseTensorValue(
@@ -1700,7 +1766,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -1729,7 +1795,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
         "string_value": "bb"
       }
     ]
-    expected_tensors = [
+    expected_data = [
       {
         "com.test.string_value":
           np.asarray([
@@ -1740,7 +1806,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
     ]
     self._test_pass_dataset(writer_schema=writer_schema,
                             record_data=record_data,
-                            expected_tensors=expected_tensors,
+                            expected_data=expected_data,
                             features=features,
                             reader_schema=writer_schema,
                             batch_size=2, num_epochs=1)
@@ -1794,7 +1860,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
   #       "string_value": "bb"
   #     }
   #   ]
-  #   expected_tensors = [
+  #   expected_data = [
   #     {
   #       "string_value":
   #         np.asarray([
@@ -1805,7 +1871,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
   #   ]
   #   self._test_pass_dataset(writer_schema=schema,
   #                           record_data=record_data,
-  #                           expected_tensors=expected_tensors,
+  #                           expected_data=expected_data,
   #                           features=features,
   #                           reader_schema=schema,
   #                           batch_size=2, num_epochs=1)
@@ -1928,7 +1994,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
   #           dtype=tf_types.int32,
   #           size=94040)
   #   }
-  #   expected_tensors = [
+  #   expected_data = [
   #     {
   #       "guests[gender='female'].address":
   #         sparse_tensor.SparseTensorValue(
@@ -1938,7 +2004,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
   #   ]
   #   self._test_pass_dataset(writer_schema=writer_schema,
   #                           record_data=record_data,
-  #                           expected_tensors=expected_tensors,
+  #                           expected_data=expected_data,
   #                           features=features,
   #                           batch_size=2, num_epochs=1)
 

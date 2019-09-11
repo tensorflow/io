@@ -48,6 +48,29 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
 
     return [filename]
 
+  def _assert_same_data(self, expected_data, actual_data):
+    if isinstance(expected_data, tuple):
+      assert isinstance(actual_data, tuple), \
+        "Found type {} but expected type {}".format(type(actual_data),
+                                                    tuple)
+      assert len(expected_data) == 2, \
+        "Found {} components in expected dataset but must have {}"\
+          .format(len(expected_data), 2)
+
+      assert len(actual_data) == 2, \
+        "Found {} components in actual dataset but expected {}" \
+          .format(len(actual_data), 2)
+
+      expected_features, expected_labels = expected_data
+      actual_features, actual_labels = actual_data
+
+      self._assert_same_tensors(expected_features, actual_features)
+      self._assert_same_tensors(expected_labels, actual_labels)
+
+    else:
+      self._assert_same_tensors(expected_data, actual_data)
+
+
   def _assert_same_tensors(self, expected_tensors, actual_tensors):
 
     logging.info("Expected tensors: {}".format(expected_tensors))
@@ -74,7 +97,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
       else:
         assert_same_array(expected_tensor, actual_tensor)
 
-  def _verify_output(self, expected_tensors, actual_dataset):
+  def _verify_output(self, expected_data, actual_dataset):
 
     # Turn off any parallelism and random for testing
     config = config_pb2.ConfigProto(
@@ -86,15 +109,15 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
       next_element = iterator.get_next()
       sess.run(iterator.initializer)
 
-      for tensors in expected_tensors:
+      for expected_datum in expected_data:
 
-        self._assert_same_tensors(expected_tensors=tensors,
-                                  actual_tensors=sess.run(next_element))
+        self._assert_same_data(expected_data=expected_datum,
+                               actual_data=sess.run(next_element))
 
       with self.assertRaises(OutOfRangeError):
         sess.run(next_element)
 
-  def _test_pass_dataset(self, writer_schema, record_data, expected_tensors,
+  def _test_pass_dataset(self, writer_schema, record_data, expected_data,
                          features, reader_schema, batch_size, **kwargs):
     filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                  records=record_data)
@@ -103,9 +126,10 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         file_pattern=filenames, reader_schema=reader_schema,
         features=features, batch_size=batch_size,
         shuffle=kwargs.get("shuffle", None),
-        num_epochs=kwargs.get("num_epochs", None))
+        num_epochs=kwargs.get("num_epochs", None),
+        label_keys=kwargs.get("label_keys", []))
 
-    self._verify_output(expected_tensors=expected_tensors,
+    self._verify_output(expected_data=expected_data,
                         actual_dataset=actual_dataset)
 
   def _test_fail_dataset(self, writer_schema, record_data, features,

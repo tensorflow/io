@@ -127,6 +127,7 @@ class AvroDatasetOp : public DatasetOpKernel {
                       "] == ", DataTypeString(dense_types_[d])));
     }
 
+    // first all dense and then all sparse tensors according to their input order
     std::map<string, int> key_to_output_index;
     for (int d = 0; d < dense_keys_.size(); ++d) {
       auto result = key_to_output_index.insert({dense_keys_[d], 0});
@@ -174,9 +175,6 @@ class AvroDatasetOp : public DatasetOpKernel {
  private:
   class Dataset : public DatasetBase {
    public:
-    // Need to keep batched separate from original values because that state can't be
-    // transferred to outside of this class (using output_shapes or node graph def)
-    // We will pass that batched information to the parser and to the output shape check
     Dataset(OpKernelContext* ctx,
             std::vector<string> filenames,
             int64 batch_size,
@@ -203,15 +201,11 @@ class AvroDatasetOp : public DatasetOpKernel {
           sparse_types_(sparse_types),
           dense_types_(dense_types),
           dense_shapes_(dense_shapes),
-          dense_shapes_batched_(PrependBatchDimension(dense_shapes, batch_size, drop_remainder, 0,
-                                                      dense_shapes.size())),
           output_types_(output_types),
           output_shapes_(output_shapes),
-          output_shapes_batched_(PrependBatchDimension(output_shapes, batch_size, drop_remainder, 0,
-                                                       dense_keys_.size())),
           config_(BuildConfig(batch_size, drop_remainder, input_stream_buffer_size,
                               avro_data_buffer_size, dense_keys_, dense_types_,
-                              dense_shapes_batched_, dense_defaults_, sparse_keys_,
+                              dense_shapes_, dense_defaults_, sparse_keys_,
                               sparse_types_)) { }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -226,10 +220,6 @@ class AvroDatasetOp : public DatasetOpKernel {
 
     const std::vector<PartialTensorShape>& output_shapes() const override {
       return output_shapes_;
-    }
-
-    const std::vector<PartialTensorShape>& output_shapes_batched() const {
-      return output_shapes_batched_;
     }
 
     string DebugString() const override { return "AvroDatasetOp::Dataset"; }
@@ -394,11 +384,11 @@ class AvroDatasetOp : public DatasetOpKernel {
                 << dense.default_value.shape().DebugString();
 
           } else {
-            CHECK(dataset()->output_shapes_batched_[output_index].IsCompatibleWith(
+            CHECK(dataset()->output_shapes_[output_index].IsCompatibleWith(
                 avro_result.dense_values[d].shape()))
                 << "Got wrong shape for AvroDataset return value " << d
                 << " (expected "
-                << dataset()->output_shapes_batched_[output_index].DebugString() << ", got "
+                << dataset()->output_shapes_[output_index].DebugString() << ", got "
                 << avro_result.dense_values[d].shape().DebugString()
                 << ").";
           }
@@ -420,11 +410,11 @@ class AvroDatasetOp : public DatasetOpKernel {
               << " (expected "
               << DataTypeString(dataset()->output_dtypes()[output_index]) << ", got "
               << DataTypeString(serialized_sparse.dtype()) << ").";
-          CHECK(dataset()->output_shapes_batched_[output_index].IsCompatibleWith(
+          CHECK(dataset()->output_shapes_[output_index].IsCompatibleWith(
               serialized_sparse.shape()))
               << "Got wrong shape for AvroDataset return value " << d
               << " (expected "
-              << dataset()->output_shapes_batched_[output_index].DebugString() << ", got "
+              << dataset()->output_shapes_[output_index].DebugString() << ", got "
               << serialized_sparse.shape().DebugString() << ").";
 
           VLOG(5) << "Sparse output tensor for " << dataset()->sparse_keys_[d] << " has ";
@@ -440,25 +430,6 @@ class AvroDatasetOp : public DatasetOpKernel {
       size_t current_file_index_ GUARDED_BY(mu_) = 0;
       std::unique_ptr<AvroFileStreamReader> reader_ GUARDED_BY(mu_);
     };                      // class Iterator
-
-    static std::vector<PartialTensorShape> PrependBatchDimension(
-      const std::vector<PartialTensorShape>& shapes, int64 dim, bool drop_remainder,
-      int64 first, int64 num) {
-
-      std::vector<PartialTensorShape> new_shapes(shapes);
-      for (int s = first; s < num; ++s) {
-        // Know batch dimension (it's fixed)
-        if (drop_remainder) {
-          new_shapes[s] = PartialTensorShape({dim}).Concatenate(new_shapes[s]);
-
-        // Don't know batch dimension, put a -1 here
-        } else {
-          new_shapes[s] = PartialTensorShape({-1}).Concatenate(new_shapes[s]);
-        }
-      }
-
-      return new_shapes;
-    }
 
     static AvroParseConfig BuildConfig(int64 batch_size, bool drop_remainder,
       size_t input_stream_buffer_size, size_t avro_data_buffer_size,
@@ -497,10 +468,8 @@ class AvroDatasetOp : public DatasetOpKernel {
     const DataTypeVector sparse_types_;
     const DataTypeVector dense_types_;
     const std::vector<PartialTensorShape> dense_shapes_;
-    const std::vector<PartialTensorShape> dense_shapes_batched_;
     const DataTypeVector output_types_;
     const std::vector<PartialTensorShape> output_shapes_;
-    const std::vector<PartialTensorShape> output_shapes_batched_;
     const AvroParseConfig config_;
   };  // class Dataset
 
