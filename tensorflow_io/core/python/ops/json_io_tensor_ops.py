@@ -40,7 +40,7 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
           metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      columns = columns.numpy().tolist()
+      columns = [column.decode() for column in columns.numpy().tolist()]
       spec = []
       for column in columns:
         shape, dtype = core_ops.json_indexable_spec(resource, column)

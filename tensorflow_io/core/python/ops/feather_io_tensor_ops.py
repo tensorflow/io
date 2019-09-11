@@ -37,7 +37,7 @@ class FeatherIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      columns = columns.numpy().tolist()
+      columns = [column.decode() for column in columns.numpy().tolist()]
       spec = []
       for column in columns:
         shape, dtype = core_ops.feather_indexable_spec(resource, column)
