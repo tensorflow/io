@@ -77,10 +77,7 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Next(const int64 capacity, const int64 component, Tensor* tensor, int64* record_read) override {
-    if (component != 0) {
-      return errors::InvalidArgument("component other than 0 is not supported: ", component);
-    }
+  Status Next(const int64 capacity, const Tensor& component, Tensor* tensor, int64* record_read) override {
     *record_read = 0;
     while ((*record_read) < capacity) {
       MDB_val mdb_key;
@@ -94,11 +91,9 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    shapes.push_back(PartialTensorShape({-1}));
-    dtypes.clear();
-    dtypes.push_back(DT_STRING);
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    *shape = PartialTensorShape({-1});
+    *dtype = DT_STRING;
     return Status::OK();
   }
 
@@ -165,27 +160,21 @@ class LMDBMapping : public IOMappingInterface {
     return Status::OK();
   }
 
-  Status Spec(std::vector<PartialTensorShape>& shapes, std::vector<DataType>& dtypes) override {
-    shapes.clear();
-    for (size_t i = 0; i < 2; i++) {
-      shapes.push_back(PartialTensorShape({-1}));
-    }
-    dtypes.clear();
-    for (size_t i = 0; i < 2; i++) {
-      dtypes.push_back(DT_STRING);
-    }
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    *shape = PartialTensorShape({-1});
+    *dtype = DT_STRING;
     return Status::OK();
   }
 
-  Status GetItem(const std::vector<string>& key, Tensor* tensor) override {
-    for (size_t i = 0; i < key.size(); i++) {
+  Status GetItem(const Tensor& key, Tensor* tensor) override {
+    for (int64 i = 0; i < key.NumElements(); i++) {
       MDB_val mdb_key;
       MDB_val mdb_data;
-      mdb_key.mv_data = (void *)key[i].data();
-      mdb_key.mv_size = key[i].size();
+      mdb_key.mv_data = (void *)key.flat<string>()(i).data();
+      mdb_key.mv_size = key.flat<string>()(i).size();
       int status = mdb_get(mdb_txn_, mdb_dbi_, &mdb_key, &mdb_data);
       if (status != MDB_SUCCESS) {
-        return errors::InvalidArgument("unable to get value from key(", key[i], "): ", status);
+        return errors::InvalidArgument("unable to get value from key(", key.flat<string>()(i), "): ", status);
       }
       tensor->flat<string>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
     }

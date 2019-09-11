@@ -38,21 +38,18 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource, shapes, dtypes = core_ops.kafka_indexable_init(
+      iterable = core_ops.kafka_iterable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      shapes = [
-          tf.TensorShape(
-              [None if dim < 0 else dim for dim in e.numpy() if dim != 0]
-          ) for e in tf.unstack(shapes)]
-      dtypes = [tf.as_dtype(e.numpy()) for e in tf.unstack(dtypes)]
-      assert len(shapes) == 1
-      assert len(dtypes) == 1
-      shape = shapes[0]
-      dtype = dtypes[0]
-      spec = tf.TensorSpec(shape, dtype)
+      resource = core_ops.kafka_indexable_init(
+          subscription, metadata=metadata, iterable=iterable,
+          container=scope,
+          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
+      shape, dtype = core_ops.kafka_indexable_spec(resource, 0)
+      spec = tf.TensorSpec(tf.TensorShape(shape), tf.as_dtype(dtype.numpy()))
 
+      self._iterable = iterable
       super(KafkaIOTensor, self).__init__(
-          spec, resource, core_ops.kafka_indexable_get_item,
+          spec, resource, core_ops.kafka_indexable_get_item, component=0,
           internal=internal)

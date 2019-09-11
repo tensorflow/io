@@ -23,17 +23,23 @@ REGISTER_OP("JSONIndexableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("output: resource")
-  .Output("shapes: int64")
-  .Output("dtypes: int64")
-  .Output("columns: string")
+  .Output("component: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
-  .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-    c->set_output(3, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
+    return Status::OK();
+   });
+
+REGISTER_OP("JSONIndexableSpec")
+  .Input("input: resource")
+  .Input("component: string")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
     return Status::OK();
    });
 
@@ -42,7 +48,7 @@ REGISTER_OP("JSONIndexableGetItem")
   .Input("start: int64")
   .Input("stop: int64")
   .Input("step: int64")
-  .Input("component: int64")
+  .Input("component: string")
   .Output("output: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")

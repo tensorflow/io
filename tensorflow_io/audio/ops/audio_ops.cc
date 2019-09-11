@@ -22,18 +22,24 @@ namespace tensorflow {
 REGISTER_OP("WAVIndexableInit")
   .Input("input: string")
   .Output("output: resource")
-  .Output("dtypes: int64")
-  .Output("shapes: int64")
-  .Output("rate: int32")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
-  .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-    c->set_output(3, c->Scalar());
     return Status::OK();
+   });
+
+REGISTER_OP("WAVIndexableSpec")
+  .Input("input: resource")
+  .Input("component: int64")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .Output("rate: int32")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
+    c->set_output(2, c->Scalar());
+     return Status::OK();
    });
 
 REGISTER_OP("WAVIndexableGetItem")

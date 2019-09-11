@@ -22,16 +22,23 @@ namespace tensorflow {
 REGISTER_OP("KafkaIndexableInit")
   .Input("input: string")
   .Input("metadata: string")
+  .Input("iterable: resource")
   .Output("output: resource")
-  .Output("dtypes: int64")
-  .Output("shapes: int64")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
-  .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+REGISTER_OP("KafkaIndexableSpec")
+  .Input("input: resource")
+  .Input("component: int64")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
     return Status::OK();
    });
 
@@ -57,15 +64,10 @@ REGISTER_OP("KafkaIterableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("output: resource")
-  .Output("dtypes: int64")
-  .Output("shapes: int64")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
-  .SetIsStateful()
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({c->UnknownDim()}));
-    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
     return Status::OK();
    });
 
@@ -84,6 +86,7 @@ REGISTER_OP("KafkaIterableNext")
     c->set_output(0, entry);
     return Status::OK();
    });
+
 
 REGISTER_OP("KafkaOutputSequence")
     .Input("topic: string")
