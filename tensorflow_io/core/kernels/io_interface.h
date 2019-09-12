@@ -37,6 +37,10 @@ class IOInterface : public ResourceBase {
     // This is the time to attach another resource to this interface.
     return errors::Unimplemented("Context");
   }
+  virtual Status Label(const Tensor& component, PartialTensorShape* shape, DataType* dtype) {
+    // The implementation of Label() indicate if the output consists of a `label` (e.g., null mask) field.
+    return errors::Unimplemented("Label");
+  }
 };
 
 class IOIterableInterface : public IOInterface {
@@ -47,9 +51,9 @@ class IOIterableInterface : public IOInterface {
 class IOIndexableInterface : public IOInterface {
  public:
   virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
-  virtual Status GetNull(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
-    // By default GetNull is not implemented
-    return errors::Unimplemented("GetNull");
+  virtual Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
+    // By default GetLabel is not implemented
+    return errors::Unimplemented("GetLabel");
   }
 };
 
@@ -359,9 +363,9 @@ class IOIndexableGetItemOp : public OpKernel {
   }
 };
 template<typename Type>
-class IOIndexableGetNullOp : public OpKernel {
+class IOIndexableGetLabelOp : public OpKernel {
  public:
-  explicit IOIndexableGetNullOp<Type>(OpKernelConstruction* ctx)
+  explicit IOIndexableGetLabelOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
 
@@ -389,7 +393,7 @@ class IOIndexableGetNullOp : public OpKernel {
 
     PartialTensorShape shape;
     DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
+    OP_REQUIRES_OK(context, resource->Label(*component, &shape, &dtype));
 
     int64 count = shape.dim_size(0);
     if (start > count) {
@@ -404,8 +408,8 @@ class IOIndexableGetNullOp : public OpKernel {
 
     gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = stop - start;
-    Tensor tensor(DT_BOOL, TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetNull(start, stop, step, *component, &tensor));
+    Tensor tensor(dtype, TensorShape(dims));
+    OP_REQUIRES_OK(context, resource->GetLabel(start, stop, step, *component, &tensor));
     context->set_output(0, tensor);
   }
 };

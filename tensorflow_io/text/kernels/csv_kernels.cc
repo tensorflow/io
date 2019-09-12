@@ -196,7 +196,16 @@ class CSVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetNull(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
+  Status Label(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+    *shape = shapes_[column_index];
+    *dtype = DT_BOOL;
+    return Status::OK();
+  }
+  Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
     if (step != 1) {
       return errors::InvalidArgument("step ", step, " is not supported");
     }
@@ -244,6 +253,6 @@ REGISTER_KERNEL_BUILDER(Name("CSVIndexableSpec").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<CSVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetNull").Device(DEVICE_CPU),
-                        IOIndexableGetNullOp<CSVIndexable>);
+                        IOIndexableGetLabelOp<CSVIndexable>);
 }  // namespace data
 }  // namespace tensorflow
