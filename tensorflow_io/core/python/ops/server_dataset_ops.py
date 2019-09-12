@@ -26,7 +26,7 @@ from tensorflow_io.core.python.ops import core_ops
 class ServerDataset(tf.compat.v2.data.Dataset):
   """ServerDataset"""
 
-  def __init__(self, server, component):
+  def __init__(self, server, component, spec, label):
     """Create a ServerDataset.
     Args:
       server: An IOServer.
@@ -35,15 +35,23 @@ class ServerDataset(tf.compat.v2.data.Dataset):
     with tf.name_scope("ServerDataset") as scope:
       resource = server._resource
 
+      shape = tf.TensorShape([e if i != 0 else None for (i, e) in enumerate(spec.shape.as_list())])
+      dtype = spec.dtype
+
+      label_shape = tf.TensorShape([e if i != 0 else None for (i, e) in enumerate(label.shape.as_list())])
+      label_dtype = label.dtype
+
       capacity = 1
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
           lambda i: core_ops.grpcio_server_iterable_next(
               resource, capacity, component=component,
-              dtype=tf.string, shape=tf.TensorShape([None])))
+              shape=shape, dtype=dtype,
+              label_shape=label_shape, label_dtype=label_dtype))
+
       dataset = dataset.apply(
           tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v)[0], 0)))
+              lambda v: tf.greater(tf.shape(v.value)[0], 0)))
       dataset = dataset.unbatch()
 
       self._resource = resource

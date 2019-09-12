@@ -55,11 +55,33 @@ class GRPCIOServerClient(object):
     self._server = server
     super(GRPCIOServerClient, self).__init__()
 
-  def send(self, data, component):
+  def send(self, component, value, label=None):
+    capacity = 1
+
     with grpc.insecure_channel(self._server) as channel:
       stub = server_pb2_grpc.GRPCIOServerStub(channel)
       metadata = [("component", component)]
-      response = stub.Next(
-          iter([server_pb2.Request(item=e) for e in data]),
-          metadata=metadata)
+      spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(value.shape.as_list())]) + ":" + value.dtype.name
+      metadata.append(("spec", spec))
+      if label is not None:
+        spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(value.shape.as_list())]) + ":" + value.dtype.name
+        metadata.append(("label", spec))
+      start = 0
+      stop = value.shape[0]
+      entry_start = list(range(start, stop, capacity))
+      entry_stop = entry_start[1:] + [stop]
+
+      def function(value, label=None):
+        value_tensor = tf.make_tensor_proto(value)
+        value_field = google.protobuf.any_pb2.Any()
+        value_field.Pack(value_tensor)
+        if label is not None:
+          label_tensor = tf.make_tensor_proto(label)
+          label_field = google.protobuf.any_pb2.Any()
+          label_field.Pack(label_tensor)
+          return server_pb2.Request(value=value_field, label=label_field)
+        return server_pb2.Request(value=value_field)
+      if label is not None:
+        return stub.Next(iter([function(value[start:stop], label[start:stop]) for (start, stop) in zip(entry_start, entry_stop)]), metadata=metadata)
+      return stub.Next(iter([function(value[start:stop]) for (start, stop) in zip(entry_start, entry_stop)]), metadata=metadata)
       return response

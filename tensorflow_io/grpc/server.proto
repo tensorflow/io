@@ -7,8 +7,10 @@ service GRPCIOServer {
 }
 
 message Request {
-  // google.protobuf.Any item = 1;
-  string item = 1;
+  google.protobuf.Any value = 1;
+  oneof option {
+    google.protobuf.Any label = 2;
+  }
 }
 
 message Response {

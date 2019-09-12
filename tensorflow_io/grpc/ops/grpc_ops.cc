@@ -34,15 +34,25 @@ REGISTER_OP("GRPCIOServerIterableNext")
   .Input("input: resource")
   .Input("capacity: int64")
   .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
+  .Output("label: label_dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
+  .Attr("label_shape: shape")
+  .Attr("label_dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     PartialTensorShape shape;
     TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
     shape_inference::ShapeHandle entry;
     TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
     c->set_output(0, entry);
+
+    PartialTensorShape label_shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("label_shape", &label_shape));
+    shape_inference::ShapeHandle label_entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(label_shape, &label_entry));
+    c->set_output(1, label_entry);
+
     return Status::OK();
    });
 

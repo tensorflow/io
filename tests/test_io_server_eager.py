@@ -17,25 +17,48 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import time
 import threading
+import numpy as np
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 from tensorflow_io.core.python.ops.server_dataset_ops import ServerDataset
+from tensorflow_io.grpc.python.ops import grpc_io_server_client
 
 def test_io_server():
   """test_io_server"""
+  mnist_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "mnist.npz")
+  with np.load(mnist_filename) as f:
+    (x_test, y_test) = f['x_test'], f['y_test']
+  x_test = tf.constant(x_test)
+  y_test = tf.constant(y_test)
+
+  ########################################################
+  # component is a key to identify the stream at the server
+  component = "1234567"
+
   server = tfio.IOServer()
+
   def client():
-    tensor = tfio.IOTensor.from_tensor(tf.constant(["12345", "67890"]))
-    tensor.to_server("123")
-    return None
+    client = grpc_io_server_client.GRPCIOServerClient()
+    return client.send(component, x_test, y_test)
   x = threading.Thread(target=client)
   x.start()
+
   time.sleep(5)
-  dataset = ServerDataset(server, "123")
+  dataset = ServerDataset(
+      server, component,
+      tf.TensorSpec(x_test.shape, x_test.dtype),
+      tf.TensorSpec(y_test.shape, y_test.dtype))
+  # dataset is ready to be used
+  ########################################################
+
   for d in dataset:
-    print("DATA: ", d.numpy())
+    print("DATA: ", d.value.shape, d.label.shape)
