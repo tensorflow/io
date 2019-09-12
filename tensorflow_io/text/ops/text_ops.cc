@@ -176,4 +176,22 @@ REGISTER_OP("CSVIndexableGetItem")
     return Status::OK();
    });
 
+REGISTER_OP("CSVIndexableGetNull")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("step: int64")
+  .Input("component: string")
+  .Output("output: dtype")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

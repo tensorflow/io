@@ -176,7 +176,7 @@ class KafkaIterable : public IOIterableInterface {
 
     return Status::OK();
   }
-  Status Next(const int64 capacity, const Tensor& component, Tensor* tensor, int64* record_read) override {
+  Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
     while (consumer_.get() != nullptr && (*record_read) < capacity) {
       if (!kafka_event_cb_.run()) {
@@ -191,7 +191,7 @@ class KafkaIterable : public IOIterableInterface {
       std::unique_ptr<RdKafka::Message> message(consumer_->consume(timeout_));
       if (message->err() == RdKafka::ERR_NO_ERROR) {
          // Produce the line as output.
-         tensor->flat<string>()((*record_read)) = std::string(static_cast<const char*>(message->payload()), message->len());
+         value->flat<string>()((*record_read)) = std::string(static_cast<const char*>(message->payload()), message->len());
          // Sync offset
          offset_ = message->offset();
          (*record_read)++;

@@ -77,7 +77,7 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Next(const int64 capacity, const Tensor& component, Tensor* tensor, int64* record_read) override {
+  Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
     while ((*record_read) < capacity) {
       MDB_val mdb_key;
@@ -86,7 +86,7 @@ class LMDBIterable : public IOIterableInterface {
       if (status != MDB_SUCCESS) {
         break;
       }
-      tensor->flat<string>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
+      value->flat<string>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
       (*record_read)++;
     }
     return Status::OK();
