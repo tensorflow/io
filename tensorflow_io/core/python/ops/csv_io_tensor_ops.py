@@ -49,3 +49,17 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
           spec, columns,
           resource, core_ops.csv_indexable_get_item,
           internal=internal)
+
+  #=============================================================================
+  # IsNull checking
+  #=============================================================================
+  def isnull(self, column):
+    """Return a BaseIOTensor of bool for null values in `column`"""
+    column_index = self.columns.index(
+        next(e for e in self.columns if e == column))
+    spec = tf.nest.flatten(self.spec)[column_index]
+    # change spec to bool
+    spec = tf.TensorSpec(spec.shape, tf.bool)
+    return io_tensor_ops.BaseIOTensor(
+        spec, self._resource, core_ops.csv_indexable_get_null,
+        component=column, internal=True)
