@@ -50,5 +50,18 @@ def test_csv_format():
 
   os.unlink(f.name)
 
+def test_null_csv_format():
+  """test_null_csv_format"""
+  # cat tests/test_csv/null.csv
+  # C1,C2,C3
+  # 1,2,3
+  # 4,NaN,6
+  # 7,8,9
+  csv_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_csv", "null.csv")
+  csv = tfio.IOTensor.from_csv(csv_path)
+  assert np.all(csv.isnull('C2').to_tensor().numpy() == [False, True, False])
+
 if __name__ == "__main__":
   test.main()

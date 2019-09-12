@@ -47,6 +47,10 @@ class IOIterableInterface : public IOInterface {
 class IOIndexableInterface : public IOInterface {
  public:
   virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
+  virtual Status GetNull(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
+    // By default GetNull is not implemented
+    return errors::Unimplemented("GetNull");
+  }
 };
 
 class IOMappingInterface : public IOInterface {
@@ -351,6 +355,57 @@ class IOIndexableGetItemOp : public OpKernel {
     dims[0] = stop - start;
     Tensor tensor(dtype, TensorShape(dims));
     OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, *component, &tensor));
+    context->set_output(0, tensor);
+  }
+};
+template<typename Type>
+class IOIndexableGetNullOp : public OpKernel {
+ public:
+  explicit IOIndexableGetNullOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    int64 start = start_tensor->scalar<int64>()();
+
+    const Tensor* stop_tensor;
+    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    int64 stop = stop_tensor->scalar<int64>()();
+
+    const Tensor* step_tensor;
+    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
+    int64 step = step_tensor->scalar<int64>()();
+
+    const Tensor* component;
+    OP_REQUIRES_OK(context, context->input("component", &component));
+
+    OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
+
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
+
+    int64 count = shape.dim_size(0);
+    if (start > count) {
+      start = count;
+    }
+    if (stop < 0) {
+      stop = count;
+    }
+    if (stop < start) {
+      stop = start;
+    }
+
+    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+    dims[0] = stop - start;
+    Tensor tensor(DT_BOOL, TensorShape(dims));
+    OP_REQUIRES_OK(context, resource->GetNull(start, stop, step, *component, &tensor));
     context->set_output(0, tensor);
   }
 };

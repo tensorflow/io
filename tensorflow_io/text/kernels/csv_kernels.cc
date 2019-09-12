@@ -196,6 +196,28 @@ class CSVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
+  Status GetNull(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
+    if (step != 1) {
+      return errors::InvalidArgument("step ", step, " is not supported");
+    }
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+
+    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
+
+    int64 curr_index = 0;
+    for (auto chunk : slice->data()->chunks()) {
+      for (int64_t item = 0; item < chunk->length(); item++) {
+        tensor->flat<bool>()(curr_index) = chunk->IsNull(item);
+        curr_index++;
+      }
+    }
+
+    return Status::OK();
+  }
+
   string DebugString() const override {
     mutex_lock l(mu_);
     return strings::StrCat("CSVIndexable");
@@ -221,5 +243,7 @@ REGISTER_KERNEL_BUILDER(Name("CSVIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<CSVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetItem").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<CSVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetNull").Device(DEVICE_CPU),
+                        IOIndexableGetNullOp<CSVIndexable>);
 }  // namespace data
 }  // namespace tensorflow
