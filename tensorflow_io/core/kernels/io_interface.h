@@ -45,12 +45,14 @@ class IOInterface : public ResourceBase {
 
 class IOIterableInterface : public IOInterface {
  public:
-  virtual Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value) = 0;
+  // By default label field is ignored
+  virtual Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) = 0;
 };
 
 class IOIndexableInterface : public IOInterface {
  public:
   virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
+
   virtual Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
     // By default GetLabel is not implemented
     return errors::Unimplemented("GetLabel");
@@ -87,6 +89,19 @@ class IOIndexableImplementation : public IOIndexableInterface {
 
     const int64 capacity = 4096;
 
+    TensorShape chunk_label_shape;
+    label_ = false;
+    Status status = iterable_->Label(component, &label_shape_, &label_dtype_);
+    if (!errors::IsUnimplemented(status)) {
+      if (!status.ok()) {
+        return status;
+      }
+      label_ = true;
+      gtl::InlinedVector<int64, 4> dims = label_shape_.dim_sizes();
+      dims[0] = capacity;
+      chunk_label_shape = TensorShape(dims);
+    }
+
     TF_RETURN_IF_ERROR(iterable_->Spec(component, &value_shape_, &value_dtype_));
     gtl::InlinedVector<int64, 4> dims = value_shape_.dim_sizes();
     dims[0] = capacity;
@@ -96,18 +111,32 @@ class IOIndexableImplementation : public IOIndexableInterface {
 
     int64 record_read = 0;
     do {
-      chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
-      int64 chunk_record_read = 0;
-      TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back()));
+      if (label_) {
+        chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
+        chunk_labels_.push_back(Tensor(label_dtype_, chunk_label_shape));
+        TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back(), &chunk_labels_.back()));
+      } else {
+        chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
+        TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back(), nullptr));
+      }
       if (record_read == 0) {
+        if (label_) {
+          chunk_labels_.pop_back();
+        }
         chunk_values_.pop_back();
         break;
       }
       if (record_read < capacity) {
+        if (label_) {
+          chunk_labels_.back() = chunk_labels_.back().Slice(0, record_read);;
+        }
         chunk_values_.back() = chunk_values_.back().Slice(0, record_read);
       }
       total += record_read;
     } while (record_read != 0);
+    if (label_) {
+      label_shape_.set_dim(0, total);
+    }
     value_shape_.set_dim(0, total);
     return Status::OK();
   }
@@ -178,6 +207,10 @@ class IOIndexableImplementation : public IOIndexableInterface {
   PartialTensorShape value_shape_ GUARDED_BY(mu_);
   DataType value_dtype_ GUARDED_BY(mu_);
   std::vector<Tensor> chunk_values_;
+  bool label_ GUARDED_BY(mu_);
+  PartialTensorShape label_shape_ GUARDED_BY(mu_);
+  DataType label_dtype_ GUARDED_BY(mu_);
+  std::vector<Tensor> chunk_labels_;
 };
 
 
@@ -306,14 +339,32 @@ class IOIterableNextOp : public OpKernel {
 
     gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = capacity;
-    Tensor tensor(dtype, TensorShape(dims));
+    Tensor value(dtype, TensorShape(dims));
+
+    bool with_label = false;
+    Tensor label;
+    Status status = resource->Label(*component, &shape, &dtype);
+    if (!errors::IsUnimplemented(status)) {
+      OP_REQUIRES_OK(context, status);
+
+      gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+      dims[0] = capacity;
+      label = Tensor(dtype, TensorShape(dims));
+      with_label = true;
+    }
 
     int64 record_read;
-    OP_REQUIRES_OK(context, resource->Next(capacity, *component, &record_read, &tensor));
+    OP_REQUIRES_OK(context, resource->Next(capacity, *component, &record_read, &value, &label));
     if (record_read < capacity) {
-      context->set_output(0, tensor.Slice(0, record_read));
+      context->set_output(0, value.Slice(0, record_read));
+      if (with_label) {
+        context->set_output(1, label.Slice(0, record_read));
+      }
     } else {
-      context->set_output(0, tensor);
+      context->set_output(0, value);
+      if (with_label) {
+        context->set_output(1, label);
+      }
     }
   }
 };
