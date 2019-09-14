@@ -18,7 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -32,13 +31,15 @@ class ServerDataset(tf.compat.v2.data.Dataset):
       server: An IOServer.
       component: A reference component key.
     """
-    with tf.name_scope("ServerDataset") as scope:
-      resource = server._resource
+    with tf.name_scope("ServerDataset"):
+      resource = server._resource # pylint: disable=protected-access
 
-      shape = tf.TensorShape([e if i != 0 else None for (i, e) in enumerate(spec.shape.as_list())])
+      shape = tf.TensorShape([
+          e if i != 0 else None for (i, e) in enumerate(spec.shape.as_list())])
       dtype = spec.dtype
 
-      label_shape = tf.TensorShape([e if i != 0 else None for (i, e) in enumerate(label.shape.as_list())])
+      label_shape = tf.TensorShape([
+          e if i != 0 else None for (i, e) in enumerate(label.shape.as_list())])
       label_dtype = label.dtype
 
       capacity = 4096

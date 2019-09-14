@@ -26,8 +26,8 @@ import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops.server_dataset_ops import ServerDataset
-from tensorflow_io.grpc.python.ops import grpc_io_server_client
+from tensorflow_io.core.python.ops.server_dataset_ops import ServerDataset # pylint: disable=wrong-import-position
+from tensorflow_io.grpc.python.ops import grpc_io_server_client # pylint: disable=wrong-import-position
 
 def test_io_server():
   """test_io_server"""

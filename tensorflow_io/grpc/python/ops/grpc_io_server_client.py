@@ -56,15 +56,20 @@ class GRPCIOServerClient(object):
     super(GRPCIOServerClient, self).__init__()
 
   def send(self, component, value, label=None):
+    """send"""
     capacity = 4096
 
     with grpc.insecure_channel(self._server) as channel:
       stub = server_pb2_grpc.GRPCIOServerStub(channel)
       metadata = [("component", component)]
-      spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(value.shape.as_list())]) + ":" + value.dtype.name
+      spec = ",".join([
+          str(e) if i != 0 else "-1" for (i, e) in enumerate(
+              value.shape.as_list())]) + ":" + value.dtype.name
       metadata.append(("spec", spec))
       if label is not None:
-        spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(label.shape.as_list())]) + ":" + label.dtype.name
+        spec = ",".join([
+            str(e) if i != 0 else "-1" for (i, e) in enumerate(
+                label.shape.as_list())]) + ":" + label.dtype.name
         metadata.append(("label", spec))
       start = 0
       stop = value.shape[0]
@@ -82,6 +87,9 @@ class GRPCIOServerClient(object):
           return server_pb2.Request(value=value_field, label=label_field)
         return server_pb2.Request(value=value_field)
       if label is not None:
-        return stub.Next(iter([function(value[start:stop], label[start:stop]) for (start, stop) in zip(entry_start, entry_stop)]), metadata=metadata)
-      return stub.Next(iter([function(value[start:stop]) for (start, stop) in zip(entry_start, entry_stop)]), metadata=metadata)
-      return response
+        return stub.Next(iter([function(
+            value[start:stop], label[start:stop]) for (start, stop) in zip(
+                entry_start, entry_stop)]), metadata=metadata)
+      return stub.Next(iter([function(
+          value[start:stop]) for (start, stop) in zip(
+              entry_start, entry_stop)]), metadata=metadata)
