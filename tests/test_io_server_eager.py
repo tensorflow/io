@@ -60,5 +60,9 @@ def test_io_server():
   # dataset is ready to be used
   ########################################################
 
+  i = 0
   for d in dataset:
-    print("DATA: ", d.value.shape, d.label.shape)
+    x, y = d
+    assert np.all(x == x_test[i])
+    assert np.all(y == y_test[i])
+    i += 1

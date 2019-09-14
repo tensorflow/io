@@ -56,7 +56,7 @@ class GRPCIOServerClient(object):
     super(GRPCIOServerClient, self).__init__()
 
   def send(self, component, value, label=None):
-    capacity = 1
+    capacity = 4096
 
     with grpc.insecure_channel(self._server) as channel:
       stub = server_pb2_grpc.GRPCIOServerStub(channel)
@@ -64,7 +64,7 @@ class GRPCIOServerClient(object):
       spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(value.shape.as_list())]) + ":" + value.dtype.name
       metadata.append(("spec", spec))
       if label is not None:
-        spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(value.shape.as_list())]) + ":" + value.dtype.name
+        spec = ",".join([str(e) if i != 0 else "-1" for (i, e) in enumerate(label.shape.as_list())]) + ":" + label.dtype.name
         metadata.append(("label", spec))
       start = 0
       stop = value.shape[0]

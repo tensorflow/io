@@ -53,6 +53,7 @@ class GRPCIOServerImplementation : public IOIterableInterface {
       condition_variable_.wait(l);
     }
     void Notify() {
+      reader_ = nullptr;
       condition_variable_.notify_all();
     }
    private:
@@ -168,13 +169,19 @@ class GRPCIOServerImplementation : public IOIterableInterface {
     return Status::OK();
   }
   Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) override {
+    *record_read = 0;
+
     GRPCIOServerServiceState* p = service_.State(component.scalar<string>()());
     if (p == nullptr) {
       return errors::InvalidArgument("unable to find component: ", component.scalar<string>()());
     }
-    *record_read = 0;
+    grpc::ServerReader<Request>* reader = p->Reader();
+    if (reader == nullptr) {
+      return Status::OK();
+    }
+
     Request request;
-    while (p->Reader()->Read(&request)) {
+    while (reader->Read(&request)) {
       TensorProto value_field;
       request.value().UnpackTo(&value_field);
       value->FromProto(value_field);
@@ -183,7 +190,7 @@ class GRPCIOServerImplementation : public IOIterableInterface {
         request.label().UnpackTo(&label_field);
         label->FromProto(label_field);
       }
-      (*record_read)++;
+      (*record_read) += value->shape().dim_size(0);
       if ((*record_read) >= capacity) {
         return Status::OK();
       }

@@ -41,17 +41,18 @@ class ServerDataset(tf.compat.v2.data.Dataset):
       label_shape = tf.TensorShape([e if i != 0 else None for (i, e) in enumerate(label.shape.as_list())])
       label_dtype = label.dtype
 
-      capacity = 1
+      capacity = 4096
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
           lambda i: core_ops.grpcio_server_iterable_next(
               resource, capacity, component=component,
               shape=shape, dtype=dtype,
-              label_shape=label_shape, label_dtype=label_dtype))
+              label_shape=label_shape, label_dtype=label_dtype)).map(
+                  lambda v: (v.value, v.label))
 
       dataset = dataset.apply(
           tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v.value)[0], 0)))
+              lambda value, label: tf.greater(tf.shape(value)[0], 0)))
       dataset = dataset.unbatch()
 
       self._resource = resource
