@@ -21,8 +21,7 @@ import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-kinesis_ops = _load_library('_kinesis_ops.so')
+from tensorflow_io.core.python.ops import core_ops as kinesis_ops
 
 class KinesisDataset(data.Dataset):
   """A Kinesis Dataset that consumes the message.
