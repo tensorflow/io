@@ -32,7 +32,7 @@ ERROR = tf.constant([1, 1, 1, 1])
 @tf.function
 def _nucleotide_to_onehot(nucleotide):
   """Encodes a nucleotide using a one hot encoding."""
-  if tf.math.equal(nucleotide, tf.constant(b'A')):
+  if tf.math.equal(nucleotide, tf.constant(b'A')):  # pylint: disable=no-else-return
     return A_ONEHOT
   elif tf.math.equal(nucleotide, tf.constant(b'C')):
     return C_ONEHOT
@@ -61,21 +61,24 @@ def sequences_to_onehot(sequences):
   Returns:
     tf.RaggedTensor: The output sequences with nucleotides one hot endcoded.
   """
-  all_onehot_nucleotides = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
+  all_onehot_nucleotides = tf.TensorArray(
+      dtype=tf.int32, size=0, dynamic_size=True)
   sequence_splits = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
 
   global_nucleotide_idx = 0
-  sequence_splits = sequence_splits.write(sequence_splits.size(), global_nucleotide_idx)
+  sequence_splits = sequence_splits.write(
+      sequence_splits.size(), global_nucleotide_idx)
 
   for sequence in sequences:
     for nucleotide in tf.strings.bytes_split(sequence):
       all_onehot_nucleotides = all_onehot_nucleotides.write(
-        global_nucleotide_idx,
-        _nucleotide_to_onehot(nucleotide)
+          global_nucleotide_idx,
+          _nucleotide_to_onehot(nucleotide)
       )
       global_nucleotide_idx += 1
-    sequence_splits = sequence_splits.write(sequence_splits.size(), global_nucleotide_idx)
+    sequence_splits = sequence_splits.write(
+        sequence_splits.size(), global_nucleotide_idx)
   return tf.RaggedTensor.from_row_splits(
-    values=all_onehot_nucleotides.stack(),
-    row_splits=sequence_splits.stack()
+      values=all_onehot_nucleotides.stack(),
+      row_splits=sequence_splits.stack()
   )
