@@ -34,7 +34,7 @@ if [ "$action" == "start" ]; then
     echo pull localstack/localstack:0.8.10
     docker pull localstack/localstack:0.8.10
     echo pull localstack/localstack:0.8.10 successfully
-    docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
+    docker run -d --rm -p 4568:4568 -p 4572:4572 --name=$container localstack/localstack:0.8.10
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container
