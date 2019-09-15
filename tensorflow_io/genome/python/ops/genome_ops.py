@@ -56,11 +56,14 @@ def sequences_to_onehot(sequences):
   G -> [0 ,0 ,1, 0]
   T -> [0, 0, 0, 1]
 
+  If for some reason a non (A, T, C, G) character exists in the string, it is
+  currently mapped to a error one hot encoding [1, 1, 1, 1].
+
   Args:
     sequences: A tf.string tensor where each string represents a DNA sequence
 
   Returns:
-    tf.RaggedTensor: The output sequences with nucleotides one hot endcoded.
+    tf.RaggedTensor: The output sequences with nucleotides one hot encoded.
   """
   all_onehot_nucleotides = tf.TensorArray(
       dtype=tf.int32, size=0, dynamic_size=True)
