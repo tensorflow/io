@@ -98,7 +98,8 @@ def test_genome_sequences_to_onehot():
     raw_data = genome_io.read_fastq(filename=fastq_path)
     data = genome_io.sequences_to_onehot(sequences=raw_data.sequences)
     out = sess.run(data)
-    assert np.all(out.to_list() == expected)
+
+  assert np.all(out.to_list() == expected)
 
 if __name__ == "__main__":
   test.main()
