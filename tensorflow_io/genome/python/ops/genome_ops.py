@@ -27,23 +27,23 @@ read_fastq = core_ops.read_fastq
 @tf.function
 def _nucleotide_to_onehot(nucleotide):
   """Encodes a nucleotide using a one hot encoding."""
-  A_ONEHOT = tf.constant([1, 0, 0, 0])
-  C_ONEHOT = tf.constant([0, 1, 0, 0])
-  G_ONEHOT = tf.constant([0, 0, 1, 0])
-  T_ONEHOT = tf.constant([0, 0, 0, 1])
-  ERROR = tf.constant([1, 1, 1, 1])
+  a_onehot = tf.constant([1, 0, 0, 0])
+  c_onehot = tf.constant([0, 1, 0, 0])
+  g_onehot = tf.constant([0, 0, 1, 0])
+  t_onehot = tf.constant([0, 0, 0, 1])
+  error_onehot = tf.constant([1, 1, 1, 1])
 
   if tf.math.equal(nucleotide, tf.constant(b'A')):  # pylint: disable=no-else-return
-    return A_ONEHOT
+    return a_onehot
   elif tf.math.equal(nucleotide, tf.constant(b'C')):
-    return C_ONEHOT
+    return c_onehot
   elif tf.math.equal(nucleotide, tf.constant(b'G')):
-    return G_ONEHOT
+    return g_onehot
   elif tf.math.equal(nucleotide, tf.constant(b'T')):
-    return T_ONEHOT
+    return t_onehot
   else:
     # TODO(suyashkumar): how best to raise error from within tf.function?
-    return ERROR
+    return error_onehot
 
 
 @tf.function
