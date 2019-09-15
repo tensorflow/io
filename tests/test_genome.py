@@ -100,6 +100,7 @@ def test_genome_sequences_to_onehot():
     out = sess.run(data)
 
   assert np.all(out.to_list() == expected)
+  assert False
 
 if __name__ == "__main__":
   test.main()

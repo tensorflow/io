@@ -22,16 +22,17 @@ from tensorflow_io.core.python.ops import core_ops
 
 read_fastq = core_ops.read_fastq
 
-A_ONEHOT = tf.constant([1, 0, 0, 0])
-C_ONEHOT = tf.constant([0, 1, 0, 0])
-G_ONEHOT = tf.constant([0, 0, 1, 0])
-T_ONEHOT = tf.constant([0, 0, 0, 1])
-ERROR = tf.constant([1, 1, 1, 1])
 
 
 @tf.function
 def _nucleotide_to_onehot(nucleotide):
   """Encodes a nucleotide using a one hot encoding."""
+  A_ONEHOT = tf.constant([1, 0, 0, 0])
+  C_ONEHOT = tf.constant([0, 1, 0, 0])
+  G_ONEHOT = tf.constant([0, 0, 1, 0])
+  T_ONEHOT = tf.constant([0, 0, 0, 1])
+  ERROR = tf.constant([1, 1, 1, 1])
+
   if tf.math.equal(nucleotide, tf.constant(b'A')):  # pylint: disable=no-else-return
     return A_ONEHOT
   elif tf.math.equal(nucleotide, tf.constant(b'C')):
