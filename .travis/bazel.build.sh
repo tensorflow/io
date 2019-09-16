@@ -32,6 +32,7 @@ if [[ $(uname) == "Linux" ]]; then
 fi
 
 python -m pip install -q ${TENSORFLOW_INSTALL}
+python -m pip install gast==0.2.2
 
 python third_party/tf/configure.py
 
