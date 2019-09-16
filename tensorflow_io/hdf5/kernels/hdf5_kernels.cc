@@ -164,7 +164,11 @@ class ListHDF5DatasetsOp : public OpKernel {
 
       H5::DataType data_type = data_set.getDataType();
       hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-      if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+      if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
+        dtype = "int8";
+      } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
+        dtype = "uint8";
+      } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
         dtype = "int32";
       } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
         dtype = "uint32";
@@ -293,7 +297,11 @@ class ReadHDF5Op : public OpKernel {
 
     H5::DataType data_type = data_set.getDataType();
     hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-    if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+    if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
+      data_set.read(output_tensor->flat<int8>().data(), H5::PredType::NATIVE_INT8, memory_space, data_space);
+    } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
+      data_set.read(output_tensor->flat<uint8>().data(), H5::PredType::NATIVE_UINT8, memory_space, data_space);
+    } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
       data_set.read(output_tensor->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
     } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
       data_set.read(output_tensor->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
@@ -365,7 +373,11 @@ class HDF5Indexable : public IOIndexableInterface {
 
       H5::DataType data_type = data_set.getDataType();
       hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-      if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+      if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
+        dtype = DT_INT8;
+      } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
+        dtype = DT_UINT8;
+      } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
         dtype = DT_INT32;
       } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
         dtype = DT_UINT32;
@@ -430,7 +442,11 @@ class HDF5Indexable : public IOIndexableInterface {
 
       H5::DataType data_type = data_set.getDataType();
       hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-      if (H5Tequal(native_type, H5T_NATIVE_INT)) {
+      if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
+        data_set.read(tensor->flat<int8>().data(), H5::PredType::NATIVE_INT8, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
+        data_set.read(tensor->flat<uint8>().data(), H5::PredType::NATIVE_UINT8, memory_space, data_space);
+      } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
         data_set.read(tensor->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
         data_set.read(tensor->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
