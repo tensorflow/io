@@ -40,18 +40,36 @@ def test_io_server():
   x_test = tf.constant(x_test)
   y_test = tf.constant(y_test)
 
+
+  # Build a model with normal data, for demo purposes,
+  # just use x_test and y_test as x_train and y_train
+  x_train, y_train = x_test, y_test
+  x_train = tf.image.convert_image_dtype(x_train, tf.float32)
+  model = tf.keras.models.Sequential([
+      tf.keras.layers.Flatten(input_shape=(28, 28)),
+      tf.keras.layers.Dense(512, activation=tf.nn.relu),
+      tf.keras.layers.Dropout(0.2),
+      tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+  ])
+  model.compile(optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy'])
+  model.fit(x_train, y_train, epochs=5)
+
+
   ########################################################
   # component is a key to identify the stream at the server
   component = "1234567"
 
   server = tfio.IOServer()
-
+  # TODO: y_test could be dropped for inference
   def client():
     client = grpc_io_server_client.GRPCIOServerClient()
     return client.send(component, x_test, y_test)
   x = threading.Thread(target=client)
   x.start()
 
+  # TODO: y_test could be dropped for inference
   time.sleep(5)
   dataset = ServerDataset(
       server, component,
@@ -60,9 +78,12 @@ def test_io_server():
   # dataset is ready to be used
   ########################################################
 
-  i = 0
-  for d in dataset:
-    x, y = d
-    assert np.all(x == x_test[i])
-    assert np.all(y == y_test[i])
-    i += 1
+  # TODO: this line could be dropped for inference
+  # if the previous TODOs are in place:
+  dataset = dataset.map(
+      lambda value, label: value).map(
+          lambda value: tf.image.convert_image_dtype(value, tf.float32))
+
+  dataset = dataset.batch(1)
+  predict = model.predict(dataset)
+  print("PREDICT: ", predict.dtype, predict.shape)
