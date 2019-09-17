@@ -93,6 +93,8 @@ class CSVIndexable : public IOIndexableInterface {
         dtype= ::tensorflow::DT_DOUBLE;
         break;
       case ::arrow::Type::STRING:
+        dtype= ::tensorflow::DT_STRING;
+        break;
       case ::arrow::Type::BINARY:
       case ::arrow::Type::FIXED_SIZE_BINARY:
       case ::arrow::Type::DATE32:
@@ -155,6 +157,16 @@ class CSVIndexable : public IOIndexableInterface {
           } \
         } \
       }
+
+    #define PROCESS_STRING_TYPE(ATYPE) { \
+        int64 curr_index = 0; \
+        for (auto chunk : slice->data()->chunks()) { \
+          for (int64_t item = 0; item < chunk->length(); item++) { \
+            tensor->flat<string>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
+            curr_index++; \
+          } \
+        } \
+      }
     switch (tensor->dtype()) {
     case DT_BOOL:
       PROCESS_TYPE(bool, ::arrow::BooleanArray);
@@ -188,6 +200,9 @@ class CSVIndexable : public IOIndexableInterface {
       break;
     case DT_DOUBLE:
       PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
+      break;
+    case DT_STRING:
+      PROCESS_STRING_TYPE(::arrow::StringArray);
       break;
     default:
       return errors::InvalidArgument("data type is not supported: ", DataTypeString(tensor->dtype()));

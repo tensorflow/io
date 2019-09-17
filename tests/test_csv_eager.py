@@ -63,5 +63,51 @@ def test_null_csv_format():
   csv = tfio.IOTensor.from_csv(csv_path)
   assert np.all(csv.isnull('C2').to_tensor().numpy() == [False, True, False])
 
+def test_str_csv_format():
+  """test_str_csv_format"""
+  # CSV from https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv
+  # First 10 entries:
+  # "Month","Passengers"
+  # "1949-01",112
+  # "1949-02",118
+  # "1949-03",132
+  # "1949-04",129
+  # "1949-05",121
+  # "1949-06",135
+  # "1949-07",148
+  # "1949-08",148
+  # "1949-09",136
+  # "1949-10",119
+  # See https://machinelearningmastery.com/time-series-prediction-lstm-recurrent-neural-networks-python-keras/
+  csv_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_csv", "airline-passengers.csv")
+  csv = tfio.IOTensor.from_csv(csv_path)
+  assert np.all(csv("Month").to_tensor()[0:10].numpy() == [
+      b"1949-01",
+      b"1949-02",
+      b"1949-03",
+      b"1949-04",
+      b"1949-05",
+      b"1949-06",
+      b"1949-07",
+      b"1949-08",
+      b"1949-09",
+      b"1949-10",
+  ])
+  assert np.all(csv("Passengers").to_tensor()[0:10].numpy() == [
+      112,
+      118,
+      132,
+      129,
+      121,
+      135,
+      148,
+      148,
+      136,
+      119,
+  ])
+
+
 if __name__ == "__main__":
   test.main()
