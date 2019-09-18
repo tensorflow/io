@@ -123,11 +123,10 @@ REGISTER_OP("FeatherIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherIndexableGetItem")
+REGISTER_OP("FeatherIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
   .Output("output: dtype")
   .Attr("shape: shape")

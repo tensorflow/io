@@ -391,7 +391,7 @@ REGISTER_KERNEL_BUILDER(Name("FeatherIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<FeatherIndexable>);
 REGISTER_KERNEL_BUILDER(Name("FeatherIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FeatherIndexable>);
-REGISTER_KERNEL_BUILDER(Name("FeatherIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("FeatherIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<FeatherIndexable>);
 }  // namespace data
 }  // namespace tensorflow
