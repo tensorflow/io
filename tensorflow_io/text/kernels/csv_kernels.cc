@@ -259,7 +259,7 @@ REGISTER_KERNEL_BUILDER(Name("CSVIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<CSVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<CSVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("CSVIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<CSVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetNull").Device(DEVICE_CPU),
                         IOIndexableGetLabelOp<CSVIndexable>);

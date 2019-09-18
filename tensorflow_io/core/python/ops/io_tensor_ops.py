@@ -281,7 +281,7 @@ class _TableIOTensor(_IOTensor):
     self._resource = resource
     self._function = function
     super(_TableIOTensor, self).__init__(
-        spec, columns, internal=internal)
+        spec, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -297,9 +297,22 @@ class _TableIOTensor(_IOTensor):
     column_index = self.columns.index(
         next(e for e in self.columns if e == column))
     spec = tf.nest.flatten(self.spec)[column_index]
+    class function():
+      def __init__(self, func, spec, column):
+        self._func = func
+        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
+        self._dtype = spec.dtype
+        self._component = column
+
+      def __call__(self, resource, start, stop):
+        return self._func(
+            resource, start=start, stop=stop,
+            component=self._component,
+            shape=self._shape, dtype=self._dtype)
+
     return BaseIOTensor(
-        spec, self._resource, self._function,
-        component=column, internal=True)
+        spec, self._resource, function(self._function, spec, column),
+        internal=True)
 
 class _CollectionIOTensor(_IOTensor):
   """_CollectionIOTensor
