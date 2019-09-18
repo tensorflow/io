@@ -42,11 +42,10 @@ REGISTER_OP("KafkaIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaIndexableGetItem")
+REGISTER_OP("KafkaIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: int64")
   .Output("output: dtype")
   .Attr("shape: shape")

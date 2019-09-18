@@ -245,7 +245,7 @@ REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<IOIndexableImplementation<KafkaIterable>>);
 REGISTER_KERNEL_BUILDER(Name("KafkaIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<IOIndexableImplementation<KafkaIterable>>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("KafkaIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<IOIndexableImplementation<KafkaIterable>>);
 
 }  // namespace data
