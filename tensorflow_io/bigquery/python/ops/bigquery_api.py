@@ -28,7 +28,7 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-import operator
+from operator import itemgetter
 
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
@@ -231,7 +231,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
     # of b/141251314
     sorted_fields_with_types = sorted(
         zip(selected_fields, output_types),
-        key=operator.itemgetter(0))
+        key=itemgetter(0))
     selected_fields, output_types = list(zip(*sorted_fields_with_types))
     selected_fields = list(selected_fields)
     output_types = list(output_types)

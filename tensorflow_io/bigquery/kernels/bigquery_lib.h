@@ -253,7 +253,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
           ((*out_tensors)[i]).scalar<string>()() =
               field.value<avro::GenericEnum>().symbol();
           break;
-        case avro::AVRO_NULL:
+        case avro::AVRO_NULL:  // Fallthrough;
           break;
         default:
           return errors::InvalidArgument("unsupported data type: ",
