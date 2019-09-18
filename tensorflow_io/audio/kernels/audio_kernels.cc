@@ -144,11 +144,7 @@ class WAVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
-
+  Status GetItem(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) override {
     const int64 sample_start = start;
     const int64 sample_stop = stop;
 

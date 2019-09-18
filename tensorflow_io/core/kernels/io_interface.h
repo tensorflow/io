@@ -51,9 +51,9 @@ class IOIterableInterface : public IOInterface {
 
 class IOIndexableInterface : public IOInterface {
  public:
-  virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
+  virtual Status GetItem(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) = 0;
 
-  virtual Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
+  virtual Status GetLabel(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) {
     // By default GetLabel is not implemented
     return errors::Unimplemented("GetLabel");
   }
@@ -155,15 +155,12 @@ class IOIndexableImplementation : public IOIndexableInterface {
     return strings::StrCat("IOIndexableImplementation<", iterable_->DebugString(), ">[]");
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    return GetTensor(value_shape_, value_dtype_, chunk_values_, start, stop, step, component, tensor);
+  Status GetItem(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) override {
+    return GetTensor(value_shape_, value_dtype_, chunk_values_, start, stop, component, tensor);
   }
 
  private:
-  Status GetTensor(const PartialTensorShape& shape, const DataType& dtype, const std::vector<Tensor>& chunk_tensors, const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
-    if (step != 1) {
-      return errors::InvalidArgument("step != 1 is not supported: ", step);
-    }
+  Status GetTensor(const PartialTensorShape& shape, const DataType& dtype, const std::vector<Tensor>& chunk_tensors, const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) {
     // We assume only one component at the moment.
     if (component.scalar<int64>()() != 0) {
         return errors::InvalidArgument("component ", component.scalar<int64>()(), " not supported");
@@ -246,9 +243,8 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       }
     }
 
-    const void *memory_data = nullptr;
     size_t memory_size = 0;
-
+    const void *memory_data = nullptr;
     const Tensor* memory_tensor;
     status = context->input("memory", &memory_tensor);
     if (status.ok()) {
@@ -388,14 +384,8 @@ class IOIndexableGetItemOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
-    const Tensor* step_tensor;
-    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
-    int64 step = step_tensor->scalar<int64>()();
-
     const Tensor* component;
     OP_REQUIRES_OK(context, context->input("component", &component));
-
-    OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
 
     PartialTensorShape shape;
     DataType dtype;
@@ -415,7 +405,7 @@ class IOIndexableGetItemOp : public OpKernel {
     gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = stop - start;
     Tensor tensor(dtype, TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, *component, &tensor));
+    OP_REQUIRES_OK(context, resource->GetItem(start, stop, *component, &tensor));
     context->set_output(0, tensor);
   }
 };
@@ -439,14 +429,8 @@ class IOIndexableGetLabelOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
-    const Tensor* step_tensor;
-    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
-    int64 step = step_tensor->scalar<int64>()();
-
     const Tensor* component;
     OP_REQUIRES_OK(context, context->input("component", &component));
-
-    OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
 
     PartialTensorShape shape;
     DataType dtype;
@@ -466,7 +450,7 @@ class IOIndexableGetLabelOp : public OpKernel {
     gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
     dims[0] = stop - start;
     Tensor tensor(dtype, TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetLabel(start, stop, step, *component, &tensor));
+    OP_REQUIRES_OK(context, resource->GetLabel(start, stop, *component, &tensor));
     context->set_output(0, tensor);
   }
 };

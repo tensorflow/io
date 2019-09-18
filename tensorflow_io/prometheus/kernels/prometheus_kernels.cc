@@ -149,10 +149,7 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
+  Status GetItem(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) override {
     if (component.scalar<string>()() == "index") {
       memcpy(&tensor->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
     } else if (component.scalar<string>()() == "value") {
