@@ -484,7 +484,7 @@ REGISTER_KERNEL_BUILDER(Name("HDF5IndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<HDF5Indexable>);
 REGISTER_KERNEL_BUILDER(Name("HDF5IndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<HDF5Indexable>);
-REGISTER_KERNEL_BUILDER(Name("HDF5IndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("HDF5IndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<HDF5Indexable>);
 }  // namespace data
 }  // namespace tensorflow

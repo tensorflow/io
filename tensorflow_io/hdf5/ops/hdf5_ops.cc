@@ -41,11 +41,10 @@ REGISTER_OP("HDF5IndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("HDF5IndexableGetItem")
+REGISTER_OP("HDF5IndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
   .Output("output: dtype")
   .Attr("shape: shape")

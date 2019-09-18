@@ -336,7 +336,7 @@ class _CollectionIOTensor(_IOTensor):
     self._resource = resource
     self._function = function
     super(_CollectionIOTensor, self).__init__(
-        spec, keys, internal=internal)
+        spec, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -352,9 +352,23 @@ class _CollectionIOTensor(_IOTensor):
     key_index = self.keys.index(
         next(e for e in self.keys if e == key))
     spec = tf.nest.flatten(self.spec)[key_index]
+    class function():
+      def __init__(self, func, spec, key):
+        self._func = func
+        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
+        self._dtype = spec.dtype
+        self._component = key
+
+      def __call__(self, resource, start, stop):
+        return self._func(
+            resource, start=start, stop=stop,
+            component=self._component,
+            shape=self._shape, dtype=self._dtype)
+
     return BaseIOTensor(
-        spec, self._resource, self._function,
-        component=key, internal=True)
+        spec, self._resource,
+        function(self._function, spec, key),
+        internal=True)
 
 class _SeriesIOTensor(_IOTensor):
   """_SeriesIOTensor"""
