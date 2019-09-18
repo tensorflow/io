@@ -60,7 +60,7 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
     spec = tf.nest.flatten(self.spec)[column_index]
     # change spec to bool
     spec = tf.TensorSpec(spec.shape, tf.bool)
-    class function():
+    class _Function(object):
       def __init__(self, func, spec, column):
         self._func = func
         self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
@@ -75,5 +75,5 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
 
     return io_tensor_ops.BaseIOTensor(
         spec, self._resource,
-        function(core_ops.csv_indexable_get_null, spec, column),
+        _Function(core_ops.csv_indexable_get_null, spec, column),
         internal=True)

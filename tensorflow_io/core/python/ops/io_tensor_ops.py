@@ -18,7 +18,6 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-import uuid
 
 import tensorflow as tf
 
@@ -156,7 +155,7 @@ class BaseIOTensor(_IOTensor):
     # Find out the indices based on length and key,
     # based on python slice()'s indices method:
     index = key if isinstance(key, slice) else slice(key, key + 1)
-    (start, stop, step) = index.indices(self.shape[0])
+    start, stop, _ = index.indices(self.shape[0])
     if start >= self.shape[0]:
       raise IndexError("index %s is out of range" % key)
     item = self._function(self._resource, start=start, stop=stop)
@@ -175,26 +174,27 @@ class BaseIOTensor(_IOTensor):
     spec = tf.TensorSpec(
         tf.TensorShape(self.shape.dims[0] - size + 1).concatenate(size),
         self.dtype)
-    class function():
-      def __init__(self, func, window_size):
+    class _Function(object):
+      def __init__(self, func, spec, size):
         self._func = func
-        self._window_size = window_size
+        self._spec = spec
+        self._size = size
       def __call__(self, resource, start, stop):
         return tf.reshape(
             tf.image.extract_patches(
                 tf.reshape(
                     self._func(
-                      resource,
-                      start, stop + self._window_size - 1),
-                  [1, 1, stop + self._window_size - 1 - start, 1]),
-              sizes=[1, 1, self._window_size, 1],
-              strides=[1, 1, 1, 1],
-              rates=[1, 1, 1, 1],
-              padding='VALID'),
-          spec.shape)
+                        resource,
+                        start, stop + self._size - 1),
+                    [1, 1, stop + self._size - 1 - start, 1]),
+                sizes=[1, 1, self._size, 1],
+                strides=[1, 1, 1, 1],
+                rates=[1, 1, 1, 1],
+                padding='VALID'),
+            self._spec.shape)
     return BaseIOTensor(spec,
                         self._resource,
-                        function(self._function, size),
+                        _Function(self._function, spec, size),
                         internal=True)
 
   #=============================================================================
@@ -229,7 +229,8 @@ class TensorIOTensor(BaseIOTensor):
                internal=False):
     tensor = tf.convert_to_tensor(tensor)
 
-    class function():
+    class _Function(object):
+      """_Function"""
       def __init__(self, tensor):
         self._base_start = [0 for _ in tensor.shape.as_list()]
         self._base_size = [-1 for _ in tensor.shape.as_list()]
@@ -245,7 +246,7 @@ class TensorIOTensor(BaseIOTensor):
 
     super(TensorIOTensor, self).__init__(
         tf.TensorSpec(tensor.shape, tensor.dtype),
-        tensor, function(tensor), internal=internal)
+        tensor, _Function(tensor), internal=internal)
 
   #=============================================================================
   # Tensor Type Conversions
@@ -297,7 +298,7 @@ class _TableIOTensor(_IOTensor):
     column_index = self.columns.index(
         next(e for e in self.columns if e == column))
     spec = tf.nest.flatten(self.spec)[column_index]
-    class function():
+    class _Function(object):
       def __init__(self, func, spec, column):
         self._func = func
         self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
@@ -311,7 +312,7 @@ class _TableIOTensor(_IOTensor):
             shape=self._shape, dtype=self._dtype)
 
     return BaseIOTensor(
-        spec, self._resource, function(self._function, spec, column),
+        spec, self._resource, _Function(self._function, spec, column),
         internal=True)
 
   #=============================================================================
@@ -331,7 +332,8 @@ class _TableIOTensor(_IOTensor):
     Returns:
       A `tf.data.Dataset` with value obtained from this `IOTensor`.
     """
-    class function():
+    class _Function(object):
+      """_Function"""
       def __init__(self, func, spec, columns):
         self._func = func
         self._spec = [tf.TensorSpec(
@@ -352,7 +354,7 @@ class _TableIOTensor(_IOTensor):
 
     return _IOTensorDataset(
         self.spec, self._resource,
-        function(self._function, self.spec, self.columns))
+        _Function(self._function, self.spec, self.columns))
 
 
 class _CollectionIOTensor(_IOTensor):
@@ -393,7 +395,7 @@ class _CollectionIOTensor(_IOTensor):
     key_index = self.keys.index(
         next(e for e in self.keys if e == key))
     spec = tf.nest.flatten(self.spec)[key_index]
-    class function():
+    class _Function(object):
       def __init__(self, func, spec, key):
         self._func = func
         self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
@@ -408,7 +410,7 @@ class _CollectionIOTensor(_IOTensor):
 
     return BaseIOTensor(
         spec, self._resource,
-        function(self._function, spec, key),
+        _Function(self._function, spec, key),
         internal=True)
 
 class _SeriesIOTensor(_IOTensor):
@@ -421,7 +423,7 @@ class _SeriesIOTensor(_IOTensor):
                internal=False):
     self._resource = resource
 
-    class series_function():
+    class _SeriesFunction(object):
       def __init__(self, func, component, spec):
         self._func = func
         self._component = component
@@ -432,8 +434,8 @@ class _SeriesIOTensor(_IOTensor):
                           component=self._component,
                           shape=self._shape, dtype=self._dtype)
 
-    self._index_function = series_function(function, "index", spec[0])
-    self._value_function = series_function(function, "value", spec[1])
+    self._index_function = _SeriesFunction(function, "index", spec[0])
+    self._value_function = _SeriesFunction(function, "value", spec[1])
     super(_SeriesIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -459,7 +461,7 @@ class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
   def __init__(self,
                iterable_init, iterable_next,
                mapping_resource, mapping_function):
-    with tf.name_scope("IterableIOTensorDataset") as scope:
+    with tf.name_scope("IterableIOTensorDataset"):
       resource = iterable_init()
 
       capacity = 4096
@@ -534,7 +536,7 @@ class _KeyValueIOTensor(_IOTensor):
   # Iterator
   #=============================================================================
   def __iter__(self):
-    with tf.name_scope("KeyValueIOTensorIter") as scope:
+    with tf.name_scope("KeyValueIOTensorIter"):
       resource = self._iterable_init()
       capacity = 1
       while True:

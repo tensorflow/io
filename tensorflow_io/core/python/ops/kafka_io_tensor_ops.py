@@ -49,7 +49,7 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       shape, dtype = core_ops.kafka_indexable_spec(resource, 0)
       spec = tf.TensorSpec(tf.TensorShape(shape), tf.as_dtype(dtype.numpy()))
 
-      class function():
+      class _Function(object):
         def __init__(self, func, spec):
           self._func = func
           self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
@@ -64,5 +64,5 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       self._iterable = iterable
       super(KafkaIOTensor, self).__init__(
           spec, resource,
-          function(core_ops.kafka_indexable_read, spec),
+          _Function(core_ops.kafka_indexable_read, spec),
           internal=internal)
