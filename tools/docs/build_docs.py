@@ -46,8 +46,13 @@ import tensorflow_io as tfio
 from tensorflow_docs.api_generator import generate_lib
 from tensorflow_docs.api_generator import parser
 from tensorflow_docs.api_generator import public_api
+from tensorflow_docs.api_generator import utils
 
 from tensorflow.python.util import tf_inspect
+
+
+# tfio doesn't eagerly import submodules.
+utils.recursive_import(tfio)
 
 # Use tensorflow's `tf_inspect`, which is aware of `tf_decorator`.
 parser.tf_inspect = tf_inspect
