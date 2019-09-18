@@ -61,7 +61,7 @@ class IOIndexableInterface : public IOInterface {
 
 class IOMappingInterface : public IOInterface {
  public:
-  virtual Status GetItem(const Tensor& key, Tensor* tensor) = 0;
+  virtual Status Read(const Tensor& key, Tensor* value) = 0;
 };
 
 template<typename Type>
@@ -455,9 +455,9 @@ class IOIndexableGetLabelOp : public OpKernel {
   }
 };
 template<typename Type>
-class IOMappingGetItemOp : public OpKernel {
+class IOMappingReadOp : public OpKernel {
  public:
-  explicit IOMappingGetItemOp<Type>(OpKernelConstruction* ctx)
+  explicit IOMappingReadOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
 
@@ -469,9 +469,9 @@ class IOMappingGetItemOp : public OpKernel {
     const Tensor* key;
     OP_REQUIRES_OK(context, context->input("key", &key));
 
-    Tensor tensor(DT_STRING, TensorShape({key->NumElements()}));
-    OP_REQUIRES_OK(context, resource->GetItem(*key, &tensor));
-    context->set_output(0, tensor);
+    Tensor value(DT_STRING, TensorShape({key->NumElements()}));
+    OP_REQUIRES_OK(context, resource->Read(*key, &value));
+    context->set_output(0, value);
   }
 };
 }  // namespace data
