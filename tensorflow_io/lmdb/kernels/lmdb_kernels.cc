@@ -200,7 +200,7 @@ REGISTER_KERNEL_BUILDER(Name("LMDBIterableNext").Device(DEVICE_CPU),
                         IOIterableNextOp<LMDBIterable>);
 REGISTER_KERNEL_BUILDER(Name("LMDBMappingInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<LMDBMapping>);
-REGISTER_KERNEL_BUILDER(Name("LMDBMappingGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("LMDBMappingRead").Device(DEVICE_CPU),
                         IOMappingGetItemOp<LMDBMapping>);
 }  // namespace data
 }  // namespace tensorflow

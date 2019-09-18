@@ -231,7 +231,7 @@ REGISTER_KERNEL_BUILDER(Name("WAVIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<WAVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("WAVIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<WAVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("WAVIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("WAVIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<WAVIndexable>);
 
 

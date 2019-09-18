@@ -80,7 +80,7 @@ REGISTER_OP("LMDBMappingInit")
     return Status::OK();
    });
 
-REGISTER_OP("LMDBMappingGetItem")
+REGISTER_OP("LMDBMappingRead")
   .Input("input: resource")
   .Input("key: string")
   .Output("output: string")
