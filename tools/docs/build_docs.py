@@ -46,8 +46,13 @@ import tensorflow_io as tfio
 from tensorflow_docs.api_generator import generate_lib
 from tensorflow_docs.api_generator import parser
 from tensorflow_docs.api_generator import public_api
+from tensorflow_docs.api_generator import utils
 
 from tensorflow.python.util import tf_inspect
+
+
+# tfio doesn't eagerly import submodules.
+utils.recursive_import(tfio)
 
 # Use tensorflow's `tf_inspect`, which is aware of `tf_decorator`.
 parser.tf_inspect = tf_inspect
@@ -59,22 +64,37 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
     'git_branch',
-    default='master',
+    default=None,
     help='The name of the corresponding branch on github.')
 
+flags.DEFINE_string("output_dir", "/tmp/io_api",
+                    "Where to output the docs")
+
+CODE_PREFIX_TEMPLATE = "https://github.com/tensorflow/io/tree/{git_branch}/tensorflow_io"
 flags.DEFINE_string(
-    'output_dir',
-    default='docs/api_docs/python/',
-    help='Where to write the resulting docs to.')
+    "code_url_prefix", None,
+    "The url prefix for links to the code.")
+
+flags.DEFINE_bool("search_hints", True,
+                  "Include metadata search hints in the generated files")
+
+flags.DEFINE_string("site_path", "io/api_docs/python",
+                    "Path prefix in the _toc.yaml")
+
+flags.mark_flags_as_mutual_exclusive(['code_url_prefix', 'git_branch'])
+
 
 
 def main(argv):
     if argv[1:]:
         raise ValueError('Unrecognized arguments: {}'.format(argv[1:]))
 
-    code_url_prefix = ('https://github.com/tensorflow/io/tree/'
-                       '{git_branch}/tensorflow_io'.format(
-                           git_branch=FLAGS.git_branch))
+    if FLAGS.git_branch:
+      code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch=FLAGS.git_branch)
+    elif FLAGS.code_url_prefix:
+      code_url_prefix = FLAGS.code_url_prefix
+    else:
+      code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch='master')
 
     doc_generator = generate_lib.DocGenerator(
         root_title=PROJECT_FULL_NAME,
@@ -83,7 +103,9 @@ def main(argv):
         code_url_prefix=code_url_prefix,
         private_map={'tfio': ['__version__', 'utils', 'version']},
         # This callback cleans up a lot of aliases caused by internal imports.
-        callbacks=[public_api.local_definitions_filter])
+        callbacks=[public_api.local_definitions_filter],
+        search_hints=FLAGS.search_hints,
+        site_path=FLAGS.site_path)
 
     doc_generator.build(FLAGS.output_dir)
 
