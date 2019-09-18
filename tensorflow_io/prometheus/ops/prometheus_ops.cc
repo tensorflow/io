@@ -41,11 +41,10 @@ REGISTER_OP("PrometheusIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("PrometheusIndexableGetItem")
+REGISTER_OP("PrometheusIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
   .Output("output: dtype")
   .Attr("shape: shape")

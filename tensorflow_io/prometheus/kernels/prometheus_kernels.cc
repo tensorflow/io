@@ -180,7 +180,7 @@ REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<PrometheusIndexable>);
 REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<PrometheusIndexable>);
 
 }  // namespace data

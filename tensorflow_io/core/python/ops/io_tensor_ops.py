@@ -352,9 +352,22 @@ class _SeriesIOTensor(_IOTensor):
                function,
                internal=False):
     self._resource = resource
-    self._function = function
+
+    class series_function():
+      def __init__(self, func, component, spec):
+        self._func = func
+        self._component = component
+        self._shape = spec.shape
+        self._dtype = spec.dtype
+      def __call__(self, resource, start, stop):
+        return self._func(resource, start, stop,
+                          component=self._component,
+                          shape=self._shape, dtype=self._dtype)
+
+    self._index_function = series_function(function, "index", spec[0])
+    self._value_function = series_function(function, "value", spec[1])
     super(_SeriesIOTensor, self).__init__(
-        spec, ["index", "value"], internal=internal)
+        spec, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -364,15 +377,13 @@ class _SeriesIOTensor(_IOTensor):
   def index(self):
     """The index column of the series"""
     return BaseIOTensor(
-        self.spec[0], self._resource, self._function,
-        component="index", internal=True)
+        self.spec[0], self._resource, self._index_function, internal=True)
 
   @property
   def value(self):
     """The value column of the series"""
     return BaseIOTensor(
-        self.spec[1], self._resource, self._function,
-        component="value", internal=True)
+        self.spec[1], self._resource, self._value_function, internal=True)
 
 class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
   """_KeyValueIOTensorDataset"""
