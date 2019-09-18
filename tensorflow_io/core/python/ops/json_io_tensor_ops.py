@@ -50,5 +50,5 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
       spec = tuple(spec)
       super(JSONIOTensor, self).__init__(
           spec, columns,
-          resource, core_ops.json_indexable_get_item,
+          resource, core_ops.json_indexable_read,
           internal=internal)

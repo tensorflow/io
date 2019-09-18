@@ -43,11 +43,10 @@ REGISTER_OP("JSONIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("JSONIndexableGetItem")
+REGISTER_OP("JSONIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
   .Output("output: dtype")
   .Attr("shape: shape")

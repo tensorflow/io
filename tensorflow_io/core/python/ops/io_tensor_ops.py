@@ -314,6 +314,47 @@ class _TableIOTensor(_IOTensor):
         spec, self._resource, function(self._function, spec, column),
         internal=True)
 
+  #=============================================================================
+  # Dataset Conversions
+  #=============================================================================
+
+  def to_dataset(self):
+    """Converts this `IOTensor` into a `tf.data.Dataset`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+
+    Returns:
+      A `tf.data.Dataset` with value obtained from this `IOTensor`.
+    """
+    class function():
+      def __init__(self, func, spec, columns):
+        self._func = func
+        self._spec = [tf.TensorSpec(
+            tf.TensorShape([None]).concatenate(e.shape[1:]),
+            e.dtype) for e in spec]
+        self._columns = columns
+        self._components = zip(
+            tf.nest.flatten(self._spec), tf.nest.flatten(self._columns))
+
+      def __call__(self, resource, start, stop):
+        return tf.nest.pack_sequence_as(
+            self._columns,
+            [self._func(
+                resource, start, stop,
+                component=component,
+                shape=e.shape,
+                dtype=e.dtype) for (e, component) in self._components])
+
+    return _IOTensorDataset(
+        self.spec, self._resource,
+        function(self._function, self.spec, self.columns))
+
+
 class _CollectionIOTensor(_IOTensor):
   """_CollectionIOTensor
 

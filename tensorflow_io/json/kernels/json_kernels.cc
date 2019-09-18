@@ -412,7 +412,7 @@ REGISTER_KERNEL_BUILDER(Name("JSONIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<JSONIndexable>);
 REGISTER_KERNEL_BUILDER(Name("JSONIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<JSONIndexable>);
-REGISTER_KERNEL_BUILDER(Name("JSONIndexableGetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("JSONIndexableRead").Device(DEVICE_CPU),
                         IOIndexableGetItemOp<JSONIndexable>);
 }  // namespace data
 }  // namespace tensorflow
