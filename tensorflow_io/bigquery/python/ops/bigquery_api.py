@@ -27,7 +27,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from collections import OrderedDict
+import collections
 from operator import itemgetter
 
 from tensorflow.python.data.experimental.ops import interleave_ops
@@ -236,7 +236,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
     selected_fields = list(selected_fields)
     output_types = list(output_types)
 
-    self._element_spec = OrderedDict(zip(
+    self._element_spec = collections.OrderedDict(zip(
         selected_fields,
         (tensor_spec.TensorSpec([], dtype) for dtype in output_types)))
 
