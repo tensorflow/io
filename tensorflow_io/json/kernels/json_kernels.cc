@@ -17,12 +17,11 @@ limitations under the License.
 #include <fstream>
 #include "kernels/dataset_ops.h"
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/stream.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/env.h"
 #include "include/json/json.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
-#include "tensorflow_io/core/kernels/stream.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include "arrow/memory_pool.h"
 #include "arrow/json/reader.h"
 #include "arrow/table.h"

@@ -14,8 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/stream.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "lmdb.h"
