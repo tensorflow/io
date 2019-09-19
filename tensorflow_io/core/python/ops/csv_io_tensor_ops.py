@@ -70,10 +70,10 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
       def __call__(self, resource, start, stop):
         return self._func(
             resource, start=start, stop=stop,
-            component=self._component,
+            component=self._component, filter=['label'],
             shape=self._shape, dtype=self._dtype)
 
     return io_tensor_ops.BaseIOTensor(
         spec, self._resource,
-        _Function(core_ops.csv_indexable_get_null, spec, column),
+        _Function(core_ops.csv_indexable_read, spec, column),
         internal=True)

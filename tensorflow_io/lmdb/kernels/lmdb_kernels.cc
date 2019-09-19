@@ -91,7 +91,7 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
@@ -160,7 +160,7 @@ class LMDBMapping : public IOMappingInterface {
     return Status::OK();
   }
 
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();

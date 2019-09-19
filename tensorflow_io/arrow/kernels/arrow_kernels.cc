@@ -287,7 +287,7 @@ class FeatherIndexable : public IOIndexableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
     }
@@ -297,7 +297,7 @@ class FeatherIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) override {
+  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
     }
@@ -323,12 +323,12 @@ class FeatherIndexable : public IOIndexableInterface {
         int64 curr_index = 0; \
         for (auto chunk : slice->data()->chunks()) { \
          for (int64_t item = 0; item < chunk->length(); item++) { \
-            tensor->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
+            value->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
             curr_index++; \
           } \
         } \
       }
-    switch (tensor->dtype()) {
+    switch (value->dtype()) {
     case DT_BOOL:
       FEATHER_PROCESS_TYPE(bool, ::arrow::BooleanArray);
       break;
@@ -363,7 +363,7 @@ class FeatherIndexable : public IOIndexableInterface {
       FEATHER_PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
       break;
     default:
-      return errors::InvalidArgument("data type is not supported: ", DataTypeString(tensor->dtype()));
+      return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
     }
 
     return Status::OK();
@@ -392,6 +392,6 @@ REGISTER_KERNEL_BUILDER(Name("FeatherIndexableInit").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("FeatherIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FeatherIndexable>);
 REGISTER_KERNEL_BUILDER(Name("FeatherIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableGetItemOp<FeatherIndexable>);
+                        IOIndexableReadOp<FeatherIndexable>);
 }  // namespace data
 }  // namespace tensorflow
