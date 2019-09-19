@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/core/kernels/io_interface.h"
-#include "tensorflow_io/core/kernels/stream.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
 namespace data {
