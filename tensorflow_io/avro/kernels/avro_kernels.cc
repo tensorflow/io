@@ -14,7 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/stream.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include "api/DataFile.hh"
 #include "api/Compiler.hh"
 #include "api/Generic.hh"
@@ -287,6 +288,235 @@ REGISTER_KERNEL_BUILDER(Name("ReadAvro").Device(DEVICE_CPU),
                         ReadAvroOp);
 
 
+
 }  // namespace
+
+class AvroIndexable : public IOIndexableInterface {
+ public:
+  AvroIndexable(Env* env)
+  : env_(env) {}
+
+  ~AvroIndexable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    string schema;
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("schema: ") == 0) {
+        schema = metadata[i].substr(8);
+      }
+    }
+
+    string error;
+    std::istringstream ss(schema);
+    if (!(avro::compileJsonSchema(ss, reader_schema_, error))) {
+      return errors::Internal("Avro schema error: ", error);
+    }
+
+    for (int i = 0; i < reader_schema_.root()->names(); i++) {
+      columns_.push_back(reader_schema_.root()->nameAt(i));
+      columns_index_[reader_schema_.root()->nameAt(i)] = i;
+    }
+
+    avro::GenericDatum datum(reader_schema_.root());
+    const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+    for (size_t i = 0; i < reader_schema_.root()->names(); i++) {
+      const avro::GenericDatum& field = record.field(columns_[i]);
+      ::tensorflow::DataType dtype;
+      switch(field.type()) {
+      case avro::AVRO_BOOL:
+        dtype = DT_BOOL;
+        break;
+      case avro::AVRO_INT:
+        dtype = DT_INT32;
+        break;
+      case avro::AVRO_LONG:
+        dtype = DT_INT64;
+        break;
+      case avro::AVRO_FLOAT:
+        dtype = DT_FLOAT;
+        break;
+      case avro::AVRO_DOUBLE:
+        dtype = DT_DOUBLE;
+        break;
+      case avro::AVRO_STRING:
+        dtype = DT_STRING;
+        break;
+      case avro::AVRO_BYTES:
+        dtype = DT_STRING;
+        break;
+      case avro::AVRO_FIXED:
+        dtype = DT_STRING;
+        break;
+      case avro::AVRO_ENUM:
+        dtype = DT_STRING;
+        break;
+      default:
+        return errors::InvalidArgument("Avro type unsupported: ", field.type());
+      }
+      dtypes_.emplace_back(dtype);
+    }
+
+    // Find out the total number of rows
+    reader_stream_.reset(new AvroInputStream(file_.get()));
+    reader_.reset(new avro::DataFileReader<avro::GenericDatum>(std::move(reader_stream_), reader_schema_));
+
+    avro::DecoderPtr decoder = avro::binaryDecoder();
+
+    int64 total = 0;
+
+    reader_->sync(0);
+    int64 offset = reader_->previousSync();
+    while (offset < file_size_) {
+      StringPiece result;
+      string buffer(16, 0x00);
+      TF_RETURN_IF_ERROR(file_->Read(offset, buffer.size(), &result, &buffer[0]));
+      std::unique_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*)result.data(), result.size());
+      decoder->init(*in);
+      long items = decoder->decodeLong();
+
+      total += static_cast<int64>(items);
+      positions_.emplace_back(std::pair<int64, int64>(static_cast<int64>(items), offset));
+
+      reader_->sync(offset);
+      offset = reader_->previousSync();
+    }
+
+    for (size_t i = 0; i < columns_.size(); i++) {
+      shapes_.emplace_back(TensorShape({total}));
+    }
+    return Status::OK();
+  }
+
+  Status Partitions(std::vector<int64> *partitions) override {
+    partitions->clear();
+    // positions_ are pairs of <items, offset>
+    for (size_t i = 0; i < positions_.size(); i++) {
+      partitions->emplace_back(positions_[i].first);
+    }
+    return Status::OK();
+  }
+
+  Status Components(Tensor* components) override {
+    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+    for (size_t i = 0; i < columns_.size(); i++) {
+      components->flat<string>()(i) = columns_[i];
+    }
+    return Status::OK();
+  }
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+    *shape = shapes_[column_index];
+    *dtype = dtypes_[column_index];
+    return Status::OK();
+  }
+
+   Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
+    const string& column = component.scalar<string>()();
+    avro::GenericDatum datum(reader_schema_);
+
+    // Find the start sync point
+    int64 item_index_sync = 0;
+    for (size_t i = 0; i < positions_.size(); i++, item_index_sync += positions_[i].first) {
+      if (item_index_sync >= stop) {
+        continue;
+      }
+      if (item_index_sync + positions_[i].first <= start) {
+        continue;
+      }
+      // TODO: Avro is sync point partitioned and each block is very similiar to
+      // Row Group of parquet. Ideally each block should be cached with the hope
+      // that slicing and indexing will happend around the same block across multiple
+      // rows. Caching is not done yet.
+
+      // Seek to sync
+      reader_->seek(positions_[i].second);
+      for (int64 item_index = item_index_sync; item_index < (item_index_sync + positions_[i].first) && item_index < stop; item_index++) {
+        // Read anyway
+        if (!reader_->read(datum)) {
+          return errors::Internal("unable to read record at: ", item_index);
+        }
+        // Assign only when in range
+        if (item_index >= start) {
+          const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+          const avro::GenericDatum& field = record.field(column);
+          switch(field.type()) {
+          case avro::AVRO_BOOL:
+            value->flat<bool>()(item_index - start) = field.value<bool>();
+            break;
+          case avro::AVRO_INT:
+            value->flat<int32>()(item_index - start) = field.value<int32_t>();
+            break;
+          case avro::AVRO_LONG:
+            value->flat<int64>()(item_index - start) = field.value<int64_t>();
+            break;
+          case avro::AVRO_FLOAT:
+            value->flat<float>()(item_index - start) = field.value<float>();
+            break;
+          case avro::AVRO_DOUBLE:
+            value->flat<double>()(item_index - start) = field.value<double>();
+            break;
+          case avro::AVRO_STRING:
+            value->flat<string>()(item_index - start) = field.value<string>();
+            break;
+          case avro::AVRO_BYTES: {
+              const std::vector<uint8_t>& field_value = field.value<std::vector<uint8_t>>();
+              value->flat<string>()(item_index - start) = string((char *)&field_value[0], field_value.size());
+            }
+            break;
+          case avro::AVRO_FIXED: {
+              const std::vector<uint8_t>& field_value = field.value<avro::GenericFixed>().value();
+              value->flat<string>()(item_index - start) = string((char *)&field_value[0], field_value.size());
+            }
+            break;
+          case avro::AVRO_ENUM:
+            value->flat<string>()(item_index - start) = field.value<avro::GenericEnum>().symbol();
+            break;
+          default:
+            return errors::InvalidArgument("unsupported data type: ", field.type());
+          }
+        }
+      }
+    }
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("AvroIndexable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  avro::ValidSchema reader_schema_;
+  std::unique_ptr<avro::InputStream> reader_stream_;
+  std::unique_ptr<avro::DataFileReader<avro::GenericDatum>> reader_;
+  std::vector<std::pair<int64, int64>> positions_; // <items/sync> pair
+
+  std::vector<DataType> dtypes_;
+  std::vector<TensorShape> shapes_;
+  std::vector<string> columns_;
+  std::unordered_map<string, int64> columns_index_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("AvroIndexableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<AvroIndexable>);
+REGISTER_KERNEL_BUILDER(Name("AvroIndexableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<AvroIndexable>);
+REGISTER_KERNEL_BUILDER(Name("AvroIndexablePartitions").Device(DEVICE_CPU),
+                        IOIndexablePartitionsOp<AvroIndexable>);
+REGISTER_KERNEL_BUILDER(Name("AvroIndexableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<AvroIndexable>);
+
 }  // namespace data
 }  // namespace tensorflow

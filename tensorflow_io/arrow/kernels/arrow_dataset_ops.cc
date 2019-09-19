@@ -18,7 +18,7 @@ limitations under the License.
 #include "arrow/util/io-util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
-#include "tensorflow_io/core/kernels/stream.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"

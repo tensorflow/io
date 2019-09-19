@@ -58,11 +58,10 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
         def __call__(self, resource, start, stop):
           return self._func(
               resource, start=start, stop=stop,
-              component=0,
               shape=self._shape, dtype=self._dtype)
 
       self._iterable = iterable
       super(KafkaIOTensor, self).__init__(
           spec, resource,
           _Function(core_ops.kafka_indexable_read, spec),
-          internal=internal)
+          partitions=None, internal=internal)

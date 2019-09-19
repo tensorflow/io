@@ -62,7 +62,7 @@ class KafkaDataset(tf.compat.v2.data.Dataset):
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
           lambda i: core_ops.kafka_iterable_next(
-              resource, capacity, component=0,
+              resource, capacity,
               dtype=tf.string, shape=tf.TensorShape([None])))
       dataset = dataset.apply(
           tf.data.experimental.take_while(

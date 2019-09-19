@@ -45,4 +45,54 @@ REGISTER_OP("ReadAvro")
        return Status::OK();
      });
 
+REGISTER_OP("AvroIndexableInit")
+  .Input("input: string")
+  .Input("metadata: string")
+  .Output("resource: resource")
+  .Output("component: string")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({}));
+    return Status::OK();
+   });
+
+REGISTER_OP("AvroIndexableSpec")
+  .Input("input: resource")
+  .Input("component: string")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
+    return Status::OK();
+   });
+
+REGISTER_OP("AvroIndexableRead")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Input("component: string")
+  .Output("value: dtype")
+  .Attr("filter: list(string) = []")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+   });
+
+REGISTER_OP("AvroIndexablePartitions")
+  .Input("input: resource")
+  .Output("partitions: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

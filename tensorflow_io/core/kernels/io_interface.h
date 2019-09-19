@@ -25,9 +25,13 @@ class IOInterface : public ResourceBase {
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
 
+  virtual Status Partitions(std::vector<int64> *partitions) {
+    // By default partitions is not implemented: Unimplemented
+    return errors::Unimplemented("Patitions");
+  }
   virtual Status Components(Tensor* components) {
     // By default there is only one component: Unimplemented
-    return errors::Unimplemented("Component");
+    return errors::Unimplemented("Components");
   }
   virtual Status Extra(const Tensor& component, std::vector<Tensor>* extra) {
     // This is the chance to provide additional extra information which should be appended to extra.
@@ -245,8 +249,15 @@ class IOInterfaceSpecOp : public OpKernel {
     OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     PartialTensorShape shape;
     DataType dtype;
@@ -262,7 +273,7 @@ class IOInterfaceSpecOp : public OpKernel {
     context->set_output(1, dtype_tensor);
 
     std::vector<Tensor> extra;
-    Status status = resource->Extra(*component, &extra);
+    status = resource->Extra(*component, &extra);
     if (!errors::IsUnimplemented(status)) {
       OP_REQUIRES_OK(context, status);
       for (size_t i = 0; i < extra.size(); i++) {
@@ -304,8 +315,15 @@ class IOIterableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("capacity", &capacity_tensor));
     const int64 capacity = capacity_tensor->scalar<int64>()();
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     OP_REQUIRES(context, (capacity > 0), errors::InvalidArgument("capacity <= 0 is not supported: ", capacity));
 
@@ -399,8 +417,15 @@ class IOIndexableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     int64 output_index = 0;
     Tensor* value_tensor = nullptr;
@@ -449,6 +474,29 @@ class IOMappingReadOp : public OpKernel {
     Tensor value(DT_STRING, TensorShape({key->NumElements()}));
     OP_REQUIRES_OK(context, resource->Read(*key, &value));
     context->set_output(0, value);
+  }
+};
+template<typename Type>
+class IOIndexablePartitionsOp : public OpKernel {
+ public:
+  explicit IOIndexablePartitionsOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    std::vector<int64> partitions;
+    OP_REQUIRES_OK(context, resource->Partitions(&partitions));
+
+    Tensor partitions_tensor(DT_INT64, TensorShape({static_cast<int64>(partitions.size())}));
+    for (size_t i = 0; i < partitions.size(); i++) {
+      partitions_tensor.flat<int64>()(i) = partitions[i];
+    }
+
+    context->set_output(0, partitions_tensor);
   }
 };
 }  // namespace data

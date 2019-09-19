@@ -64,7 +64,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
           self._dtype = dtype
         def __call__(self, resource, capacity):
           return self._func(
-              resource, capacity, component=0,
+              resource, capacity,
               shape=self._shape, dtype=self._dtype)
 
       super(LMDBIOTensor, self).__init__(

@@ -44,29 +44,27 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, rate = core_ops.wav_indexable_spec(resource, component=0)
+      shape, dtype, rate = core_ops.wav_indexable_spec(resource)
       shape = tf.TensorShape(shape.numpy())
       dtype = tf.as_dtype(dtype.numpy())
       spec = tf.TensorSpec(shape, dtype)
 
       class _Function(object):
-        def __init__(self, func, shape, dtype, component=0):
+        def __init__(self, func, shape, dtype):
           self._func = func
           self._shape = tf.TensorShape([None]).concatenate(shape[1:])
           self._dtype = dtype
-          self._component = component
 
         def __call__(self, resource, start, stop):
           return self._func(
               resource, start=start, stop=stop,
-              component=self._component,
               shape=self._shape, dtype=self._dtype)
 
       self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
           spec, resource,
           _Function(core_ops.wav_indexable_read, spec.shape, spec.dtype),
-          internal=internal)
+          partitions=None, internal=internal)
 
   #=============================================================================
   # Accessors

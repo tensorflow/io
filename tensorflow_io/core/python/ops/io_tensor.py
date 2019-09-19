@@ -27,6 +27,7 @@ from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
 from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
 from tensorflow_io.core.python.ops import csv_io_tensor_ops
+from tensorflow_io.core.python.ops import avro_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -382,3 +383,23 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromCSV")):
       return csv_io_tensor_ops.CSVIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_avro(cls,
+                filename,
+                schema,
+                **kwargs):
+    """Creates an `IOTensor` from an avro file.
+
+    Args:
+      filename: A string, the filename of an avro file.
+      schema: A string, the schema of an avro file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromAvro")):
+      return avro_io_tensor_ops.AvroIOTensor(
+          filename, schema, internal=True, **kwargs)

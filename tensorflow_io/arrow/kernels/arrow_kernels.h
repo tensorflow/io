@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_ARROW_KERNELS_H_
 #define TENSORFLOW_IO_ARROW_KERNELS_H_
 
-#include "kernels/stream.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include "arrow/io/api.h"
 #include "arrow/buffer.h"
 #include "arrow/type.h"
