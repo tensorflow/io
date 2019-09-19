@@ -39,11 +39,40 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       spec = (tf.TensorSpec(tf.TensorShape([None]), tf.string),
               tf.TensorSpec(tf.TensorShape([None]), tf.string))
+
+      class _MappingRead(object):
+        def __init__(self, func):
+          self._func = func
+        def __call__(self, resource, key):
+          return self._func(resource, key)
+
+      class _IterableInit(object):
+        def __init__(self, func, filename):
+          self._func = func
+          self._filename = filename
+        def __call__(self):
+          with tf.name_scope("IterableInit") as scope:
+            return self._func(
+                self._filename,
+                container=scope,
+                shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))
+
+      class _IterableNext(object):
+        def __init__(self, func, shape, dtype):
+          self._func = func
+          self._shape = shape
+          self._dtype = dtype
+        def __call__(self, resource, capacity):
+          return self._func(
+              resource, capacity, component=0,
+              shape=self._shape, dtype=self._dtype)
+
       super(LMDBIOTensor, self).__init__(
           spec,
           resource,
-          core_ops.lmdb_mapping_get_item,
-          filename,
-          core_ops.lmdb_iterable_init,
-          core_ops.lmdb_iterable_next,
+          _MappingRead(core_ops.lmdb_mapping_read),
+          _IterableInit(
+              core_ops.lmdb_iterable_init, filename),
+          _IterableNext(
+              core_ops.lmdb_iterable_next, tf.TensorShape([None]), tf.string),
           internal=internal)

@@ -47,5 +47,5 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
                     tf.TensorSpec(tf.TensorShape(value_shape),
                                   tf.as_dtype(value_dtype.numpy()))])
       super(PrometheusIOTensor, self).__init__(
-          spec, resource, core_ops.prometheus_indexable_get_item,
+          spec, resource, core_ops.prometheus_indexable_read,
           internal=internal)

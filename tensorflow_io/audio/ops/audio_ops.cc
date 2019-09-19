@@ -21,7 +21,7 @@ namespace tensorflow {
 
 REGISTER_OP("WAVIndexableInit")
   .Input("input: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -42,13 +42,12 @@ REGISTER_OP("WAVIndexableSpec")
      return Status::OK();
    });
 
-REGISTER_OP("WAVIndexableGetItem")
+REGISTER_OP("WAVIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: int64")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

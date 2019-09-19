@@ -215,7 +215,7 @@ class KafkaIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
@@ -245,8 +245,8 @@ REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<IOIndexableImplementation<KafkaIterable>>);
 REGISTER_KERNEL_BUILDER(Name("KafkaIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<IOIndexableImplementation<KafkaIterable>>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableGetItem").Device(DEVICE_CPU),
-                        IOIndexableGetItemOp<IOIndexableImplementation<KafkaIterable>>);
+REGISTER_KERNEL_BUILDER(Name("KafkaIndexableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<IOIndexableImplementation<KafkaIterable>>);
 
 }  // namespace data
 }  // namespace tensorflow

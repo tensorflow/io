@@ -399,24 +399,21 @@ class HDF5Indexable : public IOIndexableInterface {
     }
     return Status::OK();
   }
-  Status Component(Tensor* component) override {
-    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Components(Tensor* components) override {
+    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
-      component->flat<string>()(i) = columns_[i];
+      components->flat<string>()(i) = columns_[i];
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     const int64 column_index = columns_index_[component.scalar<string>()()];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
+  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
     const string& column = component.scalar<string>()();
 
     H5::H5File *file = file_image_->GetFile();
@@ -443,19 +440,19 @@ class HDF5Indexable : public IOIndexableInterface {
       H5::DataType data_type = data_set.getDataType();
       hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
       if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
-        data_set.read(tensor->flat<int8>().data(), H5::PredType::NATIVE_INT8, memory_space, data_space);
+        data_set.read(value->flat<int8>().data(), H5::PredType::NATIVE_INT8, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
-        data_set.read(tensor->flat<uint8>().data(), H5::PredType::NATIVE_UINT8, memory_space, data_space);
+        data_set.read(value->flat<uint8>().data(), H5::PredType::NATIVE_UINT8, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
-        data_set.read(tensor->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
+        data_set.read(value->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
-        data_set.read(tensor->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
+        data_set.read(value->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
-        data_set.read(tensor->flat<int64>().data(), H5::PredType::NATIVE_LONG, memory_space, data_space);
+        data_set.read(value->flat<int64>().data(), H5::PredType::NATIVE_LONG, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
-        data_set.read(tensor->flat<float>().data(), H5::PredType::NATIVE_FLOAT, memory_space, data_space);
+        data_set.read(value->flat<float>().data(), H5::PredType::NATIVE_FLOAT, memory_space, data_space);
       } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
-        data_set.read(tensor->flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memory_space, data_space);
+        data_set.read(value->flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memory_space, data_space);
       } else {
         return errors::Unimplemented("data type not supported yet: ", data_set.getTypeClass());
       }
@@ -487,7 +484,7 @@ REGISTER_KERNEL_BUILDER(Name("HDF5IndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<HDF5Indexable>);
 REGISTER_KERNEL_BUILDER(Name("HDF5IndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<HDF5Indexable>);
-REGISTER_KERNEL_BUILDER(Name("HDF5IndexableGetItem").Device(DEVICE_CPU),
-                        IOIndexableGetItemOp<HDF5Indexable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5IndexableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<HDF5Indexable>);
 }  // namespace data
 }  // namespace tensorflow

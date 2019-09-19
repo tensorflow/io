@@ -23,9 +23,9 @@ namespace data {
 class IOInterface : public ResourceBase {
  public:
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
-  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) = 0;
+  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
 
-  virtual Status Component(Tensor* component) {
+  virtual Status Components(Tensor* components) {
     // By default there is only one component: Unimplemented
     return errors::Unimplemented("Component");
   }
@@ -37,32 +37,25 @@ class IOInterface : public ResourceBase {
     // This is the time to attach another resource to this interface.
     return errors::Unimplemented("Context");
   }
-  virtual Status Label(const Tensor& component, PartialTensorShape* shape, DataType* dtype) {
-    // The implementation of Label() indicate if the output consists of a `label` (e.g., null mask) field.
-    return errors::Unimplemented("Label");
-  }
 };
 
 class IOIterableInterface : public IOInterface {
  public:
-  // By default label field is ignored
+  // Check value==nullptr or label==nullptr to see which field is needed.
   virtual Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) = 0;
 };
 
 class IOIndexableInterface : public IOInterface {
  public:
-  virtual Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) = 0;
-
-  virtual Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
-    // By default GetLabel is not implemented
-    return errors::Unimplemented("GetLabel");
-  }
+  // Check value==nullptr or label==nullptr to see which field is needed.
+  virtual Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) = 0;
 };
 
 class IOMappingInterface : public IOInterface {
  public:
-  virtual Status GetItem(const Tensor& key, Tensor* tensor) = 0;
+  virtual Status Read(const Tensor& key, Tensor* value) = 0;
 };
+
 
 template<typename Type>
 class IOIndexableImplementation : public IOIndexableInterface {
@@ -83,26 +76,13 @@ class IOIndexableImplementation : public IOIndexableInterface {
 
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     TF_RETURN_IF_ERROR(iterable_->Init(input, metadata, memory_data, memory_size));
-    // We assume only one component at the moment.
+    // We assume only one component at the moment, we also assume only value field is needed
     Tensor component(DT_INT64, TensorShape({}));
     component.scalar<int64>()() = 0;
 
     const int64 capacity = 4096;
 
-    TensorShape chunk_label_shape;
-    label_ = false;
-    Status status = iterable_->Label(component, &label_shape_, &label_dtype_);
-    if (!errors::IsUnimplemented(status)) {
-      if (!status.ok()) {
-        return status;
-      }
-      label_ = true;
-      gtl::InlinedVector<int64, 4> dims = label_shape_.dim_sizes();
-      dims[0] = capacity;
-      chunk_label_shape = TensorShape(dims);
-    }
-
-    TF_RETURN_IF_ERROR(iterable_->Spec(component, &value_shape_, &value_dtype_));
+    TF_RETURN_IF_ERROR(iterable_->Spec(component, &value_shape_, &value_dtype_, false));
     gtl::InlinedVector<int64, 4> dims = value_shape_.dim_sizes();
     dims[0] = capacity;
     TensorShape chunk_value_shape(dims);
@@ -111,39 +91,27 @@ class IOIndexableImplementation : public IOIndexableInterface {
 
     int64 record_read = 0;
     do {
-      if (label_) {
-        chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
-        chunk_labels_.push_back(Tensor(label_dtype_, chunk_label_shape));
-        TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back(), &chunk_labels_.back()));
-      } else {
-        chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
-        TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back(), nullptr));
-      }
+      chunk_values_.push_back(Tensor(value_dtype_, chunk_value_shape));
+      TF_RETURN_IF_ERROR(iterable_->Next(capacity, component, &record_read, &chunk_values_.back(), nullptr));
       if (record_read == 0) {
-        if (label_) {
-          chunk_labels_.pop_back();
-        }
         chunk_values_.pop_back();
         break;
       }
       if (record_read < capacity) {
-        if (label_) {
-          chunk_labels_.back() = chunk_labels_.back().Slice(0, record_read);;
-        }
         chunk_values_.back() = chunk_values_.back().Slice(0, record_read);
       }
       total += record_read;
     } while (record_read != 0);
-    if (label_) {
-      label_shape_.set_dim(0, total);
-    }
     value_shape_.set_dim(0, total);
     return Status::OK();
   }
-  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
-    // We assume only one component at the moment.
+  virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+    // We assume only one component at the moment, we also assume only value field is needed
     if (component.scalar<int64>()() != 0) {
         return errors::InvalidArgument("component ", component.scalar<int64>()(), " not supported");
+    }
+    if (label) {
+        return errors::InvalidArgument("label is not supported");
     }
     *shape = value_shape_;
     *dtype = value_dtype_;
@@ -155,15 +123,12 @@ class IOIndexableImplementation : public IOIndexableInterface {
     return strings::StrCat("IOIndexableImplementation<", iterable_->DebugString(), ">[]");
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    return GetTensor(value_shape_, value_dtype_, chunk_values_, start, stop, step, component, tensor);
+  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
+    return GetTensor(value_shape_, value_dtype_, chunk_values_, start, stop, component, value);
   }
 
  private:
-  Status GetTensor(const PartialTensorShape& shape, const DataType& dtype, const std::vector<Tensor>& chunk_tensors, const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) {
-    if (step != 1) {
-      return errors::InvalidArgument("step != 1 is not supported: ", step);
-    }
+  Status GetTensor(const PartialTensorShape& shape, const DataType& dtype, const std::vector<Tensor>& chunk_tensors, const int64 start, const int64 stop, const Tensor& component, Tensor* tensor) {
     // We assume only one component at the moment.
     if (component.scalar<int64>()() != 0) {
         return errors::InvalidArgument("component ", component.scalar<int64>()(), " not supported");
@@ -207,10 +172,6 @@ class IOIndexableImplementation : public IOIndexableInterface {
   PartialTensorShape value_shape_ GUARDED_BY(mu_);
   DataType value_dtype_ GUARDED_BY(mu_);
   std::vector<Tensor> chunk_values_;
-  bool label_ GUARDED_BY(mu_);
-  PartialTensorShape label_shape_ GUARDED_BY(mu_);
-  DataType label_dtype_ GUARDED_BY(mu_);
-  std::vector<Tensor> chunk_labels_;
 };
 
 
@@ -246,9 +207,8 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       }
     }
 
-    const void *memory_data = nullptr;
     size_t memory_size = 0;
-
+    const void *memory_data = nullptr;
     const Tensor* memory_tensor;
     status = context->input("memory", &memory_tensor);
     if (status.ok()) {
@@ -257,11 +217,11 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
 
     OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
-    Tensor component_tensor;
-    status = this->resource_->Component(&component_tensor);
+    Tensor components_tensor;
+    status = this->resource_->Components(&components_tensor);
     if (!errors::IsUnimplemented(status)) {
       OP_REQUIRES_OK(context, status);
-      context->set_output(1, component_tensor);
+      context->set_output(1, components_tensor);
     }
   }
   Status CreateResource(Type** resource)
@@ -290,7 +250,7 @@ class IOInterfaceSpecOp : public OpKernel {
 
     PartialTensorShape shape;
     DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
+    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype, false));
 
     Tensor shape_tensor(DT_INT64, TensorShape({shape.dims()}));
     for (int64 i = 0; i < shape.dims(); i++) {
@@ -316,7 +276,23 @@ template<typename Type>
 class IOIterableNextOp : public OpKernel {
  public:
   explicit IOIterableNextOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx) {
+      : OpKernel(ctx), value_output_(true), label_output_(false) {
+    std::vector<string> filter;
+    Status status = ctx->GetAttr("filter", &filter);
+    if (status.ok()) {
+      if (filter.size() != 0) {
+        value_output_ = false;
+        label_output_ = false;
+        for (size_t i = 0; i < filter.size(); i++) {
+          if (filter[i] == "value") {
+            value_output_ = true;
+          }
+          if (filter[i] == "label") {
+            label_output_ = true;
+          }
+        }
+      }
+    }
   }
 
   void Compute(OpKernelContext* context) override {
@@ -333,46 +309,81 @@ class IOIterableNextOp : public OpKernel {
 
     OP_REQUIRES(context, (capacity > 0), errors::InvalidArgument("capacity <= 0 is not supported: ", capacity));
 
-    PartialTensorShape shape;
-    DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
-
-    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
-    dims[0] = capacity;
-    Tensor value(dtype, TensorShape(dims));
-
-    bool with_label = false;
-    Tensor label;
-    Status status = resource->Label(*component, &shape, &dtype);
-    if (!errors::IsUnimplemented(status)) {
-      OP_REQUIRES_OK(context, status);
-
+    Tensor* value_tensor = nullptr;
+    Tensor value;
+    if (value_output_) {
+      PartialTensorShape shape;
+      DataType dtype;
+      OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype, false));
       gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
       dims[0] = capacity;
-      label = Tensor(dtype, TensorShape(dims));
-      with_label = true;
+      TensorShape value_shape(dims);
+      value = Tensor(dtype, value_shape);
+      value_tensor = &value;
+    }
+
+    Tensor* label_tensor = nullptr;
+    Tensor label;
+    if (label_output_) {
+      PartialTensorShape shape;
+      DataType dtype;
+      OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype, true));
+      gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+      dims[0] = capacity;
+      TensorShape label_shape(dims);
+      label = Tensor(dtype, label_shape);
+      label_tensor = &label;
     }
 
     int64 record_read;
-    OP_REQUIRES_OK(context, resource->Next(capacity, *component, &record_read, &value, &label));
+    OP_REQUIRES_OK(context, resource->Next(capacity, *component, &record_read, value_tensor, label_tensor));
+
+    int64 output_index = 0;
     if (record_read < capacity) {
-      context->set_output(0, value.Slice(0, record_read));
-      if (with_label) {
-        context->set_output(1, label.Slice(0, record_read));
+      if (value_output_) {
+        context->set_output(output_index, value.Slice(0, record_read));
+        output_index++;
+      }
+      if (label_output_) {
+        context->set_output(output_index, label.Slice(0, record_read));
+        output_index++;
       }
     } else {
-      context->set_output(0, value);
-      if (with_label) {
-        context->set_output(1, label);
+      if (value_output_) {
+        context->set_output(output_index, value);
+        output_index++;
+      }
+      if (label_output_) {
+        context->set_output(output_index, label);
+        output_index++;
       }
     }
   }
+ private:
+  bool value_output_;
+  bool label_output_;
 };
 template<typename Type>
-class IOIndexableGetItemOp : public OpKernel {
+class IOIndexableReadOp : public OpKernel {
  public:
-  explicit IOIndexableGetItemOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx) {
+  explicit IOIndexableReadOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) , value_output_(true), label_output_(false) {
+    std::vector<string> filter;
+    Status status = ctx->GetAttr("filter", &filter);
+    if (status.ok()) {
+      if (filter.size() != 0) {
+        value_output_ = false;
+        label_output_ = false;
+        for (size_t i = 0; i < filter.size(); i++) {
+          if (filter[i] == "value") {
+            value_output_ = true;
+          }
+          if (filter[i] == "label") {
+            label_output_ = true;
+          }
+        }
+      }
+    }
   }
 
   void Compute(OpKernelContext* context) override {
@@ -388,92 +399,42 @@ class IOIndexableGetItemOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
-    const Tensor* step_tensor;
-    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
-    int64 step = step_tensor->scalar<int64>()();
-
     const Tensor* component;
     OP_REQUIRES_OK(context, context->input("component", &component));
 
-    OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
-
-    PartialTensorShape shape;
-    DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype));
-
-    int64 count = shape.dim_size(0);
-    if (start > count) {
-      start = count;
+    int64 output_index = 0;
+    Tensor* value_tensor = nullptr;
+    if (value_output_) {
+      PartialTensorShape shape;
+      DataType dtype;
+      OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype, false));
+      gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+      dims[0] = stop - start;
+      TensorShape value_shape(dims);
+      OP_REQUIRES_OK(context, context->allocate_output(output_index, value_shape, &value_tensor));
+      output_index++;
     }
-    if (stop < 0) {
-      stop = count;
+    Tensor* label_tensor = nullptr;
+    if (label_output_) {
+      PartialTensorShape shape;
+      DataType dtype;
+      OP_REQUIRES_OK(context, resource->Spec(*component, &shape, &dtype, true));
+      gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+      dims[0] = stop - start;
+      TensorShape label_shape(dims);
+      OP_REQUIRES_OK(context, context->allocate_output(output_index, label_shape, &label_tensor));
+      output_index++;
     }
-    if (stop < start) {
-      stop = start;
-    }
-
-    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
-    dims[0] = stop - start;
-    Tensor tensor(dtype, TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetItem(start, stop, step, *component, &tensor));
-    context->set_output(0, tensor);
+    OP_REQUIRES_OK(context, resource->Read(start, stop, *component, value_tensor, label_tensor));
   }
+ private:
+  bool value_output_;
+  bool label_output_;
 };
 template<typename Type>
-class IOIndexableGetLabelOp : public OpKernel {
+class IOMappingReadOp : public OpKernel {
  public:
-  explicit IOIndexableGetLabelOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx) {
-  }
-
-  void Compute(OpKernelContext* context) override {
-    Type* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
-    core::ScopedUnref unref(resource);
-
-    const Tensor* start_tensor;
-    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
-    int64 start = start_tensor->scalar<int64>()();
-
-    const Tensor* stop_tensor;
-    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
-    int64 stop = stop_tensor->scalar<int64>()();
-
-    const Tensor* step_tensor;
-    OP_REQUIRES_OK(context, context->input("step", &step_tensor));
-    int64 step = step_tensor->scalar<int64>()();
-
-    const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
-
-    OP_REQUIRES(context, (step == 1), errors::InvalidArgument("step != 1 is not supported: ", step));
-
-    PartialTensorShape shape;
-    DataType dtype;
-    OP_REQUIRES_OK(context, resource->Label(*component, &shape, &dtype));
-
-    int64 count = shape.dim_size(0);
-    if (start > count) {
-      start = count;
-    }
-    if (stop < 0) {
-      stop = count;
-    }
-    if (stop < start) {
-      stop = start;
-    }
-
-    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
-    dims[0] = stop - start;
-    Tensor tensor(dtype, TensorShape(dims));
-    OP_REQUIRES_OK(context, resource->GetLabel(start, stop, step, *component, &tensor));
-    context->set_output(0, tensor);
-  }
-};
-template<typename Type>
-class IOMappingGetItemOp : public OpKernel {
- public:
-  explicit IOMappingGetItemOp<Type>(OpKernelConstruction* ctx)
+  explicit IOMappingReadOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
 
@@ -485,9 +446,9 @@ class IOMappingGetItemOp : public OpKernel {
     const Tensor* key;
     OP_REQUIRES_OK(context, context->input("key", &key));
 
-    Tensor tensor(DT_STRING, TensorShape({key->NumElements()}));
-    OP_REQUIRES_OK(context, resource->GetItem(*key, &tensor));
-    context->set_output(0, tensor);
+    Tensor value(DT_STRING, TensorShape({key->NumElements()}));
+    OP_REQUIRES_OK(context, resource->Read(*key, &value));
+    context->set_output(0, value);
   }
 };
 }  // namespace data

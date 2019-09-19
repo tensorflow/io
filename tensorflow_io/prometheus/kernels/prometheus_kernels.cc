@@ -134,7 +134,7 @@ class PrometheusIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     int64 column_index;
     if (component.scalar<string>()() == "index") {
       column_index = 0;
@@ -149,14 +149,11 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
+  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
     if (component.scalar<string>()() == "index") {
-      memcpy(&tensor->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
+      memcpy(&value->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
     } else if (component.scalar<string>()() == "value") {
-      memcpy(&tensor->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
+      memcpy(&value->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
     } else {
       return errors::InvalidArgument("component ", component.scalar<string>()() , " is not supported");
     }
@@ -183,8 +180,8 @@ REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<PrometheusIndexable>);
 REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableGetItem").Device(DEVICE_CPU),
-                        IOIndexableGetItemOp<PrometheusIndexable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<PrometheusIndexable>);
 
 }  // namespace data
 }  // namespace tensorflow

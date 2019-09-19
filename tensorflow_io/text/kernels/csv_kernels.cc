@@ -120,27 +120,28 @@ class CSVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Component(Tensor* component) override {
-    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Components(Tensor* components) override {
+    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
-      component->flat<string>()(i) = columns_[i];
+      components->flat<string>()(i) = columns_[i];
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
     }
     int64 column_index = columns_index_[component.scalar<string>()()];
     *shape = shapes_[column_index];
-    *dtype = dtypes_[column_index];
+    if (label) {
+      *dtype = DT_BOOL;
+    } else {
+      *dtype = dtypes_[column_index];
+    }
     return Status::OK();
   }
 
-  Status GetItem(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
+  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
     }
@@ -152,7 +153,7 @@ class CSVIndexable : public IOIndexableInterface {
         int64 curr_index = 0; \
         for (auto chunk : slice->data()->chunks()) { \
           for (int64_t item = 0; item < chunk->length(); item++) { \
-            tensor->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
+            value->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
             curr_index++; \
           } \
         } \
@@ -162,80 +163,62 @@ class CSVIndexable : public IOIndexableInterface {
         int64 curr_index = 0; \
         for (auto chunk : slice->data()->chunks()) { \
           for (int64_t item = 0; item < chunk->length(); item++) { \
-            tensor->flat<string>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
+            value->flat<string>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
             curr_index++; \
           } \
         } \
       }
-    switch (tensor->dtype()) {
-    case DT_BOOL:
-      PROCESS_TYPE(bool, ::arrow::BooleanArray);
-      break;
-    case DT_INT8:
-      PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
-      break;
-    case DT_UINT8:
-      PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
-      break;
-    case DT_INT16:
-      PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
-      break;
-    case DT_UINT16:
-      PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
-      break;
-    case DT_INT32:
-      PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
-      break;
-    case DT_UINT32:
-      PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
-      break;
-    case DT_INT64:
-      PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
-      break;
-    case DT_UINT64:
-      PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
-      break;
-    case DT_FLOAT:
-      PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
-      break;
-    case DT_DOUBLE:
-      PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
-      break;
-    case DT_STRING:
-      PROCESS_STRING_TYPE(::arrow::StringArray);
-      break;
-    default:
-      return errors::InvalidArgument("data type is not supported: ", DataTypeString(tensor->dtype()));
+
+    if (value != nullptr) {
+      switch (value->dtype()) {
+      case DT_BOOL:
+        PROCESS_TYPE(bool, ::arrow::BooleanArray);
+        break;
+      case DT_INT8:
+        PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
+        break;
+      case DT_UINT8:
+        PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
+        break;
+      case DT_INT16:
+        PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
+        break;
+      case DT_UINT16:
+        PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
+        break;
+      case DT_INT32:
+        PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
+        break;
+      case DT_UINT32:
+        PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
+        break;
+      case DT_INT64:
+        PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
+        break;
+      case DT_UINT64:
+        PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
+        break;
+      case DT_FLOAT:
+        PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
+        break;
+      case DT_DOUBLE:
+        PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
+        break;
+      case DT_STRING:
+        PROCESS_STRING_TYPE(::arrow::StringArray);
+        break;
+      default:
+        return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
+      }
     }
 
-    return Status::OK();
-  }
-
-  Status Label(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
-    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
-      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
-    }
-    int64 column_index = columns_index_[component.scalar<string>()()];
-    *shape = shapes_[column_index];
-    *dtype = DT_BOOL;
-    return Status::OK();
-  }
-  Status GetLabel(const int64 start, const int64 stop, const int64 step, const Tensor& component, Tensor* tensor) override {
-    if (step != 1) {
-      return errors::InvalidArgument("step ", step, " is not supported");
-    }
-    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
-      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
-    }
-    int64 column_index = columns_index_[component.scalar<string>()()];
-
-    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
-
-    int64 curr_index = 0;
-    for (auto chunk : slice->data()->chunks()) {
-      for (int64_t item = 0; item < chunk->length(); item++) {
-        tensor->flat<bool>()(curr_index) = chunk->IsNull(item);
-        curr_index++;
+    if (label != nullptr) {
+      int64 curr_index = 0;
+      for (auto chunk : slice->data()->chunks()) {
+        for (int64_t item = 0; item < chunk->length(); item++) {
+          label->flat<bool>()(curr_index) = chunk->IsNull(item);
+          curr_index++;
+        }
       }
     }
 
@@ -265,9 +248,7 @@ REGISTER_KERNEL_BUILDER(Name("CSVIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<CSVIndexable>);
 REGISTER_KERNEL_BUILDER(Name("CSVIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<CSVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetItem").Device(DEVICE_CPU),
-                        IOIndexableGetItemOp<CSVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableGetNull").Device(DEVICE_CPU),
-                        IOIndexableGetLabelOp<CSVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("CSVIndexableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<CSVIndexable>);
 }  // namespace data
 }  // namespace tensorflow

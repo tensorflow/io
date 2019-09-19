@@ -22,8 +22,8 @@ namespace tensorflow {
 REGISTER_OP("JSONIndexableInit")
   .Input("input: string")
   .Input("metadata: string")
-  .Output("output: resource")
-  .Output("component: string")
+  .Output("resource: resource")
+  .Output("components: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -43,13 +43,12 @@ REGISTER_OP("JSONIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("JSONIndexableGetItem")
+REGISTER_OP("JSONIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
