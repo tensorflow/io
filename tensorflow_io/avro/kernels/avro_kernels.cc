@@ -392,6 +392,16 @@ class AvroIndexable : public IOIndexableInterface {
     }
     return Status::OK();
   }
+
+  Status Partitions(std::vector<int64> *partitions) override {
+    partitions->clear();
+    // positions_ are pairs of <items, offset>
+    for (size_t i = 0; i < positions_.size(); i++) {
+      partitions->emplace_back(positions_[i].first);
+    }
+    return Status::OK();
+  }
+
   Status Components(Tensor* components) override {
     *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
@@ -479,19 +489,6 @@ class AvroIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Capacity(std::vector<int64> *start, std::vector<int64>* stop) {
-    start->clear();
-    stop->clear();
-    int64 item_index = 0;
-    // positions_ are pairs of ,items, offset>
-    for (size_t i = 0; i < positions_.size(); i++) {
-      start->emplace_back(item_index);
-      item_index += positions_[i].first;
-      stop->emplace_back(item_index);
-    }
-    return Status::OK();
-  }
-
   string DebugString() const override {
     mutex_lock l(mu_);
     return strings::StrCat("AvroIndexable");
@@ -516,6 +513,8 @@ REGISTER_KERNEL_BUILDER(Name("AvroIndexableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<AvroIndexable>);
 REGISTER_KERNEL_BUILDER(Name("AvroIndexableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<AvroIndexable>);
+REGISTER_KERNEL_BUILDER(Name("AvroIndexablePartitions").Device(DEVICE_CPU),
+                        IOIndexablePartitionsOp<AvroIndexable>);
 REGISTER_KERNEL_BUILDER(Name("AvroIndexableRead").Device(DEVICE_CPU),
                         IOIndexableReadOp<AvroIndexable>);
 

@@ -32,6 +32,7 @@ class AvroIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
   def __init__(self,
                filename,
                schema,
+               capacity=None,
                internal=False):
     with tf.name_scope("AvroIOTensor") as scope:
       metadata = ["schema: %s" % schema]
@@ -39,6 +40,14 @@ class AvroIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
           filename, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+      partitions = None
+      if capacity is not None:
+        partitions = core_ops.avro_indexable_partitions(resource)
+        partitions = partitions.numpy().tolist()
+        if capacity > 0:
+          partitions = [
+              v for e in partitions for v in list(
+                  [capacity] * (e // capacity) + [e % capacity])]
       columns = [column.decode() for column in columns.numpy().tolist()]
       spec = []
       for column in columns:
@@ -50,4 +59,4 @@ class AvroIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
       super(AvroIOTensor, self).__init__(
           spec, columns,
           resource, core_ops.avro_indexable_read,
-          internal=internal)
+          partitions=partitions, internal=internal)

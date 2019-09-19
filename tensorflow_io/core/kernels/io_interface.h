@@ -25,9 +25,13 @@ class IOInterface : public ResourceBase {
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
 
+  virtual Status Partitions(std::vector<int64> *partitions) {
+    // By default partitions is not implemented: Unimplemented
+    return errors::Unimplemented("Patitions");
+  }
   virtual Status Components(Tensor* components) {
     // By default there is only one component: Unimplemented
-    return errors::Unimplemented("Component");
+    return errors::Unimplemented("Components");
   }
   virtual Status Extra(const Tensor& component, std::vector<Tensor>* extra) {
     // This is the chance to provide additional extra information which should be appended to extra.
@@ -449,6 +453,29 @@ class IOMappingReadOp : public OpKernel {
     Tensor value(DT_STRING, TensorShape({key->NumElements()}));
     OP_REQUIRES_OK(context, resource->Read(*key, &value));
     context->set_output(0, value);
+  }
+};
+template<typename Type>
+class IOIndexablePartitionsOp : public OpKernel {
+ public:
+  explicit IOIndexablePartitionsOp<Type>(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    Type* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    std::vector<int64> partitions;
+    OP_REQUIRES_OK(context, resource->Partitions(&partitions));
+
+    Tensor partitions_tensor(DT_INT64, TensorShape({static_cast<int64>(partitions.size())}));
+    for (size_t i = 0; i < partitions.size(); i++) {
+      partitions_tensor.flat<int64>()(i) = partitions[i];
+    }
+
+    context->set_output(0, partitions_tensor);
   }
 };
 }  // namespace data

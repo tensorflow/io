@@ -48,4 +48,5 @@ class FeatherIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
       super(FeatherIOTensor, self).__init__(
           spec, columns,
           resource, core_ops.feather_indexable_read,
+          partitions=None,
           internal=internal)

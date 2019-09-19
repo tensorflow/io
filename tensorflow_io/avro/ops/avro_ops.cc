@@ -87,4 +87,12 @@ REGISTER_OP("AvroIndexableRead")
     return Status::OK();
    });
 
+REGISTER_OP("AvroIndexablePartitions")
+  .Input("input: resource")
+  .Output("partitions: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

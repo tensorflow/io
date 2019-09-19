@@ -277,10 +277,12 @@ class _TableIOTensor(_IOTensor):
                columns,
                resource,
                function,
+               partitions,
                internal=False):
     self._columns = columns
     self._resource = resource
     self._function = function
+    self._partitions = partitions
     super(_TableIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -310,9 +312,40 @@ class _TableIOTensor(_IOTensor):
             resource, start=start, stop=stop,
             component=self._component,
             shape=self._shape, dtype=self._dtype)
+    class _PartitionedFunction(object):
+      """PartitionedFunction will translate call to cached Function call"""
+      def __init__(self, func, partitions):
+        self._func = func
+        self._partitions = partitions
+        partitions_indices = tf.cumsum(partitions).numpy().tolist()
+        self._partitions_start = list([0] + partitions_indices[:-1])
+        self._partitions_stop = partitions_indices
+        self._tensors = [None for _ in partitions]
 
+      def __call__(self, resource, start, stop):
+        indices_start = tf.math.maximum(self._partitions_start, start)
+        indices_stop = tf.math.minimum(self._partitions_stop, stop)
+        indices_hit = tf.math.less(indices_start, indices_stop)
+        indices = tf.squeeze(tf.compat.v2.where(indices_hit), [1])
+        items = []
+        # TODO: change to tf.while_loop
+        for index in indices:
+          if self._tensors[index] is None:
+            self._tensors[index] = self._func(
+                resource,
+                self._partitions_start[index],
+                self._partitions_stop[index])
+          slice_start = indices_start[index] - self._partitions_start[index]
+          slice_size = indices_stop[index] - indices_start[index]
+          item = tf.slice(self._tensors[index], [slice_start], [slice_size])
+          items.append(item)
+        return tf.concat(items, axis=0)
+
+    function = _Function(self._function, spec, column)
+    if self._partitions is not None:
+      function = _PartitionedFunction(function, self._partitions)
     return BaseIOTensor(
-        spec, self._resource, _Function(self._function, spec, column),
+        spec, self._resource, function,
         internal=True)
 
   #=============================================================================
