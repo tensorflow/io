@@ -27,6 +27,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
+from operator import itemgetter
+
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import structure
