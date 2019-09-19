@@ -123,7 +123,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
                                                  records=record_data)
 
     actual_dataset = avro_dataset.make_avro_dataset_v1(
-        file_pattern=filenames, reader_schema=reader_schema,
+        filenames=filenames, reader_schema=reader_schema,
         features=features, batch_size=batch_size,
         shuffle=kwargs.get("shuffle", None),
         num_epochs=kwargs.get("num_epochs", None),
@@ -138,7 +138,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
                                                  records=record_data)
 
     actual_dataset = avro_dataset.make_avro_dataset_v1(
-        file_pattern=filenames, reader_schema=reader_schema,
+        filenames=filenames, reader_schema=reader_schema,
         features=features, batch_size=batch_size,
         shuffle=kwargs.get("shuffle", None),
         num_epochs=kwargs.get("num_epochs", None))

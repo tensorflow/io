@@ -51,6 +51,9 @@ public:
   // Get the shape for sparse indices if this value store where represented as sparse tensor
   virtual Status GetSparseIndexShape(TensorShape* shape) const = 0;
 
+  // Get the maximum index for each dimension and assign it to the dense_shape
+  virtual Status GetDenseShapeForSparse(Tensor* dense_shape) const = 0;
+
   // Check if values match at the reverse index between this store and the provided one
   virtual bool ValuesMatchAtReverseIndex(const ValueStore& store, size_t reverse_index) const = 0;
 
@@ -169,6 +172,8 @@ public:
   Status GetSparseValueShape(TensorShape* shape) const override;
 
   Status GetSparseIndexShape(TensorShape* shape) const override;
+
+  Status GetDenseShapeForSparse(Tensor* dense_shape) const override;
 
   Status MakeDense(Tensor* tensor, const TensorShape& resolved_shape, const Tensor& defaults) const override;
 
@@ -316,6 +321,19 @@ Status ValueBuffer<T>::GetSparseIndexShape(TensorShape* shape) const {
   // Only add this dimension if it is necessary, which is > 1
   if (n_dim > 1) {
     (*shape).AddDim(shape_builder_.GetNumberOfDimensions());
+  }
+  return Status::OK();
+}
+
+// Assumes dense_shape has been allocated appropriate space -- not checked
+template <typename T>
+Status ValueBuffer<T>::GetDenseShapeForSparse(Tensor* dense_shape) const {
+  TensorShape shape;
+  shape_builder_.GetDenseShape(&shape);
+  auto tensor_flat = (*dense_shape).flat<int64>();
+  size_t n_dim = shape.dims();
+  for (size_t i_dim = 0; i_dim < n_dim; ++i_dim) {
+    tensor_flat(i_dim) = shape.dim_size(i_dim);
   }
   return Status::OK();
 }

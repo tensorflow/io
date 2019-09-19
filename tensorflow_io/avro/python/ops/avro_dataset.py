@@ -387,12 +387,12 @@ class _AvroDataset(DatasetSource):
 # TODO(fraudies) Fix the proper export of the symbol
 # @tf_export("tensorflow_io.avro.make_avro_dataset", v1=[])
 def make_avro_dataset(
-    file_pattern,
+    filenames,
     reader_schema,
     features,
     batch_size,
     num_parallel_calls=2,
-    label_keys=[],
+    label_keys=None,
     num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
@@ -408,7 +408,7 @@ def make_avro_dataset(
   Reads from avro files and parses the contents into tensors.
 
   Args:
-    file_pattern: A `tf.string` tensor containing one or more filenames.
+    filenames: A `tf.string` tensor containing one or more filenames.
     reader_schema: A `tf.string` scalar for schema resolution.
 
     features: Is a map of keys that describe a single entry or sparse vector
@@ -469,10 +469,19 @@ def make_avro_dataset(
     avro_data_buffer_size: The size of the avro data buffer in By
 
   """
-  filenames = readers._get_file_names(file_pattern, False)
+
+  # if not isinstance(file_pattern, list):
+  #   filenames = readers._get_file_names(file_pattern, False)
+  # else:
+  #   filenames = file_pattern
+
   dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
   if shuffle:
-    dataset = dataset.shuffle(len(filenames), shuffle_seed)
+    n_filenames = array_ops.shape(filenames, out_type=dtypes.int64)[0]
+    dataset = dataset.shuffle(n_filenames, shuffle_seed)
+
+  if label_keys is None:
+    label_keys = []
 
   # Handle the case where the user only provided a single label key
   if not isinstance(label_keys, list):
@@ -529,12 +538,12 @@ def make_avro_dataset(
 # TODO(fraudies) Fix the proper export of the symbol
 # @tf_export(v1=["tensorflow_io.avro.make_avro_dataset"])
 def make_avro_dataset_v1(
-    file_pattern,
+    filenames,
     reader_schema,
     features,
     batch_size,
     num_parallel_calls=2,
-    label_keys=[],
+    label_keys=None,
     num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
@@ -546,7 +555,7 @@ def make_avro_dataset_v1(
     sloppy=False
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
-      file_pattern, reader_schema, features, batch_size, num_parallel_calls,
+      filenames, reader_schema, features, batch_size, num_parallel_calls,
       label_keys, num_epochs, input_stream_buffer_size, avro_data_buffer_size,
       shuffle, shuffle_buffer_size, shuffle_seed, prefetch_buffer_size,
       num_parallel_reads, sloppy))

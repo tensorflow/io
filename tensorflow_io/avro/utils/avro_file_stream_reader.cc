@@ -138,10 +138,8 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
     VLOG(5) << "Value shape: " << value_shape;
     VLOG(5) << "Index shape: " << index_shape;
 
-    TensorShape size_shape;
-    size_shape.AddDim(index_shape.dims());
-    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, size_shape);
-    TF_RETURN_IF_ERROR(ShapeToTensor(&(*result).sparse_shapes[i_sparse], index_shape));
+    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({index_shape.dims()}));
+    TF_RETURN_IF_ERROR((*value_store).GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
   }
 
   // Get dense tensors
@@ -198,16 +196,6 @@ int AvroFileStreamReader::ResolveDefaultShape(TensorShape* resolved, const Parti
   // TODO: Check that dense shape matches dimensions, handle cases where the default is not given
   PartialTensorShape full_shape(PartialTensorShape({batch_size}).Concatenate(default_shape));
   return full_shape.AsTensorShape(resolved);
-}
-
-// Assumes tensor has been allocated appropriate space -- not checked
-Status AvroFileStreamReader::ShapeToTensor(Tensor* tensor, const TensorShape& shape) {
-  auto tensor_flat = (*tensor).flat<int64>();
-  size_t n_dim = shape.dims();
-  for (size_t i_dim = 0; i_dim < n_dim; ++i_dim) {
-    tensor_flat(i_dim) = shape.dim_size(i_dim);
-  }
-  return Status::OK();
 }
 
 std::vector<std::pair<string, DataType>> AvroFileStreamReader::CreateKeysAndTypesFromConfig() {

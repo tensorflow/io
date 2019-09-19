@@ -113,9 +113,6 @@ public:
   Status Read(AvroResult* result);
 private:
 
-  // Assumes tensor has been allocated appropriate space -- not checked
-  static Status ShapeToTensor(Tensor* tensor, const TensorShape& shape);
-
   // Checks that there are no duplicate keys in the sparse feature names and dense feature names
   std::vector<std::pair<string, DataType>> CreateKeysAndTypesFromConfig();
 
