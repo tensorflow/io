@@ -22,7 +22,7 @@ namespace tensorflow {
 REGISTER_OP("PrometheusIndexableInit")
   .Input("input: string")
   .Input("metadata: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -46,7 +46,7 @@ REGISTER_OP("PrometheusIndexableRead")
   .Input("start: int64")
   .Input("stop: int64")
   .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

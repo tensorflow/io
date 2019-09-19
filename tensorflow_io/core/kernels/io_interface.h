@@ -25,7 +25,7 @@ class IOInterface : public ResourceBase {
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
 
-  virtual Status Component(Tensor* component) {
+  virtual Status Components(Tensor* components) {
     // By default there is only one component: Unimplemented
     return errors::Unimplemented("Component");
   }
@@ -217,11 +217,11 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
 
     OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
-    Tensor component_tensor;
-    status = this->resource_->Component(&component_tensor);
+    Tensor components_tensor;
+    status = this->resource_->Components(&components_tensor);
     if (!errors::IsUnimplemented(status)) {
       OP_REQUIRES_OK(context, status);
-      context->set_output(1, component_tensor);
+      context->set_output(1, components_tensor);
     }
   }
   Status CreateResource(Type** resource)

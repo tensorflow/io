@@ -21,8 +21,8 @@ namespace tensorflow {
 
 REGISTER_OP("HDF5IndexableInit")
   .Input("input: string")
-  .Output("output: resource")
-  .Output("component: string")
+  .Output("resource: resource")
+  .Output("components: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -46,7 +46,7 @@ REGISTER_OP("HDF5IndexableRead")
   .Input("start: int64")
   .Input("stop: int64")
   .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

@@ -137,7 +137,7 @@ REGISTER_OP("TextOutputSequenceSetItem")
 
 REGISTER_OP("CSVIndexableInit")
   .Input("input: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Output("component: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")

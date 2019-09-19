@@ -399,10 +399,10 @@ class HDF5Indexable : public IOIndexableInterface {
     }
     return Status::OK();
   }
-  Status Component(Tensor* component) override {
-    *component = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Components(Tensor* components) override {
+    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
     for (size_t i = 0; i < columns_.size(); i++) {
-      component->flat<string>()(i) = columns_[i];
+      components->flat<string>()(i) = columns_[i];
     }
     return Status::OK();
   }
