@@ -64,4 +64,4 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       super(KafkaIOTensor, self).__init__(
           spec, resource,
           _Function(core_ops.kafka_indexable_read, spec),
-          internal=internal)
+          partitions=None, internal=internal)

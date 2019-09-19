@@ -77,4 +77,4 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
     return io_tensor_ops.BaseIOTensor(
         spec, self._resource,
         _Function(core_ops.csv_indexable_read, spec, column),
-        internal=True)
+        partitions=None, internal=True)

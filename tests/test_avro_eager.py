@@ -25,7 +25,6 @@ import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops import avro_io_tensor_ops # pylint: disable=wrong-import-position
 
 def test_avro():
   """test_avro"""
@@ -77,8 +76,8 @@ def test_avro_partition():
       1, 2, 3,
       11, 12, 13,
       50, 51, 100]:
-    avro = avro_io_tensor_ops.AvroIOTensor(
-        filename, schema, capacity=capacity, internal=True)
+    avro = tfio.IOTensor.from_avro(
+        filename, schema, capacity=capacity)
     assert np.all(
         avro("im").to_tensor().numpy() == [100.0 + i for i in range(100)])
     assert np.all(
@@ -87,7 +86,7 @@ def test_avro_partition():
         1, 2, 3,
         10, 11, 12, 13,
         50, 51, 52, 53]:
-      indices = range(0, 100, step)
+      indices = list(range(0, 100, step))
       for start, stop in zip(indices, indices[1:] + [100]):
         im_expected = [100.0 + i for i in range(start, stop)]
         im_items = avro("im")[start:stop]
@@ -96,6 +95,30 @@ def test_avro_partition():
         re_expected = [100.0 * i for i in range(start, stop)]
         re_items = avro("re")[start:stop]
         assert np.all(re_items.numpy() == re_expected)
+
+def test_avro_dataset_partition():
+  """test_avro_dataset_partition"""
+  # The test.bin was created from avro/lang/c++/examples/datafile.cc.
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "test.bin")
+  filename = "file://" + filename
+
+  schema_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "cpx.json")
+  with open(schema_filename, 'r') as f:
+    schema = f.read()
+  for capacity in [1, 2, 3, 11, 12, 13, 50, 51, 100]:
+    avro = tfio.IOTensor.from_avro(
+        filename, schema, capacity=capacity)
+    dataset = avro.to_dataset()
+    i = 0
+    for v in dataset:
+      re, im = v
+      assert im.numpy() == 100.0 + i
+      assert re.numpy() == 100.0 * i
+      i += 1
 
 if __name__ == "__main__":
   test.main()

@@ -401,4 +401,5 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAvro")):
-      return avro_io_tensor_ops.AvroIOTensor(filename, schema, internal=True)
+      return avro_io_tensor_ops.AvroIOTensor(
+          filename, schema, internal=True, **kwargs)
