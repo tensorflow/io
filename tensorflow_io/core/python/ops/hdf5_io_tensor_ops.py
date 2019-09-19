@@ -47,5 +47,5 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
       spec = tuple(spec)
       super(HDF5IOTensor, self).__init__(
           spec, columns,
-          resource, core_ops.hdf5_indexable_get_item,
+          resource, core_ops.hdf5_indexable_read,
           internal=internal)

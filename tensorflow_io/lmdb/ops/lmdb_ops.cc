@@ -45,7 +45,7 @@ REGISTER_OP("LMDBDatasetV2")
 
 REGISTER_OP("LMDBIterableInit")
   .Input("input: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -57,7 +57,7 @@ REGISTER_OP("LMDBIterableNext")
   .Input("input: resource")
   .Input("capacity: int64")
   .Input("component: int64")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -71,7 +71,7 @@ REGISTER_OP("LMDBIterableNext")
 
 REGISTER_OP("LMDBMappingInit")
   .Input("input: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetIsStateful()
@@ -80,10 +80,10 @@ REGISTER_OP("LMDBMappingInit")
     return Status::OK();
    });
 
-REGISTER_OP("LMDBMappingGetItem")
+REGISTER_OP("LMDBMappingRead")
   .Input("input: resource")
   .Input("key: string")
-  .Output("output: string")
+  .Output("value: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->input(1));
     return Status::OK();

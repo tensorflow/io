@@ -102,8 +102,8 @@ REGISTER_OP("ListFeatherColumns")
 
 REGISTER_OP("FeatherIndexableInit")
   .Input("input: string")
-  .Output("output: resource")
-  .Output("component: string")
+  .Output("resource: resource")
+  .Output("components: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -123,13 +123,12 @@ REGISTER_OP("FeatherIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherIndexableGetItem")
+REGISTER_OP("FeatherIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

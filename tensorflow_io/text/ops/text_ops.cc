@@ -137,7 +137,7 @@ REGISTER_OP("TextOutputSequenceSetItem")
 
 REGISTER_OP("CSVIndexableInit")
   .Input("input: string")
-  .Output("output: resource")
+  .Output("resource: resource")
   .Output("component: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
@@ -158,31 +158,13 @@ REGISTER_OP("CSVIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("CSVIndexableGetItem")
+REGISTER_OP("CSVIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("step: int64")
   .Input("component: string")
-  .Output("output: dtype")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-   });
-
-REGISTER_OP("CSVIndexableGetNull")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Input("step: int64")
-  .Input("component: string")
-  .Output("output: dtype")
+  .Output("value: dtype")
+  .Attr("filter: list(string) = []")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

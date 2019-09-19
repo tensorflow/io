@@ -91,7 +91,7 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
@@ -160,13 +160,13 @@ class LMDBMapping : public IOMappingInterface {
     return Status::OK();
   }
 
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype) override {
+  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
   }
 
-  Status GetItem(const Tensor& key, Tensor* tensor) override {
+  Status Read(const Tensor& key, Tensor* value) override {
     for (int64 i = 0; i < key.NumElements(); i++) {
       MDB_val mdb_key;
       MDB_val mdb_data;
@@ -176,7 +176,7 @@ class LMDBMapping : public IOMappingInterface {
       if (status != MDB_SUCCESS) {
         return errors::InvalidArgument("unable to get value from key(", key.flat<string>()(i), "): ", status);
       }
-      tensor->flat<string>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
+      value->flat<string>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
     }
     return Status::OK();
   }
@@ -200,7 +200,7 @@ REGISTER_KERNEL_BUILDER(Name("LMDBIterableNext").Device(DEVICE_CPU),
                         IOIterableNextOp<LMDBIterable>);
 REGISTER_KERNEL_BUILDER(Name("LMDBMappingInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<LMDBMapping>);
-REGISTER_KERNEL_BUILDER(Name("LMDBMappingGetItem").Device(DEVICE_CPU),
-                        IOMappingGetItemOp<LMDBMapping>);
+REGISTER_KERNEL_BUILDER(Name("LMDBMappingRead").Device(DEVICE_CPU),
+                        IOMappingReadOp<LMDBMapping>);
 }  // namespace data
 }  // namespace tensorflow
