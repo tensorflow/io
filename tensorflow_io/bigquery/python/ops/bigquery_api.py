@@ -27,6 +27,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
+from operator import itemgetter
+
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
@@ -223,8 +226,19 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
 
   def __init__(self, client_resource, selected_fields, output_types,
                avro_schema, stream):
-    self._element_spec = tuple(
-        tensor_spec.TensorSpec([], dtype) for dtype in output_types)
+
+    # selected_fields and corresponding output_types have to be sorted because
+    # of b/141251314
+    sorted_fields_with_types = sorted(
+        zip(selected_fields, output_types),
+        key=itemgetter(0))
+    selected_fields, output_types = list(zip(*sorted_fields_with_types))
+    selected_fields = list(selected_fields)
+    output_types = list(output_types)
+
+    self._element_spec = collections.OrderedDict(zip(
+        selected_fields,
+        (tensor_spec.TensorSpec([], dtype) for dtype in output_types)))
 
     variant_tensor = _bigquery_so.big_query_dataset(
         client=client_resource,
