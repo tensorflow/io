@@ -249,8 +249,15 @@ class IOInterfaceSpecOp : public OpKernel {
     OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     PartialTensorShape shape;
     DataType dtype;
@@ -266,7 +273,7 @@ class IOInterfaceSpecOp : public OpKernel {
     context->set_output(1, dtype_tensor);
 
     std::vector<Tensor> extra;
-    Status status = resource->Extra(*component, &extra);
+    status = resource->Extra(*component, &extra);
     if (!errors::IsUnimplemented(status)) {
       OP_REQUIRES_OK(context, status);
       for (size_t i = 0; i < extra.size(); i++) {
@@ -308,8 +315,15 @@ class IOIterableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("capacity", &capacity_tensor));
     const int64 capacity = capacity_tensor->scalar<int64>()();
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     OP_REQUIRES(context, (capacity > 0), errors::InvalidArgument("capacity <= 0 is not supported: ", capacity));
 
@@ -403,8 +417,15 @@ class IOIndexableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
+    Status status;
+
+    Tensor component_empty(DT_INT64, TensorShape({}));
+    component_empty.scalar<int64>()() = 0;
     const Tensor* component;
-    OP_REQUIRES_OK(context, context->input("component", &component));
+    status = context->input("component", &component);
+    if (!status.ok()) {
+      component = &component_empty;
+    }
 
     int64 output_index = 0;
     Tensor* value_tensor = nullptr;
