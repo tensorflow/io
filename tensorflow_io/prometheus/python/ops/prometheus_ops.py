@@ -21,7 +21,7 @@ import warnings
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import core_golang_ops
 
 warnings.warn(
     "The tensorflow_io.prometheus.PrometheusDataset is "
@@ -32,7 +32,7 @@ warnings.warn(
 
 def read_prometheus(endpoint, query):
   """read_prometheus"""
-  return core_ops.read_prometheus(endpoint, query)
+  return core_golang_ops.read_prometheus(endpoint, query)
 
 class PrometheusDataset(data_ops.BaseDataset):
   """A Prometheus Dataset"""
