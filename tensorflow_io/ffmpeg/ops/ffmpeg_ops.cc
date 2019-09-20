@@ -70,7 +70,7 @@ REGISTER_OP("AudioDataset")
 REGISTER_OP("FfmpegIndexableInit")
   .Input("input: string")
   .Output("resource: resource")
-  .Output("component: string")
+  .Output("components: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -81,10 +81,10 @@ REGISTER_OP("FfmpegIndexableInit")
 
 REGISTER_OP("FfmpegIndexableSpec")
   .Input("input: resource")
-  .Input("component: string")
   .Output("shape: int64")
   .Output("dtype: int64")
   .Output("rate: int64")
+  .Attr("component: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->MakeShape({c->UnknownDim()}));
     c->set_output(1, c->MakeShape({}));

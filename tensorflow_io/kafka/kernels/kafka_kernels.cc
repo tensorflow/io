@@ -176,7 +176,7 @@ class KafkaIterable : public IOIterableInterface {
 
     return Status::OK();
   }
-  Status Next(const int64 capacity, const Tensor& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Next(const int64 capacity, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
     while (consumer_.get() != nullptr && (*record_read) < capacity) {
       if (!kafka_event_cb_.run()) {
@@ -215,7 +215,7 @@ class KafkaIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();

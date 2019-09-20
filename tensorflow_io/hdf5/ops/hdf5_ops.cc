@@ -32,9 +32,9 @@ REGISTER_OP("HDF5IndexableInit")
    });
 REGISTER_OP("HDF5IndexableSpec")
   .Input("input: resource")
-  .Input("component: string")
   .Output("shape: int64")
   .Output("dtype: int64")
+  .Attr("component: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->MakeShape({c->UnknownDim()}));
     c->set_output(1, c->MakeShape({}));
@@ -45,8 +45,8 @@ REGISTER_OP("HDF5IndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("component: string")
   .Output("value: dtype")
+  .Attr("component: string")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
