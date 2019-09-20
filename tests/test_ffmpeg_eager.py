@@ -26,6 +26,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 if sys.platform == "darwin":
   pytest.skip("video is not supported on macOS yet", allow_module_level=True)
+import tensorflow_io as tfio  # pylint: disable=wrong-import-position
 import tensorflow_io.ffmpeg as ffmpeg_io  # pylint: disable=wrong-import-position
 
 video_path = "file://" + os.path.join(
@@ -41,6 +42,16 @@ def test_video_dataset():
     assert v.shape == (320, 560, 3)
     i += 1
   assert i == 166 * num_repeats
+
+def test_ffmpeg_io_tensor_video():
+  """test_ffmpeg_io_tensor_video"""
+  video = tfio.IOTensor.from_ffmpeg(video_path)
+  assert video.spec[0].shape.as_list() == [None, 320, 560, 3]
+  assert video.spec[0].dtype == tf.uint8
+  assert video.spec[0].name == 'video:0'
+  assert video.spec[1].shape.as_list() == [None, 1]
+  assert video.spec[1].dtype == tf.float32
+  assert video.spec[1].name == 'audio:1'
 
 audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
