@@ -84,9 +84,11 @@ REGISTER_OP("FfmpegIndexableSpec")
   .Input("component: string")
   .Output("shape: int64")
   .Output("dtype: int64")
+  .Output("rate: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->MakeShape({c->UnknownDim()}));
     c->set_output(1, c->MakeShape({}));
+    c->set_output(2, c->MakeShape({}));
     return Status::OK();
    });
 

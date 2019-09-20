@@ -51,6 +51,15 @@ class FFmpegReadStreamMeta {
   int64 media_type_;
 
 };
+class FFmpegVideoStreamMeta : public FFmpegReadStreamMeta {
+ public:
+  FFmpegVideoStreamMeta()
+  : FFmpegReadStreamMeta(AVMEDIA_TYPE_VIDEO) {}
+  virtual ~FFmpegVideoStreamMeta() {}
+
+ private:
+};
+
 class FFmpegAudioStreamMeta : public FFmpegReadStreamMeta {
  public:
   FFmpegAudioStreamMeta(int64 rate)
@@ -267,6 +276,7 @@ class FFmpegIndexable : public IOIndexableInterface {
         video_index++;
         columns_.push_back(column);
         columns_index_[column] = i;
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegVideoStreamMeta()));
         }
         break;
       case AVMEDIA_TYPE_AUDIO: {
@@ -367,6 +377,18 @@ class FFmpegIndexable : public IOIndexableInterface {
     int64 column_index = columns_index_[component.scalar<string>()()];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
+    return Status::OK();
+  }
+  Status Extra(const Tensor& component, std::vector<Tensor>* extra) override {
+    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+    }
+    int64 column_index = columns_index_[component.scalar<string>()()];
+    // Expose a sample `rate`
+    Tensor rate(DT_INT32, TensorShape({}));
+    FFmpegAudioStreamMeta *meta = dynamic_cast<FFmpegAudioStreamMeta *>(columns_meta_[column_index].get());
+    rate.scalar<int32>()() = (meta != nullptr) ? meta->Rate() : 0;
+    extra->push_back(rate);
     return Status::OK();
   }
 

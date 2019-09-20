@@ -21,6 +21,7 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
+from tensorflow_io.core.python.ops import audio_io_tensor_ops
 
 class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """FFmpegIOTensor"""
@@ -38,14 +39,22 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
-      spec = []
+      elements = []
       for column in columns:
-        shape, dtype = ffmpeg_ops.ffmpeg_indexable_spec(resource, column)
+        shape, dtype, rate = ffmpeg_ops.ffmpeg_indexable_spec(resource, column)
         shape = tf.TensorShape([None if e < 0 else e for e in shape])
         dtype = tf.as_dtype(dtype.numpy())
-        spec.append(tf.TensorSpec(shape, dtype, column))
-      spec = tuple(spec)
+        spec = tf.TensorSpec(shape, dtype, column)
+        if column.startswith("a:"):
+          rate = rate.numpy()
+          elements.append(audio_io_tensor_ops.AudioIOTensor(
+              rate, spec, resource, None, partitions=None,
+              internal=internal))
+        else:
+          elements.append(io_tensor_ops.BaseIOTensor(
+              spec, resource, None, partitions=None,
+              internal=internal))
+      spec = tuple([e.spec for e in elements])
       super(FFmpegIOTensor, self).__init__(
-          spec, columns,
-          resource, None,
+          spec, columns, elements,
           internal=internal)

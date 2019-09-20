@@ -238,7 +238,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return audio_io_tensor_ops.AudioIOTensor(filename, internal=True)
+      return audio_io_tensor_ops._from_audio(filename, internal=True) # pylint: disable=protected-access
 
   @classmethod
   def from_json(cls,

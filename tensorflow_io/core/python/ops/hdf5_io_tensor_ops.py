@@ -33,19 +33,35 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
                filename,
                internal=False):
     with tf.name_scope("HDF5IOTensor") as scope:
+      class _Function(object):
+        def __init__(self, func, spec, key):
+          self._func = func
+          self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
+          self._dtype = spec.dtype
+          self._component = key
+        def __call__(self, resource, start, stop):
+          return self._func(
+              resource, start=start, stop=stop,
+              component=self._component,
+              shape=self._shape, dtype=self._dtype)
+
       resource, columns = core_ops.hdf5_indexable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
-      spec = []
+      elements = []
       for column in columns:
         shape, dtype = core_ops.hdf5_indexable_spec(resource, column)
         shape = tf.TensorShape(shape)
         dtype = tf.as_dtype(dtype.numpy())
-        spec.append(tf.TensorSpec(shape, dtype, column))
-      spec = tuple(spec)
+        spec = tf.TensorSpec(shape, dtype, column)
+        elements.append(
+            io_tensor_ops.BaseIOTensor(
+                spec, resource,
+                _Function(core_ops.hdf5_indexable_read, spec, column),
+                partitions=None, internal=True))
+      spec = tuple([e.spec for e in elements])
       super(HDF5IOTensor, self).__init__(
-          spec, columns,
-          resource, core_ops.hdf5_indexable_read,
+          spec, columns, elements,
           internal=internal)
