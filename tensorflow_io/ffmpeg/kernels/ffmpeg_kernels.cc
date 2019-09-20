@@ -40,6 +40,121 @@ class FFmpegReadStreamFile : public SizedRandomAccessFile {
   int64 file_size_ = -1;
 };
 
+class FFmpegReadStreamMeta {
+ public:
+  FFmpegReadStreamMeta(int64 media_type)
+  : media_type_(media_type) {}
+  virtual ~FFmpegReadStreamMeta() {}
+
+  int64 Type() { return media_type_; }
+ private:
+  int64 media_type_;
+
+};
+class FFmpegAudioStreamMeta : public FFmpegReadStreamMeta {
+ public:
+  FFmpegAudioStreamMeta(int64 rate)
+  : FFmpegReadStreamMeta(AVMEDIA_TYPE_AUDIO)
+  , rate_(rate) {}
+  virtual ~FFmpegAudioStreamMeta() {}
+
+  int64 Rate() { return rate_; }
+ private:
+  int64 rate_;
+};
+
+class FFmpegSubtitleStreamMeta : public FFmpegReadStreamMeta {
+ public:
+  FFmpegSubtitleStreamMeta(const std::vector<string>& entries)
+  : FFmpegReadStreamMeta(AVMEDIA_TYPE_SUBTITLE)
+  , entries_(entries) {}
+  virtual ~FFmpegSubtitleStreamMeta() {}
+
+  static Status Read(AVFormatContext *format_context, AVStream *media_stream, std::vector<string>* entries) {
+    entries->clear();
+
+#if LIBAVCODEC_VERSION_MAJOR > 56
+    // Find decoder for the stream
+    AVCodec *codec = avcodec_find_decoder(media_stream->codecpar->codec_id);
+    if (!codec) {
+      return errors::Internal("could not find media codec: ", media_stream->codecpar->codec_id);
+    }
+    // Allocate a codec context for the decoder
+    AVCodecContext *codec_context = avcodec_alloc_context3(codec);
+    if (!codec_context) {
+      return errors::Internal("could not allocate codec context");
+    }
+
+    std::unique_ptr<AVCodecContext, void(*)(AVCodecContext*)> codec_context_scope(codec_context, [](AVCodecContext* p) { if (p != nullptr) { avcodec_free_context(&p); } });
+
+    // Copy codec parameters from input stream to output codec context
+    if (avcodec_parameters_to_context(codec_context, media_stream->codecpar) < 0) {
+      return errors::Internal("could not copy codec parameters from input stream to output codec context");
+    }
+#else
+    AVCodecContext *codec_context = media_stream->codec;
+
+    // Find decoder for the stream
+    AVCodec *codec = avcodec_find_decoder(codec_context->codec_id);
+    if (!codec) {
+      return errors::Internal("could not find media codec: ", codec_context->codec_id);
+    }
+#endif
+    // Initialize the decoders
+    // TODO (yongtang): avcodec_open2 is not thread-safe
+    AVDictionary *opts = NULL;
+    if (avcodec_open2(codec_context, codec, &opts) < 0) {
+      return errors::Internal("could not open codec");
+    }
+
+    // Initialize packet
+    AVPacket packet;
+    av_init_packet(&packet);
+    packet.data = NULL;
+    packet.size = 0;
+
+    if (av_read_frame(format_context, &packet) < 0) {
+      // No frame to read, assume empty;
+      return Status::OK();
+    }
+
+    std::unique_ptr<AVPacket, void(*)(AVPacket*)> packet_scope(&packet, [](AVPacket* p) { if (p != nullptr) { av_packet_unref(p); } });
+    do {
+      if(packet.stream_index != media_stream->index) {
+        continue;
+      }
+      AVSubtitle subtitle;
+      int got_subtitle = 0;
+      int decoded = avcodec_decode_subtitle2(codec_context, &subtitle, &got_subtitle, &packet);
+      if (decoded >= 0 && got_subtitle > 0) {
+        if (subtitle.num_rects > 1) {
+          return errors::InvalidArgument("subtitle with more than 1 rect not supported: ", subtitle.num_rects);
+        }
+        string line;
+        int rect_index = 0;
+        if (subtitle.rects[rect_index]->type == SUBTITLE_TEXT) {
+          line = string(subtitle.rects[rect_index]->text);
+        } else if (subtitle.rects[rect_index]->type == SUBTITLE_ASS) {
+          line = string(subtitle.rects[rect_index]->ass);
+        } else {
+          return errors::InvalidArgument("unsupported subtitle type: ", subtitle.rects[rect_index]->type);
+        }
+        packet.data += decoded;
+        packet.size -= decoded;
+        if (packet.size > 0) {
+          return errors::InvalidArgument("packet is supposed to only have one subtitle, but still have ", packet.size, " bytes");
+        }
+        entries->push_back(line);
+      }
+    } while (av_read_frame(format_context, &packet) >= 0);
+
+    return Status::OK();
+  }
+  
+ private:
+  std::vector<string> entries_;
+};
+
 static int IOFFmpegReadPacket(void *opaque, uint8_t *buf, int buf_size) {
   FFmpegReadStreamFile *r = (FFmpegReadStreamFile *)opaque;
   StringPiece result;
@@ -124,35 +239,46 @@ class FFmpegIndexable : public IOIndexableInterface {
       return errors::InvalidArgument("could not find stream information: ", filename);
     }
 
+    int64 audio_index = 0, video_index = 0, subtitle_index = 0;
     for (int64 i = 0; i < format_context_->nb_streams; i++)
     {
 #if LIBAVCODEC_VERSION_MAJOR > 56
       int media_type = format_context_->streams[i]->codecpar->codec_type;
+      int64 height = format_context_->streams[i]->codecpar->height;
+      int64 width = format_context_->streams[i]->codecpar->width;
 #else
       int media_type = format_context_->streams[i]->codec->codec_type;
+      int64 height = format_context_->streams[i]->codec->height;
+      int64 width = format_context_->streams[i]->codec->width;
 #endif
+      int64 frames = format_context_->streams[i]->nb_frames;
+      if (frames == 0) {
+        // Set frames to -1 to have a proper shape of None
+        frames = -1;
+      }
       switch (media_type)
       {
       case AVMEDIA_TYPE_VIDEO: {
         // n * h * w * 3 (uint8) / always RGB
-#if LIBAVCODEC_VERSION_MAJOR > 56
-        shapes_.push_back(PartialTensorShape({-1, format_context_->streams[i]->codecpar->height, format_context_->streams[i]->codecpar->width, 3}));
-#else
-        shapes_.push_back(PartialTensorShape({-1, format_context_->streams[i]->codec->height, format_context_->streams[i]->codec->width, 3}));
-#endif
+        shapes_.push_back(PartialTensorShape({frames, height, width, 3}));
         dtypes_.push_back(DT_UINT8);
-        string column = absl::StrCat("video:", i);
+
+        string column = absl::StrCat("v:", video_index);
+        video_index++;
         columns_.push_back(column);
         columns_index_[column] = i;
         }
         break;
       case AVMEDIA_TYPE_AUDIO: {
         DataType dtype = DT_INVALID;
-// TODO: version check is not right for audio
 #if LIBAVCODEC_VERSION_MAJOR > 56
         int format = format_context_->streams[i]->codecpar->format;
+        int64 channels = format_context_->streams[i]->codecpar->channels;
+        int64 rate = format_context_->streams[i]->codecpar->sample_rate;
 #else
         int format = format_context_->streams[i]->codec->sample_fmt;
+        int64 channels = format_context_->streams[i]->codec->channels;
+        int64 rate = format_context_->streams[i]->codec->sample_rate;
 #endif
         switch (format)
         {
@@ -193,14 +319,33 @@ class FFmpegIndexable : public IOIndexableInterface {
           return errors::InvalidArgument("invalid audio (", i, ") format: ", format);
         }
         // samples * channels
-        shapes_.push_back(PartialTensorShape({-1, format_context_->streams[i]->codec->channels}));
+        shapes_.push_back(PartialTensorShape({frames, channels}));
         dtypes_.push_back(dtype);
-        string column = absl::StrCat("audio:", i);
+        string column = absl::StrCat("a:", audio_index);
+        audio_index++;
         columns_.push_back(column);
         columns_index_[column] = i;
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegAudioStreamMeta(rate)));
         }
         break;
-      case AVMEDIA_TYPE_SUBTITLE:
+      case AVMEDIA_TYPE_SUBTITLE: {
+        // Subtitle always will not show frames.
+        // Since it is expected to be small, let's just extract inline
+        std::vector<string> entries;
+        TF_RETURN_IF_ERROR(FFmpegSubtitleStreamMeta::Read(format_context_, format_context_->streams[i], &entries));
+        if (entries.size() >= 0) {
+          frames = static_cast<int64>(entries.size());
+        }
+        shapes_.push_back(PartialTensorShape({frames}));
+        DataType dtype = DT_STRING;
+        dtypes_.push_back(dtype);
+        string column = absl::StrCat("s:", subtitle_index);
+        subtitle_index++;
+        columns_.push_back(column);
+        columns_index_[column] = i;
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegSubtitleStreamMeta(entries)));
+        }
+        break;
       default:
         return errors::InvalidArgument("invalid stream (", i, ") type: ", media_type);
       };
@@ -248,6 +393,7 @@ class FFmpegIndexable : public IOIndexableInterface {
   std::vector<PartialTensorShape> shapes_;
   std::vector<string> columns_;
   std::unordered_map<string, int64> columns_index_;
+  std::vector<std::unique_ptr<FFmpegReadStreamMeta>> columns_meta_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("FfmpegIndexableInit").Device(DEVICE_CPU),

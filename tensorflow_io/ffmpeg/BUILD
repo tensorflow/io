@@ -53,7 +53,6 @@ cc_library(
         "kernels/audio_ffmpeg_input.cc",
         "kernels/audio_ffmpeg_reader.cc",
         "kernels/audio_ffmpeg_reader.h",
-        "kernels/ffmpeg_kernels.cc",
         "kernels/video_ffmpeg_input.cc",
         "kernels/video_ffmpeg_reader.cc",
         "kernels/video_ffmpeg_reader.h",
