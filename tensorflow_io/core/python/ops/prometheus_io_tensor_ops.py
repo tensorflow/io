@@ -21,7 +21,7 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
-from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import core_golang_ops
 
 class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=protected-access
   """PrometheusIOTensor"""
@@ -35,17 +35,17 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
                internal=False):
     with tf.name_scope("PrometheusIOTensor") as scope:
       metadata = [] if endpoint is None else ["endpoint: %s" % endpoint]
-      resource = core_ops.prometheus_indexable_init(
+      resource = core_golang_ops.prometheus_indexable_init(
           query, metadata=metadata,
           container=scope, shared_name="%s/%s" % (query, uuid.uuid4().hex))
-      index_shape, index_dtype = core_ops.prometheus_indexable_spec(
+      index_shape, index_dtype = core_golang_ops.prometheus_indexable_spec(
           resource, "index")
-      value_shape, value_dtype = core_ops.prometheus_indexable_spec(
+      value_shape, value_dtype = core_golang_ops.prometheus_indexable_spec(
           resource, "value")
       spec = tuple([tf.TensorSpec(tf.TensorShape(index_shape),
                                   tf.as_dtype(index_dtype.numpy())),
                     tf.TensorSpec(tf.TensorShape(value_shape),
                                   tf.as_dtype(value_dtype.numpy()))])
       super(PrometheusIOTensor, self).__init__(
-          spec, resource, core_ops.prometheus_indexable_read,
+          spec, resource, core_golang_ops.prometheus_indexable_read,
           internal=internal)

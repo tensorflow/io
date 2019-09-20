@@ -124,9 +124,8 @@ cc_library(
 go_binary(
     name = "golang_ops",
     srcs = ["go/prometheus.go"],
-    out = "python/ops/libtensorflow_io_golang.so",
     cgo = True,
-    linkmode = "c-shared",
+    linkmode = "c-archive",
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_prometheus_client_golang//api:go_default_library",
@@ -136,15 +135,12 @@ go_binary(
 )
 
 cc_library(
-    name = "prometheus_go_ops",
-    srcs = [
-        "golang_ops.h",
-    ],
+    name = "go_ops",
     copts = tf_io_copts(),
-    data = [
-        "//tensorflow_io/core:golang_ops.h",
-    ],
     linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:golang_ops.cc",
+    ],
 )
 
 cc_binary(
@@ -152,12 +148,12 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        ":core_ops",
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/audio:audio_ops",
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/cifar:cifar_ops",
+        "//tensorflow_io/core:core_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
@@ -167,12 +163,20 @@ cc_binary(
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/parquet:parquet_ops",
-        "//tensorflow_io/prometheus:prometheus_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
         "@xz//:lzma",
+    ],
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_golang.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = [
+        "//tensorflow_io/prometheus:prometheus_ops",
     ],
 )
 
