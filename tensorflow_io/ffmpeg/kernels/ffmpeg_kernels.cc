@@ -148,6 +148,7 @@ class FFmpegIndexable : public IOIndexableInterface {
         break;
       case AVMEDIA_TYPE_AUDIO: {
         DataType dtype = DT_INVALID;
+// TODO: version check is not right for audio
 #if LIBAVCODEC_VERSION_MAJOR > 56
         int format = format_context_->streams[i]->codecpar->format;
 #else

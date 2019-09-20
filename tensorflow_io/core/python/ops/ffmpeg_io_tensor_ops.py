@@ -21,7 +21,6 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
-from tensorflow_io.core.python.ops import ffmpeg_ops
 
 class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """FFmpegIOTensor"""
@@ -33,6 +32,7 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
                filename,
                internal=False):
     with tf.name_scope("FFmpegIOTensor") as scope:
+      from tensorflow_io.core.python.ops import ffmpeg_ops
       resource, columns = ffmpeg_ops.ffmpeg_indexable_init(
           filename,
           container=scope,
