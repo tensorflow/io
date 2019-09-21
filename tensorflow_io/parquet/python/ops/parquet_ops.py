@@ -17,9 +17,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops as parquet_ops
 from tensorflow_io.core.python.ops import data_ops
+
+warnings.warn(
+    "The tensorflow_io.parquet.ParquetDataset is "
+    "deprecated. Please look for tfio.IOTensor.from_parquet "
+    "for reading parquet files into tensorflow.",
+    DeprecationWarning)
 
 def list_parquet_columns(filename, **kwargs):
   """list_parquet_columns"""
