@@ -47,7 +47,8 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
       shape, dtype = core_ops.kafka_indexable_spec(resource, 0)
-      spec = tf.TensorSpec(tf.TensorShape(shape), tf.as_dtype(dtype.numpy()))
+      spec = tf.TensorSpec(
+          tf.TensorShape(shape.numpy()), tf.as_dtype(dtype.numpy()))
 
       class _Function(object):
         def __init__(self, func, spec):

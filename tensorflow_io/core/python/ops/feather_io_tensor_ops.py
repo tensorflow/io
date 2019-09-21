@@ -41,7 +41,7 @@ class FeatherIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
       spec = []
       for column in columns:
         shape, dtype = core_ops.feather_indexable_spec(resource, column)
-        shape = tf.TensorShape(shape)
+        shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec.append(tf.TensorSpec(shape, dtype, column))
       spec = tuple(spec)
