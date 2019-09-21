@@ -130,13 +130,13 @@ class WAVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     *shape = shape_;
     *dtype = dtype_;
     return Status::OK();
   }
 
-  Status Extra(const Tensor& component, std::vector<Tensor>* extra) override {
+  Status Extra(const string& component, std::vector<Tensor>* extra) override {
     // Expose a sample `rate`
     Tensor rate(DT_INT32, TensorShape({}));
     rate.scalar<int32>()() = header_.nSamplesPerSec;
@@ -144,7 +144,7 @@ class WAVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
     const int64 sample_start = start;
     const int64 sample_stop = stop;
 

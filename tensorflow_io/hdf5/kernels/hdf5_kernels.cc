@@ -399,22 +399,22 @@ class HDF5Indexable : public IOIndexableInterface {
     }
     return Status::OK();
   }
-  Status Components(Tensor* components) override {
-    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Components(std::vector<string>* components) override {
+    components->clear();
     for (size_t i = 0; i < columns_.size(); i++) {
-      components->flat<string>()(i) = columns_[i];
+      components->push_back(columns_[i]);
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
-    const int64 column_index = columns_index_[component.scalar<string>()()];
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+    const int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
-    const string& column = component.scalar<string>()();
+  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+    const string& column = component;
 
     H5::H5File *file = file_image_->GetFile();
     try {

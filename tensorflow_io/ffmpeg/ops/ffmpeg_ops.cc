@@ -67,4 +67,29 @@ REGISTER_OP("AudioDataset")
        return Status::OK();
      });
 
+REGISTER_OP("FfmpegIndexableInit")
+  .Input("input: string")
+  .Output("resource: resource")
+  .Output("components: string")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    c->set_output(1, c->MakeShape({}));
+    return Status::OK();
+   });
+
+REGISTER_OP("FfmpegIndexableSpec")
+  .Input("input: resource")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .Output("rate: int64")
+  .Attr("component: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
+    c->set_output(2, c->MakeShape({}));
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

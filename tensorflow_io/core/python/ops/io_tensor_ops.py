@@ -412,12 +412,10 @@ class _CollectionIOTensor(_IOTensor):
   def __init__(self,
                spec,
                keys,
-               resource,
-               function,
+               values,
                internal=False):
     self._keys = keys
-    self._resource = resource
-    self._function = function
+    self._values = values
     super(_CollectionIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -434,24 +432,7 @@ class _CollectionIOTensor(_IOTensor):
     """Return a BaseIOTensor with key named `key`"""
     key_index = self.keys.index(
         next(e for e in self.keys if e == key))
-    spec = tf.nest.flatten(self.spec)[key_index]
-    class _Function(object):
-      def __init__(self, func, spec, key):
-        self._func = func
-        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-        self._dtype = spec.dtype
-        self._component = key
-
-      def __call__(self, resource, start, stop):
-        return self._func(
-            resource, start=start, stop=stop,
-            component=self._component,
-            shape=self._shape, dtype=self._dtype)
-
-    return BaseIOTensor(
-        spec, self._resource,
-        _Function(self._function, spec, key),
-        partitions=None, internal=True)
+    return self._values[key_index]
 
 class _SeriesIOTensor(_IOTensor):
   """_SeriesIOTensor"""

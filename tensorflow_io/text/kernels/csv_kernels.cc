@@ -119,18 +119,18 @@ class CSVIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Components(Tensor* components) override {
-    *components = Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}));
+  Status Components(std::vector<string>* components) override {
+    components->clear();
     for (size_t i = 0; i < columns_.size(); i++) {
-      components->flat<string>()(i) = columns_[i];
+      components->push_back(columns_[i]);
     }
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
-    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
-      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+    if (columns_index_.find(component) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component, " is invalid");
     }
-    int64 column_index = columns_index_[component.scalar<string>()()];
+    int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     if (label) {
       *dtype = DT_BOOL;
@@ -140,11 +140,11 @@ class CSVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
-    if (columns_index_.find(component.scalar<string>()()) == columns_index_.end()) {
-      return errors::InvalidArgument("component ", component.scalar<string>()(), " is invalid");
+  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+    if (columns_index_.find(component) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component, " is invalid");
     }
-    int64 column_index = columns_index_[component.scalar<string>()()];
+    int64 column_index = columns_index_[component];
 
     std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
 

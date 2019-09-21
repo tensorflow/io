@@ -138,7 +138,7 @@ REGISTER_OP("TextOutputSequenceSetItem")
 REGISTER_OP("CSVIndexableInit")
   .Input("input: string")
   .Output("resource: resource")
-  .Output("component: string")
+  .Output("components: string")
   .Attr("container: string = ''")
   .Attr("shared_name: string = ''")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -149,9 +149,9 @@ REGISTER_OP("CSVIndexableInit")
 
 REGISTER_OP("CSVIndexableSpec")
   .Input("input: resource")
-  .Input("component: string")
   .Output("shape: int64")
   .Output("dtype: int64")
+  .Attr("component: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     c->set_output(0, c->MakeShape({c->UnknownDim()}));
     c->set_output(1, c->MakeShape({}));
@@ -162,9 +162,9 @@ REGISTER_OP("CSVIndexableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
-  .Input("component: string")
   .Output("value: dtype")
   .Attr("filter: list(string) = []")
+  .Attr("component: string")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
