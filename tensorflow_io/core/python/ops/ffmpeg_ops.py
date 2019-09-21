@@ -70,3 +70,5 @@ audio_input = _ffmpeg_ops.audio_input
 video_input = _ffmpeg_ops.video_input
 audio_dataset = _ffmpeg_ops.audio_dataset
 video_dataset = _ffmpeg_ops.video_dataset
+ffmpeg_indexable_init = _ffmpeg_ops.ffmpeg_indexable_init
+ffmpeg_indexable_spec = _ffmpeg_ops.ffmpeg_indexable_spec

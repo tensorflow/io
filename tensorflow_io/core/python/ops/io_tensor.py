@@ -28,6 +28,7 @@ from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
 from tensorflow_io.core.python.ops import csv_io_tensor_ops
 from tensorflow_io.core.python.ops import avro_io_tensor_ops
+from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -237,7 +238,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return audio_io_tensor_ops.AudioIOTensor(filename, internal=True)
+      return audio_io_tensor_ops._from_audio(filename, internal=True) # pylint: disable=protected-access
 
   @classmethod
   def from_json(cls,
@@ -403,3 +404,21 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromAvro")):
       return avro_io_tensor_ops.AvroIOTensor(
           filename, schema, internal=True, **kwargs)
+
+  @classmethod
+  def from_ffmpeg(cls,
+                  filename,
+                  **kwargs):
+    """Creates an `IOTensor` from a audio/video file.
+
+    Args:
+      filename: A string, the filename of a audio/video file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+      return ffmpeg_io_tensor_ops.FFmpegIOTensor(
+          filename, internal=True)

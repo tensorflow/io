@@ -134,14 +134,14 @@ class PrometheusIndexable : public IOIndexableInterface {
 
     return Status::OK();
   }
-  Status Spec(const Tensor& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
     int64 column_index;
-    if (component.scalar<string>()() == "index") {
+    if (component == "index") {
       column_index = 0;
-    } else if (component.scalar<string>()() == "value") {
+    } else if (component == "value") {
       column_index = 1;
     } else {
-      return errors::InvalidArgument("component ", component.scalar<string>()() , " is not supported");
+      return errors::InvalidArgument("component ", component, " is not supported");
     }
 
     *shape = shapes_[column_index];
@@ -149,13 +149,13 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const Tensor& component, Tensor* value, Tensor* label) override {
-    if (component.scalar<string>()() == "index") {
+  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+    if (component == "index") {
       memcpy(&value->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
-    } else if (component.scalar<string>()() == "value") {
+    } else if (component == "value") {
       memcpy(&value->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
     } else {
-      return errors::InvalidArgument("component ", component.scalar<string>()() , " is not supported");
+      return errors::InvalidArgument("component ", component, " is not supported");
     }
 
     return Status::OK();

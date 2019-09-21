@@ -37,34 +37,16 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   # Constructor (private)
   #=============================================================================
   def __init__(self,
-               filename,
+               rate,
+               spec,
+               resource,
+               function,
+               partitions,
                internal=False):
-    with tf.name_scope("AudioIOTensor") as scope:
-      resource = core_ops.wav_indexable_init(
-          filename,
-          container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, rate = core_ops.wav_indexable_spec(resource)
-      shape = tf.TensorShape(shape.numpy())
-      dtype = tf.as_dtype(dtype.numpy())
-      spec = tf.TensorSpec(shape, dtype)
-
-      class _Function(object):
-        def __init__(self, func, shape, dtype):
-          self._func = func
-          self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-          self._dtype = dtype
-
-        def __call__(self, resource, start, stop):
-          return self._func(
-              resource, start=start, stop=stop,
-              shape=self._shape, dtype=self._dtype)
-
-      self._rate = rate.numpy()
-      super(AudioIOTensor, self).__init__(
-          spec, resource,
-          _Function(core_ops.wav_indexable_read, spec.shape, spec.dtype),
-          partitions=None, internal=internal)
+    self._rate = rate
+    super(AudioIOTensor, self).__init__(
+        spec, resource, function,
+        partitions=partitions, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -74,3 +56,33 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   def rate(self):
     """The sample `rate` of the audio stream"""
     return self._rate
+
+def _from_audio(filename, internal=False):
+  """_from_audio"""
+  with tf.name_scope("FromAudio") as scope:
+    resource = core_ops.wav_indexable_init(
+        filename,
+        container=scope,
+        shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+    shape, dtype, rate = core_ops.wav_indexable_spec(resource)
+    shape = tf.TensorShape(shape.numpy())
+    dtype = tf.as_dtype(dtype.numpy())
+    spec = tf.TensorSpec(shape, dtype)
+
+    class _Function(object):
+      def __init__(self, func, shape, dtype):
+        self._func = func
+        self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+        self._dtype = dtype
+
+      def __call__(self, resource, start, stop):
+        return self._func(
+            resource, start=start, stop=stop,
+            shape=self._shape, dtype=self._dtype)
+
+    rate = rate.numpy()
+    return AudioIOTensor(
+        rate,
+        spec, resource,
+        _Function(core_ops.wav_indexable_read, spec.shape, spec.dtype),
+        partitions=None, internal=internal)
