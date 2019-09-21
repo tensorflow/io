@@ -119,6 +119,7 @@ def test_avro_dataset_partition():
       assert im.numpy() == 100.0 + i
       assert re.numpy() == 100.0 * i
       i += 1
+    assert i == 100
 
 if __name__ == "__main__":
   test.main()

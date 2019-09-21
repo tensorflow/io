@@ -29,6 +29,7 @@ from tensorflow_io.core.python.ops import feather_io_tensor_ops
 from tensorflow_io.core.python.ops import csv_io_tensor_ops
 from tensorflow_io.core.python.ops import avro_io_tensor_ops
 from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
+from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -422,3 +423,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
       return ffmpeg_io_tensor_ops.FFmpegIOTensor(
           filename, internal=True)
+
+  @classmethod
+  def from_parquet(cls,
+                   filename,
+                   **kwargs):
+    """Creates an `IOTensor` from a parquet file.
+
+    Args:
+      filename: A string, the filename of a parquet file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromParquet")):
+      return parquet_io_tensor_ops.ParquetIOTensor(filename, internal=True)
