@@ -53,7 +53,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
       elements = []
       for column in columns:
         shape, dtype = core_ops.hdf5_indexable_spec(resource, column)
-        shape = tf.TensorShape(shape)
+        shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         elements.append(

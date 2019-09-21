@@ -42,9 +42,9 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
           resource, "index")
       value_shape, value_dtype = core_golang_ops.prometheus_indexable_spec(
           resource, "value")
-      spec = tuple([tf.TensorSpec(tf.TensorShape(index_shape),
+      spec = tuple([tf.TensorSpec(tf.TensorShape(index_shape.numpy()),
                                   tf.as_dtype(index_dtype.numpy())),
-                    tf.TensorSpec(tf.TensorShape(value_shape),
+                    tf.TensorSpec(tf.TensorShape(value_shape.numpy()),
                                   tf.as_dtype(value_dtype.numpy()))])
       super(PrometheusIOTensor, self).__init__(
           spec, resource, core_golang_ops.prometheus_indexable_read,
