@@ -42,7 +42,7 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
       elements = []
       for column in columns:
         shape, dtype, rate = ffmpeg_ops.ffmpeg_indexable_spec(resource, column)
-        shape = tf.TensorShape([None if e < 0 else e for e in shape])
+        shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         if column.startswith("a:"):
