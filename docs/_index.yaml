@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 # ==============================================================================
+book_path: /io/_book.yaml
 project_path: /io/_project.yaml
 description: <!--no description-->
 landing_page:
@@ -52,6 +53,7 @@ landing_page:
 
             </pre>
             {% dynamic if request.tld != 'cn' %}
+            <a class="colab-button" target="_blank" href="https://colab.research.google.com/github/tensorflow/io/blob/master/docs/tutorials/quick.ipynb">Run in a <span>Notebook</span></a>
             {% dynamic endif %}
     - classname: devsite-landing-row-cards
       items:
