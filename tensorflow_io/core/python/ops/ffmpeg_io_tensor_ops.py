@@ -22,7 +22,7 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 
-class _IOTensorIterableAudioNextFunction(object):
+class _IOTensorIterableNextFunction(object):
   def __init__(self, resource, component, function, shape, dtype, capacity):
     self._resource = resource
     self._component = component
@@ -99,26 +99,25 @@ class _IOTensorIterablePartitionedFunction(object):
     return self._length
 
 
-class FFmpegAudioIOTensor(io_tensor_ops._IOTensor): # pylint: disable=protected-access
+class FFmpegBaseIOTensor(io_tensor_ops._IOTensor): # pylint: disable=protected-access
   """FFmpegAudioIOTensor"""
   def __init__(self,
-               spec, function, rate,
+               spec, function,
                internal=False):
-    with tf.name_scope("FFmpegAudioIOTensor"):
+    with tf.name_scope("FFmpegBaseIOTensor"):
       self._function = function
-      self._rate = rate
-      super(FFmpegAudioIOTensor, self).__init__(
+      super(FFmpegBaseIOTensor, self).__init__(
           spec, internal=internal)
 
-  @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
-  def rate(self):
-    return self._rate
   @property
   def shape(self):
     return self.spec.shape
   @property
   def dtype(self):
     return self.spec.dtype
+  def to_tensor(self, **kwargs):
+    with tf.name_scope(kwargs.get("name", "IOToTensor")):
+      return self.__getitem__(slice(None, None))
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
     # Find out the indices based on length and key,
@@ -129,6 +128,28 @@ class FFmpegAudioIOTensor(io_tensor_ops._IOTensor): # pylint: disable=protected-
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
     return self._function._partitions_length() # pylint: disable=protected-access
+
+class FFmpegAudioIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-access
+  """FFmpegAudioIOTensor"""
+  def __init__(self,
+               spec, function, rate,
+               internal=False):
+    with tf.name_scope("FFmpegAudioIOTensor"):
+      self._rate = rate
+      super(FFmpegAudioIOTensor, self).__init__(
+          spec, function, internal=internal)
+  @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
+  def rate(self):
+    return self._rate
+
+class FFmpegSubtitleIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-access
+  """FFmpegAudioIOTensor"""
+  def __init__(self,
+               spec, function,
+               internal=False):
+    with tf.name_scope("FFmpegSubtitleIOTensor"):
+      super(FFmpegSubtitleIOTensor, self).__init__(
+          spec, function, internal=internal)
 
 class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """FFmpegIOTensor"""
@@ -152,15 +173,19 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
+        function = _IOTensorIterableNextFunction(
+            resource, column,
+            ffmpeg_ops.ffmpeg_iterable_next,
+            shape, dtype, capacity=4096)
         if column.startswith("a:"):
           rate = rate.numpy()
-          function = _IOTensorIterableAudioNextFunction(
-              resource, column,
-              ffmpeg_ops.ffmpeg_iterable_next,
-              shape, dtype, capacity=4096)
           elements.append(FFmpegAudioIOTensor(
               spec, _IOTensorIterablePartitionedFunction(function),
               rate, internal=internal))
+        elif column.startswith("s:"):
+          elements.append(FFmpegSubtitleIOTensor(
+              spec, _IOTensorIterablePartitionedFunction(function),
+              internal=internal))
         else:
           elements.append(io_tensor_ops.BaseIOTensor(
               spec, resource, None, partitions=None,

@@ -90,10 +90,11 @@ def test_ffmpeg_io_tensor_audio():
   assert audio_24bit('a:0').dtype == tf.int32
   assert audio_24bit('a:0').rate == 44100
 
+# Disable as the mkv file is large. Run locally
+# by pulling test file while is located in:
+# https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv
 def _test_ffmpeg_io_tensor_mkv():
   """test_ffmpeg_io_tensor_mkv"""
-  # Note: test file is located in:
-  # https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv
   mkv_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_video", "test5.mkv")
@@ -101,3 +102,11 @@ def _test_ffmpeg_io_tensor_mkv():
   assert mkv('a:0').shape.as_list() == [None, 2]
   assert mkv('a:0').dtype == tf.float32
   assert mkv('a:0').rate == 48000
+  assert mkv('s:0').shape.as_list() == [None, 1]
+  assert mkv('s:0').dtype == tf.string
+  assert mkv('s:0')[0] == ['...the colossus of Rhodes!\r\n']
+  assert mkv('s:0')[1] == ['No!\r\n']
+  assert mkv('s:0')[2] == [
+      'The colossus of Rhodes\\Nand it is here just for you Proog.\r\n']
+  assert mkv('s:0')[3] == ['It is there...\r\n']
+  assert mkv('s:0')[4] == ["I'm telling you,\\NEmo...\r\n"]
