@@ -414,7 +414,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
   virtual ~FFmpegSubtitleReadStreamMeta() {}
   virtual Status Open(const string& filename, int64 stream_index) override {
     TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(filename, stream_index));
-    shape_ = PartialTensorShape({-1, 1});
+    shape_ = PartialTensorShape({-1});
     dtype_ = DT_STRING;
     return Status::OK();
   }

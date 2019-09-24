@@ -38,10 +38,12 @@ class _IOTensorIterableNextFunction(object):
 class _IOTensorIterablePartitionedFunction(object):
   """PartitionedFunction will translate call to cached Function call"""
   # function: next call of the iterable
-  def __init__(self, function):
+  def __init__(self, function, shape):
     self._function = function
     self._partitions = []
     self._length = None
+    self._slice_suffix_start = [0 for _ in shape[1:]]
+    self._slice_suffix_size = [e for e in shape[1:]]
 
   def __call__(self, start, stop):
     while self._length is None:
@@ -78,8 +80,8 @@ class _IOTensorIterablePartitionedFunction(object):
     for index in indices:
       slice_start = indices_start[index] - self._partitions_start[index]
       slice_size = indices_stop[index] - indices_start[index]
-      slice_start = [slice_start, 0]
-      slice_size = [slice_size, 1]
+      slice_start = [slice_start] + self._slice_suffix_start
+      slice_size = [slice_size] + self._slice_suffix_size
       item = tf.slice(self._partitions[index], slice_start, slice_size)
       items.append(item)
     return tf.concat(items, axis=0)
@@ -180,11 +182,11 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
         if column.startswith("a:"):
           rate = rate.numpy()
           elements.append(FFmpegAudioIOTensor(
-              spec, _IOTensorIterablePartitionedFunction(function),
+              spec, _IOTensorIterablePartitionedFunction(function, shape),
               rate, internal=internal))
         elif column.startswith("s:"):
           elements.append(FFmpegSubtitleIOTensor(
-              spec, _IOTensorIterablePartitionedFunction(function),
+              spec, _IOTensorIterablePartitionedFunction(function, shape),
               internal=internal))
         else:
           elements.append(io_tensor_ops.BaseIOTensor(

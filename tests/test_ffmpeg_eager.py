@@ -102,7 +102,7 @@ def _test_ffmpeg_io_tensor_mkv():
   assert mkv('a:0').shape.as_list() == [None, 2]
   assert mkv('a:0').dtype == tf.float32
   assert mkv('a:0').rate == 48000
-  assert mkv('s:0').shape.as_list() == [None, 1]
+  assert mkv('s:0').shape.as_list() == [None]
   assert mkv('s:0').dtype == tf.string
   assert mkv('s:0')[0] == ['...the colossus of Rhodes!\r\n']
   assert mkv('s:0')[1] == ['No!\r\n']
