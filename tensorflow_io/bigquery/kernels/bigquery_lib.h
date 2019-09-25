@@ -135,7 +135,6 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
             &response_->avro_rows().serialized_binary_rows()[0]),
         response_->avro_rows().serialized_binary_rows().size());
     decoder_->init(*memory_input_stream_);
-    datum_ = absl::make_unique<avro::GenericDatum>(*this->dataset()->schema());
     return Status::OK();
   }
 
@@ -143,11 +142,12 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
                     const std::vector<string>& columns,
                     const std::vector<DataType>& output_types)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    avro::decode(*decoder_, *datum_);
-    if (datum_->type() != avro::AVRO_RECORD) {
+    avro::GenericDatum datum = avro::GenericDatum(*this->dataset()->schema());
+    avro::decode(*decoder_, datum);
+    if (datum.type() != avro::AVRO_RECORD) {
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
-    const avro::GenericRecord& record = datum_->value<avro::GenericRecord>();
+    const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
     out_tensors->clear();
     // Let's allocate enough space for Tensor, if more than read then slice.
     std::vector<DataType> expected_output_types;
@@ -245,7 +245,6 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
       GUARDED_BY(mu_);
   std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ GUARDED_BY(mu_);
   std::unique_ptr<avro::InputStream> memory_input_stream_ GUARDED_BY(mu_);
-  std::unique_ptr<avro::GenericDatum> datum_ GUARDED_BY(mu_);
   avro::DecoderPtr decoder_ GUARDED_BY(mu_);
 };
 
