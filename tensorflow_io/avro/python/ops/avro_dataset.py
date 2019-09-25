@@ -54,7 +54,6 @@ class _AvroDataset(DatasetSource):
       drop_remainder, num_parallel_calls, input_stream_buffer_size,
       avro_data_buffer_size):
 
-    super(_AvroDataset, self).__init__()
     self._filenames = ops.convert_to_tensor(
         filenames, dtypes.string, name="filenames")
     self._features = _AvroDataset._build_keys_for_sparse_features(features)
@@ -110,6 +109,7 @@ class _AvroDataset(DatasetSource):
 
     # With batch dimension
     self._dense_shapes = self._element_structure._flat_shapes[:len(dense_shapes)]
+    super(_AvroDataset, self).__init__(self._as_variant_tensor())
 
 
   def _as_variant_tensor(self):
