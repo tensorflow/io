@@ -135,6 +135,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
             &response_->avro_rows().serialized_binary_rows()[0]),
         response_->avro_rows().serialized_binary_rows().size());
     decoder_->init(*memory_input_stream_);
+    datum_ = absl::make_unique<avro::GenericDatum>(*this->dataset()->schema());
     return Status::OK();
   }
 
@@ -142,12 +143,11 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
                     const std::vector<string>& columns,
                     const std::vector<DataType>& output_types)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    avro::GenericDatum datum = avro::GenericDatum(*this->dataset()->schema());
-    avro::decode(*decoder_, datum);
-    if (datum.type() != avro::AVRO_RECORD) {
+    avro::decode(*decoder_, *datum_);
+    if (datum_->type() != avro::AVRO_RECORD) {
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
-    const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+    const avro::GenericRecord& record = datum_->value<avro::GenericRecord>();
     out_tensors->clear();
     // Let's allocate enough space for Tensor, if more than read then slice.
     std::vector<DataType> expected_output_types;
@@ -191,12 +191,11 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
           return errors::InvalidArgument("unsupported data type: ",
                                          field.type());
       }
-      if (dtype != output_types[i] && output_types[i] != DT_STRING) {
+      if (dtype != output_types[i]) {
         return errors::InvalidArgument(
             "output type mismatch for column: ", columns[i],
             " expected type: ", DataType_Name(dtype),
             " actual type: ", DataType_Name(output_types[i]));
-        return errors::InvalidArgument("error");
       }
       expected_output_types.emplace_back(dtype);
       Tensor tensor(ctx->allocator({}), output_types[i], {});
@@ -207,44 +206,19 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
       const avro::GenericDatum& field = record.field(column);
       switch (field.type()) {
         case avro::AVRO_BOOL:
-          if (output_types[i] == DT_BOOL) {
-            ((*out_tensors)[i]).scalar<bool>()() = field.value<bool>();
-          } else if (output_types[i] == DT_STRING) {
-            ((*out_tensors)[i]).scalar<string>()() =
-                std::to_string(field.value<bool>());
-          }
+          ((*out_tensors)[i]).scalar<bool>()() = field.value<bool>();
           break;
         case avro::AVRO_INT:
-          if (output_types[i] == DT_INT32) {
-            ((*out_tensors)[i]).scalar<int32>()() = field.value<int32_t>();
-          } else if (output_types[i] == DT_STRING) {
-            ((*out_tensors)[i]).scalar<string>()() =
-                std::to_string(field.value<int32_t>());
-          }
+          ((*out_tensors)[i]).scalar<int32>()() = field.value<int32_t>();
           break;
         case avro::AVRO_LONG:
-          if (output_types[i] == DT_INT64) {
-            ((*out_tensors)[i]).scalar<int64>()() = field.value<int64_t>();
-          } else if (output_types[i] == DT_STRING) {
-            ((*out_tensors)[i]).scalar<string>()() =
-                std::to_string(field.value<int64_t>());
-          }
+          ((*out_tensors)[i]).scalar<int64>()() = field.value<int64_t>();
           break;
         case avro::AVRO_FLOAT:
-          if (output_types[i] == DT_FLOAT) {
-            ((*out_tensors)[i]).scalar<float>()() = field.value<float>();
-          } else if (output_types[i] == DT_STRING) {
-            ((*out_tensors)[i]).scalar<string>()() =
-                std::to_string(field.value<float>());
-          }
+          ((*out_tensors)[i]).scalar<float>()() = field.value<float>();
           break;
         case avro::AVRO_DOUBLE:
-          if (output_types[i] == DT_DOUBLE) {
-            ((*out_tensors)[i]).scalar<double>()() = field.value<double>();
-          } else if (output_types[i] == DT_STRING) {
-            ((*out_tensors)[i]).scalar<string>()() =
-                std::to_string(field.value<double>());
-          }
+          ((*out_tensors)[i]).scalar<double>()() = field.value<double>();
           break;
         case avro::AVRO_STRING:
           ((*out_tensors)[i]).scalar<string>()() = field.value<string>();
@@ -253,7 +227,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
           ((*out_tensors)[i]).scalar<string>()() =
               field.value<avro::GenericEnum>().symbol();
           break;
-        case avro::AVRO_NULL:  // Fallthrough;
+        case avro::AVRO_NULL:
           break;
         default:
           return errors::InvalidArgument("unsupported data type: ",
@@ -271,6 +245,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
       GUARDED_BY(mu_);
   std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ GUARDED_BY(mu_);
   std::unique_ptr<avro::InputStream> memory_input_stream_ GUARDED_BY(mu_);
+  std::unique_ptr<avro::GenericDatum> datum_ GUARDED_BY(mu_);
   avro::DecoderPtr decoder_ GUARDED_BY(mu_);
 };
 
