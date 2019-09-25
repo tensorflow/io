@@ -17,11 +17,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-image_ops = _load_library('_image_ops.so')
+from tensorflow_io.core.python.ops import core_ops
+
+warnings.warn(
+    "Image Dataset (WebP/GIF/TIFF are deprecated and "
+    "may be removed in the next release, please use "
+    "image ops such as decode_webp for future usage",
+    DeprecationWarning)
 
 
 class WebPDataset(data.Dataset):
@@ -40,7 +47,7 @@ class WebPDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return image_ops.web_p_dataset(self._filenames)
+    return core_ops.web_p_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -70,7 +77,7 @@ class TIFFDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return image_ops.tiff_dataset(self._filenames)
+    return core_ops.tiff_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -99,7 +106,7 @@ class GIFDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return image_ops.gif_dataset(self._filenames)
+    return core_ops.gif_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -124,7 +131,7 @@ def decode_webp(contents, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return image_ops.decode_web_p(contents, name=name)
+  return core_ops.decode_web_p(contents, name=name)
 
 def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
   """
@@ -144,5 +151,5 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
     texts = []
   if colors is None:
     colors = [[]]
-  return image_ops.draw_bounding_boxes_v3(
+  return core_ops.draw_bounding_boxes_v3(
       images, boxes, colors, texts, name=name)
