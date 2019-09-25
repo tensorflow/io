@@ -192,10 +192,10 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
                                          field.type());
       }
       if (dtype != output_types[i]) {
-        return errors::InvalidArgument(absl::StrFormat(
-            "output type mismatch for column '%s', "
-            "expected type '%s', actual type '%s'",
-            columns[i], DataType_Name(dtype), DataType_Name(output_types[i])));
+        return errors::InvalidArgument(
+            "output type mismatch for column: ", columns[i],
+            " expected type: ", DataType_Name(dtype),
+            " actual type: ", DataType_Name(output_types[i]));
       }
       expected_output_types.emplace_back(dtype);
       Tensor tensor(ctx->allocator({}), output_types[i], {});
