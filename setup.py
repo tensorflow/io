@@ -180,7 +180,7 @@ setup(
 )
 """
 
-package = 'tensorflow==2.0.0rc1'
+package = 'tensorflow==2.0.0rc2'
 version = '0.9.0'
 project = 'tensorflow-io'
 if '--package-version' in sys.argv:
