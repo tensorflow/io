@@ -125,7 +125,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
   : FFmpegReadStream(file, file_size)
   , media_type_(media_type)
   , nb_frames_(-1)
-  , dtype_(DT_STRING)
+  , dtype_(DT_INVALID)
   , packet_scope_(nullptr, [](AVPacket* p) { if (p != nullptr) { av_packet_unref(p); }})
   , codec_context_scope_(nullptr, [](AVCodecContext* p) { if (p != nullptr) { avcodec_free_context(&p); }})
   , initialized_(false) {}
@@ -189,9 +189,6 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
   string Codec() { return codec_; }
   PartialTensorShape Shape() { return shape_; }
   DataType DType() { return dtype_; }
-  virtual Status DecodeFrame() {
-    return errors::Unimplemented("DecodeFrame");
-  }
   Status DecodePacket() {
     if (packet_scope_.get() == nullptr) {
       return errors::OutOfRange("EOF reached");
@@ -203,41 +200,24 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
         break;
       }
     } while (packet_.stream_index != stream_index_);
+    int got_frame;
     // decode
     if (ret >= 0) {
       while (packet_.size > 0) {
-        TF_RETURN_IF_ERROR(DecodeFrame());
+        TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
       return Status::OK();
     }
-    while (packet_.size > 0) {
-      while (packet_.size > 0) {
-        TF_RETURN_IF_ERROR(DecodeFrame());
-      }
-    }
+    // final cache clean up
+    do {
+      TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
+    } while (got_frame);
     packet_scope_.reset(nullptr);
     
     return Status::OK();
   }
-  // Update record_read and samples_index_ inside
-  virtual Status ReadDecodedRecord(int64 record_to_read, int64* record_read, Tensor* value) {
-    return errors::Unimplemented("ReadDecodedRecord");
-  }
-  virtual Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) {
-    while ((*record_read) < record_to_read) {
-      if (frames_.empty()) {
-        return Status::OK();
-      }
-      if (samples_index_ < frames_.front()->nb_samples) {
-        TF_RETURN_IF_ERROR(ReadDecodedRecord(record_to_read, record_read, value));
-      }
-      if (!frames_.empty() && samples_index_ >= frames_.front()->nb_samples) {
-        frames_.pop_front();
-        samples_index_ = 0;
-      }
-    }
-    return Status::OK();
-  }
+  virtual Status DecodeFrame(int* got_frame) = 0;
+  virtual Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) = 0;
   virtual Status Read(int64 record_to_read, int64* record_read, Tensor* value) {
     if (!initialized_) {
       TF_RETURN_IF_ERROR(InitializeDecoder());
@@ -254,8 +234,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       status = DecodePacket();
     } while (status.ok());
 
-    status = ReadDecoded(record_to_read, record_read, value);
-    return Status::OK();
+    return ReadDecoded(record_to_read, record_read, value);
   }
  protected:
   int64 media_type_;
@@ -277,24 +256,67 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
   FFmpegVideoReadStreamMeta(SizedRandomAccessFile* file, uint64 file_size)
   : FFmpegReadStreamMeta(file, file_size, AVMEDIA_TYPE_VIDEO)
   , height_(-1)
-  , width_(-1) {}
+  , width_(-1)
+  , num_bytes_(-1)
+  , sws_context_(nullptr, [](SwsContext* p) { if (p != nullptr) { sws_freeContext(p); }}) {}
   virtual ~FFmpegVideoReadStreamMeta() {}
   virtual Status Open(const string& filename, int64 stream_index) {
     TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(filename, stream_index));
-#if LIBAVCODEC_VERSION_MAJOR > 56
-    height_ = format_context_->streams[stream_index]->codecpar->height;
-    width_ = format_context_->streams[stream_index]->codecpar->width;
-#else
-    height_ = format_context_->streams[stream_index]->codec->height;
-    width_ = format_context_->streams[stream_index]->codec->width;
-#endif
-    shape_ = PartialTensorShape({-1, height_, width_});
+
+    height_ = codec_context_->height;
+    width_ = codec_context_->width;
+    num_bytes_ = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height, 1);
+
+    SwsContext* sws_context = sws_getContext(codec_context_->width, codec_context_->height, codec_context_->pix_fmt, codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24, 0, NULL, NULL, NULL);
+    if (!sws_context) {
+      return errors::Internal("could not allocate sws context");
+    }
+    sws_context_.reset(sws_context);
+
+    shape_ = PartialTensorShape({-1, height_, width_, 3});
+    dtype_ = DT_UINT8;
+    return Status::OK();
+  }
+  Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) override {
+    while ((*record_read) < record_to_read) {
+      if (frames_.empty()) {
+        return Status::OK();
+      }
+      int64 offset = (*record_read) * height_ * width_ * 3;
+      memcpy(reinterpret_cast<char*>(&value->flat<uint8>().data()[offset]), reinterpret_cast<char*>(frames_buffer_.front().get()), num_bytes_ * sizeof(uint8_t));
+      frames_.pop_front();
+      frames_buffer_.pop_front();
+      (*record_read)++;
+    }
+    return Status::OK();
+  }
+  Status DecodeFrame(int *got_frame) override {
+    std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
+    int decoded = avcodec_decode_video2(codec_context_, frame.get(), got_frame, &packet_);
+    if (decoded < 0) {
+      return errors::InvalidArgument("error decoding video frame (", decoded, ")");
+    }
+    decoded = FFMIN(decoded, packet_.size);      
+    packet_.data += decoded;
+    packet_.size -= decoded;
+    if (*got_frame) {
+      std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame_rgb(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
+      std::unique_ptr<uint8_t, void(*)(uint8_t*)> buffer_rgb((uint8_t*)av_malloc(num_bytes_ * sizeof(uint8_t)), [](uint8_t* p) { if (p != nullptr) { av_free(p); } });
+      avpicture_fill((AVPicture *)frame_rgb.get(), buffer_rgb.get(), AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height);
+      sws_scale(sws_context_.get(), frame->data, frame->linesize, 0, codec_context_->height, frame_rgb->data, frame_rgb->linesize);
+
+      frames_.push_back(std::move(frame_rgb));
+      frames_buffer_.push_back(std::move(buffer_rgb));
+    }
     return Status::OK();
   }
 
  private:
   int64 height_;
   int64 width_;
+  int64 num_bytes_;
+  std::deque<std::unique_ptr<uint8_t, void(*)(uint8_t*)>> frames_buffer_;
+  std::unique_ptr<SwsContext, void(*)(SwsContext*)> sws_context_;
 };
 
 class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
@@ -358,7 +380,7 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
 
     return Status::OK();
   }
-  Status ReadDecodedRecord(int64 record_to_read, int64* record_read, Tensor* value) override {
+  Status ReadDecodedRecord(int64 record_to_read, int64* record_read, Tensor* value) {
     int64 datasize = av_get_bytes_per_sample(codec_context_->sample_fmt);
     if (datasize != DataTypeSize(dtype_)) {
       return errors::InvalidArgument("failed to calculate data size");
@@ -385,17 +407,31 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
     }
     return Status::OK();
   }
-  Status DecodeFrame() override {
-    int got_frame = 0;
+  Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) override {
+    while ((*record_read) < record_to_read) {
+      if (frames_.empty()) {
+        return Status::OK();
+      }
+      if (samples_index_ < frames_.front()->nb_samples) {
+        TF_RETURN_IF_ERROR(ReadDecodedRecord(record_to_read, record_read, value));
+      }
+      if (!frames_.empty() && samples_index_ >= frames_.front()->nb_samples) {
+        frames_.pop_front();
+        samples_index_ = 0;
+      }
+    }
+    return Status::OK();
+  }
+  Status DecodeFrame(int* got_frame) override {
     std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
-    int decoded = avcodec_decode_audio4(codec_context_, frame.get(), &got_frame, &packet_);
+    int decoded = avcodec_decode_audio4(codec_context_, frame.get(), got_frame, &packet_);
     if (decoded < 0) {
       return errors::InvalidArgument("error decoding audio frame (", decoded, ")");
     }
     decoded = FFMIN(decoded, packet_.size);      
     packet_.data += decoded;
     packet_.size -= decoded;
-    if (got_frame) {
+    if (*got_frame) {
       frames_.push_back(std::move(frame));
     }
     return Status::OK();
@@ -430,17 +466,16 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
     }
     return Status::OK();
   }
-  Status DecodeFrame() override {
-    int got_frame = 0;
+  Status DecodeFrame(int* got_frame) override {
     AVSubtitle subtitle;
-    int decoded = avcodec_decode_subtitle2(codec_context_, &subtitle, &got_frame, &packet_);
+    int decoded = avcodec_decode_subtitle2(codec_context_, &subtitle, got_frame, &packet_);
     if (decoded < 0) {
       return errors::InvalidArgument("error decoding subtitle frame (", decoded, ")");
     }
     decoded = FFMIN(decoded, packet_.size);
     packet_.data += decoded;
     packet_.size -= decoded;
-    if (got_frame) {
+    if (*got_frame) {
       // We expect one rect
       if (subtitle.num_rects != 1) {
         return errors::InvalidArgument("number of rects has to be 1, received: ", subtitle.num_rects);
@@ -499,8 +534,8 @@ class FFmpegIterable : public IOIterableInterface {
       case AVMEDIA_TYPE_VIDEO:
         columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegVideoReadStreamMeta(file_.get(), file_size_)));
         TF_RETURN_IF_ERROR(columns_meta_[i]->Open(filename, i));
-        shapes_.push_back(PartialTensorShape({-1}));
-        dtypes_.push_back(DT_STRING);
+        shapes_.push_back(columns_meta_[i]->Shape());
+        dtypes_.push_back(columns_meta_[i]->DType());
         columns_.push_back(absl::StrCat("v:", video_index));
         columns_index_[columns_.back()] = i;
         video_index++;

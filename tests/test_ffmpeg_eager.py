@@ -110,3 +110,9 @@ def _test_ffmpeg_io_tensor_mkv():
       'The colossus of Rhodes\\Nand it is here just for you Proog.\r\n']
   assert mkv('s:0')[3] == ['It is there...\r\n']
   assert mkv('s:0')[4] == ["I'm telling you,\\NEmo...\r\n"]
+
+  video = tfio.IOTensor.from_ffmpeg(video_path)
+  assert video('v:0').shape.as_list() == [None, 320, 560, 3]
+  assert video('v:0').dtype == tf.uint8
+  assert len(video('v:0')) == 166
+  assert video('v:0').to_tensor().shape == [166, 320, 560, 3]

@@ -17,7 +17,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import uuid
+import warnings
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
@@ -131,6 +133,28 @@ class FFmpegBaseIOTensor(io_tensor_ops._IOTensor): # pylint: disable=protected-a
     """Returns the total number of items of this IOTensor."""
     return self._function._partitions_length() # pylint: disable=protected-access
 
+class FFmpegVideoIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-access
+  """FFmpegVideoIOTensor"""
+  def __init__(self,
+               spec, function,
+               internal=False):
+    with tf.name_scope("FFmpegVideoIOTensor"):
+      super(FFmpegVideoIOTensor, self).__init__(
+          spec, function, internal=internal)
+  def __getitem__(self, key):
+    warnings.warn(
+        "Indexed access of video may consume much resource, "
+        "please consider using VideoDataset instead",
+        Warning if sys.version_info[0] < 3 else ResourceWarning)
+    return super(FFmpegVideoIOTensor, self).__getitem__(key)
+  def __len__(self):
+    warnings.warn(
+        "Indexed access of video may consume much resource, "
+        "please consider using VideoDataset instead",
+        Warning if sys.version_info[0] < 3 else ResourceWarning)
+    return super(FFmpegVideoIOTensor, self).__len__()
+
+
 class FFmpegAudioIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-access
   """FFmpegAudioIOTensor"""
   def __init__(self,
@@ -145,7 +169,7 @@ class FFmpegAudioIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-acces
     return self._rate
 
 class FFmpegSubtitleIOTensor(FFmpegBaseIOTensor): # pylint: disable=protected-access
-  """FFmpegAudioIOTensor"""
+  """FFmpegSubtitleIOTensor"""
   def __init__(self,
                spec, function,
                internal=False):
@@ -175,22 +199,30 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = _IOTensorIterableNextFunction(
-            resource, column,
-            ffmpeg_ops.ffmpeg_iterable_next,
-            shape, dtype, capacity=4096)
         if column.startswith("a:"):
+          function = _IOTensorIterableNextFunction(
+              resource, column,
+              ffmpeg_ops.ffmpeg_iterable_next,
+              shape, dtype, capacity=4096)
           rate = rate.numpy()
           elements.append(FFmpegAudioIOTensor(
               spec, _IOTensorIterablePartitionedFunction(function, shape),
               rate, internal=internal))
         elif column.startswith("s:"):
+          function = _IOTensorIterableNextFunction(
+              resource, column,
+              ffmpeg_ops.ffmpeg_iterable_next,
+              shape, dtype, capacity=4096)
           elements.append(FFmpegSubtitleIOTensor(
               spec, _IOTensorIterablePartitionedFunction(function, shape),
               internal=internal))
         else:
-          elements.append(io_tensor_ops.BaseIOTensor(
-              spec, resource, None, partitions=None,
+          function = _IOTensorIterableNextFunction(
+              resource, column,
+              ffmpeg_ops.ffmpeg_iterable_next,
+              shape, dtype, capacity=1)
+          elements.append(FFmpegVideoIOTensor(
+              spec, _IOTensorIterablePartitionedFunction(function, shape),
               internal=internal))
       spec = tuple([e.spec for e in elements])
       super(FFmpegIOTensor, self).__init__(
