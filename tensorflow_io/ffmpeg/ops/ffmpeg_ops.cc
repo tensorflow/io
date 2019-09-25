@@ -67,7 +67,7 @@ REGISTER_OP("AudioDataset")
        return Status::OK();
      });
 
-REGISTER_OP("FfmpegIndexableInit")
+REGISTER_OP("FfmpegIterableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -79,7 +79,7 @@ REGISTER_OP("FfmpegIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("FfmpegIndexableSpec")
+REGISTER_OP("FfmpegIterableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -92,4 +92,19 @@ REGISTER_OP("FfmpegIndexableSpec")
     return Status::OK();
    });
 
+REGISTER_OP("FfmpegIterableNext")
+  .Input("input: resource")
+  .Input("capacity: int64")
+  .Output("value: dtype")
+  .Attr("component: string")
+  .Attr("shape: shape")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    PartialTensorShape shape;
+    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+    shape_inference::ShapeHandle entry;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+    c->set_output(0, entry);
+    return Status::OK();
+  });
 }  // namespace tensorflow
