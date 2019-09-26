@@ -27,14 +27,14 @@ VERSION=5.3.1
 if [[ "$(uname)" == "Darwin" ]]; then
     curl -sSOL http://packages.confluent.io/archive/5.3/confluent-community-5.3.1-2.12.tar.gz
     tar -xzf confluent-community-5.3.1-2.12.tar.gz
-    (cd confluent-$VERSION/ && bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
-    (cd confluent-$VERSION/ && bin/kafka-server-start -daemon etc/kafka/server.properties)
-    (cd confluent-$VERSION/ && bin/schema-registry-start -daemon etc/schema-registry/schema-registry.properties)
+    (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
+    (cd confluent-$VERSION/ && sudo bin/kafka-server-start -daemon etc/kafka/server.properties)
+    (cd confluent-$VERSION/ && sudo bin/schema-registry-start -daemon etc/schema-registry/schema-registry.properties)
     echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
     echo Wait 15 secs until kafka is up and running
     sleep 15
-    confluent-$VERSION/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
-    confluent-$VERSION/bin/kafka-console-producer.sh --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
+    confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+    confluent-$VERSION/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
     echo Everything started
     exit 0
 fi
@@ -69,7 +69,6 @@ if [ "$action" == "start" ]; then
       -e SCHEMA_REGISTRY_LISTENERS=http://localhost:8081 \
       -e SCHEMA_REGISTRY_DEBUG=true \
       confluentinc/cp-schema-registry:$VERSION
- 
     echo Wait 15 secs until kafka is up and running
     sleep 15
     echo Create test topic
