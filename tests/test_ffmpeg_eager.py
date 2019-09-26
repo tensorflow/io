@@ -116,3 +116,10 @@ def _test_ffmpeg_io_tensor_mkv():
   assert video('v:0').dtype == tf.uint8
   assert len(video('v:0')) == 166
   assert video('v:0').to_tensor().shape == [166, 320, 560, 3]
+
+def test_ffmpeg_decode_video():
+  """test_ffmpeg_decode_video"""
+  content = tf.io.read_file(video_path)
+  video = ffmpeg_io.decode_video(content, 0)
+  assert video.shape == [166, 320, 560, 3]
+  assert video.dtype == tf.uint8

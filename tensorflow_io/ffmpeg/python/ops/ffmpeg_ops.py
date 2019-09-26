@@ -24,6 +24,8 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.core.python.ops import ffmpeg_ops
 
+decode_video = ffmpeg_ops.ffmpeg_decode_video
+
 class VideoDataset(data_ops.Dataset):
   """A Video File Dataset that reads the video file."""
 

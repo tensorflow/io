@@ -73,3 +73,4 @@ video_dataset = _ffmpeg_ops.video_dataset
 ffmpeg_iterable_init = _ffmpeg_ops.ffmpeg_iterable_init
 ffmpeg_iterable_spec = _ffmpeg_ops.ffmpeg_iterable_spec
 ffmpeg_iterable_next = _ffmpeg_ops.ffmpeg_iterable_next
+ffmpeg_decode_video = _ffmpeg_ops.ffmpeg_decode_video
