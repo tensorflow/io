@@ -107,4 +107,13 @@ REGISTER_OP("FfmpegIterableNext")
     c->set_output(0, entry);
     return Status::OK();
   });
+
+REGISTER_OP("FfmpegDecodeVideo")
+  .Input("input: string")
+  .Input("index: int64")
+  .Output("value: uint8")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), 3}));
+    return Status::OK();
+  });
 }  // namespace tensorflow
