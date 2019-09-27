@@ -22,36 +22,66 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
+VERSION=5.3.1
+
 if [[ "$(uname)" == "Darwin" ]]; then
-    curl -sSOL https://archive.apache.org/dist/kafka/0.10.1.0/kafka_2.11-0.10.1.0.tgz
-    tar -xzf kafka_2.11-0.10.1.0.tgz
-    (cd kafka_2.11-0.10.1.0/ && bin/zookeeper-server-start.sh -daemon config/zookeeper.properties)
-    (cd kafka_2.11-0.10.1.0/ && bin/kafka-server-start.sh -daemon config/server.properties)
-    echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > kafka_2.11-0.10.1.0/test
+    curl -sSOL http://packages.confluent.io/archive/5.3/confluent-community-5.3.1-2.12.tar.gz
+    tar -xzf confluent-community-5.3.1-2.12.tar.gz
+    (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
+    (cd confluent-$VERSION/ && sudo bin/kafka-server-start -daemon etc/kafka/server.properties)
+    (cd confluent-$VERSION/ && sudo bin/schema-registry-start -daemon etc/schema-registry/schema-registry.properties)
+    echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
     echo Wait 15 secs until kafka is up and running
-    sleep 5
-    kafka_2.11-0.10.1.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
-    kafka_2.11-0.10.1.0/bin/kafka-console-producer.sh --topic test --broker-list 127.0.0.1:9092 < kafka_2.11-0.10.1.0/test
+    sleep 15
+    confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+    confluent-$VERSION/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
+    echo Everything started
     exit 0
 fi
 action=$1
 container=$2
 if [ "$action" == "start" ]; then
-    echo pull spotify/kafka
-    docker pull spotify/kafka
-    echo pull spotify/kafka successfully
-    docker run -d --rm --net=host --name=$container spotify/kafka
-    echo Wait 5 secs until kafka is up and running
-    sleep 5
+    docker pull confluentinc/cp-zookeeper:$VERSION
+    docker pull confluentinc/cp-kafka:$VERSION
+    docker pull confluentinc/cp-schema-registry:$VERSION
+    docker run -d \
+      --net=host \
+      --name=$container-zookeeper \
+      -e ZOOKEEPER_CLIENT_PORT=2181 \
+      -e ZOOKEEPER_TICK_TIME=2000 \
+      -e ZOOKEEPER_SYNC_LIMIT=2 \
+      confluentinc/cp-zookeeper:$VERSION
+    echo Container $container-zookeeper started successfully
+    docker run -d \
+      --net=host \
+      --name=$container-kafka \
+      -e KAFKA_ZOOKEEPER_CONNECT=localhost:2181 \
+      -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
+      -e KAFKA_BROKER_ID=2 \
+      -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+      confluentinc/cp-kafka:$VERSION
+    echo Container $container-kafka started successfully
+    docker run -d \
+      --net=host \
+      --name=$container-schema-registry \
+      -e SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=localhost:2181 \
+      -e SCHEMA_REGISTRY_HOST_NAME=localhost \
+      -e SCHEMA_REGISTRY_LISTENERS=http://localhost:8081 \
+      -e SCHEMA_REGISTRY_DEBUG=true \
+      confluentinc/cp-schema-registry:$VERSION
+    echo Wait 15 secs until kafka is up and running
+    sleep 15
     echo Create test topic
-    docker exec $container bash -c '/opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test'
+    docker exec -i $container-kafka bash -c '/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test'
     echo Create test message
-    docker exec $container bash -c 'echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > /test'
+    docker exec -i $container-kafka bash -c 'echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > /test'
     echo Produce test message
-    docker exec $container bash -c '/opt/kafka_2.11-0.10.1.0/bin/kafka-console-producer.sh --topic test --broker-list 127.0.0.1:9092 < /test'
+    docker exec -i $container-kafka bash -c '/usr/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < /test'
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
-    docker rm -f $container
+    docker rm -f $container-zookeeper
+    docker rm -f $container-kafka
+    docker rm -f $container-schema-registry
     echo Container $container removed successfully
 else
   echo "Usage: $0 start|stop <kafka container name>" >&2
