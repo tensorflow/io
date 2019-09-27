@@ -310,6 +310,22 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
     }
     return Status::OK();
   }
+  virtual Status Peek(int64* record_to_read) {
+    if (!initialized_) {
+      TF_RETURN_IF_ERROR(InitializeDecoder());
+      TF_RETURN_IF_ERROR(DecodePacket());
+      initialized_ = true;
+    }
+    Status status;
+    do {
+      status = DecodePacket();
+    } while (status.ok());
+    *record_to_read = frames_.size();
+    return Status::OK();
+  }
+  
+  int64 Height() { return height_; }
+  int64 Width() { return width_; }
 
  private:
   int64 height_;
@@ -628,5 +644,44 @@ REGISTER_KERNEL_BUILDER(Name("FfmpegIterableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FFmpegIterable>);
 REGISTER_KERNEL_BUILDER(Name("FfmpegIterableNext").Device(DEVICE_CPU),
                         IOIterableNextOp<FFmpegIterable>);
+
+class FFmpegDecodeVideoOp : public OpKernel {
+ public:
+  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* index_tensor;
+    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
+
+    const string& input = input_tensor->scalar<string>()();
+    SizedRandomAccessFile file(env_, "memory", input.data(), input.size());
+
+    FFmpegReaderInit();
+
+    FFmpegVideoReadStreamMeta video_meta(&file, input.size());
+    OP_REQUIRES_OK(context, video_meta.Open("memory", index_tensor->scalar<int64>()()));
+    int64 record_to_read = 0;
+    OP_REQUIRES_OK(context, video_meta.Peek(&record_to_read));
+
+    Tensor* video_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({record_to_read, video_meta.Height(), video_meta.Width(), channels_}), &video_tensor));
+
+    int64 record_read = 0;
+    OP_REQUIRES_OK(context, video_meta.Read(record_to_read, &record_read, video_tensor));
+    OP_REQUIRES(context, (record_read == record_to_read), errors::InvalidArgument("unable to read expected frames ", record_to_read, " vs. ", record_read));
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  static const int64 channels_ = 3;
+};
+
+REGISTER_KERNEL_BUILDER(Name("FfmpegDecodeVideo").Device(DEVICE_CPU),
+                        FFmpegDecodeVideoOp);
 }  // namespace data
 }  // namespace tensorflow

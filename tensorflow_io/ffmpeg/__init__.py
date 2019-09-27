@@ -16,6 +16,7 @@
 
 @@AudioDataset
 @@VideoDataset
+@@decode_video
 """
 
 from __future__ import absolute_import
@@ -24,12 +25,14 @@ from __future__ import print_function
 
 from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import AudioDataset
 from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import VideoDataset
+from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import decode_video
 
 from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     "AudioDataset",
     "VideoDataset",
+    "decode_video",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
