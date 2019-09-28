@@ -43,7 +43,7 @@ class IOInterface : public ResourceBase {
   }
 };
 
-class IOIndexableInterface : public IOInterface {
+class IOReadableInterface : public IOInterface {
  public:
   // Check value==nullptr or label==nullptr to see which field is needed.
   virtual Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) = 0;
@@ -161,9 +161,9 @@ class IOInterfaceSpecOp : public OpKernel {
 };
 
 template<typename Type>
-class IOIndexableReadOp : public OpKernel {
+class IOReadableReadOp : public OpKernel {
  public:
-  explicit IOIndexableReadOp<Type>(OpKernelConstruction* ctx)
+  explicit IOReadableReadOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx), component_(""), value_output_(true), label_output_(false) {
     std::vector<string> filter;
     Status status = ctx->GetAttr("filter", &filter);
@@ -276,9 +276,9 @@ class IOMappingReadOp : public OpKernel {
   }
 };
 template<typename Type>
-class IOIndexablePartitionsOp : public OpKernel {
+class IOReadablePartitionsOp : public OpKernel {
  public:
-  explicit IOIndexablePartitionsOp<Type>(OpKernelConstruction* ctx)
+  explicit IOReadablePartitionsOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
 

@@ -63,7 +63,7 @@ private:
   bool run_ GUARDED_BY(mu_) = true;
 };
 
-class KafkaReadable : public IOIndexableInterface {
+class KafkaReadable : public IOReadableInterface {
  public:
   KafkaReadable(Env* env) : env_(env) {}
 
@@ -314,7 +314,7 @@ class KafkaReadable : public IOIndexableInterface {
 REGISTER_KERNEL_BUILDER(Name("KafkaReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<KafkaReadable>);
 REGISTER_KERNEL_BUILDER(Name("KafkaReadableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<KafkaReadable>);
+                        IOReadableReadOp<KafkaReadable>);
 
 class DecodeAvroOp : public OpKernel {
  public:

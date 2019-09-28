@@ -19,10 +19,17 @@ from __future__ import print_function
 
 import sys
 import uuid
+import warnings
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.core.python.ops import ffmpeg_ops
+
+warnings.warn(
+    "The tensorflow_io.ffmpeg.AudioDataset/VideoDataset is "
+    "deprecated. Please look for tfio.IODataset.from_ffmpeg "
+    "for reading LMDB key/value pairs into tensorflow.",
+    DeprecationWarning)
 
 decode_video = ffmpeg_ops.ffmpeg_decode_video
 

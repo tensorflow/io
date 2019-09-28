@@ -77,12 +77,12 @@ REGISTER_KERNEL_BUILDER(Name("ReadPrometheus").Device(DEVICE_CPU),
 }  // namespace
 
 
-class PrometheusIndexable : public IOIndexableInterface {
+class PrometheusReadable : public IOReadableInterface {
  public:
-  PrometheusIndexable(Env* env)
+  PrometheusReadable(Env* env)
   : env_(env) {}
 
-  ~PrometheusIndexable() {}
+  ~PrometheusReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 query is not supported");
@@ -164,7 +164,7 @@ class PrometheusIndexable : public IOIndexableInterface {
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("PrometheusIndexable");
+    return strings::StrCat("PrometheusReadable");
   }
  private:
   mutable mutex mu_;
@@ -177,12 +177,12 @@ class PrometheusIndexable : public IOIndexableInterface {
   std::vector<double> value_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<PrometheusIndexable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<PrometheusReadable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<PrometheusReadable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<PrometheusReadable>);
 
 }  // namespace data
 }  // namespace tensorflow

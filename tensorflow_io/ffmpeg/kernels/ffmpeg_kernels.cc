@@ -537,7 +537,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
   }
   std::deque<string> subtitles_;
 };
-class FFmpegReadable : public IOIndexableInterface {
+class FFmpegReadable : public IOReadableInterface {
  public:
   FFmpegReadable(Env* env)
   : env_(env) {}
@@ -664,7 +664,7 @@ REGISTER_KERNEL_BUILDER(Name("FfmpegReadableInit").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("FfmpegReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FFmpegReadable>);
 REGISTER_KERNEL_BUILDER(Name("FfmpegReadableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<FFmpegReadable>);
+                        IOReadableReadOp<FFmpegReadable>);
 
 class FFmpegDecodeVideoOp : public OpKernel {
  public:
