@@ -52,7 +52,7 @@ class IOIterableInterface : public IOInterface {
 class IOIndexableInterface : public IOInterface {
  public:
   // Check value==nullptr or label==nullptr to see which field is needed.
-  virtual Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) = 0;
+  virtual Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) = 0;
 };
 
 class IOMappingInterface : public IOInterface {
@@ -420,8 +420,8 @@ class IOIndexableReadOp : public OpKernel {
 
     Status status;
 
-    int64 output_index = 0;
     Tensor* value_tensor = nullptr;
+    Tensor value;
     if (value_output_) {
       PartialTensorShape shape;
       DataType dtype;
@@ -429,10 +429,11 @@ class IOIndexableReadOp : public OpKernel {
       gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
       dims[0] = stop - start;
       TensorShape value_shape(dims);
-      OP_REQUIRES_OK(context, context->allocate_output(output_index, value_shape, &value_tensor));
-      output_index++;
+      value = Tensor(dtype, value_shape);
+      value_tensor = &value;
     }
     Tensor* label_tensor = nullptr;
+    Tensor label;
     if (label_output_) {
       PartialTensorShape shape;
       DataType dtype;
@@ -440,10 +441,31 @@ class IOIndexableReadOp : public OpKernel {
       gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
       dims[0] = stop - start;
       TensorShape label_shape(dims);
-      OP_REQUIRES_OK(context, context->allocate_output(output_index, label_shape, &label_tensor));
-      output_index++;
+      label = Tensor(dtype, label_shape);
+      label_tensor = &label;
     }
-    OP_REQUIRES_OK(context, resource->Read(start, stop, component_, value_tensor, label_tensor));
+    int64 record_read = 0;
+    OP_REQUIRES_OK(context, resource->Read(start, stop, component_, &record_read, value_tensor, label_tensor));
+    int64 output_index = 0;
+    if (record_read < stop - start) {
+      if (value_output_) {
+        context->set_output(output_index, value.Slice(0, record_read));
+        output_index++;
+      }
+      if (label_output_) {
+        context->set_output(output_index, label.Slice(0, record_read));
+        output_index++;
+      }
+    } else {
+      if (value_output_) {
+        context->set_output(output_index, value);
+        output_index++;
+      }
+      if (label_output_) {
+        context->set_output(output_index, label);
+        output_index++;
+      }
+    }
   }
  private:
   string component_;

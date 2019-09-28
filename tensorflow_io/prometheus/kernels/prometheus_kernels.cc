@@ -149,7 +149,7 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     if (component == "index") {
       memcpy(&value->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
     } else if (component == "value") {
@@ -157,6 +157,7 @@ class PrometheusIndexable : public IOIndexableInterface {
     } else {
       return errors::InvalidArgument("component ", component, " is not supported");
     }
+    *record_read = stop - start;
 
     return Status::OK();
   }
