@@ -46,7 +46,7 @@ def test_hdf5_list_dataset():
     assert hdf5('/group1/group3/dset2').shape == [1, 1]
 
 def test_hdf5_read_dataset():
-  """test_hdf5_list_dataset"""
+  """test_hdf5_read_dataset"""
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_hdf5", "tdset.h5")

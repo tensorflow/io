@@ -156,7 +156,7 @@ cc_binary(
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/genome:genome_ops",
-        #"//tensorflow_io/hdf5:hdf5_ops",
+        "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/image:image_ops",
         #"//tensorflow_io/json:json_ops",

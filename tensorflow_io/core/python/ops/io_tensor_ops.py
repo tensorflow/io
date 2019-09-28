@@ -20,10 +20,30 @@ from __future__ import print_function
 import sys
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import io_dataset_ops
 
 class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
   pass
+
+class _IOTensorComponentFunction(object):
+  def __init__(self, function, resource, component, shape, dtype):
+    self._function = function
+    self._resource = resource
+    self._component = component
+    self._length = shape[0]
+    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    start, stop, _ = slice(start, stop).indices(self._length)
+    return self._function(
+        self._resource,
+        start=start, stop=stop,
+        component=self._component,
+        shape=self._shape, dtype=self._dtype)
+  @property
+  def length(self):
+    return self._length
 
 class _IOTensorIterablePartitionedFunction(object):
   """PartitionedFunction will translate call to cached Function call"""
@@ -121,7 +141,7 @@ class _IOTensorPartitionedFunction(object):
 class _IOTensorDataset(tf.compat.v2.data.Dataset):
   """_IOTensorDataset"""
 
-  def __init__(self, spec, resource, function, partitions):
+  def __init__(self, function):
     if partitions is None:
       start = 0
       stop = tf.nest.flatten(spec)[0].shape[0]
@@ -202,10 +222,11 @@ class BaseIOTensor(_IOTensor):
   def __init__(self,
                spec,
                function,
+               dataset_function,
                internal=False):
     # function used for dataset should not be partitioned.
     self._function = function
-    self._dataset_function = None
+    self._dataset_function = dataset_function
     super(BaseIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -240,8 +261,7 @@ class BaseIOTensor(_IOTensor):
     Returns:
       A `tf.data.Dataset` with value obtained from this `IOTensor`.
     """
-    return _IOTensorDataset(
-        self.spec, self._resource, self._dataset_function, self._partitions)
+    return io_dataset_ops._IODataset(self._dataset_function)
 
   #=============================================================================
   # Indexing & Slicing

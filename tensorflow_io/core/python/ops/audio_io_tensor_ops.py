@@ -24,9 +24,9 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
 class _AudioIOTensorFunction(object):
-  def __init__(self, resource, function, shape, dtype):
-    self._resource = resource
+  def __init__(self, function, resource, shape, dtype):
     self._function = function
+    self._resource = resource
     self._length = shape[0]
     self._shape = tf.TensorShape([None]).concatenate(shape[1:])
     self._dtype = dtype
@@ -66,10 +66,10 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       dtype = tf.as_dtype(dtype.numpy())
       spec = tf.TensorSpec(shape, dtype)
       function = _AudioIOTensorFunction(
-          resource, core_ops.wav_readable_read, shape, dtype)
+          core_ops.wav_readable_read, resource, shape, dtype)
       self._rate = rate
       super(AudioIOTensor, self).__init__(
-          spec, function, internal=internal)
+          spec, function, None, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -79,33 +79,3 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   def rate(self):
     """The sample `rate` of the audio stream"""
     return self._rate
-
-def _from_audio(filename, internal=False):
-  """_from_audio"""
-  with tf.name_scope("FromAudio") as scope:
-    resource = core_ops.wav_readable_init(
-        filename,
-        container=scope,
-        shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-    shape, dtype, rate = core_ops.wav_readable_spec(resource)
-    shape = tf.TensorShape(shape.numpy())
-    dtype = tf.as_dtype(dtype.numpy())
-    spec = tf.TensorSpec(shape, dtype)
-
-    class _Function(object):
-      def __init__(self, func, shape, dtype):
-        self._func = func
-        self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-        self._dtype = dtype
-
-      def __call__(self, resource, start, stop):
-        return self._func(
-            resource, start=start, stop=stop,
-            shape=self._shape, dtype=self._dtype)
-
-    rate = rate.numpy()
-    return AudioIOTensor(
-        rate,
-        spec, resource,
-        _Function(core_ops.wav_indexable_read, spec.shape, spec.dtype),
-        partitions=None, internal=internal)
