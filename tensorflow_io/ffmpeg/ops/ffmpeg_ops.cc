@@ -67,7 +67,7 @@ REGISTER_OP("AudioDataset")
        return Status::OK();
      });
 
-REGISTER_OP("FfmpegIterableInit")
+REGISTER_OP("FfmpegReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -79,7 +79,7 @@ REGISTER_OP("FfmpegIterableInit")
     return Status::OK();
    });
 
-REGISTER_OP("FfmpegIterableSpec")
+REGISTER_OP("FfmpegReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -92,9 +92,10 @@ REGISTER_OP("FfmpegIterableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FfmpegIterableNext")
+REGISTER_OP("FfmpegReadableRead")
   .Input("input: resource")
-  .Input("capacity: int64")
+  .Input("start: int64")
+  .Input("stop: int64")
   .Output("value: dtype")
   .Attr("component: string")
   .Attr("shape: shape")

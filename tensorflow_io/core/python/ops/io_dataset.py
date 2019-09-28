@@ -20,6 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import kafka_dataset_ops
+from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   """IODataset
@@ -118,6 +119,27 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
           servers=kwargs.get("servers", None),
           configuration=kwargs.get("configuration", None),
           internal=True)
+
+  @classmethod
+  def from_ffmpeg(cls,
+                  filename,
+                  stream,
+                  **kwargs):
+    """Creates an `IODataset` from a media file by FFmpeg
+
+    Args:
+      filename: A string, the filename of a media file.
+      stream: A string, the stream index (e.g., "v:0"). Note
+        video, audio, and subtitle index starts with 0 separately.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+      return ffmpeg_dataset_ops.FFmpegIODataset(
+          filename, stream, internal=True)
 
 class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=protected-access
   """IOStreamDataset

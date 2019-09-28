@@ -24,8 +24,8 @@ import tensorflow as tf
 class _IOStreamDataset(tf.compat.v2.data.Dataset):
   """_IOStreamDataset"""
 
-  def __init__(self, function):
-      capacity = 4096
+  def __init__(self, function, **kwargs):
+      capacity = start = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(lambda index: function(index, index+capacity))
       dataset = dataset.apply(
@@ -48,5 +48,5 @@ class _IOStreamDataset(tf.compat.v2.data.Dataset):
 class _IODataset(_IOStreamDataset):
   """_IODataset"""
 
-  def __init__(self, function):
-    super(_IODataset, self).__init__(function)
+  def __init__(self, function, **kwargs):
+    super(_IODataset, self).__init__(function, **kwargs)

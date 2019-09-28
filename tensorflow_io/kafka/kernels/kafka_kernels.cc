@@ -63,11 +63,11 @@ private:
   bool run_ GUARDED_BY(mu_) = true;
 };
 
-class KafkaIndexable : public IOIndexableInterface {
+class KafkaReadable : public IOIndexableInterface {
  public:
-  KafkaIndexable(Env* env) : env_(env) {}
+  KafkaReadable(Env* env) : env_(env) {}
 
-  ~KafkaIndexable() {}
+  ~KafkaReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
@@ -293,7 +293,7 @@ class KafkaIndexable : public IOIndexableInterface {
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("KafkaIterable[]");
+    return strings::StrCat("KafkaReadable[]");
   }
  private:
   mutable mutex mu_;
@@ -311,10 +311,10 @@ class KafkaIndexable : public IOIndexableInterface {
   int64 offset_tail_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<KafkaIndexable>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<KafkaIndexable>);
+REGISTER_KERNEL_BUILDER(Name("KafkaReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<KafkaReadable>);
+REGISTER_KERNEL_BUILDER(Name("KafkaReadableRead").Device(DEVICE_CPU),
+                        IOIndexableReadOp<KafkaReadable>);
 
 class DecodeAvroOp : public OpKernel {
  public:

@@ -31,7 +31,7 @@ REGISTER_OP("DecodeAvro")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaIndexableInit")
+REGISTER_OP("KafkaReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -42,7 +42,7 @@ REGISTER_OP("KafkaIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaIndexableRead")
+REGISTER_OP("KafkaReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

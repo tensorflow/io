@@ -28,7 +28,6 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 if sys.platform == "darwin":
   pytest.skip("video is not supported on macOS yet", allow_module_level=True)
 import tensorflow_io as tfio  # pylint: disable=wrong-import-position
-import tensorflow_io.ffmpeg as ffmpeg_io  # pylint: disable=wrong-import-position
 
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
@@ -36,7 +35,7 @@ def test_video_dataset():
   """test_video_dataset"""
   num_repeats = 2
 
-  video_dataset = ffmpeg_io.VideoDataset([video_path]).repeat(num_repeats)
+  video_dataset = tfio.IODataset.from_ffmpeg(video_path, "v:0").repeat(num_repeats)
 
   i = 0
   for v in video_dataset:
@@ -48,7 +47,7 @@ audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "test_audio", "mono_10khz.wav")
 
-def test_audio_dataset():
+def _test_audio_dataset():
   """Test Audio Dataset"""
   with open(audio_path, 'rb') as f:
     wav_contents = f.read()
@@ -71,7 +70,7 @@ def test_audio_dataset():
     i += 2
   assert i == 5760
 
-def test_ffmpeg_io_tensor_audio():
+def _test_ffmpeg_io_tensor_audio():
   """test_ffmpeg_io_tensor_audio"""
   audio = tfio.IOTensor.from_audio(audio_path)
   ffmpeg = tfio.IOTensor.from_ffmpeg(audio_path)
@@ -117,7 +116,7 @@ def _test_ffmpeg_io_tensor_mkv():
   assert len(video('v:0')) == 166
   assert video('v:0').to_tensor().shape == [166, 320, 560, 3]
 
-def test_ffmpeg_decode_video():
+def _test_ffmpeg_decode_video():
   """test_ffmpeg_decode_video"""
   content = tf.io.read_file(video_path)
   video = ffmpeg_io.decode_video(content, 0)
