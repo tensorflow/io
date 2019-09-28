@@ -67,12 +67,12 @@ Status ValidateWAVHeader(struct WAVHeader *header) {
   return Status::OK();
 }
 
-class WAVIndexable : public IOIndexableInterface {
+class WAVReadable : public IOReadableInterface {
  public:
-  WAVIndexable(Env* env)
+  WAVReadable(Env* env)
   : env_(env) {}
 
-  ~WAVIndexable() {}
+  ~WAVReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -144,7 +144,7 @@ class WAVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     const int64 sample_start = start;
     const int64 sample_stop = stop;
 
@@ -210,12 +210,14 @@ class WAVIndexable : public IOIndexableInterface {
       position += head.size;
     } while (position < filesize);
 
+    (*record_read) = stop - start;
+
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("WAVIndexable");
+    return strings::StrCat("WAVReadable");
   }
  private:
   mutable mutex mu_;
@@ -227,12 +229,12 @@ class WAVIndexable : public IOIndexableInterface {
   struct WAVHeader header_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("WAVIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<WAVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("WAVIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<WAVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("WAVIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<WAVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("WAVReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<WAVReadable>);
+REGISTER_KERNEL_BUILDER(Name("WAVReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<WAVReadable>);
+REGISTER_KERNEL_BUILDER(Name("WAVReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<WAVReadable>);
 
 
 }  // namespace data

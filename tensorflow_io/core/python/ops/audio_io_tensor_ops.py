@@ -23,6 +23,23 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
+class _AudioIOTensorFunction(object):
+  def __init__(self, resource, function, shape, dtype):
+    self._resource = resource
+    self._function = function
+    self._length = shape[0]
+    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    start, stop, _ = slice(start, stop).indices(self._length)
+    return self._function(
+        self._resource,
+        start=start, stop=stop,
+        shape=self._shape, dtype=self._dtype)
+  @property
+  def length(self):
+    return self._length
+
 class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
   """AudioIOTensor
 
@@ -37,16 +54,22 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   # Constructor (private)
   #=============================================================================
   def __init__(self,
-               rate,
-               spec,
-               resource,
-               function,
-               partitions,
+               filename,
                internal=False):
-    self._rate = rate
-    super(AudioIOTensor, self).__init__(
-        spec, resource, function,
-        partitions=partitions, internal=internal)
+    with tf.name_scope("FromAudio") as scope:
+      resource = core_ops.wav_readable_init(
+          filename,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+      shape, dtype, rate = core_ops.wav_readable_spec(resource)
+      shape = tf.TensorShape(shape.numpy())
+      dtype = tf.as_dtype(dtype.numpy())
+      spec = tf.TensorSpec(shape, dtype)
+      function = _AudioIOTensorFunction(
+          resource, core_ops.wav_readable_read, shape, dtype)
+      self._rate = rate
+      super(AudioIOTensor, self).__init__(
+          spec, function, internal=internal)
 
   #=============================================================================
   # Accessors
@@ -60,11 +83,11 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
 def _from_audio(filename, internal=False):
   """_from_audio"""
   with tf.name_scope("FromAudio") as scope:
-    resource = core_ops.wav_indexable_init(
+    resource = core_ops.wav_readable_init(
         filename,
         container=scope,
         shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-    shape, dtype, rate = core_ops.wav_indexable_spec(resource)
+    shape, dtype, rate = core_ops.wav_readable_spec(resource)
     shape = tf.TensorShape(shape.numpy())
     dtype = tf.as_dtype(dtype.numpy())
     spec = tf.TensorSpec(shape, dtype)

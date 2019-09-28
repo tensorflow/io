@@ -149,7 +149,7 @@ cc_binary(
     linkshared = 1,
     deps = [
         #"//tensorflow_io/arrow:arrow_ops",
-        #"//tensorflow_io/audio:audio_ops",
+        "//tensorflow_io/audio:audio_ops",
         #"//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/cifar:cifar_ops",

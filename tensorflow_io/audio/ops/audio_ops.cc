@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("WAVIndexableInit")
+REGISTER_OP("WAVReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -29,7 +29,7 @@ REGISTER_OP("WAVIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("WAVIndexableSpec")
+REGISTER_OP("WAVReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -41,7 +41,7 @@ REGISTER_OP("WAVIndexableSpec")
      return Status::OK();
    });
 
-REGISTER_OP("WAVIndexableRead")
+REGISTER_OP("WAVReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

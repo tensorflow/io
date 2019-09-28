@@ -46,7 +46,6 @@ class FFmpegReadStream {
   }
   virtual Status Open(int64 stream_index) {
     offset_ = 0;
-
     AVFormatContext *format_context; 
     if ((format_context = avformat_alloc_context()) != NULL) {
       AVIOContext *io_context;
@@ -236,8 +235,8 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     Status status;
     do {
       TF_RETURN_IF_ERROR(ReadDecoded(record_to_read, record_read, value));
-      record_index_ += (*record_read);
       if ((*record_read) >= record_to_read) {
+        record_index_ += (*record_read);
         return Status::OK();
       }
       status = DecodePacket();

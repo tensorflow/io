@@ -28,6 +28,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 if sys.platform == "darwin":
   pytest.skip("video is not supported on macOS yet", allow_module_level=True)
 import tensorflow_io as tfio  # pylint: disable=wrong-import-position
+import tensorflow_io.ffmpeg as ffmpeg_io  # pylint: disable=wrong-import-position
 
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
@@ -47,7 +48,7 @@ audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "test_audio", "mono_10khz.wav")
 
-def _test_audio_dataset():
+def test_audio_dataset():
   """Test Audio Dataset"""
   with open(audio_path, 'rb') as f:
     wav_contents = f.read()
@@ -70,7 +71,7 @@ def _test_audio_dataset():
     i += 2
   assert i == 5760
 
-def _test_ffmpeg_io_tensor_audio():
+def test_ffmpeg_io_tensor_audio():
   """test_ffmpeg_io_tensor_audio"""
   audio = tfio.IOTensor.from_audio(audio_path)
   ffmpeg = tfio.IOTensor.from_ffmpeg(audio_path)
@@ -92,7 +93,7 @@ def _test_ffmpeg_io_tensor_audio():
 # Disable as the mkv file is large. Run locally
 # by pulling test file while is located in:
 # https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv
-def _test_ffmpeg_io_tensor_mkv():
+def test_ffmpeg_io_tensor_mkv():
   """test_ffmpeg_io_tensor_mkv"""
   mkv_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
@@ -116,7 +117,7 @@ def _test_ffmpeg_io_tensor_mkv():
   assert len(video('v:0')) == 166
   assert video('v:0').to_tensor().shape == [166, 320, 560, 3]
 
-def _test_ffmpeg_decode_video():
+def test_ffmpeg_decode_video():
   """test_ffmpeg_decode_video"""
   content = tf.io.read_file(video_path)
   video = ffmpeg_io.decode_video(content, 0)
