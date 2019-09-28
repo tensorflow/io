@@ -25,6 +25,70 @@ class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
   pass
 
+class _IOTensorIterablePartitionedFunction(object):
+  """PartitionedFunction will translate call to cached Function call"""
+  # function: next call of the iterable
+  def __init__(self, function, shape):
+    self._function = function
+    self._partitions = []
+    self._length = None
+    self._slice_suffix_start = [0 for _ in shape[1:]]
+    self._slice_suffix_size = [e for e in shape[1:]]
+  def __call__(self, start, stop):
+    while self._length is None:
+      # if stop is not None then resolved partitions have to cover stop
+      # if stop is None then all partitions has to be resolved
+      if stop is not None:
+        if stop <= sum([e.shape[0] for e in self._partitions]):
+          break
+      # resolve one step
+      partition = self._function()
+      if partition.shape[0] == 0:
+        self._length = sum([e.shape[0] for e in self._partitions])
+      else:
+        self._partitions.append(partition)
+      partitions_indices = tf.cumsum(
+          [e.shape[0] for e in self._partitions]).numpy().tolist()
+      self._partitions_start = list([0] + partitions_indices[:-1])
+      self._partitions_stop = partitions_indices
+    length = self._partitions_stop[-1]
+    index = slice(start, stop)
+    start, stop, _ = index.indices(length)
+    if start >= length:
+      raise IndexError("index %s is out of range" % index)
+    indices_start = tf.math.maximum(self._partitions_start, start)
+    indices_stop = tf.math.minimum(self._partitions_stop, stop)
+    indices_hit = tf.math.less(indices_start, indices_stop)
+    indices = tf.squeeze(tf.compat.v2.where(indices_hit), [1])
+    return self._partitions_read(indices_start, indices_stop, indices)
+  @property
+  def length(self):
+    """length"""
+    while self._length is None:
+      # resolve until length is available
+      partition = self._function()
+      if partition.shape[0] == 0:
+        self._length = sum([e.shape[0] for e in self._partitions])
+      else:
+        self._partitions.append(partition)
+      partitions_indices = tf.cumsum(
+          [e.shape[0] for e in self._partitions]).numpy().tolist()
+      self._partitions_start = list([0] + partitions_indices[:-1])
+      self._partitions_stop = partitions_indices
+    return self._length
+  def _partitions_read(self, indices_start, indices_stop, indices):
+    """_partitions_read"""
+    items = []
+    # TODO: change to tf.while_loop
+    for index in indices:
+      slice_start = indices_start[index] - self._partitions_start[index]
+      slice_size = indices_stop[index] - indices_start[index]
+      slice_start = [slice_start] + self._slice_suffix_start
+      slice_size = [slice_size] + self._slice_suffix_size
+      item = tf.slice(self._partitions[index], slice_start, slice_size)
+      items.append(item)
+    return tf.concat(items, axis=0)
+
 class _IOTensorPartitionedFunction(object):
   """PartitionedFunction will translate call to cached Function call"""
   def __init__(self, func, partitions):
@@ -137,17 +201,11 @@ class BaseIOTensor(_IOTensor):
 
   def __init__(self,
                spec,
-               resource,
                function,
-               partitions,
                internal=False):
     # function used for dataset should not be partitioned.
-    self._dataset_function = function
-    if partitions is not None:
-      function = _IOTensorPartitionedFunction(function, partitions)
-    self._resource = resource
     self._function = function
-    self._partitions = partitions
+    self._dataset_function = None
     super(BaseIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -193,15 +251,12 @@ class BaseIOTensor(_IOTensor):
     # Find out the indices based on length and key,
     # based on python slice()'s indices method:
     index = key if isinstance(key, slice) else slice(key, key + 1)
-    start, stop, _ = index.indices(self.shape[0])
-    if start >= self.shape[0]:
-      raise IndexError("index %s is out of range" % key)
-    item = self._function(self._resource, start=start, stop=stop)
-    return tf.squeeze(item, axis=[0]) if (stop == start + 1) else item
+    items = self._function(start=index.start, stop=index.stop)
+    return tf.squeeze(items, axis=[0]) if items.shape[0] == 1 else items
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
-    return self.shape[0]
+    return self._function.length
 
 
   #=============================================================================

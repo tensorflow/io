@@ -29,12 +29,13 @@ import tensorflow_io as tfio # pylint: disable=wrong-import-position
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
 
-def _test_kafka_io_tensor():
+def test_kafka_io_tensor():
   kafka = tfio.IOTensor.from_kafka("test")
   assert kafka.dtype == tf.string
-  assert kafka.shape == [10]
+  assert kafka.shape.as_list() == [None]
   assert np.all(kafka.to_tensor().numpy() == [
       ("D" + str(i)).encode() for i in range(10)])
+  assert len(kafka) == 10
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
