@@ -24,7 +24,11 @@ import tensorflow as tf
 class _IOStreamDataset(tf.compat.v2.data.Dataset):
   """_IOStreamDataset"""
 
-  def __init__(self, function, **kwargs):
+  def __init__(self, function, internal=True, **kwargs):
+    if not internal:
+      raise ValueError("IOStreamDataset constructor is private; please use one "
+                       "of the factory methods instead (e.g., "
+                       "IODataset.from_kafka())")
     with tf.name_scope("IOStreamDataset"):
       capacity = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
@@ -49,6 +53,6 @@ class _IOStreamDataset(tf.compat.v2.data.Dataset):
 class _IODataset(_IOStreamDataset):
   """_IODataset"""
 
-  def __init__(self, function, **kwargs):
+  def __init__(self, function, internal=False, **kwargs):
     with tf.name_scope("IODataset"):
-      super(_IODataset, self).__init__(function, **kwargs)
+      super(_IODataset, self).__init__(function, internal=internal, **kwargs)

@@ -53,7 +53,7 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
       super(KafkaIODataset, self).__init__(
-          _KafkaIODatasetFunction(resource))
+          _KafkaIODatasetFunction(resource), internal=internal)
 
 class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=protected-access
   """KafkaIOStreamDataset"""
@@ -77,4 +77,4 @@ class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=p
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
 
       super(KafkaIOStreamDataset, self).__init__(
-          _KafkaIODatasetFunction(resource))
+          _KafkaIODatasetFunction(resource), internal=internal)

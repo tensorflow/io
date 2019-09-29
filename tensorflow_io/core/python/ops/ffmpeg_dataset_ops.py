@@ -55,4 +55,6 @@ class FFmpegIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-ac
       super(FFmpegIODataset, self).__init__(
           _FFmpegIODatasetFunction(
               ffmpeg_ops.ffmpeg_readable_read,
-              resource, stream, shape, dtype), capacity=capacity)
+              resource, stream, shape, dtype),
+          capacity=capacity,
+          internal=internal)

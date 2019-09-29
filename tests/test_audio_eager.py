@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import os
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):

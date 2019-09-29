@@ -30,7 +30,8 @@ video_path = "file://" +os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
 def test_video_predict():
   model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
-  x = ffmpeg_io.VideoDataset(video_path, batch=1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  x = ffmpeg_io.VideoDataset(video_path).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  x = x.map(lambda v: tf.expand_dims(v, axis=0))
   y = model.predict(x)
   p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
   assert len(p) == 166

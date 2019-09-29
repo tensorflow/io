@@ -79,6 +79,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+      _ = filename
       raise NotImplementedError
 
   @classmethod

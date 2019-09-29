@@ -36,7 +36,8 @@ def test_video_dataset():
   """test_video_dataset"""
   num_repeats = 2
 
-  video_dataset = tfio.IODataset.from_ffmpeg(video_path, "v:0").repeat(num_repeats)
+  video_dataset = tfio.IODataset.from_ffmpeg(
+      video_path, "v:0").repeat(num_repeats)
 
   i = 0
   for v in video_dataset:
@@ -93,7 +94,7 @@ def test_ffmpeg_io_tensor_audio():
 # Disable as the mkv file is large. Run locally
 # by pulling test file while is located in:
 # https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv
-def test_ffmpeg_io_tensor_mkv():
+def _test_ffmpeg_io_tensor_mkv():
   """test_ffmpeg_io_tensor_mkv"""
   mkv_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),

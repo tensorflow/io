@@ -78,7 +78,7 @@ class KafkaReadable : public IOReadableInterface {
     RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
 
     eof_ = true;
-    timeout_ = 1000;
+    timeout_ = 2000;
     for (size_t i = 0; i < metadata.size(); i++) {
       if (metadata[i].find_first_of("conf.eof") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");

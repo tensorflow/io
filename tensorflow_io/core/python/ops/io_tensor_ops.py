@@ -232,6 +232,7 @@ class BaseIOTensor(_IOTensor):
         tf.TensorShape(self._function.length - size + 1).concatenate(size),
         self.dtype)
     class _Function(object):
+      """_Function"""
       def __init__(self, func, spec, size):
         self._func = func
         self._spec = spec
@@ -240,7 +241,7 @@ class BaseIOTensor(_IOTensor):
       def __call__(self, start, stop):
         start, stop, _ = slice(start, stop).indices(self._length)
         if start >= self._length:
-            raise IndexError("index %s is out of range" % slice(start, stop))
+          raise IndexError("index %s is out of range" % slice(start, stop))
         return tf.reshape(
             tf.image.extract_patches(
                 tf.reshape(
@@ -298,7 +299,7 @@ class TensorIOTensor(BaseIOTensor):
       def __call__(self, start, stop):
         start, stop, _ = slice(start, stop).indices(self._length)
         if start >= self._length:
-            raise IndexError("index %s is out of range" % slice(start, stop))
+          raise IndexError("index %s is out of range" % slice(start, stop))
         slice_start = self._base_start
         slice_size = self._base_size
         slice_start[0] = start

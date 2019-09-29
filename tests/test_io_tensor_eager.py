@@ -17,20 +17,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import math
 import numpy
-import pandas
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
-from tensorflow.keras.models import Sequential # pylint: disable=wrong-import-position
-from tensorflow.keras.layers import Dense # pylint: disable=wrong-import-position
-from tensorflow.keras.layers import LSTM # pylint: disable=wrong-import-position
-
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 
