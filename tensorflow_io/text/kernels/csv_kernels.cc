@@ -25,12 +25,12 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class CSVIndexable : public IOIndexableInterface {
+class CSVReadable : public IOReadableInterface {
  public:
-  CSVIndexable(Env* env)
+  CSVReadable(Env* env)
   : env_(env) {}
 
-  ~CSVIndexable() {}
+  ~CSVReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -140,13 +140,28 @@ class CSVIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
     int64 column_index = columns_index_[component];
 
-    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
+    (*record_read) = 0;
+    if (start >= shapes_[column_index].dim_size(0)) {
+      return Status::OK();
+    }
+    const string& column = component;
+    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
+
+    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(element_start, element_stop);
 
     #define PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
@@ -220,13 +235,14 @@ class CSVIndexable : public IOIndexableInterface {
         }
       }
     }
+    (*record_read) = element_stop - element_start;
 
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("CSVIndexable");
+    return strings::StrCat("CSVReadable");
   }
  private:
   mutable mutex mu_;
@@ -243,11 +259,11 @@ class CSVIndexable : public IOIndexableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<CSVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<CSVIndexable>);
-REGISTER_KERNEL_BUILDER(Name("CSVIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<CSVIndexable>);
+REGISTER_KERNEL_BUILDER(Name("CSVReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<CSVReadable>);
+REGISTER_KERNEL_BUILDER(Name("CSVReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<CSVReadable>);
+REGISTER_KERNEL_BUILDER(Name("CSVReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<CSVReadable>);
 }  // namespace data
 }  // namespace tensorflow
