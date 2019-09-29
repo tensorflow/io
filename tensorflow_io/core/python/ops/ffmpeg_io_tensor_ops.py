@@ -48,7 +48,7 @@ class FFmpegVideoIOTensor(io_tensor_ops.BaseIOTensor):
                internal=False):
     with tf.name_scope("FFmpegVideoIOTensor"):
       super(FFmpegVideoIOTensor, self).__init__(
-          spec, function, dataset_function=None, internal=internal)
+          spec, function, internal=internal)
 
 
 class FFmpegAudioIOTensor(io_tensor_ops.BaseIOTensor):
@@ -59,7 +59,7 @@ class FFmpegAudioIOTensor(io_tensor_ops.BaseIOTensor):
     with tf.name_scope("FFmpegAudioIOTensor"):
       self._rate = rate
       super(FFmpegAudioIOTensor, self).__init__(
-          spec, function, dataset_function=None, internal=internal)
+          spec, function, internal=internal)
 
   @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
   def rate(self):
@@ -73,7 +73,7 @@ class FFmpegSubtitleIOTensor(io_tensor_ops.BaseIOTensor):
                internal=False):
     with tf.name_scope("FFmpegSubtitleIOTensor"):
       super(FFmpegSubtitleIOTensor, self).__init__(
-          spec, function, dataset_function=None, internal=internal)
+          spec, function, internal=internal)
 
 class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """FFmpegIOTensor"""

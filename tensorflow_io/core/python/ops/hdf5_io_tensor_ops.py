@@ -21,7 +21,6 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
 
 class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
@@ -48,12 +47,9 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
         function = io_tensor_ops._IOTensorComponentFunction(
             core_ops.hdf5_readable_read,
             resource, column, shape, dtype)
-        dataset_function = io_dataset_ops._IODatasetComponentFunction(
-            core_ops.hdf5_readable_read,
-            resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(
-                spec, function, dataset_function, internal=internal))
+                spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
       super(HDF5IOTensor, self).__init__(
           spec, columns, elements,

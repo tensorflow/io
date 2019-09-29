@@ -138,39 +138,6 @@ class _IOTensorPartitionedFunction(object):
       items.append(item)
     return tf.concat(items, axis=0)
 
-class _IOTensorDataset(tf.compat.v2.data.Dataset):
-  """_IOTensorDataset"""
-
-  def __init__(self, function):
-    if partitions is None:
-      start = 0
-      stop = tf.nest.flatten(spec)[0].shape[0]
-      capacity = 4096
-      entry_start = list(range(start, stop, capacity))
-      entry_stop = entry_start[1:] + [stop]
-    else:
-      partitions = tf.cast(partitions, tf.int64)
-      entry_stop = tf.cumsum(partitions)
-      entry_start = tf.concat([[0], entry_stop[:-1]], axis=0)
-    dataset = tf.compat.v2.data.Dataset.from_tensor_slices((
-        tf.constant(entry_start, tf.int64),
-        tf.constant(entry_stop, tf.int64)))
-    dataset = dataset.map(lambda start, stop: function(resource, start=start, stop=stop))
-    dataset = dataset.unbatch()
-
-    self._dataset = dataset
-    self._resource = resource
-    self._function = function
-    super(_IOTensorDataset, self).__init__(
-        self._dataset._variant_tensor) # pylint: disable=protected-access
-
-  def _inputs(self):
-    return []
-
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
-
 class _IOTensor(object):
   """_IOTensor"""
 
@@ -222,11 +189,9 @@ class BaseIOTensor(_IOTensor):
   def __init__(self,
                spec,
                function,
-               dataset_function,
                internal=False):
     # function used for dataset should not be partitioned.
     self._function = function
-    self._dataset_function = dataset_function
     super(BaseIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -243,25 +208,6 @@ class BaseIOTensor(_IOTensor):
   def dtype(self):
     """Returns the `dtype` of elements in the tensor."""
     return self.spec.dtype
-
-  #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    return io_dataset_ops._IODataset(self._dataset_function)
 
   #=============================================================================
   # Indexing & Slicing
@@ -388,14 +334,10 @@ class _TableIOTensor(_IOTensor):
   def __init__(self,
                spec,
                columns,
-               resource,
-               function,
-               partitions,
+               values,
                internal=False):
     self._columns = columns
-    self._resource = resource
-    self._function = function
-    self._partitions = partitions
+    self._values = values
     super(_TableIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -412,65 +354,7 @@ class _TableIOTensor(_IOTensor):
     """Return a BaseIOTensor with column named `column`"""
     column_index = self.columns.index(
         next(e for e in self.columns if e == column))
-    spec = tf.nest.flatten(self.spec)[column_index]
-    class _Function(object):
-      def __init__(self, func, spec, column):
-        self._func = func
-        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-        self._dtype = spec.dtype
-        self._component = column
-
-      def __call__(self, resource, start, stop):
-        return self._func(
-            resource, start=start, stop=stop,
-            component=self._component,
-            shape=self._shape, dtype=self._dtype)
-    function = _Function(self._function, spec, column)
-    return BaseIOTensor(
-        spec, self._resource, function, self._partitions,
-        internal=True)
-
-  #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    class _Function(object):
-      """_Function"""
-      def __init__(self, func, spec, columns):
-        self._func = func
-        self._spec = [tf.TensorSpec(
-            tf.TensorShape([None]).concatenate(e.shape[1:]),
-            e.dtype) for e in spec]
-        self._columns = columns
-        self._components = zip(
-            tf.nest.flatten(self._spec), tf.nest.flatten(self._columns))
-
-      def __call__(self, resource, start, stop):
-        return tf.nest.pack_sequence_as(
-            self._columns,
-            [self._func(
-                resource, start, stop,
-                component=component,
-                shape=e.shape,
-                dtype=e.dtype) for (e, component) in self._components])
-
-    return _IOTensorDataset(
-        self.spec, self._resource,
-        _Function(self._function, self.spec, self.columns), self._partitions)
-
+    return self._values[column_index]
 
 class _CollectionIOTensor(_IOTensor):
   """_CollectionIOTensor
@@ -557,45 +441,6 @@ class _SeriesIOTensor(_IOTensor):
         self._value_function,
         partitions=None, internal=True)
 
-class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
-  """_KeyValueIOTensorDataset"""
-
-  def __init__(self,
-               iterable_init, iterable_next,
-               mapping_resource, mapping_function):
-    with tf.name_scope("IterableIOTensorDataset"):
-      resource = iterable_init()
-
-      capacity = 4096
-      dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
-      def func(_):
-        k = iterable_next(resource, capacity)
-        v = mapping_function(mapping_resource, k)
-        return (k, v)
-      dataset = dataset.map(func)
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda k, v: tf.greater(tf.shape(k)[0], 0)))
-      dataset = dataset.unbatch()
-
-      self._iterable_init = iterable_init
-      self._iterable_next = iterable_next
-
-      self._mapping_resource = mapping_resource
-      self._mapping_function = mapping_function
-
-      self._resource = resource
-      self._dataset = dataset
-      super(_KeyValueIOTensorDataset, self).__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
-
-  def _inputs(self):
-    return []
-
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
-
 class _KeyValueIOTensor(_IOTensor):
   """_KeyValueIOTensor"""
 
@@ -612,27 +457,6 @@ class _KeyValueIOTensor(_IOTensor):
     self._iterable_next = iterable_next
     super(_KeyValueIOTensor, self).__init__(
         spec, internal=internal)
-
-  #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    return _KeyValueIOTensorDataset(
-        self._iterable_init, self._iterable_next,
-        self._resource, self._function)
 
   #=============================================================================
   # Iterator

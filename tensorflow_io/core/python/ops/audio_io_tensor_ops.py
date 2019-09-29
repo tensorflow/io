@@ -69,7 +69,7 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
           core_ops.wav_readable_read, resource, shape, dtype)
       self._rate = rate
       super(AudioIOTensor, self).__init__(
-          spec, function, None, internal=internal)
+          spec, function, internal=internal)
 
   #=============================================================================
   # Accessors

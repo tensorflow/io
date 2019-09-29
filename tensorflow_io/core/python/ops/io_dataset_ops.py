@@ -50,15 +50,3 @@ class _IODataset(_IOStreamDataset):
 
   def __init__(self, function, **kwargs):
     super(_IODataset, self).__init__(function, **kwargs)
-
-class _IODatasetComponentFunction(object):
-  def __init__(self, function, resource, component, shape, dtype):
-    self._function = function
-    self._resource = resource
-    self._component = component
-    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-    self._dtype = dtype
-  def __call__(self, start, stop):
-    return self._function(
-        self._resource, start=start, stop=stop,
-        component=self._component, shape=self._shape, dtype=self._dtype)

@@ -63,7 +63,7 @@ def test_hdf5_read_dataset():
       vv = list([np.asarray([v for v in range(i, i + 20)])])
       assert np.all(p1[i].numpy() == vv)
 
-  dataset = tfio.IOTensor.from_hdf5(filename)('/dset1').to_dataset()
+  dataset = tfio.IODataset.from_hdf5(filename, '/dset1')
   i = 0
   for p in dataset:
     vv = list([np.asarray([v for v in range(i, i + 20)])])

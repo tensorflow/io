@@ -65,4 +65,4 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
         function, tf.TensorShape([None]))
       spec = tf.TensorSpec(tf.TensorShape([None]), tf.string)
       super(KafkaIOTensor, self).__init__(
-          spec, function, dataset_function=None, internal=internal)
+          spec, function, internal=internal)
