@@ -25,6 +25,7 @@ class _IOStreamDataset(tf.compat.v2.data.Dataset):
   """_IOStreamDataset"""
 
   def __init__(self, function, **kwargs):
+    with tf.name_scope("IOStreamDataset"):
       capacity = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(lambda index: function(index, index+capacity))
@@ -49,4 +50,5 @@ class _IODataset(_IOStreamDataset):
   """_IODataset"""
 
   def __init__(self, function, **kwargs):
-    super(_IODataset, self).__init__(function, **kwargs)
+    with tf.name_scope("IODataset"):
+      super(_IODataset, self).__init__(function, **kwargs)

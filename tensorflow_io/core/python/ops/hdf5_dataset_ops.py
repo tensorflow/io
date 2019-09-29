@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import uuid
 
 import tensorflow as tf
@@ -36,13 +35,13 @@ class _HDF5IODatasetFunction(object):
         self._resource, start=start, stop=stop,
         component=self._component, shape=self._shape, dtype=self._dtype)
 
-class HDF5IODataset(io_dataset_ops._IODataset):
+class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
   """HDF5IODataset"""
 
   def __init__(self,
                filename,
                dataset,
-               internal=True):
+               internal=False):
     """HDF5IODataset."""
     with tf.name_scope("HDF5IODataset") as scope:
       resource, _ = core_ops.hdf5_readable_init(

@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import uuid
 
 import tensorflow as tf
@@ -32,7 +31,7 @@ class _KafkaIODatasetFunction(object):
         self._resource, start=start, stop=stop,
         shape=tf.TensorShape([None]), dtype=tf.string)
 
-class KafkaIODataset(io_dataset_ops._IODataset):
+class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
   """KafkaIODataset"""
 
   def __init__(self,
@@ -56,7 +55,7 @@ class KafkaIODataset(io_dataset_ops._IODataset):
       super(KafkaIODataset, self).__init__(
           _KafkaIODatasetFunction(resource))
 
-class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset):
+class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=protected-access
   """KafkaIOStreamDataset"""
 
   def __init__(self,
@@ -77,13 +76,5 @@ class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset):
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
 
-      class KafkaIOStreamDatasetFunction(object):
-        def __init__(self, resource):
-          self._resource = resource
-        def __call__(self, index):
-          capacity=4096
-          return core_ops.kafka_readable_read(
-              resource, start=index, stop=index+capacity,
-              shape=tf.TensorShape([None]), dtype=tf.string)
       super(KafkaIOStreamDataset, self).__init__(
           _KafkaIODatasetFunction(resource))

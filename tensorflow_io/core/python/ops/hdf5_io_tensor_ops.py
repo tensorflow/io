@@ -44,7 +44,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = io_tensor_ops._IOTensorComponentFunction(
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
             core_ops.hdf5_readable_read,
             resource, column, shape, dtype)
         elements.append(

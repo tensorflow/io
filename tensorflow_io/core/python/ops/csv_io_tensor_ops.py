@@ -24,6 +24,7 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
 class _IOTensorComponentLabelFunction(object):
+  """_IOTensorComponentLabelFunction"""
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
     self._resource = resource
@@ -63,7 +64,7 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = io_tensor_ops._IOTensorComponentFunction(
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
             core_ops.csv_readable_read,
             resource, column, shape, dtype)
         elements.append(

@@ -150,14 +150,28 @@ class PrometheusReadable : public IOReadableInterface {
   }
 
   Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+    (*record_read) = 0;
+    if (start >= shapes_[0].dim_size(0)) {
+      return Status::OK();
+    }
+    int64 element_start = start < shapes_[0].dim_size(0) ? start : shapes_[0].dim_size(0);
+    int64 element_stop = stop < shapes_[0].dim_size(0) ? stop : shapes_[0].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
+
     if (component == "index") {
-      memcpy(&value->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
+      memcpy(&value->flat<int64>().data()[0], &timestamp_[element_start], sizeof(int64) * (element_stop - element_start));
     } else if (component == "value") {
-      memcpy(&value->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
+      memcpy(&value->flat<double>().data()[0], &value_[element_start], sizeof(double) * (element_stop - element_start));
     } else {
       return errors::InvalidArgument("component ", component, " is not supported");
     }
-    *record_read = stop - start;
+    *record_read = element_stop - element_start;
 
     return Status::OK();
   }

@@ -17,11 +17,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import uuid
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_dataset_ops
 
 class _FFmpegIODatasetFunction(object):
@@ -36,7 +34,7 @@ class _FFmpegIODatasetFunction(object):
         self._resource, start=start, stop=stop,
         component=self._component, shape=self._shape, dtype=self._dtype)
 
-class FFmpegIODataset(io_dataset_ops._IODataset):
+class FFmpegIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
   """FFmpegIODataset"""
 
   def __init__(self,

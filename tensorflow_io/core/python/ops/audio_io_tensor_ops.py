@@ -24,6 +24,7 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
 class _AudioIOTensorFunction(object):
+  """_AudioIOTensorFunction"""
   def __init__(self, function, resource, shape, dtype):
     self._function = function
     self._resource = resource

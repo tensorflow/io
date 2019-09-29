@@ -17,14 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import uuid
-import warnings
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 
 class _FFmpegIOTensorFunction(object):
+  """_FFmpegIOTensorFuntion"""
   def __init__(self, function, resource, component, shape, dtype, capacity):
     self._function = function
     self._resource = resource
@@ -101,7 +100,7 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
         function = _FFmpegIOTensorFunction(
             ffmpeg_ops.ffmpeg_readable_read,
             resource, column, shape, dtype, capacity=capacity)
-        function = io_tensor_ops._IOTensorIterablePartitionedFunction(
+        function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
             function, shape)
         if column.startswith("v:"):
           elements.append(

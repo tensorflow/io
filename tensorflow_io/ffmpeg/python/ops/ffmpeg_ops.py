@@ -17,11 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-import uuid
 import warnings
 
-import tensorflow as tf
 from tensorflow_io.core.python.ops import ffmpeg_ops
 from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 
@@ -37,10 +34,10 @@ class AudioDataset(ffmpeg_dataset_ops.FFmpegIODataset):
   """A Audio File Dataset that reads the audio file."""
 
   def __init__(self, filename, stream="a:0"):
-      super(AudioDataset, self).__init__(filename, stream)
+    super(AudioDataset, self).__init__(filename, stream)
 
 class VideoDataset(ffmpeg_dataset_ops.FFmpegIODataset):
   """A Video File Dataset that reads the video file."""
 
   def __init__(self, filename, stream="v:0"):
-      super(VideoDataset, self).__init__(filename, stream)
+    super(VideoDataset, self).__init__(filename, stream)

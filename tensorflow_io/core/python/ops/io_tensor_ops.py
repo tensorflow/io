@@ -17,16 +17,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import tensorflow as tf
-from tensorflow_io.core.python.ops import io_dataset_ops
 
 class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
   pass
 
 class _IOTensorComponentFunction(object):
+  """_IOTensorComponentFunction will translate call"""
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
     self._resource = resource
@@ -252,9 +250,8 @@ class BaseIOTensor(_IOTensor):
                 padding='VALID'),
             self._spec.shape)
     return BaseIOTensor(spec,
-                        self._resource,
                         _Function(self._function, spec, size),
-                        partitions=None, internal=True)
+                        internal=True)
 
   #=============================================================================
   # Tensor Type Conversions
@@ -398,24 +395,11 @@ class _SeriesIOTensor(_IOTensor):
 
   def __init__(self,
                spec,
-               resource,
-               function,
+               index,
+               value,
                internal=False):
-    self._resource = resource
-
-    class _SeriesFunction(object):
-      def __init__(self, func, component, spec):
-        self._func = func
-        self._component = component
-        self._shape = spec.shape
-        self._dtype = spec.dtype
-      def __call__(self, resource, start, stop):
-        return self._func(resource, start, stop,
-                          component=self._component,
-                          shape=self._shape, dtype=self._dtype)
-
-    self._index_function = _SeriesFunction(function, "index", spec[0])
-    self._value_function = _SeriesFunction(function, "value", spec[1])
+    self._index = index
+    self._value = value
     super(_SeriesIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -426,20 +410,12 @@ class _SeriesIOTensor(_IOTensor):
   @property
   def index(self):
     """The index column of the series"""
-    return BaseIOTensor(
-        self.spec[0],
-        self._resource,
-        self._index_function,
-        partitions=None, internal=True)
+    return self._index
 
   @property
   def value(self):
     """The value column of the series"""
-    return BaseIOTensor(
-        self.spec[1],
-        self._resource,
-        self._value_function,
-        partitions=None, internal=True)
+    return self._value
 
 class _KeyValueIOTensor(_IOTensor):
   """_KeyValueIOTensor"""

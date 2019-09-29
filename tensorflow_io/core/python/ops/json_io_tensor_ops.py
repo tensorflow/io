@@ -47,7 +47,7 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = io_tensor_ops._IOTensorComponentFunction(
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
             core_ops.json_readable_read,
             resource, column, shape, dtype)
         elements.append(

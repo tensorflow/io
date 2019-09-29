@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
 import uuid
 
 import tensorflow as tf
@@ -36,7 +35,7 @@ class _AvroIODatasetFunction(object):
         self._resource, start=start, stop=stop,
         component=self._component, shape=self._shape, dtype=self._dtype)
 
-class AvroIODataset(io_dataset_ops._IODataset):
+class AvroIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
   """AvroIODataset"""
 
   def __init__(self,
@@ -58,4 +57,5 @@ class AvroIODataset(io_dataset_ops._IODataset):
       super(AvroIODataset, self).__init__(
           _AvroIODatasetFunction(
               core_ops.avro_readable_read,
-              resource, column, shape, dtype), capacity=capacity)
+              resource, column, shape, dtype), capacity=capacity,
+          internal=internal)

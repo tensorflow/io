@@ -24,15 +24,16 @@ from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
 class _KafkaIOTensorFunction(object):
+  """_KafkaIOTensorFunction"""
   def __init__(self, resource, capacity):
     self._resource = resource
     self._capacity = capacity
     self._index = 0
   def __call__(self):
     items = core_ops.kafka_readable_read(
-      self._resource,
-      start=self._index, stop=self._index+self._capacity,
-      shape=tf.TensorShape([None]), dtype=tf.string)
+        self._resource,
+        start=self._index, stop=self._index+self._capacity,
+        shape=tf.TensorShape([None]), dtype=tf.string)
     self._index += items.shape[0]
     return items
 
@@ -61,8 +62,8 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
       function = _KafkaIOTensorFunction(resource, capacity=4096)
-      function = io_tensor_ops._IOTensorIterablePartitionedFunction(
-        function, tf.TensorShape([None]))
+      function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
+          function, tf.TensorShape([None]))
       spec = tf.TensorSpec(tf.TensorShape([None]), tf.string)
       super(KafkaIOTensor, self).__init__(
           spec, function, internal=internal)
