@@ -45,7 +45,7 @@ REGISTER_OP("ReadAvro")
        return Status::OK();
      });
 
-REGISTER_OP("AvroIndexableInit")
+REGISTER_OP("AvroReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -58,7 +58,7 @@ REGISTER_OP("AvroIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("AvroIndexableSpec")
+REGISTER_OP("AvroReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -69,7 +69,7 @@ REGISTER_OP("AvroIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("AvroIndexableRead")
+REGISTER_OP("AvroReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -87,7 +87,7 @@ REGISTER_OP("AvroIndexableRead")
     return Status::OK();
    });
 
-REGISTER_OP("AvroIndexablePartitions")
+REGISTER_OP("AvroReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

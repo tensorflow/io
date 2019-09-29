@@ -20,6 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import hdf5_dataset_ops
+from tensorflow_io.core.python.ops import avro_dataset_ops
 from tensorflow_io.core.python.ops import kafka_dataset_ops
 from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 
@@ -161,6 +162,28 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
       return hdf5_dataset_ops.HDF5IODataset(
           filename, dataset, internal=True)
+
+  @classmethod
+  def from_avro(cls,
+                filename,
+                schema,
+                column,
+                **kwargs):
+    """Creates an `IODataset` from a avro file's dataset object.
+
+    Args:
+      filename: A string, the filename of a avro file.
+      schema: A string, the schema of a avro file.
+      column: A string, the column name within avro file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromAvro")):
+      return avro_dataset_ops.AvroIODataset(
+          filename, schema, column, internal=True)
 
 class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=protected-access
   """IOStreamDataset
