@@ -159,7 +159,7 @@ cc_binary(
         "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/image:image_ops",
-        #"//tensorflow_io/json:json_ops",
+        "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
         #"//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
