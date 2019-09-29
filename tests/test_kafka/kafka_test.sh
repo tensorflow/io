@@ -28,8 +28,11 @@ if [[ "$(uname)" == "Darwin" ]]; then
     curl -sSOL http://packages.confluent.io/archive/5.3/confluent-community-5.3.1-2.12.tar.gz
     tar -xzf confluent-community-5.3.1-2.12.tar.gz
     (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
+    echo Wait 10 secs until zookeeper is up and running
+    sleep 10
     (cd confluent-$VERSION/ && sudo bin/kafka-server-start -daemon etc/kafka/server.properties)
     echo Wait 10 secs until kafka is up and running
+    sleep 10
     (cd confluent-$VERSION/ && sudo bin/schema-registry-start -daemon etc/schema-registry/schema-registry.properties)
     echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
     echo Wait 15 secs until all is up and running
