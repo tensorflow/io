@@ -33,6 +33,8 @@ class _AudioIOTensorFunction(object):
     self._dtype = dtype
   def __call__(self, start, stop):
     start, stop, _ = slice(start, stop).indices(self._length)
+    if start >= self._length:
+        raise IndexError("index %s is out of range" % slice(start, stop))
     return self._function(
         self._resource,
         start=start, stop=stop,
