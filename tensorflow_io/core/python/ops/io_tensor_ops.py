@@ -229,19 +229,22 @@ class BaseIOTensor(_IOTensor):
   def window(self, size):
     """Returns the sliding window of this IOTensor."""
     spec = tf.TensorSpec(
-        tf.TensorShape(self.shape.dims[0] - size + 1).concatenate(size),
+        tf.TensorShape(self._function.length - size + 1).concatenate(size),
         self.dtype)
     class _Function(object):
       def __init__(self, func, spec, size):
         self._func = func
         self._spec = spec
         self._size = size
-      def __call__(self, resource, start, stop):
+        self._length = self._spec.shape[0]
+      def __call__(self, start, stop):
+        start, stop, _ = slice(start, stop).indices(self._length)
+        if start >= self._length:
+            raise IndexError("index %s is out of range" % slice(start, stop))
         return tf.reshape(
             tf.image.extract_patches(
                 tf.reshape(
                     self._func(
-                        resource,
                         start, stop + self._size - 1),
                     [1, 1, stop + self._size - 1 - start, 1]),
                 sizes=[1, 1, self._size, 1],
@@ -288,21 +291,28 @@ class TensorIOTensor(BaseIOTensor):
     class _Function(object):
       """_Function"""
       def __init__(self, tensor):
+        self._tensor = tensor
         self._base_start = [0 for _ in tensor.shape.as_list()]
         self._base_size = [-1 for _ in tensor.shape.as_list()]
-
-      def __call__(self, resource, start, stop):
+        self._length = tensor.shape[0]
+      def __call__(self, start, stop):
+        start, stop, _ = slice(start, stop).indices(self._length)
+        if start >= self._length:
+            raise IndexError("index %s is out of range" % slice(start, stop))
         slice_start = self._base_start
         slice_size = self._base_size
         slice_start[0] = start
         slice_size[0] = stop - start
-        return tf.slice(resource, slice_start, slice_size)
+        return tf.slice(self._tensor, slice_start, slice_size)
+      @property
+      def length(self):
+        return self._length
 
     self._tensor = tensor
 
     super(TensorIOTensor, self).__init__(
         tf.TensorSpec(tensor.shape, tensor.dtype),
-        tensor, _Function(tensor), None, internal=internal)
+        _Function(tensor), internal=internal)
 
   #=============================================================================
   # Tensor Type Conversions
