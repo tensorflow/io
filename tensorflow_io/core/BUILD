@@ -148,7 +148,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        #"//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/audio:audio_ops",
         #"//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",

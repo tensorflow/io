@@ -31,7 +31,6 @@ class ParquetIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
   #=============================================================================
   def __init__(self,
                filename,
-               capacity=None,
                internal=False):
     with tf.name_scope("ParquetIOTensor") as scope:
       resource, columns = core_ops.parquet_readable_init(

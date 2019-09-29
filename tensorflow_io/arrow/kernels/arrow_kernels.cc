@@ -379,7 +379,7 @@ class FeatherReadable : public IOReadableInterface {
     default:
       return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
     }
-
+    (*record_read) = element_stop - element_start;
     return Status::OK();
   }
 
