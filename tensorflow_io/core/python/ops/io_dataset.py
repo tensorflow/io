@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import hdf5_dataset_ops
 from tensorflow_io.core.python.ops import avro_dataset_ops
+from tensorflow_io.core.python.ops import lmdb_dataset_ops
 from tensorflow_io.core.python.ops import kafka_dataset_ops
 from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 
@@ -184,6 +185,24 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromAvro")):
       return avro_dataset_ops.AvroIODataset(
           filename, schema, column, internal=True)
+
+  @classmethod
+  def from_lmdb(cls,
+                filename,
+                **kwargs):
+    """Creates an `IODataset` from a lmdb file.
+
+    Args:
+      filename: A string, the filename of a lmdb file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
+      return lmdb_dataset_ops.LMDBIODataset(
+          filename, internal=True)
 
 class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=protected-access
   """IOStreamDataset

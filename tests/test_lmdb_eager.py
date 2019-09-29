@@ -45,7 +45,7 @@ def test_lmdb_read_from_file():
   for key in lmdb:
     assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
 
-  lmdb_dataset = lmdb.to_dataset()
+  lmdb_dataset = tfio.IODataset.from_lmdb(filename)
   ii = 0
   for vv in lmdb_dataset:
     i = ii % 10
@@ -55,7 +55,7 @@ def test_lmdb_read_from_file():
     ii += 1
   assert ii == 10
 
-  lmdb_dataset = lmdb.to_dataset().batch(3)
+  lmdb_dataset = tfio.IODataset.from_lmdb(filename).batch(3)
   i = 0
   for vv in lmdb_dataset:
     k, v = vv

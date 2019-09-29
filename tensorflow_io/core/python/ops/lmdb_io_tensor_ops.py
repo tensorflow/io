@@ -23,6 +23,13 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
+class _IOTensorMappingFunction(object):
+  def __init__(self, function, resource):
+    self._function = function
+    self._resource = resource
+  def __call__(self, key):
+    return self._function(self._resource, key)
+
 class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected-access
   """LMDBIOTensor"""
 
@@ -40,12 +47,6 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
       spec = (tf.TensorSpec(tf.TensorShape([None]), tf.string),
               tf.TensorSpec(tf.TensorShape([None]), tf.string))
 
-      class _MappingRead(object):
-        def __init__(self, func):
-          self._func = func
-        def __call__(self, resource, key):
-          return self._func(resource, key)
-
       class _IterableInit(object):
         def __init__(self, func, filename):
           self._func = func
@@ -62,17 +63,18 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
           self._func = func
           self._shape = shape
           self._dtype = dtype
-        def __call__(self, resource, capacity):
+          self._index = 0
+        def __call__(self, resource):
           return self._func(
-              resource, capacity,
+              resource,
+              start=self._index, stop=self._index+1,
               shape=self._shape, dtype=self._dtype)
 
       super(LMDBIOTensor, self).__init__(
           spec,
-          resource,
-          _MappingRead(core_ops.lmdb_mapping_read),
+          _IOTensorMappingFunction(core_ops.lmdb_mapping_read, resource),
           _IterableInit(
-              core_ops.lmdb_iterable_init, filename),
+              core_ops.lmdb_readable_init, filename),
           _IterableNext(
-              core_ops.lmdb_iterable_next, tf.TensorShape([None]), tf.string),
+              core_ops.lmdb_readable_read, tf.TensorShape([None]), tf.string),
           internal=internal)

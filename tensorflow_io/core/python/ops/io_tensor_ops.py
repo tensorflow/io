@@ -446,12 +446,10 @@ class _KeyValueIOTensor(_IOTensor):
 
   def __init__(self,
                spec,
-               resource,
                function,
                iterable_init,
                iterable_next,
                internal=False):
-    self._resource = resource
     self._function = function
     self._iterable_init = iterable_init
     self._iterable_next = iterable_next
@@ -464,10 +462,9 @@ class _KeyValueIOTensor(_IOTensor):
   def __iter__(self):
     with tf.name_scope("KeyValueIOTensorIter"):
       resource = self._iterable_init()
-      capacity = 1
       while True:
-        value = self._iterable_next(resource, capacity)
-        if tf.shape(value)[0].numpy() < capacity:
+        value = self._iterable_next(resource)
+        if tf.shape(value)[0].numpy() == 0:
           return
         yield value[0]
 
@@ -476,4 +473,4 @@ class _KeyValueIOTensor(_IOTensor):
   #=============================================================================
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
-    return self._function(self._resource, key)
+    return self._function(key)
