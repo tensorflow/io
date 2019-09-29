@@ -55,7 +55,7 @@ def test_tiff_io_tensor():
   tiff = tfio.IOTensor.from_tiff(filename)
   assert tiff.keys == list(range(5))
   for i in tiff.keys:
-    assert np.all(images[i] == tiff(i).to_tensor())
+    assert np.all(images[i].numpy() == tiff(i).to_tensor().numpy())
 
 
 if __name__ == "__main__":
