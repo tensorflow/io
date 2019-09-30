@@ -55,4 +55,5 @@ class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acce
       super(HDF5IODataset, self).__init__(
           _HDF5IODatasetFunction(
               core_ops.hdf5_readable_read,
-              resource, dataset, shape, dtype), capacity=capacity, internal=internal)
+              resource, dataset, shape, dtype),
+          capacity=capacity, internal=internal)

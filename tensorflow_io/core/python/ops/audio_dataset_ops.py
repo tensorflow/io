@@ -45,7 +45,7 @@ class AudioIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, rate = core_ops.wav_readable_spec(resource)
+      shape, dtype, _ = core_ops.wav_readable_spec(resource)
       shape = tf.TensorShape(shape.numpy())
       dtype = tf.as_dtype(dtype.numpy())
       super(AudioIODataset, self).__init__(
