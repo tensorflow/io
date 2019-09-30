@@ -16,6 +16,11 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_interface.h"
 
 #include "rdkafkacpp.h"
+#include "api/DataFile.hh"
+#include "api/Compiler.hh"
+#include "api/Generic.hh"
+#include "api/Stream.hh"
+#include "api/Validator.hh"
 
 #include <unordered_map>
 
@@ -248,5 +253,96 @@ REGISTER_KERNEL_BUILDER(Name("KafkaIndexableSpec").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("KafkaIndexableRead").Device(DEVICE_CPU),
                         IOIndexableReadOp<IOIndexableImplementation<KafkaIterable>>);
 
+class DecodeAvroOp : public OpKernel {
+ public:
+  explicit DecodeAvroOp(OpKernelConstruction* context) : OpKernel(context) {
+   OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    avro::ValidSchema avro_schema;
+    std::istringstream ss(schema_);
+    string error;
+    OP_REQUIRES(context, (avro::compileJsonSchema(ss, avro_schema, error)), errors::Unimplemented("Avro schema error: ", error));
+
+    avro::GenericDatum datum(avro_schema);
+    std::vector<Tensor*> value;
+    value.reserve(avro_schema.root()->names());
+    for (size_t i = 0; i < avro_schema.root()->names(); i++) {
+      Tensor* value_tensor = nullptr;
+      OP_REQUIRES_OK(context, context->allocate_output(static_cast<int64>(i), input_tensor->shape(), &value_tensor));
+      value.push_back(value_tensor);
+    }
+
+    for (int64 entry_index = 0; entry_index < input_tensor->NumElements(); entry_index++) {
+      const string& entry = input_tensor->flat<string>()(entry_index);
+      std::unique_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
+
+      avro::DecoderPtr d = avro::binaryDecoder();
+      d->init(*in);
+      avro::decode(*d, datum);
+      const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+      for (int i = 0; i < avro_schema.root()->names(); i++) {
+        const avro::GenericDatum& field = record.fieldAt(i);
+        switch(field.type()) {
+        case avro::AVRO_BOOL:
+          value[i]->flat<bool>()(entry_index) = field.value<bool>();
+          break;
+        case avro::AVRO_INT:
+          value[i]->flat<int32>()(entry_index) = field.value<int32_t>();
+          break;
+        case avro::AVRO_LONG:
+          value[i]->flat<int64>()(entry_index) = field.value<int64_t>();
+          break;
+        case avro::AVRO_FLOAT:
+          value[i]->flat<float>()(entry_index) = field.value<float>();
+          break;
+        case avro::AVRO_DOUBLE:
+          value[i]->flat<double>()(entry_index) = field.value<double>();
+          break;
+        case avro::AVRO_STRING:
+          value[i]->flat<string>()(entry_index) = field.value<string>();
+          break;
+        case avro::AVRO_BYTES:
+          {
+            const std::vector<uint8_t>& field_value = field.value<std::vector<uint8_t>>();
+            string v;
+            if (field_value.size() > 0) {
+              v.resize(field_value.size());
+              memcpy(&v[0], &field_value[0], field_value.size());
+            }
+            value[i]->flat<string>()(entry_index) = std::move(v);
+          }
+          break;
+        case avro::AVRO_FIXED:
+          {
+            const std::vector<uint8_t>& field_value = field.value<avro::GenericFixed>().value();
+            string v;
+            if (field_value.size() > 0) {
+              v.resize(field_value.size());
+              memcpy(&v[0], &field_value[0], field_value.size());
+            }
+            value[i]->flat<string>()(entry_index) = std::move(v);
+          }
+          break;
+        case avro::AVRO_ENUM:
+          value[i]->flat<string>()(entry_index) = field.value<avro::GenericEnum>().symbol();
+          break;
+        default:
+          OP_REQUIRES(context, false, errors::InvalidArgument("unsupported data type: ", field.type()));
+        }
+      }
+    }
+  }
+private:
+  string schema_;
+};
+
+
+REGISTER_KERNEL_BUILDER(Name("DecodeAvro").Device(DEVICE_CPU),
+                        DecodeAvroOp);
 }  // namespace data
 }  // namespace tensorflow
