@@ -41,7 +41,7 @@ class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acce
   def __init__(self,
                filename,
                dataset,
-               internal=False):
+               internal=True):
     """HDF5IODataset."""
     with tf.name_scope("HDF5IODataset") as scope:
       resource, _ = core_ops.hdf5_readable_init(
@@ -55,4 +55,4 @@ class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acce
       super(HDF5IODataset, self).__init__(
           _HDF5IODatasetFunction(
               core_ops.hdf5_readable_read,
-              resource, dataset, shape, dtype), capacity=capacity)
+              resource, dataset, shape, dtype), capacity=capacity, internal=internal)
