@@ -19,6 +19,18 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("DecodeAvro")
+  .Input("input: string")
+  .Output("value: dtype")
+  .Attr("schema: string")
+  .Attr("dtype: list({float,double,int32,int64,string})")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    for (int64 i = 0; i < c->num_outputs(); i++) {
+      c->set_output(i, c->input(0));
+    }
+    return Status::OK();
+   });
+
 REGISTER_OP("KafkaIndexableInit")
   .Input("input: string")
   .Input("metadata: string")

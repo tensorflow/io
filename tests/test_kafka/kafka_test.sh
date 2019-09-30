@@ -28,13 +28,20 @@ if [[ "$(uname)" == "Darwin" ]]; then
     curl -sSOL http://packages.confluent.io/archive/5.3/confluent-community-5.3.1-2.12.tar.gz
     tar -xzf confluent-community-5.3.1-2.12.tar.gz
     (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
+    echo Wait 10 secs until zookeeper is up and running
+    sleep 10
     (cd confluent-$VERSION/ && sudo bin/kafka-server-start -daemon etc/kafka/server.properties)
+    echo Wait 10 secs until kafka is up and running
+    sleep 10
     (cd confluent-$VERSION/ && sudo bin/schema-registry-start -daemon etc/schema-registry/schema-registry.properties)
     echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
-    echo Wait 15 secs until kafka is up and running
+    echo Wait 15 secs until all is up and running
     sleep 15
-    confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
-    confluent-$VERSION/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
+    sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+    sudo confluent-$VERSION/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
+    sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic avro-test
+    echo -e "{\"f1\":\"value1\",\"f2\":1}\n{\"f1\":\"value2\",\"f2\":2}\n{\"f1\":\"value3\",\"f2\":3}" > confluent-$VERSION/avro-test
+    sudo confluent-$VERSION/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema="{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"}]}" < confluent-$VERSION/avro-test
     echo Everything started
     exit 0
 fi
@@ -61,6 +68,7 @@ if [ "$action" == "start" ]; then
       -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
       confluentinc/cp-kafka:$VERSION
     echo Container $container-kafka started successfully
+    echo Wait 10 secs until kafka is up and running
     docker run -d \
       --net=host \
       --name=$container-schema-registry \
@@ -69,7 +77,7 @@ if [ "$action" == "start" ]; then
       -e SCHEMA_REGISTRY_LISTENERS=http://localhost:8081 \
       -e SCHEMA_REGISTRY_DEBUG=true \
       confluentinc/cp-schema-registry:$VERSION
-    echo Wait 15 secs until kafka is up and running
+    echo Wait 15 secs until all is up and running
     sleep 15
     echo Create test topic
     docker exec -i $container-kafka bash -c '/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test'
@@ -77,6 +85,12 @@ if [ "$action" == "start" ]; then
     docker exec -i $container-kafka bash -c 'echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > /test'
     echo Produce test message
     docker exec -i $container-kafka bash -c '/usr/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < /test'
+    echo Create avro test topic
+    docker exec -i $container-kafka bash -c '/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic avro-test'
+    echo Create avro test message
+    docker exec -i $container-schema-registry bash -c 'echo -e "{\"f1\":\"value1\",\"f2\":1}\n{\"f1\":\"value2\",\"f2\":2}\n{\"f1\":\"value3\",\"f2\":3}" > /avro-test'
+    echo Produce avro test message
+    docker exec -i $container-schema-registry bash -c "/usr/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema='{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"}]}' </avro-test"
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container-zookeeper
