@@ -27,8 +27,7 @@ import tempfile
 
 import tensorflow as tf
 from tensorflow import dtypes
-from tensorflow.compat.v2 import data
-from tensorflow.python.data.ops.dataset_ops import flat_structure
+from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import structure as structure_lib
 from tensorflow_io.core.python.ops import core_ops
 
@@ -88,7 +87,7 @@ def arrow_schema_to_tensor_types(schema):
   return tensor_types, tensor_shapes
 
 
-class ArrowBaseDataset(data.Dataset):
+class ArrowBaseDataset(dataset_ops.DatasetV2):
   """Base class for Arrow Datasets to provide columns used in record batches
   and corresponding output tensor types, shapes and classes.
   """
@@ -121,21 +120,24 @@ class ArrowBaseDataset(data.Dataset):
         dtypes.string,
         name="batch_mode")
     if batch_size is not None or batch_mode == 'auto':
+      spec_batch_size = batch_size if batch_mode == 'drop_remainder' else None
       # pylint: disable=protected-access
-      self._structure = self._structure._batch(
-          batch_size if batch_mode == 'drop_remainder' else None)
+      self._structure = nest.map_structure(
+          lambda component_spec: component_spec._batch(spec_batch_size),
+          self._structure)
+      print(self._flat_structure)
     variant_tensor = make_variant_fn(
         columns=self._columns,
         batch_size=self._batch_size,
         batch_mode=self._batch_mode,
-        **flat_structure(self))
+        **self._flat_structure)
     super(ArrowBaseDataset, self).__init__(variant_tensor)
 
   def _inputs(self):
     return []
 
   @property
-  def _element_structure(self):
+  def element_spec(self):
     return self._structure
 
   @property
