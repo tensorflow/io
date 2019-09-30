@@ -145,8 +145,22 @@ class WAVReadable : public IOReadableInterface {
   }
 
   Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
-    const int64 sample_start = start;
-    const int64 sample_stop = stop;
+    (*record_read) = 0;
+    if (start >= shape_.dim_size(0)) {
+      return Status::OK();
+    }
+    int64 element_start = start < shape_.dim_size(0) ? start : shape_.dim_size(0);
+    int64 element_stop = stop < shape_.dim_size(0) ? stop : shape_.dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
+
+    const int64 sample_start = element_start;
+    const int64 sample_stop = element_stop;
 
     int64 sample_offset = 0;
     if (header_.riff_size + 8 != file_size_) {
@@ -210,7 +224,7 @@ class WAVReadable : public IOReadableInterface {
       position += head.size;
     } while (position < filesize);
 
-    (*record_read) = stop - start;
+    (*record_read) = element_stop - element_start;
 
     return Status::OK();
   }
