@@ -47,16 +47,11 @@ class BigQueryClient(object):
   `readSession` method to initiate a BigQuery read session.
   """
 
-  def __init__(self, client_resource=None):
+  def __init__(self):
     """Creates a BigQueryClient to start BigQuery read sessions.
 
-    Args:
-      client_resource: client resource (optional).
     """
-
-    if client_resource is None:
-      client_resource = _bigquery_so.big_query_client()
-    self._client_resource = client_resource
+    self._client_resource = _bigquery_so.big_query_client()
 
   def read_session(self,
                    parent,
@@ -251,3 +246,18 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
   @property
   def element_spec(self):
     return self._element_spec
+
+
+class BigQueryTestClient(BigQueryClient):
+  """BigQueryTestClient is the entrypoint for interacting with Fake Cloud BigQuery service."""
+
+  # pylint: disable=super-init-not-called
+  def __init__(self, fake_server_address):
+    """Creates a BigQueryTestClient to start BigQuery read sessions.
+
+    Args:
+      fake_server_address: url for service faking Cloud BigQuery Storage API.
+    """
+
+    self._client_resource = _bigquery_so.big_query_test_client(
+        fake_server_address)
