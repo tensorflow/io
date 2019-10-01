@@ -26,7 +26,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
 import tensorflow_io as tfio  # pylint: disable=wrong-import-position
 import tensorflow_io.json as json_io  # pylint: disable=wrong-import-position
 
-def _test_io_tensor_json_recods_mode():
+def test_io_tensor_json_recods_mode():
   """Test case for tfio.IOTensor.from_json."""
   x_test = [[1.1, 2], [2.1, 3]]
   y_test = [[2.2, 3], [1.2, 3]]
@@ -62,9 +62,9 @@ def _test_io_tensor_json_recods_mode():
     assert v_y[0] == float_label[i].numpy()
     assert v_y[1] == integer_label[i].numpy()
 
-  feature_dataset = features.to_dataset()
+  feature_dataset = tfio.IODataset.from_json(feature_filename, mode='records')
 
-  label_dataset = labels.to_dataset()
+  label_dataset = tfio.IODataset.from_json(label_filename, mode='records')
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,
@@ -82,7 +82,7 @@ def _test_io_tensor_json_recods_mode():
     i += 1
   assert i == len(y_test)
 
-def _test_io_tensor_json():
+def test_io_tensor_json():
   """Test case for tfio.IOTensor.from_json."""
   x_test = [[1.1, 2], [2.1, 3]]
   y_test = [[2.2, 3], [1.2, 3]]
@@ -118,9 +118,9 @@ def _test_io_tensor_json():
     assert v_y[0] == float_label[i].numpy()
     assert v_y[1] == integer_label[i].numpy()
 
-  feature_dataset = features.to_dataset()
+  feature_dataset = tfio.IODataset.from_json(feature_filename)
 
-  label_dataset = labels.to_dataset()
+  label_dataset = tfio.IODataset.from_json(label_filename)
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,

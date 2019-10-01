@@ -344,6 +344,7 @@ class JSONReadable : public IOReadableInterface {
       } else {
         return errors::InvalidArgument("invalid data type: ", dtypes_[column_index]);
       }
+       (*record_read) = element_stop - element_start;
 
       return Status::OK();
     }
