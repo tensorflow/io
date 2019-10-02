@@ -107,6 +107,13 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
   uint64 batch_size = 0;
   TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value_, read_value,
     reader_schema_, config_.batch_size, &batch_size));
+  VLOG(5) << "Read and parsed " << batch_size << " elements";
+
+  // Drop reminder if batch size is not the requested batch size
+  if (config_.drop_remainder && batch_size != config_.batch_size) {
+    VLOG(5) << "Drop " << batch_size << " remaining items";
+    return errors::OutOfRange("eof");
+  }
 
   // Get sparse tensors
   size_t n_sparse = config_.sparse.size();
@@ -133,13 +140,16 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
       &(*result).sparse_values[i_sparse],
       &(*result).sparse_indices[i_sparse]));
 
+    int64 rank = (*result).sparse_indices[i_sparse].dim_size(1); // rank is the 2nd dimension of the index
+    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({rank}));
+    TF_RETURN_IF_ERROR((*value_store).GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
+
     VLOG(5) << "Sparse values: " << (*result).sparse_values[i_sparse].SummarizeValue(15);
     VLOG(5) << "Sparse indices: " << (*result).sparse_indices[i_sparse].SummarizeValue(15);
+    VLOG(5) << "Sparse dense shapes: " << (*result).sparse_shapes[i_sparse].SummarizeValue(15);
     VLOG(5) << "Value shape: " << value_shape;
     VLOG(5) << "Index shape: " << index_shape;
-
-    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({index_shape.dims()}));
-    TF_RETURN_IF_ERROR((*value_store).GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
+    VLOG(5) << "Sparse dense shapes shape: " << (*result).sparse_shapes[i_sparse].shape();
   }
 
   // Get dense tensors
@@ -164,6 +174,7 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
       default_shape = default_value.shape();
     }
 
+    VLOG(5) << "Default shape is " << default_shape;
     VLOG(5) << "Default value is " << default_value.SummarizeValue(9);
 
     TensorShape resolved_shape;

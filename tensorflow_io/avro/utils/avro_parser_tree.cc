@@ -50,20 +50,22 @@ Status AvroParserTree::ParseValues(
   // add being marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddBeginMarks(key_to_value));
 
-  // Initialize with 1 because we already read one value
+  // Parse first value
+  TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
   uint64 values_read = 1;
-  for (; has_value && values_read < values_to_parse; ++values_read) {
-    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+  // Increment before compare because we already read one value
+  while (values_read < values_to_parse) {
     try {
       has_value = read_value(datum);
     } catch (avro::Exception& e) {
       return errors::InvalidArgument("Error reading value: ", e.what());
     }
-  }
-
-  // Make sure to add the last value too
-  if (has_value) {
-    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+    if (has_value) {
+        TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+        values_read++;
+    } else {
+        break;
+    }
   }
 
   *values_parsed = values_read;
@@ -452,7 +454,7 @@ std::vector<string> SplitOnDelimiterButNotInsideSquareBrackets(const string& str
   // check that delimiter is not [ or ]
   string lastMatch = "";
   int nBrackets = 0;
-  for (char c : str) {
+  for (const char& c : str) {
     nBrackets += (c == '[');
     nBrackets -= (c == ']');
     if (nBrackets == 0 && c == delimiter) {

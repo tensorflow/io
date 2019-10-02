@@ -35,7 +35,6 @@ from tensorflow.python.ops import parsing_ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource, DatasetV1Adapter
-from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.experimental.ops import optimization
 from tensorflow.python.data.experimental.ops import readers
 from tensorflow_io.core.python.ops import core_ops as avro_ops
@@ -391,17 +390,16 @@ def make_avro_dataset(
     reader_schema,
     features,
     batch_size,
+    num_epochs,
     num_parallel_calls=2,
     label_keys=None,
-    num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
     shuffle=True,
     shuffle_buffer_size=10000,
     shuffle_seed=None,
     prefetch_buffer_size=optimization.AUTOTUNE,
-    num_parallel_reads=1,
-    sloppy=False
+    num_parallel_reads=1
 ):
   """Makes an avro dataset.
 
@@ -462,19 +460,15 @@ def make_avro_dataset(
 
     label_key: The label key, if None no label will be returned
 
-    num_epochs: The number of epochs
+    num_epochs: The number of epochs. If number of epochs is set to None we
+                cycle infinite times and drop the remainder automatically.
+                This will make all batch sizes the same size and static.
 
     input_stream_buffer_size: The size of the input stream buffer in By
 
     avro_data_buffer_size: The size of the avro data buffer in By
 
   """
-
-  # if not isinstance(file_pattern, list):
-  #   filenames = readers._get_file_names(file_pattern, False)
-  # else:
-  #   filenames = file_pattern
-
   dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
   if shuffle:
     n_filenames = array_ops.shape(filenames, out_type=dtypes.int64)[0]
@@ -506,9 +500,8 @@ def make_avro_dataset(
     )
 
   # Read files sequentially (if num_parallel_reads=1) or in parallel
-  dataset = dataset.apply(
-      interleave_ops.parallel_interleave(
-          filename_to_dataset, cycle_length=num_parallel_reads, sloppy=sloppy))
+  dataset = dataset.interleave(filename_to_dataset, cycle_length=num_parallel_calls,
+                               num_parallel_calls=num_parallel_reads)
 
   dataset = readers._maybe_shuffle_and_repeat(
       dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed)
@@ -542,21 +535,20 @@ def make_avro_dataset_v1(
     reader_schema,
     features,
     batch_size,
+    num_epochs,
     num_parallel_calls=2,
     label_keys=None,
-    num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
     shuffle=True,
     shuffle_buffer_size=10000,
     shuffle_seed=None,
     prefetch_buffer_size=optimization.AUTOTUNE,
-    num_parallel_reads=1,
-    sloppy=False
+    num_parallel_reads=1
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
-      filenames, reader_schema, features, batch_size, num_parallel_calls,
-      label_keys, num_epochs, input_stream_buffer_size, avro_data_buffer_size,
-      shuffle, shuffle_buffer_size, shuffle_seed, prefetch_buffer_size,
-      num_parallel_reads, sloppy))
+      filenames, reader_schema, features, batch_size, num_epochs,
+      num_parallel_calls, label_keys, input_stream_buffer_size,
+      avro_data_buffer_size, shuffle, shuffle_buffer_size, shuffle_seed,
+      prefetch_buffer_size, num_parallel_reads))
 make_avro_dataset_v1.__doc__ = make_avro_dataset.__doc__
