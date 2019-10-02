@@ -236,11 +236,14 @@ http_archive(
 
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "03a22a2fbfec8ccc44ff2e8061c312c9b4a0d33046b6d0c84c8eca5c56569387",
-    strip_prefix = "grpc-1.24.0",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:grpc.patch",
+    ],
+    sha256 = "6dc4f122527670099124a71d8a180b0b074a18efa939173d6c3a0673229f57d3",
+    strip_prefix = "grpc-e68ce1164b49529de12fbba63d53f081aef5c90e",
     urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.24.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.24.0.tar.gz",
+        "https://github.com/grpc/grpc/archive/e68ce1164b49529de12fbba63d53f081aef5c90e.tar.gz",
     ],
 )
 
