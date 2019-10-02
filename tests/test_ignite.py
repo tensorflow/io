@@ -24,9 +24,6 @@ import pytest
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 
-pytest.skip(
-    "ignite test is disabled temporarily", allow_module_level=True)
-
 from tensorflow import dtypes            # pylint: disable=wrong-import-position
 from tensorflow import errors            # pylint: disable=wrong-import-position
 from tensorflow import test              # pylint: disable=wrong-import-position
@@ -307,12 +304,20 @@ class IgniteDatasetTest(test.TestCase):
 
     """
     self._clear_env()
+
+    igds_local = ignite_io.IgniteDataset(
+        cache_name="SQL_PUBLIC_TEST_CACHE",
+        schema_host="localhost",
+        host='localhost',
+        port=10800)
+
+    # TODO: this is a workaround due to failure to build a TypeSpec for
+    # IgniteDataset in non-eager mode
     ds = data.Dataset.from_tensor_slices(["localhost"]).interleave(
-        lambda host: ignite_io.IgniteDataset(
-            cache_name="SQL_PUBLIC_TEST_CACHE",
-            schema_host="localhost", host=host,
-            port=10800), cycle_length=4, block_length=16
-    )
+        lambda host: igds_local,
+        cycle_length=4,
+        block_length=16)
+
     self._check_dataset(ds)
 
   def _clear_env(self):
