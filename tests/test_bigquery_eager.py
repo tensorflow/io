@@ -23,6 +23,7 @@ from io import BytesIO
 import json
 import fastavro
 import grpc
+import tensorflow as tf
 
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
@@ -33,7 +34,8 @@ from tensorflow_io.bigquery import BigQueryTestClient
 import google.cloud.bigquery.storage.v1beta1.storage_pb2_grpc as storage_pb2_grpc
 import google.cloud.bigquery.storage.v1beta1.storage_pb2 as storage_pb2
 
-ops.enable_eager_execution()
+if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
+  tf.compat.v1.enable_eager_execution()
 
 
 class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
