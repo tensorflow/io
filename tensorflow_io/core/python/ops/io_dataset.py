@@ -172,14 +172,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   def from_avro(cls,
                 filename,
                 schema,
-                column,
+                columns=None,
                 **kwargs):
     """Creates an `IODataset` from a avro file's dataset object.
 
     Args:
       filename: A string, the filename of a avro file.
       schema: A string, the schema of a avro file.
-      column: A string, the column name within avro file.
+      columns: A list of column names within avro file.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -188,7 +188,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromAvro")):
       return avro_dataset_ops.AvroIODataset(
-          filename, schema, column, internal=True)
+          filename, schema, columns=columns, internal=True)
 
   @classmethod
   def from_lmdb(cls,

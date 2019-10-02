@@ -17,11 +17,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
 import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 
 class _AvroIODatasetFunction(object):
   def __init__(self, function, resource, component, shape, dtype):
@@ -35,27 +35,64 @@ class _AvroIODatasetFunction(object):
         self._resource, start=start, stop=stop,
         component=self._component, shape=self._shape, dtype=self._dtype)
 
-class AvroIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
+class AvroIODataset(tf.compat.v2.data.Dataset):
   """AvroIODataset"""
 
   def __init__(self,
                filename,
                schema,
-               column,
+               columns=None,
                internal=True):
     """AvroIODataset."""
+    if not internal:
+      raise ValueError("AvroIODataset constructor is private; please use one "
+                       "of the factory methods instead (e.g., "
+                       "IODataset.from_avro())")
     with tf.name_scope("AvroIODataset") as scope:
+      capacity = 4096
+
       metadata = ["schema: %s" % schema]
-      resource, _ = core_ops.avro_readable_init(
+      resource, columns_v = core_ops.avro_readable_init(
           filename, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype = core_ops.avro_readable_spec(resource, column)
-      shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
-      dtype = tf.as_dtype(dtype.numpy())
-      capacity = 4096
+      columns = columns if columns is not None else columns_v.numpy()
+
+      columns_dataset = []
+
+      columns_function = []
+      for column in columns:
+        shape, dtype = core_ops.avro_readable_spec(resource, column)
+        shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
+        dtype = tf.as_dtype(dtype.numpy())
+        function = _AvroIODatasetFunction(
+            core_ops.avro_readable_read, resource, column, shape, dtype)
+        columns_function.append(function)
+
+      for (column, function) in zip(columns, columns_function):
+        column_dataset = tf.compat.v2.data.Dataset.range(
+            0, sys.maxsize, capacity)
+        column_dataset = column_dataset.map(
+            lambda index: function(
+                index, index+capacity))
+        column_dataset = column_dataset.apply(
+            tf.data.experimental.take_while(
+                lambda v: tf.greater(tf.shape(v)[0], 0)))
+        columns_dataset.append(column_dataset)
+      if len(columns_dataset) == 1:
+        dataset = columns_dataset[0]
+      else:
+        dataset = tf.compat.v2.data.Dataset.zip(tuple(columns_dataset))
+      dataset = dataset.unbatch()
+
+      self._function = columns_function
+      self._dataset = dataset
       super(AvroIODataset, self).__init__(
-          _AvroIODatasetFunction(
-              core_ops.avro_readable_read,
-              resource, column, shape, dtype), capacity=capacity,
-          internal=internal)
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
