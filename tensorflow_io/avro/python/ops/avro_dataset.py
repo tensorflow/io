@@ -35,7 +35,6 @@ from tensorflow.python.ops import parsing_ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource, DatasetV1Adapter
-from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.experimental.ops import optimization
 from tensorflow.python.data.experimental.ops import readers
 from tensorflow_io.core.python.ops import core_ops as avro_ops
@@ -506,9 +505,8 @@ def make_avro_dataset(
     )
 
   # Read files sequentially (if num_parallel_reads=1) or in parallel
-  dataset = dataset.apply(
-      interleave_ops.parallel_interleave(
-          filename_to_dataset, cycle_length=num_parallel_reads, sloppy=sloppy))
+  dataset = dataset.interleave(filename_to_dataset, cycle_length=num_parallel_calls,
+                               num_parallel_calls=num_parallel_reads)
 
   dataset = readers._maybe_shuffle_and_repeat(
       dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed)
