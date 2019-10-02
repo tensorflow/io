@@ -82,6 +82,15 @@ def test_io_tensor_json_recods_mode():
     i += 1
   assert i == len(y_test)
 
+  # single column
+  floatfeature = tfio.IODataset.from_json(
+      feature_filename, columns=["floatfeature"], mode='records')
+  i = 0
+  for v in floatfeature:
+    assert x_test[i][0] == v.numpy()
+    i += 1
+  assert i == len(x_test)
+
 def test_io_tensor_json():
   """Test case for tfio.IOTensor.from_json."""
   x_test = [[1.1, 2], [2.1, 3]]

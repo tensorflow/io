@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""JSONDataset"""
+"""ParquetDataset"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -23,7 +23,7 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class _JSONIODatasetFunction(object):
+class _ParquetIODatasetFunction(object):
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
     self._resource = resource
@@ -35,25 +35,24 @@ class _JSONIODatasetFunction(object):
         self._resource, start=start, stop=stop,
         component=self._component, shape=self._shape, dtype=self._dtype)
 
-class JSONIODataset(tf.compat.v2.data.Dataset):
-  """JSONIODataset"""
+class ParquetIODataset(tf.compat.v2.data.Dataset):
+  """ParquetIODataset"""
 
   def __init__(self,
                filename,
                columns=None,
-               mode=None,
                internal=True):
-    """JSONIODataset."""
+    """ParquetIODataset."""
     if not internal:
-      raise ValueError("JSONIODataset constructor is private; please use one "
+      raise ValueError("ParquetIODataset constructor is private; "
+                       "please use one "
                        "of the factory methods instead (e.g., "
-                       "IODataset.from_json())")
-    with tf.name_scope("JSONIODataset") as scope:
+                       "IODataset.from_parquet())")
+    with tf.name_scope("ParquetIODataset") as scope:
       capacity = 4096
 
-      metadata = [] if mode is None else ["mode: %s" % mode]
-      resource, columns_v = core_ops.json_readable_init(
-          filename, metadata=metadata,
+      resource, columns_v = core_ops.parquet_readable_init(
+          filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = columns if columns is not None else columns_v.numpy()
@@ -62,11 +61,11 @@ class JSONIODataset(tf.compat.v2.data.Dataset):
 
       columns_function = []
       for column in columns:
-        shape, dtype = core_ops.json_readable_spec(resource, column)
+        shape, dtype = core_ops.parquet_readable_spec(resource, column)
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
-        function = _JSONIODatasetFunction(
-            core_ops.json_readable_read, resource, column, shape, dtype)
+        function = _ParquetIODatasetFunction(
+            core_ops.parquet_readable_read, resource, column, shape, dtype)
         columns_function.append(function)
 
       for (column, function) in zip(columns, columns_function):
@@ -87,7 +86,7 @@ class JSONIODataset(tf.compat.v2.data.Dataset):
 
       self._function = columns_function
       self._dataset = dataset
-      super(JSONIODataset, self).__init__(
+      super(ParquetIODataset, self).__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

@@ -26,6 +26,7 @@ from tensorflow_io.core.python.ops import audio_dataset_ops
 from tensorflow_io.core.python.ops import kafka_dataset_ops
 from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 from tensorflow_io.core.python.ops import json_dataset_ops
+from tensorflow_io.core.python.ops import parquet_dataset_ops
 
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   """IODataset
@@ -229,6 +230,27 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromJSON")):
       return json_dataset_ops.JSONIODataset(
           filename, columns=columns, mode=mode, internal=True)
+
+  @classmethod
+  def from_parquet(cls,
+                   filename,
+                   columns=None,
+                   **kwargs):
+    """Creates an `IODataset` from a json file.
+
+    Args:
+      filename: A string, the filename of a json file.
+      columns: A list of column names. By default (None)
+        all columns will be read.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromParquet")):
+      return parquet_dataset_ops.ParquetIODataset(
+          filename, columns=columns, internal=True)
 
 class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=protected-access
   """IOStreamDataset
