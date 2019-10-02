@@ -27,7 +27,7 @@ import tensorflow_io.grpc as grpc_io
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
          tf.version.VERSION.startswith("2.0.")), reason=None)
-def test_grpc_with_mnist_tutorial():
+def _test_grpc_with_mnist_tutorial():
   """test_mnist_tutorial"""
   (x_train, y_train), (_, _) = tf.keras.datasets.mnist.load_data()
   x = grpc_io.GRPCDataset.from_numpy(x_train, batch=1000)
