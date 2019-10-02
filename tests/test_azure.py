@@ -189,5 +189,28 @@ class AZFSTest(test.TestCase):
     # Check that file was removed.
     self.assertFalse(gfile.Exists(file_name))
 
+  def _test_read_file_offset_and_dataset(self):
+    """Test read file with dataset
+    """
+    # Note: disabled for now. Will enable once
+    # all moved to eager mode
+    # Setup and check preconditions.
+    file_name = self._path_to("readfiledataset")
+    if gfile.Exists(file_name):
+      gfile.Remove(file_name)
+
+    # Write data.
+    with gfile.Open(file_name, 'w') as w:
+      w.write("Hello1,world1!\nHello2,world2!")
+    dataset = tf.data.experimental.CsvDataset(file_name, [tf.string, tf.string])
+    expected = [[b"Hello1", b"world1!"], [b"Hello2", b"world2!"]]
+    i = 0
+    for v in dataset:
+      v0, v1 = v
+      assert v0.numpy() == expected[i][0]
+      assert v1.numpy() == expected[i][1]
+      i += 1
+    assert i == 2
+
 if __name__ == '__main__':
   test.main()

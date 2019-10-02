@@ -29,32 +29,56 @@ AzBlobRandomAccessFile::AzBlobRandomAccessFile(const std::string &account,
 
 Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
                                     StringPiece *result, char *scratch) const {
-  auto blob_client = CreateAzBlobClientWrapper(account_);
-
-  std::ostringstream oss;
-  // https://stackoverflow.com/a/12481580
-#ifndef __APPLE__
-  oss.rdbuf()->pubsetbuf(scratch, n);
-#endif
-
-  blob_client.download_blob_to_stream(container_, object_, offset, n, oss);
-  if (errno != 0) {
-    n = 0;
+  // If n == 0, then return Status::OK()
+  // otherwise, if bytes_read < n then return OutofRange
+  if (n == 0) {
     *result = StringPiece("", 0);
-    return errors::Internal("Failed to get contents of az://", account_,
-                            kAzBlobEndpoint, "/", container_, "/", object_,
-                            " (", errno_to_string(), ")");
+    return Status::OK();
+  }
+  auto blob_client = CreateAzBlobClientWrapper(account_);
+  auto blob_property = blob_client.get_blob_property(container_, object_);
+  if (errno != 0) {
+    return errors::Internal("Failed to get properties");
+  }
+  int64 file_size = blob_property.size;
+
+  size_t bytes_to_read = n;
+  if (offset >= file_size) {
+    bytes_to_read = 0;
+  } else if (offset + n > file_size) {
+    bytes_to_read = file_size - offset;
   }
 
+  if (bytes_to_read == 0) {
+    *result = StringPiece("", 0);
+  } else {
+    std::ostringstream oss;
+    // https://stackoverflow.com/a/12481580
 #ifndef __APPLE__
-  *result = StringPiece(scratch, n);
-#else
-  auto blob_string = oss.str();
-  if (scratch != nullptr) {
-    std::copy(blob_string.begin(), blob_string.end(), scratch);
-  }
-  *result = StringPiece(blob_string);
+    oss.rdbuf()->pubsetbuf(scratch, bytes_to_read);
 #endif
+
+    blob_client.download_blob_to_stream(container_, object_, offset, bytes_to_read, oss);
+    if (errno != 0) {
+      *result = StringPiece("", 0);
+      return errors::Internal("Failed to get contents of az://", account_,
+                              kAzBlobEndpoint, "/", container_, "/", object_,
+                              " (", errno_to_string(), ")");
+    }
+
+#ifndef __APPLE__
+    *result = StringPiece(scratch, bytes_to_read);
+#else
+    auto blob_string = oss.str();
+    if (scratch != nullptr) {
+      std::copy(blob_string.begin(), blob_string.end(), scratch);
+    }
+    *result = StringPiece(blob_string);
+#endif
+  }
+  if (bytes_to_read < n) {
+    return errors::OutOfRange("EOF reached");
+  }
 
   return Status::OK();
 }
