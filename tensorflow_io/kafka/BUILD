@@ -21,6 +21,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:sequence_ops",
+        "@avro",
         "@kafka",
     ],
 )

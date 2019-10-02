@@ -24,6 +24,8 @@ from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
 
+decode_avro = core_ops.decode_avro
+
 warnings.warn(
     "implementation of existing tensorflow_io.kafka.KafkaDataset is "
     "deprecated and will be replaced with the implementation in "

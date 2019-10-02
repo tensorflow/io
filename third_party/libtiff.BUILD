@@ -14,12 +14,15 @@ cc_library(
         exclude = [
             "libtiff/tif_win32.c",
         ],
-    ),
+    ) + [
+        "libtiff/tif_stream.cxx",
+    ],
     hdrs = glob([
         "libtiff/*.h",
     ]) + [
         "libtiff/tif_config.h",
         "libtiff/tiffconf.h",
+        "libtiff/tiffio.hxx",
     ],
     defines = [],
     includes = [

@@ -121,8 +121,9 @@ arrow::Status ArrowStreamClient::Tell(int64_t* position) const {
 arrow::Status ArrowStreamClient::Read(int64_t nbytes,
                                       int64_t* bytes_read,
                                       void* out) {
-  // TODO: look into why 0 bytes are requested
+  // TODO: 0 bytes requested when message body length == 0
   if (nbytes == 0) {
+    *bytes_read = 0;
     return arrow::Status::OK();
   }
 
