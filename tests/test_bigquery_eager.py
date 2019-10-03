@@ -78,15 +78,14 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     self._project_id = request.table_reference.project_id
     self._table_id = request.table_reference.table_id
     self._dataset_id = request.table_reference.dataset_id
-    self._streams.clear()
+    self._streams = []
     response = storage_pb2.ReadSession()
     response.avro_schema.schema = self._avro_schema
     for i in range(request.requested_streams):
       stream_name = self._build_stream_name(i)
       self._streams.append(stream_name)
-      stream = storage_pb2.Stream()
+      stream = response.streams.add()
       stream.name = stream_name
-      response.streams.append(stream)
     return response
 
   def ReadRows(self, request, context):
