@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <grpcpp/grpcpp.h>
+#include <grpc++/grpc++.h>
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -29,6 +29,7 @@ limitations under the License.
 #include "google/cloud/bigquery/storage/v1beta1/storage.grpc.pb.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/net.h"
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
@@ -67,17 +68,16 @@ class BigQueryTestClientOp : public OpKernel {
               cinfo_.container(), cinfo_.name(), &resource,
               [this](BigQueryClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(
                   mu_) {
-                VLOG(3) << "Creating BigQueryTestClientOp Fake client";    
+                LOG(INFO) << "Connecting BigQueryTestClientOp Fake client to:"
+                          << fake_server_address_;
                 std::shared_ptr<grpc::Channel> channel = ::grpc::CreateChannel(
                     fake_server_address_, grpc::InsecureChannelCredentials());
-                auto stub =
-                    absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
-                        channel);
-
+                auto stub = apiv1beta1::BigQueryStorage::NewStub(channel);
+                LOG(INFO) << "BigQueryTestClientOp waiting for connections";
                 channel->WaitForConnected(
                   gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
-                VLOG(3) << "Done creating BigQueryTestClientOp Fake client";
+                  gpr_time_from_seconds(15, GPR_TIMESPAN)));
+                LOG(INFO) << "Done creating BigQueryTestClientOp Fake client";
                 *ret = new BigQueryClientResource(std::move(stub));
                 return Status::OK();
               }));
