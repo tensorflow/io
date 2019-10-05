@@ -19,9 +19,7 @@ limitations under the License.
 namespace tensorflow {
 
 REGISTER_OP("BigQueryTestClient")
-    .Attr("avro_schema: string")
-    .Attr("avro_serialized_rows_per_stream: list(string) >= 1")
-    .Attr("avro_serialized_rows_count_per_stream: list(int) >= 1")
+    .Attr("fake_server_address: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")
