@@ -19,6 +19,7 @@ for high-speed data loading.
 
 @@BigQueryClient
 @@BigQueryReadSession
+@@BigQueryTestClient
 
 """
 
@@ -29,10 +30,12 @@ from __future__ import print_function
 from tensorflow.python.util.all_util import remove_undocumented
 from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryClient
 from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryReadSession
+from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryTestClient
 
 _allowed_symbols = [
     'BigQueryClient',
     'BigQueryReadSession',
+    'BigQueryTestClient'
 ]
 
 remove_undocumented(__name__, _allowed_symbols)

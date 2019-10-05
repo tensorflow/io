@@ -29,6 +29,12 @@ if [[ $(uname) == "Linux" ]]; then
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   python get-pip.py -q
   python -m pip --version
+else
+# upgrading pip version on MacOS due to 
+# https://github.com/googleapis/google-cloud-python/issues/2990
+  python -m pip install --upgrade pip
+  python -m pip install --upgrade setuptools
+  python -m pip --version
 fi
 
 python -m pip install -q ${TENSORFLOW_INSTALL}
