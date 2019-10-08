@@ -177,12 +177,12 @@ REGISTER_KERNEL_BUILDER(Name("ListFeatherColumns").Device(DEVICE_CPU),
 }  // namespace
 
 
-class FeatherIndexable : public IOIndexableInterface {
+class FeatherReadable : public IOReadableInterface {
  public:
-  FeatherIndexable(Env* env)
+  FeatherReadable(Env* env)
   : env_(env) {}
 
-  ~FeatherIndexable() {}
+  ~FeatherReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -297,11 +297,25 @@ class FeatherIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
     int64 column_index = columns_index_[component];
+
+    (*record_read) = 0;
+    if (start >= shapes_[column_index].dim_size(0)) {
+      return Status::OK();
+    }
+    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
 
     if (feather_file_.get() == nullptr) {
       feather_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
@@ -317,7 +331,7 @@ class FeatherIndexable : public IOIndexableInterface {
       return errors::Internal(s.ToString());
     }
 
-    std::shared_ptr<::arrow::Column> slice = column->Slice(start, stop);
+    std::shared_ptr<::arrow::Column> slice = column->Slice(element_start, element_stop);
 
     #define FEATHER_PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
@@ -365,13 +379,13 @@ class FeatherIndexable : public IOIndexableInterface {
     default:
       return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
     }
-
+    (*record_read) = element_stop - element_start;
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("FeatherIndexable");
+    return strings::StrCat("FeatherReadable");
   }
  private:
   mutable mutex mu_;
@@ -387,11 +401,11 @@ class FeatherIndexable : public IOIndexableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("FeatherIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<FeatherIndexable>);
-REGISTER_KERNEL_BUILDER(Name("FeatherIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<FeatherIndexable>);
-REGISTER_KERNEL_BUILDER(Name("FeatherIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<FeatherIndexable>);
+REGISTER_KERNEL_BUILDER(Name("FeatherReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<FeatherReadable>);
+REGISTER_KERNEL_BUILDER(Name("FeatherReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<FeatherReadable>);
+REGISTER_KERNEL_BUILDER(Name("FeatherReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<FeatherReadable>);
 }  // namespace data
 }  // namespace tensorflow

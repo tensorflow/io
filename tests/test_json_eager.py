@@ -62,9 +62,9 @@ def test_io_tensor_json_recods_mode():
     assert v_y[0] == float_label[i].numpy()
     assert v_y[1] == integer_label[i].numpy()
 
-  feature_dataset = features.to_dataset()
+  feature_dataset = tfio.IODataset.from_json(feature_filename, mode='records')
 
-  label_dataset = labels.to_dataset()
+  label_dataset = tfio.IODataset.from_json(label_filename, mode='records')
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,
@@ -81,6 +81,15 @@ def test_io_tensor_json_recods_mode():
       assert v_y[index] == y.numpy()
     i += 1
   assert i == len(y_test)
+
+  # single column
+  floatfeature = tfio.IODataset.from_json(
+      feature_filename, columns=["floatfeature"], mode='records')
+  i = 0
+  for v in floatfeature:
+    assert x_test[i][0] == v.numpy()
+    i += 1
+  assert i == len(x_test)
 
 def test_io_tensor_json():
   """Test case for tfio.IOTensor.from_json."""
@@ -118,9 +127,9 @@ def test_io_tensor_json():
     assert v_y[0] == float_label[i].numpy()
     assert v_y[1] == integer_label[i].numpy()
 
-  feature_dataset = features.to_dataset()
+  feature_dataset = tfio.IODataset.from_json(feature_filename)
 
-  label_dataset = labels.to_dataset()
+  label_dataset = tfio.IODataset.from_json(label_filename)
 
   dataset = tf.data.Dataset.zip((
       feature_dataset,

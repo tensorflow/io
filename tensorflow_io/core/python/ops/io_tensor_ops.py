@@ -17,13 +17,95 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
 import tensorflow as tf
 
 class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
   pass
+
+class _IOTensorComponentFunction(object):
+  """_IOTensorComponentFunction will translate call"""
+  def __init__(self, function, resource, component, shape, dtype):
+    self._function = function
+    self._resource = resource
+    self._component = component
+    self._length = shape[0]
+    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    start, stop, _ = slice(start, stop).indices(self._length)
+    return self._function(
+        self._resource,
+        start=start, stop=stop,
+        component=self._component,
+        shape=self._shape, dtype=self._dtype)
+  @property
+  def length(self):
+    return self._length
+
+class _IOTensorIterablePartitionedFunction(object):
+  """PartitionedFunction will translate call to cached Function call"""
+  # function: next call of the iterable
+  def __init__(self, function, shape):
+    self._function = function
+    self._partitions = []
+    self._length = None
+    self._slice_suffix_start = [0 for _ in shape[1:]]
+    self._slice_suffix_size = [e for e in shape[1:]]
+  def __call__(self, start, stop):
+    while self._length is None:
+      # if stop is not None then resolved partitions have to cover stop
+      # if stop is None then all partitions has to be resolved
+      if stop is not None:
+        if stop <= sum([e.shape[0] for e in self._partitions]):
+          break
+      # resolve one step
+      partition = self._function()
+      if partition.shape[0] == 0:
+        self._length = sum([e.shape[0] for e in self._partitions])
+      else:
+        self._partitions.append(partition)
+      partitions_indices = tf.cumsum(
+          [e.shape[0] for e in self._partitions]).numpy().tolist()
+      self._partitions_start = list([0] + partitions_indices[:-1])
+      self._partitions_stop = partitions_indices
+    length = self._partitions_stop[-1]
+    index = slice(start, stop)
+    start, stop, _ = index.indices(length)
+    if start >= length:
+      raise IndexError("index %s is out of range" % index)
+    indices_start = tf.math.maximum(self._partitions_start, start)
+    indices_stop = tf.math.minimum(self._partitions_stop, stop)
+    indices_hit = tf.math.less(indices_start, indices_stop)
+    indices = tf.squeeze(tf.compat.v2.where(indices_hit), [1])
+    return self._partitions_read(indices_start, indices_stop, indices)
+  @property
+  def length(self):
+    """length"""
+    while self._length is None:
+      # resolve until length is available
+      partition = self._function()
+      if partition.shape[0] == 0:
+        self._length = sum([e.shape[0] for e in self._partitions])
+      else:
+        self._partitions.append(partition)
+      partitions_indices = tf.cumsum(
+          [e.shape[0] for e in self._partitions]).numpy().tolist()
+      self._partitions_start = list([0] + partitions_indices[:-1])
+      self._partitions_stop = partitions_indices
+    return self._length
+  def _partitions_read(self, indices_start, indices_stop, indices):
+    """_partitions_read"""
+    items = []
+    # TODO: change to tf.while_loop
+    for index in indices:
+      slice_start = indices_start[index] - self._partitions_start[index]
+      slice_size = indices_stop[index] - indices_start[index]
+      slice_start = [slice_start] + self._slice_suffix_start
+      slice_size = [slice_size] + self._slice_suffix_size
+      item = tf.slice(self._partitions[index], slice_start, slice_size)
+      items.append(item)
+    return tf.concat(items, axis=0)
 
 class _IOTensorPartitionedFunction(object):
   """PartitionedFunction will translate call to cached Function call"""
@@ -53,39 +135,6 @@ class _IOTensorPartitionedFunction(object):
       item = tf.slice(self._tensors[index], [slice_start], [slice_size])
       items.append(item)
     return tf.concat(items, axis=0)
-
-class _IOTensorDataset(tf.compat.v2.data.Dataset):
-  """_IOTensorDataset"""
-
-  def __init__(self, spec, resource, function, partitions):
-    if partitions is None:
-      start = 0
-      stop = tf.nest.flatten(spec)[0].shape[0]
-      capacity = 4096
-      entry_start = list(range(start, stop, capacity))
-      entry_stop = entry_start[1:] + [stop]
-    else:
-      partitions = tf.cast(partitions, tf.int64)
-      entry_stop = tf.cumsum(partitions)
-      entry_start = tf.concat([[0], entry_stop[:-1]], axis=0)
-    dataset = tf.compat.v2.data.Dataset.from_tensor_slices((
-        tf.constant(entry_start, tf.int64),
-        tf.constant(entry_stop, tf.int64)))
-    dataset = dataset.map(lambda start, stop: function(resource, start=start, stop=stop))
-    dataset = dataset.unbatch()
-
-    self._dataset = dataset
-    self._resource = resource
-    self._function = function
-    super(_IOTensorDataset, self).__init__(
-        self._dataset._variant_tensor) # pylint: disable=protected-access
-
-  def _inputs(self):
-    return []
-
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
 
 class _IOTensor(object):
   """_IOTensor"""
@@ -137,17 +186,10 @@ class BaseIOTensor(_IOTensor):
 
   def __init__(self,
                spec,
-               resource,
                function,
-               partitions,
                internal=False):
     # function used for dataset should not be partitioned.
-    self._dataset_function = function
-    if partitions is not None:
-      function = _IOTensorPartitionedFunction(function, partitions)
-    self._resource = resource
     self._function = function
-    self._partitions = partitions
     super(BaseIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -166,26 +208,6 @@ class BaseIOTensor(_IOTensor):
     return self.spec.dtype
 
   #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    return _IOTensorDataset(
-        self.spec, self._resource, self._dataset_function, self._partitions)
-
-  #=============================================================================
   # Indexing & Slicing
   #=============================================================================
   def __getitem__(self, key):
@@ -193,15 +215,12 @@ class BaseIOTensor(_IOTensor):
     # Find out the indices based on length and key,
     # based on python slice()'s indices method:
     index = key if isinstance(key, slice) else slice(key, key + 1)
-    start, stop, _ = index.indices(self.shape[0])
-    if start >= self.shape[0]:
-      raise IndexError("index %s is out of range" % key)
-    item = self._function(self._resource, start=start, stop=stop)
-    return tf.squeeze(item, axis=[0]) if (stop == start + 1) else item
+    items = self._function(start=index.start, stop=index.stop)
+    return tf.squeeze(items, axis=[0]) if items.shape[0] == 1 else items
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""
-    return self.shape[0]
+    return self._function.length
 
 
   #=============================================================================
@@ -210,19 +229,23 @@ class BaseIOTensor(_IOTensor):
   def window(self, size):
     """Returns the sliding window of this IOTensor."""
     spec = tf.TensorSpec(
-        tf.TensorShape(self.shape.dims[0] - size + 1).concatenate(size),
+        tf.TensorShape(self._function.length - size + 1).concatenate(size),
         self.dtype)
     class _Function(object):
+      """_Function"""
       def __init__(self, func, spec, size):
         self._func = func
         self._spec = spec
         self._size = size
-      def __call__(self, resource, start, stop):
+        self._length = self._spec.shape[0]
+      def __call__(self, start, stop):
+        start, stop, _ = slice(start, stop).indices(self._length)
+        if start >= self._length:
+          raise IndexError("index %s is out of range" % slice(start, stop))
         return tf.reshape(
             tf.image.extract_patches(
                 tf.reshape(
                     self._func(
-                        resource,
                         start, stop + self._size - 1),
                     [1, 1, stop + self._size - 1 - start, 1]),
                 sizes=[1, 1, self._size, 1],
@@ -231,9 +254,8 @@ class BaseIOTensor(_IOTensor):
                 padding='VALID'),
             self._spec.shape)
     return BaseIOTensor(spec,
-                        self._resource,
                         _Function(self._function, spec, size),
-                        partitions=None, internal=True)
+                        internal=True)
 
   #=============================================================================
   # Tensor Type Conversions
@@ -270,21 +292,28 @@ class TensorIOTensor(BaseIOTensor):
     class _Function(object):
       """_Function"""
       def __init__(self, tensor):
+        self._tensor = tensor
         self._base_start = [0 for _ in tensor.shape.as_list()]
         self._base_size = [-1 for _ in tensor.shape.as_list()]
-
-      def __call__(self, resource, start, stop):
+        self._length = tensor.shape[0]
+      def __call__(self, start, stop):
+        start, stop, _ = slice(start, stop).indices(self._length)
+        if start >= self._length:
+          raise IndexError("index %s is out of range" % slice(start, stop))
         slice_start = self._base_start
         slice_size = self._base_size
         slice_start[0] = start
         slice_size[0] = stop - start
-        return tf.slice(resource, slice_start, slice_size)
+        return tf.slice(self._tensor, slice_start, slice_size)
+      @property
+      def length(self):
+        return self._length
 
     self._tensor = tensor
 
     super(TensorIOTensor, self).__init__(
         tf.TensorSpec(tensor.shape, tensor.dtype),
-        tensor, _Function(tensor), None, internal=internal)
+        _Function(tensor), internal=internal)
 
   #=============================================================================
   # Tensor Type Conversions
@@ -313,14 +342,10 @@ class _TableIOTensor(_IOTensor):
   def __init__(self,
                spec,
                columns,
-               resource,
-               function,
-               partitions,
+               values,
                internal=False):
     self._columns = columns
-    self._resource = resource
-    self._function = function
-    self._partitions = partitions
+    self._values = values
     super(_TableIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -337,65 +362,7 @@ class _TableIOTensor(_IOTensor):
     """Return a BaseIOTensor with column named `column`"""
     column_index = self.columns.index(
         next(e for e in self.columns if e == column))
-    spec = tf.nest.flatten(self.spec)[column_index]
-    class _Function(object):
-      def __init__(self, func, spec, column):
-        self._func = func
-        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-        self._dtype = spec.dtype
-        self._component = column
-
-      def __call__(self, resource, start, stop):
-        return self._func(
-            resource, start=start, stop=stop,
-            component=self._component,
-            shape=self._shape, dtype=self._dtype)
-    function = _Function(self._function, spec, column)
-    return BaseIOTensor(
-        spec, self._resource, function, self._partitions,
-        internal=True)
-
-  #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    class _Function(object):
-      """_Function"""
-      def __init__(self, func, spec, columns):
-        self._func = func
-        self._spec = [tf.TensorSpec(
-            tf.TensorShape([None]).concatenate(e.shape[1:]),
-            e.dtype) for e in spec]
-        self._columns = columns
-        self._components = zip(
-            tf.nest.flatten(self._spec), tf.nest.flatten(self._columns))
-
-      def __call__(self, resource, start, stop):
-        return tf.nest.pack_sequence_as(
-            self._columns,
-            [self._func(
-                resource, start, stop,
-                component=component,
-                shape=e.shape,
-                dtype=e.dtype) for (e, component) in self._components])
-
-    return _IOTensorDataset(
-        self.spec, self._resource,
-        _Function(self._function, self.spec, self.columns), self._partitions)
-
+    return self._values[column_index]
 
 class _CollectionIOTensor(_IOTensor):
   """_CollectionIOTensor
@@ -439,24 +406,11 @@ class _SeriesIOTensor(_IOTensor):
 
   def __init__(self,
                spec,
-               resource,
-               function,
+               index,
+               value,
                internal=False):
-    self._resource = resource
-
-    class _SeriesFunction(object):
-      def __init__(self, func, component, spec):
-        self._func = func
-        self._component = component
-        self._shape = spec.shape
-        self._dtype = spec.dtype
-      def __call__(self, resource, start, stop):
-        return self._func(resource, start, stop,
-                          component=self._component,
-                          shape=self._shape, dtype=self._dtype)
-
-    self._index_function = _SeriesFunction(function, "index", spec[0])
-    self._value_function = _SeriesFunction(function, "value", spec[1])
+    self._index = index
+    self._value = value
     super(_SeriesIOTensor, self).__init__(
         spec, internal=internal)
 
@@ -467,71 +421,22 @@ class _SeriesIOTensor(_IOTensor):
   @property
   def index(self):
     """The index column of the series"""
-    return BaseIOTensor(
-        self.spec[0],
-        self._resource,
-        self._index_function,
-        partitions=None, internal=True)
+    return self._index
 
   @property
   def value(self):
     """The value column of the series"""
-    return BaseIOTensor(
-        self.spec[1],
-        self._resource,
-        self._value_function,
-        partitions=None, internal=True)
-
-class _KeyValueIOTensorDataset(tf.compat.v2.data.Dataset):
-  """_KeyValueIOTensorDataset"""
-
-  def __init__(self,
-               iterable_init, iterable_next,
-               mapping_resource, mapping_function):
-    with tf.name_scope("IterableIOTensorDataset"):
-      resource = iterable_init()
-
-      capacity = 4096
-      dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
-      def func(_):
-        k = iterable_next(resource, capacity)
-        v = mapping_function(mapping_resource, k)
-        return (k, v)
-      dataset = dataset.map(func)
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda k, v: tf.greater(tf.shape(k)[0], 0)))
-      dataset = dataset.unbatch()
-
-      self._iterable_init = iterable_init
-      self._iterable_next = iterable_next
-
-      self._mapping_resource = mapping_resource
-      self._mapping_function = mapping_function
-
-      self._resource = resource
-      self._dataset = dataset
-      super(_KeyValueIOTensorDataset, self).__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
-
-  def _inputs(self):
-    return []
-
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    return self._value
 
 class _KeyValueIOTensor(_IOTensor):
   """_KeyValueIOTensor"""
 
   def __init__(self,
                spec,
-               resource,
                function,
                iterable_init,
                iterable_next,
                internal=False):
-    self._resource = resource
     self._function = function
     self._iterable_init = iterable_init
     self._iterable_next = iterable_next
@@ -539,36 +444,14 @@ class _KeyValueIOTensor(_IOTensor):
         spec, internal=internal)
 
   #=============================================================================
-  # Dataset Conversions
-  #=============================================================================
-
-  def to_dataset(self):
-    """Converts this `IOTensor` into a `tf.data.Dataset`.
-
-    Example:
-
-    ```python
-    ```
-
-    Args:
-
-    Returns:
-      A `tf.data.Dataset` with value obtained from this `IOTensor`.
-    """
-    return _KeyValueIOTensorDataset(
-        self._iterable_init, self._iterable_next,
-        self._resource, self._function)
-
-  #=============================================================================
   # Iterator
   #=============================================================================
   def __iter__(self):
     with tf.name_scope("KeyValueIOTensorIter"):
       resource = self._iterable_init()
-      capacity = 1
       while True:
-        value = self._iterable_next(resource, capacity)
-        if tf.shape(value)[0].numpy() < capacity:
+        value = self._iterable_next(resource)
+        if tf.shape(value)[0].numpy() == 0:
           return
         yield value[0]
 
@@ -577,4 +460,4 @@ class _KeyValueIOTensor(_IOTensor):
   #=============================================================================
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
-    return self._function(self._resource, key)
+    return self._function(key)

@@ -332,12 +332,12 @@ REGISTER_KERNEL_BUILDER(Name("ReadHDF5").Device(DEVICE_CPU),
 }  // namespace
 
 
-class HDF5Indexable : public IOIndexableInterface {
+class HDF5Readable : public IOReadableInterface {
  public:
-  HDF5Indexable(Env* env)
+  HDF5Readable(Env* env)
   : env_(env) {}
 
-  ~HDF5Indexable() {}
+  ~HDF5Readable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -413,8 +413,26 @@ class HDF5Indexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+    if (columns_index_.find(component) == columns_index_.end()) {
+      return errors::InvalidArgument("component ", component, " is invalid");
+    }
+    int64 column_index = columns_index_[component];
+
+    (*record_read) = 0;
+    if (start >= shapes_[column_index].dim_size(0)) {
+      return Status::OK();
+    }
     const string& column = component;
+    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
 
     H5::H5File *file = file_image_->GetFile();
     try {
@@ -425,13 +443,10 @@ class HDF5Indexable : public IOIndexableInterface {
       absl::InlinedVector<hsize_t, 4> dims(rank);
       data_space.getSimpleExtentDims(dims.data());
 
-      if (start > dims[0] || stop > dims[0]) {
-        return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
-      }
       // Find the border of the dims start and dims
       absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
-      dims_start[0] = start;
-      dims[0] = stop - start;
+      dims_start[0] = element_start;
+      dims[0] = element_stop - element_start;
 
       H5::DataSpace memory_space(dims.size(), dims.data());
 
@@ -459,13 +474,13 @@ class HDF5Indexable : public IOIndexableInterface {
     } catch(H5::FileIException e){
       return errors::InvalidArgument("unable to open dataset", e.getCDetailMsg());
     } 
-
+    (*record_read) = element_stop - element_start;
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("HDF5Indexable");
+    return strings::StrCat("HDF5Readable");
   }
  private:
   mutable mutex mu_;
@@ -480,11 +495,11 @@ class HDF5Indexable : public IOIndexableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("HDF5IndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<HDF5Indexable>);
-REGISTER_KERNEL_BUILDER(Name("HDF5IndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<HDF5Indexable>);
-REGISTER_KERNEL_BUILDER(Name("HDF5IndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<HDF5Indexable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5ReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<HDF5Readable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5ReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<HDF5Readable>);
+REGISTER_KERNEL_BUILDER(Name("HDF5ReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<HDF5Readable>);
 }  // namespace data
 }  // namespace tensorflow

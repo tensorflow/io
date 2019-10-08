@@ -35,21 +35,24 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
                internal=False):
     with tf.name_scope("JSONIOTensor") as scope:
       metadata = [] if mode is None else ["mode: %s" % mode]
-      resource, columns = core_ops.json_indexable_init(
+      resource, columns = core_ops.json_readable_init(
           filename,
           metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
-      spec = []
+      elements = []
       for column in columns:
-        shape, dtype = core_ops.json_indexable_spec(resource, column)
+        shape, dtype = core_ops.json_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
-        spec.append(tf.TensorSpec(shape, dtype, column))
-      spec = tuple(spec)
+        spec = tf.TensorSpec(shape, dtype, column)
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
+            core_ops.json_readable_read,
+            resource, column, shape, dtype)
+        elements.append(
+            io_tensor_ops.BaseIOTensor(
+                spec, function, internal=internal))
+      spec = tuple([e.spec for e in elements])
       super(JSONIOTensor, self).__init__(
-          spec, columns,
-          resource, core_ops.json_indexable_read,
-          partitions=None,
-          internal=internal)
+          spec, columns, elements, internal=internal)

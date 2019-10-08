@@ -100,7 +100,7 @@ REGISTER_OP("ListFeatherColumns")
        return Status::OK();
      });
 
-REGISTER_OP("FeatherIndexableInit")
+REGISTER_OP("FeatherReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -112,7 +112,7 @@ REGISTER_OP("FeatherIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherIndexableSpec")
+REGISTER_OP("FeatherReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -123,7 +123,7 @@ REGISTER_OP("FeatherIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherIndexableRead")
+REGISTER_OP("FeatherReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

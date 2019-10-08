@@ -26,22 +26,16 @@ import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops import kafka_dataset_ops # pylint: disable=wrong-import-position
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
-
-def test_kafka_dataset():
-  dataset = kafka_dataset_ops.KafkaDataset("test").batch(2)
-  assert np.all([
-      e.numpy().tolist() for e in dataset] == np.asarray([
-          ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
 
 def test_kafka_io_tensor():
   kafka = tfio.IOTensor.from_kafka("test")
   assert kafka.dtype == tf.string
-  assert kafka.shape == [10]
+  assert kafka.shape.as_list() == [None]
   assert np.all(kafka.to_tensor().numpy() == [
       ("D" + str(i)).encode() for i in range(10)])
+  assert len(kafka) == 10
 
 @pytest.mark.skipif(
     not (hasattr(tf, "version") and
@@ -114,3 +108,20 @@ def test_avro_kafka_dataset():
           e, schema=schema, dtype=[tf.string, tf.int64]))
   entries = [(f1.numpy(), f2.numpy()) for (f1, f2) in dataset]
   np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
+
+def test_kafka_stream_dataset():
+  dataset = tfio.IOStreamDataset.from_kafka("test").batch(2)
+  assert np.all([
+      e.numpy().tolist() for e in dataset] == np.asarray([
+          ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
+  # repeat multiple times does not work for kafka_stream_dataset
+  with pytest.raises(tf.errors.InvalidArgumentError):
+    _ = [e.numpy().tolist() for e in dataset]
+
+def test_kafka_io_dataset():
+  dataset = tfio.IODataset.from_kafka("test").batch(2)
+  # repeat multiple times will result in the same result
+  for i in range(5):
+    assert np.all([
+        e.numpy().tolist() for e in dataset] == np.asarray([
+            ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))

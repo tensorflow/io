@@ -81,6 +81,30 @@ def test_parquet():
     assert np.isclose(v4, p4[i].numpy())
     assert np.isclose(v5, p5[i].numpy())
 
+  # test parquet dataset
+  columns = [
+      'boolean_field',
+      'int32_field',
+      'int64_field',
+      'float_field',
+      'double_field']
+  dataset = tfio.IODataset.from_parquet(filename, columns)
+  i = 0
+  for v in dataset:
+    v0 = ((i % 2) == 0)
+    v1 = i
+    v2 = i * 1000 * 1000 * 1000 * 1000
+    v4 = 1.1 * i
+    v5 = 1.1111111 * i
+    p0, p1, p2, p4, p5 = v
+    assert v0 == p0
+    assert v1 == p1
+    assert v2 == p2
+    assert np.isclose(v4, p4)
+    assert np.isclose(v5, p5)
+
+    i += 1
+
 def test_parquet_partition():
   """test_parquet_partition"""
   for capacity in [

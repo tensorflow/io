@@ -23,8 +23,9 @@ namespace data {
 
 class FFmpegReadStream {
  public:
-  FFmpegReadStream(SizedRandomAccessFile* file, uint64 file_size)
-  : file_(file)
+  FFmpegReadStream(const string& filename, SizedRandomAccessFile* file, uint64 file_size)
+  : filename_(filename)
+  , file_(file)
   , file_size_(file_size)
   , offset_(0)
   , format_context_(nullptr, [](AVFormatContext* p) { if (p != nullptr) { avformat_close_input(&p); av_free(p); } })
@@ -43,13 +44,14 @@ class FFmpegReadStream {
 #endif
     return media_type;
   }
-  virtual Status Open(const string& filename, int64 stream_index) {
+  virtual Status Open(int64 stream_index) {
+    offset_ = 0;
     AVFormatContext *format_context; 
     if ((format_context = avformat_alloc_context()) != NULL) {
       AVIOContext *io_context;
       if ((io_context = avio_alloc_context(NULL, 0, 0, this, FFmpegReadStream::ReadPacket, NULL, FFmpegReadStream::Seek)) != NULL) {
         format_context->pb = io_context;
-        if (avformat_open_input(&format_context, filename.c_str(), NULL, NULL) >= 0) {
+        if (avformat_open_input(&format_context, filename_.c_str(), NULL, NULL) >= 0) {
           if (avformat_find_stream_info(format_context, NULL) >= 0) {
             // No plan to read any other stream frame
             for (int64 i = 0; i < format_context->nb_streams; i++) {
@@ -67,7 +69,7 @@ class FFmpegReadStream {
       }
       av_free(format_context);
     }
-    return errors::InvalidArgument("unable to open file: ", filename);
+    return errors::InvalidArgument("unable to open file: ", filename_);
    }
 
   static int ReadPacket(void *opaque, uint8_t *buf, int buf_size) {
@@ -112,6 +114,7 @@ class FFmpegReadStream {
   }
 
  public:
+  string filename_;
   SizedRandomAccessFile *file_ = nullptr;
   uint64 file_size_ = 0;
   uint64 offset_ = 0;
@@ -121,9 +124,10 @@ class FFmpegReadStream {
 };
 class FFmpegReadStreamMeta : public FFmpegReadStream {
  public:
-  FFmpegReadStreamMeta(SizedRandomAccessFile* file, uint64 file_size, int64 media_type)
-  : FFmpegReadStream(file, file_size)
+  FFmpegReadStreamMeta(const string& filename, SizedRandomAccessFile* file, uint64 file_size, int64 media_type)
+  : FFmpegReadStream(filename, file, file_size)
   , media_type_(media_type)
+  , record_index_(0)
   , nb_frames_(-1)
   , dtype_(DT_INVALID)
   , packet_scope_(nullptr, [](AVPacket* p) { if (p != nullptr) { av_packet_unref(p); }})
@@ -132,8 +136,10 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
 
   virtual ~FFmpegReadStreamMeta() {}
 
-  virtual Status Open(const string& filename, int64 stream_index) {
-    TF_RETURN_IF_ERROR(FFmpegReadStream::Open(filename, stream_index));
+  virtual Status Open(int64 stream_index) override {
+    record_index_ = 0;
+    initialized_ = false;
+    TF_RETURN_IF_ERROR(FFmpegReadStream::Open(stream_index));
     if (StreamType(stream_index) != media_type_) {
       return errors::Internal("type mismatch: ", StreamType(stream_index), " vs. ", media_type_);
     }
@@ -185,6 +191,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     return Status::OK();
   }
   int64 Type() { return media_type_; }
+  int64 RecordIndex() { return record_index_; }
   int64 Frames() { return nb_frames_; }
   string Codec() { return codec_; }
   PartialTensorShape Shape() { return shape_; }
@@ -229,15 +236,18 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     do {
       TF_RETURN_IF_ERROR(ReadDecoded(record_to_read, record_read, value));
       if ((*record_read) >= record_to_read) {
+        record_index_ += (*record_read);
         return Status::OK();
       }
       status = DecodePacket();
     } while (status.ok());
-
-    return ReadDecoded(record_to_read, record_read, value);
+    TF_RETURN_IF_ERROR(ReadDecoded(record_to_read, record_read, value));
+    record_index_ += (*record_read);
+    return Status::OK();
   }
  protected:
   int64 media_type_;
+  int64 record_index_;
   int64 nb_frames_;
   PartialTensorShape shape_;
   DataType dtype_;
@@ -253,15 +263,15 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
 };
 class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegVideoReadStreamMeta(SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(file, file_size, AVMEDIA_TYPE_VIDEO)
+  FFmpegVideoReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
+  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_VIDEO)
   , height_(-1)
   , width_(-1)
   , num_bytes_(-1)
   , sws_context_(nullptr, [](SwsContext* p) { if (p != nullptr) { sws_freeContext(p); }}) {}
   virtual ~FFmpegVideoReadStreamMeta() {}
-  virtual Status Open(const string& filename, int64 stream_index) {
-    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(filename, stream_index));
+  virtual Status Open(int64 stream_index) override {
+    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
 
     height_ = codec_context_->height;
     width_ = codec_context_->width;
@@ -337,14 +347,14 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
 
 class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegAudioReadStreamMeta(SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(file, file_size, AVMEDIA_TYPE_AUDIO)
+  FFmpegAudioReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
+  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_AUDIO)
   , channels_(-1)
   , rate_(-1) {}
   virtual ~FFmpegAudioReadStreamMeta() {}
 
-  virtual Status Open(const string& filename, int64 stream_index) override {
-    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(filename, stream_index));
+  virtual Status Open(int64 stream_index) override {
+    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
 #if LIBAVCODEC_VERSION_MAJOR > 56
     int format = format_context_->streams[stream_index]->codecpar->format;
     channels_ = format_context_->streams[stream_index]->codecpar->channels;
@@ -461,11 +471,11 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
 
 class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegSubtitleReadStreamMeta(SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(file, file_size, AVMEDIA_TYPE_SUBTITLE) {}
+  FFmpegSubtitleReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
+  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_SUBTITLE) {}
   virtual ~FFmpegSubtitleReadStreamMeta() {}
-  virtual Status Open(const string& filename, int64 stream_index) override {
-    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(filename, stream_index));
+  virtual Status Open(int64 stream_index) override {
+    TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
     shape_ = PartialTensorShape({-1});
     dtype_ = DT_STRING;
     return Status::OK();
@@ -526,12 +536,12 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
   }
   std::deque<string> subtitles_;
 };
-class FFmpegIterable : public IOIterableInterface {
+class FFmpegReadable : public IOReadableInterface {
  public:
-  FFmpegIterable(Env* env)
+  FFmpegReadable(Env* env)
   : env_(env) {}
 
-  ~FFmpegIterable() {}
+  ~FFmpegReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -539,17 +549,17 @@ class FFmpegIterable : public IOIterableInterface {
     const string& filename = input[0];
     file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
     TF_RETURN_IF_ERROR(env_->GetFileSize(filename, &file_size_));
-    ffmpeg_file_.reset(new FFmpegReadStream(file_.get(), file_size_));
+    ffmpeg_file_.reset(new FFmpegReadStream(filename, file_.get(), file_size_));
 
     FFmpegReaderInit();
-    TF_RETURN_IF_ERROR(ffmpeg_file_->Open(filename, -1));
+    TF_RETURN_IF_ERROR(ffmpeg_file_->Open(-1));
 
     int64 audio_index = 0, video_index = 0, subtitle_index = 0;
     for (int64 i = 0; i < ffmpeg_file_->Streams(); i++) {
       switch(ffmpeg_file_->StreamType(i)) {
       case AVMEDIA_TYPE_VIDEO:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegVideoReadStreamMeta(file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(filename, i));
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegVideoReadStreamMeta(filename, file_.get(), file_size_)));
+        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
         shapes_.push_back(columns_meta_[i]->Shape());
         dtypes_.push_back(columns_meta_[i]->DType());
         columns_.push_back(absl::StrCat("v:", video_index));
@@ -557,8 +567,8 @@ class FFmpegIterable : public IOIterableInterface {
         video_index++;
         break;    
       case AVMEDIA_TYPE_AUDIO:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegAudioReadStreamMeta(file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(filename, i));
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegAudioReadStreamMeta(filename, file_.get(), file_size_)));
+        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
         shapes_.push_back(columns_meta_[i]->Shape());
         dtypes_.push_back(columns_meta_[i]->DType());
         columns_.push_back(absl::StrCat("a:", audio_index));
@@ -566,8 +576,8 @@ class FFmpegIterable : public IOIterableInterface {
         audio_index++;
         break;
       case AVMEDIA_TYPE_SUBTITLE:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegSubtitleReadStreamMeta(file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(filename, i));
+        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegSubtitleReadStreamMeta(filename, file_.get(), file_size_)));
+        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
         shapes_.push_back(columns_meta_[i]->Shape());
         dtypes_.push_back(columns_meta_[i]->DType());
         columns_.push_back(absl::StrCat("s:", subtitle_index));
@@ -610,18 +620,29 @@ class FFmpegIterable : public IOIterableInterface {
     return Status::OK();
   }
 
-  Status Next(const int64 capacity, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+    *record_read = 0;
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
     int64 column_index = columns_index_[component];
-    Status status = columns_meta_[column_index]->Read(capacity, record_read, value);
-    return status;
+    if (start != columns_meta_[column_index]->RecordIndex()) {
+      // If we reach to the end, then just 0
+      if (start > columns_meta_[column_index]->RecordIndex()) {
+        return Status::OK();
+      }
+      if (start != 0) {
+        return errors::InvalidArgument("ffmepg dataset could not seek to a random location");
+      }
+      // Else we will recreate the meta.
+      TF_RETURN_IF_ERROR(columns_meta_[column_index]->Open(column_index));
+    }
+    return columns_meta_[column_index]->Read(stop - start, record_read, value);
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("FFmpegIterable");
+    return strings::StrCat("FFmpegReadable");
   }
  private:
   mutable mutex mu_;
@@ -630,7 +651,6 @@ class FFmpegIterable : public IOIterableInterface {
   uint64 file_size_ GUARDED_BY(mu_);
   std::unique_ptr<FFmpegReadStream> ffmpeg_file_ GUARDED_BY(mu_);
 
-
   std::vector<DataType> dtypes_;
   std::vector<PartialTensorShape> shapes_;
   std::vector<string> columns_;
@@ -638,12 +658,12 @@ class FFmpegIterable : public IOIterableInterface {
   std::vector<std::unique_ptr<FFmpegReadStreamMeta>> columns_meta_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("FfmpegIterableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<FFmpegIterable>);
-REGISTER_KERNEL_BUILDER(Name("FfmpegIterableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<FFmpegIterable>);
-REGISTER_KERNEL_BUILDER(Name("FfmpegIterableNext").Device(DEVICE_CPU),
-                        IOIterableNextOp<FFmpegIterable>);
+REGISTER_KERNEL_BUILDER(Name("FfmpegReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<FFmpegReadable>);
+REGISTER_KERNEL_BUILDER(Name("FfmpegReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<FFmpegReadable>);
+REGISTER_KERNEL_BUILDER(Name("FfmpegReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<FFmpegReadable>);
 
 class FFmpegDecodeVideoOp : public OpKernel {
  public:
@@ -663,8 +683,8 @@ class FFmpegDecodeVideoOp : public OpKernel {
 
     FFmpegReaderInit();
 
-    FFmpegVideoReadStreamMeta video_meta(&file, input.size());
-    OP_REQUIRES_OK(context, video_meta.Open("memory", index_tensor->scalar<int64>()()));
+    FFmpegVideoReadStreamMeta video_meta("memory", &file, input.size());
+    OP_REQUIRES_OK(context, video_meta.Open(index_tensor->scalar<int64>()()));
     int64 record_to_read = 0;
     OP_REQUIRES_OK(context, video_meta.Peek(&record_to_read));
 

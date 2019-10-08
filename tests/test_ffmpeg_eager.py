@@ -36,7 +36,8 @@ def test_video_dataset():
   """test_video_dataset"""
   num_repeats = 2
 
-  video_dataset = ffmpeg_io.VideoDataset([video_path]).repeat(num_repeats)
+  video_dataset = tfio.IODataset.from_ffmpeg(
+      video_path, "v:0").repeat(num_repeats)
 
   i = 0
   for v in video_dataset:
@@ -123,3 +124,10 @@ def test_ffmpeg_decode_video():
   video = ffmpeg_io.decode_video(content, 0)
   assert video.shape == [166, 320, 560, 3]
   assert video.dtype == tf.uint8
+
+def test_video_predict():
+  model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
+  x = ffmpeg_io.VideoDataset(video_path).batch(1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  y = model.predict(x)
+  p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
+  assert len(p) == 166

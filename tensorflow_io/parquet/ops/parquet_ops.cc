@@ -44,7 +44,7 @@ REGISTER_OP("ReadParquet")
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
-REGISTER_OP("ParquetIndexableInit")
+REGISTER_OP("ParquetReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -56,7 +56,7 @@ REGISTER_OP("ParquetIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetIndexableSpec")
+REGISTER_OP("ParquetReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -67,7 +67,7 @@ REGISTER_OP("ParquetIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetIndexableRead")
+REGISTER_OP("ParquetReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -84,7 +84,7 @@ REGISTER_OP("ParquetIndexableRead")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetIndexablePartitions")
+REGISTER_OP("ParquetReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

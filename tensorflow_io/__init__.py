@@ -18,3 +18,4 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.core.python.ops.io_tensor import IOTensor
+from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset

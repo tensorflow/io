@@ -23,12 +23,12 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-class LMDBIterable : public IOIterableInterface {
+class LMDBReadable : public IOReadableInterface {
  public:
-  LMDBIterable(Env* env)
+  LMDBReadable(Env* env)
   : env_(env) {}
 
-  ~LMDBIterable() {
+  ~LMDBReadable() {
     if (mdb_env_ != nullptr) {
       if (mdb_cursor_) {
         mdb_cursor_close(mdb_cursor_);
@@ -77,9 +77,9 @@ class LMDBIterable : public IOIterableInterface {
     }
     return Status::OK();
   }
-  Status Next(const int64 capacity, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
-    while ((*record_read) < capacity) {
+    while (start + (*record_read) < stop) {
       MDB_val mdb_key;
       MDB_val mdb_data;
       int status = mdb_cursor_get(mdb_cursor_, &mdb_key, &mdb_data, MDB_NEXT);
@@ -99,7 +99,7 @@ class LMDBIterable : public IOIterableInterface {
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("LMDBIterable[]");
+    return strings::StrCat("LMDBReadable[]");
   }
  private:
   mutable mutex mu_;
@@ -194,10 +194,10 @@ class LMDBMapping : public IOMappingInterface {
   MDB_dbi mdb_dbi_ GUARDED_BY(mu_) = 0;
 };
 
-REGISTER_KERNEL_BUILDER(Name("LMDBIterableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<LMDBIterable>);
-REGISTER_KERNEL_BUILDER(Name("LMDBIterableNext").Device(DEVICE_CPU),
-                        IOIterableNextOp<LMDBIterable>);
+REGISTER_KERNEL_BUILDER(Name("LMDBReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<LMDBReadable>);
+REGISTER_KERNEL_BUILDER(Name("LMDBReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<LMDBReadable>);
 REGISTER_KERNEL_BUILDER(Name("LMDBMappingInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<LMDBMapping>);
 REGISTER_KERNEL_BUILDER(Name("LMDBMappingRead").Device(DEVICE_CPU),

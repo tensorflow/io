@@ -77,12 +77,12 @@ REGISTER_KERNEL_BUILDER(Name("ReadPrometheus").Device(DEVICE_CPU),
 }  // namespace
 
 
-class PrometheusIndexable : public IOIndexableInterface {
+class PrometheusReadable : public IOReadableInterface {
  public:
-  PrometheusIndexable(Env* env)
+  PrometheusReadable(Env* env)
   : env_(env) {}
 
-  ~PrometheusIndexable() {}
+  ~PrometheusReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 query is not supported");
@@ -149,21 +149,36 @@ class PrometheusIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+    (*record_read) = 0;
+    if (start >= shapes_[0].dim_size(0)) {
+      return Status::OK();
+    }
+    int64 element_start = start < shapes_[0].dim_size(0) ? start : shapes_[0].dim_size(0);
+    int64 element_stop = stop < shapes_[0].dim_size(0) ? stop : shapes_[0].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
+
     if (component == "index") {
-      memcpy(&value->flat<int64>().data()[0], &timestamp_[start], sizeof(int64) * (stop - start));
+      memcpy(&value->flat<int64>().data()[0], &timestamp_[element_start], sizeof(int64) * (element_stop - element_start));
     } else if (component == "value") {
-      memcpy(&value->flat<double>().data()[0], &value_[start], sizeof(double) * (stop - start));
+      memcpy(&value->flat<double>().data()[0], &value_[element_start], sizeof(double) * (element_stop - element_start));
     } else {
       return errors::InvalidArgument("component ", component, " is not supported");
     }
+    *record_read = element_stop - element_start;
 
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("PrometheusIndexable");
+    return strings::StrCat("PrometheusReadable");
   }
  private:
   mutable mutex mu_;
@@ -176,12 +191,12 @@ class PrometheusIndexable : public IOIndexableInterface {
   std::vector<double> value_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<PrometheusIndexable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<PrometheusIndexable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<PrometheusReadable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<PrometheusReadable>);
+REGISTER_KERNEL_BUILDER(Name("PrometheusReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<PrometheusReadable>);
 
 }  // namespace data
 }  // namespace tensorflow

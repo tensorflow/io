@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import os
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
@@ -36,47 +35,9 @@ def test_from_tensor():
   numpy_data = audio_data.to_tensor().numpy()
 
   new_tensor = tfio.IOTensor.from_tensor(numpy_data)
-
   # The behavior of from_audio and from_tesnor should match
   for i, audio_value in enumerate(audio_data):
     assert new_tensor[i].numpy() == audio_value.numpy()
-
-def test_from_tensor_to_dataset():
-  """test_from_tensor_to_dataset"""
-  audio_data = tfio.IOTensor.from_audio(audio_path)
-  numpy_data = audio_data.to_tensor().numpy()
-
-  new_tensor = tfio.IOTensor.from_tensor(numpy_data)
-
-  audio_data_dataset = audio_data.to_dataset()
-  new_tensor_dataset = new_tensor.to_dataset()
-
-  # The behavior of from_audio and from_tesnor should match
-  # for dataset operatios with to_dataset
-  dataset = tf.compat.v2.data.Dataset.zip(
-      (audio_data_dataset, new_tensor_dataset))
-  for i in dataset:
-    x, y = i
-    assert x.numpy() == y.numpy()
-
-def test_sklearn():
-  """test_sklearn"""
-  # sklearn works both on numpy array and IOTensor.
-  audio_data = tfio.IOTensor.from_audio(audio_path)
-  numpy_data = audio_data.to_tensor().numpy()
-
-  audio_scaler = MinMaxScaler()
-  audio_scaler.fit(audio_data)
-  audio_transformed = audio_scaler.transform(audio_data)
-
-  numpy_scaler = MinMaxScaler()
-  numpy_scaler.fit(numpy_data)
-  numpy_transformed = numpy_scaler.transform(numpy_data)
-
-  assert audio_scaler.data_max_ == numpy_scaler.data_max_
-  assert audio_scaler.data_min_ == numpy_scaler.data_min_
-  assert np.all(audio_transformed == numpy_transformed)
-
 def test_audio_dataset():
   """Test Audio Dataset"""
   with open(audio_path, 'rb') as f:
@@ -85,14 +46,14 @@ def test_audio_dataset():
 
   f = lambda x: float(x) / (1 << 15)
 
-  audio_dataset = tfio.IOTensor.from_audio(audio_path).to_dataset()
+  audio_dataset = tfio.IODataset.from_audio(audio_path)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v.numpy())
     i += 1
   assert i == 5760
 
-  audio_dataset = tfio.IOTensor.from_audio(audio_path).to_dataset().batch(2)
+  audio_dataset = tfio.IODataset.from_audio(audio_path).batch(2)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v[0].numpy())

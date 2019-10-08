@@ -23,6 +23,26 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
+class _IOTensorComponentLabelFunction(object):
+  """_IOTensorComponentLabelFunction"""
+  def __init__(self, function, resource, component, shape, dtype):
+    self._function = function
+    self._resource = resource
+    self._component = component
+    self._length = shape[0]
+    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    start, stop, _ = slice(start, stop).indices(self._length)
+    return self._function(
+        self._resource,
+        start=start, stop=stop,
+        component=self._component, filter=['label'],
+        shape=self._shape, dtype=self._dtype)
+  @property
+  def length(self):
+    return self._length
+
 class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
   """CSVIOTensor"""
 
@@ -33,23 +53,28 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
                filename,
                internal=False):
     with tf.name_scope("CSVIOTensor") as scope:
-      resource, columns = core_ops.csv_indexable_init(
+      resource, columns = core_ops.csv_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
-      spec = []
+      elements = []
       for column in columns:
-        shape, dtype = core_ops.csv_indexable_spec(resource, column)
+        shape, dtype = core_ops.csv_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
-        spec.append(tf.TensorSpec(shape, dtype, column))
-      spec = tuple(spec)
+        spec = tf.TensorSpec(shape, dtype, column)
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
+            core_ops.csv_readable_read,
+            resource, column, shape, dtype)
+        elements.append(
+            io_tensor_ops.BaseIOTensor(
+                spec, function, internal=internal))
+      spec = tuple([e.spec for e in elements])
+
+      self._resource = resource
       super(CSVIOTensor, self).__init__(
-          spec, columns,
-          resource, core_ops.csv_indexable_read,
-          partitions=None,
-          internal=internal)
+          spec, columns, elements, internal=internal)
 
   #=============================================================================
   # IsNull checking
@@ -61,20 +86,9 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
     spec = tf.nest.flatten(self.spec)[column_index]
     # change spec to bool
     spec = tf.TensorSpec(spec.shape, tf.bool)
-    class _Function(object):
-      def __init__(self, func, spec, column):
-        self._func = func
-        self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-        self._dtype = spec.dtype
-        self._component = column
-
-      def __call__(self, resource, start, stop):
-        return self._func(
-            resource, start=start, stop=stop,
-            component=self._component, filter=['label'],
-            shape=self._shape, dtype=self._dtype)
+    function = _IOTensorComponentLabelFunction(
+        core_ops.csv_readable_read,
+        self._resource, column, spec.shape, spec.dtype)
 
     return io_tensor_ops.BaseIOTensor(
-        spec, self._resource,
-        _Function(core_ops.csv_indexable_read, spec, column),
-        partitions=None, internal=True)
+        spec, function, internal=True)

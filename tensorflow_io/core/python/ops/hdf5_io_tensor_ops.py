@@ -20,8 +20,8 @@ from __future__ import print_function
 import uuid
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import io_tensor_ops
 
 class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """HDF5IOTensor"""
@@ -33,34 +33,23 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
                filename,
                internal=False):
     with tf.name_scope("HDF5IOTensor") as scope:
-      class _Function(object):
-        def __init__(self, func, spec, key):
-          self._func = func
-          self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-          self._dtype = spec.dtype
-          self._component = key
-        def __call__(self, resource, start, stop):
-          return self._func(
-              resource, start=start, stop=stop,
-              component=self._component,
-              shape=self._shape, dtype=self._dtype)
-
-      resource, columns = core_ops.hdf5_indexable_init(
+      resource, columns = core_ops.hdf5_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype = core_ops.hdf5_indexable_spec(resource, column)
+        shape, dtype = core_ops.hdf5_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
+            core_ops.hdf5_readable_read,
+            resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(
-                spec, resource,
-                _Function(core_ops.hdf5_indexable_read, spec, column),
-                partitions=None, internal=True))
+                spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
       super(HDF5IOTensor, self).__init__(
           spec, columns, elements,
