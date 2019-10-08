@@ -146,6 +146,8 @@ class BigQueryReadSessionOp : public OpKernel {
     *createReadSessionRequest.mutable_read_options()
          ->mutable_selected_fields() = {selected_fields_.begin(),
                                         selected_fields_.end()};
+    createReadSessionRequest.mutable_read_options()->set_row_restriction(
+        row_restriction_);                                        
     createReadSessionRequest.set_requested_streams(requested_streams_);
     createReadSessionRequest.set_format(apiv1beta1::DataFormat::AVRO);
     VLOG(3) << "createReadSessionRequest: "
