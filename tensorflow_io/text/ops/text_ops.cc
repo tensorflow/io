@@ -135,7 +135,7 @@ REGISTER_OP("TextOutputSequenceSetItem")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("CSVIndexableInit")
+REGISTER_OP("CSVReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -147,7 +147,7 @@ REGISTER_OP("CSVIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("CSVIndexableSpec")
+REGISTER_OP("CSVReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -158,7 +158,7 @@ REGISTER_OP("CSVIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("CSVIndexableRead")
+REGISTER_OP("CSVReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

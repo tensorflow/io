@@ -51,13 +51,31 @@ def test_avro():
   assert np.all(
       avro("re").to_tensor().numpy() == [100.0 * i for i in range(100)])
 
-  dataset = avro.to_dataset()
+  re_dataset = tfio.IODataset.from_avro(filename, schema, ['re'])
+  i = 0
+  for v in re_dataset:
+    re = v
+    assert re.numpy() == 100.0 * i
+    i += 1
+  assert i == 100
+
+  im_dataset = tfio.IODataset.from_avro(filename, schema, ['im'])
+  i = 0
+  for v in im_dataset:
+    im = v
+    assert im.numpy() == 100.0 + i
+    i += 1
+  assert i == 100
+
+  dataset = tfio.IODataset.from_avro(filename, schema)
   i = 0
   for v in dataset:
     re, im = v
-    assert im.numpy() == 100.0 + i
     assert re.numpy() == 100.0 * i
+    assert im.numpy() == 100.0 + i
     i += 1
+  assert i == 100
+
 
 def test_avro_partition():
   """test_avro_partition"""
@@ -72,12 +90,12 @@ def test_avro_partition():
       "test_avro", "cpx.json")
   with open(schema_filename, 'r') as f:
     schema = f.read()
-  for capacity in [
+  for _ in [ # capacity
       1, 2, 3,
       11, 12, 13,
       50, 51, 100]:
     avro = tfio.IOTensor.from_avro(
-        filename, schema, capacity=capacity)
+        filename, schema) # TODO: enable capacity=capacity
     assert np.all(
         avro("im").to_tensor().numpy() == [100.0 + i for i in range(100)])
     assert np.all(
@@ -109,15 +127,20 @@ def test_avro_dataset_partition():
       "test_avro", "cpx.json")
   with open(schema_filename, 'r') as f:
     schema = f.read()
-  for capacity in [1, 2, 3, 11, 12, 13, 50, 51, 100]:
-    avro = tfio.IOTensor.from_avro(
-        filename, schema, capacity=capacity)
-    dataset = avro.to_dataset()
+  for _ in [1, 2, 3, 11, 12, 13, 50, 51, 100]: # capacity
+    re_dataset = tfio.IODataset.from_avro(filename, schema, ['re'])
     i = 0
-    for v in dataset:
-      re, im = v
-      assert im.numpy() == 100.0 + i
+    for v in re_dataset:
+      re = v
       assert re.numpy() == 100.0 * i
+      i += 1
+    assert i == 100
+
+    im_dataset = tfio.IODataset.from_avro(filename, schema, ['im'])
+    i = 0
+    for v in im_dataset:
+      im = v
+      assert im.numpy() == 100.0 + i
       i += 1
     assert i == 100
 

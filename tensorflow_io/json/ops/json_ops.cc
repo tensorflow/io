@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("JSONIndexableInit")
+REGISTER_OP("JSONReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -32,7 +32,7 @@ REGISTER_OP("JSONIndexableInit")
     return Status::OK();
    });
 
-REGISTER_OP("JSONIndexableSpec")
+REGISTER_OP("JSONReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -43,7 +43,7 @@ REGISTER_OP("JSONIndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("JSONIndexableRead")
+REGISTER_OP("JSONReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

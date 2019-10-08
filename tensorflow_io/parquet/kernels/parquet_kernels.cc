@@ -221,12 +221,12 @@ REGISTER_KERNEL_BUILDER(Name("ReadParquet").Device(DEVICE_CPU),
 }  // namespace
 
 
-class ParquetIndexable : public IOIndexableInterface {
+class ParquetReadable : public IOReadableInterface {
  public:
-  ParquetIndexable(Env* env)
+  ParquetReadable(Env* env)
   : env_(env) {}
 
-  ~ParquetIndexable() {}
+  ~ParquetReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -308,24 +308,37 @@ class ParquetIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
     int64 column_index = columns_index_[component];
+    (*record_read) = 0;
+    if (start >= shapes_[column_index].dim_size(0)) {
+      return Status::OK();
+    }
     const string& column = component;
+    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
 
     int64 row_group_offset = 0;
     for (int row_group = 0; row_group < parquet_metadata_->num_row_groups(); row_group++) {
       std::shared_ptr<parquet::RowGroupReader> row_group_reader = parquet_reader_->RowGroup(row_group);
       // Skip if row group is not within [start..stop]
-      if ((row_group_offset + row_group_reader->metadata()->num_rows() < start) || (stop <= row_group_offset)) {
+      if ((row_group_offset + row_group_reader->metadata()->num_rows() < element_start) || (element_stop <= row_group_offset)) {
         row_group_offset += row_group_reader->metadata()->num_rows();
         continue;
       }
       // Find row_to_read range
-      int64 row_to_read_start = row_group_offset > start ? row_group_offset : start;
-      int64 row_to_read_final = (row_group_offset + row_group_reader->metadata()->num_rows()) < (stop) ? (row_group_offset + row_group_reader->metadata()->num_rows()) : (stop);
+      int64 row_to_read_start = row_group_offset > element_start ? row_group_offset : element_start;
+      int64 row_to_read_final = (row_group_offset + row_group_reader->metadata()->num_rows()) < (element_stop) ? (row_group_offset + row_group_reader->metadata()->num_rows()) : (element_stop);
       int64 row_to_read_count = row_to_read_final - row_to_read_start;
 
       // TODO: parquet is RowGroup based so ideally the RowGroup should be cached
@@ -342,7 +355,7 @@ class ParquetIndexable : public IOIndexableInterface {
           if (row_to_read_start > row_group_offset) { \
             reader->Skip(row_to_read_start - row_group_offset); \
           } \
-          ptype::c_type* value_p = (ptype::c_type *)(void *)(&(value->flat<type>().data()[row_to_read_start - start])); \
+          ptype::c_type* value_p = (ptype::c_type *)(void *)(&(value->flat<type>().data()[row_to_read_start - element_start])); \
           int64_t values_read; \
           int64_t levels_read = reader->ReadBatch(row_to_read_count, nullptr, nullptr, value_p, &values_read); \
           if (!(levels_read == values_read && levels_read == row_to_read_count)) { \
@@ -370,12 +383,13 @@ class ParquetIndexable : public IOIndexableInterface {
       }
       row_group_offset += row_group_reader->metadata()->num_rows();
     }
+    (*record_read) = element_stop - element_start;
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("ParquetIndexable");
+    return strings::StrCat("ParquetReadable");
   }
  private:
   mutable mutex mu_;
@@ -392,13 +406,13 @@ class ParquetIndexable : public IOIndexableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("ParquetIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<ParquetIndexable>);
-REGISTER_KERNEL_BUILDER(Name("ParquetIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<ParquetIndexable>);
-REGISTER_KERNEL_BUILDER(Name("ParquetIndexablePartitions").Device(DEVICE_CPU),
-                        IOIndexablePartitionsOp<ParquetIndexable>);
-REGISTER_KERNEL_BUILDER(Name("ParquetIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<ParquetIndexable>);
+REGISTER_KERNEL_BUILDER(Name("ParquetReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<ParquetReadable>);
+REGISTER_KERNEL_BUILDER(Name("ParquetReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<ParquetReadable>);
+REGISTER_KERNEL_BUILDER(Name("ParquetReadablePartitions").Device(DEVICE_CPU),
+                        IOReadablePartitionsOp<ParquetReadable>);
+REGISTER_KERNEL_BUILDER(Name("ParquetReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<ParquetReadable>);
 }  // namespace data
 }  // namespace tensorflow

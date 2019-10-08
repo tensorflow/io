@@ -43,7 +43,7 @@ REGISTER_OP("LMDBDatasetV2")
        return Status::OK();
      });
 
-REGISTER_OP("LMDBIterableInit")
+REGISTER_OP("LMDBReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -53,9 +53,10 @@ REGISTER_OP("LMDBIterableInit")
     return Status::OK();
    });
 
-REGISTER_OP("LMDBIterableNext")
+REGISTER_OP("LMDBReadableRead")
   .Input("input: resource")
-  .Input("capacity: int64")
+  .Input("start: int64")
+  .Input("stop: int64")
   .Output("value: dtype")
   .Attr("shape: shape")
   .Attr("dtype: type")

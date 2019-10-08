@@ -23,6 +23,20 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
+class _KafkaIOTensorFunction(object):
+  """_KafkaIOTensorFunction"""
+  def __init__(self, resource, capacity):
+    self._resource = resource
+    self._capacity = capacity
+    self._index = 0
+  def __call__(self):
+    items = core_ops.kafka_readable_read(
+        self._resource,
+        start=self._index, stop=self._index+self._capacity,
+        shape=tf.TensorShape([None]), dtype=tf.string)
+    self._index += items.shape[0]
+    return items
+
 class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
   """KafkaIOTensor"""
 
@@ -30,39 +44,26 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   # Constructor (private)
   #=============================================================================
   def __init__(self,
-               subscription,
-               servers=None,
-               configuration=None,
-               internal=False):
+               topic,
+               partition,
+               offset,
+               tail,
+               servers,
+               configuration,
+               internal=True):
+    """KafkaIOTensor."""
     with tf.name_scope("KafkaIOTensor") as scope:
+      subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      iterable = core_ops.kafka_iterable_init(
+      resource = core_ops.kafka_readable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      resource = core_ops.kafka_indexable_init(
-          subscription, metadata=metadata, iterable=iterable,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      shape, dtype = core_ops.kafka_indexable_spec(resource, 0)
-      spec = tf.TensorSpec(
-          tf.TensorShape(shape.numpy()), tf.as_dtype(dtype.numpy()))
-
-      class _Function(object):
-        def __init__(self, func, spec):
-          self._func = func
-          self._shape = tf.TensorShape([None]).concatenate(spec.shape[1:])
-          self._dtype = spec.dtype
-
-        def __call__(self, resource, start, stop):
-          return self._func(
-              resource, start=start, stop=stop,
-              shape=self._shape, dtype=self._dtype)
-
-      self._iterable = iterable
+      function = _KafkaIOTensorFunction(resource, capacity=4096)
+      function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
+          function, tf.TensorShape([None]))
+      spec = tf.TensorSpec(tf.TensorShape([None]), tf.string)
       super(KafkaIOTensor, self).__init__(
-          spec, resource,
-          _Function(core_ops.kafka_indexable_read, spec),
-          partitions=None, internal=internal)
+          spec, function, internal=internal)

@@ -207,12 +207,12 @@ REGISTER_KERNEL_BUILDER(Name("ReadJSON").Device(DEVICE_CPU),
 }  // namespace
 
 
-class JSONIndexable : public IOIndexableInterface {
+class JSONReadable : public IOReadableInterface {
  public:
-  JSONIndexable(Env* env)
+  JSONReadable(Env* env)
   : env_(env) {}
 
-  ~JSONIndexable() {}
+  ~JSONReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
@@ -315,25 +315,41 @@ class JSONIndexable : public IOIndexableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
     int64 column_index = columns_index_[component];
 
+    (*record_read) = 0;
+    if (start >= shapes_[column_index].dim_size(0)) {
+      return Status::OK();
+    }
+    const string& column = component;
+    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+
+    if (element_start > element_stop) {
+      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+    }
+    if (element_start == element_stop) {
+      return Status::OK();
+    }
+
     if (mode_ == "records") {
       if (dtypes_[column_index] == DT_INT64) {
-        memcpy(&value->flat<int64>().data()[0], &tensors_[column_index].flat<int64>().data()[start], sizeof(int64) * (stop - start));
+        memcpy(&value->flat<int64>().data()[0], &tensors_[column_index].flat<int64>().data()[element_start], sizeof(int64) * (element_stop - element_start));
       } else if (dtypes_[column_index] == DT_DOUBLE) {
-        memcpy(&value->flat<double>().data()[0], &tensors_[column_index].flat<double>().data()[start], sizeof(double) * (stop - start));
+        memcpy(&value->flat<double>().data()[0], &tensors_[column_index].flat<double>().data()[element_start], sizeof(double) * (element_stop - element_start));
       } else {
         return errors::InvalidArgument("invalid data type: ", dtypes_[column_index]);
       }
+       (*record_read) = element_stop - element_start;
 
       return Status::OK();
     }
 
-    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(start, stop);
+    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(element_start, element_stop);
 
     #define PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
@@ -381,13 +397,13 @@ class JSONIndexable : public IOIndexableInterface {
     default:
       return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
     }
-
+    (*record_read) = element_stop - element_start;
     return Status::OK();
   }
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("JSONIndexable");
+    return strings::StrCat("JSONReadable");
   }
  private:
   mutable mutex mu_;
@@ -407,11 +423,11 @@ class JSONIndexable : public IOIndexableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("JSONIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<JSONIndexable>);
-REGISTER_KERNEL_BUILDER(Name("JSONIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<JSONIndexable>);
-REGISTER_KERNEL_BUILDER(Name("JSONIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<JSONIndexable>);
+REGISTER_KERNEL_BUILDER(Name("JSONReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<JSONReadable>);
+REGISTER_KERNEL_BUILDER(Name("JSONReadableSpec").Device(DEVICE_CPU),
+                        IOInterfaceSpecOp<JSONReadable>);
+REGISTER_KERNEL_BUILDER(Name("JSONReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<JSONReadable>);
 }  // namespace data
 }  // namespace tensorflow

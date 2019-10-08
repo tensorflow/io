@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("HDF5IndexableInit")
+REGISTER_OP("HDF5ReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -30,7 +30,7 @@ REGISTER_OP("HDF5IndexableInit")
     c->set_output(1, c->MakeShape({}));
     return Status::OK();
    });
-REGISTER_OP("HDF5IndexableSpec")
+REGISTER_OP("HDF5ReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -41,7 +41,7 @@ REGISTER_OP("HDF5IndexableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("HDF5IndexableRead")
+REGISTER_OP("HDF5ReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

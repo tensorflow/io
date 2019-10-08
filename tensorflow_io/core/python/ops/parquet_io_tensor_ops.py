@@ -31,30 +31,25 @@ class ParquetIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
   #=============================================================================
   def __init__(self,
                filename,
-               capacity=None,
                internal=False):
     with tf.name_scope("ParquetIOTensor") as scope:
-      resource, columns = core_ops.parquet_indexable_init(
+      resource, columns = core_ops.parquet_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      partitions = None
-      if capacity is not None:
-        partitions = core_ops.parquet_indexable_partitions(resource)
-        partitions = partitions.numpy().tolist()
-        if capacity > 0:
-          partitions = [
-              v for e in partitions for v in list(
-                  [capacity] * (e // capacity) + [e % capacity])]
       columns = [column.decode() for column in columns.numpy().tolist()]
-      spec = []
+      elements = []
       for column in columns:
-        shape, dtype = core_ops.parquet_indexable_spec(resource, column)
+        shape, dtype = core_ops.parquet_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
-        spec.append(tf.TensorSpec(shape, dtype, column))
-      spec = tuple(spec)
+        spec = tf.TensorSpec(shape, dtype, column)
+        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
+            core_ops.parquet_readable_read,
+            resource, column, shape, dtype)
+        elements.append(
+            io_tensor_ops.BaseIOTensor(
+                spec, function, internal=internal))
+      spec = tuple([e.spec for e in elements])
       super(ParquetIOTensor, self).__init__(
-          spec, columns,
-          resource, core_ops.parquet_indexable_read,
-          partitions=partitions, internal=internal)
+          spec, columns, elements, internal=internal)

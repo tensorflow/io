@@ -63,12 +63,11 @@ private:
   bool run_ GUARDED_BY(mu_) = true;
 };
 
-class KafkaIterable : public IOIterableInterface {
+class KafkaReadable : public IOReadableInterface {
  public:
-  KafkaIterable(Env* env)
-  : env_(env) {}
+  KafkaReadable(Env* env) : env_(env) {}
 
-  ~KafkaIterable() {}
+  ~KafkaReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
@@ -79,12 +78,12 @@ class KafkaIterable : public IOIterableInterface {
     RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
 
     eof_ = true;
-    timeout_ = 1000;
+    timeout_ = 2000;
     for (size_t i = 0; i < metadata.size(); i++) {
       if (metadata[i].find_first_of("conf.eof") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
-          return errors::InvalidArgument("invalid timeout configuration: ", metadata[i]);
+          return errors::InvalidArgument("invalid bounded configuration: ", metadata[i]);
         }
         eof_ = (parts[1] != "0");
       } else if (metadata[i].find_first_of("conf.timeout") == 0) {
@@ -136,77 +135,143 @@ class KafkaIterable : public IOIterableInterface {
       return errors::Internal("failed to set event_cb:", errstr);
     }
 
-    // TODO: multiple topic and partitions
-
-    const string& entry = input[0];
-    std::vector<string> parts = str_util::Split(entry, ":");
-    string topic = parts[0];
-    int32 partition = 0;
-    if (parts.size() > 1) {
-      if (!strings::safe_strto32(parts[1], &partition)) {
-        return errors::InvalidArgument("invalid parameters: ", entry);
-      }
-    }
-
-    int64 start = 0;
-    if (parts.size() > 2) {
-      if (!strings::safe_strto64(parts[2], &start)) {
-        return errors::InvalidArgument("invalid parameters: ", entry);
-      }
-    }
-    subscription_.reset(RdKafka::TopicPartition::create(topic, partition, start));
-    start = subscription_->offset();
-
-    offset_ = start;
-
-    int64 stop = -1;
-    if (parts.size() > 3) {
-      if (!strings::safe_strto64(parts[3], &stop)) {
-        return errors::InvalidArgument("invalid parameters: ", entry);
-      }
-    }
-    range_ = std::pair<int64, int64>(start, stop);
-
     consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
     if (!consumer_.get()) {
       return errors::Internal("failed to create consumer:", errstr);
     }
 
+    // TODO: multiple topic and partitions
+    const string& entry = input[0];
+    std::vector<string> parts = str_util::Split(entry, ":");
+    if (parts.size() != 3 && parts.size() != 4) {
+      return errors::InvalidArgument("invalid input: ", entry);
+    }
+    string topic = parts[0];
+    int32 partition = 0;
+    if (!strings::safe_strto32(parts[1], &partition)) {
+      return errors::InvalidArgument("invalid parameters: ", entry);
+    }
+    subscription_.reset(RdKafka::TopicPartition::create(topic, partition));
     std::vector<RdKafka::TopicPartition*> partitions;
     partitions.emplace_back(subscription_.get());
+
+    offset_head_ = 0;
+    offset_tail_ = -1;
+    if (!strings::safe_strto64(parts[2], &offset_head_)) {
+      return errors::InvalidArgument("invalid parameters: ", entry);
+    }
+    subscription_->set_offset(offset_head_);
     RdKafka::ErrorCode err = consumer_->assign(partitions);
     if (err != RdKafka::ERR_NO_ERROR) {
       return errors::Internal("failed to assign partition: ", RdKafka::err2str(err));
     }
+    // If offset tail is specified then resolve
+    if (parts.size() == 4) {
+      std::unique_ptr<RdKafka::Message> message;
+      do {
+        message.reset(consumer_->consume(timeout_));
+      } while (message->err() == RdKafka::ERR__TRANSPORT);
+      if (message->err() != RdKafka::ERR_NO_ERROR) {
+        return errors::Internal("failed to consume head message: ", RdKafka::err2str(message->err()));
+      }
+      offset_head_ = message->offset();
 
+      if (!strings::safe_strto64(parts[3], &offset_tail_)) {
+        return errors::InvalidArgument("invalid parameters: ", entry);
+      }
+      if (offset_tail_ == -1) {
+        subscription_->set_offset(RdKafka::Consumer::OffsetTail(1));
+      } else {
+        subscription_->set_offset(offset_tail_ - 1);
+      }
+      err = consumer_->seek(*subscription_, timeout_);
+      if (err != RdKafka::ERR_NO_ERROR) {
+        return errors::Internal("failed to seek tail -1: ", RdKafka::err2str(err));
+      }
+      do {
+        message.reset(consumer_->consume(timeout_));
+      } while (message->err() == RdKafka::ERR__TRANSPORT);
+      if (message->err() != RdKafka::ERR_NO_ERROR) {
+        return errors::Internal("failed to consume tail message: ", RdKafka::err2str(message->err()));
+      }
+      offset_tail_ = message->offset();
+
+      subscription_->set_offset(offset_head_);
+      err = consumer_->seek(*subscription_, timeout_);
+      if (err != RdKafka::ERR_NO_ERROR) {
+        return errors::Internal("failed to seek tail -1: ", RdKafka::err2str(err));
+      }
+    }
+
+    index_ = 0;
+    offset_ = subscription_->offset();
     return Status::OK();
   }
-  Status Next(const int64 capacity, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
-    while (consumer_.get() != nullptr && (*record_read) < capacity) {
+    if (start != index_) {
+      // Case 1: start > 0
+      if (start > 0) {
+        // If EOF has aleady been reached, then we will just return empty
+        // in case start > index_
+        if (start > index_) {
+          // EOF of topic for stream dataset, just return
+          if (consumer_.get() == nullptr) {
+            return Status::OK();
+          }
+          // EOF of topic for normal dataset, just return
+          if (offset_tail_ >= 0 && offset_ >= offset_tail_) {
+            return Status::OK();
+          }
+        }
+        // Otherwise  just return error
+        return errors::InvalidArgument("dataset can not seek to a random location");
+      }
+      // Case 2: start = 0
+      // If offset_tail_ < 0, then this is a stream dataset,
+      // we should return empty data 
+      if (offset_tail_ < 0) {
+        return errors::InvalidArgument("stream dataset can not return back to 0");
+      }
+      // otherwise we seek to the beginning, this is important to make dataset
+      // repeatable so that it could be used in training
+      subscription_->set_offset(offset_head_);
+      RdKafka::ErrorCode err = consumer_->seek((*subscription_), timeout_);
+      if (err != RdKafka::ERR_NO_ERROR) {
+        return errors::Internal("failed to seek partition: ", RdKafka::err2str(err));
+      }
+      index_ = 0;
+      offset_ = subscription_->offset();
+    }
+
+    while (consumer_.get() != nullptr && index_ < stop) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal("failed to consume due to all brokers down");
       }
-      if (range_.second >= 0 && (subscription_->offset() >= range_.second || offset_ >= range_.second)) {
-        // EOF of topic
-        consumer_.reset(nullptr);
-        return Status::OK();
+      if (offset_tail_ >= 0 && offset_ >= offset_tail_) {
+        // EOF of topic, reset index to 0
+        break;
       }
 
       std::unique_ptr<RdKafka::Message> message(consumer_->consume(timeout_));
       if (message->err() == RdKafka::ERR_NO_ERROR) {
-         // Produce the line as output.
-         value->flat<string>()((*record_read)) = std::string(static_cast<const char*>(message->payload()), message->len());
-         // Sync offset
-         offset_ = message->offset();
-         (*record_read)++;
-         continue;
+        // Produce the line as output.
+        value->flat<string>()(index_) = std::string(static_cast<const char*>(message->payload()), message->len());
+        (*record_read)++;
+        index_++;
+        offset_ = message->offset();
+        continue;
       }
       if (message->err() == RdKafka::ERR__PARTITION_EOF) {
-        LOG(INFO) << "Partition reach EOF, current offset: " << offset_;
+        LOG(INFO) << "Partition reach EOF, current offset: " << subscription_->offset();
+        if (offset_tail_ >= 0) {
+          return errors::Internal("received EOF unexpected: ", message->errstr());
+        }
+        // If this is the end of file, then stop here.
+        // Also, this means, file could not be reused.
         if (eof_) {
           consumer_.reset(nullptr);
-          return Status::OK();
+          break;
         }
       }
       else if (message->err() == RdKafka::ERR__TRANSPORT) {
@@ -228,30 +293,28 @@ class KafkaIterable : public IOIterableInterface {
 
   string DebugString() const override {
     mutex_lock l(mu_);
-    return strings::StrCat("KafkaIterable[]");
+    return strings::StrCat("KafkaReadable[]");
   }
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
-  std::pair<string, int32> range_ GUARDED_BY(mu_);
+  int64 index_ GUARDED_BY(mu_);
+  int64 offset_ GUARDED_BY(mu_);
+
   std::unique_ptr<RdKafka::TopicPartition> subscription_ GUARDED_BY(mu_);
   std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
   KafkaEventCb kafka_event_cb_ = KafkaEventCb();
   int64 timeout_ GUARDED_BY(mu_);
   bool eof_ GUARDED_BY(mu_);
-  int64 offset_ GUARDED_BY(mu_);
+
+  int64 offset_head_ GUARDED_BY(mu_);
+  int64 offset_tail_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("KafkaIterableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<KafkaIterable>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIterableNext").Device(DEVICE_CPU),
-                        IOIterableNextOp<KafkaIterable>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<IOIndexableImplementation<KafkaIterable>>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<IOIndexableImplementation<KafkaIterable>>);
-REGISTER_KERNEL_BUILDER(Name("KafkaIndexableRead").Device(DEVICE_CPU),
-                        IOIndexableReadOp<IOIndexableImplementation<KafkaIterable>>);
+REGISTER_KERNEL_BUILDER(Name("KafkaReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<KafkaReadable>);
+REGISTER_KERNEL_BUILDER(Name("KafkaReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<KafkaReadable>);
 
 class DecodeAvroOp : public OpKernel {
  public:
