@@ -56,9 +56,22 @@ def main():
   read_session = client.read_session(
       "projects/" + GCP_PROJECT_ID,
       DATASET_GCP_PROJECT_ID, TABLE_ID, DATASET_ID,
-      ["title", "id", "num_characters"],
-      [dtypes.string, dtypes.int64, dtypes.int64],
-      requested_streams=2)
+      ["title",
+       "id",
+       "num_characters",
+       "language",
+       "timestamp",
+       "wp_namespace",
+       "contributor_username"],
+      [dtypes.string,
+       dtypes.int64,
+       dtypes.int64,
+       dtypes.string,
+       dtypes.int64,
+       dtypes.int64,
+       dtypes.string],
+      requested_streams=2,
+      row_restriction="num_characters > 1000")
   dataset = read_session.parallel_read_rows()
 
   row_index = 0
