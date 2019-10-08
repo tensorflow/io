@@ -70,7 +70,7 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       spec = tf.TensorSpec(shape, dtype)
       function = _AudioIOTensorFunction(
           core_ops.wav_readable_read, resource, shape, dtype)
-      self._rate = rate
+      self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
           spec, function, internal=internal)
 
