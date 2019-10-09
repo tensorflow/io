@@ -22,6 +22,7 @@ extern "C" {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavutil/imgutils.h"
+#include "libavutil/log.h"
 #include "libswscale/swscale.h"
 #include <dlfcn.h>
 
@@ -38,6 +39,30 @@ void FFmpegReaderInit() {
   mutex_lock lock(mu);
   count++;
   if (count == 1) {
+    // Set log level if needed
+    static const struct { const char *name; int level; } log_levels[] = {
+        { "quiet"  , AV_LOG_QUIET   },
+        { "panic"  , AV_LOG_PANIC   },
+        { "fatal"  , AV_LOG_FATAL   },
+        { "error"  , AV_LOG_ERROR   },
+        { "warning", AV_LOG_WARNING },
+        { "info"   , AV_LOG_INFO    },
+        { "verbose", AV_LOG_VERBOSE },
+        { "debug"  , AV_LOG_DEBUG   },
+        // { "trace"  , AV_LOG_TRACE   },
+    };
+    const char* log_level_name = getenv("FFMPEG_LOG_LEVEL");
+    if (log_level_name != nullptr) {
+      string log_level = log_level_name;
+      for (size_t i = 0; i < sizeof(log_levels)/sizeof(log_levels[0]); i++) {
+        if (log_level == log_levels[i].name) {
+          LOG(INFO) << "FFmpeg log level: " << log_level;
+          av_log_set_level(log_levels[i].level);
+          break;
+        }
+      }
+    }
+
     // Register all formats and codecs
     av_register_all();
   }
