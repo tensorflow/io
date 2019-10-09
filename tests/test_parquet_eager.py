@@ -80,8 +80,8 @@ def test_parquet():
     v2 = i * 1000 * 1000 * 1000 * 1000
     v4 = 1.1 * i
     v5 = 1.1111111 * i
-    v6 = "parquet%03d" % i
-    v7 = ''.join([chr(i % 256) for _ in range(10)])
+    v6 = b"parquet%03d" % i
+    v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
     assert v0 == p0[i].numpy()
     assert v1 == p1[i].numpy()
     assert v2 == p2[i].numpy()
@@ -107,8 +107,8 @@ def test_parquet():
     v2 = i * 1000 * 1000 * 1000 * 1000
     v4 = 1.1 * i
     v5 = 1.1111111 * i
-    v6 = "parquet%03d" % i
-    v7 = ''.join([chr(i % 256) for _ in range(10)])
+    v6 = b"parquet%03d" % i
+    v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
     p0, p1, p2, p4, p5, p6, p7 = v
     assert v0 == p0.numpy()
     assert v1 == p1.numpy()
