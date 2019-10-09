@@ -32,7 +32,8 @@ filename = os.path.join(
     "parquet_cpp_example.parquet")
 filename = "file://" + filename
 
-# Note: The sample file is generated from:
+# Note: The sample file is generated from the following after apply patch
+# tests/test_parquet/parquet_cpp_example.patch:
 # `parquet-cpp/examples/low-level-api/reader_writer`
 # This test extracts columns of [0, 1, 2, 4, 5]
 # with column data types of [bool, int32, int64, float, double].
@@ -63,11 +64,15 @@ def test_parquet():
   p2 = parquet('int64_field')
   p4 = parquet('float_field')
   p5 = parquet('double_field')
+  p6 = parquet('ba_field')
+  p7 = parquet('flba_field')
   assert p0.dtype == tf.bool
   assert p1.dtype == tf.int32
   assert p2.dtype == tf.int64
   assert p4.dtype == tf.float32
   assert p5.dtype == tf.float64
+  assert p6.dtype == tf.string
+  assert p7.dtype == tf.string
 
   for i in range(500): # 500 rows.
     v0 = ((i % 2) == 0)
@@ -75,11 +80,15 @@ def test_parquet():
     v2 = i * 1000 * 1000 * 1000 * 1000
     v4 = 1.1 * i
     v5 = 1.1111111 * i
+    v6 = b"parquet%03d" % i
+    v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
     assert v0 == p0[i].numpy()
     assert v1 == p1[i].numpy()
     assert v2 == p2[i].numpy()
     assert np.isclose(v4, p4[i].numpy())
     assert np.isclose(v5, p5[i].numpy())
+    assert v6 == p6[i].numpy()
+    assert v7 == p7[i].numpy()
 
   # test parquet dataset
   columns = [
@@ -87,7 +96,9 @@ def test_parquet():
       'int32_field',
       'int64_field',
       'float_field',
-      'double_field']
+      'double_field',
+      'ba_field',
+      'flba_field']
   dataset = tfio.IODataset.from_parquet(filename, columns)
   i = 0
   for v in dataset:
@@ -96,13 +107,16 @@ def test_parquet():
     v2 = i * 1000 * 1000 * 1000 * 1000
     v4 = 1.1 * i
     v5 = 1.1111111 * i
-    p0, p1, p2, p4, p5 = v
+    v6 = b"parquet%03d" % i
+    v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
+    p0, p1, p2, p4, p5, p6, p7 = v
     assert v0 == p0.numpy()
     assert v1 == p1.numpy()
     assert v2 == p2.numpy()
     assert np.isclose(v4, p4.numpy())
     assert np.isclose(v5, p5.numpy())
-
+    assert v6 == p6.numpy()
+    assert v7 == p7.numpy()
     i += 1
 
 def test_parquet_partition():
