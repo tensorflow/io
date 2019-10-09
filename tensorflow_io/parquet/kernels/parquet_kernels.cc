@@ -362,6 +362,43 @@ class ParquetReadable : public IOReadableInterface {
             return errors::InvalidArgument("null value in column: ", column); \
           } \
         }
+
+      #define PARQUET_PROCESS_BYTE_ARRAY(ptype) { \
+          parquet::TypedColumnReader<ptype>* reader = \
+              static_cast<parquet::TypedColumnReader<ptype>*>( \
+                  column_reader.get()); \
+          if (row_to_read_start > row_group_offset) { \
+            reader->Skip(row_to_read_start - row_group_offset); \
+          } \
+          std::unique_ptr<ptype::c_type[]> value_p(new ptype::c_type[row_to_read_count]); \
+          int64_t values_read; \
+          int64_t levels_read = reader->ReadBatch(row_to_read_count, nullptr, nullptr, value_p.get(), &values_read); \
+          if (!(levels_read == values_read && levels_read == row_to_read_count)) { \
+            return errors::InvalidArgument("null value in column: ", column); \
+          } \
+          for (int64_t index = 0; index < values_read; index++) { \
+            value->flat<string>()(row_to_read_start - element_start + index) = ByteArrayToString(value_p[index]); \
+          } \
+        }
+
+      #define PARQUET_PROCESS_FIXED_LEN_BYTE_ARRAY(ptype, len) { \
+          parquet::TypedColumnReader<ptype>* reader = \
+              static_cast<parquet::TypedColumnReader<ptype>*>( \
+                  column_reader.get()); \
+          if (row_to_read_start > row_group_offset) { \
+            reader->Skip(row_to_read_start - row_group_offset); \
+          } \
+          std::unique_ptr<ptype::c_type[]> value_p(new ptype::c_type[row_to_read_count]); \
+          int64_t values_read; \
+          int64_t levels_read = reader->ReadBatch(row_to_read_count, nullptr, nullptr, value_p.get(), &values_read); \
+          if (!(levels_read == values_read && levels_read == row_to_read_count)) { \
+            return errors::InvalidArgument("null value in column: ", column); \
+          } \
+          for (int64_t index = 0; index < values_read; index++) { \
+            value->flat<string>()(row_to_read_start - element_start + index) = string((const char*)value_p[index].ptr, len); \
+          } \
+        }
+
       switch (parquet_metadata_->schema()->Column(column_index)->physical_type()) {
       case parquet::Type::BOOLEAN:
         PARQUET_PROCESS_TYPE(parquet::BooleanType, bool);
@@ -377,6 +414,12 @@ class ParquetReadable : public IOReadableInterface {
         break;
       case parquet::Type::DOUBLE:
         PARQUET_PROCESS_TYPE(parquet::DoubleType, double);
+        break;
+      case parquet::Type::BYTE_ARRAY:
+        PARQUET_PROCESS_BYTE_ARRAY(parquet::ByteArrayType);
+        break;
+      case parquet::Type::FIXED_LEN_BYTE_ARRAY:
+        PARQUET_PROCESS_FIXED_LEN_BYTE_ARRAY(parquet::FLBAType, parquet_metadata_->schema()->Column(column_index)->type_length());
         break;
       default:
         return errors::InvalidArgument("invalid data type: ", parquet_metadata_->schema()->Column(column_index)->physical_type());
