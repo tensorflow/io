@@ -81,12 +81,14 @@ def test_parquet():
     v4 = 1.1 * i
     v5 = 1.1111111 * i
     v6 = "parquet%03d" % i
+    v7 = ''.join([chr(i % 256) for _ in range(10)])
     assert v0 == p0[i].numpy()
     assert v1 == p1[i].numpy()
     assert v2 == p2[i].numpy()
     assert np.isclose(v4, p4[i].numpy())
     assert np.isclose(v5, p5[i].numpy())
     assert v6 == p6[i].numpy()
+    assert v7 == p7[i].numpy()
 
   # test parquet dataset
   columns = [
@@ -95,7 +97,8 @@ def test_parquet():
       'int64_field',
       'float_field',
       'double_field',
-      'ba_field']
+      'ba_field',
+      'flba_field']
   dataset = tfio.IODataset.from_parquet(filename, columns)
   i = 0
   for v in dataset:
@@ -105,13 +108,15 @@ def test_parquet():
     v4 = 1.1 * i
     v5 = 1.1111111 * i
     v6 = "parquet%03d" % i
-    p0, p1, p2, p4, p5, p6 = v
+    v7 = ''.join([chr(i % 256) for _ in range(10)])
+    p0, p1, p2, p4, p5, p6, p7 = v
     assert v0 == p0.numpy()
     assert v1 == p1.numpy()
     assert v2 == p2.numpy()
     assert np.isclose(v4, p4.numpy())
     assert np.isclose(v5, p5.numpy())
     assert v6 == p6.numpy()
+    assert v7 == p7.numpy()
     i += 1
 
 def test_parquet_partition():
