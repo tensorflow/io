@@ -97,11 +97,11 @@ def test_parquet():
     v4 = 1.1 * i
     v5 = 1.1111111 * i
     p0, p1, p2, p4, p5 = v
-    assert v0 == p0
-    assert v1 == p1
-    assert v2 == p2
-    assert np.isclose(v4, p4)
-    assert np.isclose(v5, p5)
+    assert v0 == p0.numpy()
+    assert v1 == p1.numpy()
+    assert v2 == p2.numpy()
+    assert np.isclose(v4, p4.numpy())
+    assert np.isclose(v5, p5.numpy())
 
     i += 1
 
