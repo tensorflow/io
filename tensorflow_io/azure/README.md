@@ -13,7 +13,7 @@
 ```python
 >>> import os
 >>> import tensorflow as tf
->>> import tensorflow_io.azure
+>>> import tensorflow_io as tfio
 >>>
 >>> os.environ['TF_AZURE_STORAGE_KEY'] = 'my-storage-key'
 >>>
