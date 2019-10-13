@@ -8,14 +8,14 @@ load(
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_pubsub_ops.so",
+cc_library(
+    name = "pubsub_ops",
     srcs = [
         "kernels/pubsub_dataset_ops.cc",
         "ops/dataset_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googleapis//google/pubsub/v1:pubsub_cc_grpc",
