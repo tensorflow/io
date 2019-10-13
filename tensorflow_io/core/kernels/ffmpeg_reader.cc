@@ -31,7 +31,6 @@ extern "C" {
 #include "kernels/ffmpeg_reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 static mutex mu(LINKER_INITIALIZED);
@@ -254,5 +253,4 @@ FFmpegReader::~FFmpegReader() {
 }
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

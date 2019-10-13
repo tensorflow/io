@@ -17,7 +17,6 @@ limitations under the License.
 #include "lmdb.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class LMDBInputStream{
@@ -149,5 +148,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>LMDBDatasetV2").Device(DEVICE_CPU),
                         FileInputDatasetOp<LMDBInput, LMDBInputStream>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

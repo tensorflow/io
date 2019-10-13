@@ -21,7 +21,6 @@ limitations under the License.
 #include "kernels/dataset_ops.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -108,5 +107,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>CIFAR100Dataset").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

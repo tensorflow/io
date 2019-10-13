@@ -32,7 +32,6 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 static const char* AWSCryptoAllocationTag = "AWSCryptoAllocation";
@@ -470,5 +469,4 @@ class KinesisDatasetOp : public DatasetOpKernel {
 REGISTER_KERNEL_BUILDER(Name("IO>KinesisDataset").Device(DEVICE_CPU),
                         KinesisDatasetOp);
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

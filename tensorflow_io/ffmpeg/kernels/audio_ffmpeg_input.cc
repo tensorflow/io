@@ -16,7 +16,6 @@ limitations under the License.
 #include "kernels/audio_ffmpeg_reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class AudioInput: public FileInput<audio::AudioReader> {
@@ -63,5 +62,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<AudioInput, audio::AudioReader>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

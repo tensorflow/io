@@ -20,7 +20,6 @@ limitations under the License.
 #include "tiffio.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -386,5 +385,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>TIFFDataset").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

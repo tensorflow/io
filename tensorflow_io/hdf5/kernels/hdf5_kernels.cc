@@ -22,7 +22,6 @@ limitations under the License.
 #include <H5Cpp.h>
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -504,5 +503,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<HDF5Readable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

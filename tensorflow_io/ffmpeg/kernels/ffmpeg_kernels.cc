@@ -19,7 +19,6 @@ limitations under the License.
 #include "kernels/video_ffmpeg_reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class FFmpegReadStream {
@@ -706,5 +705,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>FfmpegDecodeVideo").Device(DEVICE_CPU),
                         FFmpegDecodeVideoOp);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

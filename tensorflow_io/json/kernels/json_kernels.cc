@@ -29,7 +29,6 @@ limitations under the License.
 #include "rapidjson/document.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace{
 
@@ -432,5 +431,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<JSONReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

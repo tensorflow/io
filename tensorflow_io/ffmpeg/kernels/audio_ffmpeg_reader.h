@@ -16,7 +16,6 @@ limitations under the License.
 #include "kernels/ffmpeg_reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace audio {
 
@@ -39,5 +38,4 @@ class AudioReader : public FFmpegReader{
 
 }  // namespace video
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

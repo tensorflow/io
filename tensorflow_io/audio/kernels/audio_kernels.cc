@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 // See http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
@@ -252,5 +251,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<WAVReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

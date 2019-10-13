@@ -19,7 +19,6 @@ limitations under the License.
 #include "parquet/api/reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -460,5 +459,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>ParquetReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<ParquetReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

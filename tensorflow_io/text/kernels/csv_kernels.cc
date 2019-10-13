@@ -23,7 +23,6 @@ limitations under the License.
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class CSVReadable : public IOReadableInterface {
@@ -268,5 +267,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>CSVReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<CSVReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

@@ -19,7 +19,6 @@ limitations under the License.
 #include "gif_lib.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -250,5 +249,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>GIFDataset").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

@@ -25,7 +25,6 @@ limitations under the License.
 #include "tensorflow/core/public/version.h"
 
 namespace tensorflow {
-namespace io {
 
 Status GrpcStatusToTfStatus(const ::grpc::Status& status);
 Status GcpStatusToTfStatus(const ::google::cloud::Status& status);
@@ -152,7 +151,6 @@ class BigtableReaderDatasetIterator : public DatasetIterator<Dataset> {
 
 }  // namespace data
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_BIGTABLE_KERNELS_BIGTABLE_LIB_H_

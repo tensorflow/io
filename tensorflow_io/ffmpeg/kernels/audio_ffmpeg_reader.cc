@@ -18,7 +18,6 @@ limitations under the License.
 #include "kernels/audio_ffmpeg_reader.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace audio {
 
@@ -73,5 +72,4 @@ void AudioReader::ProcessFrame() {
 
 }  // namespace video
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

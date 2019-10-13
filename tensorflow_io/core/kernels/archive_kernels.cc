@@ -23,7 +23,6 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -241,5 +240,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>ReadArchive").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

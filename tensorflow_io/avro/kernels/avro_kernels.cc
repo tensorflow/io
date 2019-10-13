@@ -23,7 +23,6 @@ limitations under the License.
 #include "api/Validator.hh"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -539,5 +538,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>AvroReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<AvroReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

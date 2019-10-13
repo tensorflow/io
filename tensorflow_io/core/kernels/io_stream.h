@@ -20,7 +20,6 @@ limitations under the License.
 #include "tensorflow/core/lib/io/random_inputstream.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 // Note: This SizedRandomAccessFile should only lives within Compute()
@@ -72,7 +71,6 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
 };
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_CORE_KERNELS_STREAM_H_

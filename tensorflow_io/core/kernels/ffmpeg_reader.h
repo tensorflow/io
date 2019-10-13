@@ -29,7 +29,6 @@ extern "C" {
 }
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 void FFmpegReaderInit();
@@ -68,5 +67,4 @@ class FFmpegReader {
 };
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

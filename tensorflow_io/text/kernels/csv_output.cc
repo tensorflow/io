@@ -16,7 +16,6 @@ limitations under the License.
 #include "absl/strings/escaping.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -71,5 +70,4 @@ REGISTER_KERNEL_BUILDER(
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

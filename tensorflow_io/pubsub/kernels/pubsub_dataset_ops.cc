@@ -18,7 +18,6 @@ limitations under the License.
 #include "google/pubsub/v1/pubsub.grpc.pb.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 using grpc::ClientContext;
@@ -228,5 +227,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>PubSubDataset").Device(DEVICE_CPU),
                         PubSubDatasetOp);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

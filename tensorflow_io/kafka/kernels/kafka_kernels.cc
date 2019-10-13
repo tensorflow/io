@@ -25,7 +25,6 @@ limitations under the License.
 #include <unordered_map>
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class KafkaEventCb : public RdKafka::EventCb {
@@ -410,5 +409,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU),
                         DecodeAvroOp);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

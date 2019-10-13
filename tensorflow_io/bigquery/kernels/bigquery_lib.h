@@ -30,7 +30,6 @@ limitations under the License.
 #include "tensorflow/core/framework/resource_mgr.h"
 
 namespace tensorflow {
-namespace io {
 
 Status GrpcStatusToTfStatus(const ::grpc::Status& status);
 string GrpcStatusToString(const ::grpc::Status& status);
@@ -250,6 +249,5 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
 };
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow
 #endif  // TENSORFLOW_IO_BIGQUERY_KERNELS_BIGQUERY_LIB_H_

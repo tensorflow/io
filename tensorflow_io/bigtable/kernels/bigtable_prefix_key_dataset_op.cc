@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -116,5 +115,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>BigtablePrefixKeyDataset").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

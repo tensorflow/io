@@ -19,7 +19,6 @@ limitations under the License.
 #include "tensorflow/core/lib/core/threadpool.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 class BigtableClientOp : public OpKernel {
@@ -359,5 +358,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>DatasetToBigtable").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

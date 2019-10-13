@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow_io/core/golang_ops.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -200,5 +199,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>PrometheusReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<PrometheusReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

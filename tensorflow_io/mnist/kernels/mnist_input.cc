@@ -16,7 +16,6 @@ limitations under the License.
 #include "kernels/dataset_ops.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class MNISTImageInput: public FileInput<int64> {
@@ -120,5 +119,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>MNISTImageDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<MNISTImageInput, int64>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

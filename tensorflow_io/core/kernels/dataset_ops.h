@@ -27,7 +27,6 @@ limitations under the License.
 #include "tensorflow/core/framework/variant_op_registry.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class FilenoInputStream : public io::InputStreamInterface {
@@ -1146,5 +1145,4 @@ class StreamInputDatasetOp : public DatasetOpKernel {
 };
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

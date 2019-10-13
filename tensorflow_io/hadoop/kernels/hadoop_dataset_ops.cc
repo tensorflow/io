@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -340,5 +339,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>SequenceFileDataset").Device(DEVICE_CPU),
 
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

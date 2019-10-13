@@ -21,7 +21,6 @@ limitations under the License.
 #include "lmdb.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 class LMDBReadable : public IOReadableInterface {
@@ -205,5 +204,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>LMDBMappingRead").Device(DEVICE_CPU),
                         IOMappingReadOp<LMDBMapping>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

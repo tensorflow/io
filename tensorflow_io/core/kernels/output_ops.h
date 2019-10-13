@@ -20,7 +20,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 template<typename T>
@@ -81,5 +80,4 @@ class DatasetOutputOp : public AsyncOpKernel {
 };
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

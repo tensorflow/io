@@ -16,7 +16,6 @@ limitations under the License.
 #include "re2/re2.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 namespace {
 
@@ -65,5 +64,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>RE2FullMatch").Device(DEVICE_CPU),
                         RE2FullMatchOp);
 }  // namespace
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow
