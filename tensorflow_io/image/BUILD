@@ -12,6 +12,7 @@ cc_library(
     srcs = [
         "kernels/font_opensans_regular.h",
         "kernels/gif_dataset_ops.cc",
+        "kernels/image_bmp_kernels.cc",
         "kernels/image_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/tiff_dataset_ops.cc",

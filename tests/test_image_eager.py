@@ -24,7 +24,7 @@ import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
-
+import tensorflow_io.image as image_io # pylint: disable=wrong-import-position
 
 def test_tiff_io_tensor():
   """Test case for TIFFImageIOTensor"""
@@ -57,6 +57,20 @@ def test_tiff_io_tensor():
   for i in tiff.keys:
     assert np.all(images[i].numpy() == tiff(i).to_tensor().numpy())
 
+def test_encode_webp():
+  """Test case for encode_bmp."""
+  width = 51
+  height = 26
+  channels = 3
+  bmp_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_image", "lena.bmp")
+  with open(bmp_file, 'rb') as f:
+    bmp_contents = f.read()
+  image_v = tf.image.decode_bmp(bmp_contents)
+  assert image_v.shape == [height, width, channels]
+  bmp_encoded = image_io.encode_bmp(image_v)
+  image_e = tf.image.decode_bmp(bmp_encoded)
+  assert np.all(image_v.numpy() == image_e.numpy())
 
 if __name__ == "__main__":
   test.main()
