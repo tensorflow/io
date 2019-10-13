@@ -66,7 +66,7 @@ class VideoInput: public FileInput<video::VideoReader> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(VideoInput, "tensorflow::io::data::VideoInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(VideoInput, "tensorflow::data::VideoInput");
 
 REGISTER_KERNEL_BUILDER(Name("IO>VideoInput").Device(DEVICE_CPU),
                         FileInputOp<VideoInput>);

@@ -197,7 +197,7 @@ class PcapInput: public FileInput<PcapInputStream> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(PcapInput, "tensorflow::io::data::PcapInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(PcapInput, "tensorflow::data::PcapInput");
 
 REGISTER_KERNEL_BUILDER(Name("IO>PcapInput").Device(DEVICE_CPU),
                         FileInputOp<PcapInput>);

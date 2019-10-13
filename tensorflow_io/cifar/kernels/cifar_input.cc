@@ -94,8 +94,8 @@ class CIFAR100Input: public FileInput<int64> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::io::CIFAR10Input");
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR100Input, "tensorflow::io::CIFAR100Input");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::CIFAR10Input");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR100Input, "tensorflow::CIFAR100Input");
 
 REGISTER_KERNEL_BUILDER(Name("IO>CIFAR10Input").Device(DEVICE_CPU),
                         FileInputOp<CIFAR10Input>);

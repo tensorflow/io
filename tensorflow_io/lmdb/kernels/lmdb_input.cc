@@ -141,7 +141,7 @@ class LMDBInput: public FileInput<LMDBInputStream> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(LMDBInput, "tensorflow::io::data::LMDBInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(LMDBInput, "tensorflow::data::LMDBInput");
 
 REGISTER_KERNEL_BUILDER(Name("IO>LMDBInput").Device(DEVICE_CPU),
                         FileInputOp<LMDBInput>);

@@ -55,7 +55,7 @@ class AudioInput: public FileInput<audio::AudioReader> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(AudioInput, "tensorflow::io::data::AudioInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(AudioInput, "tensorflow::data::AudioInput");
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioInput").Device(DEVICE_CPU),
                         FileInputOp<AudioInput>);

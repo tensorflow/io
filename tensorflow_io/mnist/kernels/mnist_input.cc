@@ -107,8 +107,8 @@ class MNISTLabelInput: public FileInput<int64> {
   int64 size_;
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::io::data::MNISTLabelInput");
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::io::data::MNISTImageInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::data::MNISTLabelInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::data::MNISTImageInput");
 
 REGISTER_KERNEL_BUILDER(Name("IO>MNISTLabelInput").Device(DEVICE_CPU),
                         FileInputOp<MNISTLabelInput>);
