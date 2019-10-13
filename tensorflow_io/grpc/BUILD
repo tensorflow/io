@@ -27,8 +27,8 @@ cc_grpc_library(
     deps = [":endpoint_cc_proto"],
 )
 
-cc_binary(
-    name = "python/ops/_grpc_ops.so",
+cc_library(
+    name = "grpc_ops",
     srcs = [
         "kernels/grpc_input.cc",
         "ops/grpc_ops.cc",
@@ -37,7 +37,7 @@ cc_binary(
     includes = [
         ".",
     ],
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         ":endpoint_cc_grpc",
         "//tensorflow_io/core:dataset_ops",

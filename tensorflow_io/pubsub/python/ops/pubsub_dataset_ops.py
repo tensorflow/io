@@ -20,8 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-pubsub_ops = _load_library('_pubsub_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 class PubSubDataset(data.Dataset):
   """A PubSub Dataset that consumes the message.
@@ -54,8 +53,8 @@ class PubSubDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return pubsub_ops.pub_sub_dataset(self._subscriptions, self._server,
-                                      self._eof, self._timeout)
+    return core_ops.pub_sub_dataset(self._subscriptions, self._server,
+                                    self._eof, self._timeout)
 
   @property
   def output_classes(self):
