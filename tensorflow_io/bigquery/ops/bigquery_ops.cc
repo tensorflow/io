@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>BigQueryClient")
     .Attr("container: string = ''")
@@ -56,5 +55,4 @@ REGISTER_OP("IO>BigQueryDataset")
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
-}  // namespace io
 }  // namespace tensorflow

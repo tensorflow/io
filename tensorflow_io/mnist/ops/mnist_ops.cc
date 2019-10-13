@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>MNISTImageDataset")
     .Input("input: T")
@@ -68,5 +67,4 @@ REGISTER_OP("IO>MNISTImageInput")
        return Status::OK();
      });
 
-}  // namespace io
 }  // namespace tensorflow

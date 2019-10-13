@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>KinesisDataset")
     .Input("stream: string")
@@ -40,5 +39,4 @@ interval: The interval for the Kinesis Client to wait before
   it tries to get records again (in millisecond).
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow

@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>JSONReadableInit")
   .Input("input: string")
@@ -81,5 +80,4 @@ REGISTER_OP("IO>ReadJSON")
        return Status::OK();
      });
 
-}  // namespace io
 }  // namespace tensorflow

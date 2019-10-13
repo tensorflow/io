@@ -16,7 +16,6 @@ limitations under the License.
 #include "tensorflow_io/bigtable/kernels/bigtable_lib.h"
 
 namespace tensorflow {
-namespace io {
 
 Status GrpcStatusToTfStatus(const ::grpc::Status& status) {
   if (status.ok()) {
@@ -93,5 +92,4 @@ string RegexFromStringSet(const std::vector<string>& strs) {
   return str_util::Join(uniq, "|");
 }
 
-}  // namespace io
 }  // namespace tensorflow

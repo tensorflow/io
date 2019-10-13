@@ -22,7 +22,6 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
-namespace io {
 
 static int PasswordCb(char *buf, int size, int rwflag, void *password) {
   strncpy(buf, (char *)(password), size);
@@ -149,5 +148,4 @@ Status SslWrapper::WriteData(const uint8_t *buf, const int32_t length) {
   return Status::OK();
 }
 
-}  // namespace io
 }  // namespace tensorflow

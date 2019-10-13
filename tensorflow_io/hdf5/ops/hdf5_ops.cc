@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>HDF5ReadableInit")
   .Input("input: string")
@@ -86,5 +85,4 @@ REGISTER_OP("IO>ReadHDF5")
       return Status::OK();
     });
 
-}  // namespace io
 }  // namespace tensorflow

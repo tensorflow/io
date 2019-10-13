@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>CIFAR10Dataset")
     .Input("input: T")
@@ -62,5 +61,4 @@ REGISTER_OP("IO>CIFAR100Input")
        return Status::OK();
      });
 
-}  // namespace io
 }  // namespace tensorflow

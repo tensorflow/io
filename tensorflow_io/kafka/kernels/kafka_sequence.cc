@@ -22,7 +22,6 @@ limitations under the License.
 #include <deque>
 
 namespace tensorflow {
-namespace io {
 
 class KafkaOutputSequence : public OutputSequence {
  public:
@@ -156,5 +155,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceSetItem").Device(DEVICE_CPU)
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceFlush").Device(DEVICE_CPU),
                         OutputSequenceFlushOp<KafkaOutputSequence>);
 
-}  // namespace io
 }  // namespace tensorflow

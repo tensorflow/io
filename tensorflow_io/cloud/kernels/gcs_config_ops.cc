@@ -24,7 +24,6 @@ limitations under the License.
 #include "tensorflow/core/util/ptr_util.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 // The default initial delay between retries with exponential backoff.
@@ -203,5 +202,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>GcsConfigureBlockCache").Device(DEVICE_CPU),
                         GcsBlockCacheOpKernel);
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow

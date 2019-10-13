@@ -20,7 +20,6 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/stringprintf.h"
 
 namespace tensorflow {
-namespace io {
 
 namespace {
 
@@ -77,5 +76,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>BigtableTestClient").Device(DEVICE_CPU),
                         BigtableTestClientOp);
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow

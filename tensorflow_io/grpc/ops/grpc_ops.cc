@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>GRPCInput")
     .Input("source: string")
@@ -43,5 +42,4 @@ REGISTER_OP("IO>GRPCDataset")
        return Status::OK();
      });
 
-}  // namespace io
 }  // namespace tensorflow

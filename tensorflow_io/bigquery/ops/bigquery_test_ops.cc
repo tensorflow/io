@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>BigQueryTestClient")
     .Attr("fake_server_address: string")
@@ -26,5 +25,4 @@ REGISTER_OP("IO>BigQueryTestClient")
     .Output("client: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
-}  // namespace io
 }  // namespace tensorflow

@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
-namespace io {
 
 BinaryObjectParser::BinaryObjectParser() : byte_swapper_(ByteSwapper(false)) {}
 
@@ -332,5 +331,4 @@ bool* BinaryObjectParser::ParseBoolArr(uint8_t** ptr, int length) const {
   return res;
 }
 
-}  // namespace io
 }  // namespace tensorflow

@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>GcsConfigureCredentials")
     .Input("json: string")
@@ -68,5 +67,4 @@ they are different, the current contents of the block cache is dropped, and a
 new block cache is created fresh.
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow

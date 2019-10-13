@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 using shape_inference::InferenceContext;
 
@@ -56,5 +55,4 @@ feature_shape: A 1-D int64 tensor of dense_shape [ndims].
 num_features: The number of features.
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow

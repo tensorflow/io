@@ -28,7 +28,6 @@ limitations under the License.
 #include "tensorflow/core/platform/cloud/google_auth_provider.h"
 
 namespace tensorflow {
-namespace io {
 
 /// This class facilitates accessing BigQuery tables.
 ///
@@ -199,7 +198,6 @@ class BigQueryTableAccessor {
   TF_DISALLOW_COPY_AND_ASSIGN(BigQueryTableAccessor);
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_CLOUD_KERNELS_BIGQUERY_TABLE_ACCESSOR_H_

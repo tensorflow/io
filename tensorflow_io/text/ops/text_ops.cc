@@ -19,7 +19,6 @@ limitations under the License.
 #include "re2/re2.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>RE2FullMatch")
     .Input("input: string")
@@ -178,5 +177,4 @@ REGISTER_OP("IO>CSVReadableRead")
     return Status::OK();
    });
 
-}  // namespace io
 }  // namespace tensorflow

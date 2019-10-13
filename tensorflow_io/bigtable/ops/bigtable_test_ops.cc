@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>BigtableTestClient")
     .Attr("container: string = ''")
@@ -25,5 +24,4 @@ REGISTER_OP("IO>BigtableTestClient")
     .Output("client: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
-}  // namespace io
 }  // namespace tensorflow

@@ -22,7 +22,6 @@ limitations under the License.
 #include "tensorflow/core/platform/mutex.h"
 
 namespace tensorflow {
-namespace io {
 
 class IgniteDatasetIterator : public DatasetIterator<IgniteDataset> {
  public:
@@ -95,7 +94,6 @@ constexpr int32_t kCloseConnectionReqLength = 18;
 constexpr int32_t kHandshakeReqDefaultLength = 8;
 constexpr int32_t kMinResLength = 12;
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_ITERATOR_H_

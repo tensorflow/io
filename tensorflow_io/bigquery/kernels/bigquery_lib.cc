@@ -16,7 +16,6 @@ limitations under the License.
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 ::tensorflow::error::Code GcpErrorCodeToTfErrorCode(::grpc::StatusCode code) {
   switch (code) {
@@ -79,5 +78,4 @@ string GrpcStatusToString(const ::grpc::Status& status) {
                          " error details: ", status.error_details());
 }
 
-}  // namespace io
 }  // namespace tensorflow

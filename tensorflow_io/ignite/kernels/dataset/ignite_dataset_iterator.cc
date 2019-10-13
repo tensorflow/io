@@ -21,7 +21,6 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
-namespace io {
 
 IgniteDatasetIterator::IgniteDatasetIterator(
     const Params& params, string host, int32 port, string cache_name,
@@ -420,5 +419,4 @@ int32_t IgniteDatasetIterator::JavaHashCode(string str) const {
   return h;
 }
 
-}  // namespace io
 }  // namespace tensorflow

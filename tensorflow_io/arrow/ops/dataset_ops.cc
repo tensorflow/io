@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>ArrowZeroCopyDataset")
     .Input("buffer_address: uint64")
@@ -141,5 +140,4 @@ REGISTER_OP("IO>FeatherReadableRead")
     return Status::OK();
    });
 
-}  // namespace io
 }  // namespace tensorflow

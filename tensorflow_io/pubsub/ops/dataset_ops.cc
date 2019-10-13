@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>PubSubDataset")
     .Input("subscriptions: string")
@@ -29,5 +28,4 @@ REGISTER_OP("IO>PubSubDataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-}  // namespace io
 }  // namespace tensorflow

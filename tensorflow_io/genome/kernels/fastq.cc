@@ -26,7 +26,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 namespace {
 using nucleus::FastqReader;
@@ -78,5 +77,4 @@ class FastqOp : public OpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("IO>ReadFastq").Device(DEVICE_CPU), FastqOp);
 
-}  // namespace io
 }  // namespace tensorflow

@@ -22,7 +22,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 
 class AzBlobWritableFile : public WritableFile {
 public:
@@ -45,7 +44,6 @@ private:
   bool sync_needed_; // whether there is buffered data that needs to be synced
 };
 
-} // namespace io
 } // namespace tensorflow
 
 #endif // TENSORFLOW_IO_AZURE_AZFS_WRITABLE_FILE_H

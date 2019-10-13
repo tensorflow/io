@@ -22,7 +22,6 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/str_util.h"
 
 namespace tensorflow {
-namespace io {
 
 template <typename T, typename Tlabel>
 class DecodeLibsvmOp : public OpKernel {
@@ -166,5 +165,4 @@ REGISTER_KERNEL(int32);
 REGISTER_KERNEL(int64);
 #undef REGISTER_KERNEL
 
-}  // namespace io
 }  // namespace tensorflow

@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
-namespace io {
 
 IgniteDataset::IgniteDataset(OpKernelContext* ctx, string cache_name,
                              string host, int32 port, bool local, int32 part,
@@ -79,5 +78,4 @@ Status IgniteDataset::AsGraphDefInternal(SerializationContext* ctx,
       "IgniteDataset does not support 'AsGraphDefInternal'");
 }
 
-}  // namespace io
 }  // namespace tensorflow

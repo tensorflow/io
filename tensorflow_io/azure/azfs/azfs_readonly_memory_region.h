@@ -21,7 +21,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 
 class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
  public:
@@ -35,7 +34,6 @@ class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
   uint64 length_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H

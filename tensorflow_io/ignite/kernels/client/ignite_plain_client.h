@@ -19,7 +19,6 @@ limitations under the License.
 #include "tensorflow_io/ignite/kernels/client/ignite_client.h"
 
 namespace tensorflow {
-namespace io {
 
 class PlainClient : public Client {
  public:
@@ -39,7 +38,6 @@ class PlainClient : public Client {
   int sock_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_PLAIN_CLIENT_H_

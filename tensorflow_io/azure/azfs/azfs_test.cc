@@ -20,7 +20,6 @@ limitations under the License.
 	EXPECT_EQ(val, Status::OK())
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 class AzBlobFileSystemTest : public ::testing::Test {
@@ -278,5 +277,4 @@ TEST_F(AzBlobFileSystemTest, GetMatchingPaths_FilenameWildcard) {
 }
 
 }  // namespace
-}  // namespace io
-}  // namespace tensorflow 
+}  // namespace tensorflow

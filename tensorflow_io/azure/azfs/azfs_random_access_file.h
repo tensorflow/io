@@ -19,7 +19,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 
 class AzBlobRandomAccessFile : public RandomAccessFile {
  public:
@@ -35,7 +34,6 @@ class AzBlobRandomAccessFile : public RandomAccessFile {
   std::string object_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H

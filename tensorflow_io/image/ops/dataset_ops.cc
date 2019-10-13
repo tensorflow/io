@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>WebPDataset")
     .Input("filenames: string")
@@ -71,5 +70,4 @@ REGISTER_OP("IO>DrawBoundingBoxesV3")
       return shape_inference::UnchangedShapeWithRankAtLeast(c, 3);
     });
 
-}  // namespace io
 }  // namespace tensorflow

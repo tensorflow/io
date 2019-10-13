@@ -19,7 +19,6 @@ limitations under the License.
 #include "gtest/gtest.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 void WriteCell(const string& row, const string& family, const string& column,
@@ -348,5 +347,4 @@ TEST(BigtableTestClientTest, SampleKeysEvenNumber) {
 }
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow

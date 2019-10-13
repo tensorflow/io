@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>DecodeDICOMImage")
     .Input("contents: string")
@@ -33,5 +32,4 @@ REGISTER_OP("IO>DecodeDICOMImage")
 loads a dicom image file and returns its pixel information in the specified output format
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow

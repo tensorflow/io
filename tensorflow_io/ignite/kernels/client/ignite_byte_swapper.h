@@ -20,7 +20,6 @@ limitations under the License.
 #include "tensorflow/core/platform/byte_order.h"
 
 namespace tensorflow {
-namespace io {
 
 class ByteSwapper {
  public:
@@ -121,7 +120,6 @@ class ByteSwapper {
   bool swap_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_BYTE_SWAPPER_H_

@@ -44,7 +44,6 @@ typedef uint64_t
     Uint64;  // Uint64 not present in tensorflow::custom-op docker image dcmtk
 
 namespace tensorflow {
-namespace io {
 
 template <typename dtype>
 class DecodeDICOMImageOp : public OpKernel {
@@ -278,5 +277,4 @@ REGISTER_DECODE_DICOM_IMAGE_CPU(double);
 
 #undef REGISTER_DECODE_DICOM_IMAGE_CPU
 
-}  // namespace io
 }  // namespace tensorflow

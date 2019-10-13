@@ -29,7 +29,6 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
-namespace io {
 
 PlainClient::PlainClient(string host, int port, bool big_endian)
     : Client(big_endian),
@@ -140,5 +139,4 @@ Status PlainClient::WriteData(const uint8_t *buf, const int32_t length) {
   return Status::OK();
 }
 
-}  // namespace io
 }  // namespace tensorflow

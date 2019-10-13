@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>LMDBInput")
     .Input("source: string")
@@ -90,5 +89,4 @@ REGISTER_OP("IO>LMDBMappingRead")
     return Status::OK();
    });
 
-}  // namespace io
 }  // namespace tensorflow

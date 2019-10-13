@@ -25,7 +25,6 @@ limitations under the License.
 #include "blob/blob_client.h"
 
 namespace tensorflow {
-namespace io {
 
 //class AzBlobFileSystem;
 
@@ -82,7 +81,6 @@ class AzBlobFileSystem : public FileSystem {
       std::vector<std::string>* results) const;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_H_

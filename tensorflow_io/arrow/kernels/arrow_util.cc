@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
-namespace io {
 
 Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
                      std::string* endpoint_value) {
@@ -58,5 +57,4 @@ Status ParseHost(std::string host, std::string* host_address, std::string* host_
   return Status::OK();
 }
 
-}  // namespace io
 }  // namespace tensorflow

@@ -31,7 +31,6 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 constexpr char kOSSCredentialsDefaultFile[] = ".osscredentials";
@@ -1278,5 +1277,5 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
   return Status::OK();
 
 }
-}  // namespace io
+
 } // end namespace tensorflow

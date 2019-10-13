@@ -23,7 +23,6 @@ limitations under the License.
 // #include "util/task/codes.pb.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 void UpdateRow(const ::google::bigtable::v2::Mutation& mut,
@@ -460,5 +459,4 @@ BigtableTestClient::PrepareAsyncMutateRows(
   return nullptr;            
 }
 
-}  // namespace io
 }  // namespace tensorflow

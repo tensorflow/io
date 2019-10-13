@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 REGISTER_OP("IO>IgniteDataset")
     .Input("cache_name: string")
@@ -54,5 +53,4 @@ schema: Internal structure that defines schema of cache objects.
 permutation: Internal structure that defines permutation of cache objects.
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow

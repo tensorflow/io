@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/numbers.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 constexpr size_t kBufferSize = 1024 * 1024;  // In bytes.
@@ -369,5 +368,4 @@ bool BigQueryTableAccessor::Done() {
               first_buffered_row_index_ + next_row_in_buffer_);
 }
 
-}  // namespace io
 }  // namespace tensorflow

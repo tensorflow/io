@@ -18,7 +18,6 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
-namespace io {
 
 namespace {
 
@@ -66,5 +65,4 @@ bool MultiModeKeyRange::contains_key(StringPiece key) const {
   return true;
 }
 
-}  // namespace io
 }  // namespace tensorflow

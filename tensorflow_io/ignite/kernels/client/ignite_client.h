@@ -21,7 +21,6 @@ limitations under the License.
 #include "tensorflow/core/lib/core/status.h"
 
 namespace tensorflow {
-namespace io {
 
 class Client {
  public:
@@ -80,7 +79,6 @@ class Client {
   const ByteSwapper byte_swapper_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_CLIENT_H_

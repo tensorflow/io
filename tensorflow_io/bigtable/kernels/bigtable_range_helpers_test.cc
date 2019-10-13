@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/platform/test.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 TEST(MultiModeKeyRangeTest, SimplePrefix) {
@@ -105,5 +104,4 @@ TEST(MultiModeKeyRangeTest, PrefixSignedWrapAround) {
 }
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow

@@ -41,7 +41,6 @@ void z_error(char* message)
 }
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 std::vector<std::vector<float>> DefaultColorTable(int depth) {
@@ -327,5 +326,4 @@ private:
 TF_CALL_half(REGISTER_CPU_KERNEL);
 TF_CALL_float(REGISTER_CPU_KERNEL);
 
-}  // namespace io
 }  // namespace tensorflow

@@ -34,7 +34,6 @@ limitations under the License.
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
@@ -102,5 +101,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>BigQueryTestClient").Device(DEVICE_CPU),
                         BigQueryTestClientOp);
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow

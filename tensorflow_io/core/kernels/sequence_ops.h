@@ -18,7 +18,6 @@ limitations under the License.
 #include <deque>
 
 namespace tensorflow {
-namespace io {
 
 class OutputSequence : public ResourceBase {
  public:
@@ -125,5 +124,4 @@ class OutputSequenceFlushOp : public OpKernel {
   mutex mu_;
 };
 
-}  // namespace io
 }  // namespace tensorflow

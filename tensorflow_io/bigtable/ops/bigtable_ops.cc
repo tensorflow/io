@@ -17,7 +17,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
-namespace io {
 
 // TODO(saeta): Add support for setting ClientOptions values.
 REGISTER_OP("IO>BigtableClient")
@@ -105,5 +104,4 @@ REGISTER_OP("IO>BigtableScanDataset")
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
-}  // namespace io
 }  // namespace tensorflow

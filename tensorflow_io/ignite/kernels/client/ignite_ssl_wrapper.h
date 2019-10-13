@@ -21,7 +21,6 @@ limitations under the License.
 #include <openssl/ssl.h>
 
 namespace tensorflow {
-namespace io {
 
 class SslWrapper : public Client {
  public:
@@ -47,7 +46,6 @@ class SslWrapper : public Client {
   SSL* ssl_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_SSL_WRAPPER_H_

@@ -22,7 +22,6 @@ limitations under the License.
 #include "tensorflow/core/platform/types.h"
 
 namespace tensorflow {
-namespace io {
 
 // Represents a continuous range of keys defined by either a prefix or a range.
 //
@@ -63,7 +62,6 @@ class MultiModeKeyRange {
   const string end_;
 };
 
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_BIGTABLE_KERNELS_BIGTABLE_RANGE_HELPERS_H_

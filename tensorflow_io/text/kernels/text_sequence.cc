@@ -21,7 +21,6 @@ limitations under the License.
 #include <deque>
 
 namespace tensorflow {
-namespace io {
 
 class TextOutputSequence : public OutputSequence {
  public:
@@ -92,5 +91,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequence").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequenceSetItem").Device(DEVICE_CPU),
                         OutputSequenceSetItemOp<TextOutputSequence>);
 
-}  // namespace io
 }  // namespace tensorflow

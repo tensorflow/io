@@ -19,7 +19,6 @@ limitations under the License.
 #include <string>
 
 namespace tensorflow {
-namespace io {
 namespace {
 
 const string kSampleSchema = R"({
@@ -400,7 +399,6 @@ const string kTestEmptyRow = R"({
     }]}]})";
 
 }  // namespace
-}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_CLOUD_KERNELS_BIGQUERY_TABLE_ACCESSOR_TEST_DATA_H_

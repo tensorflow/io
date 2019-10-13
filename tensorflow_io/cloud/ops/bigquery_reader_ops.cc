@@ -19,7 +19,6 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-namespace io {
 
 using shape_inference::InferenceContext;
 
@@ -87,5 +86,4 @@ test_end_point: Do not use. For testing purposes only.
 partitions: Serialized table partitions.
 )doc");
 
-}  // namespace io
 }  // namespace tensorflow
