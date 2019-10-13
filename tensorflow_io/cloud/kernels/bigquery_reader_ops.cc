@@ -27,6 +27,7 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/numbers.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 constexpr int64 kDefaultRowBufferSize = 1000;  // Number of rows to buffer.
@@ -120,7 +121,7 @@ class BigQueryReaderOp : public ReaderOpKernel {
   std::unique_ptr<BigQueryTableAccessor> bigquery_table_accessor_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryReader").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReader").Device(DEVICE_CPU),
                         BigQueryReaderOp);
 
 class GenerateBigQueryReaderPartitionsOp : public OpKernel {
@@ -187,7 +188,8 @@ class GenerateBigQueryReaderPartitionsOp : public OpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("GenerateBigQueryReaderPartitions").Device(DEVICE_CPU),
+    Name("IO>GenerateBigQueryReaderPartitions").Device(DEVICE_CPU),
     GenerateBigQueryReaderPartitionsOp);
 
+}  // namespace io
 }  // namespace tensorflow

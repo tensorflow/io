@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 #define TENSORFLOW_IO_ARROW_UTIL_H_
 
 namespace tensorflow {
+namespace io {
 
 // Parse the given endpoint to extract type and value strings
 Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
@@ -25,6 +26,7 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
 // Parse the given IPv4 host string to get address and port
 Status ParseHost(std::string host, std::string* host_address, std::string* host_port);
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif

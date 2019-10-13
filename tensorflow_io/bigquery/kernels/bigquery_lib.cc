@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 ::tensorflow::error::Code GcpErrorCodeToTfErrorCode(::grpc::StatusCode code) {
   switch (code) {
@@ -77,4 +78,6 @@ string GrpcStatusToString(const ::grpc::Status& status) {
                          " error message:", status.error_message(),
                          " error details: ", status.error_details());
 }
+
+}  // namespace io
 }  // namespace tensorflow

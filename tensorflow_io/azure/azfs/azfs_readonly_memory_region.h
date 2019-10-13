@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 
 class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
  public:
@@ -34,6 +35,7 @@ class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
   uint64 length_;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H

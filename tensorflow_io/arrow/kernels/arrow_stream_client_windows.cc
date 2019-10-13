@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ limitations under the License.
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 
 namespace tensorflow {
+namespace io {
 
 ArrowStreamClient::ArrowStreamClient(const std::string& endpoint)
     : endpoint_(endpoint), sock_(-1), pos_(0) {}
@@ -160,4 +161,5 @@ arrow::Status ArrowStreamClient::Read(int64_t nbytes,
   return arrow::Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

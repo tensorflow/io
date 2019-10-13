@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 #include "tensorflow_io/azure/azfs/azfs_client.h"
 
 namespace tensorflow {
+namespace io {
 
 // TODO: DO NOT use a hardcoded path
 Status GetTmpFilename(std::string *filename) {
@@ -118,4 +119,6 @@ Status AzBlobWritableFile::CheckWritable() const {
   }
   return Status::OK();
 }
+
+}  // namespace io
 }  // namespace tensorflow

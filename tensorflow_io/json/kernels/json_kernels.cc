@@ -29,6 +29,7 @@ limitations under the License.
 #include "rapidjson/document.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace{
 
@@ -199,9 +200,9 @@ private:
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ListJSONColumns").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ListJSONColumns").Device(DEVICE_CPU),
                         ListJSONColumnsOp);
-REGISTER_KERNEL_BUILDER(Name("ReadJSON").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadJSON").Device(DEVICE_CPU),
                         ReadJSONOp);
 
 }  // namespace
@@ -423,11 +424,13 @@ class JSONReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("JSONReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<JSONReadable>);
-REGISTER_KERNEL_BUILDER(Name("JSONReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<JSONReadable>);
-REGISTER_KERNEL_BUILDER(Name("JSONReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<JSONReadable>);
+
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

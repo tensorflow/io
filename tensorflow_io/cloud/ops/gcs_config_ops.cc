@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("GcsConfigureCredentials")
+REGISTER_OP("IO>GcsConfigureCredentials")
     .Input("json: string")
     .SetShapeFn(shape_inference::NoOutputs)
     .Doc(R"doc(
@@ -54,7 +55,7 @@ stored in a constant op within the graph that might accidentally be checkpointed
 or in other ways be persisted or exfiltrated.
 )doc");
 
-REGISTER_OP("GcsConfigureBlockCache")
+REGISTER_OP("IO>GcsConfigureBlockCache")
     .Input("max_cache_size: uint64")
     .Input("block_size: uint64")
     .Input("max_staleness: uint64")
@@ -67,4 +68,5 @@ they are different, the current contents of the block cache is dropped, and a
 new block cache is created fresh.
 )doc");
 
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -334,9 +335,10 @@ class SequenceFileDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("SequenceFileDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>SequenceFileDataset").Device(DEVICE_CPU),
                         SequenceFileDatasetOp);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

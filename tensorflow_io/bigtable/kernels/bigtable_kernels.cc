@@ -19,6 +19,7 @@ limitations under the License.
 #include "tensorflow/core/lib/core/threadpool.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 class BigtableClientOp : public OpKernel {
@@ -112,7 +113,7 @@ class BigtableClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigtableClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigtableClient").Device(DEVICE_CPU),
                         BigtableClientOp);
 
 class BigtableTableOp : public OpKernel {
@@ -168,7 +169,7 @@ class BigtableTableOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigtableTable").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigtableTable").Device(DEVICE_CPU),
                         BigtableTableOp);
 
 }  // namespace
@@ -353,9 +354,10 @@ class ToBigtableOp : public AsyncOpKernel {
   std::unique_ptr<thread::ThreadPool> thread_pool_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("DatasetToBigtable").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DatasetToBigtable").Device(DEVICE_CPU),
                         ToBigtableOp);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
+namespace io {
 
 IgniteDatasetIterator::IgniteDatasetIterator(
     const Params& params, string host, int32 port, string cache_name,
@@ -419,4 +420,5 @@ int32_t IgniteDatasetIterator::JavaHashCode(string str) const {
   return h;
 }
 
+}  // namespace io
 }  // namespace tensorflow

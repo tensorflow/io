@@ -20,6 +20,7 @@ limitations under the License.
 #include "tiffio.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -380,9 +381,10 @@ class TIFFDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("TIFFDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>TIFFDataset").Device(DEVICE_CPU),
                         TIFFDatasetOp);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

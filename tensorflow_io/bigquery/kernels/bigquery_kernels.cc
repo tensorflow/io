@@ -32,6 +32,7 @@ limitations under the License.
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
@@ -98,7 +99,7 @@ class BigQueryClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryClient").Device(DEVICE_CPU),
                         BigQueryClientOp);
 
 class BigQueryReadSessionOp : public OpKernel {
@@ -208,8 +209,9 @@ class BigQueryReadSessionOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryReadSession").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReadSession").Device(DEVICE_CPU),
                         BigQueryReadSessionOp);
 
 }  // namespace
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 
 class AzBlobWritableFile : public WritableFile {
 public:
@@ -44,6 +45,7 @@ private:
   bool sync_needed_; // whether there is buffered data that needs to be synced
 };
 
+} // namespace io
 } // namespace tensorflow
 
 #endif // TENSORFLOW_IO_AZURE_AZFS_WRITABLE_FILE_H

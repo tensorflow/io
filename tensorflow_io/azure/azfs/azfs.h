@@ -1,4 +1,4 @@
-/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ limitations under the License.
 #include "blob/blob_client.h"
 
 namespace tensorflow {
+namespace io {
 
 //class AzBlobFileSystem;
 
@@ -81,6 +82,7 @@ class AzBlobFileSystem : public FileSystem {
       std::vector<std::string>* results) const;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_H_

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ limitations under the License.
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
@@ -97,8 +98,9 @@ class BigQueryTestClientOp : public OpKernel {
   string fake_server_address_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryTestClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryTestClient").Device(DEVICE_CPU),
                         BigQueryTestClientOp);
 
 }  // namespace
+}  // namespace io
 }  // namespace tensorflow

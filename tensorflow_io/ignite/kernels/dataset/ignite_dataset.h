@@ -19,6 +19,7 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 
 namespace tensorflow {
+namespace io {
 
 class IgniteDataset : public DatasetBase {
  public:
@@ -58,6 +59,7 @@ class IgniteDataset : public DatasetBase {
   const std::vector<PartialTensorShape> shapes_;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_H_

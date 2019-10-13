@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ limitations under the License.
 #include "rdkafkacpp.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
+
 class KafkaDatasetOp : public DatasetOpKernel {
  public:
   using DatasetOpKernel::DatasetOpKernel;
@@ -448,7 +450,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("KafkaDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaDataset").Device(DEVICE_CPU),
                         KafkaDatasetOp);
 
 class WriteKafkaOp : public OpKernel {
@@ -529,6 +531,8 @@ private:
   static const int timeout_ = 5000;
 };
 
-REGISTER_KERNEL_BUILDER(Name("WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
+REGISTER_KERNEL_BUILDER(Name("IO>WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
+
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

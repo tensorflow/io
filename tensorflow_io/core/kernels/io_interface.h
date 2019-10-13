@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/util/batch_util.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 
 class IOInterface : public ResourceBase {
@@ -298,5 +299,7 @@ class IOReadablePartitionsOp : public OpKernel {
     context->set_output(0, partitions_tensor);
   }
 };
+
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

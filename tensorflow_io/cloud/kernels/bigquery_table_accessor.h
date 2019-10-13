@@ -1,4 +1,4 @@
-/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ limitations under the License.
 #include "tensorflow/core/platform/cloud/google_auth_provider.h"
 
 namespace tensorflow {
+namespace io {
 
 /// This class facilitates accessing BigQuery tables.
 ///
@@ -198,5 +199,7 @@ class BigQueryTableAccessor {
   TF_DISALLOW_COPY_AND_ASSIGN(BigQueryTableAccessor);
 };
 
+}  // namespace io
 }  // namespace tensorflow
+
 #endif  // TENSORFLOW_CONTRIB_CLOUD_KERNELS_BIGQUERY_TABLE_ACCESSOR_H_

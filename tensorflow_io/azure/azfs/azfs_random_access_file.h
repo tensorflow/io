@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 
 class AzBlobRandomAccessFile : public RandomAccessFile {
  public:
@@ -34,6 +35,7 @@ class AzBlobRandomAccessFile : public RandomAccessFile {
   std::string object_;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H

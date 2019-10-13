@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("BigQueryClient")
+REGISTER_OP("IO>BigQueryClient")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("BigQueryReadSession")
+REGISTER_OP("IO>BigQueryReadSession")
     .Input("client: resource")
     .Attr("parent: string")
     .Attr("project_id: string")
@@ -44,7 +45,7 @@ REGISTER_OP("BigQueryReadSession")
       return tensorflow::Status::OK();
     });
 
-REGISTER_OP("BigQueryDataset")
+REGISTER_OP("IO>BigQueryDataset")
     .Input("client: resource")
     .Input("stream: string")
     .Input("avro_schema: string")
@@ -55,4 +56,5 @@ REGISTER_OP("BigQueryDataset")
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
+}  // namespace io
 }  // namespace tensorflow

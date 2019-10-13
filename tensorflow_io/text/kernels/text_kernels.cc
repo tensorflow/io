@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -161,10 +162,11 @@ class ReadTextOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ReadText").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadText").Device(DEVICE_CPU),
                         ReadTextOp);
 
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

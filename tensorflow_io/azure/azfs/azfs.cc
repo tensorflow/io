@@ -1,4 +1,4 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ limitations under the License.
 #include "storage_errno.h"
 
 namespace tensorflow {
+namespace io {
 
 Status AzBlobFileSystem::NewRandomAccessFile(
     const std::string &filename, std::unique_ptr<RandomAccessFile> *result) {
@@ -471,4 +472,5 @@ Status AzBlobFileSystem::ListResources(
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

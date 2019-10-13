@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("KinesisDataset")
+REGISTER_OP("IO>KinesisDataset")
     .Input("stream: string")
     .Input("shard: string")
     .Input("read_indefinitely: bool")
@@ -39,4 +40,5 @@ interval: The interval for the Kinesis Client to wait before
   it tries to get records again (in millisecond).
 )doc");
 
+}  // namespace io
 }  // namespace tensorflow

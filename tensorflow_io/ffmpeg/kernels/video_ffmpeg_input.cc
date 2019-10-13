@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ limitations under the License.
 #include "kernels/video_ffmpeg_reader.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 
 class VideoInput: public FileInput<video::VideoReader> {
@@ -65,12 +66,13 @@ class VideoInput: public FileInput<video::VideoReader> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(VideoInput, "tensorflow::data::VideoInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(VideoInput, "tensorflow::io::data::VideoInput");
 
-REGISTER_KERNEL_BUILDER(Name("VideoInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>VideoInput").Device(DEVICE_CPU),
                         FileInputOp<VideoInput>);
-REGISTER_KERNEL_BUILDER(Name("VideoDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>VideoDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<VideoInput, video::VideoReader>);
 
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

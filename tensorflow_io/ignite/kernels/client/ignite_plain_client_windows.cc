@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 
 namespace tensorflow {
+namespace io {
 
 PlainClient::PlainClient(string host, int port, bool big_endian)
     : Client(big_endian),
@@ -139,4 +140,5 @@ Status PlainClient::WriteData(const uint8_t *buf, const int32_t length) {
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ limitations under the License.
 #include "kernels/dataset_ops.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 
 class MNISTImageInput: public FileInput<int64> {
@@ -106,16 +107,18 @@ class MNISTLabelInput: public FileInput<int64> {
   int64 size_;
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::data::MNISTLabelInput");
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::data::MNISTImageInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::io::data::MNISTLabelInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::io::data::MNISTImageInput");
 
-REGISTER_KERNEL_BUILDER(Name("MNISTLabelInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>MNISTLabelInput").Device(DEVICE_CPU),
                         FileInputOp<MNISTLabelInput>);
-REGISTER_KERNEL_BUILDER(Name("MNISTImageInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>MNISTImageInput").Device(DEVICE_CPU),
                         FileInputOp<MNISTImageInput>);
-REGISTER_KERNEL_BUILDER(Name("MNISTLabelDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>MNISTLabelDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<MNISTLabelInput, int64>);
-REGISTER_KERNEL_BUILDER(Name("MNISTImageDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>MNISTImageDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<MNISTImageInput, int64>);
+
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

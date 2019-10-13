@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ limitations under the License.
 #include "arrow/io/api.h"
 
 namespace tensorflow {
+namespace io {
 
 // Class to wrap a socket as a readable Arrow InputStream
 class ArrowStreamClient : public arrow::io::InputStream {
@@ -40,6 +41,7 @@ class ArrowStreamClient : public arrow::io::InputStream {
   int64_t pos_;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_ARROW_STREAM_CLIENT_H_

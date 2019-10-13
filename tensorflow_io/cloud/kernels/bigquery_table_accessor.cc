@@ -1,4 +1,4 @@
-/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/numbers.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 constexpr size_t kBufferSize = 1024 * 1024;  // In bytes.
@@ -368,4 +369,5 @@ bool BigQueryTableAccessor::Done() {
               first_buffered_row_index_ + next_row_in_buffer_);
 }
 
+}  // namespace io
 }  // namespace tensorflow

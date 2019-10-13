@@ -23,6 +23,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -231,13 +232,14 @@ class ReadArchiveOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ListArchiveEntries").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ListArchiveEntries").Device(DEVICE_CPU),
                         ListArchiveEntriesOp);
 
-REGISTER_KERNEL_BUILDER(Name("ReadArchive").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadArchive").Device(DEVICE_CPU),
                         ReadArchiveOp);
 
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("GRPCInput")
+REGISTER_OP("IO>GRPCInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("columns: list(string) = []")
@@ -29,7 +30,7 @@ REGISTER_OP("GRPCInput")
        return Status::OK();
      });
 
-REGISTER_OP("GRPCDataset")
+REGISTER_OP("IO>GRPCDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -42,4 +43,5 @@ REGISTER_OP("GRPCDataset")
        return Status::OK();
      });
 
+}  // namespace io
 }  // namespace tensorflow

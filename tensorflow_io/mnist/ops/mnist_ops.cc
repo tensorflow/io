@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("MNISTImageDataset")
+REGISTER_OP("IO>MNISTImageDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -31,7 +32,8 @@ REGISTER_OP("MNISTImageDataset")
        c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
        return Status::OK();
      });
-REGISTER_OP("MNISTLabelDataset")
+
+REGISTER_OP("IO>MNISTLabelDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -44,8 +46,7 @@ REGISTER_OP("MNISTLabelDataset")
        return Status::OK();
      });
 
-
-REGISTER_OP("MNISTLabelInput")
+REGISTER_OP("IO>MNISTLabelInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -56,7 +57,7 @@ REGISTER_OP("MNISTLabelInput")
        return Status::OK();
      });
 
-REGISTER_OP("MNISTImageInput")
+REGISTER_OP("IO>MNISTImageInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -67,4 +68,5 @@ REGISTER_OP("MNISTImageInput")
        return Status::OK();
      });
 
+}  // namespace io
 }  // namespace tensorflow

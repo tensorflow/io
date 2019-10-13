@@ -18,6 +18,7 @@ limitations under the License.
 #include <grpc++/grpc++.h>
 
 namespace tensorflow {
+namespace io {
 namespace data {
 
 class GRPCInputState {
@@ -66,11 +67,12 @@ class GRPCInput: public StreamInput<GRPCInputState> {
  protected:
 };
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(GRPCInput, "tensorflow::data::GRPCInput");
+REGISTER_UNARY_VARIANT_DECODE_FUNCTION(GRPCInput, "tensorflow::io::data::GRPCInput");
 
-REGISTER_KERNEL_BUILDER(Name("GRPCInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GRPCInput").Device(DEVICE_CPU),
                         StreamInputOp<GRPCInput>);
-REGISTER_KERNEL_BUILDER(Name("GRPCDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GRPCDataset").Device(DEVICE_CPU),
                         StreamInputDatasetOp<GRPCInput, GRPCInputState>);
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

@@ -22,6 +22,7 @@ limitations under the License.
 #include "arrow/type.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 
 Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out);
@@ -99,6 +100,7 @@ private:
 
 
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_ARROW_KERNELS_H_

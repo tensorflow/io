@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ limitations under the License.
 #include "tensorflow/core/platform/mutex.h"
 
 namespace tensorflow {
+namespace io {
 
 class IgniteDatasetIterator : public DatasetIterator<IgniteDataset> {
  public:
@@ -94,6 +95,7 @@ constexpr int32_t kCloseConnectionReqLength = 18;
 constexpr int32_t kHandshakeReqDefaultLength = 8;
 constexpr int32_t kMinResLength = 12;
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_ITERATOR_H_

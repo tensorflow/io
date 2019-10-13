@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
+namespace io {
 
 BinaryObjectParser::BinaryObjectParser() : byte_swapper_(ByteSwapper(false)) {}
 
@@ -331,4 +332,5 @@ bool* BinaryObjectParser::ParseBoolArr(uint8_t** ptr, int length) const {
   return res;
 }
 
+}  // namespace io
 }  // namespace tensorflow

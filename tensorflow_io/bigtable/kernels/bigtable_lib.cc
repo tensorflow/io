@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow_io/bigtable/kernels/bigtable_lib.h"
 
 namespace tensorflow {
+namespace io {
 
 Status GrpcStatusToTfStatus(const ::grpc::Status& status) {
   if (status.ok()) {
@@ -92,4 +93,5 @@ string RegexFromStringSet(const std::vector<string>& strs) {
   return str_util::Join(uniq, "|");
 }
 
+}  // namespace io
 }  // namespace tensorflow

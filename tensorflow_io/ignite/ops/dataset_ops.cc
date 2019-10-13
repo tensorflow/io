@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("IgniteDataset")
+REGISTER_OP("IO>IgniteDataset")
     .Input("cache_name: string")
     .Input("host: string")
     .Input("port: int32")
@@ -53,4 +54,5 @@ schema: Internal structure that defines schema of cache objects.
 permutation: Internal structure that defines permutation of cache objects.
 )doc");
 
+}  // namespace io
 }  // namespace tensorflow

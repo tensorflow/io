@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ limitations under the License.
 #include "kernels/output_ops.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -41,8 +42,9 @@ class TextDatasetOutput {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("TextDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<TextDatasetOutput>);
+    Name("IO>TextDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<TextDatasetOutput>);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

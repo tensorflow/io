@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("PubSubDataset")
+REGISTER_OP("IO>PubSubDataset")
     .Input("subscriptions: string")
     .Input("server: string")
     .Input("eof: bool")
@@ -28,4 +29,5 @@ REGISTER_OP("PubSubDataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
+}  // namespace io
 }  // namespace tensorflow

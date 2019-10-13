@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
+namespace io {
 
 Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
                      std::string* endpoint_value) {
@@ -57,4 +58,5 @@ Status ParseHost(std::string host, std::string* host_address, std::string* host_
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

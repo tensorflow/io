@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("BigQueryTestClient")
+REGISTER_OP("IO>BigQueryTestClient")
     .Attr("fake_server_address: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("DecodeAvro")
+REGISTER_OP("IO>DecodeAvro")
   .Input("input: string")
   .Output("value: dtype")
   .Attr("schema: string")
@@ -31,7 +32,7 @@ REGISTER_OP("DecodeAvro")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaReadableInit")
+REGISTER_OP("IO>KafkaReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -42,7 +43,7 @@ REGISTER_OP("KafkaReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaReadableRead")
+REGISTER_OP("IO>KafkaReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -58,7 +59,7 @@ REGISTER_OP("KafkaReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("KafkaOutputSequence")
+REGISTER_OP("IO>KafkaOutputSequence")
     .Input("topic: string")
     .Input("servers: string")
     .Output("sequence: resource")
@@ -72,15 +73,18 @@ REGISTER_OP("KafkaOutputSequence")
       c->set_output(0, c->Scalar());
       return Status::OK();
     });
-REGISTER_OP("KafkaOutputSequenceSetItem")
+
+REGISTER_OP("IO>KafkaOutputSequenceSetItem")
     .Input("sequence: resource")
     .Input("index: int64")
     .Input("item: string")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
-REGISTER_OP("KafkaOutputSequenceFlush")
+
+REGISTER_OP("IO>KafkaOutputSequenceFlush")
     .Input("sequence: resource")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
+}  // namespace io
 }  // namespace tensorflow

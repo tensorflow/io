@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ limitations under the License.
 #include "imageio/metadata.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
+
 class WebPDatasetOp : public DatasetOpKernel {
  public:
   using DatasetOpKernel::DatasetOpKernel;
@@ -205,12 +207,13 @@ class DecodeWebPOp : public OpKernel {
   // TODO (yongtang): Set channels_ = 4 for now.
   static const int channels_ = 4;
 };
-REGISTER_KERNEL_BUILDER(Name("WebPDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>WebPDataset").Device(DEVICE_CPU),
                         WebPDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("DecodeWebP").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeWebP").Device(DEVICE_CPU),
                         DecodeWebPOp);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

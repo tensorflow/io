@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ limitations under the License.
 // #include "util/task/codes.pb.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 void UpdateRow(const ::google::bigtable::v2::Mutation& mut,
@@ -458,4 +459,6 @@ BigtableTestClient::PrepareAsyncMutateRows(
                   "cause a crash!";        
   return nullptr;            
 }
+
+}  // namespace io
 }  // namespace tensorflow

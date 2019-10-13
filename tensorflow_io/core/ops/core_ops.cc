@@ -18,8 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
 
-REGISTER_OP("ListArchiveEntries")
+REGISTER_OP("IO>ListArchiveEntries")
     .Input("filename: string")
     .Input("memory: string")
     .Output("format: string")
@@ -31,7 +32,7 @@ REGISTER_OP("ListArchiveEntries")
       return Status::OK();
     });
 
-REGISTER_OP("ReadArchive")
+REGISTER_OP("IO>ReadArchive")
     .Input("filename: string")
     .Input("format: string")
     .Input("entries: string")
@@ -42,4 +43,5 @@ REGISTER_OP("ReadArchive")
       return Status::OK();
     });
 
+}  // namespace io
 }  // namespace tensorflow

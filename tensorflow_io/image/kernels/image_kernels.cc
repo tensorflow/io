@@ -1,4 +1,4 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ void z_error(char* message)
 }
 
 namespace tensorflow {
-
+namespace io {
 namespace {
 
 std::vector<std::vector<float>> DefaultColorTable(int depth) {
@@ -321,10 +321,11 @@ private:
 
 #define REGISTER_CPU_KERNEL(T)                                               \
   REGISTER_KERNEL_BUILDER(                                                   \
-      Name("DrawBoundingBoxesV3").Device(DEVICE_CPU).TypeConstraint<T>("T"),   \
+      Name("IO>DrawBoundingBoxesV3").Device(DEVICE_CPU).TypeConstraint<T>("T"),   \
       DrawBoundingBoxesV3Op<T>);
 
 TF_CALL_half(REGISTER_CPU_KERNEL);
 TF_CALL_float(REGISTER_CPU_KERNEL);
 
+}  // namespace io
 }  // namespace tensorflow

@@ -16,6 +16,7 @@ limitations under the License.
 #include "absl/strings/escaping.h"
 
 namespace tensorflow {
+namespace io {
 namespace data {
 namespace {
 
@@ -66,8 +67,9 @@ class CsvDatasetOutput {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("CsvDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<CsvDatasetOutput>);
+    Name("IO>CsvDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<CsvDatasetOutput>);
 
 }  // namespace
 }  // namespace data
+}  // namespace io
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/stringprintf.h"
 
 namespace tensorflow {
+namespace io {
 
 namespace {
 
@@ -72,8 +73,9 @@ class BigtableTestClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigtableTestClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigtableTestClient").Device(DEVICE_CPU),
                         BigtableTestClientOp);
 
 }  // namespace
+}  // namespace io
 }  // namespace tensorflow
