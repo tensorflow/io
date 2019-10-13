@@ -22,7 +22,7 @@ import unittest
 
 from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
-from tensorflow_io.oss import ossfs_ops  # pylint: disable=unused-import
+import tensorflow_io as tfio  # pylint: disable=unused-import
 
 get_oss_path = None
 access_id = os.environ.get("OSS_ACCESS_ID")
