@@ -32,7 +32,6 @@ limitations under the License.
   } while (false)
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 enum ArrowBatchMode {
@@ -1189,5 +1188,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow

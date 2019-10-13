@@ -24,7 +24,6 @@ limitations under the License.
 #include "arrow/table.h"
 
 namespace tensorflow {
-namespace io {
 namespace data {
 
 Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out) {
@@ -410,5 +409,4 @@ REGISTER_KERNEL_BUILDER(Name("IO>FeatherReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<FeatherReadable>);
 
 }  // namespace data
-}  // namespace io
 }  // namespace tensorflow
