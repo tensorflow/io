@@ -180,12 +180,24 @@ setup(
 )
 """
 
-package = 'tensorflow>=2.0.0,<2.1.0'
-version = '0.9.0'
-project = 'tensorflow-io'
+# read package and version from:
+# tensorflow_io/core/python/ops/io_info.py
+with open("tensorflow_io/core/python/ops/io_info.py") as f:
+  entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
+  assert sum(e.startswith("package = ") for e in entries) == 1
+  assert sum(e.startswith("version = ") for e in entries) == 1
+  package = list([
+      e[10:] for e in entries if e.startswith("package = ")])[0].strip("'")
+  version = list([
+      e[10:] for e in entries if e.startswith("version = ")])[0].strip("'")
+  assert package != ""
+  assert version != ""
+
 if '--package-version' in sys.argv:
   print(package)
   sys.exit(0)
+
+project = 'tensorflow-io'
 
 # Note: import setuptools later to avoid unnecessary dependency
 from setuptools import sandbox # pylint: disable=wrong-import-position
@@ -196,6 +208,10 @@ if '--nightly' in sys.argv:
   project = 'tensorflow-io-nightly'
   sys.argv.remove('--nightly')
   sys.argv.pop(nightly_idx)
+
+print("setup.py - project = '{}'".format(project))
+print("setup.py - package = '{}'".format(package))
+print("setup.py - version = '{}'".format(version))
 
 rootpath = tempfile.mkdtemp()
 print("setup.py - create {} and copy tensorflow_io".format(rootpath))
