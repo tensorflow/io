@@ -18,7 +18,7 @@ py_library(
         "python/ops/bigquery_api.py",
     ],
     data = [
-        ":python/ops/_bigquery.so",
+        "//tensorflow_io/core:python/ops/libtensorflow_io.so",
     ],
     srcs_version = "PY2AND3",
 )
@@ -26,8 +26,8 @@ py_library(
 # Have to put test op into prod binary because of https://github.com/grpc/grpc/issues/20034
 # Otherwise whenever 2 dynamically built libraries that are using grpc loaded
 # using _load_library, only first one will work.
-cc_binary(
-    name = "python/ops/_bigquery.so",
+cc_library(
+    name = "bigquery_ops",
     srcs = [
         "kernels/bigquery_dataset_op.cc",
         "kernels/bigquery_kernels.cc",
@@ -36,7 +36,7 @@ cc_binary(
         "ops/bigquery_test_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         ":bigquery_lib_cc",
         "@avro",

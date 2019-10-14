@@ -19,8 +19,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-grpc_ops = _load_library('_grpc_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 class GRPCDataset(data.Dataset):
   """A GRPC Dataset
@@ -32,7 +31,7 @@ class GRPCDataset(data.Dataset):
     Args:
       endpoint: A `tf.string` tensor containing one or more endpoints.
     """
-    self._data_input = grpc_ops.grpc_input(endpoint)
+    self._data_input = core_ops.grpc_input(endpoint)
     self._batch = 0 if batch is None else batch
     shape[0] = None
     self._output_shapes = tuple([
@@ -63,7 +62,7 @@ class GRPCDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return grpc_ops.grpc_dataset(
+    return core_ops.grpc_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,

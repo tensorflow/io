@@ -26,7 +26,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.training import training
-from tensorflow_io.core.python.ops import _load_library
+from tensorflow_io.core.python.ops import core_ops
 
 # Some GCS operations may be pre-defined and available via tf.contrib in
 # earlier TF versions. Because these ops are pre-registered, they will not be
@@ -35,9 +35,8 @@ from tensorflow_io.core.python.ops import _load_library
 tf_v1 = tf.version.VERSION.startswith('1')
 
 if not tf_v1:
-  _gcs_config_so = _load_library("_gcs_config_ops.so")
-  gcs_configure_credentials = _gcs_config_so.gcs_configure_credentials
-  gcs_configure_block_cache = _gcs_config_so.gcs_configure_block_cache
+  gcs_configure_credentials = core_ops.gcs_configure_credentials
+  gcs_configure_block_cache = core_ops.gcs_configure_block_cache
 
 class BlockCacheParams(object):  # pylint: disable=useless-object-inheritance
   """BlockCacheParams is a struct used for configuring the GCS Block Cache."""

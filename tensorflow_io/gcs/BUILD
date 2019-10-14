@@ -2,18 +2,19 @@ licenses(["notice"])  # Apache 2.0
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "python/ops/_gcs_config_ops.so",
+load(
+    "//third_party/tf:tensorflow_io.bzl",
+    "tf_io_copts",
+)
+
+cc_library(
+    name = "gcs_config_ops",
     srcs = [
         "kernels/gcs_config_op_kernels.cc",
         "ops/gcs_config_ops.cc",
     ],
-    copts = [
-        "-pthread",
-        "-std=c++11",
-        "-DNDEBUG",
-    ],
-    linkshared = 1,
+    copts = tf_io_copts(),
+    linkstatic = True,
     deps = [
         "@curl",
         "@jsoncpp_git//:jsoncpp",
