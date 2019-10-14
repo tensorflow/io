@@ -25,7 +25,7 @@ def list_json_columns(filename):
   """list_json_columns"""
   if not tf.executing_eagerly():
     raise NotImplementedError("list_json_columns only support eager mode")
-  columns, dtypes = core_ops.list_json_columns(filename)
+  columns, dtypes = core_ops.io_list_json_columns(filename)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes))
   return dict([(column.numpy().decode(), tf.TensorSpec(
       tf.TensorShape([None]),
@@ -35,7 +35,7 @@ def list_json_columns(filename):
 
 def read_json(filename, column):
   """read_json"""
-  return core_ops.read_json(
+  return core_ops.io_read_json(
       filename, column.name, dtype=column.dtype)
 
 class JSONDataset(data_ops.BaseDataset):
@@ -64,7 +64,7 @@ class JSONDataset(data_ops.BaseDataset):
     datasets = []
     for i, column in enumerate(columns):
       datasets.append(data_ops.Dataset.from_tensors(
-          core_ops.read_json(filename, column, dtype=self._dtypes[i])))
+          core_ops.io_read_json(filename, column, dtype=self._dtypes[i])))
 
     self._dataset = tf.compat.v2.data.Dataset.zip(tuple(datasets))
 

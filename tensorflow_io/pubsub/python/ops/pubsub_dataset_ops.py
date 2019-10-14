@@ -54,7 +54,7 @@ class PubSubDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return pubsub_ops.pub_sub_dataset(self._subscriptions, self._server,
+    return pubsub_ops.io_pub_sub_dataset(self._subscriptions, self._server,
                                       self._eof, self._timeout)
 
   @property

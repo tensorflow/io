@@ -60,7 +60,7 @@ class SequenceFileDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return hadoop_ops.sequence_file_dataset(
+    return hadoop_ops.io_sequence_file_dataset(
         self._filenames, (dtypes.string, dtypes.string))
 
   @property

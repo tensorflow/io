@@ -60,16 +60,16 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
                filename,
                internal=False):
     with tf.name_scope("FromAudio") as scope:
-      resource = core_ops.wav_readable_init(
+      resource = core_ops.io_wav_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, rate = core_ops.wav_readable_spec(resource)
+      shape, dtype, rate = core_ops.io_wav_readable_spec(resource)
       shape = tf.TensorShape(shape.numpy())
       dtype = tf.as_dtype(dtype.numpy())
       spec = tf.TensorSpec(shape, dtype)
       function = _AudioIOTensorFunction(
-          core_ops.wav_readable_read, resource, shape, dtype)
+          core_ops.io_wav_readable_read, resource, shape, dtype)
       self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
           spec, function, internal=internal)

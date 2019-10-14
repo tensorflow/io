@@ -30,7 +30,7 @@ class _KafkaIOTensorFunction(object):
     self._capacity = capacity
     self._index = 0
   def __call__(self):
-    items = core_ops.kafka_readable_read(
+    items = core_ops.io_kafka_readable_read(
         self._resource,
         start=self._index, stop=self._index+self._capacity,
         shape=tf.TensorShape([None]), dtype=tf.string)
@@ -57,7 +57,7 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.kafka_readable_init(
+      resource = core_ops.io_kafka_readable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))

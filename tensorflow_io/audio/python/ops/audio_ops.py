@@ -43,6 +43,6 @@ class AudioDataset(data_ops.Dataset):
         tf.TensorShape([None])] if batch == 0 else [
             tf.TensorShape([None, None])]
     super(AudioDataset, self).__init__(
-        ffmpeg_ops.audio_dataset,
-        ffmpeg_ops.audio_input(filename),
+        ffmpeg_ops.io_audio_dataset,
+        ffmpeg_ops.io_audio_input(filename),
         batch, dtypes, shapes)

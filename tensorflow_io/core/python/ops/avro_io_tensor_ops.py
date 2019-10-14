@@ -35,19 +35,19 @@ class AvroIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
                internal=False):
     with tf.name_scope("AvroIOTensor") as scope:
       metadata = ["schema: %s" % schema]
-      resource, columns = core_ops.avro_readable_init(
+      resource, columns = core_ops.io_avro_readable_init(
           filename, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype = core_ops.avro_readable_spec(resource, column)
+        shape, dtype = core_ops.io_avro_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.avro_readable_read,
+            core_ops.io_avro_readable_read,
             resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(

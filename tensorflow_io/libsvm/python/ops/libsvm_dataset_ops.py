@@ -21,7 +21,7 @@ def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
     features: A `SparseTensor` of the shape `[input_shape, num_features]`.
     labels: A `Tensor` of the same shape as content.
   """
-  labels, indices, values, shape = gen_libsvm_ops.decode_libsvm(
+  labels, indices, values, shape = gen_libsvm_ops.io_decode_libsvm(
       content, num_features, dtype=dtype, label_dtype=label_dtype)
   return sparse.SparseTensor(indices, values, shape), labels
 

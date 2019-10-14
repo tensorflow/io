@@ -34,7 +34,7 @@ def list_parquet_columns(filename, **kwargs):
   if not tf.executing_eagerly():
     raise NotImplementedError("list_parquet_columns only support eager mode")
   memory = kwargs.get("memory", "")
-  columns, dtypes, shapes = parquet_ops.list_parquet_columns(
+  columns, dtypes, shapes = parquet_ops.io_list_parquet_columns(
       filename, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes), tf.unstack(shapes))
   return dict([(column.numpy().decode(), tf.TensorSpec(
@@ -50,7 +50,7 @@ def read_parquet(filename, column, **kwargs):
     stop = column.shape[0] - start
   if stop is None:
     stop = -1
-  return parquet_ops.read_parquet(
+  return parquet_ops.io_read_parquet(
       filename, column.name, memory=memory,
       start=start, stop=-1, dtype=column.dtype)
 
@@ -85,7 +85,7 @@ class ParquetDataset(data_ops.BaseDataset):
     entry_stop = entry_start[1:] + [stop]
     dataset = data_ops.BaseDataset.from_tensor_slices(
         (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
-    ).map(lambda start, stop: parquet_ops.read_parquet(
+    ).map(lambda start, stop: parquet_ops.io_read_parquet(
         filename, column, memory="", start=start, stop=stop, dtype=dtype))
     self._dataset = dataset
 

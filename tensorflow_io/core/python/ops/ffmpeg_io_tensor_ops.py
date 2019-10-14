@@ -85,20 +85,20 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
                internal=False):
     with tf.name_scope("FFmpegIOTensor") as scope:
       from tensorflow_io.core.python.ops import ffmpeg_ops
-      resource, columns = ffmpeg_ops.ffmpeg_readable_init(
+      resource, columns = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype, rate = ffmpeg_ops.ffmpeg_readable_spec(resource, column)
+        shape, dtype, rate = ffmpeg_ops.io_ffmpeg_readable_spec(resource, column)
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         capacity = 1 if column.startswith("v:") else 4096
         function = _FFmpegIOTensorFunction(
-            ffmpeg_ops.ffmpeg_readable_read,
+            ffmpeg_ops.io_ffmpeg_readable_read,
             resource, column, shape, dtype, capacity=capacity)
         function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
             function, shape)

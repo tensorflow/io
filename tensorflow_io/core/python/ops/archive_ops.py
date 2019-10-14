@@ -24,11 +24,11 @@ def list_archive_entries(filename, filters, **kwargs):
   memory = kwargs.get("memory", "")
   if not isinstance(filters, list):
     filters = [filters]
-  return core_ops.list_archive_entries(
+  return core_ops.io_list_archive_entries(
       filename, filters=filters, memory=memory)
 
 def read_archive(filename, format, entries, **kwargs): # pylint: disable=redefined-builtin
   """read_archive"""
   memory = kwargs.get("memory", "")
-  return core_ops.read_archive(
+  return core_ops.io_read_archive(
       filename, format, entries, memory=memory)

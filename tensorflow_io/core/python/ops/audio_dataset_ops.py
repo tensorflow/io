@@ -29,7 +29,7 @@ class _AudioIODatasetFunction(object):
     self._shape = tf.TensorShape([None]).concatenate(shape[1:])
     self._dtype = dtype
   def __call__(self, start, stop):
-    return core_ops.wav_readable_read(
+    return core_ops.io_wav_readable_read(
         self._resource, start=start, stop=stop,
         shape=self._shape, dtype=self._dtype)
 
@@ -41,11 +41,11 @@ class AudioIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
                internal=True):
     """AudioIODataset."""
     with tf.name_scope("AudioIODataset") as scope:
-      resource = core_ops.wav_readable_init(
+      resource = core_ops.io_wav_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, _ = core_ops.wav_readable_spec(resource)
+      shape, dtype, _ = core_ops.io_wav_readable_spec(resource)
       shape = tf.TensorShape(shape.numpy())
       dtype = tf.as_dtype(dtype.numpy())
       super(AudioIODataset, self).__init__(

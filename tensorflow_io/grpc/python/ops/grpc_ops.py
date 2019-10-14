@@ -32,7 +32,7 @@ class GRPCDataset(data.Dataset):
     Args:
       endpoint: A `tf.string` tensor containing one or more endpoints.
     """
-    self._data_input = grpc_ops.grpc_input(endpoint)
+    self._data_input = grpc_ops.io_grpc_input(endpoint)
     self._batch = 0 if batch is None else batch
     shape[0] = None
     self._output_shapes = tuple([
@@ -63,7 +63,7 @@ class GRPCDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return grpc_ops.grpc_dataset(
+    return grpc_ops.io_grpc_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,

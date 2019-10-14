@@ -52,7 +52,7 @@ class AvroIODataset(tf.compat.v2.data.Dataset):
       capacity = 4096
 
       metadata = ["schema: %s" % schema]
-      resource, columns_v = core_ops.avro_readable_init(
+      resource, columns_v = core_ops.io_avro_readable_init(
           filename, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
@@ -62,11 +62,11 @@ class AvroIODataset(tf.compat.v2.data.Dataset):
 
       columns_function = []
       for column in columns:
-        shape, dtype = core_ops.avro_readable_spec(resource, column)
+        shape, dtype = core_ops.io_avro_readable_spec(resource, column)
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         function = _AvroIODatasetFunction(
-            core_ops.avro_readable_read, resource, column, shape, dtype)
+            core_ops.io_avro_readable_read, resource, column, shape, dtype)
         columns_function.append(function)
 
       for (column, function) in zip(columns, columns_function):
