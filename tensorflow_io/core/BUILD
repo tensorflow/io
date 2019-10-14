@@ -156,6 +156,7 @@ cc_binary(
         "//tensorflow_io/cifar:cifar_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/dicom:dicom_ops",
+        "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
