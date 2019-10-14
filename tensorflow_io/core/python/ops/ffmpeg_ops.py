@@ -66,11 +66,11 @@ _ffmpeg_ops = _load_dependency_and_library({
     ],
 })
 
-io_audio_input = _ffmpeg_ops.audio_input
-io_video_input = _ffmpeg_ops.video_input
-io_audio_dataset = _ffmpeg_ops.audio_dataset
-io_video_dataset = _ffmpeg_ops.video_dataset
-io_ffmpeg_readable_init = _ffmpeg_ops.ffmpeg_readable_init
-io_ffmpeg_readable_spec = _ffmpeg_ops.ffmpeg_readable_spec
-io_ffmpeg_readable_read = _ffmpeg_ops.ffmpeg_readable_read
-io_ffmpeg_decode_video = _ffmpeg_ops.ffmpeg_decode_video
+io_audio_input = _ffmpeg_ops.io_audio_input
+io_video_input = _ffmpeg_ops.io_video_input
+io_audio_dataset = _ffmpeg_ops.io_audio_dataset
+io_video_dataset = _ffmpeg_ops.io_video_dataset
+io_ffmpeg_readable_init = _ffmpeg_ops.io_ffmpeg_readable_init
+io_ffmpeg_readable_spec = _ffmpeg_ops.io_ffmpeg_readable_spec
+io_ffmpeg_readable_read = _ffmpeg_ops.io_ffmpeg_readable_read
+io_ffmpeg_decode_video = _ffmpeg_ops.io_ffmpeg_decode_video
