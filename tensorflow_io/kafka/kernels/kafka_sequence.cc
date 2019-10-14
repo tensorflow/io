@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -145,13 +145,14 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
 };
 
 
-REGISTER_KERNEL_BUILDER(Name("KafkaOutputSequence").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequence").Device(DEVICE_CPU),
                         KafkaOutputSequenceOp);
 
 
-REGISTER_KERNEL_BUILDER(Name("KafkaOutputSequenceSetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceSetItem").Device(DEVICE_CPU),
                         OutputSequenceSetItemOp<KafkaOutputSequence>);
 
-REGISTER_KERNEL_BUILDER(Name("KafkaOutputSequenceFlush").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceFlush").Device(DEVICE_CPU),
                         OutputSequenceFlushOp<KafkaOutputSequence>);
+
 }  // namespace tensorflow

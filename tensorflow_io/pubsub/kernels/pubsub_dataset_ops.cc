@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,12 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/dataset.h"
-
 #include <grpc++/grpc++.h>
-
 #include "google/pubsub/v1/pubsub.grpc.pb.h"
 
 namespace tensorflow {
 namespace data {
+
 using grpc::ClientContext;
 using google::pubsub::v1::Subscriber;
 using google::pubsub::v1::PullRequest;
@@ -224,7 +223,8 @@ class PubSubDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("PubSubDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PubSubDataset").Device(DEVICE_CPU),
                         PubSubDatasetOp);
+
 }  // namespace data
 }  // namespace tensorflow

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ListAvroColumns")
+REGISTER_OP("IO>ListAvroColumns")
     .Input("filename: string")
     .Input("schema: string")
     .Input("memory: string")
@@ -31,7 +31,7 @@ REGISTER_OP("ListAvroColumns")
        return Status::OK();
      });
 
-REGISTER_OP("ReadAvro")
+REGISTER_OP("IO>ReadAvro")
     .Input("filename: string")
     .Input("schema: string")
     .Input("column: string")
@@ -45,7 +45,7 @@ REGISTER_OP("ReadAvro")
        return Status::OK();
      });
 
-REGISTER_OP("AvroReadableInit")
+REGISTER_OP("IO>AvroReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -58,7 +58,7 @@ REGISTER_OP("AvroReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("AvroReadableSpec")
+REGISTER_OP("IO>AvroReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -69,7 +69,7 @@ REGISTER_OP("AvroReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("AvroReadableRead")
+REGISTER_OP("IO>AvroReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -87,7 +87,7 @@ REGISTER_OP("AvroReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("AvroReadablePartitions")
+REGISTER_OP("IO>AvroReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

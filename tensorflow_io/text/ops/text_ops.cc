@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("RE2FullMatch")
+REGISTER_OP("IO>RE2FullMatch")
     .Input("input: string")
     .Output("output: bool")
     .Output("groups: string")
@@ -46,7 +46,7 @@ REGISTER_OP("RE2FullMatch")
       return Status::OK();
     });
 
-REGISTER_OP("ReadText")
+REGISTER_OP("IO>ReadText")
     .Input("filename: string")
     .Input("memory: string")
     .Input("offset: int64")
@@ -57,7 +57,7 @@ REGISTER_OP("ReadText")
        return Status::OK();
      });
 
-REGISTER_OP("TextStreamInput")
+REGISTER_OP("IO>TextStreamInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -68,7 +68,7 @@ REGISTER_OP("TextStreamInput")
        return Status::OK();
      });
 
-REGISTER_OP("TextStreamDataset")
+REGISTER_OP("IO>TextStreamDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -81,7 +81,7 @@ REGISTER_OP("TextStreamDataset")
        return Status::OK();
      });
 
-REGISTER_OP("TextInput")
+REGISTER_OP("IO>TextInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -92,7 +92,7 @@ REGISTER_OP("TextInput")
        return Status::OK();
      });
 
-REGISTER_OP("TextDataset")
+REGISTER_OP("IO>TextDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -105,7 +105,7 @@ REGISTER_OP("TextDataset")
        return Status::OK();
      });
 
-REGISTER_OP("TextDatasetOutput")
+REGISTER_OP("IO>TextDatasetOutput")
     .Input("dataset: variant")
     .Input("filename: string")
     .SetIsStateful()
@@ -113,7 +113,7 @@ REGISTER_OP("TextDatasetOutput")
        return Status::OK();
      });
 
-REGISTER_OP("CsvDatasetOutput")
+REGISTER_OP("IO>CsvDatasetOutput")
     .Input("dataset: variant")
     .Input("filename: string")
     .SetIsStateful()
@@ -121,21 +121,22 @@ REGISTER_OP("CsvDatasetOutput")
        return Status::OK();
      });
 
-REGISTER_OP("TextOutputSequence")
+REGISTER_OP("IO>TextOutputSequence")
     .Input("destination: string")
     .Output("sequence: resource")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
-REGISTER_OP("TextOutputSequenceSetItem")
+
+REGISTER_OP("IO>TextOutputSequenceSetItem")
     .Input("sequence: resource")
     .Input("index: int64")
     .Input("item: string")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("CSVReadableInit")
+REGISTER_OP("IO>CSVReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -147,7 +148,7 @@ REGISTER_OP("CSVReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("CSVReadableSpec")
+REGISTER_OP("IO>CSVReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -158,7 +159,7 @@ REGISTER_OP("CSVReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("CSVReadableRead")
+REGISTER_OP("IO>CSVReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

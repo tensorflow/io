@@ -22,8 +22,8 @@ from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops as dicom_ops
 
-decode_dicom_data = dicom_ops.decode_dicom_data
-decode_dicom_image = dicom_ops.decode_dicom_image
+decode_dicom_data = dicom_ops.io_decode_dicom_data
+decode_dicom_image = dicom_ops.io_decode_dicom_image
 
 
 class tags(object): # pylint: disable=invalid-name

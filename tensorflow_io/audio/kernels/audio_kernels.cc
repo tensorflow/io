@@ -243,13 +243,12 @@ class WAVReadable : public IOReadableInterface {
   struct WAVHeader header_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("WAVReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<WAVReadable>);
-REGISTER_KERNEL_BUILDER(Name("WAVReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<WAVReadable>);
-REGISTER_KERNEL_BUILDER(Name("WAVReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<WAVReadable>);
-
 
 }  // namespace data
 }  // namespace tensorflow

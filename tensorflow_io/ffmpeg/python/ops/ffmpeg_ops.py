@@ -28,7 +28,7 @@ warnings.warn(
     "for reading LMDB key/value pairs into tensorflow.",
     DeprecationWarning)
 
-decode_video = ffmpeg_ops.ffmpeg_decode_video
+decode_video = ffmpeg_ops.io_ffmpeg_decode_video
 
 class AudioDataset(ffmpeg_dataset_ops.FFmpegIODataset):
   """A Audio File Dataset that reads the audio file."""

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 namespace {
+
 class DecodeTIFFInfoOp : public OpKernel {
  public:
   explicit DecodeTIFFInfoOp(OpKernelConstruction* context) : OpKernel(context) {}
@@ -83,9 +84,9 @@ class DecodeTIFFOp : public OpKernel {
   // TODO (yongtang): Set channels_ = 4 for now.
   static const int channels_ = 4;
 };
-REGISTER_KERNEL_BUILDER(Name("DecodeTiffInfo").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeTiffInfo").Device(DEVICE_CPU),
                         DecodeTIFFInfoOp);
-REGISTER_KERNEL_BUILDER(Name("DecodeTiff").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeTiff").Device(DEVICE_CPU),
                         DecodeTIFFOp);
 
 }  // namespace

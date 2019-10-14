@@ -145,9 +145,9 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryDataset").Device(DEVICE_CPU),
                         BigQueryDatasetOp);
 
 }  // namespace
-}  // namespace data
+}  // namespace io
 }  // namespace tensorflow

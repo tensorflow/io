@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
-using namespace tensorflow;
+namespace tensorflow {
 
 class DecodeDICOMDataOp : public OpKernel {
  public:
@@ -87,5 +87,7 @@ class DecodeDICOMDataOp : public OpKernel {
     }
   }
 };
-REGISTER_KERNEL_BUILDER(Name("DecodeDICOMData").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMData").Device(DEVICE_CPU),
                         DecodeDICOMDataOp);
+
+}  // namespace tensorflow

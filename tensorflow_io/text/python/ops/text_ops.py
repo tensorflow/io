@@ -30,7 +30,7 @@ def read_text(filename, **kwargs):
   memory = kwargs.get("memory", "")
   offset = kwargs.get("offset", 0)
   length = kwargs.get("length", -1)
-  return core_ops.read_text(
+  return core_ops.io_read_text(
       filename, offset=offset, length=length, memory=memory)
 
 def save_text(dataset, filename):
@@ -40,7 +40,7 @@ def save_text(dataset, filename):
     dataset: A TextDataset to be saved.
     filename: A `tf.string` tensor containing filename.
   """
-  return core_ops.text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+  return core_ops.io_text_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
 def save_csv(dataset, filename):
@@ -50,7 +50,7 @@ def save_csv(dataset, filename):
     dataset: A Dataset to be saved.
     filename: A `tf.string` tensor containing filename.
   """
-  return core_ops.csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
+  return core_ops.io_csv_dataset_output(dataset._variant_tensor, filename) # pylint: disable=protected-access
 
 
 def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
@@ -60,7 +60,7 @@ def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
     dataset: A `tf.string` tensor
     pattern: A pattern string.
   """
-  return core_ops.re2_full_match(input, pattern)
+  return core_ops.io_re2_full_match(input, pattern)
 
 
 class TextDataset(data_ops.BaseDataset):
@@ -79,7 +79,7 @@ class TextDataset(data_ops.BaseDataset):
 
     if filename.startswith("file://-") or filename.startswith("file://0"):
       dataset = data_ops.BaseDataset.range(1).map(
-          lambda length: core_ops.read_text(filename, memory="", offset=0, length=length)
+          lambda length: core_ops.io_read_text(filename, memory="", offset=0, length=length)
       )
     else:
       filesize = tf.io.gfile.GFile(filename).size()
@@ -92,7 +92,7 @@ class TextDataset(data_ops.BaseDataset):
               tf.constant(entry_offset, tf.int64),
               tf.constant(entry_length, tf.int64)
           )
-      ).map(lambda offset, length: core_ops.read_text(
+      ).map(lambda offset, length: core_ops.io_read_text(
           filename, memory="",
           offset=offset, length=length))
     self._dataset = dataset
@@ -107,10 +107,10 @@ class TextOutputSequence(object):
     """Create a `TextOutputSequence`.
     """
     self._filenames = filenames
-    self._resource = core_ops.text_output_sequence(destination=filenames)
+    self._resource = core_ops.io_text_output_sequence(destination=filenames)
 
   def setitem(self, index, item):
-    core_ops.text_output_sequence_set_item(self._resource, index, item)
+    core_ops.io_text_output_sequence_set_item(self._resource, index, item)
 
 
 def _infer_dtype(val):

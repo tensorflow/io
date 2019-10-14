@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("VideoInput")
+REGISTER_OP("IO>VideoInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -30,7 +30,7 @@ REGISTER_OP("VideoInput")
        return Status::OK();
      });
 
-REGISTER_OP("VideoDataset")
+REGISTER_OP("IO>VideoDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -43,7 +43,7 @@ REGISTER_OP("VideoDataset")
        return Status::OK();
      });
 
-REGISTER_OP("AudioInput")
+REGISTER_OP("IO>AudioInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -54,7 +54,7 @@ REGISTER_OP("AudioInput")
        return Status::OK();
      });
 
-REGISTER_OP("AudioDataset")
+REGISTER_OP("IO>AudioDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -67,7 +67,7 @@ REGISTER_OP("AudioDataset")
        return Status::OK();
      });
 
-REGISTER_OP("FfmpegReadableInit")
+REGISTER_OP("IO>FfmpegReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -79,7 +79,7 @@ REGISTER_OP("FfmpegReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("FfmpegReadableSpec")
+REGISTER_OP("IO>FfmpegReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -92,7 +92,7 @@ REGISTER_OP("FfmpegReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FfmpegReadableRead")
+REGISTER_OP("IO>FfmpegReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -109,7 +109,7 @@ REGISTER_OP("FfmpegReadableRead")
     return Status::OK();
   });
 
-REGISTER_OP("FfmpegDecodeVideo")
+REGISTER_OP("IO>FfmpegDecodeVideo")
   .Input("input: string")
   .Input("index: int64")
   .Output("value: uint8")
@@ -117,4 +117,5 @@ REGISTER_OP("FfmpegDecodeVideo")
     c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), 3}));
     return Status::OK();
   });
+
 }  // namespace tensorflow

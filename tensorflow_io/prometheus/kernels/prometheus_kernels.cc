@@ -70,7 +70,7 @@ class ReadPrometheusOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ReadPrometheus").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadPrometheus").Device(DEVICE_CPU),
                         ReadPrometheusOp);
 
 
@@ -191,11 +191,11 @@ class PrometheusReadable : public IOReadableInterface {
   std::vector<double> value_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("PrometheusReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PrometheusReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<PrometheusReadable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PrometheusReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<PrometheusReadable>);
-REGISTER_KERNEL_BUILDER(Name("PrometheusReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PrometheusReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<PrometheusReadable>);
 
 }  // namespace data

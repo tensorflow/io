@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ListParquetColumns")
+REGISTER_OP("IO>ListParquetColumns")
     .Input("filename: string")
     .Input("memory: string")
     .Output("columns: string")
@@ -32,7 +32,7 @@ REGISTER_OP("ListParquetColumns")
        return Status::OK();
      });
 
-REGISTER_OP("ReadParquet")
+REGISTER_OP("IO>ReadParquet")
     .Input("filename: string")
     .Input("column: string")
     .Input("memory: string")
@@ -44,7 +44,8 @@ REGISTER_OP("ReadParquet")
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
-REGISTER_OP("ParquetReadableInit")
+
+REGISTER_OP("IO>ParquetReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -56,7 +57,7 @@ REGISTER_OP("ParquetReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetReadableSpec")
+REGISTER_OP("IO>ParquetReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -67,7 +68,7 @@ REGISTER_OP("ParquetReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetReadableRead")
+REGISTER_OP("IO>ParquetReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -84,7 +85,7 @@ REGISTER_OP("ParquetReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("ParquetReadablePartitions")
+REGISTER_OP("IO>ParquetReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

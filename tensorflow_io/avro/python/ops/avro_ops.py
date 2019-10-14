@@ -34,7 +34,7 @@ def list_avro_columns(filename, schema, **kwargs):
   if not tf.executing_eagerly():
     raise NotImplementedError("list_avro_columns only support eager mode")
   memory = kwargs.get("memory", "")
-  columns, dtypes = core_ops.list_avro_columns(
+  columns, dtypes = core_ops.io_list_avro_columns(
       filename, schema=schema, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes))
   return dict([(column.numpy().decode(), tf.TensorSpec(
@@ -48,7 +48,7 @@ def read_avro(filename, schema, column, **kwargs):
   memory = kwargs.get("memory", "")
   offset = kwargs.get("offset", 0)
   length = kwargs.get("length", -1)
-  return core_ops.read_avro(
+  return core_ops.io_read_avro(
       filename, schema, column.name, memory=memory,
       offset=offset, length=length, dtype=column.dtype)
 
@@ -80,7 +80,7 @@ class AvroDataset(data_ops.BaseDataset):
             tf.constant(entry_offset, tf.int64),
             tf.constant(entry_length, tf.int64)
         )
-    ).map(lambda offset, length: core_ops.read_avro(
+    ).map(lambda offset, length: core_ops.io_read_avro(
         filename, schema, column, memory="",
         offset=offset, length=length, dtype=dtype))
     self._dataset = dataset

@@ -33,19 +33,19 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
                filename,
                internal=False):
     with tf.name_scope("HDF5IOTensor") as scope:
-      resource, columns = core_ops.hdf5_readable_init(
+      resource, columns = core_ops.io_hdf5_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype = core_ops.hdf5_readable_spec(resource, column)
+        shape, dtype = core_ops.io_hdf5_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.hdf5_readable_read,
+            core_ops.io_hdf5_readable_read,
             resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -466,7 +466,7 @@ class KinesisDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("KinesisDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KinesisDataset").Device(DEVICE_CPU),
                         KinesisDatasetOp);
 }  // namespace data
 }  // namespace tensorflow

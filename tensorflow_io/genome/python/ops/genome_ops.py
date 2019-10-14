@@ -20,7 +20,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-read_fastq = core_ops.read_fastq
+read_fastq = core_ops.io_read_fastq
 
 
 

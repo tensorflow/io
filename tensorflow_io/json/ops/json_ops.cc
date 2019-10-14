@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("JSONReadableInit")
+REGISTER_OP("IO>JSONReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -32,7 +32,7 @@ REGISTER_OP("JSONReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("JSONReadableSpec")
+REGISTER_OP("IO>JSONReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -43,7 +43,7 @@ REGISTER_OP("JSONReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("JSONReadableRead")
+REGISTER_OP("IO>JSONReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -60,7 +60,7 @@ REGISTER_OP("JSONReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("ListJSONColumns")
+REGISTER_OP("IO>ListJSONColumns")
     .Input("filename: string")
     .Output("columns: string")
     .Output("dtypes: string")
@@ -70,7 +70,7 @@ REGISTER_OP("ListJSONColumns")
        return Status::OK();
      });
 
-REGISTER_OP("ReadJSON")
+REGISTER_OP("IO>ReadJSON")
     .Input("filename: string")
     .Input("column: string")
     .Attr("dtype: type")

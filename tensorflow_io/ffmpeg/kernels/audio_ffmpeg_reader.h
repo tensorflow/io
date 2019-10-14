@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ class AudioReader : public FFmpegReader{
 
   int64 sample_index_ = 0;
 };
+
 }  // namespace video
 }  // namespace data
 }  // namespace tensorflow

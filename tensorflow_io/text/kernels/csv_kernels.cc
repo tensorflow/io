@@ -259,11 +259,12 @@ class CSVReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("CSVReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CSVReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<CSVReadable>);
-REGISTER_KERNEL_BUILDER(Name("CSVReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CSVReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<CSVReadable>);
-REGISTER_KERNEL_BUILDER(Name("CSVReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CSVReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<CSVReadable>);
+
 }  // namespace data
 }  // namespace tensorflow

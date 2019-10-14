@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("WebPDataset")
+REGISTER_OP("IO>WebPDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -28,7 +28,7 @@ REGISTER_OP("WebPDataset")
        return Status::OK();
      });
 
-REGISTER_OP("TIFFDataset")
+REGISTER_OP("IO>TIFFDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -37,7 +37,7 @@ REGISTER_OP("TIFFDataset")
        return Status::OK();
      });
 
-REGISTER_OP("GIFDataset")
+REGISTER_OP("IO>GIFDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -46,7 +46,7 @@ REGISTER_OP("GIFDataset")
        return Status::OK();
      });
 
-REGISTER_OP("DecodeWebP")
+REGISTER_OP("IO>DecodeWebP")
     .Input("contents: string")
     .Output("image: uint8")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -58,7 +58,7 @@ REGISTER_OP("DecodeWebP")
       return Status::OK();
     });
 
-REGISTER_OP("DrawBoundingBoxesV3")
+REGISTER_OP("IO>DrawBoundingBoxesV3")
     .Input("images: T")
     .Input("boxes: float")
     .Input("colors: float")

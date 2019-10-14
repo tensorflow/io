@@ -194,13 +194,14 @@ class LMDBMapping : public IOMappingInterface {
   MDB_dbi mdb_dbi_ GUARDED_BY(mu_) = 0;
 };
 
-REGISTER_KERNEL_BUILDER(Name("LMDBReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<LMDBReadable>);
-REGISTER_KERNEL_BUILDER(Name("LMDBReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<LMDBReadable>);
-REGISTER_KERNEL_BUILDER(Name("LMDBMappingInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBMappingInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<LMDBMapping>);
-REGISTER_KERNEL_BUILDER(Name("LMDBMappingRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBMappingRead").Device(DEVICE_CPU),
                         IOMappingReadOp<LMDBMapping>);
+
 }  // namespace data
 }  // namespace tensorflow

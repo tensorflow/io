@@ -27,7 +27,7 @@ class _LMDBIODatasetFunction(object):
   def __init__(self, resource):
     self._resource = resource
   def __call__(self, start, stop):
-    return core_ops.kafka_readable_read(
+    return core_ops.io_kafka_readable_read(
         self._resource, start=start, stop=stop,
         shape=tf.TensorShape([None]), dtype=tf.string)
 
@@ -36,18 +36,18 @@ class LMDBIODataset(tf.compat.v2.data.Dataset):
 
   def __init__(self, filename, **kwargs):
     with tf.name_scope("LMDBIODataset") as scope:
-      mapping = core_ops.lmdb_mapping_init(
+      mapping = core_ops.io_lmdb_mapping_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      resource = core_ops.lmdb_readable_init(
+      resource = core_ops.io_lmdb_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       capacity = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
-          lambda index: core_ops.lmdb_readable_read(
+          lambda index: core_ops.io_lmdb_readable_read(
               resource,
               start=index, stop=index+capacity,
               shape=tf.TensorShape([None]), dtype=tf.string))
@@ -55,7 +55,7 @@ class LMDBIODataset(tf.compat.v2.data.Dataset):
           tf.data.experimental.take_while(
               lambda v: tf.greater(tf.shape(v)[0], 0)))
       dataset = dataset.map(
-          lambda key: (key, core_ops.lmdb_mapping_read(mapping, key)))
+          lambda key: (key, core_ops.io_lmdb_mapping_read(mapping, key)))
       dataset = dataset.unbatch()
 
       self._mapping = mapping

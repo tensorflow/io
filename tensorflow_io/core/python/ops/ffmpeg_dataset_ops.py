@@ -44,17 +44,17 @@ class FFmpegIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-ac
     """FFmpegIODataset."""
     with tf.name_scope("FFmpegIODataset") as scope:
       from tensorflow_io.core.python.ops import ffmpeg_ops
-      resource, _ = ffmpeg_ops.ffmpeg_readable_init(
+      resource, _ = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype, _ = ffmpeg_ops.ffmpeg_readable_spec(resource, stream)
+      shape, dtype, _ = ffmpeg_ops.io_ffmpeg_readable_spec(resource, stream)
       shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
       dtype = tf.as_dtype(dtype.numpy())
       capacity = 1 if stream.startswith("v:") else 4096
       super(FFmpegIODataset, self).__init__(
           _FFmpegIODatasetFunction(
-              ffmpeg_ops.ffmpeg_readable_read,
+              ffmpeg_ops.io_ffmpeg_readable_read,
               resource, stream, shape, dtype),
           capacity=capacity,
           internal=internal)

@@ -66,7 +66,7 @@ class CsvDatasetOutput {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("CsvDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<CsvDatasetOutput>);
+    Name("IO>CsvDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<CsvDatasetOutput>);
 
 }  // namespace
 }  // namespace data

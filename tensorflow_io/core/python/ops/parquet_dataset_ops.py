@@ -51,7 +51,7 @@ class ParquetIODataset(tf.compat.v2.data.Dataset):
     with tf.name_scope("ParquetIODataset") as scope:
       capacity = 4096
 
-      resource, columns_v = core_ops.parquet_readable_init(
+      resource, columns_v = core_ops.io_parquet_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
@@ -61,11 +61,11 @@ class ParquetIODataset(tf.compat.v2.data.Dataset):
 
       columns_function = []
       for column in columns:
-        shape, dtype = core_ops.parquet_readable_spec(resource, column)
+        shape, dtype = core_ops.io_parquet_readable_spec(resource, column)
         shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
         dtype = tf.as_dtype(dtype.numpy())
         function = _ParquetIODatasetFunction(
-            core_ops.parquet_readable_read, resource, column, shape, dtype)
+            core_ops.io_parquet_readable_read, resource, column, shape, dtype)
         columns_function.append(function)
 
       for (column, function) in zip(columns, columns_function):

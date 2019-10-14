@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("KafkaDataset")
+REGISTER_OP("IO>KafkaDataset")
     .Input("topics: string")
     .Input("servers: string")
     .Input("group: string")
@@ -50,7 +50,7 @@ config_topic: A `tf.string` tensor containing topic configuration
   please refer to 'Topic configuration properties' in librdkafka doc.
 )doc");
 
-REGISTER_OP("WriteKafka")
+REGISTER_OP("IO>WriteKafka")
     .Input("message: string")
     .Input("topic: string")
     .Input("servers: string")

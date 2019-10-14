@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -168,7 +168,7 @@ class GcsCredentialsOpKernel : public OpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("GcsConfigureCredentials").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GcsConfigureCredentials").Device(DEVICE_CPU),
                         GcsCredentialsOpKernel);
 
 class GcsBlockCacheOpKernel : public OpKernel {
@@ -198,7 +198,7 @@ class GcsBlockCacheOpKernel : public OpKernel {
   }
 };
 
-REGISTER_KERNEL_BUILDER(Name("GcsConfigureBlockCache").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GcsConfigureBlockCache").Device(DEVICE_CPU),
                         GcsBlockCacheOpKernel);
 
 }  // namespace

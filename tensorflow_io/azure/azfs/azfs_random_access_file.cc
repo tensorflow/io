@@ -82,4 +82,5 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
 
   return Status::OK();
 }
+
 }  // namespace tensorflow
