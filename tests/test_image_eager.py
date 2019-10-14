@@ -57,6 +57,37 @@ def test_tiff_io_tensor():
   for i in tiff.keys:
     assert np.all(images[i].numpy() == tiff(i).to_tensor().numpy())
 
+def test_decode_tiff():
+  """Test case for tfio.experimental.image.decode_tiff"""
+  width = 560
+  height = 320
+  channels = 4
+
+  images = []
+  for filename in [
+      "small-00.png",
+      "small-01.png",
+      "small-02.png",
+      "small-03.png",
+      "small-04.png"]:
+    with open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "test_image",
+                     filename), 'rb') as f:
+      png_contents = f.read()
+    image_v = tf.image.decode_png(png_contents, channels=channels)
+    assert image_v.shape == [height, width, channels]
+    images.append(image_v)
+
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
+  filename = "file://" + filename
+
+  for i in range(5):
+    tiff = tfio.experimental.image.decode_tiff(
+        tf.io.read_file(filename), index=i)
+    assert np.all(images[i].numpy() == tiff.numpy())
+
 
 if __name__ == "__main__":
   test.main()
