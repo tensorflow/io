@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,12 +31,13 @@ class GRPCDataset(data.Dataset):
     Args:
       endpoint: A `tf.string` tensor containing one or more endpoints.
     """
-    self._data_input = core_ops.grpc_input(endpoint)
+    self._data_input = core_ops.io_grpc_input(endpoint)
+  
     self._batch = 0 if batch is None else batch
     shape[0] = None
     self._output_shapes = tuple([
-        tf.TensorShape(shape[1:])]) if self._batch == 0 else tuple([
-            tf.TensorShape(shape)])
+      tf.TensorShape(shape[1:])]) if self._batch == 0 else tuple([
+      tf.TensorShape(shape)])
     self._output_types = tuple([dtype])
     self._batch = 0 if batch is None else batch
     super(GRPCDataset, self).__init__()
@@ -62,11 +63,13 @@ class GRPCDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return core_ops.grpc_dataset(
-        self._data_input,
-        self._batch,
-        output_types=self.output_types,
-        output_shapes=self.output_shapes)
+
+    return core_ops.io_grpc_dataset(
+      self._data_input,
+      self._batch,
+      output_types=self.output_types,
+      output_shapes=self.output_shapes)
+
 
   @property
   def output_shapes(self):

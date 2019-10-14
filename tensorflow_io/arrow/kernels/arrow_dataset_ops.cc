@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -1175,16 +1175,16 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("ArrowZeroCopyDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowZeroCopyDataset").Device(DEVICE_CPU),
                         ArrowZeroCopyDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("ArrowSerializedDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowSerializedDataset").Device(DEVICE_CPU),
                         ArrowSerializedDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("ArrowFeatherDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowFeatherDataset").Device(DEVICE_CPU),
                         ArrowFeatherDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("ArrowStreamDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
 
 }  // namespace data

@@ -161,7 +161,7 @@ class ReadTextOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ReadText").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadText").Device(DEVICE_CPU),
                         ReadTextOp);
 
 

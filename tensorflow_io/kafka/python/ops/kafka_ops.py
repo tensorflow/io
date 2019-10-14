@@ -27,11 +27,11 @@ class KafkaOutputSequence(object):
     """Create a `KafkaOutputSequence`.
     """
     self._topic = topic
-    self._resource = core_ops.kafka_output_sequence(
+    self._resource = core_ops.io_kafka_output_sequence(
         topic=topic, servers=servers)
 
   def setitem(self, index, item):
-    core_ops.kafka_output_sequence_set_item(self._resource, index, item)
+    core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
 
   def flush(self):
-    core_ops.kafka_output_sequence_flush(self._resource)
+    core_ops.io_kafka_output_sequence_flush(self._resource)

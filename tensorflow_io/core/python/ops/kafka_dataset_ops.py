@@ -27,7 +27,7 @@ class _KafkaIODatasetFunction(object):
   def __init__(self, resource):
     self._resource = resource
   def __call__(self, start, stop):
-    return core_ops.kafka_readable_read(
+    return core_ops.io_kafka_readable_read(
         self._resource, start=start, stop=stop,
         shape=tf.TensorShape([None]), dtype=tf.string)
 
@@ -48,7 +48,7 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.kafka_readable_init(
+      resource = core_ops.io_kafka_readable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
@@ -71,7 +71,7 @@ class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=p
       metadata = [e for e in configuration or []]
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.kafka_readable_init(
+      resource = core_ops.io_kafka_readable_init(
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))

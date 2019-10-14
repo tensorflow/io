@@ -43,7 +43,7 @@ limitations under the License.
 typedef uint64_t
     Uint64;  // Uint64 not present in tensorflow::custom-op docker image dcmtk
 
-using namespace tensorflow;
+namespace tensorflow {
 
 template <typename dtype>
 class DecodeDICOMImageOp : public OpKernel {
@@ -262,7 +262,7 @@ class DecodeDICOMImageOp : public OpKernel {
 
 // Register the CPU kernels.
 #define REGISTER_DECODE_DICOM_IMAGE_CPU(dtype)                 \
-  REGISTER_KERNEL_BUILDER(Name("DecodeDICOMImage")             \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")             \
                               .Device(DEVICE_CPU)              \
                               .TypeConstraint<dtype>("dtype"), \
                           DecodeDICOMImageOp<dtype>);
@@ -276,3 +276,5 @@ REGISTER_DECODE_DICOM_IMAGE_CPU(Eigen::half);
 REGISTER_DECODE_DICOM_IMAGE_CPU(double);
 
 #undef REGISTER_DECODE_DICOM_IMAGE_CPU
+
+}  // namespace tensorflow

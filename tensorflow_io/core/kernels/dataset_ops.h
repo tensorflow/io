@@ -1143,5 +1143,6 @@ class StreamInputDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
   std::vector<PartialTensorShape> output_shapes_;
 };
+
 }  // namespace data
 }  // namespace tensorflow

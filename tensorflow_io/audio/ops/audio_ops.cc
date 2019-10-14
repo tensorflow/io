@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("WAVReadableInit")
+REGISTER_OP("IO>WAVReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -29,7 +29,7 @@ REGISTER_OP("WAVReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("WAVReadableSpec")
+REGISTER_OP("IO>WAVReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -41,7 +41,7 @@ REGISTER_OP("WAVReadableSpec")
      return Status::OK();
    });
 
-REGISTER_OP("WAVReadableRead")
+REGISTER_OP("IO>WAVReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

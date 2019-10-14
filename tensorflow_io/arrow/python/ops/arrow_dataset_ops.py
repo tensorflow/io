@@ -191,7 +191,7 @@ class ArrowDataset(ArrowBaseDataset):
     """
     if serialized_batches is not None:
       make_variant_fn = partial(
-          core_ops.arrow_serialized_dataset,
+          core_ops.io_arrow_serialized_dataset,
           serialized_batches)
     elif arrow_buffer is None:
       raise ValueError("Must set either serialzied_batches or arrow_buffer")
@@ -209,7 +209,7 @@ class ArrowDataset(ArrowBaseDataset):
           dtype=dtypes.int64,
           name="buffer_size")
       make_variant_fn = partial(
-          core_ops.arrow_zero_copy_dataset,
+          core_ops.io_arrow_zero_copy_dataset,
           buffer_address,
           buffer_size)
       # Keep a reference to the arrow buffers used
@@ -359,7 +359,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="filenames")
     super(ArrowFeatherDataset, self).__init__(
-        partial(core_ops.arrow_feather_dataset, filenames),
+        partial(core_ops.io_arrow_feather_dataset, filenames),
         columns,
         output_types,
         output_shapes,
@@ -444,7 +444,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="endpoints")
     super(ArrowStreamDataset, self).__init__(
-        partial(core_ops.arrow_stream_dataset, endpoints),
+        partial(core_ops.io_arrow_stream_dataset, endpoints),
         columns,
         output_types,
         output_shapes,
@@ -643,7 +643,7 @@ def list_feather_columns(filename, **kwargs):
   if not tf.executing_eagerly():
     raise NotImplementedError("list_feather_columns only support eager mode")
   memory = kwargs.get("memory", "")
-  columns, dtypes_, shapes = core_ops.list_feather_columns(
+  columns, dtypes_, shapes = core_ops.io_list_feather_columns(
       filename, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes_), tf.unstack(shapes))
   return dict([(column.numpy().decode(), tf.TensorSpec(

@@ -44,16 +44,16 @@ class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acce
                internal=True):
     """HDF5IODataset."""
     with tf.name_scope("HDF5IODataset") as scope:
-      resource, _ = core_ops.hdf5_readable_init(
+      resource, _ = core_ops.io_hdf5_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype = core_ops.hdf5_readable_spec(resource, dataset)
+      shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
       shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
       dtype = tf.as_dtype(dtype.numpy())
       capacity = 4096
       super(HDF5IODataset, self).__init__(
           _HDF5IODatasetFunction(
-              core_ops.hdf5_readable_read,
+              core_ops.io_hdf5_readable_read,
               resource, dataset, shape, dtype),
           capacity=capacity, internal=internal)

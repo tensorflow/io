@@ -35,6 +35,6 @@ class PcapDataset(data_ops.Dataset):
         tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
             tf.TensorShape([None]), tf.TensorShape([None])]
     super(PcapDataset, self).__init__(
-        pcap_ops.pcap_dataset,
-        pcap_ops.pcap_input(filenames),
+        pcap_ops.io_pcap_dataset,
+        pcap_ops.io_pcap_input(filenames),
         batch, dtypes, shapes)

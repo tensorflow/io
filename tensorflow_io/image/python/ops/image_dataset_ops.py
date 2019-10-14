@@ -47,7 +47,7 @@ class WebPDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return core_ops.web_p_dataset(self._filenames)
+    return core_ops.io_web_p_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -77,7 +77,7 @@ class TIFFDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return core_ops.tiff_dataset(self._filenames)
+    return core_ops.io_tiff_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -106,7 +106,7 @@ class GIFDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return core_ops.gif_dataset(self._filenames)
+    return core_ops.io_gif_dataset(self._filenames)
 
   @property
   def output_classes(self):
@@ -131,7 +131,7 @@ def decode_webp(contents, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return core_ops.decode_web_p(contents, name=name)
+  return core_ops.io_decode_web_p(contents, name=name)
 
 def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
   """
@@ -151,5 +151,5 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
     texts = []
   if colors is None:
     colors = [[]]
-  return core_ops.draw_bounding_boxes_v3(
+  return core_ops.io_draw_bounding_boxes_v3(
       images, boxes, colors, texts, name=name)

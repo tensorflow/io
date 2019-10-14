@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("ArrowZeroCopyDataset")
+REGISTER_OP("IO>ArrowZeroCopyDataset")
     .Input("buffer_address: uint64")
     .Input("buffer_size: int64")
     .Input("columns: int32")
@@ -38,7 +38,7 @@ in file format.
 buffer_size: Buffer size in bytes
 )doc");
 
-REGISTER_OP("ArrowSerializedDataset")
+REGISTER_OP("IO>ArrowSerializedDataset")
     .Input("serialized_batches: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -54,7 +54,7 @@ Creates a dataset that reads serialized Arrow RecordBatches in file format.
 serialized_batches: Serialized Arrow RecordBatches.
 )doc");
 
-REGISTER_OP("ArrowFeatherDataset")
+REGISTER_OP("IO>ArrowFeatherDataset")
     .Input("filenames: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -70,7 +70,7 @@ Creates a dataset that reads files in Arrow Feather format.
 filenames: One or more file paths.
 )doc");
 
-REGISTER_OP("ArrowStreamDataset")
+REGISTER_OP("IO>ArrowStreamDataset")
     .Input("endpoints: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -87,7 +87,7 @@ endpoints: One or more host addresses that are serving an Arrow stream.
 )doc");
 
 
-REGISTER_OP("ListFeatherColumns")
+REGISTER_OP("IO>ListFeatherColumns")
     .Input("filename: string")
     .Input("memory: string")
     .Output("columns: string")
@@ -100,7 +100,7 @@ REGISTER_OP("ListFeatherColumns")
        return Status::OK();
      });
 
-REGISTER_OP("FeatherReadableInit")
+REGISTER_OP("IO>FeatherReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -112,7 +112,7 @@ REGISTER_OP("FeatherReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherReadableSpec")
+REGISTER_OP("IO>FeatherReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -123,7 +123,7 @@ REGISTER_OP("FeatherReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("FeatherReadableRead")
+REGISTER_OP("IO>FeatherReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -139,4 +139,5 @@ REGISTER_OP("FeatherReadableRead")
     c->set_output(0, entry);
     return Status::OK();
    });
+
 }  // namespace tensorflow

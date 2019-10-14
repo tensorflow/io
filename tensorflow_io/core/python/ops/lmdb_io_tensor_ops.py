@@ -40,7 +40,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
                filename,
                internal=False):
     with tf.name_scope("LMDBIOTensor") as scope:
-      resource = core_ops.lmdb_mapping_init(
+      resource = core_ops.io_lmdb_mapping_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
@@ -72,9 +72,9 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
 
       super(LMDBIOTensor, self).__init__(
           spec,
-          _IOTensorMappingFunction(core_ops.lmdb_mapping_read, resource),
+          _IOTensorMappingFunction(core_ops.io_lmdb_mapping_read, resource),
           _IterableInit(
-              core_ops.lmdb_readable_init, filename),
+              core_ops.io_lmdb_readable_init, filename),
           _IterableNext(
-              core_ops.lmdb_readable_read, tf.TensorShape([None]), tf.string),
+              core_ops.io_lmdb_readable_read, tf.TensorShape([None]), tf.string),
           internal=internal)

@@ -17,12 +17,14 @@ limitations under the License.
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
 
-using namespace tensorflow;
+namespace tensorflow {
 
-REGISTER_OP("DecodeDICOMData")
+REGISTER_OP("IO>DecodeDICOMData")
     .Input("contents: string")
     .Input("tags: uint32")
     .Output("tag_values: string")
     .Doc(R"doc(
 loads a dicom file and returns the specified tags values as string.
 )doc");
+
+}  // namespace tensorflow

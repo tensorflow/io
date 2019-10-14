@@ -68,9 +68,9 @@ class GRPCInput: public StreamInput<GRPCInputState> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(GRPCInput, "tensorflow::data::GRPCInput");
 
-REGISTER_KERNEL_BUILDER(Name("GRPCInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GRPCInput").Device(DEVICE_CPU),
                         StreamInputOp<GRPCInput>);
-REGISTER_KERNEL_BUILDER(Name("GRPCDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GRPCDataset").Device(DEVICE_CPU),
                         StreamInputDatasetOp<GRPCInput, GRPCInputState>);
 }  // namespace data
 }  // namespace tensorflow

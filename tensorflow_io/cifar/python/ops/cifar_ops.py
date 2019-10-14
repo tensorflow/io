@@ -31,7 +31,7 @@ class _CIFAR10Dataset(data.Dataset):
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = cifar_ops.cifar10_input(filename, filters)
+    self._data_input = cifar_ops.io_cifar10_input(filename, filters)
     self._batch = 0 if batch is None else batch
     super(_CIFAR10Dataset, self).__init__()
 
@@ -39,7 +39,7 @@ class _CIFAR10Dataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return cifar_ops.cifar10_dataset(
+    return cifar_ops.io_cifar10_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,
@@ -107,7 +107,7 @@ class _CIFAR100Dataset(data.Dataset):
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
     """
-    self._data_input = cifar_ops.cifar100_input(filename, filters)
+    self._data_input = cifar_ops.io_cifar100_input(filename, filters)
     self._batch = 0 if batch is None else batch
     super(_CIFAR100Dataset, self).__init__()
 
@@ -115,7 +115,7 @@ class _CIFAR100Dataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return cifar_ops.cifar100_dataset(
+    return cifar_ops.io_cifar100_dataset(
         self._data_input,
         self._batch,
         output_types=self.output_types,

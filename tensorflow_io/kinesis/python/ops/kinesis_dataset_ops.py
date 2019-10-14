@@ -82,7 +82,7 @@ class KinesisDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return kinesis_ops.kinesis_dataset(
+    return kinesis_ops.io_kinesis_dataset(
         self._stream, self._shard, self._read_indefinitely, self._interval)
 
   @property

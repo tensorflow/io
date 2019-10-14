@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("PrometheusReadableInit")
+REGISTER_OP("IO>PrometheusReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -30,7 +30,7 @@ REGISTER_OP("PrometheusReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("PrometheusReadableSpec")
+REGISTER_OP("IO>PrometheusReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -41,7 +41,7 @@ REGISTER_OP("PrometheusReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("PrometheusReadableRead")
+REGISTER_OP("IO>PrometheusReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -58,7 +58,7 @@ REGISTER_OP("PrometheusReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("ReadPrometheus")
+REGISTER_OP("IO>ReadPrometheus")
     .Input("endpoint: string")
     .Input("query: string")
     .Output("timestamp: int64")

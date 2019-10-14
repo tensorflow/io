@@ -170,7 +170,7 @@ class ListFeatherColumnsOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("ListFeatherColumns").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ListFeatherColumns").Device(DEVICE_CPU),
                         ListFeatherColumnsOp);
 
 
@@ -401,11 +401,12 @@ class FeatherReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("FeatherReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>FeatherReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<FeatherReadable>);
-REGISTER_KERNEL_BUILDER(Name("FeatherReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>FeatherReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FeatherReadable>);
-REGISTER_KERNEL_BUILDER(Name("FeatherReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>FeatherReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<FeatherReadable>);
+
 }  // namespace data
 }  // namespace tensorflow

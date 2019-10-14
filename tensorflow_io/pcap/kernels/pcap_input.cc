@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -198,9 +198,9 @@ class PcapInput: public FileInput<PcapInputStream> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(PcapInput, "tensorflow::data::PcapInput");
 
-REGISTER_KERNEL_BUILDER(Name("PcapInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PcapInput").Device(DEVICE_CPU),
                         FileInputOp<PcapInput>);
-REGISTER_KERNEL_BUILDER(Name("PcapDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PcapDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<PcapInput, PcapInputStream>);
 
 }  // namespace data

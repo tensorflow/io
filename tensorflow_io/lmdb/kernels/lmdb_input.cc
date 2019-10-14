@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -142,9 +142,10 @@ class LMDBInput: public FileInput<LMDBInputStream> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(LMDBInput, "tensorflow::data::LMDBInput");
 
-REGISTER_KERNEL_BUILDER(Name("LMDBInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBInput").Device(DEVICE_CPU),
                         FileInputOp<LMDBInput>);
-REGISTER_KERNEL_BUILDER(Name("LMDBDatasetV2").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>LMDBDatasetV2").Device(DEVICE_CPU),
                         FileInputDatasetOp<LMDBInput, LMDBInputStream>);
+
 }  // namespace data
 }  // namespace tensorflow

@@ -771,7 +771,7 @@ class IgniteDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return ignite_ops.ignite_dataset(self.cache_name, self.host, self.port,
+    return ignite_ops.io_ignite_dataset(self.cache_name, self.host, self.port,
                                      self.local, self.part, self.page_size,
                                      self.schema, self.permutation)
 

@@ -53,19 +53,19 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
                filename,
                internal=False):
     with tf.name_scope("CSVIOTensor") as scope:
-      resource, columns = core_ops.csv_readable_init(
+      resource, columns = core_ops.io_csv_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype = core_ops.csv_readable_spec(resource, column)
+        shape, dtype = core_ops.io_csv_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.csv_readable_read,
+            core_ops.io_csv_readable_read,
             resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(
@@ -87,7 +87,7 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-acc
     # change spec to bool
     spec = tf.TensorSpec(spec.shape, tf.bool)
     function = _IOTensorComponentLabelFunction(
-        core_ops.csv_readable_read,
+        core_ops.io_csv_readable_read,
         self._resource, column, spec.shape, spec.dtype)
 
     return io_tensor_ops.BaseIOTensor(

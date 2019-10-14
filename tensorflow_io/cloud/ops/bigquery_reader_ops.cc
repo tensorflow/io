@@ -1,4 +1,4 @@
-/* Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,11 +17,12 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
+
 namespace tensorflow {
 
 using shape_inference::InferenceContext;
 
-REGISTER_OP("BigQueryReader")
+REGISTER_OP("IO>BigQueryReader")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Attr("project_id: string")
@@ -54,7 +55,7 @@ test_end_point: Do not use. For testing purposes only.
 reader_handle: The handle to reference the Reader.
 )doc");
 
-REGISTER_OP("GenerateBigQueryReaderPartitions")
+REGISTER_OP("IO>GenerateBigQueryReaderPartitions")
     .Attr("project_id: string")
     .Attr("dataset_id: string")
     .Attr("table_id: string")

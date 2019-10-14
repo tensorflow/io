@@ -24,7 +24,7 @@ from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
 
-decode_avro = core_ops.decode_avro
+decode_avro = core_ops.io_decode_avro
 
 warnings.warn(
     "implementation of existing tensorflow_io.kafka.KafkaDataset is "
@@ -90,7 +90,7 @@ class KafkaDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return core_ops.kafka_dataset(self._topics, self._servers,
+    return core_ops.io_kafka_dataset(self._topics, self._servers,
                                   self._group, self._eof, self._timeout,
                                   self._config_global, self._config_topic)
 
@@ -120,5 +120,5 @@ def write_kafka(message,
   Returns:
       A `Tensor` of type `string`. 0-D.
   """
-  return core_ops.write_kafka(
+  return core_ops.io_write_kafka(
       message=message, topic=topic, servers=servers, name=name)

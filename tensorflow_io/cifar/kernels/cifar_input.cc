@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 namespace {
+
 class CIFAR10Input: public FileInput<int64> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<int64>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
@@ -95,14 +96,15 @@ class CIFAR100Input: public FileInput<int64> {
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::CIFAR10Input");
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR100Input, "tensorflow::CIFAR100Input");
 
-REGISTER_KERNEL_BUILDER(Name("CIFAR10Input").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR10Input").Device(DEVICE_CPU),
                         FileInputOp<CIFAR10Input>);
-REGISTER_KERNEL_BUILDER(Name("CIFAR100Input").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR100Input").Device(DEVICE_CPU),
                         FileInputOp<CIFAR100Input>);
-REGISTER_KERNEL_BUILDER(Name("CIFAR10Dataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR10Dataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<CIFAR10Input, int64>);
-REGISTER_KERNEL_BUILDER(Name("CIFAR100Dataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR100Dataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<CIFAR100Input, int64>);
+
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow

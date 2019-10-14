@@ -34,7 +34,7 @@ def list_hdf5_datasets(filename, **kwargs):
   if not tf.executing_eagerly():
     raise NotImplementedError("list_hdf5_datasets only support eager mode")
   memory = kwargs.get("memory", "")
-  datasets, dtypes, shapes = core_ops.list_hdf5_datasets(
+  datasets, dtypes, shapes = core_ops.io_list_hdf5_datasets(
       filename, memory=memory)
   entries = zip(tf.unstack(datasets), tf.unstack(dtypes), tf.unstack(shapes))
   entries = [
@@ -54,7 +54,7 @@ def read_hdf5(filename, dataset, **kwargs):
     stop = dataset.shape[0] - start
   if stop is None:
     stop = -1
-  return core_ops.read_hdf5(
+  return core_ops.io_read_hdf5(
       filename, dataset.name, memory=memory,
       start=start, stop=stop, dtype=dataset.dtype)
 
@@ -88,7 +88,7 @@ class HDF5Dataset(data_ops.BaseDataset):
     entry_stop = entry_start[1:] + [stop]
     self._dataset = data_ops.BaseDataset.from_tensor_slices(
         (tf.constant(entry_start, tf.int64), tf.constant(entry_stop, tf.int64))
-    ).map(lambda start, stop: core_ops.read_hdf5(
+    ).map(lambda start, stop: core_ops.io_read_hdf5(
         filename, dataset, memory="", start=start, stop=stop, dtype=dtype))
     super(HDF5Dataset, self).__init__(
         self._dataset._variant_tensor, [dtype], [shape]) # pylint: disable=protected-access

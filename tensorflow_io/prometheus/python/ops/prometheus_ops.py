@@ -32,7 +32,7 @@ warnings.warn(
 
 def read_prometheus(endpoint, query):
   """read_prometheus"""
-  return core_golang_ops.read_prometheus(endpoint, query)
+  return core_golang_ops.io_read_prometheus(endpoint, query)
 
 class PrometheusDataset(data_ops.BaseDataset):
   """A Prometheus Dataset"""

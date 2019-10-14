@@ -298,5 +298,6 @@ class IOReadablePartitionsOp : public OpKernel {
     context->set_output(0, partitions_tensor);
   }
 };
+
 }  // namespace data
 }  // namespace tensorflow

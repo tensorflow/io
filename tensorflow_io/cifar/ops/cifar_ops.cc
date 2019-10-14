@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("CIFAR10Dataset")
+REGISTER_OP("IO>CIFAR10Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -29,7 +29,7 @@ REGISTER_OP("CIFAR10Dataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("CIFAR100Dataset")
+REGISTER_OP("IO>CIFAR100Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -39,7 +39,7 @@ REGISTER_OP("CIFAR100Dataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("CIFAR10Input")
+REGISTER_OP("IO>CIFAR10Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -50,7 +50,7 @@ REGISTER_OP("CIFAR10Input")
        return Status::OK();
      });
 
-REGISTER_OP("CIFAR100Input")
+REGISTER_OP("IO>CIFAR100Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -60,6 +60,5 @@ REGISTER_OP("CIFAR100Input")
        c->set_output(0, c->MakeShape({c->UnknownDim()}));
        return Status::OK();
      });
-
 
 }  // namespace tensorflow

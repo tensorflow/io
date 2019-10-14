@@ -18,7 +18,8 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
-REGISTER_OP("ReadFastq")
+
+REGISTER_OP("IO>ReadFastq")
     .Input("filename: string")
     .Output("sequences: string")
     .Output("raw_quality: string")
@@ -26,5 +27,5 @@ REGISTER_OP("ReadFastq")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
-}  // tensorflow
 
+}  // namespace tensorflow
