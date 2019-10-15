@@ -74,7 +74,9 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
           spec,
           _IOTensorMappingFunction(core_ops.io_lmdb_mapping_read, resource),
           _IterableInit(
-              core_ops.io_lmdb_readable_init, filename),
+              core_ops.io_lmdb_readable_init,
+              filename),
           _IterableNext(
-              core_ops.io_lmdb_readable_read, tf.TensorShape([None]), tf.string),
+              core_ops.io_lmdb_readable_read,
+              tf.TensorShape([None]), tf.string),
           internal=internal)
