@@ -42,7 +42,7 @@ REGISTER_OP("IO>DecodeTiff")
     return Status::OK();
   });
 
-REGISTER_OP("EncodeBmp")
+REGISTER_OP("IO>EncodeBmp")
   .Input("input: uint8")
   .Output("output: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

@@ -165,4 +165,4 @@ def encode_bmp(image, name=None):
   Returns:
     A `Tensor` of type `string`.
   """
-  return core_ops.encode_bmp(image, name=name)
+  return core_ops.io_encode_bmp(image, name=name)
