@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# tensorflow_io.core.python.ops is implicitly imported (along with file system)
 from tensorflow_io.core.python.ops.io_info import version as __version__
 from tensorflow_io.core.python.ops.io_tensor import IOTensor
 from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset

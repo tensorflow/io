@@ -16,10 +16,10 @@ OSS_BUCKET = your_oss_bucket_name
 In Python code, import the extension `ossfs_op` module to use the extension with `gfile`. The files and directory URI should have `oss://` prefix, followed by an oss bucket name, access_id, access_key, oss_host, then the directory hierarchy.
 
 ```python
-import tensorflow_io.oss
-from tensorflow.python.platform import gfile
+import tensorflow as tf
+import tensorflow_io as tfio
 
-gfile.MkDir('oss://${bucket}\x01id=${access_id}\x02key=${access_key}\x02host=${host}/test_dir')
+tf.io.gfile.mkdir('oss://${bucket}\x01id=${access_id}\x02key=${access_key}\x02host=${host}/test_dir')
 ```
 
 With the extension installed, OSS files can be used with Dataset Ops, etc., in the same fashion as other files.

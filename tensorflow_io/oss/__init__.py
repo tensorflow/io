@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.oss.python.ops import ossfs_ops  # pylint: disable=unused-import
+import tensorflow_io.core.python.ops # pylint: disable=unused-import
 
 from tensorflow.python.util.all_util import remove_undocumented
 
