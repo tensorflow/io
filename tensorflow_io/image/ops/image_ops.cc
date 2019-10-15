@@ -42,4 +42,14 @@ REGISTER_OP("IO>DecodeTiff")
     return Status::OK();
   });
 
+REGISTER_OP("IO>EncodeBmp")
+  .Input("input: uint8")
+  .Output("output: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &unused));
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+  });
+
 }  // namespace tensorflow
