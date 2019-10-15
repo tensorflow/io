@@ -166,6 +166,7 @@ cc_binary(
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
+        "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
         "//tensorflow_io/text:text_ops",
