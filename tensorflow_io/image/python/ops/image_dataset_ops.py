@@ -153,3 +153,16 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
     colors = [[]]
   return core_ops.io_draw_bounding_boxes_v3(
       images, boxes, colors, texts, name=name)
+
+def encode_bmp(image, name=None):
+  """
+  Encode a uint8 tensor to bmp image.
+
+  Args:
+    image: A Tensor. 3-D uint8 with shape [height, width, channels].
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `string`.
+  """
+  return core_ops.io_encode_bmp(image, name=name)
