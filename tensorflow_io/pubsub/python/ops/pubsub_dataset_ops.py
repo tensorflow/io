@@ -41,12 +41,12 @@ class PubSubDataset(data.Dataset):
                (in millisecond).
     """
     self._subscriptions = tf.convert_to_tensor(
-      subscriptions, dtype=dtypes.string, name="subscriptions")
+        subscriptions, dtype=dtypes.string, name="subscriptions")
     self._server = tf.convert_to_tensor(
-      server, dtype=dtypes.string, name="server")
+        server, dtype=dtypes.string, name="server")
     self._eof = tf.convert_to_tensor(eof, dtype=dtypes.bool, name="eof")
     self._timeout = tf.convert_to_tensor(
-      timeout, dtype=dtypes.int64, name="timeout")
+        timeout, dtype=dtypes.int64, name="timeout")
     super(PubSubDataset, self).__init__()
 
   def _inputs(self):
@@ -54,7 +54,7 @@ class PubSubDataset(data.Dataset):
 
   def _as_variant_tensor(self):
     return core_ops.io_pub_sub_dataset(self._subscriptions, self._server,
-                                    self._eof, self._timeout)
+                                       self._eof, self._timeout)
 
   @property
   def output_classes(self):

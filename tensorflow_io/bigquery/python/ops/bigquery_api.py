@@ -49,7 +49,7 @@ class BigQueryClient(object):
     """Creates a BigQueryClient to start BigQuery read sessions.
 
     """
-    self._client_resource = core_ops.big_query_client()
+    self._client_resource = core_ops.io_big_query_client()
 
   def read_session(self,
                    parent,
@@ -122,7 +122,7 @@ class BigQueryClient(object):
     if not output_types:
       output_types = [dtypes.string] * len(selected_fields)
 
-    (streams, avro_schema) = core_ops.big_query_read_session(
+    (streams, avro_schema) = core_ops.io_big_query_read_session(
         client=self._client_resource,
         parent=parent,
         project_id=project_id,
@@ -233,7 +233,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         selected_fields,
         (tensor_spec.TensorSpec([], dtype) for dtype in output_types)))
 
-    variant_tensor = core_ops.big_query_dataset(
+    variant_tensor = core_ops.io_big_query_dataset(
         client=client_resource,
         selected_fields=selected_fields,
         output_types=output_types,
@@ -257,5 +257,5 @@ class BigQueryTestClient(BigQueryClient):
       fake_server_address: url for service faking Cloud BigQuery Storage API.
     """
 
-    self._client_resource = core_ops.big_query_test_client(
+    self._client_resource = core_ops.io_big_query_test_client(
         fake_server_address)
