@@ -35,8 +35,8 @@ from tensorflow_io.core.python.ops import core_ops
 tf_v1 = tf.version.VERSION.startswith('1')
 
 if not tf_v1:
-  gcs_configure_credentials = core_ops.gcs_configure_credentials
-  gcs_configure_block_cache = core_ops.gcs_configure_block_cache
+  gcs_configure_credentials = core_ops.io_gcs_configure_credentials
+  gcs_configure_block_cache = core_ops.io_gcs_configure_block_cache
 
 class BlockCacheParams(object):  # pylint: disable=useless-object-inheritance
   """BlockCacheParams is a struct used for configuring the GCS Block Cache."""
