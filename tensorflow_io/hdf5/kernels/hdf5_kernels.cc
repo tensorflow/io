@@ -323,9 +323,9 @@ class ReadHDF5Op : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ListHDF5Datasets").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoListHDF5Datasets").Device(DEVICE_CPU),
                         ListHDF5DatasetsOp);
-REGISTER_KERNEL_BUILDER(Name("IO>ReadHDF5").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoReadHDF5").Device(DEVICE_CPU),
                         ReadHDF5Op);
 
 
@@ -495,11 +495,11 @@ class HDF5Readable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoHDF5ReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<HDF5Readable>);
-REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoHDF5ReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<HDF5Readable>);
-REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoHDF5ReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<HDF5Readable>);
 
 }  // namespace data

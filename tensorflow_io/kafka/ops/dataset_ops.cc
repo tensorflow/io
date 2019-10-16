@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>KafkaDataset")
+REGISTER_OP("IoKafkaDataset")
     .Input("topics: string")
     .Input("servers: string")
     .Input("group: string")
@@ -50,7 +50,7 @@ config_topic: A `tf.string` tensor containing topic configuration
   please refer to 'Topic configuration properties' in librdkafka doc.
 )doc");
 
-REGISTER_OP("IO>WriteKafka")
+REGISTER_OP("IoWriteKafka")
     .Input("message: string")
     .Input("topic: string")
     .Input("servers: string")

@@ -98,7 +98,7 @@ class BigQueryClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigQueryClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigQueryClient").Device(DEVICE_CPU),
                         BigQueryClientOp);
 
 class BigQueryReadSessionOp : public OpKernel {
@@ -208,7 +208,7 @@ class BigQueryReadSessionOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReadSession").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigQueryReadSession").Device(DEVICE_CPU),
                         BigQueryReadSessionOp);
 
 }  // namespace

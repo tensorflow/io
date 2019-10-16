@@ -198,9 +198,9 @@ class PcapInput: public FileInput<PcapInputStream> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(PcapInput, "tensorflow::data::PcapInput");
 
-REGISTER_KERNEL_BUILDER(Name("IO>PcapInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoPcapInput").Device(DEVICE_CPU),
                         FileInputOp<PcapInput>);
-REGISTER_KERNEL_BUILDER(Name("IO>PcapDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoPcapDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<PcapInput, PcapInputStream>);
 
 }  // namespace data

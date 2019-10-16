@@ -282,9 +282,9 @@ class ReadAvroOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ListAvroColumns").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoListAvroColumns").Device(DEVICE_CPU),
                         ListAvroColumnsOp);
-REGISTER_KERNEL_BUILDER(Name("IO>ReadAvro").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoReadAvro").Device(DEVICE_CPU),
                         ReadAvroOp);
 
 
@@ -528,13 +528,13 @@ class AvroReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>AvroReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoAvroReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<AvroReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>AvroReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoAvroReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<AvroReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>AvroReadablePartitions").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoAvroReadablePartitions").Device(DEVICE_CPU),
                         IOReadablePartitionsOp<AvroReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>AvroReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoAvroReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<AvroReadable>);
 
 }  // namespace data

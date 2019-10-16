@@ -449,7 +449,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>KafkaDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoKafkaDataset").Device(DEVICE_CPU),
                         KafkaDatasetOp);
 
 class WriteKafkaOp : public OpKernel {
@@ -530,7 +530,7 @@ private:
   static const int timeout_ = 5000;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
+REGISTER_KERNEL_BUILDER(Name("IoWriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
 
 }  // namespace data
 }  // namespace tensorflow

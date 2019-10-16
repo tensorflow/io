@@ -72,7 +72,7 @@ class BigtableTestClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigtableTestClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigtableTestClient").Device(DEVICE_CPU),
                         BigtableTestClientOp);
 
 }  // namespace

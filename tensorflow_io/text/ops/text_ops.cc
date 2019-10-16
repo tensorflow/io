@@ -20,7 +20,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>RE2FullMatch")
+REGISTER_OP("IoRE2FullMatch")
     .Input("input: string")
     .Output("output: bool")
     .Output("groups: string")
@@ -46,7 +46,7 @@ REGISTER_OP("IO>RE2FullMatch")
       return Status::OK();
     });
 
-REGISTER_OP("IO>ReadText")
+REGISTER_OP("IoReadText")
     .Input("filename: string")
     .Input("memory: string")
     .Input("offset: int64")
@@ -57,7 +57,7 @@ REGISTER_OP("IO>ReadText")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextStreamInput")
+REGISTER_OP("IoTextStreamInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -68,7 +68,7 @@ REGISTER_OP("IO>TextStreamInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextStreamDataset")
+REGISTER_OP("IoTextStreamDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -81,7 +81,7 @@ REGISTER_OP("IO>TextStreamDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextInput")
+REGISTER_OP("IoTextInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -92,7 +92,7 @@ REGISTER_OP("IO>TextInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextDataset")
+REGISTER_OP("IoTextDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -105,7 +105,7 @@ REGISTER_OP("IO>TextDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextDatasetOutput")
+REGISTER_OP("IoTextDatasetOutput")
     .Input("dataset: variant")
     .Input("filename: string")
     .SetIsStateful()
@@ -113,7 +113,7 @@ REGISTER_OP("IO>TextDatasetOutput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>CsvDatasetOutput")
+REGISTER_OP("IoCsvDatasetOutput")
     .Input("dataset: variant")
     .Input("filename: string")
     .SetIsStateful()
@@ -121,7 +121,7 @@ REGISTER_OP("IO>CsvDatasetOutput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TextOutputSequence")
+REGISTER_OP("IoTextOutputSequence")
     .Input("destination: string")
     .Output("sequence: resource")
     .Attr("container: string = ''")
@@ -129,14 +129,14 @@ REGISTER_OP("IO>TextOutputSequence")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IO>TextOutputSequenceSetItem")
+REGISTER_OP("IoTextOutputSequenceSetItem")
     .Input("sequence: resource")
     .Input("index: int64")
     .Input("item: string")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IO>CSVReadableInit")
+REGISTER_OP("IoCSVReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -148,7 +148,7 @@ REGISTER_OP("IO>CSVReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>CSVReadableSpec")
+REGISTER_OP("IoCSVReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -159,7 +159,7 @@ REGISTER_OP("IO>CSVReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IO>CSVReadableRead")
+REGISTER_OP("IoCSVReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

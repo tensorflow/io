@@ -380,7 +380,7 @@ class TIFFDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>TIFFDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoTIFFDataset").Device(DEVICE_CPU),
                         TIFFDatasetOp);
 
 }  // namespace

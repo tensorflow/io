@@ -243,11 +243,11 @@ class WAVReadable : public IOReadableInterface {
   struct WAVHeader header_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoWAVReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<WAVReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoWAVReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<WAVReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoWAVReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<WAVReadable>);
 
 }  // namespace data

@@ -109,13 +109,13 @@ class MNISTLabelInput: public FileInput<int64> {
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTLabelInput, "tensorflow::data::MNISTLabelInput");
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(MNISTImageInput, "tensorflow::data::MNISTImageInput");
 
-REGISTER_KERNEL_BUILDER(Name("IO>MNISTLabelInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoMNISTLabelInput").Device(DEVICE_CPU),
                         FileInputOp<MNISTLabelInput>);
-REGISTER_KERNEL_BUILDER(Name("IO>MNISTImageInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoMNISTImageInput").Device(DEVICE_CPU),
                         FileInputOp<MNISTImageInput>);
-REGISTER_KERNEL_BUILDER(Name("IO>MNISTLabelDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoMNISTLabelDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<MNISTLabelInput, int64>);
-REGISTER_KERNEL_BUILDER(Name("IO>MNISTImageDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoMNISTImageDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<MNISTImageInput, int64>);
 
 }  // namespace data
