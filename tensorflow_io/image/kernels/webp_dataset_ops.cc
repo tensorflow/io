@@ -206,10 +206,10 @@ class DecodeWebPOp : public OpKernel {
   // TODO (yongtang): Set channels_ = 4 for now.
   static const int channels_ = 4;
 };
-REGISTER_KERNEL_BUILDER(Name("IO>WebPDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoWebPDataset").Device(DEVICE_CPU),
                         WebPDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeWebP").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoDecodeWebP").Device(DEVICE_CPU),
                         DecodeWebPOp);
 
 }  // namespace

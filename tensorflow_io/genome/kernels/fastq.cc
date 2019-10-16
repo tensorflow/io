@@ -75,6 +75,6 @@ class FastqOp : public OpKernel {
   }
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ReadFastq").Device(DEVICE_CPU), FastqOp);
+REGISTER_KERNEL_BUILDER(Name("IoReadFastq").Device(DEVICE_CPU), FastqOp);
 
 }  // namespace tensorflow

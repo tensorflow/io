@@ -262,7 +262,7 @@ class DecodeDICOMImageOp : public OpKernel {
 
 // Register the CPU kernels.
 #define REGISTER_DECODE_DICOM_IMAGE_CPU(dtype)                 \
-  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")             \
+  REGISTER_KERNEL_BUILDER(Name("IoDecodeDICOMImage")             \
                               .Device(DEVICE_CPU)              \
                               .TypeConstraint<dtype>("dtype"), \
                           DecodeDICOMImageOp<dtype>);

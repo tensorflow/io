@@ -84,9 +84,9 @@ class DecodeTIFFOp : public OpKernel {
   // TODO (yongtang): Set channels_ = 4 for now.
   static const int channels_ = 4;
 };
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeTiffInfo").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoDecodeTiffInfo").Device(DEVICE_CPU),
                         DecodeTIFFInfoOp);
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeTiff").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoDecodeTiff").Device(DEVICE_CPU),
                         DecodeTIFFOp);
 
 }  // namespace

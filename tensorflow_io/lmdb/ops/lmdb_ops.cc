@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>LMDBInput")
+REGISTER_OP("IoLMDBInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -30,7 +30,7 @@ REGISTER_OP("IO>LMDBInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>LMDBDatasetV2")
+REGISTER_OP("IoLMDBDatasetV2")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -43,7 +43,7 @@ REGISTER_OP("IO>LMDBDatasetV2")
        return Status::OK();
      });
 
-REGISTER_OP("IO>LMDBReadableInit")
+REGISTER_OP("IoLMDBReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -53,7 +53,7 @@ REGISTER_OP("IO>LMDBReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>LMDBReadableRead")
+REGISTER_OP("IoLMDBReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -69,7 +69,7 @@ REGISTER_OP("IO>LMDBReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IO>LMDBMappingInit")
+REGISTER_OP("IoLMDBMappingInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -80,7 +80,7 @@ REGISTER_OP("IO>LMDBMappingInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>LMDBMappingRead")
+REGISTER_OP("IoLMDBMappingRead")
   .Input("input: resource")
   .Input("key: string")
   .Output("value: string")

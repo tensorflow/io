@@ -119,7 +119,7 @@ class BigtableSampleKeysDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigtableSampleKeysDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigtableSampleKeysDataset").Device(DEVICE_CPU),
                         BigtableSampleKeysDatasetOp);
 
 }  // namespace

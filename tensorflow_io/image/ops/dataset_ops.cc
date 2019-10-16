@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>WebPDataset")
+REGISTER_OP("IoWebPDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -28,7 +28,7 @@ REGISTER_OP("IO>WebPDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>TIFFDataset")
+REGISTER_OP("IoTIFFDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -37,7 +37,7 @@ REGISTER_OP("IO>TIFFDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>GIFDataset")
+REGISTER_OP("IoGIFDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .SetIsStateful()
@@ -46,7 +46,7 @@ REGISTER_OP("IO>GIFDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>DecodeWebP")
+REGISTER_OP("IoDecodeWebP")
     .Input("contents: string")
     .Output("image: uint8")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -58,7 +58,7 @@ REGISTER_OP("IO>DecodeWebP")
       return Status::OK();
     });
 
-REGISTER_OP("IO>DrawBoundingBoxesV3")
+REGISTER_OP("IoDrawBoundingBoxesV3")
     .Input("images: T")
     .Input("boxes: float")
     .Input("colors: float")

@@ -168,7 +168,7 @@ class GcsCredentialsOpKernel : public OpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>GcsConfigureCredentials").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoGcsConfigureCredentials").Device(DEVICE_CPU),
                         GcsCredentialsOpKernel);
 
 class GcsBlockCacheOpKernel : public OpKernel {
@@ -198,7 +198,7 @@ class GcsBlockCacheOpKernel : public OpKernel {
   }
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>GcsConfigureBlockCache").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoGcsConfigureBlockCache").Device(DEVICE_CPU),
                         GcsBlockCacheOpKernel);
 
 }  // namespace

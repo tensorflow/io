@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>IgniteDataset")
+REGISTER_OP("IoIgniteDataset")
     .Input("cache_name: string")
     .Input("host: string")
     .Input("port: int32")

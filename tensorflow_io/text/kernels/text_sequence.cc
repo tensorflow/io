@@ -84,11 +84,11 @@ class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {
   }
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequence").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoTextOutputSequence").Device(DEVICE_CPU),
                         TextOutputSequenceOp);
 
 
-REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequenceSetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoTextOutputSequenceSetItem").Device(DEVICE_CPU),
                         OutputSequenceSetItemOp<TextOutputSequence>);
 
 }  // namespace tensorflow

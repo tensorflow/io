@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>ReadFastq")
+REGISTER_OP("IoReadFastq")
     .Input("filename: string")
     .Output("sequences: string")
     .Output("raw_quality: string")

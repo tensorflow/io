@@ -18,7 +18,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>BigtableTestClient")
+REGISTER_OP("IoBigtableTestClient")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")

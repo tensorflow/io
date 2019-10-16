@@ -97,7 +97,7 @@ class BigQueryTestClientOp : public OpKernel {
   string fake_server_address_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigQueryTestClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigQueryTestClient").Device(DEVICE_CPU),
                         BigQueryTestClientOp);
 
 }  // namespace

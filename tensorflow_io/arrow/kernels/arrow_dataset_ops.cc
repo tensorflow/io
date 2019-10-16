@@ -1175,16 +1175,16 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ArrowZeroCopyDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoArrowZeroCopyDataset").Device(DEVICE_CPU),
                         ArrowZeroCopyDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("IO>ArrowSerializedDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoArrowSerializedDataset").Device(DEVICE_CPU),
                         ArrowSerializedDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("IO>ArrowFeatherDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoArrowFeatherDataset").Device(DEVICE_CPU),
                         ArrowFeatherDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
 
 }  // namespace data
