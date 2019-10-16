@@ -97,13 +97,18 @@ bool ShapeBuilder::HasAllElements(const TensorShape& shape) const {
 }
 
 Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_info,
-  const TensorShape& shape) const {
+  const TensorShape& output_shape) const {
+
+  TensorShape shape;
+  ReconcileShape(&shape, output_shape);
+
   size_t offset = 0;
-  size_t i_dim = 0; // -1 to make sure indices start from 0
+  size_t i_dim = 0;
   size_t n_dim = shape.dims();
   std::vector<size_t> counts(n_dim+1, 0);
   std::vector<size_t> dims(CumulativeProductOfDimensionsWithOneAtEnd(shape));
 
+  // VLOG(3) << "shape " << shape;
   for (size_t info : element_info_) {
     // Open a group
     if (info == kBeginMark) {
@@ -114,6 +119,7 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
     } else if (info == kFinishMark) {
       size_t count = counts[i_dim];
       size_t length = shape.dim_size(i_dim-1);
+      // VLOG(3) << "count = " << count << ", length = " << length;
 
       // Handle the inner most element count
       if (i_dim == n_dim) {
@@ -125,13 +131,17 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
         }
 
         if (count > 0) {
-          //LOG(INFO) << "Copy (" << offset << ", " << count << ")";
+          // VLOG(3) << "Copy (" << offset << ", " << count << ")";
           (*copy_info).push_back(std::make_pair(offset, count));
         }
         offset += length;
 
       // Handle where the caller did not provide all finish marks
       } else if (count < length) {
+        // VLOG(3) << "Update missing finish ";
+        // VLOG(3) << "dims[" << i_dim << "] = " << dims[i_dim];
+        // VLOG(3) << "length = " << length << ", count = " << count;
+
         offset += dims[i_dim] * (length - count);
       }
 
@@ -139,6 +149,7 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
       i_dim--;
     } else {
       counts[i_dim] = info;
+      // VLOG(3) << "Filled counts " << counts[i_dim];
     }
   }
 
@@ -146,7 +157,11 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
 }
 
 Status ShapeBuilder::GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_info,
-  const TensorShape& shape) const {
+  const TensorShape& output_shape) const {
+
+  TensorShape shape;
+  ReconcileShape(&shape, output_shape);
+
   size_t offset = 0;
   size_t i_dim = 0;
   size_t n_dim = shape.dims();
@@ -242,6 +257,16 @@ string ShapeBuilder::ToString() const {
     }
   }
   return ss.str();
+}
+
+void ShapeBuilder::ReconcileShape(TensorShape* reconciled, const TensorShape& shape) const {
+    *reconciled = shape;
+    TensorShape dense_shape;
+    GetDenseShape(&dense_shape);
+    // If we have one additional dimensions add that
+    if (dense_shape.dims() == (*reconciled).dims()+1) {
+        (*reconciled).AddDim(dense_shape.dim_size(dense_shape.dims()-1));
+    }
 }
 
 std::vector<size_t> ShapeBuilder::CumulativeProductOfDimensionsWithOneAtEnd(

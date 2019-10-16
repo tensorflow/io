@@ -390,9 +390,9 @@ def make_avro_dataset(
     reader_schema,
     features,
     batch_size,
+    num_epochs,
     num_parallel_calls=2,
     label_keys=None,
-    num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
     shuffle=True,
@@ -461,7 +461,9 @@ def make_avro_dataset(
 
     label_key: The label key, if None no label will be returned
 
-    num_epochs: The number of epochs
+    num_epochs: The number of epochs. If number of epochs is set to None we
+                cycle infinite times and drop the remainder automatically.
+                This will make all batch sizes the same size and static.
 
     input_stream_buffer_size: The size of the input stream buffer in By
 
@@ -540,9 +542,9 @@ def make_avro_dataset_v1(
     reader_schema,
     features,
     batch_size,
+    num_epochs,
     num_parallel_calls=2,
     label_keys=None,
-    num_epochs=None,
     input_stream_buffer_size=16*1024,
     avro_data_buffer_size=256,
     shuffle=True,
@@ -553,8 +555,8 @@ def make_avro_dataset_v1(
     sloppy=False
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
-      filenames, reader_schema, features, batch_size, num_parallel_calls,
-      label_keys, num_epochs, input_stream_buffer_size, avro_data_buffer_size,
-      shuffle, shuffle_buffer_size, shuffle_seed, prefetch_buffer_size,
-      num_parallel_reads, sloppy))
+      filenames, reader_schema, features, batch_size, num_epochs,
+      num_parallel_calls, label_keys, input_stream_buffer_size,
+      avro_data_buffer_size, shuffle, shuffle_buffer_size, shuffle_seed,
+      prefetch_buffer_size, num_parallel_reads, sloppy))
 make_avro_dataset_v1.__doc__ = make_avro_dataset.__doc__

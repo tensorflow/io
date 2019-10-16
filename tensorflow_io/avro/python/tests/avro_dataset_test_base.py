@@ -70,7 +70,6 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
     else:
       self._assert_same_tensors(expected_data, actual_data)
 
-
   def _assert_same_tensors(self, expected_tensors, actual_tensors):
 
     logging.info("Expected tensors: {}".format(expected_tensors))
@@ -97,7 +96,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
       else:
         assert_same_array(expected_tensor, actual_tensor)
 
-  def _verify_output(self, expected_data, actual_dataset):
+  def _verify_output(self, expected_data, actual_dataset, **kwargs):
 
     # Turn off any parallelism and random for testing
     config = config_pb2.ConfigProto(
@@ -114,8 +113,9 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         self._assert_same_data(expected_data=expected_datum,
                                actual_data=sess.run(next_element))
 
-      with self.assertRaises(OutOfRangeError):
-        sess.run(next_element)
+      if not kwargs.get("skip_out_of_range_error", False):
+          with self.assertRaises(OutOfRangeError):
+            sess.run(next_element)
 
   def _test_pass_dataset(self, writer_schema, record_data, expected_data,
                          features, reader_schema, batch_size, **kwargs):
@@ -130,7 +130,8 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         label_keys=kwargs.get("label_keys", []))
 
     self._verify_output(expected_data=expected_data,
-                        actual_dataset=actual_dataset)
+                        actual_dataset=actual_dataset,
+                        **kwargs)
 
   def _test_fail_dataset(self, writer_schema, record_data, features,
                          reader_schema, batch_size, **kwargs):

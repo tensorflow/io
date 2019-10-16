@@ -100,11 +100,11 @@ public:
   // True if the shape builder registered all elements for the given shape
   bool HasAllElements(const TensorShape& shape) const;
 
-  // Get the copy information for the given tensor shape
-  Status GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_info, const TensorShape& shape) const;
+  // Get the copy information for the given tensor output shape
+  Status GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_info, const TensorShape& output_shape) const;
 
-  // Get the fill information for the given tensor shape
-  Status GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_info, const TensorShape& shape) const;
+  // Get the fill information for the given tensor output shape
+  Status GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_info, const TensorShape& output_shape) const;
 
   // Get the indices as tensor for this shape
   Status GetIndices(Tensor* indices) const;
@@ -112,6 +112,15 @@ public:
   // Get a human readable string for this shape builder
   string ToString() const;
 private:
+
+  // Reconcile the output shape of a tensor with the shape within this shape builder
+  // Used by copy and fill info
+  // This will handle flattening, where the user did not provide a shape but the batch shape defines fully
+  // (e.g. batch size = 3). Then the output shape is [3] but the shape builder parsed this as [3 1]
+  // one data point per entry. This method will reconcile the shape to [3 1]
+  // If we use this parser to patch assume the user provided a shape of [3, 2] but the shape builder only
+  // had one entry per row then their shape will be [3, 1]. This will reconcile the shapes to [3, 2]
+  void ReconcileShape(TensorShape* reconciled, const TensorShape& shape) const;
 
   // Get the cumulative product of dimensions without the last one
   std::vector<size_t> CumulativeProductOfDimensionsWithOneAtEnd(const TensorShape& shape) const;
@@ -383,6 +392,7 @@ template <typename T>
 Status ValueBuffer<T>::FillInFromBuffer(Tensor* tensor) const {
 
   TensorShape shape = (*tensor).shape();
+  //shape_builder_.GetDenseShape(&shape); //(*tensor).shape();
   auto tensor_data = (*tensor).flat<T>().data();
   auto buffer_data = values_.begin();
 
@@ -393,6 +403,9 @@ Status ValueBuffer<T>::FillInFromBuffer(Tensor* tensor) const {
   for (const auto& info : copy_info) {
     size_t target_offset = info.first;
     size_t length = info.second;
+
+    VLOG(3) << "Copy at offset " << source_offset << ": " << length << " values to offset " << target_offset;
+
     CopyOrMoveBlock(
       buffer_data + source_offset,
       buffer_data + source_offset + length,
@@ -412,6 +425,8 @@ Status ValueBuffer<T>::FillInFromDefault(Tensor* tensor, const Tensor& defaults)
   }
 
   TensorShape shape = (*tensor).shape();
+  //TensorShape shape;
+  //shape_builder_.GetDenseShape(&shape); //(*tensor).shape();
   auto tensor_data = (*tensor).flat<T>().data();
   auto buffer_data = defaults.flat<T>().data();
 
