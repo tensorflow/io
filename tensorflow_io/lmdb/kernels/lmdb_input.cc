@@ -142,9 +142,9 @@ class LMDBInput: public FileInput<LMDBInputStream> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(LMDBInput, "tensorflow::data::LMDBInput");
 
-REGISTER_KERNEL_BUILDER(Name("IO>LMDBInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoLMDBInput").Device(DEVICE_CPU),
                         FileInputOp<LMDBInput>);
-REGISTER_KERNEL_BUILDER(Name("IO>LMDBDatasetV2").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoLMDBDatasetV2").Device(DEVICE_CPU),
                         FileInputDatasetOp<LMDBInput, LMDBInputStream>);
 
 }  // namespace data

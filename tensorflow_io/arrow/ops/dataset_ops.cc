@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>ArrowZeroCopyDataset")
+REGISTER_OP("IoArrowZeroCopyDataset")
     .Input("buffer_address: uint64")
     .Input("buffer_size: int64")
     .Input("columns: int32")
@@ -38,7 +38,7 @@ in file format.
 buffer_size: Buffer size in bytes
 )doc");
 
-REGISTER_OP("IO>ArrowSerializedDataset")
+REGISTER_OP("IoArrowSerializedDataset")
     .Input("serialized_batches: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -54,7 +54,7 @@ Creates a dataset that reads serialized Arrow RecordBatches in file format.
 serialized_batches: Serialized Arrow RecordBatches.
 )doc");
 
-REGISTER_OP("IO>ArrowFeatherDataset")
+REGISTER_OP("IoArrowFeatherDataset")
     .Input("filenames: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -70,7 +70,7 @@ Creates a dataset that reads files in Arrow Feather format.
 filenames: One or more file paths.
 )doc");
 
-REGISTER_OP("IO>ArrowStreamDataset")
+REGISTER_OP("IoArrowStreamDataset")
     .Input("endpoints: string")
     .Input("columns: int32")
     .Input("batch_size: int64")
@@ -87,7 +87,7 @@ endpoints: One or more host addresses that are serving an Arrow stream.
 )doc");
 
 
-REGISTER_OP("IO>ListFeatherColumns")
+REGISTER_OP("IoListFeatherColumns")
     .Input("filename: string")
     .Input("memory: string")
     .Output("columns: string")
@@ -100,7 +100,7 @@ REGISTER_OP("IO>ListFeatherColumns")
        return Status::OK();
      });
 
-REGISTER_OP("IO>FeatherReadableInit")
+REGISTER_OP("IoFeatherReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -112,7 +112,7 @@ REGISTER_OP("IO>FeatherReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>FeatherReadableSpec")
+REGISTER_OP("IoFeatherReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -123,7 +123,7 @@ REGISTER_OP("IO>FeatherReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IO>FeatherReadableRead")
+REGISTER_OP("IoFeatherReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")

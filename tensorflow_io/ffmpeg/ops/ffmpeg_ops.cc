@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>VideoInput")
+REGISTER_OP("IoVideoInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -30,7 +30,7 @@ REGISTER_OP("IO>VideoInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>VideoDataset")
+REGISTER_OP("IoVideoDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -43,7 +43,7 @@ REGISTER_OP("IO>VideoDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>AudioInput")
+REGISTER_OP("IoAudioInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -54,7 +54,7 @@ REGISTER_OP("IO>AudioInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>AudioDataset")
+REGISTER_OP("IoAudioDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -67,7 +67,7 @@ REGISTER_OP("IO>AudioDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>FfmpegReadableInit")
+REGISTER_OP("IoFfmpegReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -79,7 +79,7 @@ REGISTER_OP("IO>FfmpegReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>FfmpegReadableSpec")
+REGISTER_OP("IoFfmpegReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -92,7 +92,7 @@ REGISTER_OP("IO>FfmpegReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IO>FfmpegReadableRead")
+REGISTER_OP("IoFfmpegReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -109,7 +109,7 @@ REGISTER_OP("IO>FfmpegReadableRead")
     return Status::OK();
   });
 
-REGISTER_OP("IO>FfmpegDecodeVideo")
+REGISTER_OP("IoFfmpegDecodeVideo")
   .Input("input: string")
   .Input("index: int64")
   .Output("value: uint8")

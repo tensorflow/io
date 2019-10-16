@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>KinesisDataset")
+REGISTER_OP("IoKinesisDataset")
     .Input("stream: string")
     .Input("shard: string")
     .Input("read_indefinitely: bool")

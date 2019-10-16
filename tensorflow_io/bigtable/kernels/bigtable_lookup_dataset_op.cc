@@ -226,7 +226,7 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigtableLookupDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigtableLookupDataset").Device(DEVICE_CPU),
                         BigtableLookupDatasetOp);
 
 }  // namespace

@@ -110,7 +110,7 @@ class BigtablePrefixKeyDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigtablePrefixKeyDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigtablePrefixKeyDataset").Device(DEVICE_CPU),
                         BigtablePrefixKeyDatasetOp);
 
 }  // namespace

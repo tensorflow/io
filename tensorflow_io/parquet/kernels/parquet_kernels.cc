@@ -212,9 +212,9 @@ class ReadParquetOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ListParquetColumns").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoListParquetColumns").Device(DEVICE_CPU),
                         ListParquetColumnsOp);
-REGISTER_KERNEL_BUILDER(Name("IO>ReadParquet").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoReadParquet").Device(DEVICE_CPU),
                         ReadParquetOp);
 
 
@@ -449,13 +449,13 @@ class ParquetReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>ParquetReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoParquetReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<ParquetReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>ParquetReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoParquetReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<ParquetReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>ParquetReadablePartitions").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoParquetReadablePartitions").Device(DEVICE_CPU),
                         IOReadablePartitionsOp<ParquetReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>ParquetReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoParquetReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<ParquetReadable>);
 
 }  // namespace data

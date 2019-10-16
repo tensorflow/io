@@ -120,7 +120,7 @@ class BigQueryReaderOp : public ReaderOpKernel {
   std::unique_ptr<BigQueryTableAccessor> bigquery_table_accessor_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReader").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoBigQueryReader").Device(DEVICE_CPU),
                         BigQueryReaderOp);
 
 class GenerateBigQueryReaderPartitionsOp : public OpKernel {
@@ -187,7 +187,7 @@ class GenerateBigQueryReaderPartitionsOp : public OpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("IO>GenerateBigQueryReaderPartitions").Device(DEVICE_CPU),
+    Name("IoGenerateBigQueryReaderPartitions").Device(DEVICE_CPU),
     GenerateBigQueryReaderPartitionsOp);
 
 }  // namespace tensorflow

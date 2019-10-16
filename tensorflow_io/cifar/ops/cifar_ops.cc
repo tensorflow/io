@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>CIFAR10Dataset")
+REGISTER_OP("IoCIFAR10Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -29,7 +29,7 @@ REGISTER_OP("IO>CIFAR10Dataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IO>CIFAR100Dataset")
+REGISTER_OP("IoCIFAR100Dataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -39,7 +39,7 @@ REGISTER_OP("IO>CIFAR100Dataset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IO>CIFAR10Input")
+REGISTER_OP("IoCIFAR10Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -50,7 +50,7 @@ REGISTER_OP("IO>CIFAR10Input")
        return Status::OK();
      });
 
-REGISTER_OP("IO>CIFAR100Input")
+REGISTER_OP("IoCIFAR100Input")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")

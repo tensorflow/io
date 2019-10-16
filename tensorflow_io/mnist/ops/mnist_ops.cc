@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>MNISTImageDataset")
+REGISTER_OP("IoMNISTImageDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -32,7 +32,7 @@ REGISTER_OP("IO>MNISTImageDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>MNISTLabelDataset")
+REGISTER_OP("IoMNISTLabelDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")
@@ -45,7 +45,7 @@ REGISTER_OP("IO>MNISTLabelDataset")
        return Status::OK();
      });
 
-REGISTER_OP("IO>MNISTLabelInput")
+REGISTER_OP("IoMNISTLabelInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -56,7 +56,7 @@ REGISTER_OP("IO>MNISTLabelInput")
        return Status::OK();
      });
 
-REGISTER_OP("IO>MNISTImageInput")
+REGISTER_OP("IoMNISTImageInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")

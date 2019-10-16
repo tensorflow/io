@@ -658,11 +658,11 @@ class FFmpegReadable : public IOReadableInterface {
   std::vector<std::unique_ptr<FFmpegReadStreamMeta>> columns_meta_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoFfmpegReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<FFmpegReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoFfmpegReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FFmpegReadable>);
-REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoFfmpegReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<FFmpegReadable>);
 
 class FFmpegDecodeVideoOp : public OpKernel {
@@ -701,7 +701,7 @@ class FFmpegDecodeVideoOp : public OpKernel {
   static const int64 channels_ = 3;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>FfmpegDecodeVideo").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IoFfmpegDecodeVideo").Device(DEVICE_CPU),
                         FFmpegDecodeVideoOp);
 
 }  // namespace data

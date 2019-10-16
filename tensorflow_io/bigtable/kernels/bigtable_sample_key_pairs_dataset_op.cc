@@ -204,7 +204,7 @@ class BigtableSampleKeyPairsDatasetOp : public DatasetOpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("IO>BigtableSampleKeyPairsDataset").Device(DEVICE_CPU),
+    Name("IoBigtableSampleKeyPairsDataset").Device(DEVICE_CPU),
     BigtableSampleKeyPairsDatasetOp);
 
 }  // namespace
