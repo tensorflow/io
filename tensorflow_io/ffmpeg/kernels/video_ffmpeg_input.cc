@@ -67,9 +67,9 @@ class VideoInput: public FileInput<video::VideoReader> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(VideoInput, "tensorflow::data::VideoInput");
 
-REGISTER_KERNEL_BUILDER(Name("IoVideoInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>VideoInput").Device(DEVICE_CPU),
                         FileInputOp<VideoInput>);
-REGISTER_KERNEL_BUILDER(Name("IoVideoDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>VideoDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<VideoInput, video::VideoReader>);
 
 }  // namespace data

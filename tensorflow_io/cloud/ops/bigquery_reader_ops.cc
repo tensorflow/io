@@ -22,7 +22,7 @@ namespace tensorflow {
 
 using shape_inference::InferenceContext;
 
-REGISTER_OP("IoBigQueryReader")
+REGISTER_OP("IO>BigQueryReader")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Attr("project_id: string")
@@ -55,7 +55,7 @@ test_end_point: Do not use. For testing purposes only.
 reader_handle: The handle to reference the Reader.
 )doc");
 
-REGISTER_OP("IoGenerateBigQueryReaderPartitions")
+REGISTER_OP("IO>GenerateBigQueryReaderPartitions")
     .Attr("project_id: string")
     .Attr("dataset_id: string")
     .Attr("table_id: string")

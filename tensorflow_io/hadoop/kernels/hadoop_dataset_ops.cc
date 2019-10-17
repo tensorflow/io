@@ -334,7 +334,7 @@ class SequenceFileDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoSequenceFileDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>SequenceFileDataset").Device(DEVICE_CPU),
                         SequenceFileDatasetOp);
 
 }  // namespace

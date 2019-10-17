@@ -145,14 +145,14 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
 };
 
 
-REGISTER_KERNEL_BUILDER(Name("IoKafkaOutputSequence").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequence").Device(DEVICE_CPU),
                         KafkaOutputSequenceOp);
 
 
-REGISTER_KERNEL_BUILDER(Name("IoKafkaOutputSequenceSetItem").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceSetItem").Device(DEVICE_CPU),
                         OutputSequenceSetItemOp<KafkaOutputSequence>);
 
-REGISTER_KERNEL_BUILDER(Name("IoKafkaOutputSequenceFlush").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceFlush").Device(DEVICE_CPU),
                         OutputSequenceFlushOp<KafkaOutputSequence>);
 
 }  // namespace tensorflow

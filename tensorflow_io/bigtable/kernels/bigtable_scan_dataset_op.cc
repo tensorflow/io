@@ -223,7 +223,7 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoBigtableScanDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigtableScanDataset").Device(DEVICE_CPU),
                         BigtableScanDatasetOp);
 
 }  // namespace

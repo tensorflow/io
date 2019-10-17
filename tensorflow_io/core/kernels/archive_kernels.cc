@@ -231,10 +231,10 @@ class ReadArchiveOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoListArchiveEntries").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ListArchiveEntries").Device(DEVICE_CPU),
                         ListArchiveEntriesOp);
 
-REGISTER_KERNEL_BUILDER(Name("IoReadArchive").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadArchive").Device(DEVICE_CPU),
                         ReadArchiveOp);
 
 

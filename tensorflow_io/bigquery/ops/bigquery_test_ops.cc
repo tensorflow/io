@@ -18,7 +18,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoBigQueryTestClient")
+REGISTER_OP("IO>BigQueryTestClient")
     .Attr("fake_server_address: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")

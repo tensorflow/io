@@ -199,9 +199,9 @@ private:
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoListJSONColumns").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ListJSONColumns").Device(DEVICE_CPU),
                         ListJSONColumnsOp);
-REGISTER_KERNEL_BUILDER(Name("IoReadJSON").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ReadJSON").Device(DEVICE_CPU),
                         ReadJSONOp);
 
 }  // namespace
@@ -423,11 +423,11 @@ class JSONReadable : public IOReadableInterface {
   std::unordered_map<string, int64> columns_index_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoJSONReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<JSONReadable>);
-REGISTER_KERNEL_BUILDER(Name("IoJSONReadableSpec").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<JSONReadable>);
-REGISTER_KERNEL_BUILDER(Name("IoJSONReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>JSONReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<JSONReadable>);
 
 }  // namespace data

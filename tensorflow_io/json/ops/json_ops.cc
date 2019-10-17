@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoJSONReadableInit")
+REGISTER_OP("IO>JSONReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -32,7 +32,7 @@ REGISTER_OP("IoJSONReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoJSONReadableSpec")
+REGISTER_OP("IO>JSONReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -43,7 +43,7 @@ REGISTER_OP("IoJSONReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IoJSONReadableRead")
+REGISTER_OP("IO>JSONReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -60,7 +60,7 @@ REGISTER_OP("IoJSONReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoListJSONColumns")
+REGISTER_OP("IO>ListJSONColumns")
     .Input("filename: string")
     .Output("columns: string")
     .Output("dtypes: string")
@@ -70,7 +70,7 @@ REGISTER_OP("IoListJSONColumns")
        return Status::OK();
      });
 
-REGISTER_OP("IoReadJSON")
+REGISTER_OP("IO>ReadJSON")
     .Input("filename: string")
     .Input("column: string")
     .Attr("dtype: type")

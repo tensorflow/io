@@ -19,7 +19,7 @@ limitations under the License.
 namespace tensorflow {
 
 // TODO(saeta): Add support for setting ClientOptions values.
-REGISTER_OP("IoBigtableClient")
+REGISTER_OP("IO>BigtableClient")
     .Attr("project_id: string")
     .Attr("instance_id: string")
     .Attr("connection_pool_size: int")
@@ -31,7 +31,7 @@ REGISTER_OP("IoBigtableClient")
 
 // TODO(saeta): Add support for Application Profiles.
 // See https://cloud.google.com/bigtable/docs/app-profiles for more info.
-REGISTER_OP("IoBigtableTable")
+REGISTER_OP("IO>BigtableTable")
     .Input("client: resource")
     .Attr("table_name: string")
     .Attr("container: string = ''")
@@ -39,7 +39,7 @@ REGISTER_OP("IoBigtableTable")
     .Output("table: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoDatasetToBigtable")
+REGISTER_OP("IO>DatasetToBigtable")
     .Input("table: resource")
     .Input("input_dataset: variant")
     .Input("column_families: string")
@@ -47,7 +47,7 @@ REGISTER_OP("IoDatasetToBigtable")
     .Input("timestamp: int64")
     .SetShapeFn(shape_inference::NoOutputs);
 
-REGISTER_OP("IoBigtableLookupDataset")
+REGISTER_OP("IO>BigtableLookupDataset")
     .Input("keys_dataset: variant")
     .Input("table: resource")
     .Input("column_families: string")
@@ -55,7 +55,7 @@ REGISTER_OP("IoBigtableLookupDataset")
     .Output("handle: variant")
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoBigtablePrefixKeyDataset")
+REGISTER_OP("IO>BigtablePrefixKeyDataset")
     .Input("table: resource")
     .Input("prefix: string")
     .Output("handle: variant")
@@ -63,7 +63,7 @@ REGISTER_OP("IoBigtablePrefixKeyDataset")
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoBigtableRangeKeyDataset")
+REGISTER_OP("IO>BigtableRangeKeyDataset")
     .Input("table: resource")
     .Input("start_key: string")
     .Input("end_key: string")
@@ -72,14 +72,14 @@ REGISTER_OP("IoBigtableRangeKeyDataset")
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoBigtableSampleKeysDataset")
+REGISTER_OP("IO>BigtableSampleKeysDataset")
     .Input("table: resource")
     .Output("handle: variant")
     .SetIsStateful()  // TODO(b/123753214): Source dataset ops must be marked
                       // stateful to inhibit constant folding.
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoBigtableSampleKeyPairsDataset")
+REGISTER_OP("IO>BigtableSampleKeyPairsDataset")
     .Input("table: resource")
     .Input("prefix: string")
     .Input("start_key: string")
@@ -91,7 +91,7 @@ REGISTER_OP("IoBigtableSampleKeyPairsDataset")
 
 // TODO(saeta): Support continuing despite bad data (e.g. empty string, or
 // skip incomplete row.)
-REGISTER_OP("IoBigtableScanDataset")
+REGISTER_OP("IO>BigtableScanDataset")
     .Input("table: resource")
     .Input("prefix: string")
     .Input("start_key: string")

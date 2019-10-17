@@ -320,7 +320,7 @@ private:
 
 #define REGISTER_CPU_KERNEL(T)                                               \
   REGISTER_KERNEL_BUILDER(                                                   \
-      Name("IoDrawBoundingBoxesV3").Device(DEVICE_CPU).TypeConstraint<T>("T"),   \
+      Name("IO>DrawBoundingBoxesV3").Device(DEVICE_CPU).TypeConstraint<T>("T"),   \
       DrawBoundingBoxesV3Op<T>);
 
 TF_CALL_half(REGISTER_CPU_KERNEL);

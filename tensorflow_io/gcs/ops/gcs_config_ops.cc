@@ -21,7 +21,7 @@ namespace tensorflow {
 
 using shape_inference::InferenceContext;
 
-REGISTER_OP("IoGcsConfigureCredentials")
+REGISTER_OP("IO>GcsConfigureCredentials")
     .Input("json: string")
     .SetShapeFn(shape_inference::NoOutputs)
     .Doc(R"doc(
@@ -51,7 +51,7 @@ stored in a constant op within the graph that might accidentally be checkpointed
 or in other ways be persisted or exfiltrated.
 )doc");
 
-REGISTER_OP("IoGcsConfigureBlockCache")
+REGISTER_OP("IO>GcsConfigureBlockCache")
     .Input("max_cache_size: uint64")
     .Input("block_size: uint64")
     .Input("max_staleness: uint64")

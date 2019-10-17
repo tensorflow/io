@@ -56,9 +56,9 @@ class AudioInput: public FileInput<audio::AudioReader> {
 
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(AudioInput, "tensorflow::data::AudioInput");
 
-REGISTER_KERNEL_BUILDER(Name("IoAudioInput").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>AudioInput").Device(DEVICE_CPU),
                         FileInputOp<AudioInput>);
-REGISTER_KERNEL_BUILDER(Name("IoAudioDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<AudioInput, audio::AudioReader>);
 
 }  // namespace data

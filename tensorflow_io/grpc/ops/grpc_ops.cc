@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoGRPCInput")
+REGISTER_OP("IO>GRPCInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("columns: list(string) = []")
@@ -29,7 +29,7 @@ REGISTER_OP("IoGRPCInput")
        return Status::OK();
      });
 
-REGISTER_OP("IoGRPCDataset")
+REGISTER_OP("IO>GRPCDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")

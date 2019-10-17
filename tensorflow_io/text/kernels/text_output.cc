@@ -41,7 +41,7 @@ class TextDatasetOutput {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("IoTextDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<TextDatasetOutput>);
+    Name("IO>TextDatasetOutput").Device(DEVICE_CPU), DatasetOutputOp<TextDatasetOutput>);
 
 }  // namespace
 }  // namespace data
