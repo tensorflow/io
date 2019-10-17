@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoDecodeDICOMData")
+REGISTER_OP("IO>DecodeDICOMData")
     .Input("contents: string")
     .Input("tags: uint32")
     .Output("tag_values: string")

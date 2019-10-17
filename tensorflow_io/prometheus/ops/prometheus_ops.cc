@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoPrometheusReadableInit")
+REGISTER_OP("IO>PrometheusReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -30,7 +30,7 @@ REGISTER_OP("IoPrometheusReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoPrometheusReadableSpec")
+REGISTER_OP("IO>PrometheusReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -41,7 +41,7 @@ REGISTER_OP("IoPrometheusReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IoPrometheusReadableRead")
+REGISTER_OP("IO>PrometheusReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -58,7 +58,7 @@ REGISTER_OP("IoPrometheusReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoReadPrometheus")
+REGISTER_OP("IO>ReadPrometheus")
     .Input("endpoint: string")
     .Input("query: string")
     .Output("timestamp: int64")

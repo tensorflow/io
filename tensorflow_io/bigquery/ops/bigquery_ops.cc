@@ -18,13 +18,13 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoBigQueryClient")
+REGISTER_OP("IO>BigQueryClient")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoBigQueryReadSession")
+REGISTER_OP("IO>BigQueryReadSession")
     .Input("client: resource")
     .Attr("parent: string")
     .Attr("project_id: string")
@@ -44,7 +44,7 @@ REGISTER_OP("IoBigQueryReadSession")
       return tensorflow::Status::OK();
     });
 
-REGISTER_OP("IoBigQueryDataset")
+REGISTER_OP("IO>BigQueryDataset")
     .Input("client: resource")
     .Input("stream: string")
     .Input("avro_schema: string")

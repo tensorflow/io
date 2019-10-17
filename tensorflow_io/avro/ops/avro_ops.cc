@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoListAvroColumns")
+REGISTER_OP("IO>ListAvroColumns")
     .Input("filename: string")
     .Input("schema: string")
     .Input("memory: string")
@@ -31,7 +31,7 @@ REGISTER_OP("IoListAvroColumns")
        return Status::OK();
      });
 
-REGISTER_OP("IoReadAvro")
+REGISTER_OP("IO>ReadAvro")
     .Input("filename: string")
     .Input("schema: string")
     .Input("column: string")
@@ -45,7 +45,7 @@ REGISTER_OP("IoReadAvro")
        return Status::OK();
      });
 
-REGISTER_OP("IoAvroReadableInit")
+REGISTER_OP("IO>AvroReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -58,7 +58,7 @@ REGISTER_OP("IoAvroReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoAvroReadableSpec")
+REGISTER_OP("IO>AvroReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -69,7 +69,7 @@ REGISTER_OP("IoAvroReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IoAvroReadableRead")
+REGISTER_OP("IO>AvroReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -87,7 +87,7 @@ REGISTER_OP("IoAvroReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoAvroReadablePartitions")
+REGISTER_OP("IO>AvroReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

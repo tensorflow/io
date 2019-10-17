@@ -138,22 +138,22 @@ class DecodeLibsvmOp : public OpKernel {
 };
 
 #define REGISTER_KERNEL(type)                                         \
-  REGISTER_KERNEL_BUILDER(Name("IoDecodeLibsvm")                        \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeLibsvm")                        \
                               .Device(DEVICE_CPU)                     \
                               .TypeConstraint<type>("dtype")          \
                               .TypeConstraint<int32>("label_dtype"),  \
                           DecodeLibsvmOp<type, int32>);               \
-  REGISTER_KERNEL_BUILDER(Name("IoDecodeLibsvm")                        \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeLibsvm")                        \
                               .Device(DEVICE_CPU)                     \
                               .TypeConstraint<type>("dtype")          \
                               .TypeConstraint<int64>("label_dtype"),  \
                           DecodeLibsvmOp<type, int64>);               \
-  REGISTER_KERNEL_BUILDER(Name("IoDecodeLibsvm")                        \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeLibsvm")                        \
                               .Device(DEVICE_CPU)                     \
                               .TypeConstraint<type>("dtype")          \
                               .TypeConstraint<float>("label_dtype"),  \
                           DecodeLibsvmOp<type, float>);               \
-  REGISTER_KERNEL_BUILDER(Name("IoDecodeLibsvm")                        \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeLibsvm")                        \
                               .Device(DEVICE_CPU)                     \
                               .TypeConstraint<type>("dtype")          \
                               .TypeConstraint<double>("label_dtype"), \

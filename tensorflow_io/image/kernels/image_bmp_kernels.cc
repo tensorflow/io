@@ -103,7 +103,7 @@ private:
   };
   static const size_t bmp_header_size = 54;
 };
-REGISTER_KERNEL_BUILDER(Name("IoEncodeBmp").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>EncodeBmp").Device(DEVICE_CPU),
                         EncodeBmpOp);
 
 }  // namespace

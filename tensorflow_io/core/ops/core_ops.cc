@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoListArchiveEntries")
+REGISTER_OP("IO>ListArchiveEntries")
     .Input("filename: string")
     .Input("memory: string")
     .Output("format: string")
@@ -31,7 +31,7 @@ REGISTER_OP("IoListArchiveEntries")
       return Status::OK();
     });
 
-REGISTER_OP("IoReadArchive")
+REGISTER_OP("IO>ReadArchive")
     .Input("filename: string")
     .Input("format: string")
     .Input("entries: string")

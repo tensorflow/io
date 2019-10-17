@@ -311,9 +311,9 @@ class KafkaReadable : public IOReadableInterface {
   int64 offset_tail_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoKafkaReadableInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInit").Device(DEVICE_CPU),
                         IOInterfaceInitOp<KafkaReadable>);
-REGISTER_KERNEL_BUILDER(Name("IoKafkaReadableRead").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<KafkaReadable>);
 
 class DecodeAvroOp : public OpKernel {
@@ -405,7 +405,7 @@ private:
 };
 
 
-REGISTER_KERNEL_BUILDER(Name("IoDecodeAvro").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU),
                         DecodeAvroOp);
 
 }  // namespace data

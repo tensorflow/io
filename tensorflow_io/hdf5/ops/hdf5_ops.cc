@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoHDF5ReadableInit")
+REGISTER_OP("IO>HDF5ReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -31,7 +31,7 @@ REGISTER_OP("IoHDF5ReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoHDF5ReadableSpec")
+REGISTER_OP("IO>HDF5ReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -42,7 +42,7 @@ REGISTER_OP("IoHDF5ReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IoHDF5ReadableRead")
+REGISTER_OP("IO>HDF5ReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -59,7 +59,7 @@ REGISTER_OP("IoHDF5ReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoListHDF5Datasets")
+REGISTER_OP("IO>ListHDF5Datasets")
     .Input("filename: string")
     .Input("memory: string")
     .Output("datasets: string")
@@ -72,7 +72,7 @@ REGISTER_OP("IoListHDF5Datasets")
        return Status::OK();
      });
 
-REGISTER_OP("IoReadHDF5")
+REGISTER_OP("IO>ReadHDF5")
     .Input("filename: string")
     .Input("dataset: string")
     .Input("memory: string")
