@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoDecodeAvro")
+REGISTER_OP("IO>DecodeAvro")
   .Input("input: string")
   .Output("value: dtype")
   .Attr("schema: string")
@@ -31,7 +31,7 @@ REGISTER_OP("IoDecodeAvro")
     return Status::OK();
    });
 
-REGISTER_OP("IoKafkaReadableInit")
+REGISTER_OP("IO>KafkaReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -42,7 +42,7 @@ REGISTER_OP("IoKafkaReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoKafkaReadableRead")
+REGISTER_OP("IO>KafkaReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -58,7 +58,7 @@ REGISTER_OP("IoKafkaReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoKafkaOutputSequence")
+REGISTER_OP("IO>KafkaOutputSequence")
     .Input("topic: string")
     .Input("servers: string")
     .Output("sequence: resource")
@@ -73,14 +73,14 @@ REGISTER_OP("IoKafkaOutputSequence")
       return Status::OK();
     });
 
-REGISTER_OP("IoKafkaOutputSequenceSetItem")
+REGISTER_OP("IO>KafkaOutputSequenceSetItem")
     .Input("sequence: resource")
     .Input("index: int64")
     .Input("item: string")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
-REGISTER_OP("IoKafkaOutputSequenceFlush")
+REGISTER_OP("IO>KafkaOutputSequenceFlush")
     .Input("sequence: resource")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);

@@ -21,7 +21,7 @@ namespace tensorflow {
 
 using shape_inference::InferenceContext;
 
-REGISTER_OP("IoDecodeLibsvm")
+REGISTER_OP("IO>DecodeLibsvm")
     .Input("input: string")
     .Output("label: label_dtype")
     .Output("feature_indices: int64")

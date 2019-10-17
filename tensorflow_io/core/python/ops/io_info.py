@@ -17,5 +17,5 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-package = 'tensorflow>=1.15.0,<1.16.0'
-version = '0.8.0'
+package = 'tensorflow>=2.0.0,<2.1.0'
+version = '0.9.0'

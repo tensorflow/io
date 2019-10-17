@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoSequenceFileDataset")
+REGISTER_OP("IO>SequenceFileDataset")
     .Input("filenames: string")
     .Output("handle: variant")
     .Attr("output_types: list(type) >= 1")

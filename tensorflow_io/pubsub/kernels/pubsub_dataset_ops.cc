@@ -223,7 +223,7 @@ class PubSubDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoPubSubDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>PubSubDataset").Device(DEVICE_CPU),
                         PubSubDatasetOp);
 
 }  // namespace data

@@ -96,13 +96,13 @@ class CIFAR100Input: public FileInput<int64> {
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR10Input, "tensorflow::CIFAR10Input");
 REGISTER_UNARY_VARIANT_DECODE_FUNCTION(CIFAR100Input, "tensorflow::CIFAR100Input");
 
-REGISTER_KERNEL_BUILDER(Name("IoCIFAR10Input").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR10Input").Device(DEVICE_CPU),
                         FileInputOp<CIFAR10Input>);
-REGISTER_KERNEL_BUILDER(Name("IoCIFAR100Input").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR100Input").Device(DEVICE_CPU),
                         FileInputOp<CIFAR100Input>);
-REGISTER_KERNEL_BUILDER(Name("IoCIFAR10Dataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR10Dataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<CIFAR10Input, int64>);
-REGISTER_KERNEL_BUILDER(Name("IoCIFAR100Dataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>CIFAR100Dataset").Device(DEVICE_CPU),
                         FileInputDatasetOp<CIFAR100Input, int64>);
 
 }  // namespace

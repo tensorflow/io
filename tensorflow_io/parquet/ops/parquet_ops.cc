@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoListParquetColumns")
+REGISTER_OP("IO>ListParquetColumns")
     .Input("filename: string")
     .Input("memory: string")
     .Output("columns: string")
@@ -32,7 +32,7 @@ REGISTER_OP("IoListParquetColumns")
        return Status::OK();
      });
 
-REGISTER_OP("IoReadParquet")
+REGISTER_OP("IO>ReadParquet")
     .Input("filename: string")
     .Input("column: string")
     .Input("memory: string")
@@ -45,7 +45,7 @@ REGISTER_OP("IoReadParquet")
        return Status::OK();
      });
 
-REGISTER_OP("IoParquetReadableInit")
+REGISTER_OP("IO>ParquetReadableInit")
   .Input("input: string")
   .Output("resource: resource")
   .Output("components: string")
@@ -57,7 +57,7 @@ REGISTER_OP("IoParquetReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IoParquetReadableSpec")
+REGISTER_OP("IO>ParquetReadableSpec")
   .Input("input: resource")
   .Output("shape: int64")
   .Output("dtype: int64")
@@ -68,7 +68,7 @@ REGISTER_OP("IoParquetReadableSpec")
     return Status::OK();
    });
 
-REGISTER_OP("IoParquetReadableRead")
+REGISTER_OP("IO>ParquetReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
@@ -85,7 +85,7 @@ REGISTER_OP("IoParquetReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IoParquetReadablePartitions")
+REGISTER_OP("IO>ParquetReadablePartitions")
   .Input("input: resource")
   .Output("partitions: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

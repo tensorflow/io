@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoDecodeTiffInfo")
+REGISTER_OP("IO>DecodeTiffInfo")
   .Input("input: string")
   .Output("shape: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -29,7 +29,7 @@ REGISTER_OP("IoDecodeTiffInfo")
     return Status::OK();
   });
 
-REGISTER_OP("IoDecodeTiff")
+REGISTER_OP("IO>DecodeTiff")
   .Input("input: string")
   .Input("index: int64")
   .Output("image: uint8")
@@ -42,7 +42,7 @@ REGISTER_OP("IoDecodeTiff")
     return Status::OK();
   });
 
-REGISTER_OP("IoEncodeBmp")
+REGISTER_OP("IO>EncodeBmp")
   .Input("input: uint8")
   .Output("output: string")
   .SetShapeFn([](shape_inference::InferenceContext* c) {

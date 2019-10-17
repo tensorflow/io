@@ -466,7 +466,7 @@ class KinesisDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoKinesisDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KinesisDataset").Device(DEVICE_CPU),
                         KinesisDatasetOp);
 }  // namespace data
 }  // namespace tensorflow

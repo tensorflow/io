@@ -117,7 +117,7 @@ class BigtableRangeKeyDatasetOp : public DatasetOpKernel {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoBigtableRangeKeyDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigtableRangeKeyDataset").Device(DEVICE_CPU),
                         BigtableRangeKeyDatasetOp);
 
 }  // namespace

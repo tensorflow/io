@@ -244,7 +244,7 @@ class GIFDatasetOp : public DatasetOpKernel {
   DataTypeVector output_types_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("IoGIFDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>GIFDataset").Device(DEVICE_CPU),
                         GIFDatasetOp);
 
 }  // namespace

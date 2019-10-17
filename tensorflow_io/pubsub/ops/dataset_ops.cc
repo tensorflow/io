@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoPubSubDataset")
+REGISTER_OP("IO>PubSubDataset")
     .Input("subscriptions: string")
     .Input("server: string")
     .Input("eof: bool")

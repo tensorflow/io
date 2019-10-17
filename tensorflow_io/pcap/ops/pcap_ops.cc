@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IoPcapInput")
+REGISTER_OP("IO>PcapInput")
     .Input("source: string")
     .Output("handle: variant")
     .Attr("filters: list(string) = []")
@@ -30,7 +30,7 @@ REGISTER_OP("IoPcapInput")
        return Status::OK();
      });
 
-REGISTER_OP("IoPcapDataset")
+REGISTER_OP("IO>PcapDataset")
     .Input("input: T")
     .Input("batch: int64")
     .Output("handle: variant")

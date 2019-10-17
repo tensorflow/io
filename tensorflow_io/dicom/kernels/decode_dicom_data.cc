@@ -87,7 +87,7 @@ class DecodeDICOMDataOp : public OpKernel {
     }
   }
 };
-REGISTER_KERNEL_BUILDER(Name("IoDecodeDICOMData").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMData").Device(DEVICE_CPU),
                         DecodeDICOMDataOp);
 
 }  // namespace tensorflow
