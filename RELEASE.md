@@ -1,3 +1,35 @@
+# Release 0.9.0
+
+Release 0.9.0 is the first release that is fully compatible with
+TensorFlow 2.0. The package of 0.9.0 is different from 0.8.0,
+though it shares the same code base as 0.8.0 with the same sets
+of features and contributors.
+
+## Major Features
+* **TensorFlow 2.0 compatible**.
+* `tensorflow_io.json`: JSON Dataset support.
+* `tensorflow_io.dicom`: Medical image DICOM format support.
+* `tensorflow_io.genome`: DNA Sequence FastQ format support added.
+* `tensorflow_io.ffmpeg`: FFmpeg now support selection of substreams.
+* `tensorflow_io.ffmpeg`: FFmpeg now support subtitle (captioning).
+* `tensorflow_io.ffmpeg`: FFmpeg now support decode video from memory.
+* `tensorflow_io.image`: BMP encoding (encode_bmp) support.
+* `tensorflow_io.kafka`: Kafka Dataset now support Kafka Schema Registry.
+* `tensorflow_io.audio`: WAV format now support 24 bit audio streams.
+* `tensorflow_io.text`: Regex capture group (`re2_full_match`) support.
+* manylinux2010 compliant on Linux.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Amarpreet Singh, Bryan Cutler, Damien Pontifex, Duke Wang,
+Jiacheng Xu, Marcelo Lerendegui, Mark Daoust, Ouwen Huang, Suyash Kumar,
+Yong Tang, Yuan Tang, henrytansetiawan
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.8.0
 
 ## Major Features
