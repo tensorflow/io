@@ -64,6 +64,7 @@ cc_library(
     name = "core_ops",
     srcs = [
         "kernels/archive_kernels.cc",
+        "kernels/http_kernels.cc",
         "ops/core_ops.cc",
     ],
     copts = tf_io_copts(),
@@ -73,6 +74,7 @@ cc_library(
     linkstatic = True,
     deps = [
         ":dataset_ops",
+        "@curl",
     ],
 )
 
