@@ -18,7 +18,7 @@ rm -f .bazelrc
 if python -c "import tensorflow as tf" &> /dev/null; then
     echo 'using installed tensorflow'
 else
-    pip install tensorflow
+    pip install --upgrade tensorflow==1.14.0
 fi
 python -m pip install grpcio-tools
 python config_helper.py
