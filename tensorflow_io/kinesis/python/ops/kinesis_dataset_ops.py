@@ -21,8 +21,7 @@ import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-kinesis_ops = _load_library('_kinesis_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 class KinesisDataset(data.Dataset):
   """A Kinesis Dataset that consumes the message.
@@ -82,7 +81,7 @@ class KinesisDataset(data.Dataset):
     return []
 
   def _as_variant_tensor(self):
-    return kinesis_ops.io_kinesis_dataset(
+    return core_ops.io_kinesis_dataset(
         self._stream, self._shard, self._read_indefinitely, self._interval)
 
   @property
