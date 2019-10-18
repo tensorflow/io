@@ -95,7 +95,7 @@ setup(
 """
 
 package = 'tensorflow>=1.14.0,<1.15.0'
-version = '0.7.0'
+version = '0.7.1'
 project = 'tensorflow-io'
 if '--package-version' in sys.argv:
   print(package)
