@@ -9,6 +9,20 @@ load(
     "tf_io_copts",
 )
 
+py_library(
+    name = "bigquery",
+    srcs = [
+        "__init__.py",
+        "python/__init__.py",
+        "python/ops/__init__.py",
+        "python/ops/bigquery_api.py",
+    ],
+    data = [
+        ":python/ops/_bigquery.so",
+    ],
+    srcs_version = "PY2AND3",
+)
+
 KERNEL_FILES = [
     "kernels/bigquery_kernels.cc",
     "kernels/bigquery_dataset_op.cc",

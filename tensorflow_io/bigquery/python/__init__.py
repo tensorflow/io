@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
-rm -f .bazelrc
-if python -c "import tensorflow as tf" &> /dev/null; then
-    echo 'using installed tensorflow'
-else
-    pip install --upgrade tensorflow==1.14.0
-fi
-python -m pip install grpcio-tools
-python config_helper.py
+"""This module contains the Python API for the Cloud BigQuery integration."""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
