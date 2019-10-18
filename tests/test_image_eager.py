@@ -167,5 +167,47 @@ def test_decode_exif():
   exif = tfio.experimental.image.decode_jpeg_exif(tf.io.read_file(jpeg_file))
   assert exif == 4
 
+def test_openexr_io_tensor():
+  """Test case for OpenEXRIOTensor"""
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "v1.7.test.1.exr")
+  filename = "file://" + filename
+
+  exr = tfio.IOTensor.from_exr(filename)
+  assert exr.keys == [0]
+  assert exr(0).columns == ['B', 'G', 'R', 'Z']
+
+  assert exr(0)('B').dtype == tf.float16
+  assert exr(0)('G').dtype == tf.float16
+  assert exr(0)('R').dtype == tf.float16
+  assert exr(0)('Z').dtype == tf.float32
+
+  assert exr(0)('B').shape == [155, 178]
+  assert exr(0)('G').shape == [155, 178]
+  assert exr(0)('R').shape == [155, 178]
+  assert exr(0)('Z').shape == [155, 178]
+
+  b = exr(0)('B').to_tensor()
+  g = exr(0)('G').to_tensor()
+  r = exr(0)('R').to_tensor()
+  z = exr(0)('Z').to_tensor()
+
+  assert b.shape == [155, 178]
+  assert g.shape == [155, 178]
+  assert r.shape == [155, 178]
+  assert z.shape == [155, 178]
+
+  assert b.dtype == tf.float16
+  assert g.dtype == tf.float16
+  assert r.dtype == tf.float16
+  assert z.dtype == tf.float32
+
+  rgb = tf.stack([r, g, b], axis=2)
+  rgb = tf.image.convert_image_dtype(rgb, tf.uint8)
+  _ = tf.image.encode_png(rgb)
+  # TODO: compare with generated png
+  #tf.io.write_file('sample.png', png)
+
 if __name__ == "__main__":
   test.main()

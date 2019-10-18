@@ -619,3 +619,13 @@ http_archive(
         "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
     ],
 )
+
+http_archive(
+    name = "openexr",
+    build_file = "//third_party:openexr.BUILD",
+    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
+    strip_prefix = "openexr-2.4.0",
+    urls = [
+        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
+    ],
+)
