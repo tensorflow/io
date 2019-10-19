@@ -57,7 +57,7 @@ class EXRIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protecte
           channels.pop()
         spec = tuple([
             tf.TensorSpec(tf.TensorShape(shape), dtype) for dtype in dtypes])
-        columns = [channel for channel in channels]
+        columns = [channel.decode() for channel in channels]
         elements = [
             io_tensor_ops.TensorIOTensor(
                 core_ops.io_decode_exr(data, index, channel, dtype=dtype),

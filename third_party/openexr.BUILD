@@ -32,6 +32,13 @@ cc_library(
     ],
     copts = [
     ],
+    defines = select({
+        "@bazel_tools//src/conditions:darwin": [
+        ],
+        "//conditions:default": [
+            "HAVE_POSIX_SEMAPHORES=1",
+        ],
+    }),
     includes = [
         ".",
         "IlmBase/Half",
@@ -57,7 +64,6 @@ genrule(
         "#define INCLUDED_ILMBASE_CONFIG_H 1",
         "#pragma once",
         "#define HAVE_PTHREAD 1",
-        "#define HAVE_POSIX_SEMAPHORES 1",
         "#define ILMBASE_INTERNAL_NAMESPACE_CUSTOM 0",
         "#define IMATH_INTERNAL_NAMESPACE Imath_2_4",
         "#define IEX_INTERNAL_NAMESPACE Iex_2_4",
