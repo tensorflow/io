@@ -20,7 +20,7 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.lmdb`: LMDB file format support.
 - `tensorflow_io.mnist`: MNIST file format support.
 - `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
-- `tensorflow_io.bigtable`: Google Cloud Bigtable support.
+- `tensorflow_io.bigtable`: Google Cloud Bigtable support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/bigtable/README.md).
 - `tensorflow_io.oss`: Alibaba Cloud Object Storage Service (OSS) support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/oss/README.md).
 - `tensorflow_io.avro`: Apache Avro file format support.
 - `tensorflow_io.audio`: WAV file format support.
@@ -29,7 +29,7 @@ At the moment TensorFlow I/O supports the following data sources:
 - `tensorflow_io.text`: Text file with archive support.
 - `tensorflow_io.pcap`: Pcap network packet capture file support.
 - `tensorflow_io.azure`: Microsoft Azure Storage support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/azure/README.md).
-- `tensorflow_io.bigquery`: Google Cloud BigQuery support.
+- `tensorflow_io.bigquery`: Google Cloud BigQuery support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/bigquery/README.md).
 - `tensorflow_io.gcs`: GCS Configuration support.
 - `tensorflow_io.prometheus`: Prometheus observation data support.
 - `tensorflow_io.dicom`: DICOM Image file format support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/dicom/README.md).
@@ -107,6 +107,7 @@ version of TensorFlow I/O according to the table below:
 | --- | --- | --- |
 | 0.9.0 | 2.0.x | Oct 18, 2019 |
 | 0.8.0 | 1.15.x | Oct 17, 2019 |
+| 0.7.1 | 1.14.x | Oct 18, 2019 |
 | 0.7.0 | 1.14.x | Jul 14, 2019 |
 | 0.6.0 | 1.13.x | May 29, 2019 |
 | 0.5.0 | 1.13.x | Apr 12, 2019 |
