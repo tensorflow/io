@@ -5,8 +5,7 @@ from __future__ import print_function
 
 from tensorflow import sparse
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import _load_library
-gen_libsvm_ops = _load_library('_libsvm_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 
 def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
@@ -21,7 +20,7 @@ def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
     features: A `SparseTensor` of the shape `[input_shape, num_features]`.
     labels: A `Tensor` of the same shape as content.
   """
-  labels, indices, values, shape = gen_libsvm_ops.io_decode_libsvm(
+  labels, indices, values, shape = core_ops.io_decode_libsvm(
       content, num_features, dtype=dtype, label_dtype=label_dtype)
   return sparse.SparseTensor(indices, values, shape), labels
 

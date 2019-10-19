@@ -7,14 +7,14 @@ load(
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_kinesis_ops.so",
+cc_library(
+    name = "kinesis_ops",
     srcs = [
         "kernels/kinesis_dataset_ops.cc",
         "ops/dataset_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "@aws",
         "@curl",
