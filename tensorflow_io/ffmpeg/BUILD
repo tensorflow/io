@@ -10,58 +10,29 @@ load(
 cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
-        "kernels/audio_ffmpeg_input.cc",
-        "kernels/audio_ffmpeg_reader.cc",
-        "kernels/audio_ffmpeg_reader.h",
         "kernels/ffmpeg_kernels.cc",
-        "kernels/video_ffmpeg_input.cc",
-        "kernels/video_ffmpeg_reader.cc",
-        "kernels/video_ffmpeg_reader.h",
         "ops/ffmpeg_ops.cc",
     ],
     copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core:ffmpeg_3.4",
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_3_4//:ffmpeg",
     ],
 )
 
 cc_library(
     name = "ffmpeg_2.8_ops",
     srcs = [
-        "kernels/audio_ffmpeg_input.cc",
-        "kernels/audio_ffmpeg_reader.cc",
-        "kernels/audio_ffmpeg_reader.h",
         "kernels/ffmpeg_kernels.cc",
-        "kernels/video_ffmpeg_input.cc",
-        "kernels/video_ffmpeg_reader.cc",
-        "kernels/video_ffmpeg_reader.h",
         "ops/ffmpeg_ops.cc",
     ],
     copts = tf_io_copts(),
     includes = ["."],
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core:ffmpeg_2.8",
-    ],
-)
-
-cc_library(
-    name = "libav_9.20_ops",
-    srcs = [
-        "kernels/audio_ffmpeg_input.cc",
-        "kernels/audio_ffmpeg_reader.cc",
-        "kernels/audio_ffmpeg_reader.h",
-        "kernels/video_ffmpeg_input.cc",
-        "kernels/video_ffmpeg_reader.cc",
-        "kernels/video_ffmpeg_reader.h",
-        "ops/ffmpeg_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    includes = ["."],
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:libav_9.20",
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_2_8//:ffmpeg",
     ],
 )
