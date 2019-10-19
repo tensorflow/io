@@ -180,17 +180,6 @@ http_archive(
 )
 
 http_archive(
-    name = "libav_9_20",
-    build_file = "//third_party:libav_9_20.BUILD",
-    sha256 = "ecc2389bc857602450196c9240e1ebc59066980f5d42e977efe0f498145775d4",
-    strip_prefix = "libav-9.20",
-    urls = [
-        "https://mirror.bazel.build/github.com/libav/libav/archive/v9.20.tar.gz",
-        "https://github.com/libav/libav/archive/v9.20.tar.gz",
-    ],
-)
-
-http_archive(
     name = "lmdb",
     build_file = "//third_party:lmdb.BUILD",
     sha256 = "f3927859882eb608868c8c31586bb7eb84562a40a6bf5cc3e13b6b564641ea28",
