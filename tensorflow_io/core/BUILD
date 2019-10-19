@@ -163,6 +163,7 @@ cc_library(
         "@giflib",
         "@libtiff",
         "@libwebp",
+        "@openexr",
     ],
 )
 
