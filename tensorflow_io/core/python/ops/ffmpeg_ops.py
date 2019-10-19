@@ -58,18 +58,8 @@ _ffmpeg_ops = _load_dependency_and_library({
         "libavutil-ffmpeg.so.54",
         "libswscale-ffmpeg.so.3",
     ],
-    'libtensorflow_io_libav_9.20.so': [
-        "libavformat.so.54",
-        "libavcodec.so.54",
-        "libavutil.so.52",
-        "libswscale.so.2",
-    ],
 })
 
-io_audio_input = _ffmpeg_ops.io_audio_input
-io_video_input = _ffmpeg_ops.io_video_input
-io_audio_dataset = _ffmpeg_ops.io_audio_dataset
-io_video_dataset = _ffmpeg_ops.io_video_dataset
 io_ffmpeg_readable_init = _ffmpeg_ops.io_ffmpeg_readable_init
 io_ffmpeg_readable_spec = _ffmpeg_ops.io_ffmpeg_readable_spec
 io_ffmpeg_readable_read = _ffmpeg_ops.io_ffmpeg_readable_read

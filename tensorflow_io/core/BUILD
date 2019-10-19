@@ -76,51 +76,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "ffmpeg_3.4",
-    srcs = [
-        "kernels/ffmpeg_reader.cc",
-        "kernels/ffmpeg_reader.h",
-    ],
-    copts = tf_io_copts(),
-    includes = ["."],
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@ffmpeg_3_4//:ffmpeg",
-    ],
-)
-
-cc_library(
-    name = "ffmpeg_2.8",
-    srcs = [
-        "kernels/ffmpeg_reader.cc",
-        "kernels/ffmpeg_reader.h",
-    ],
-    copts = tf_io_copts(),
-    includes = ["."],
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@ffmpeg_2_8//:ffmpeg",
-    ],
-)
-
-cc_library(
-    name = "libav_9.20",
-    srcs = [
-        "kernels/ffmpeg_reader.cc",
-        "kernels/ffmpeg_reader.h",
-    ],
-    copts = tf_io_copts(),
-    includes = ["."],
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@libav_9_20//:libav",
-    ],
-)
-
 go_binary(
     name = "golang_ops",
     srcs = ["go/prometheus.go"],
@@ -202,14 +157,5 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/ffmpeg:ffmpeg_2.8_ops",
-    ],
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_libav_9.20.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/ffmpeg:libav_9.20_ops",
     ],
 )
