@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="https://github.com/tensorflow/community/blob/master/sigs/logos/SIGIO.png" width="60%"><br><br>
+</div>
+
 # TensorFlow I/O
 
 [![Travis-CI Build Status](https://travis-ci.org/tensorflow/io.svg?branch=master)](https://travis-ci.org/tensorflow/io)
@@ -189,7 +193,7 @@ Note:
 - None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
 
 
-## Developing
+## Development
 
 ### Python
 
@@ -276,6 +280,66 @@ until_out_of_range({
   batch <- sess$run(next_batch)
   print(batch)
 })
+```
+
+## Coding guidelines and standards
+
+### Naming Conventions
+
+Any new operation that is introduced in Tensorflow I/O project should be prefixed with a pre-defined text.
+This is done to ensure that different Tensorflow projects (for e.g Tensorflow I/O) declare their operation names that are globally unique,
+across the entire Tensorflow ecosystem. 
+
+For more details on defining custom operations, please refer this [tensorflow RFC](https://github.com/tensorflow/community/pull/126).
+
+Depending on the module's programming language (C++ or python), pre-defined prefix text may vary. This is detailed below.
+ 
+#### C++
+
+Any new operation that is introduced in C++ module should be prefixed with text “IO>”. 
+
+for example:
+
+A new operation named “ReadAvro” should be registered as “IO>ReadAvro”.
+
+##### Regular way:
+
+```text
+REGISTER_OP("ReadAvro")
+                    ...
+                    ...
+                    ...
+     });
+```
+
+##### Suggested way:
+
+```text
+REGISTER_OP("IO>ReadAvro")
+                    ...
+                    ...
+                    ...
+     });
+```
+
+Please note in suggested way, how the operation name is prefixed with "IO>".
+
+#### Python 
+
+Any new operation that is introduced in python module and that which corresponds to the operation in C++ module,
+should be prefixed with "io_". This ensures that C++ operation binding is mapped correctly.
+
+for example:
+
+The python equivalent declaration of above operation named “IO>ReadAvro” would be "io_read_avro".
+
+```text
+def read_avro(filename, schema, column, **kwargs):
+  """read_avro"""
+  ...
+  ...
+  ...
+  return core_ops.io_read_avro(...);
 ```
 
 ## Community
