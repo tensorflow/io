@@ -2,7 +2,7 @@ workspace(name = "org_tensorflow_io")
 
 load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
 tf_configure(
     name = "local_config_tf",
@@ -190,15 +190,12 @@ http_archive(
     ],
 )
 
-http_archive(
+# TODO: replace with release version
+new_git_repository(
     name = "libtiff",
     build_file = "//third_party:libtiff.BUILD",
-    sha256 = "2c52d11ccaf767457db0c46795d9c7d1a8d8f76f68b0b800a3dfe45786b996e4",
-    strip_prefix = "tiff-4.0.10",
-    urls = [
-        "https://mirror.bazel.build/download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-        "https://download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-    ],
+    commit = "43b0c984f0a2c81565b05b6590bf9de7df612477",
+    remote = "https://gitlab.com/libtiff/libtiff.git",
 )
 
 http_archive(
