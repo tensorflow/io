@@ -72,8 +72,7 @@ bazel build \
      //tensorflow_io/dicom:dicom_ops \
      //tensorflow_io/gcs:gcs_config_ops \
      //tensorflow_io/genome:genome_ops \
-     //tensorflow_io/grpc:grpc_ops \
-     //tensorflow_io/json:json_ops
+     //tensorflow_io/grpc:grpc_ops
 
 rm -rf build && mkdir -p build
 
