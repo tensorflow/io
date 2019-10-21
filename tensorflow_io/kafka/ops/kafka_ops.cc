@@ -19,6 +19,16 @@ limitations under the License.
 
 namespace tensorflow {
 
+REGISTER_OP("IO>EncodeAvro")
+  .Input("input: dtype")
+  .Output("string: string")
+  .Attr("schema: string")
+  .Attr("dtype: list({float,double,int32,int64,string})")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->input(0));
+    return Status::OK();
+   });
+
 REGISTER_OP("IO>DecodeAvro")
   .Input("input: string")
   .Output("value: dtype")
