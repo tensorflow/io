@@ -71,6 +71,15 @@ bazel build \
      //tensorflow_io/core:core_ops \
      //tensorflow_io/dicom:dicom_ops \
      //tensorflow_io/gcs:gcs_config_ops
+     //tensorflow_io/genome:genome_ops \
+     //tensorflow_io/grpc:grpc_ops \
+     //tensorflow_io/hdf5:hdf5_ops \
+     //tensorflow_io/ignite:ignite_ops \
+     //tensorflow_io/image:image_ops \
+     //tensorflow_io/json:json_ops \
+     //tensorflow_io/kafka:kafka_ops \
+     //tensorflow_io/kinesis:kinesis_ops \
+     //tensorflow_io/libsvm:libsvm_ops
 
 rm -rf build && mkdir -p build
 
