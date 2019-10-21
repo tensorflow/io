@@ -24,6 +24,7 @@ before_install:
   set -x -e ;
   if [[ $(uname) == "Darwin" ]]; then
     export PYVER=$(echo $TRAVIS_JOB_NAME | awk '{print $NF}') ;
+    if [[ $PYVER == 3.7* ]]; then brew update; brew upgrade pyenv; fi ;
     echo pyenv install --list ;
     pyenv install $PYVER ;
     pyenv global $PYVER ;
@@ -88,6 +89,15 @@ jobs:
 
   - stage: build
     name: "Nightly Release Build on macOS 3.6.2"
+    os: osx
+    osx_image: xcode9.3
+    script:
+    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+    - bash -x -e .travis/wheel.test.sh
+    after_success: bash -x -e .travis/after-success.sh
+
+  - stage: build
+    name: "Nightly Release Build on macOS 3.7.4"
     os: osx
     osx_image: xcode9.3
     script:
