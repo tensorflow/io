@@ -70,8 +70,7 @@ bazel build \
      //tensorflow_io/bigquery:bigquery_ops \
      //tensorflow_io/core:core_ops \
      //tensorflow_io/dicom:dicom_ops \
-     //tensorflow_io/gcs:gcs_config_ops \
-     //tensorflow_io/genome:genome_ops
+     //tensorflow_io/gcs:gcs_config_ops
 
 rm -rf build && mkdir -p build
 
