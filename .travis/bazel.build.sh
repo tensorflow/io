@@ -63,23 +63,7 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/arrow:arrow_ops \
-     //tensorflow_io/audio:audio_ops \
-     //tensorflow_io/avro:avro_ops \
-     //tensorflow_io/azure:azfs_ops \
-     //tensorflow_io/bigquery:bigquery_ops \
-     //tensorflow_io/core:core_ops \
-     //tensorflow_io/dicom:dicom_ops \
-     //tensorflow_io/gcs:gcs_config_ops \
-     //tensorflow_io/genome:genome_ops \
-     //tensorflow_io/grpc:grpc_ops \
-     //tensorflow_io/hdf5:hdf5_ops \
-     //tensorflow_io/ignite:ignite_ops \
-     //tensorflow_io/image:image_ops \
-     //tensorflow_io/json:json_ops \
-     //tensorflow_io/kafka:kafka_ops \
-     //tensorflow_io/kinesis:kinesis_ops \
-     //tensorflow_io/libsvm:libsvm_ops
+  -- //tensorflow_io/...
 
 rm -rf build && mkdir -p build
 
