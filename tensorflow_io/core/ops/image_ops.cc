@@ -44,6 +44,30 @@ REGISTER_OP("IO>DecodeTiff")
     return Status::OK();
   });
 
+REGISTER_OP("IO>DecodeGeoTiffInfo")
+  .Input("input: string")
+  .Output("shape: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
+
+REGISTER_OP("IO>DecodeGeoTiff")
+  .Input("input: string")
+  .Input("index: int64")
+  .Output("image: uint8")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+    c->set_output(0, c->MakeShape({
+        c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
+
+
 REGISTER_OP("IO>EncodeBmp")
   .Input("input: uint8")
   .Output("output: string")

@@ -159,6 +159,7 @@ def test_encode_webp():
   image_e = tf.image.decode_bmp(bmp_encoded)
   assert np.all(image_v.numpy() == image_e.numpy())
 
+
 def test_decode_exif():
   """Test case for decode_exif."""
   jpeg_file = os.path.join(
@@ -166,6 +167,22 @@ def test_decode_exif():
       "test_image", "down-mirrored.jpg")
   exif = tfio.experimental.image.decode_jpeg_exif(tf.io.read_file(jpeg_file))
   assert exif == 4
+
+def test_geo_tiff():
+  """Test case for geo tiff."""
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "GeogToWGS84GeoKey5.tif")
+  gtif = tfio.IOTensor.from_geo_tiff(filename)
+  # only one item for now
+  assert gtif.keys == [0]
+  assert gtif(0).shape == [101, 101, 4]
+  assert gtif(0).dtype == tf.uint8
+
+  image = gtif(0).to_tensor()
+  _ = tf.image.encode_png(image)
+  # TODO: check generated sample.png
+  # tf.io.write_file('sample.png', png)
 
 if __name__ == "__main__":
   test.main()
