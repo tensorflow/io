@@ -17,44 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import warnings
+from tensorflow_io.core.python.ops import lmdb_dataset_ops
 
-import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops as data_ops
-from tensorflow_io.core.python.ops import core_ops as lmdb_ops
-
-warnings.warn(
-    "The tensorflow_io.lmdb.LMDBDataset is "
-    "deprecated. Please look for tfio.IOTensor.from_lmdb "
-    "for reading LMDB key/value pairs into tensorflow.",
-    DeprecationWarning)
-
-class LMDBDataset(data_ops.Dataset):
-  """A LMDB Dataset that reads the lmdb file."""
-
-  def __init__(self, filename, batch=None):
-    """Create a `LMDBDataset`.
-
-    `LMDBDataset` allows a user to read data from a mdb file as
-    (key value) pairs sequentially.
-
-    For example:
-    ```python
-    tf.enable_eager_execution()
-    dataset = LMDBDataset("/foo/bar.mdb")
-    # Prints the (key, value) pairs inside a lmdb file.
-    for key, value in dataset:
-      print(key, value)
-    ```
-    Args:
-      filename: A `tf.string` tensor containing one or more filenames.
-    """
-    batch = 0 if batch is None else batch
-    dtypes = [tf.string, tf.string]
-    shapes = [
-        tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None]), tf.TensorShape([None])]
-    super(LMDBDataset, self).__init__(
-        lmdb_ops.io_lmdb_dataset_v2,
-        lmdb_ops.io_lmdb_input(filename),
-        batch, dtypes, shapes)
+LMDBDataset = lmdb_dataset_ops.LMDBIODataset
