@@ -39,7 +39,10 @@ def test_pcap_input():
   for v in dataset:
     (packet_timestamp, packet_data) = v
     if packets_total == 0:
-      assert np.isclose(packet_timestamp.numpy()[0], 1084443427.311224) # we know this is the correct value in the test pcap file
+      assert np.isclose(
+          packet_timestamp.numpy()[0],
+          1084443427.311224,
+          rtol=1e-15) # we know this is the correct value in the test pcap file
       assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
     packets_total += 1
   assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
@@ -50,7 +53,10 @@ def test_pcap_input():
   for v in dataset:
     (packet_timestamp, packet_data) = v
     if packets_total == 0:
-      assert packet_timestamp.numpy()[0] == 1084443427.311224 # we know this is the correct value in the test pcap file
+      assert np.isclose(
+          packet_timestamp.numpy()[0],
+          1084443427.311224,
+          rtol=1e-15) # we know this is the correct value in the test pcap file
       assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
     packets_total += 1
   assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
