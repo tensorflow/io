@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "kernels/dataset_ops.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 
 namespace tensorflow {
@@ -28,8 +29,8 @@ public:
   const uint16_t PCAP_ERRBUF_SIZE = 256;
   const uint16_t PCAP_TSTAMP_PRECISION_MICRO = 0; // use timestamps with microsecond precision by default
 
-  explicit PcapInputStream(InputStreamInterface* input_stream)
-    : io::BufferedInputStream(input_stream, 256 * 1024) {
+  explicit PcapInputStream(RandomAccessFile* file)
+    : io::BufferedInputStream(file, 256 * 1024) {
   }
 
   Status ReadRecord(double& timestamp, string* packet_data, int64& record_read) {
@@ -146,7 +147,7 @@ private:
 
 }; // end of class PcapInputStream
 
-
+/*
 class PcapInput: public FileInput<PcapInputStream> {
  public:
   Status ReadRecord(io::InputStreamInterface* s, IteratorContext* ctx, std::unique_ptr<PcapInputStream>& state, int64 record_to_read, int64* record_read, std::vector<Tensor>* out_tensors) const override {
@@ -195,13 +196,90 @@ class PcapInput: public FileInput<PcapInputStream> {
   }
  protected:
 };
+*/
 
-REGISTER_UNARY_VARIANT_DECODE_FUNCTION(PcapInput, "tensorflow::data::PcapInput");
 
-REGISTER_KERNEL_BUILDER(Name("IO>PcapInput").Device(DEVICE_CPU),
-                        FileInputOp<PcapInput>);
-REGISTER_KERNEL_BUILDER(Name("IO>PcapDataset").Device(DEVICE_CPU),
-                        FileInputDatasetOp<PcapInput, PcapInputStream>);
+class PcapReadable : public IOReadableInterface {
+ public:
+  PcapReadable(Env* env)
+  : env_(env) {}
+
+  ~PcapReadable() {}
+  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+    if (input.size() > 1) {
+      return errors::InvalidArgument("more than 1 filename is not supported");
+    }
+    const string& filename = input[0];
+    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    stream_.reset(new PcapInputStream(file_.get()));
+    TF_RETURN_IF_ERROR(stream_->ReadHeader());
+
+    record_index_ = 0;
+    record_final_ = false;
+    return Status::OK();
+  }
+  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+    *shape = PartialTensorShape({-1});
+    *dtype = label ? DT_DOUBLE : DT_STRING;
+    return Status::OK();
+  }
+
+  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+    (*record_read) = 0;
+    if (record_final_) {
+      return Status::OK();
+    }
+    if (start != record_index_) {
+      return errors::InvalidArgument("random access of pcap file is not supported: ");
+    }
+    int64 record_to_read = stop - start;
+    // read packets from the file up to record_to_read or end of file
+    while ((*record_read) < record_to_read) {
+      int64 record_count = 0;
+      double packet_timestamp;
+      string packet_data_buffer;
+      Status status = stream_->ReadRecord(packet_timestamp, &packet_data_buffer, record_count);
+      if (!(status.ok() || errors::IsOutOfRange(status))) {
+        return status;
+      }
+      if (record_count > 0) {
+        value->flat<string>()(*record_read) = packet_data_buffer;
+        label->flat<double>()(*record_read) = packet_timestamp;
+        (*record_read) += record_count;
+      } else {
+        // no more records available to read
+        // record_count == 0
+        record_final_ = true;
+        break;
+      }
+    }
+    record_index_ += (*record_read);
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return strings::StrCat("PcapReadable");
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+
+  int64 record_index_ GUARDED_BY(mu_);
+  bool record_final_ GUARDED_BY(mu_);
+
+  std::unique_ptr<PcapInputStream> stream_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>PcapReadableInit").Device(DEVICE_CPU),
+                        IOInterfaceInitOp<PcapReadable>);
+REGISTER_KERNEL_BUILDER(Name("IO>PcapReadableRead").Device(DEVICE_CPU),
+                        IOReadableReadOp<PcapReadable>);
 
 }  // namespace data
 }  // namespace tensorflow
