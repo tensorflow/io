@@ -124,6 +124,7 @@ cc_binary(
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
+        "//tensorflow_io/pcap:pcap_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",

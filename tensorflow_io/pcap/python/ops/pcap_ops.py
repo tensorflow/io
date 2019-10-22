@@ -13,28 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 """PcapDataset"""
-import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops
-from tensorflow_io.core.python.ops import _load_library
-pcap_ops = _load_library('_pcap_ops.so')
+from tensorflow_io.core.python.ops import pcap_dataset_ops
 
-
-class PcapDataset(data_ops.Dataset):
+class PcapDataset(pcap_dataset_ops.PcapIODataset):
   """A pcap Dataset. Pcap is a popular file format for capturing network packets.
   """
 
-  def __init__(self, filenames, batch=None):
+  def __init__(self, filename):
     """Create a pcap Reader.
 
     Args:
-      filenames: A `tf.string` tensor containing one or more filenames.
+      filename: A `tf.string` tensor containing filename.
     """
-    batch = 0 if batch is None else batch
-    dtypes = [tf.float64, tf.string]
-    shapes = [
-        tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
-            tf.TensorShape([None]), tf.TensorShape([None])]
-    super(PcapDataset, self).__init__(
-        pcap_ops.io_pcap_dataset,
-        pcap_ops.io_pcap_input(filenames),
-        batch, dtypes, shapes)
+    super(PcapDataset, self).__init__(filename)
