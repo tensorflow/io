@@ -339,24 +339,76 @@ class DecodeGeoTIFFInfoOp : public OpKernel {
     std::unique_ptr<TIFF, void(*)(TIFF*)> tiff(XTIFFStreamOpen("memory", &input_stream), [](TIFF* p) { if (p != nullptr) { XTIFFClose(p); } });
     OP_REQUIRES(context, (tiff.get() != nullptr), errors::InvalidArgument("unable to open TIFF from memory"));
 
-    std::vector<std::pair<int64, int64>> shape;
+    std::vector<TensorShape> shape;
+    std::vector<DataType> dtype;
     do {
       unsigned int height, width;
       TIFFGetField(tiff.get(), TIFFTAG_IMAGELENGTH, &height);
       TIFFGetField(tiff.get(), TIFFTAG_IMAGEWIDTH, &width);
 
+      unsigned short channels;
+      TIFFGetField(tiff.get(), TIFFTAG_SAMPLESPERPIXEL, &channels);
+
+      shape.push_back(TensorShape({static_cast<int64>(height), static_cast<int64>(width), static_cast<int64>(channels)}));
+
+      unsigned short format, bits;
+      if (!TIFFGetField(tiff.get(), TIFFTAG_SAMPLEFORMAT, &format)) {
+        // If format is not defined, then we assume format is SAMPLEFORMAT_UINT
+	format = SAMPLEFORMAT_UINT;
+      }
+      TIFFGetField(tiff.get(), TIFFTAG_BITSPERSAMPLE, &bits);
+      DataType pixel_dtype;
+      switch (format)
+      {
+      case SAMPLEFORMAT_UINT:
+        switch (bits)
+	{
+        case 8:
+          pixel_dtype = DT_UINT8;
+          break;
+        default:
+          OP_REQUIRES(context, false, errors::InvalidArgument("unsupported bits ", bits, " for uint"));
+	}
+	break;
+      case SAMPLEFORMAT_INT:
+        switch (bits)
+	{
+        default:
+          OP_REQUIRES(context, false, errors::InvalidArgument("unsupported bits ", bits, " for int"));
+	}
+	break;
+      case SAMPLEFORMAT_IEEEFP:
+        switch (bits)
+	{
+        case 16:
+          pixel_dtype = DT_HALF;
+          break;
+        default:
+          OP_REQUIRES(context, false, errors::InvalidArgument("unsupported bits ", bits, " for fp"));
+	}
+	break;
+      default:
+        OP_REQUIRES(context, false, errors::InvalidArgument("unsupported format ", format));
+      }
+      dtype.push_back(pixel_dtype);
+
+      // GeoTIFF specifi information
       std::unique_ptr<GTIF, void(*)(GTIF*)> gtif(GTIFNew(tiff.get()), [](GTIF* p) { if (p != nullptr) { GTIFFree(p); } });
       OP_REQUIRES(context, (gtif.get() != nullptr), errors::InvalidArgument("unable to read GeoTIFF information"));
       // GTIFPrint(gtif,0,0);
-
-      shape.push_back(std::pair<int64, int64>(static_cast<int64>(height), static_cast<int64>(width)));
     } while (TIFFReadDirectory(tiff.get()));
 
     Tensor* shape_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({static_cast<int64>(shape.size()), 2}), &shape_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({static_cast<int64>(shape.size()), 3}), &shape_tensor));
     for (size_t i = 0; i < shape.size(); i++) {
-      shape_tensor->flat<int64>()(i * 2) = shape[i].first;
-      shape_tensor->flat<int64>()(i * 2 + 1) = shape[i].second;
+      shape_tensor->flat<int64>()(i * 3) = shape[i].dim_size(0);
+      shape_tensor->flat<int64>()(i * 3 + 1) = shape[i].dim_size(1);
+      shape_tensor->flat<int64>()(i * 3 + 2) = shape[i].dim_size(2);
+    }
+    Tensor* dtype_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({static_cast<int64>(dtype.size())}), &dtype_tensor));
+    for (size_t i = 0; i < dtype.size(); i++) {
+      dtype_tensor->flat<int64>()(i) = dtype[i];
     }
   }
 };
