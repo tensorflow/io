@@ -218,7 +218,13 @@ private:
 
   // Is non trivial tensor that has >= 1 dimension and the dimension(0) > 1 value
   inline static bool IsNonTrivialTensor(const TensorShape& tensor_shape) {
-    return tensor_shape.dims() >= 1 && tensor_shape.dim_size(0) > 1;
+    // Check that any of the dimensions is > 1
+    for (size_t i_dim = 0; i_dim < tensor_shape.dims(); ++i_dim) {
+        if (tensor_shape.dim_size(i_dim) > 1) {
+            return true;
+        }
+    }
+    return false;
   }
 
   // For up to 4 values use inline memory

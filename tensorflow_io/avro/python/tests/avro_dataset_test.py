@@ -16,7 +16,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 import numpy as np
 from tensorflow.python.platform import test
 from tensorflow.python.framework import dtypes as tf_types
@@ -244,7 +243,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                                 reader_schema=writer_schema,
                                 batch_size=2, num_epochs=1)
 
-    def test_padding_from_default(self):
+    def test_padding_from_default_with_drop_remainder(self):
         writer_schema = """{
                   "type": "record",
                   "name": "row",
@@ -277,6 +276,42 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                                 features=features,
                                 reader_schema=writer_schema,
                                 batch_size=3, num_epochs=None,
+                                skip_out_of_range_error=True)
+
+    def test_padding_from_default_without_drop_remainder(self):
+        writer_schema = """{
+                  "type": "record",
+                  "name": "row",
+                  "fields": [
+                      {
+                         "name": "fixed_len",
+                         "type": {
+                            "type": "array",
+                            "items": "int"
+                         }
+                      }
+                  ]}"""
+        record_data = [
+            {"fixed_len": [0]},
+            {"fixed_len": [1]},
+            {"fixed_len": [2]},
+            {"fixed_len": [3]}
+        ]
+        features = {
+            "fixed_len[*]": parsing_ops.FixedLenFeature([2], tf_types.int32,
+                                                        default_value=[0, 1])
+        }
+        # Note, last batch is dropped
+        expected_data = [
+            {"fixed_len[*]": np.asarray([[0, 1], [1, 1], [2, 1]])},
+            {"fixed_len[*]": np.asarray([[3, 1]])}
+        ]
+        self._test_pass_dataset(writer_schema=writer_schema,
+                                record_data=record_data,
+                                expected_data=expected_data,
+                                features=features,
+                                reader_schema=writer_schema,
+                                batch_size=3, num_epochs=1,
                                 skip_out_of_range_error=True)
 
     def test_none_batch(self):

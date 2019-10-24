@@ -173,6 +173,7 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
       default_shape = default_value.shape();
     }
 
+    VLOG(5) << "Default shape is " << default_shape;
     VLOG(5) << "Default value is " << default_value.SummarizeValue(9);
 
     TensorShape resolved_shape;
