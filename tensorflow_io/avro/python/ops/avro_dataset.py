@@ -399,8 +399,7 @@ def make_avro_dataset(
     shuffle_buffer_size=10000,
     shuffle_seed=None,
     prefetch_buffer_size=optimization.AUTOTUNE,
-    num_parallel_reads=1,
-    sloppy=False
+    num_parallel_reads=1
 ):
   """Makes an avro dataset.
 
@@ -470,12 +469,6 @@ def make_avro_dataset(
     avro_data_buffer_size: The size of the avro data buffer in By
 
   """
-
-  # if not isinstance(file_pattern, list):
-  #   filenames = readers._get_file_names(file_pattern, False)
-  # else:
-  #   filenames = file_pattern
-
   dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
   if shuffle:
     n_filenames = array_ops.shape(filenames, out_type=dtypes.int64)[0]
@@ -551,12 +544,11 @@ def make_avro_dataset_v1(
     shuffle_buffer_size=10000,
     shuffle_seed=None,
     prefetch_buffer_size=optimization.AUTOTUNE,
-    num_parallel_reads=1,
-    sloppy=False
+    num_parallel_reads=1
 ):  # pylint: disable=missing-docstring
   return dataset_ops.DatasetV1Adapter(make_avro_dataset(
       filenames, reader_schema, features, batch_size, num_epochs,
       num_parallel_calls, label_keys, input_stream_buffer_size,
       avro_data_buffer_size, shuffle, shuffle_buffer_size, shuffle_seed,
-      prefetch_buffer_size, num_parallel_reads, sloppy))
+      prefetch_buffer_size, num_parallel_reads))
 make_avro_dataset_v1.__doc__ = make_avro_dataset.__doc__

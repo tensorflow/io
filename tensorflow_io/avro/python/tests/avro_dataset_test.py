@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import numpy as np
+import os
 from tensorflow.python.platform import test
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.ops import parsing_ops
@@ -25,6 +26,9 @@ from tensorflow.python.framework import sparse_tensor
 
 from tensorflow_io.avro.python.tests import avro_dataset_test_base as \
     avro_test_base
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '50'
 
 
 class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
@@ -301,7 +305,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
             "fixed_len[*]": parsing_ops.FixedLenFeature([2], tf_types.int32,
                                                         default_value=[0, 1])
         }
-        # Note, last batch is dropped
+        # Note, last batch is NOT dropped
         expected_data = [
             {"fixed_len[*]": np.asarray([[0, 1], [1, 1], [2, 1]])},
             {"fixed_len[*]": np.asarray([[3, 1]])}
@@ -964,11 +968,11 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
             {"sparse_type": sparse_tensor.SparseTensorValue(
                 np.asarray([[0, 0], [0, 3], [1, 2]]),
                 np.asarray([5.0, 2.0, 7.0]),
-                np.asarray([2, 3]))},
+                np.asarray([2, 4]))},
             {"sparse_type": sparse_tensor.SparseTensorValue(
                 np.asarray([[0, 1], [1, 3]]),
                 np.asarray([6.0, 3.0]),
-                np.asarray([2, 2]))}
+                np.asarray([2, 4]))}
         ]
         self._test_pass_dataset(writer_schema=writer_schema,
                                 record_data=record_data,
@@ -1026,7 +1030,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
             {"sparse_type": sparse_tensor.SparseTensorValue(
                 np.asarray([[0, 0, 1], [0, 3, 5], [1, 0, 1]]),
                 np.asarray([5.0, 2.0, 7.0]),
-                np.asarray([2, 3]))}
+                np.asarray([2, 4, 6]))}
         ]
         self._test_pass_dataset(writer_schema=writer_schema,
                                 record_data=record_data,
@@ -1095,11 +1099,11 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                 "first_value": sparse_tensor.SparseTensorValue(
                     np.asarray([[0, 0], [0, 3], [1, 0]]),
                     np.asarray([5.0, 2.0, 2.0]),
-                    np.asarray([2, 3])),
+                    np.asarray([2, 4])),
                 "second_value": sparse_tensor.SparseTensorValue(
                     np.asarray([[0, 2], [1, 1]]),
                     np.asarray([7.0, 2.0]),
-                    np.asarray([2, 2]))
+                    np.asarray([2, 3]))
             }
         ]
         self._test_pass_dataset(writer_schema=writer_schema,
@@ -1135,11 +1139,52 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                 sparse_tensor.SparseTensorValue(
                     np.asarray([[0, 0], [0, 1], [1, 0], [1, 1], [1, 2], [2, 0]]),
                     np.asarray([1, 2, 3, 4, 5, 6]),
-                    np.asarray([2, 6])
+                    np.asarray([3, 3])
                 )
             }
         ]
 
+        self._test_pass_dataset(writer_schema=writer_schema,
+                                record_data=record_data,
+                                expected_data=expected_data,
+                                features=features,
+                                reader_schema=writer_schema,
+                                batch_size=3, num_epochs=1)
+
+
+    def test_variable_length_2d(self):
+        writer_schema = """{
+                  "type": "record",
+                  "name": "row",
+                  "fields": [
+                      {
+                         "name": "int_list_list",
+                         "type": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": "int"
+                            }
+                         }
+                      }
+                  ]}"""
+        record_data = [
+            {"int_list_list": [[1, 2], [3, 4, 5]]},
+            {"int_list_list": [[6]]},
+            {"int_list_list": [[6]]},
+        ]
+        features = {
+            'int_list_list[*][*]': parsing_ops.VarLenFeature(tf_types.int32)
+        }
+        expected_data = [
+            {"int_list_list[*][*]":
+                sparse_tensor.SparseTensorValue(
+                    np.asarray([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]]),
+                    np.asarray([1, 2, 3, 4, 5, 6, 6]),
+                    np.asarray([3, 2, 3])
+                )
+            }
+        ]
         self._test_pass_dataset(writer_schema=writer_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
@@ -1557,13 +1602,13 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                         np.asarray([[0, 0], [1, 0], [1, 1]]),
                         np.asarray([compat.as_bytes("Hans"), compat.as_bytes("Joel"),
                                     compat.as_bytes("Marc")]),
-                        np.asarray([2, 1])),
+                        np.asarray([2, 2])),
                 "guests[gender='female'].name":
                     sparse_tensor.SparseTensorValue(
                         np.asarray([[0, 0], [0, 1], [1, 0]]),
                         np.asarray([compat.as_bytes("Mary"), compat.as_bytes("July"),
                                     compat.as_bytes("JoAn")]),
-                        np.asarray([2, 1]))
+                        np.asarray([2, 2]))
             }
         ]
 
@@ -1822,7 +1867,7 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                 "guests[gender='female'].address.street":
                     sparse_tensor.SparseTensorValue(
                         np.asarray([[0, 0]]), np.asarray([compat.as_bytes("Ellis St")]),
-                        np.asarray([2, 1]))
+                        np.asarray([1, 1]))
             }
         ]
         self._test_pass_dataset(writer_schema=writer_schema,
@@ -1897,13 +1942,13 @@ class AvroDatasetTest(avro_test_base.AvroDatasetTestBase):
                         np.asarray([[0, 0], [1, 0], [1, 1]]),
                         np.asarray([compat.as_bytes("Hans"), compat.as_bytes("Joel"),
                                     compat.as_bytes("Marc")]),
-                        np.asarray([2, 1])),
+                        np.asarray([2, 2])),
                 "guests[gender='female'].name":
                     sparse_tensor.SparseTensorValue(
                         np.asarray([[0, 0], [0, 1], [1, 0]]),
                         np.asarray([compat.as_bytes("Mary"), compat.as_bytes("July"),
                                     compat.as_bytes("JoAn")]),
-                        np.asarray([2, 1]))
+                        np.asarray([2, 2]))
             }
         ]
         self._test_pass_dataset(writer_schema=writer_schema,

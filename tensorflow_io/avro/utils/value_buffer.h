@@ -345,6 +345,8 @@ template <typename T>
 Status ValueBuffer<T>::GetDenseShapeForSparse(Tensor* dense_shape) const {
   TensorShape shape;
   shape_builder_.GetDenseShape(&shape);
+  VLOG(3) << "Dense shape for buffer is: " << shape;
+
   auto tensor_flat = (*dense_shape).flat<int64>();
   size_t n_dim = shape.dims();
   for (size_t i_dim = 0; i_dim < n_dim; ++i_dim) {

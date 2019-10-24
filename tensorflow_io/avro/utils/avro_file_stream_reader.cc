@@ -140,7 +140,8 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
       &(*result).sparse_values[i_sparse],
       &(*result).sparse_indices[i_sparse]));
 
-    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({index_shape.dims()}));
+    int64 rank = (*result).sparse_indices[i_sparse].dim_size(1); // rank is the 2nd dimension of the index
+    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({rank}));
     TF_RETURN_IF_ERROR((*value_store).GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
 
     VLOG(5) << "Sparse values: " << (*result).sparse_values[i_sparse].SummarizeValue(15);
@@ -148,7 +149,7 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
     VLOG(5) << "Sparse dense shapes: " << (*result).sparse_shapes[i_sparse].SummarizeValue(15);
     VLOG(5) << "Value shape: " << value_shape;
     VLOG(5) << "Index shape: " << index_shape;
-    VLOG(5) << "Sparse dense shapes shape: " << TensorShape({index_shape.dims()});
+    VLOG(5) << "Sparse dense shapes shape: " << (*result).sparse_shapes[i_sparse].shape();
   }
 
   // Get dense tensors
