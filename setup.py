@@ -245,6 +245,8 @@ if datapath is not None:
       for filename in [
           f for f in filenames if fnmatch.fnmatch(
               f, "*.so") or fnmatch.fnmatch(f, "*.py")]:
+        if filename.endswith("_proto.so"):
+          continue
         src = os.path.join(rootname, filename)
         dst = os.path.join(
             rootpath,
