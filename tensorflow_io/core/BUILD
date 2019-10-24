@@ -108,6 +108,7 @@ cc_binary(
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
+        "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
