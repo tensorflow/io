@@ -6,7 +6,7 @@
 
 # Contributing
 
-Tensorflow IO project welcomes all kinds of contributions, be it code changes, bug-fixes or documentation changes.
+Tensorflow I/O project welcomes all kinds of contributions, be it code changes, bug-fixes or documentation changes.
 This guide should help you in taking care of some basic setups & code conventions.
  
 ## Development

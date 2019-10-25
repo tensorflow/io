@@ -195,7 +195,7 @@ Note:
 - None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
 
 ## Contributing
-TF-IO is a community led open source project. As such, the project
+Tensorflow I/O is a community led open source project. As such, the project
 depends on public contributions, bug-fixes, and documentation. Please
 see [contribution guidelines](CONTRIBUTING.md) for a guide on how to
 contribute.
