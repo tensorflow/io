@@ -20,12 +20,10 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import tensorflow as tf
-import tensorflow_io.pcap as pcap_io # pylint: disable=wrong-import-position
+import numpy as np
 
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-
+import tensorflow_io as tfio
+import tensorflow_io.pcap as pcap_io
 
 def test_pcap_input():
   """test_pcap_input
@@ -34,14 +32,31 @@ def test_pcap_input():
   pcap_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_pcap", "http.pcap")
   file_url = "file://" + pcap_filename
-  url_filenames = [file_url]
-  dataset = pcap_io.PcapDataset(url_filenames, batch=1)
+
+  dataset = tfio.IODataset.from_pcap(file_url, capacity=5).batch(1)
 
   packets_total = 0
   for v in dataset:
     (packet_timestamp, packet_data) = v
     if packets_total == 0:
-      assert packet_timestamp.numpy()[0] == 1084443427.311224 # we know this is the correct value in the test pcap file
+      assert np.isclose(
+          packet_timestamp.numpy()[0],
+          1084443427.311224,
+          rtol=1e-15) # we know this is the correct value in the test pcap file
+      assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
+    packets_total += 1
+  assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
+
+  dataset = pcap_io.PcapDataset(file_url).batch(1)
+
+  packets_total = 0
+  for v in dataset:
+    (packet_timestamp, packet_data) = v
+    if packets_total == 0:
+      assert np.isclose(
+          packet_timestamp.numpy()[0],
+          1084443427.311224,
+          rtol=1e-15) # we know this is the correct value in the test pcap file
       assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
     packets_total += 1
   assert packets_total == 43 # we know this is the correct number of packets in the test pcap file

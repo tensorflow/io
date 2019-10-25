@@ -84,7 +84,6 @@ flags.DEFINE_string("site_path", "io/api_docs/python",
 flags.mark_flags_as_mutual_exclusive(['code_url_prefix', 'git_branch'])
 
 
-
 def main(argv):
     if argv[1:]:
         raise ValueError('Unrecognized arguments: {}'.format(argv[1:]))
@@ -101,7 +100,7 @@ def main(argv):
         # Replace `tensorflow_docs` with your module, here.
         py_modules=[(PROJECT_SHORT_NAME, tfio)],
         code_url_prefix=code_url_prefix,
-        private_map={'tfio': ['__version__', 'utils', 'version']},
+        private_map={'tfio': ['__version__', 'utils', 'version', 'core']},
         # This callback cleans up a lot of aliases caused by internal imports.
         callbacks=[public_api.local_definitions_filter],
         search_hints=FLAGS.search_hints,

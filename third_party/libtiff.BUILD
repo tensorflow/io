@@ -13,6 +13,8 @@ cc_library(
         ],
         exclude = [
             "libtiff/tif_win32.c",
+            "libtiff/tif_wince.c",
+            "libtiff/tif_vms.c",
         ],
     ) + [
         "libtiff/tif_stream.cxx",
