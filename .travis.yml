@@ -24,6 +24,7 @@ before_install:
   set -x -e ;
   if [[ $(uname) == "Darwin" ]]; then
     export PYVER=$(echo $TRAVIS_JOB_NAME | awk '{print $NF}') ;
+    if [[ $PYVER == 3.7* ]]; then brew update; brew upgrade pyenv; fi ;
     echo pyenv install --list ;
     pyenv install $PYVER ;
     pyenv global $PYVER ;

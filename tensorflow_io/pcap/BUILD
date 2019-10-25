@@ -7,14 +7,14 @@ load(
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_pcap_ops.so",
+cc_library(
+    name = "pcap_ops",
     srcs = [
-        "kernels/pcap_input.cc",
+        "kernels/pcap_kernels.cc",
         "ops/pcap_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@local_config_tf//:libtensorflow_framework",

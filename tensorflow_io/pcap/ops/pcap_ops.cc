@@ -19,28 +19,28 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>PcapInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("filters: list(string) = []")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("IO>PcapReadableInit")
+  .Input("input: string")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
 
-REGISTER_OP("IO>PcapDataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
+REGISTER_OP("IO>PcapReadableRead")
+  .Input("input: resource")
+  .Input("start: int64")
+  .Input("stop: int64")
+  .Output("value: string")
+  .Output("label: double")
+  .Attr("filter: list(string) = ['value', 'label']")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+   });
+
 
 }  // namespace tensorflow

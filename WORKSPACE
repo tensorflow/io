@@ -2,7 +2,7 @@ workspace(name = "org_tensorflow_io")
 
 load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
 tf_configure(
     name = "local_config_tf",
@@ -190,15 +190,12 @@ http_archive(
     ],
 )
 
-http_archive(
+# TODO: replace with release version
+new_git_repository(
     name = "libtiff",
     build_file = "//third_party:libtiff.BUILD",
-    sha256 = "2c52d11ccaf767457db0c46795d9c7d1a8d8f76f68b0b800a3dfe45786b996e4",
-    strip_prefix = "tiff-4.0.10",
-    urls = [
-        "https://mirror.bazel.build/download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-        "https://download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-    ],
+    commit = "43b0c984f0a2c81565b05b6590bf9de7df612477",
+    remote = "https://gitlab.com/libtiff/libtiff.git",
 )
 
 http_archive(
@@ -447,15 +444,10 @@ http_archive(
 http_archive(
     name = "avro",
     build_file = "//third_party:avro.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:avro.patch",
-    ],
-    sha256 = "42fbe407263ec174d448121cd0e20adcd75c43cb9f192b97476d9b99fa69faf3",
-    strip_prefix = "avro-release-1.9.0-rc4/lang/c++",
+    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
+    strip_prefix = "avro-release-1.9.1/lang/c++",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
-        "https://github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
     ],
 )
 

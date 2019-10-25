@@ -13,15 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 """Audio Dataset.
-
-@@WAVDataset
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-from tensorflow_io.audio.python.ops.audio_ops import WAVDataset
 
 from tensorflow.python.util.all_util import remove_undocumented
 

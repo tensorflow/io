@@ -13,13 +13,6 @@
 # limitations under the License.
 #
 # ==============================================================================
-name: TensorFlow I/O
-breadcrumb_name: I/O
-home_url: /io/
-parent_project_metadata_path: /_project.yaml
-description: >
-  "TensorFlow I/O provides useful extra Dataset, streaming, and file system extensions maintained by TensorFlow SIG-IO"
-use_site_branding: true
-hide_from_products_list: true
-content_license: cc-apache
-include: /_project_included.yaml
+toc:
+  # For example see: https://github.com/tensorflow/addons/blob/master/docs/tutorials/_toc.yaml
+
