@@ -64,25 +64,49 @@ class KafkaOutputSequence : public OutputSequence {
 #endif
     return strings::StrCat("KafkaOutputSequence[]");
   }
-  Status Initialize(const string& topic_str, const string& servers, int32 partition) {
+  Status Initialize(const string& topic_str, int32 partition, const std::vector<string>& metadata) {
     partition_ = partition;
 
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
-    std::unique_ptr<RdKafka::Conf> topic_conf(
+    std::unique_ptr<RdKafka::Conf> conf_topic(
         RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
 
-    std::string errstr;
+    string errstr;
+    RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
 
-    RdKafka::Conf::ConfResult result =
-        conf->set("default_topic_conf", topic_conf.get(), errstr);
-    if (!(result == RdKafka::Conf::CONF_OK)) {
-      return errors::Internal("Failed to set default_topic_conf:", errstr);
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find_first_of("conf.topic.") == 0) {
+        std::vector<string> parts = str_util::Split(metadata[i], "=");
+        if (parts.size() != 2) {
+            return errors::InvalidArgument("invalid topic configuration: ", metadata[i]);
+        }
+        result = conf_topic->set(parts[0].substr(11), parts[1], errstr);
+        if (result != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("failed to do topic configuration:", metadata[i], "error:", errstr);
+        }
+      } else if (metadata[i] != "" && metadata[i].find_first_of("conf.") == string::npos) {
+        std::vector<string> parts = str_util::Split(metadata[i], "=");
+        if (parts.size() != 2) {
+            return errors::InvalidArgument("invalid global configuration: ", metadata[i]);
+        }
+        if ((result = conf->set(parts[0], parts[1], errstr)) != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("failed to do global configuration: ", metadata[i], "error:", errstr);
+        }
+      }
+    }
+    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) != RdKafka::Conf::CONF_OK) {
+      return errors::Internal("failed to set default_topic_conf:", errstr);
     }
 
-    result = conf->set("bootstrap.servers", servers, errstr);
-    if (!(result == RdKafka::Conf::CONF_OK)) {
-      return errors::Internal("Failed to set bootstrap.servers ", servers, ":", errstr);
+    // producer.properties:
+    //   bootstrap.servers=localhost:9092
+    string bootstrap_servers;
+    if ((result = conf->get("bootstrap.servers", bootstrap_servers)) != RdKafka::Conf::CONF_OK) {
+      bootstrap_servers = "localhost:9092";
+      if ((result = conf->set("bootstrap.servers", bootstrap_servers, errstr)) != RdKafka::Conf::CONF_OK) {
+        return errors::Internal("failed to set bootstrap.servers [", bootstrap_servers, "]:", errstr);
+      }
     }
 
     producer_.reset(RdKafka::Producer::create(conf.get(), errstr));
@@ -90,7 +114,7 @@ class KafkaOutputSequence : public OutputSequence {
       return errors::Internal("Failed to create producer:", errstr);
     }
 
-    topic_.reset(RdKafka::Topic::create(producer_.get(), topic_str, topic_conf.get(), errstr));
+    topic_.reset(RdKafka::Topic::create(producer_.get(), topic_str, conf_topic.get(), errstr));
     if (!(topic_.get() != nullptr)) {
       return errors::Internal("Failed to create topic ", topic_str, ":", errstr);
     }
@@ -113,18 +137,20 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<KafkaOutputSequence>::Compute(context);
     mutex_lock l(mu_);
+
     const Tensor* topic_tensor;
-    const Tensor* servers_tensor;
     OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
     OP_REQUIRES(context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
                 errors::InvalidArgument(
                     "Topic tensor must be scalar, but had shape: ",
                     topic_tensor->shape().DebugString()));
-    OP_REQUIRES_OK(context, context->input("servers", &servers_tensor));
-    OP_REQUIRES(context, TensorShapeUtils::IsScalar(servers_tensor->shape()),
-                errors::InvalidArgument(
-                    "Servers tensor must be scalar, but had shape: ",
-                    servers_tensor->shape().DebugString()));
+
+    const Tensor* metadata_tensor;
+    OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
+    std::vector<string> metadata;
+    for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
+      metadata.push_back(metadata_tensor->flat<string>()(i));
+    }
 
     const string& topic_string = topic_tensor->scalar<string>()();
     std::vector<string> parts = str_util::Split(topic_string, ":");
@@ -138,9 +164,7 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
           errors::InvalidArgument("Invalid parameters: ", topic_string));
     }
 
-    const string& servers = servers_tensor->scalar<string>()();
-
-    OP_REQUIRES_OK(context, resource_->Initialize(topic_str, servers, partition));
+    OP_REQUIRES_OK(context, resource_->Initialize(topic_str, partition, metadata));
   }
 };
 

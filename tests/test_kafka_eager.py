@@ -37,9 +37,6 @@ def test_kafka_io_tensor():
       ("D" + str(i)).encode() for i in range(10)])
   assert len(kafka) == 10
 
-@pytest.mark.skipif(
-    not (hasattr(tf, "version") and
-         tf.version.VERSION.startswith("2.0.")), reason=None)
 def test_kafka_output_sequence():
   """Test case based on fashion mnist tutorial"""
   fashion_mnist = tf.keras.datasets.fashion_mnist
