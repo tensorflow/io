@@ -60,7 +60,7 @@ REGISTER_OP("IO>KafkaReadableRead")
 
 REGISTER_OP("IO>KafkaOutputSequence")
     .Input("topic: string")
-    .Input("servers: string")
+    .Input("metadata: string")
     .Output("sequence: resource")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
