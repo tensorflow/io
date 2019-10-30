@@ -80,18 +80,18 @@ class KafkaReadable : public IOReadableInterface {
     eof_ = true;
     timeout_ = 2000;
     for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("conf.eof") == 0) {
+      if (metadata[i].find("conf.eof") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
           return errors::InvalidArgument("invalid bounded configuration: ", metadata[i]);
         }
         eof_ = (parts[1] != "0");
-      } else if (metadata[i].find_first_of("conf.timeout") == 0) {
+      } else if (metadata[i].find("conf.timeout") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2 || !strings::safe_strto64(parts[1], &timeout_)) {
           return errors::InvalidArgument("invalid timeout configuration: ", metadata[i]);
         }
-      } else if (metadata[i].find_first_of("conf.topic.") == 0) {
+      } else if (metadata[i].find("conf.topic.") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
             return errors::InvalidArgument("invalid topic configuration: ", metadata[i]);
@@ -100,7 +100,7 @@ class KafkaReadable : public IOReadableInterface {
         if (result != RdKafka::Conf::CONF_OK) {
           return errors::Internal("failed to do topic configuration:", metadata[i], "error:", errstr);
         }
-      } else if (metadata[i] != "" && metadata[i].find_first_of("conf.") == string::npos) {
+      } else if (metadata[i] != "" && metadata[i].find("conf.") == string::npos) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
             return errors::InvalidArgument("invalid topic configuration: ", metadata[i]);
