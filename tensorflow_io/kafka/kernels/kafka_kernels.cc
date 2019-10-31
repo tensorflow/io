@@ -351,6 +351,30 @@ class DecodeAvroOp : public OpKernel {
       for (int i = 0; i < avro_schema.root()->names(); i++) {
         const avro::GenericDatum& field = record.fieldAt(i);
         switch(field.type()) {
+        case avro::AVRO_NULL:
+          switch(context->expected_output_dtype(i)) {
+          case DT_BOOL:
+            value[i]->flat<bool>()(entry_index) = false;
+            break;
+          case DT_INT32:
+            value[i]->flat<int32>()(entry_index) = 0;
+            break;
+          case DT_INT64:
+            value[i]->flat<int64>()(entry_index) = 0;
+            break;
+          case DT_FLOAT:
+            value[i]->flat<float>()(entry_index) = 0.0;
+            break;
+          case DT_DOUBLE:
+            value[i]->flat<double>()(entry_index) = 0.0;
+            break;
+          case DT_STRING:
+            value[i]->flat<string>()(entry_index) = "";
+            break;
+          default:
+            OP_REQUIRES(context, false, errors::InvalidArgument("unsupported data type against AVRO_NULL: ", field.type()));
+          }
+          break;
         case avro::AVRO_BOOL:
           value[i]->flat<bool>()(entry_index) = field.value<bool>();
           break;
