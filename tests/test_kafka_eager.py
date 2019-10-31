@@ -126,3 +126,16 @@ def test_kafka_io_dataset():
     assert np.all([
         e.numpy().tolist() for e in dataset] == np.asarray([
             ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
+
+def test_avro_encode_decode():
+  """test_avro_encode_decode"""
+  schema = ('{"type":"record","name":"myrecord","fields":'
+            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}"')
+  value = [('value1', 1), ('value2', 2), ('value3', 3)]
+  f1 = tf.cast([v[0] for v in value], tf.string)
+  f2 = tf.cast([v[1] for v in value], tf.int64)
+  message = kafka_io.encode_avro([f1, f2], schema=schema)
+  entries = kafka_io.decode_avro(
+      message, schema=schema, dtype=[tf.string, tf.int64])
+  assert np.all(entries[1].numpy() == f2.numpy())
+  assert np.all(entries[0].numpy() == f1.numpy())
