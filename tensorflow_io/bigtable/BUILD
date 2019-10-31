@@ -1,9 +1,7 @@
 # Cloud Bigtable client for TensorFlow
 licenses(["notice"])  # Apache 2.0
 
-package(
-    default_visibility = ["//tensorflow_io/cloud:__subpackages__"],
-)
+package(default_visibility = ["//visibility:public"])
 
 load(
     "//third_party/tf:tensorflow_io.bzl",
@@ -19,13 +17,13 @@ py_library(
         "python/ops/bigtable_api.py",
     ],
     data = [
-        ":python/ops/_bigtable.so",
+        "//tensorflow_io/core:python/ops/libtensorflow_io.so",
     ],
     srcs_version = "PY2AND3",
 )
 
-cc_binary(
-    name = "python/ops/_bigtable.so",
+cc_library(
+    name = "bigtable_ops",
     srcs = [
         "kernels/bigtable_kernels.cc",
         "kernels/bigtable_lookup_dataset_op.cc",
@@ -39,7 +37,7 @@ cc_binary(
         "ops/bigtable_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         ":bigtable_lib_cc",
         "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",

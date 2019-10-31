@@ -36,9 +36,7 @@ from tensorflow.python.data.util import nest
 from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import tensor_shape
-from tensorflow_io.core.python.ops import _load_library
-
-_bigtable_so = _load_library("_bigtable.so")
+from tensorflow_io.core.python.ops import core_ops
 
 
 class BigtableClient(object):  # pylint: disable=useless-object-inheritance
@@ -87,7 +85,7 @@ class BigtableClient(object):  # pylint: disable=useless-object-inheritance
 
     self._connection_pool_size = connection_pool_size
 
-    self._resource = _bigtable_so.bigtable_client(
+    self._resource = core_ops.bigtable_client(
         project_id, instance_id, connection_pool_size, max_receive_message_size)
 
   def table(self, name, snapshot=None):
@@ -103,7 +101,7 @@ class BigtableClient(object):  # pylint: disable=useless-object-inheritance
       operations available on the table.
     """
     # TODO(saeta): Implement snapshot functionality.
-    table = _bigtable_so.bigtable_table(self._resource, name)
+    table = core_ops.bigtable_table(self._resource, name)
     return BigtableTable(name, snapshot, table)
 
 
@@ -480,7 +478,7 @@ class BigtableTable(object): # pylint: disable=useless-object-inheritance
       raise ValueError("A column name must be specified for every component of "
                        "the dataset elements. (e.g.: len(columns) != "
                        "len(dataset.output_types))")
-    return _bigtable_so.dataset_to_bigtable(
+    return core_ops.dataset_to_bigtable(
         self._resource,
         dataset._as_variant_tensor(),  # pylint: disable=protected-access
         column_families,
@@ -603,7 +601,7 @@ class _BigtablePrefixKeyDataset(_BigtableKeyDataset):  # pylint: disable=abstrac
 
   def __init__(self, table, prefix):
     self._prefix = prefix
-    variant_tensor = _bigtable_so.bigtable_prefix_key_dataset(
+    variant_tensor = core_ops.bigtable_prefix_key_dataset(
         table=table._resource,  # pylint: disable=protected-access
         prefix=self._prefix)
     super(_BigtablePrefixKeyDataset, self).__init__(table, variant_tensor)
@@ -616,7 +614,7 @@ class _BigtableRangeKeyDataset(_BigtableKeyDataset):  # pylint: disable=abstract
   def __init__(self, table, start, end):
     self._start = start
     self._end = end
-    variant_tensor = _bigtable_so.bigtable_range_key_dataset(
+    variant_tensor = core_ops.bigtable_range_key_dataset(
         table=table._resource,  # pylint: disable=protected-access
         start_key=self._start,
         end_key=self._end)
@@ -630,7 +628,7 @@ class _BigtableSampleKeysDataset(_BigtableKeyDataset):  # pylint: disable=abstra
   # TODO(saeta): Expose the data size offsets into the keys.
 
   def __init__(self, table):
-    variant_tensor = _bigtable_so.bigtable_sample_keys_dataset(
+    variant_tensor = core_ops.bigtable_sample_keys_dataset(
         table=table._resource)  # pylint: disable=protected-access
     super(_BigtableSampleKeysDataset, self).__init__(table, variant_tensor)
 
@@ -646,7 +644,7 @@ class _BigtableLookupDataset(dataset_ops.DatasetSource):  # pylint: disable=abst
     self._normalized = normalized
     self._column_families = [i[0] for i in normalized]
     self._columns = [i[1] for i in normalized]
-    variant_tensor = _bigtable_so.bigtable_lookup_dataset(
+    variant_tensor = core_ops.bigtable_lookup_dataset(
         keys_dataset=self._dataset._as_variant_tensor(),  # pylint: disable=protected-access
         table=self._table._resource,  # pylint: disable=protected-access
         column_families=self._column_families,
@@ -678,7 +676,7 @@ class _BigtableScanDataset(dataset_ops.DatasetSource):  # pylint: disable=abstra
     self._columns = [i[1] for i in normalized]
     self._probability = probability
     self._num_outputs = len(normalized) + 1  # 1 for row key
-    variant_tensor = _bigtable_so.bigtable_scan_dataset(
+    variant_tensor = core_ops.bigtable_scan_dataset(
         table=self._table._resource,  # pylint: disable=protected-access
         prefix=self._prefix,
         start_key=self._start,
@@ -709,7 +707,7 @@ class _BigtableSampleKeyPairsDataset(dataset_ops.DatasetSource):  # pylint: disa
     self._prefix = prefix
     self._start = start
     self._end = end
-    variant_tensor = _bigtable_so.bigtable_sample_key_pairs_dataset(
+    variant_tensor = core_ops.bigtable_sample_key_pairs_dataset(
         table=self._table._resource,  # pylint: disable=protected-access
         prefix=self._prefix,
         start_key=self._start,
