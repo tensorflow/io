@@ -22,10 +22,12 @@ namespace tensorflow {
 REGISTER_OP("IO>DecodeTiffInfo")
   .Input("input: string")
   .Output("shape: int64")
+  .Output("dtype: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     shape_inference::ShapeHandle unused;
     TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
     c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
     return Status::OK();
   });
 
