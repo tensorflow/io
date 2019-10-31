@@ -92,6 +92,8 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
                  partition=0,
                  offset=0,
                  tail=-1,
+                 servers=None,
+                 configuration=None,
                  **kwargs):
     """Creates an `IODataset` from kafka server with an offset range.
 
@@ -124,8 +126,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_dataset_ops.KafkaIODataset(
           topic, partition=partition, offset=offset, tail=tail,
-          servers=kwargs.get("servers", None),
-          configuration=kwargs.get("configuration", None),
+          servers=servers, configuration=configuration,
           internal=True)
 
   @classmethod

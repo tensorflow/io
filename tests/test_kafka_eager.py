@@ -119,7 +119,8 @@ def test_kafka_stream_dataset():
     _ = [e.numpy().tolist() for e in dataset]
 
 def test_kafka_io_dataset():
-  dataset = tfio.IODataset.from_kafka("test").batch(2)
+  dataset = tfio.IODataset.from_kafka(
+      "test", configuration=["fetch.min.bytes=2"]).batch(2)
   # repeat multiple times will result in the same result
   for i in range(5):
     assert np.all([
