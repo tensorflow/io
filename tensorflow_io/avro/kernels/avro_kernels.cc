@@ -307,7 +307,7 @@ class AvroReadable : public IOReadableInterface {
 
     string schema;
     for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("schema: ") == 0) {
+      if (metadata[i].find("schema: ") == 0) {
         schema = metadata[i].substr(8);
       }
     }

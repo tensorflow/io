@@ -223,7 +223,7 @@ class JSONReadable : public IOReadableInterface {
 
     mode_ = "ndjson";
     for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("mode: ") == 0) {
+      if (metadata[i].find("mode: ") == 0) {
         mode_ = metadata[i].substr(6);
       }
     }

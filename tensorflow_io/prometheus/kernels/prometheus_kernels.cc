@@ -91,7 +91,7 @@ class PrometheusReadable : public IOReadableInterface {
 
     string endpoint = "http://localhost:9090";
     for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("endpoint: ") == 0) {
+      if (metadata[i].find("endpoint: ") == 0) {
         endpoint = metadata[i].substr(8);
       }
     }

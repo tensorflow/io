@@ -76,7 +76,7 @@ class KafkaOutputSequence : public OutputSequence {
     RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
 
     for (size_t i = 0; i < metadata.size(); i++) {
-      if (metadata[i].find_first_of("conf.topic.") == 0) {
+      if (metadata[i].find("conf.topic.") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
             return errors::InvalidArgument("invalid topic configuration: ", metadata[i]);
@@ -85,7 +85,7 @@ class KafkaOutputSequence : public OutputSequence {
         if (result != RdKafka::Conf::CONF_OK) {
           return errors::Internal("failed to do topic configuration:", metadata[i], "error:", errstr);
         }
-      } else if (metadata[i] != "" && metadata[i].find_first_of("conf.") == string::npos) {
+      } else if (metadata[i] != "" && metadata[i].find("conf.") == string::npos) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
             return errors::InvalidArgument("invalid global configuration: ", metadata[i]);
