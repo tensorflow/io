@@ -93,8 +93,11 @@ def test_kafka_output_sequence():
 
 def test_avro_kafka_dataset():
   """test_avro_kafka_dataset"""
-  schema = ('{"type":"record","name":"myrecord","fields":'
-            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}"')
+  schema = ('{"type":"record","name":"myrecord","fields":['
+            '{"name":"f1","type":"string"},'
+            '{"name":"f2","type":"long"},'
+            '{"name":"f3","type":["null","string"],"default":null}'
+            ']}"')
   dataset = kafka_io.KafkaDataset(
       ["avro-test:0"], group="avro-test", eof=True)
   # remove kafka framing
@@ -102,8 +105,8 @@ def test_avro_kafka_dataset():
   # deserialize avro
   dataset = dataset.map(
       lambda e: kafka_io.decode_avro(
-          e, schema=schema, dtype=[tf.string, tf.int64]))
-  entries = [(f1.numpy(), f2.numpy()) for (f1, f2) in dataset]
+          e, schema=schema, dtype=[tf.string, tf.int64, tf.string]))
+  entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
   np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
 
 def test_kafka_stream_dataset():
