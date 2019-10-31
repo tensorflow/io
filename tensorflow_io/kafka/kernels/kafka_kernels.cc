@@ -391,7 +391,16 @@ class DecodeAvroOp : public OpKernel {
           value[i]->flat<double>()(entry_index) = field.value<double>();
           break;
         case avro::AVRO_STRING:
-          value[i]->flat<string>()(entry_index) = field.value<string>();
+          {
+            // make a concrete explicit copy as otherwise avro may override the underlying buffer.
+            const string& field_value = field.value<string>();
+            string v;
+            if (field_value.size() > 0) {
+              v.resize(field_value.size());
+              memcpy(&v[0], &field_value[0], field_value.size());
+            }
+            value[i]->flat<string>()(entry_index) = v;
+          }
           break;
         case avro::AVRO_BYTES:
           {
@@ -428,9 +437,98 @@ private:
   string schema_;
 };
 
+class EncodeAvroOp : public OpKernel {
+ public:
+  explicit EncodeAvroOp(OpKernelConstruction* context) : OpKernel(context) {
+   OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
+  }
+
+  void Compute(OpKernelContext* context) override {
+    // Make sure input have the same elements;
+    for (int64 i = 1; i < context->num_inputs(); i++) {
+      OP_REQUIRES(
+          context, (context->input(0).NumElements() == context->input(i).NumElements()),
+          errors::InvalidArgument("number of elements different: input 0 (", context->input(0).NumElements(), ") vs. input ", i, " (", context->input(i).NumElements(), ")"));
+    }
+
+    avro::ValidSchema avro_schema;
+    std::istringstream ss(schema_);
+    string error;
+    OP_REQUIRES(context, (avro::compileJsonSchema(ss, avro_schema, error)), errors::Unimplemented("Avro schema error: ", error));
+
+    Tensor* output_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(0, context->input(0).shape(), &output_tensor));
+
+    for (int64 entry_index = 0; entry_index < context->input(0).NumElements(); entry_index++) {
+      std::ostringstream ss;
+      std::unique_ptr<avro::OutputStream> out = avro::ostreamOutputStream(ss);
+
+      avro::GenericDatum datum(avro_schema);
+      avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+      for (int i = 0; i < avro_schema.root()->names(); i++) {
+        switch (record.fieldAt(i).type())
+        {
+        case avro::AVRO_BOOL:
+          record.setFieldAt(i, avro::GenericDatum(context->input(i).flat<bool>()(entry_index)));
+          break;
+        case avro::AVRO_INT:
+          record.setFieldAt(i, avro::GenericDatum(static_cast<int32_t>(context->input(i).flat<int32>()(entry_index))));
+          break;
+        case avro::AVRO_LONG:
+          record.setFieldAt(i, avro::GenericDatum(static_cast<int64_t>(context->input(i).flat<int64>()(entry_index))));
+          break;
+        case avro::AVRO_FLOAT:
+          record.setFieldAt(i, avro::GenericDatum(context->input(i).flat<float>()(entry_index)));
+          break;
+        case avro::AVRO_DOUBLE:
+          record.setFieldAt(i, avro::GenericDatum(context->input(i).flat<double>()(entry_index)));
+          break;
+        case avro::AVRO_STRING:
+          {
+            // make a concrete explicit copy as otherwise avro may override the underlying buffer??
+            // happens in decode (not verified in encode yet).
+            const string& v = context->input(i).flat<string>()(entry_index);
+            string field_value;
+            field_value.resize(v.size());
+            if (field_value.size() > 0) {
+              memcpy(&field_value[0], &v[0], field_value.size());
+            }
+            record.setFieldAt(i, avro::GenericDatum(field_value));
+          }
+          break;
+        case avro::AVRO_BYTES:
+          {
+            const string& v = context->input(i).flat<string>()(entry_index);
+            std::vector<uint8_t> field_value;
+            field_value.resize(v.size());
+            if (field_value.size() > 0) {
+              memcpy(&field_value[0], &v[0], field_value.size());
+            }
+            record.setFieldAt(i, avro::GenericDatum(field_value));
+          }
+          break;
+        case avro::AVRO_FIXED:
+        case avro::AVRO_ENUM:
+        default:
+          OP_REQUIRES(context, false, errors::InvalidArgument("unsupported data type: ", record.fieldAt(i).type()));
+        }
+      }
+      avro::EncoderPtr e = avro::binaryEncoder();
+      e->init(*out);
+      avro::encode(*e, datum);
+      out->flush();
+      output_tensor->flat<string>()(entry_index) = ss.str();
+    }
+  }
+private:
+  string schema_;
+};
+
 
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU),
                         DecodeAvroOp);
+REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvro").Device(DEVICE_CPU),
+                        EncodeAvroOp);
 
 }  // namespace data
 }  // namespace tensorflow
