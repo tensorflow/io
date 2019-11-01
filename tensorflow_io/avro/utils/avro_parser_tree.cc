@@ -454,7 +454,7 @@ std::vector<string> SplitOnDelimiterButNotInsideSquareBrackets(const string& str
   // check that delimiter is not [ or ]
   string lastMatch = "";
   int nBrackets = 0;
-  for (char c : str) {
+  for (const char& c : str) {
     nBrackets += (c == '[');
     nBrackets -= (c == ']');
     if (nBrackets == 0 && c == delimiter) {
