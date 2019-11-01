@@ -1,13 +1,17 @@
 name: Mark stale issues and pull requests
 
 on:
+  pull_request:
+    branches:
+    - master
   schedule:
   - cron: "0 0 * * *"
 
 jobs:
-  stale:
-
-    runs-on: ubuntu-latest
+  my_job:
+    name: deploy to staging
+    runs-on: ubuntu-18.04
+  
 
     steps:
     - uses: actions/stale@v1
