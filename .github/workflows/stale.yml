@@ -8,11 +8,14 @@ on:
   - cron: "0 0 * * *"
 
 jobs:
-  my_job:
+  test:
     name: deploy to staging
     runs-on: ubuntu-18.04
-  
-
+    strategy:
+      matrix:
+      node_version: {'8', '10', '12']
+      os: [ubuntu-latest, windows-latest, macOS-latest]
+      
     steps:
     - uses: actions/stale@v1
       with:
