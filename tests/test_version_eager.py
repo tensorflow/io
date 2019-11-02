@@ -19,12 +19,12 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow_io as tfio
-from tensorflow_io.core.python.ops.version import info
+from tensorflow_io.core.python.ops import version_ops
 
 def test_version():
   """test_version"""
-  assert tfio.__version__ == info.version
-  assert tfio.version.VERSION == info.version
+  assert tfio.__version__ == version_ops.version
+  assert tfio.version.VERSION == version_ops.version
 
 
 if __name__ == "__main__":

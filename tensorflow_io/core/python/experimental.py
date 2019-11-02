@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.version"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+"""tensorflow_io.experimental"""
 
-from tensorflow_io.core.python.ops.version.info import version as VERSION
+#from tensorflow_io.core.python.ops.experimental.io_dataset import IODataset

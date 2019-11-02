@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""version_info"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+"""tensorflow_io"""
 
-package = 'tensorflow>=2.0.0,<2.1.0'
-version = '0.10.0'
+# tensorflow_io.core.python.ops is implicitly imported (along with file system)
+from tensorflow_io.core.python.ops.v0.io_tensor import IOTensor
+from tensorflow_io.core.python.ops.v0.io_dataset import IODataset, IOStreamDataset

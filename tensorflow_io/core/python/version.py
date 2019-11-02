@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
-from tensorflow_io.core.python.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.version import VERSION as __version__
+"""tensorflow_io.version"""
 
-from tensorflow_io.core.python import v0
-from tensorflow_io.core.python import version
-from tensorflow_io.core.python import experimental
+from tensorflow_io.core.python.ops.version_ops import version as VERSION
