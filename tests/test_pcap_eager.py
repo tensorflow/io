@@ -23,7 +23,6 @@ import os
 import numpy as np
 
 import tensorflow_io as tfio
-import tensorflow_io.pcap as pcap_io
 
 def test_pcap_input():
   """test_pcap_input
@@ -47,7 +46,7 @@ def test_pcap_input():
     packets_total += 1
   assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
 
-  dataset = pcap_io.PcapDataset(file_url).batch(1)
+  dataset = tfio.IODataset.from_pcap(file_url).batch(1)
 
   packets_total = 0
   for v in dataset:
