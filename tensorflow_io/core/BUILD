@@ -98,6 +98,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "prometheus_ops",
+    srcs = [
+        "kernels/prometheus_kernels.cc",
+        "ops/prometheus_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:go_ops",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -140,7 +154,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/prometheus:prometheus_ops",
+        "//tensorflow_io/core:prometheus_ops",
     ],
 )
 
