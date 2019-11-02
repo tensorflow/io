@@ -18,16 +18,16 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import io_dataset_ops
-from tensorflow_io.core.python.ops import hdf5_dataset_ops
-from tensorflow_io.core.python.ops import avro_dataset_ops
-from tensorflow_io.core.python.ops import lmdb_dataset_ops
-from tensorflow_io.core.python.ops import audio_dataset_ops
-from tensorflow_io.core.python.ops import kafka_dataset_ops
-from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
-from tensorflow_io.core.python.ops import json_dataset_ops
-from tensorflow_io.core.python.ops import parquet_dataset_ops
-from tensorflow_io.core.python.ops import pcap_dataset_ops
+from tensorflow_io.core.python.ops.v0 import io_dataset_ops
+from tensorflow_io.core.python.ops.v0 import hdf5_dataset_ops
+from tensorflow_io.core.python.ops.v0 import avro_dataset_ops
+from tensorflow_io.core.python.ops.v0 import lmdb_dataset_ops
+from tensorflow_io.core.python.ops.v0 import audio_dataset_ops
+from tensorflow_io.core.python.ops.v0 import kafka_dataset_ops
+from tensorflow_io.core.python.ops.v0 import ffmpeg_dataset_ops
+from tensorflow_io.core.python.ops.v0 import json_dataset_ops
+from tensorflow_io.core.python.ops.v0 import parquet_dataset_ops
+from tensorflow_io.core.python.ops.v0 import pcap_dataset_ops
 
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   """IODataset

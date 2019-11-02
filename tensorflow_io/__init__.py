@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow-io"""
+"""tensorflow_io"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# tensorflow_io.core.python.ops is implicitly imported (along with file system)
-from tensorflow_io.core.python.ops.io_info import version as __version__
-from tensorflow_io.core.python.ops.io_tensor import IOTensor
-from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset
+from tensorflow_io.core.python.ops.v0 import * # pylint: disable=wildcard-import
+from tensorflow_io.core.python.ops.version import VERSION as __version__
+
+from tensorflow_io.core.python.ops import v0
+from tensorflow_io.core.python.ops import version
+from tensorflow_io.core.python.ops import experimental

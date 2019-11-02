@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""LMDBDataset."""
+"""Dataset."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.core.python.ops.v0 import lmdb_dataset_ops
+import ctypes
+import _ctypes
 
-LMDBDataset = lmdb_dataset_ops.LMDBIODataset
+from tensorflow_io.core.python.ops import _load_library
+
+_golang_ops = _load_library('libtensorflow_io_golang.so')

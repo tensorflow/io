@@ -18,4 +18,4 @@ from __future__ import division
 from __future__ import print_function
 
 package = 'tensorflow>=2.0.0,<2.1.0'
-version = '0.9.0'
+version = '0.10.0'

@@ -21,7 +21,7 @@ import warnings
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops.v0 import data_ops
 
 warnings.warn(
     "The tensorflow_io.hdf5.HDF5Dataset is "

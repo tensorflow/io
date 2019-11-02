@@ -20,7 +20,7 @@ from __future__ import print_function
 import warnings
 
 from tensorflow_io.core.python.ops import ffmpeg_ops
-from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
+from tensorflow_io.core.python.ops.v0 import ffmpeg_dataset_ops
 
 warnings.warn(
     "The tensorflow_io.ffmpeg.AudioDataset/VideoDataset is "

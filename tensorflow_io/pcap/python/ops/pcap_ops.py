@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """PcapDataset"""
-from tensorflow_io.core.python.ops import pcap_dataset_ops
+from tensorflow_io.core.python.ops.v0 import pcap_dataset_ops
 
 class PcapDataset(pcap_dataset_ops.PcapIODataset):
   """A pcap Dataset. Pcap is a popular file format for capturing network packets.

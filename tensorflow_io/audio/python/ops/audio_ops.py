@@ -20,7 +20,7 @@ from __future__ import print_function
 import warnings
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops.v0 import data_ops
 
 warnings.warn(
     "The tensorflow_io.audio.WAVDataset is "

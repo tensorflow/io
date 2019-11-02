@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""AvroIOTensor"""
+"""FeatherIOTensor"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,38 +20,36 @@ from __future__ import print_function
 import uuid
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import io_tensor_ops
+from tensorflow_io.core.python.ops.v0 import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class AvroIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
-  """AvroIOTensor"""
+class FeatherIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
+  """FeatherIOTensor"""
 
   #=============================================================================
   # Constructor (private)
   #=============================================================================
   def __init__(self,
                filename,
-               schema,
                internal=False):
-    with tf.name_scope("AvroIOTensor") as scope:
-      metadata = ["schema: %s" % schema]
-      resource, columns = core_ops.io_avro_readable_init(
-          filename, metadata=metadata,
+    with tf.name_scope("FeatherIOTensor") as scope:
+      resource, columns = core_ops.io_feather_readable_init(
+          filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
-        shape, dtype = core_ops.io_avro_readable_spec(resource, column)
+        shape, dtype = core_ops.io_feather_readable_spec(resource, column)
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
         function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.io_avro_readable_read,
+            core_ops.io_feather_readable_read,
             resource, column, shape, dtype)
         elements.append(
             io_tensor_ops.BaseIOTensor(
                 spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
-      super(AvroIOTensor, self).__init__(
+      super(FeatherIOTensor, self).__init__(
           spec, columns, elements, internal=internal)
