@@ -20,7 +20,7 @@ from __future__ import print_function
 
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import io_ops
-from tensorflow_io.core.python.ops import core_ops 
+from tensorflow_io.core.python.ops import core_ops
 
 
 class BigQueryReader(io_ops.ReaderBase):
