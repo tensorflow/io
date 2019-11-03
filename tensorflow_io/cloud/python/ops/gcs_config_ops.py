@@ -25,9 +25,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.training import training
-from tensorflow_io.core.python.ops import _load_library
-
-_gcs_config_so = _load_library("_gcs_config_ops.so")
+from tensorflow_io.core.python.ops import core_ops
 
 
 # @tf_export('contrib.cloud.BlockCacheParams')
@@ -131,13 +129,13 @@ class ConfigureGcsHook(training.SessionRunHook):
     """
     if self._credentials:
       self._credentials_placeholder = array_ops.placeholder(dtypes.string)
-      self._credentials_op = _gcs_config_so.gcs_configure_credentials(
+      self._credentials_op = core_ops.gcs_configure_credentials(
           self._credentials_placeholder)
     else:
       self._credentials_op = None
 
     if self._block_cache:
-      self._block_cache_op = _gcs_config_so.gcs_configure_block_cache(
+      self._block_cache_op = core_ops.gcs_configure_block_cache(
           max_cache_size=self._block_cache.max_bytes,
           block_size=self._block_cache.block_size,
           max_staleness=self._block_cache.max_staleness)
@@ -191,10 +189,10 @@ def configure_gcs(session, credentials=None, block_cache=None, device=None):
       if isinstance(credentials, dict):
         credentials = json.dumps(credentials)
       placeholder = array_ops.placeholder(dtypes.string)
-      op = _gcs_config_so.gcs_configure_credentials(placeholder)
+      op = core_ops.gcs_configure_credentials(placeholder)
       session.run(op, feed_dict={placeholder: credentials})
     if block_cache:
-      op = _gcs_config_so.gcs_configure_block_cache(
+      op = core_ops.gcs_configure_block_cache(
           max_cache_size=block_cache.max_bytes,
           block_size=block_cache.block_size,
           max_staleness=block_cache.max_staleness)

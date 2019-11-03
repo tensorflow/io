@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""version_info"""
+"""Dataset."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-package = 'tensorflow>=2.0.0,<2.1.0'
-version = '0.9.0'
+from tensorflow_io.core.python.ops import _load_library
+
+_golang_ops = _load_library('libtensorflow_io_golang.so')
+
+io_prometheus_readable_init = _golang_ops.io_prometheus_readable_init
+io_prometheus_readable_spec = _golang_ops.io_prometheus_readable_spec
+io_prometheus_readable_read = _golang_ops.io_prometheus_readable_read

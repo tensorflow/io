@@ -1,4 +1,4 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""LibSVM Dataset.
+"""tensorflow_io"""
 
-@@make_libsvm_dataset
-@@decode_libsvm
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from tensorflow_io.libsvm.python.ops.libsvm_dataset_ops import make_libsvm_dataset
-from tensorflow_io.libsvm.python.ops.libsvm_dataset_ops import decode_libsvm
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    "make_libsvm_dataset",
-    "decode_libsvm",
-]
-
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
+# tensorflow_io.core.python.ops is implicitly imported (along with file system)
+from tensorflow_io.core.python.ops.io_tensor import IOTensor
+from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset

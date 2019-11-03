@@ -98,6 +98,35 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "prometheus_ops",
+    srcs = [
+        "kernels/prometheus_kernels.cc",
+        "ops/prometheus_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:go_ops",
+    ],
+)
+
+cc_library(
+    name = "pcap_ops",
+    srcs = [
+        "kernels/pcap_kernels.cc",
+        "ops/pcap_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -110,6 +139,7 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:core_ops",
+        "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/genome:genome_ops",
@@ -120,12 +150,10 @@ cc_binary(
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
-        "//tensorflow_io/libsvm:libsvm_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
-        "//tensorflow_io/pcap:pcap_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
         "//tensorflow_io/text:text_ops",
         "@libarchive",
@@ -140,7 +168,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/prometheus:prometheus_ops",
+        "//tensorflow_io/core:prometheus_ops",
     ],
 )
 
