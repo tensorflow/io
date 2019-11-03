@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental"""
+"""tensorflow_io.version"""
 
-#from tensorflow_io.core.python.ops.experimental.io_dataset import IODataset
+from tensorflow_io.core.python.ops.version_ops import version as VERSION # pylint: disable=unused-import

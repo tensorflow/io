@@ -13,9 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 """tensorflow_io"""
-from tensorflow_io.core.python.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.version import VERSION as __version__
+from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
 
-from tensorflow_io.core.python import v0
-from tensorflow_io.core.python import version
-from tensorflow_io.core.python import experimental
+from tensorflow_io.core.python.api import v0
+from tensorflow_io.core.python.api import version
+from tensorflow_io.core.python.api import experimental

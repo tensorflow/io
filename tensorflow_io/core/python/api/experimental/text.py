@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.version"""
+"""tensorflow_io.experimental.text"""
 
-from tensorflow_io.core.python.ops.version_ops import version as VERSION
+from tensorflow_io.core.python.ops.experimental.text_ops import decode_libsvm # pylint: disable=unused-import
