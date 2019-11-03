@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental"""
+"""tensorflow_io.experimental.image"""
 
-from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
-
-from tensorflow_io.core.python.api.experimental import image
-from tensorflow_io.core.python.api.experimental import text
+from tensorflow_io.core.python.experimental.image_ops import draw_bounding_boxes # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import decode_tiff_info # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import decode_tiff # pylint: disable=unused-import

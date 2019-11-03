@@ -21,6 +21,7 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import io_dataset
 from tensorflow_io.core.python.experimental import libsvm_dataset_ops
+from tensorflow_io.core.python.experimental import image_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -60,3 +61,21 @@ class IODataset(io_dataset.IODataset):
           dtype=dtype, label_dtype=label_dtype,
           compression_type=compression_type,
           internal=True, **kwargs)
+
+  @classmethod
+  def from_tiff(cls,
+                filename,
+                **kwargs):
+    """Creates an `IODataset` from a TIFF file.
+
+    Args:
+      filename: A string, the filename of a TIFF file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
+      return image_dataset_ops.TIFFIODataset(
+          filename, internal=True)
