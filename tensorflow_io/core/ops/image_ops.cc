@@ -54,4 +54,28 @@ REGISTER_OP("IO>EncodeBmp")
     return Status::OK();
   });
 
+REGISTER_OP("IO>DecodeWebP")
+    .Input("contents: string")
+    .Output("image: uint8")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+      c->set_output(0, c->MakeShape({
+          shape_inference::InferenceContext::kUnknownDim,
+          shape_inference::InferenceContext::kUnknownDim, 4}));
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>DrawBoundingBoxesV3")
+    .Input("images: T")
+    .Input("boxes: float")
+    .Input("colors: float")
+    .Input("texts: string")
+    .Attr("font_size: int = 0")
+    .Output("output: T")
+    .Attr("T: {float, half} = DT_FLOAT")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      return shape_inference::UnchangedShapeWithRankAtLeast(c, 3);
+    });
+
 }  // namespace tensorflow
