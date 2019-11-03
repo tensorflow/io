@@ -17,6 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.core.python.ops.v0 import lmdb_dataset_ops
+from tensorflow_io.core.python.ops import lmdb_dataset_ops
 
 LMDBDataset = lmdb_dataset_ops.LMDBIODataset

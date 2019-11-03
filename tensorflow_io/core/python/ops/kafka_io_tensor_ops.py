@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""KafkaDataset"""
+"""KafkaIOTensor"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,20 +20,29 @@ from __future__ import print_function
 import uuid
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops.v0 import io_dataset_ops
 
-class _KafkaIODatasetFunction(object):
-  def __init__(self, resource):
+class _KafkaIOTensorFunction(object):
+  """_KafkaIOTensorFunction"""
+  def __init__(self, resource, capacity):
     self._resource = resource
-  def __call__(self, start, stop):
-    return core_ops.io_kafka_readable_read(
-        self._resource, start=start, stop=stop,
+    self._capacity = capacity
+    self._index = 0
+  def __call__(self):
+    items = core_ops.io_kafka_readable_read(
+        self._resource,
+        start=self._index, stop=self._index+self._capacity,
         shape=tf.TensorShape([None]), dtype=tf.string)
+    self._index += items.shape[0]
+    return items
 
-class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
-  """KafkaIODataset"""
+class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
+  """KafkaIOTensor"""
 
+  #=============================================================================
+  # Constructor (private)
+  #=============================================================================
   def __init__(self,
                topic,
                partition,
@@ -42,8 +51,8 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
                servers,
                configuration,
                internal=True):
-    """KafkaIODataset."""
-    with tf.name_scope("KafkaIODataset") as scope:
+    """KafkaIOTensor."""
+    with tf.name_scope("KafkaIOTensor") as scope:
       subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
       metadata = [e for e in configuration or []]
       if servers is not None:
@@ -52,29 +61,9 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
           subscription, metadata=metadata,
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      super(KafkaIODataset, self).__init__(
-          _KafkaIODatasetFunction(resource), internal=internal)
-
-class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=protected-access
-  """KafkaIOStreamDataset"""
-
-  def __init__(self,
-               topic,
-               partition,
-               offset,
-               servers,
-               configuration,
-               internal=True):
-    """KafkaIOStreamDataset."""
-    with tf.name_scope("KafkaIOStreamDataset") as scope:
-      subscription = "%s:%d:%d" % (topic, partition, offset)
-      metadata = [e for e in configuration or []]
-      if servers is not None:
-        metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init(
-          subscription, metadata=metadata,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-
-      super(KafkaIOStreamDataset, self).__init__(
-          _KafkaIODatasetFunction(resource), internal=internal)
+      function = _KafkaIOTensorFunction(resource, capacity=4096)
+      function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
+          function, tf.TensorShape([None]))
+      spec = tf.TensorSpec(tf.TensorShape([None]), tf.string)
+      super(KafkaIOTensor, self).__init__(
+          spec, function, internal=internal)

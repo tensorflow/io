@@ -20,7 +20,7 @@ from __future__ import print_function
 import uuid
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops.v0 import io_dataset_ops
+from tensorflow_io.core.python.ops import io_dataset_ops
 
 class _FFmpegIODatasetFunction(object):
   def __init__(self, function, resource, component, shape, dtype):

@@ -22,7 +22,7 @@ import csv
 import numpy as np
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops.v0 import data_ops
+from tensorflow_io.core.python.ops import data_ops
 from tensorflow_io.core.python.ops import core_ops
 
 def read_text(filename, **kwargs):

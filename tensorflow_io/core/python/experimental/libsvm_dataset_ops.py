@@ -18,7 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops.experimental.text_ops import decode_libsvm
+from tensorflow_io.core.python.experimental.text_ops import decode_libsvm
 
 class LibSVMIODataset(tf.data.Dataset):
   """LibSVMIODataset"""

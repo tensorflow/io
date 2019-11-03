@@ -18,19 +18,19 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops.v0 import io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import audio_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import json_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import hdf5_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import kafka_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import lmdb_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import prometheus_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import feather_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import csv_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import avro_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import ffmpeg_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import parquet_io_tensor_ops
-from tensorflow_io.core.python.ops.v0 import tiff_io_tensor_ops
+from tensorflow_io.core.python.ops import io_tensor_ops
+from tensorflow_io.core.python.ops import audio_io_tensor_ops
+from tensorflow_io.core.python.ops import json_io_tensor_ops
+from tensorflow_io.core.python.ops import hdf5_io_tensor_ops
+from tensorflow_io.core.python.ops import kafka_io_tensor_ops
+from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
+from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
+from tensorflow_io.core.python.ops import feather_io_tensor_ops
+from tensorflow_io.core.python.ops import csv_io_tensor_ops
+from tensorflow_io.core.python.ops import avro_io_tensor_ops
+from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
+from tensorflow_io.core.python.ops import parquet_io_tensor_ops
+from tensorflow_io.core.python.ops import tiff_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor

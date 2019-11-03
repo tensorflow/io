@@ -14,4 +14,4 @@
 # ==============================================================================
 """tensorflow_io.experimental.text"""
 
-from tensorflow_io.core.python.ops.experimental.text_ops import decode_libsvm # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.text_ops import decode_libsvm # pylint: disable=unused-import
