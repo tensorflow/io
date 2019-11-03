@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""PcapInput
+"""tensorflow_io.version"""
 
-@@PcapDataset
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from tensorflow.python.util.all_util import remove_undocumented
-from tensorflow_io.pcap.python.ops.pcap_ops import PcapDataset
-
-_allowed_symbols = [
-    "PcapDataset",
-]
-
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
+from tensorflow_io.core.python.ops.version_ops import version as VERSION # pylint: disable=unused-import

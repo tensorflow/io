@@ -12,17 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""PcapDataset"""
-from tensorflow_io.core.python.ops import pcap_dataset_ops
+"""tensorflow_io.experimental"""
 
-class PcapDataset(pcap_dataset_ops.PcapIODataset):
-  """A pcap Dataset. Pcap is a popular file format for capturing network packets.
-  """
+from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
 
-  def __init__(self, filename):
-    """Create a pcap Reader.
-
-    Args:
-      filename: A `tf.string` tensor containing filename.
-    """
-    super(PcapDataset, self).__init__(filename)
+from tensorflow_io.core.python.api.experimental import text

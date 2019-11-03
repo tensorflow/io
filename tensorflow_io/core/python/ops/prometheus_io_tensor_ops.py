@@ -21,7 +21,7 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
-from tensorflow_io.core.python.ops import core_golang_ops
+from tensorflow_io.core.python.ops import golang_ops
 
 class _PrometheusIOTensorFunction(object):
   """_AudioIOTensorFunction"""
@@ -57,12 +57,12 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
                internal=False):
     with tf.name_scope("PrometheusIOTensor") as scope:
       metadata = [] if endpoint is None else ["endpoint: %s" % endpoint]
-      resource = core_golang_ops.io_prometheus_readable_init(
+      resource = golang_ops.io_prometheus_readable_init(
           query, metadata=metadata,
           container=scope, shared_name="%s/%s" % (query, uuid.uuid4().hex))
-      index_shape, index_dtype = core_golang_ops.io_prometheus_readable_spec(
+      index_shape, index_dtype = golang_ops.io_prometheus_readable_spec(
           resource, "index")
-      value_shape, value_dtype = core_golang_ops.io_prometheus_readable_spec(
+      value_shape, value_dtype = golang_ops.io_prometheus_readable_spec(
           resource, "value")
       index_shape = tf.TensorShape(index_shape.numpy())
       index_dtype = tf.as_dtype(index_dtype.numpy())
@@ -73,13 +73,13 @@ class PrometheusIOTensor(io_tensor_ops._SeriesIOTensor): # pylint: disable=prote
       index = io_tensor_ops.BaseIOTensor(
           spec[0],
           _PrometheusIOTensorFunction(
-              core_golang_ops.io_prometheus_readable_read,
+              golang_ops.io_prometheus_readable_read,
               resource, "index", index_shape, index_dtype),
           internal=internal)
       value = io_tensor_ops.BaseIOTensor(
           spec[1],
           _PrometheusIOTensorFunction(
-              core_golang_ops.io_prometheus_readable_read,
+              golang_ops.io_prometheus_readable_read,
               resource, "value", value_shape, value_dtype),
           internal=internal)
       super(PrometheusIOTensor, self).__init__(

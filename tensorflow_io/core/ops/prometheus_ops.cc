@@ -58,15 +58,4 @@ REGISTER_OP("IO>PrometheusReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IO>ReadPrometheus")
-    .Input("endpoint: string")
-    .Input("query: string")
-    .Output("timestamp: int64")
-    .Output("value: float64")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
 }  // namespace tensorflow

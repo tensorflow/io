@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""PrometheusInput
+"""version_ops"""
 
-@@PrometheusDataset
-@@read_prometheus
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from tensorflow_io.prometheus.python.ops.prometheus_ops import PrometheusDataset
-from tensorflow_io.prometheus.python.ops.prometheus_ops import read_prometheus
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    "PrometheusDataset",
-    "read_prometheus",
-]
-
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
+package = 'tensorflow>=2.0.0,<2.1.0'
+version = '0.10.0'
