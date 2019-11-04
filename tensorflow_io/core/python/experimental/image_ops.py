@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow as tf
+
 from tensorflow_io.core.python.ops import core_ops
 
 def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
@@ -114,3 +116,16 @@ def decode_exr(contents, index, channel, dtype, name=None):
   """
   return core_ops.io_decode_exr(
       contents, index=index, channel=channel, dtype=dtype, name=name)
+
+def decode_pnm(contents, dtype=tf.uint8, name=None):
+  """
+  Decode a PNM-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The PNM-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)

@@ -20,3 +20,4 @@ from tensorflow_io.core.python.experimental.image_ops import decode_tiff_info # 
 from tensorflow_io.core.python.experimental.image_ops import decode_tiff # pylint: disable=unused-import
 from tensorflow_io.core.python.experimental.image_ops import decode_exr_info # pylint: disable=unused-import
 from tensorflow_io.core.python.experimental.image_ops import decode_exr # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import decode_pnm # pylint: disable=unused-import
