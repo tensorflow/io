@@ -78,4 +78,14 @@ REGISTER_OP("IO>DrawBoundingBoxesV3")
       return shape_inference::UnchangedShapeWithRankAtLeast(c, 3);
     });
 
+REGISTER_OP("IO>DecodeJpegExif")
+  .Input("input: string")
+  .Output("orientation: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+  });
+
 }  // namespace tensorflow
