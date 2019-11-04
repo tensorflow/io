@@ -17,7 +17,8 @@ again.
 
 ## Coding Style
 
-Please see our [Style Guide](STYLE_GUIDE.md) for more details.
+Tensorflow project wide code style guidelines can be followed at [TensorFlow Style Guide - Conventions](https://www.tensorflow.org/community/contribute/code_style) and Tensorflow I/O project specific 
+code style guidelines can be followed at [Style Guide](STYLE_GUIDE.md).
 
 ## Code Reviews
 
