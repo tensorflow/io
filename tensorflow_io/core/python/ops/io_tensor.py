@@ -31,7 +31,6 @@ from tensorflow_io.core.python.ops import avro_io_tensor_ops
 from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
 from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 from tensorflow_io.core.python.ops import tiff_io_tensor_ops
-from tensorflow_io.core.python.ops import geo_tiff_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -466,22 +465,3 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
       return tiff_io_tensor_ops.TIFFIOTensor(filename, internal=True)
-
-  @classmethod
-  def from_geo_tiff(cls,
-                    filename,
-                    **kwargs):
-    """Creates an `IOTensor` from a GeoTIFF file.
-
-    Note GeoTIFF file may consists of multiple images with different shapes.
-
-    Args:
-      filename: A string, the filename of a GeoTIFF file.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A `IOTensor`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromGeoTIFF")):
-      return geo_tiff_io_tensor_ops.GeoTIFFIOTensor(filename, internal=True)

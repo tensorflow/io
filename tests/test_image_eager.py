@@ -173,13 +173,16 @@ def test_geo_tiff():
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_image", "GeogToWGS84GeoKey5.tif")
-  gtif = tfio.IOTensor.from_geo_tiff(filename)
+  shape, dtype = tfio.experimental.image.decode_geo_tiff_info(
+      tf.io.read_file(filename))
   # only one item for now
-  assert gtif.keys == [0]
-  assert gtif(0).shape == [101, 101, 4]
-  assert gtif(0).dtype == tf.uint8
+  assert np.all(shape.shape == [1, 3])
+  assert np.all(dtype.shape == [1])
+  assert np.all(shape[0] == [101, 101, 1])
+  assert np.all(dtype[0].numpy() == tf.uint8)
 
-  image = gtif(0).to_tensor()
+  image = tfio.experimental.image.decode_geo_tiff(
+      tf.io.read_file(filename))
   _ = tf.image.encode_png(image)
   # TODO: check generated sample.png
   # tf.io.write_file('sample.png', png)

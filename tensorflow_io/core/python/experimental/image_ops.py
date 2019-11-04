@@ -83,3 +83,32 @@ def decode_tiff(contents, index=0, name=None):
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
   return core_ops.io_decode_tiff(contents, index, name=name)
+
+def decode_geo_tiff_info(contents, name=None):
+  """
+  Decode a GeoTIFF-encoded image meta data.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The GeoTIFF-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  shape, dtype = core_ops.io_decode_geo_tiff_info(contents, name=name)
+  return shape, dtype
+
+def decode_geo_tiff(contents, index=0, name=None):
+  """
+  Decode a GeoTIFF-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The GeoTIFF-encoded image.
+    index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
+      inside GeoTIFF-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return core_ops.io_decode_geo_tiff(contents, index, name=name)
