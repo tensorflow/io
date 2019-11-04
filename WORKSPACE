@@ -609,3 +609,13 @@ http_archive(
         "https://tukaani.org/xz/xz-5.2.4.tar.gz",
     ],
 )
+
+http_archive(
+    name = "easyexif",
+    build_file = "//third_party:easyexif.BUILD",
+    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
+    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
+    urls = [
+        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)

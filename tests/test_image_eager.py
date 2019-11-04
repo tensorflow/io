@@ -159,5 +159,13 @@ def test_encode_webp():
   image_e = tf.image.decode_bmp(bmp_encoded)
   assert np.all(image_v.numpy() == image_e.numpy())
 
+def test_decode_exif():
+  """Test case for decode_exif."""
+  jpeg_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "down-mirrored.jpg")
+  exif = tfio.experimental.image.decode_jpeg_exif(tf.io.read_file(jpeg_file))
+  assert exif == 4
+
 if __name__ == "__main__":
   test.main()
