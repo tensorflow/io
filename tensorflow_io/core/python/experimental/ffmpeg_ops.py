@@ -12,27 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""FFmpeg Dataset.
-
-@@AudioDataset
-@@VideoDataset
-@@decode_video
-"""
-
+"""FFmpeg"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import AudioDataset
-from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import VideoDataset
-from tensorflow_io.ffmpeg.python.ops.ffmpeg_ops import decode_video
 
-from tensorflow.python.util.all_util import remove_undocumented
+def decode_video(content, index=0, name=None):
+  """Decode video stream from a video file.
 
-_allowed_symbols = [
-    "AudioDataset",
-    "VideoDataset",
-    "decode_video",
-]
+  Args:
+    content: A `Tensor` of type `string`.
+    index: The stream index.
 
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
+  Returns:
+    value: A `uint8` Tensor.
+  """
+  from tensorflow_io.core.python.ops import ffmpeg_ops
+  return ffmpeg_ops.io_ffmpeg_decode_video(
+      content, index, name=name)

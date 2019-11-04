@@ -23,12 +23,9 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
+import tensorflow_io as tfio
 if sys.platform == "darwin":
   pytest.skip("video is not supported on macOS yet", allow_module_level=True)
-import tensorflow_io as tfio  # pylint: disable=wrong-import-position
-import tensorflow_io.ffmpeg as ffmpeg_io  # pylint: disable=wrong-import-position
 
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
@@ -57,14 +54,14 @@ def test_audio_dataset():
 
   f = lambda x: float(x) / (1 << 15)
 
-  audio_dataset = ffmpeg_io.AudioDataset(audio_path)
+  audio_dataset = tfio.IODataset.from_ffmpeg(audio_path, "a:0")
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v.numpy())
     i += 1
   assert i == 5760
 
-  audio_dataset = ffmpeg_io.AudioDataset(audio_path).batch(2)
+  audio_dataset = tfio.IODataset.from_ffmpeg(audio_path, "a:0").batch(2)
   i = 0
   for v in audio_dataset:
     assert audio_v.audio[i].numpy() == f(v[0].numpy())
@@ -121,13 +118,15 @@ def _test_ffmpeg_io_tensor_mkv():
 def test_ffmpeg_decode_video():
   """test_ffmpeg_decode_video"""
   content = tf.io.read_file(video_path)
-  video = ffmpeg_io.decode_video(content, 0)
+  video = tfio.experimental.ffmpeg.decode_video(content, 0)
   assert video.shape == [166, 320, 560, 3]
   assert video.dtype == tf.uint8
 
 def test_video_predict():
   model = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
-  x = ffmpeg_io.VideoDataset(video_path).batch(1).map(lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
+  x = tfio.IODataset.from_ffmpeg(
+      video_path, "v:0").batch(1).map(
+          lambda x: tf.keras.applications.resnet50.preprocess_input(tf.image.resize(x, (224, 224))))
   y = model.predict(x)
   p = tf.keras.applications.resnet50.decode_predictions(y, top=1)
   assert len(p) == 166
