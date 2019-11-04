@@ -175,7 +175,20 @@ def test_openexr_io_tensor():
       "test_image", "glacier.exr")
   filename = "file://" + filename
 
-  exr = tfio.IOTensor.from_exr(filename)
+  exr_shape, exr_dtype, exr_channel = tfio.experimental.image.decode_exr_info(
+      tf.io.read_file(filename))
+  assert np.all(exr_shape == [1024, 2048])
+  assert np.all(exr_dtype.numpy() == [tf.float16, tf.float16, tf.float16])
+  assert np.all(exr_channel == ['B', 'G', 'R'])
+
+  exr_0_b = tfio.experimental.image.decode_exr(
+      tf.io.read_file(filename), 0, 'B', tf.float16)
+  exr_0_g = tfio.experimental.image.decode_exr(
+      tf.io.read_file(filename), 0, 'G', tf.float16)
+  exr_0_r = tfio.experimental.image.decode_exr(
+      tf.io.read_file(filename), 0, 'R', tf.float16)
+
+  exr = tfio.experimental.IOTensor.from_exr(filename)
   assert exr.keys == [0]
   assert exr(0).columns == ['B', 'G', 'R']
 
@@ -204,6 +217,11 @@ def test_openexr_io_tensor():
   _ = tf.image.encode_png(rgb)
   # TODO: compare with generated png
   # tf.io.write_file('sample.png', png)
+
+  assert np.all(b == exr_0_b)
+  assert np.all(g == exr_0_g)
+  assert np.all(r == exr_0_r)
+
 
 if __name__ == "__main__":
   test.main()

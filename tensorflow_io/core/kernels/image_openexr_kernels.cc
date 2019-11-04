@@ -199,7 +199,7 @@ class DecodeEXROp : public OpKernel {
       }
     }
     OP_REQUIRES(context, (dtype != DT_INVALID), errors::InvalidArgument("unable to find channel: ", channel));
-      
+
     Tensor* output_tensor = nullptr;
     OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({height, width}), &output_tensor));
 

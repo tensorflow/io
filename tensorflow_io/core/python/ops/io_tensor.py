@@ -31,7 +31,6 @@ from tensorflow_io.core.python.ops import avro_io_tensor_ops
 from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
 from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 from tensorflow_io.core.python.ops import tiff_io_tensor_ops
-from tensorflow_io.core.python.ops import openexr_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -466,20 +465,3 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
       return tiff_io_tensor_ops.TIFFIOTensor(filename, internal=True)
-
-  @classmethod
-  def from_exr(cls,
-               filename,
-               **kwargs):
-    """Creates an `IOTensor` from a OpenEXR file.
-
-    Args:
-      filename: A string, the filename of a OpenEXR file.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A `IOTensor`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromOpenEXR")):
-      return openexr_io_tensor_ops.EXRIOTensor(filename, internal=True)
