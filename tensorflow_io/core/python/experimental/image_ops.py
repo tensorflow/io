@@ -40,6 +40,21 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
   return core_ops.io_draw_bounding_boxes_v3(
       images, boxes, colors, texts, name=name)
 
+def decode_jpeg_exif(contents, name=None):
+  """
+  Decode Exif information from an JPEG image.
+
+  TODO: Add additional fields besides orientation.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The JPEG-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `int64` for orientation.
+  """
+  return core_ops.io_decode_jpeg_exif(contents, name=name)
+
 def decode_tiff_info(contents, name=None):
   """
   Decode a TIFF-encoded image meta data.
