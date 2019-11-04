@@ -19,29 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>EncodeAvro")
-  .Input("input: dtype")
-  .Output("string: string")
-  .Attr("schema: string")
-  .Attr("dtype: list({float,double,int32,int64,string})")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->input(0));
-    return Status::OK();
-   });
-
-REGISTER_OP("IO>DecodeAvro")
-  .Input("input: string")
-  .Output("value: dtype")
-  .Attr("schema: string")
-  .Attr("dtype: list({float,double,int32,int64,string})")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    for (int64 i = 0; i < c->num_outputs(); i++) {
-      c->set_output(i, c->input(0));
-    }
-    return Status::OK();
-   });
-
-REGISTER_OP("IO>KafkaReadableInit")
+REGISTER_OP("IO>PrometheusReadableInit")
   .Input("input: string")
   .Input("metadata: string")
   .Output("resource: resource")
@@ -52,11 +30,23 @@ REGISTER_OP("IO>KafkaReadableInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>KafkaReadableRead")
+REGISTER_OP("IO>PrometheusReadableSpec")
+  .Input("input: resource")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .Attr("component: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({}));
+    return Status::OK();
+   });
+
+REGISTER_OP("IO>PrometheusReadableRead")
   .Input("input: resource")
   .Input("start: int64")
   .Input("stop: int64")
   .Output("value: dtype")
+  .Attr("component: string")
   .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -67,32 +57,5 @@ REGISTER_OP("IO>KafkaReadableRead")
     c->set_output(0, entry);
     return Status::OK();
    });
-
-REGISTER_OP("IO>KafkaOutputSequence")
-    .Input("topic: string")
-    .Input("metadata: string")
-    .Output("sequence: resource")
-    .Attr("container: string = ''")
-    .Attr("shared_name: string = ''")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      shape_inference::ShapeHandle unused;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
-      c->set_output(0, c->Scalar());
-      return Status::OK();
-    });
-
-REGISTER_OP("IO>KafkaOutputSequenceSetItem")
-    .Input("sequence: resource")
-    .Input("index: int64")
-    .Input("item: string")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
-
-REGISTER_OP("IO>KafkaOutputSequenceFlush")
-    .Input("sequence: resource")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
 
 }  // namespace tensorflow

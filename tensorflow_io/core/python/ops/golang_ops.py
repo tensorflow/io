@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""Dataset."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.api.version import VERSION as __version__
+from tensorflow_io.core.python.ops import _load_library
 
-from tensorflow_io.core.python.api import v0
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
+_golang_ops = _load_library('libtensorflow_io_golang.so')
+
+io_prometheus_readable_init = _golang_ops.io_prometheus_readable_init
+io_prometheus_readable_spec = _golang_ops.io_prometheus_readable_spec
+io_prometheus_readable_read = _golang_ops.io_prometheus_readable_read

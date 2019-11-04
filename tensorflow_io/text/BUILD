@@ -12,10 +12,12 @@ cc_library(
     srcs = [
         "kernels/csv_kernels.cc",
         "kernels/csv_output.cc",
+        "kernels/libsvm_kernels.cc",
         "kernels/text_kernels.cc",
         "kernels/text_output.cc",
         "kernels/text_re2.cc",
         "kernels/text_sequence.cc",
+        "ops/libsvm_ops.cc",
         "ops/text_ops.cc",
     ],
     copts = tf_io_copts(),

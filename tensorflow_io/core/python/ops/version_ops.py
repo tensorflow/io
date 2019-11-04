@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""version_ops"""
 
-from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.api.version import VERSION as __version__
-
-from tensorflow_io.core.python.api import v0
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
+package = 'tensorflow>=2.0.0,<2.1.0'
+version = '0.10.0'
