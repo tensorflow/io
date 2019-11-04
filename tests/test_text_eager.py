@@ -21,13 +21,10 @@ from __future__ import print_function
 import os
 import re
 import tempfile
-import pytest
 import numpy as np
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
 def test_read_text():
   """test_read_text"""
@@ -49,7 +46,8 @@ def test_read_text():
 
   for offset, length in [
       (0, -1), (1, -1), (1000, -1), (100, 1000), (1000, 10000)]:
-    entries = text_io.read_text(filename, offset=offset, length=length)
+    entries = tfio.experimental.text.read_text(
+        filename, offset=offset, length=length)
     if length < 0:
       length = filesize - offset
     expected = [
@@ -58,26 +56,6 @@ def test_read_text():
     for k, v in enumerate(expected):
       assert entries[k].numpy().decode() + "\n" == v.decode()
 
-
-def test_text_input():
-  """test_text_input
-  """
-  text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-  text_filename = "file://" + text_filename
-
-  text_dataset = text_io.TextDataset(text_filename).apply(
-      tf.data.experimental.unbatch()).batch(2)
-  i = 0
-  for v in text_dataset:
-    assert lines[i] == v.numpy()[0]
-    i += 1
-    if i < len(lines):
-      assert lines[i] == v.numpy()[1]
-      i += 1
-  assert i == len(lines)
 
 def test_text_output_sequence():
   """Test case based on fashion mnist tutorial"""
@@ -106,7 +84,7 @@ def test_text_output_sequence():
   class OutputCallback(tf.keras.callbacks.Callback):
     """OutputCallback"""
     def __init__(self, filename, batch_size):
-      self._sequence = text_io.TextOutputSequence(filename)
+      self._sequence = tfio.experimental.text.TextOutputSequence(filename)
       self._batch_size = batch_size
 
     def on_predict_batch_end(self, batch, logs=None):
@@ -128,106 +106,6 @@ def test_text_output_sequence():
   for line, prediction in zip(lines, predictions):
     assert line == prediction
 
-@pytest.mark.skipif(True, reason="need fix")
-def test_text_output():
-  """test_text_output"""
-  text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-  text_filename = "file://" + text_filename
-
-  f, filename = tempfile.mkstemp()
-  os.close(f)
-
-  df = text_io.TextDataset(text_filename).apply(
-      tf.data.experimental.unbatch())
-  df = df.take(5)
-  text_io.save_text(df, filename)
-
-  with open(filename, 'rb') as f:
-    saved_lines = [line.strip() for line in f]
-  i = 0
-  for line in saved_lines:
-    assert lines[i] == line
-    i += 1
-  assert i == 5
-
-@pytest.mark.skipif(True, reason="need fix")
-def test_csv_output():
-  """test_csv_output"""
-  csv_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample.csv")
-  with open(csv_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-  csv_filename = "file://" + csv_filename
-
-  f, filename = tempfile.mkstemp()
-  os.close(f)
-
-  df = tf.data.experimental.CsvDataset(csv_filename, [0, 0, 0])
-  df = df.take(5)
-  text_io.save_csv(df, filename)
-
-  with open(filename, 'rb') as f:
-    saved_lines = [line.strip() for line in f]
-  i = 0
-  for line in saved_lines:
-    assert lines[i] == line
-    i += 1
-  assert i == 5
-
-def test_from_csv():
-  """test from_csv with sample csv file.
-
-  sample1.csv
-  "col1",col2,"col 3","col 4",col5
-  15,10000000000,3.0,4.0e30,"col 5 string 1"
-  30,20000000000,6.0,8.0e30,"col 5 string 2"
-
-  sample2.csv
-  15,10000000000,3.0,4.0e30,"col 5 string 1"
-  30,20000000000,6.0,8.0e30,"col 5 string 2"
-
-  header=None will use range(width) as column names.
-  """
-  expected = [
-      [np.int32(15),
-       np.int64(10000000000),
-       np.float32(3.0),
-       np.float64(4.0e30),
-       b"col 5 string 1"],
-      [np.int32(30),
-       np.int64(20000000000),
-       np.float32(6.0),
-       np.float64(8.0e30),
-       b"col 5 string 2"]]
-
-  sample1 = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample1.csv")
-  sample1 = "file://" + sample1
-
-  df1, _ = text_io.from_csv(sample1)
-
-  sample2 = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "sample2.csv")
-  sample2 = "file://" + sample2
-
-  df2, _ = text_io.from_csv(sample2, header=None)
-
-  for df in [df1, df2]:
-    line = 0
-    for records in df:
-      assert len(records) == len(expected[line])
-      for i, record in enumerate(records):
-        if isinstance(expected[line][i], bytes):
-          assert record.dtype == tf.string
-          assert record.numpy() == expected[line][i]
-        else:
-          assert record.dtype == expected[line][i].dtype
-          assert record.numpy() == expected[line][i]
-      line += 1
-
 def test_re2_extract():
   """test_text_input
   """
@@ -237,9 +115,9 @@ def test_re2_extract():
     lines = [line.strip() for line in f]
   filename = "file://" + filename
 
-  dataset = text_io.TextDataset(filename).map(
-      lambda x: text_io.re2_full_match(x, ".+(ipsum).+(dolor).+")).apply(
-          tf.data.experimental.unbatch())
+  dataset = tf.data.TextLineDataset(filename).map(
+      lambda x: tfio.experimental.text.re2_full_match(
+          x, ".+(ipsum).+(dolor).+"))
   i = 0
   for v in dataset:
     r, g = v

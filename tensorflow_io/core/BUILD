@@ -193,6 +193,28 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "text_ops",
+    srcs = [
+        "kernels/csv_kernels.cc",
+        "kernels/libsvm_kernels.cc",
+        "kernels/text_kernels.cc",
+        "kernels/text_re2.cc",
+        "kernels/text_sequence.cc",
+        "ops/libsvm_ops.cc",
+        "ops/text_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:output_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -207,6 +229,7 @@ cc_binary(
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:pcap_ops",
+        "//tensorflow_io/core:text_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/genome:genome_ops",
@@ -221,7 +244,6 @@ cc_binary(
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
-        "//tensorflow_io/text:text_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
