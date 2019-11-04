@@ -27,4 +27,4 @@ Microsoft Azure Storage, Alibaba Cloud OSS etc.
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[Apache License 2.0](https://github.com/tensorflow/io/blob/master/LICENSE)
