@@ -127,6 +127,27 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "image_ops",
+    srcs = [
+        "kernels/font_opensans_regular.h",
+        "kernels/image_bmp_kernels.cc",
+        "kernels/image_kernels.cc",
+        "kernels/image_tiff_kernels.cc",
+        "kernels/image_webp_kernels.cc",
+        "ops/image_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@freetype",
+        "@giflib",
+        "@libtiff",
+        "@libwebp",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -139,6 +160,7 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:core_ops",
+        "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
@@ -146,7 +168,6 @@ cc_binary(
         "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
-        "//tensorflow_io/image:image_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",

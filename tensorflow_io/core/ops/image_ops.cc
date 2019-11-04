@@ -19,32 +19,40 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>WebPDataset")
-    .Input("filenames: string")
-    .Output("handle: variant")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("IO>DecodeTiffInfo")
+  .Input("input: string")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({c->UnknownDim()}));
+    return Status::OK();
+  });
 
-REGISTER_OP("IO>TIFFDataset")
-    .Input("filenames: string")
-    .Output("handle: variant")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("IO>DecodeTiff")
+  .Input("input: string")
+  .Input("index: int64")
+  .Output("image: uint8")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+    c->set_output(0, c->MakeShape({
+        c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
 
-REGISTER_OP("IO>GIFDataset")
-    .Input("filenames: string")
-    .Output("handle: variant")
-    .SetIsStateful()
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
+REGISTER_OP("IO>EncodeBmp")
+  .Input("input: uint8")
+  .Output("output: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &unused));
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+  });
 
 REGISTER_OP("IO>DecodeWebP")
     .Input("contents: string")

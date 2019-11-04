@@ -25,7 +25,7 @@ limitations under the License.
 // OpenSans Regular font, Apache License 2.0
 // Generated through xxd -i.
 // OpenSans_Regular_ttf and  OpenSans_Regular_ttf_len
-#include "kernels/font_opensans_regular.h"
+#include "tensorflow_io/core/kernels/font_opensans_regular.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
