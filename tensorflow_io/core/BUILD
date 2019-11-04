@@ -148,17 +148,58 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "audio_ops",
+    srcs = [
+        "kernels/audio_kernels.cc",
+        "ops/audio_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ],
+)
+
+cc_library(
+    name = "ffmpeg_3.4_ops",
+    srcs = [
+        "kernels/ffmpeg_kernels.cc",
+        "ops/ffmpeg_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_3_4//:ffmpeg",
+    ],
+)
+
+cc_library(
+    name = "ffmpeg_2.8_ops",
+    srcs = [
+        "kernels/ffmpeg_kernels.cc",
+        "ops/ffmpeg_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_2_8//:ffmpeg",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/audio:audio_ops",
         "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
+        "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:pcap_ops",
@@ -198,7 +239,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/ffmpeg:ffmpeg_3.4_ops",
+        "//tensorflow_io/core:ffmpeg_3.4_ops",
     ],
 )
 
@@ -207,6 +248,6 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/ffmpeg:ffmpeg_2.8_ops",
+        "//tensorflow_io/core:ffmpeg_2.8_ops",
     ],
 )
