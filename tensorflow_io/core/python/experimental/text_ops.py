@@ -12,29 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""KafkaOutputSequence."""
+"""LibSVM"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow import sparse
 from tensorflow_io.core.python.ops import core_ops
 
-
-class KafkaOutputSequence(object):
-  """KafkaOutputSequence"""
-
-  def __init__(self, topic, servers="localhost", configuration=None):
-    """Create a `KafkaOutputSequence`.
-    """
-    self._topic = topic
-    metadata = [e for e in configuration or []]
-    if servers is not None:
-      metadata.append("bootstrap.servers=%s" % servers)
-    self._resource = core_ops.io_kafka_output_sequence(
-        topic=topic, metadata=metadata)
-
-  def setitem(self, index, item):
-    core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
-
-  def flush(self):
-    core_ops.io_kafka_output_sequence_flush(self._resource)
+def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
+  """Convert Libsvm records to a tensor of label and a tensor of feature.
+  Args:
+    content: A `Tensor` of type `string`. Each string is a record/row in
+      the Libsvm format.
+    num_features: The number of features.
+    dtype: The type of the output feature tensor. Default to tf.float32.
+    label_dtype: The type of the output label tensor. Default to tf.int64.
+  Returns:
+    features: A `SparseTensor` of the shape `[input_shape, num_features]`.
+    labels: A `Tensor` of the same shape as content.
+  """
+  labels, indices, values, shape = core_ops.io_decode_libsvm(
+      content, num_features, dtype=dtype, label_dtype=label_dtype)
+  return sparse.SparseTensor(indices, values, shape), labels

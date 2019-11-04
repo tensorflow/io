@@ -12,29 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""KafkaOutputSequence."""
+"""Image Ops."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops
 
+def decode_webp(contents, name=None):
+  """
+  Decode a WebP-encoded image to a uint8 tensor.
 
-class KafkaOutputSequence(object):
-  """KafkaOutputSequence"""
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The WebP-encoded image.
+    name: A name for the operation (optional).
 
-  def __init__(self, topic, servers="localhost", configuration=None):
-    """Create a `KafkaOutputSequence`.
-    """
-    self._topic = topic
-    metadata = [e for e in configuration or []]
-    if servers is not None:
-      metadata.append("bootstrap.servers=%s" % servers)
-    self._resource = core_ops.io_kafka_output_sequence(
-        topic=topic, metadata=metadata)
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return core_ops.io_decode_web_p(contents, name=name)
 
-  def setitem(self, index, item):
-    core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
+def encode_bmp(image, name=None):
+  """
+  Encode a uint8 tensor to bmp image.
 
-  def flush(self):
-    core_ops.io_kafka_output_sequence_flush(self._resource)
+  Args:
+    image: A Tensor. 3-D uint8 with shape [height, width, channels].
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `string`.
+  """
+  return core_ops.io_encode_bmp(image, name=name)

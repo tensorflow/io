@@ -12,11 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""FFmpeg"""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.api.version import VERSION as __version__
 
-from tensorflow_io.core.python.api import v0
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
+def decode_video(content, index=0, name=None):
+  """Decode video stream from a video file.
+
+  Args:
+    content: A `Tensor` of type `string`.
+    index: The stream index.
+
+  Returns:
+    value: A `uint8` Tensor.
+  """
+  from tensorflow_io.core.python.ops import ffmpeg_ops
+  return ffmpeg_ops.io_ffmpeg_decode_video(
+      content, index, name=name)

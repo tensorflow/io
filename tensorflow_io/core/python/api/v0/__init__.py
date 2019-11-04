@@ -14,9 +14,8 @@
 # ==============================================================================
 """tensorflow_io"""
 
-from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.api.version import VERSION as __version__
+# tensorflow_io.core.python.ops is implicitly imported (along with file system)
+from tensorflow_io.core.python.ops.io_tensor import IOTensor
+from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset
 
-from tensorflow_io.core.python.api import v0
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
+from tensorflow_io.core.python.api.v0 import image

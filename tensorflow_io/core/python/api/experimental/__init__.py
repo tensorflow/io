@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""tensorflow_io.experimental"""
 
-from tensorflow_io.core.python.api.v0 import * # pylint: disable=wildcard-import
-from tensorflow_io.core.python.api.version import VERSION as __version__
+from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
 
-from tensorflow_io.core.python.api import v0
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
+from tensorflow_io.core.python.api.experimental import ffmpeg
+from tensorflow_io.core.python.api.experimental import image
+from tensorflow_io.core.python.api.experimental import text
