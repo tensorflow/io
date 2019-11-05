@@ -66,5 +66,4 @@ def _load_library(filename, lib="op"):
       "unable to open file: " +
       "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs))
 
-core_golang_ops = _load_library('libtensorflow_io_golang.so')
 core_ops = _load_library('libtensorflow_io.so')

@@ -33,10 +33,14 @@ class TIFFIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
     with tf.name_scope("TIFFIOTensor"):
       # TIFF can fit into memory so load TIFF first
       data = tf.io.read_file(filename)
-      info = core_ops.io_decode_tiff_info(data)
+      shapes, dtypes = core_ops.io_decode_tiff_info(data)
+      # NOTE: While shapes returned correctly handles 3 or 4 channels
+      # we can only handle RGBA so fix shape as 4 for now,
+      # until decode_tiff is updated.
       spec = tuple([
           tf.TensorSpec(tf.TensorShape(
-              e.numpy().tolist() + [4]), tf.uint8) for e in info])
+              shape.tolist()[0:2] + [4]), dtype) for (
+                  shape, dtype) in zip(shapes.numpy(), dtypes.numpy())])
       columns = [i for i, _ in enumerate(spec)]
       elements = [
           io_tensor_ops.TensorIOTensor(
