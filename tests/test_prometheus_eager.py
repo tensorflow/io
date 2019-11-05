@@ -26,8 +26,6 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 if sys.platform == "darwin":

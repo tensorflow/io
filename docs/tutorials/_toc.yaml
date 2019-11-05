@@ -14,7 +14,6 @@
 #
 # ==============================================================================
 toc:
-  # For example see: https://github.com/tensorflow/addons/blob/master/docs/tutorials/_toc.yaml
-  - heading: "Tutorials"
-  - title: "BigQuery"
-    path: /io/tutorials/bigquery
+# For example see: https://github.com/tensorflow/addons/blob/master/docs/tutorials/_toc.yaml
+- title: "BigQuery"
+  path: /io/tutorials/bigquery

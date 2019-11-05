@@ -93,8 +93,11 @@ def test_kafka_output_sequence():
 
 def test_avro_kafka_dataset():
   """test_avro_kafka_dataset"""
-  schema = ('{"type":"record","name":"myrecord","fields":'
-            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}"')
+  schema = ('{"type":"record","name":"myrecord","fields":['
+            '{"name":"f1","type":"string"},'
+            '{"name":"f2","type":"long"},'
+            '{"name":"f3","type":["null","string"],"default":null}'
+            ']}"')
   dataset = kafka_io.KafkaDataset(
       ["avro-test:0"], group="avro-test", eof=True)
   # remove kafka framing
@@ -102,8 +105,8 @@ def test_avro_kafka_dataset():
   # deserialize avro
   dataset = dataset.map(
       lambda e: kafka_io.decode_avro(
-          e, schema=schema, dtype=[tf.string, tf.int64]))
-  entries = [(f1.numpy(), f2.numpy()) for (f1, f2) in dataset]
+          e, schema=schema, dtype=[tf.string, tf.int64, tf.string]))
+  entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
   np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
 
 def test_kafka_stream_dataset():
@@ -116,9 +119,23 @@ def test_kafka_stream_dataset():
     _ = [e.numpy().tolist() for e in dataset]
 
 def test_kafka_io_dataset():
-  dataset = tfio.IODataset.from_kafka("test").batch(2)
+  dataset = tfio.IODataset.from_kafka(
+      "test", configuration=["fetch.min.bytes=2"]).batch(2)
   # repeat multiple times will result in the same result
   for i in range(5):
     assert np.all([
         e.numpy().tolist() for e in dataset] == np.asarray([
             ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
+
+def test_avro_encode_decode():
+  """test_avro_encode_decode"""
+  schema = ('{"type":"record","name":"myrecord","fields":'
+            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}"')
+  value = [('value1', 1), ('value2', 2), ('value3', 3)]
+  f1 = tf.cast([v[0] for v in value], tf.string)
+  f2 = tf.cast([v[1] for v in value], tf.int64)
+  message = kafka_io.encode_avro([f1, f2], schema=schema)
+  entries = kafka_io.decode_avro(
+      message, schema=schema, dtype=[tf.string, tf.int64])
+  assert np.all(entries[1].numpy() == f2.numpy())
+  assert np.all(entries[0].numpy() == f1.numpy())

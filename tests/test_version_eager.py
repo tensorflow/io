@@ -18,15 +18,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io as tfio # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops import io_info # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
+from tensorflow_io.core.python.ops import version_ops
 
 def test_version():
   """test_version"""
-  assert tfio.__version__ == io_info.version
+  assert tfio.__version__ == version_ops.version
+  assert tfio.version.VERSION == version_ops.version
 
 
 if __name__ == "__main__":

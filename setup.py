@@ -181,8 +181,8 @@ setup(
 """
 
 # read package and version from:
-# tensorflow_io/core/python/ops/io_info.py
-with open("tensorflow_io/core/python/ops/io_info.py") as f:
+# tensorflow_io/core/python/ops/version_ops.py
+with open("tensorflow_io/core/python/ops/version_ops.py") as f:
   entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
   assert sum(e.startswith("package = ") for e in entries) == 1
   assert sum(e.startswith("version = ") for e in entries) == 1

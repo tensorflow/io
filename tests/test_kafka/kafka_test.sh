@@ -40,8 +40,8 @@ if [[ "$(uname)" == "Darwin" ]]; then
     sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
     sudo confluent-$VERSION/bin/kafka-console-producer --topic test --broker-list 127.0.0.1:9092 < confluent-$VERSION/test
     sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic avro-test
-    echo -e "{\"f1\":\"value1\",\"f2\":1}\n{\"f1\":\"value2\",\"f2\":2}\n{\"f1\":\"value3\",\"f2\":3}" > confluent-$VERSION/avro-test
-    sudo confluent-$VERSION/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema="{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"}]}" < confluent-$VERSION/avro-test
+    echo -e "{\"f1\":\"value1\",\"f2\":1,\"f3\":null}\n{\"f1\":\"value2\",\"f2\":2,\"f3\":{\"string\":\"2\"}}\n{\"f1\":\"value3\",\"f2\":3,\"f3\":null}" > confluent-$VERSION/avro-test
+    sudo confluent-$VERSION/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema="{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"},{\"name\":\"f3\",\"type\":[\"null\",\"string\"],\"default\":null}]}" < confluent-$VERSION/avro-test
     echo Everything started
     exit 0
 fi
@@ -88,9 +88,9 @@ if [ "$action" == "start" ]; then
     echo Create avro test topic
     docker exec -i $container-kafka bash -c '/usr/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic avro-test'
     echo Create avro test message
-    docker exec -i $container-schema-registry bash -c 'echo -e "{\"f1\":\"value1\",\"f2\":1}\n{\"f1\":\"value2\",\"f2\":2}\n{\"f1\":\"value3\",\"f2\":3}" > /avro-test'
+    docker exec -i $container-schema-registry bash -c 'echo -e "{\"f1\":\"value1\",\"f2\":1,\"f3\":null}\n{\"f1\":\"value2\",\"f2\":2,\"f3\":{\"string\":\"2\"}}\n{\"f1\":\"value3\",\"f2\":3,\"f3\":null}" > /avro-test'
     echo Produce avro test message
-    docker exec -i $container-schema-registry bash -c "/usr/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema='{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"}]}' </avro-test"
+    docker exec -i $container-schema-registry bash -c "/usr/bin/kafka-avro-console-producer --broker-list localhost:9092 --topic avro-test --property value.schema='{\"type\":\"record\",\"name\":\"myrecord\",\"fields\":[{\"name\":\"f1\",\"type\":\"string\"},{\"name\":\"f2\",\"type\":\"long\"},{\"name\":\"f3\",\"type\":[\"null\",\"string\"],\"default\":null}]}' </avro-test"
     echo Container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container-zookeeper
