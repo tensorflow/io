@@ -149,6 +149,7 @@ cc_library(
         "kernels/image_bmp_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_kernels.cc",
+        "kernels/image_openexr_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
         "ops/image_ops.cc",
@@ -162,6 +163,7 @@ cc_library(
         "@giflib",
         "@libtiff",
         "@libwebp",
+        "@openexr",
     ],
 )
 

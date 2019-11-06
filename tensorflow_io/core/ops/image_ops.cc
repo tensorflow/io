@@ -88,4 +88,33 @@ REGISTER_OP("IO>DecodeJpegExif")
     return Status::OK();
   });
 
+REGISTER_OP("IO>DecodeExrInfo")
+  .Input("input: string")
+  .Output("shape: int64")
+  .Output("dtype: int64")
+  .Output("channel: string")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
+
+REGISTER_OP("IO>DecodeExr")
+  .Input("input: string")
+  .Input("index: int64")
+  .Input("channel: string")
+  .Output("image: dtype")
+  .Attr("dtype: {uint32, half, float}")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
+    c->set_output(0, c->MakeShape({
+        c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
 }  // namespace tensorflow
