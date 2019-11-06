@@ -57,6 +57,7 @@ bash -x -e tests/test_azure/start_azure.sh
 bash -x -e tests/test_dicom/dicom_samples.sh download
 bash -x -e tests/test_dicom/dicom_samples.sh extract
 
+export BAZEL_CPU_OPTIMIZATION=yes
 bash -x -e .travis/python.release.sh
 
 if [[ $PYTHON_VERSION == "2" ]]; then

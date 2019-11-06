@@ -58,7 +58,7 @@ if [[ "${BAZEL_CACHE}" != "" ]]; then
 fi
 
 # Build with SSE4.2
-if [[ "${BAZEL_CPU_OPTIMIZATION}" == "true" ]]; then
+if [[ "${BAZEL_CPU_OPTIMIZATION}" == "yes" ]]; then
   args+=(--copt=-msse4.2 --copt=-mavx)
 fi
 

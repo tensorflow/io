@@ -114,7 +114,6 @@ class CPUFeatureCheck {
 // NOTE: In TensorFlow IO currently on Linux only AVX and earlier are supported
 // This is inline with TensorFlow Core support.
 // We may decide to enable further e.g., AVX2 in TensorFlow IO only in the future.
-#if 0
 #ifndef __AVX2__
     CheckIfFeatureUnused(CPUFeature::AVX2, "AVX2", missing_instructions);
 #endif  // __AVX2__
@@ -124,10 +123,9 @@ class CPUFeatureCheck {
 #ifndef __FMA__
     CheckIfFeatureUnused(CPUFeature::FMA, "FMA", missing_instructions);
 #endif  // __FMA__
-#endif
     if (!missing_instructions.empty()) {
-    LOG(INFO) << "Your CPU supports instructions that this TensorFlow IO "
-              << "binary was not compiled to use:" << missing_instructions;
+      LOG(INFO) << "Your CPU supports instructions that this TensorFlow IO "
+                << "binary was not compiled to use:" << missing_instructions;
     }
   }
 };
