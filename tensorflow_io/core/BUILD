@@ -101,6 +101,19 @@ cc_library(
 )
 
 cc_library(
+    name = "mnist_ops",
+    srcs = [
+        "kernels/mnist_input.cc",
+        "ops/mnist_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ],
+)
+
+cc_library(
     name = "prometheus_ops",
     srcs = [
         "kernels/prometheus_kernels.cc",
@@ -228,6 +241,7 @@ cc_binary(
         "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:image_ops",
+        "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/dicom:dicom_ops",
@@ -240,7 +254,6 @@ cc_binary(
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/lmdb:lmdb_ops",
-        "//tensorflow_io/mnist:mnist_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",

@@ -28,6 +28,7 @@ from tensorflow_io.core.python.ops import ffmpeg_dataset_ops
 from tensorflow_io.core.python.ops import json_dataset_ops
 from tensorflow_io.core.python.ops import parquet_dataset_ops
 from tensorflow_io.core.python.ops import pcap_dataset_ops
+from tensorflow_io.core.python.ops import mnist_dataset_ops
 
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   """IODataset
@@ -253,6 +254,26 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromParquet")):
       return parquet_dataset_ops.ParquetIODataset(
           filename, columns=columns, internal=True)
+
+  @classmethod
+  def from_mnist(cls,
+                 images=None,
+                 labels=None,
+                 **kwargs):
+    """Creates an `IODataset` from MNIST images and/or labels files.
+
+    Args:
+      images: A string, the filename of MNIST images file.
+      labels: A string, the filename of MNIST labels file.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromMNIST")):
+      return mnist_dataset_ops.MNISTIODataset(
+          images, labels, internal=True, **kwargs)
 
 
   @classmethod
