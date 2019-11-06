@@ -83,3 +83,34 @@ def decode_tiff(contents, index=0, name=None):
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
   return core_ops.io_decode_tiff(contents, index, name=name)
+
+def decode_exr_info(contents, name=None):
+  """
+  Decode a EXR-encoded image meta data.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  shape, dtype, channel = core_ops.io_decode_exr_info(contents, name=name)
+  return shape, dtype, channel
+
+def decode_exr(contents, index, channel, dtype, name=None):
+  """
+  Decode a EXR-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
+    index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
+      inside EXR-encoded image.
+    channel: A `Tensor` of type string. 0-D. The channel inside the image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+  """
+  return core_ops.io_decode_exr(
+      contents, index=index, channel=channel, dtype=dtype, name=name)
