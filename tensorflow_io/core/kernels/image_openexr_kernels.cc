@@ -35,12 +35,12 @@ public:
 
   bool read (char c[/*n*/], int n) override {
     if (pos_ + n > size_) {
-      throw IEX_NAMESPACE::InputExc ("Unexpected end of file.");
+      throw IEX_NAMESPACE::InputExc("Unexpected end of file.");
     }
     StringPiece result;
     Status status = file_->Read(pos_, n, &result, c);
     if (!status.ok() || result.size() < n) {
-      throw IEX_NAMESPACE::InputExc ("Unexpected end of file.");
+      throw IEX_NAMESPACE::InputExc("Unexpected end of file.");
     }
     pos_ += n;
     return (pos_ < size_);
@@ -194,7 +194,7 @@ class DecodeEXROp : public OpKernel {
           dtype = DT_FLOAT;
           break;
         default:
-          OP_REQUIRES(context, false, errors::InvalidArgument("invalid data type: ", pixel_type));
+          OP_REQUIRES(context, false, errors::InvalidArgument("invalid pixel type: ", pixel_type));
         }
       }
     }
