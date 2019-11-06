@@ -13,60 +13,18 @@
 TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support.
 
-At the moment TensorFlow I/O supports the following data sources:
-- `tensorflow_io.ignite`: Data source for Apache Ignite and Ignite File System (IGFS). Overview and usage guide [here](tensorflow_io/ignite/README.md).
-- `tensorflow_io.kafka`: Apache Kafka stream-processing support.
-- `tensorflow_io.kinesis`: Amazon Kinesis data streams support.
-- `tensorflow_io.arrow`: Apache Arrow data format support. Usage guide [here](tensorflow_io/arrow/README.md).
-- `tensorflow_io.image`: WebP and TIFF image format support.
-- `tensorflow_io.libsvm`: LIBSVM file format support.
-- `tensorflow_io.ffmpeg`: Video and Audio file support with FFmpeg.
-- `tensorflow_io.parquet`: Apache Parquet data format support.
-- `tensorflow_io.lmdb`: LMDB file format support.
-- `tensorflow_io.mnist`: MNIST file format support.
-- `tensorflow_io.pubsub`: Google Cloud Pub/Sub support.
-- `tensorflow_io.bigtable`: Google Cloud Bigtable support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/bigtable/README.md).
-- `tensorflow_io.oss`: Alibaba Cloud Object Storage Service (OSS) support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/oss/README.md).
-- `tensorflow_io.avro`: Apache Avro file format support.
-- `tensorflow_io.audio`: WAV file format support.
-- `tensorflow_io.grpc`: gRPC server Dataset, support for streaming Numpy input.
-- `tensorflow_io.hdf5`: HDF5 file format support.
-- `tensorflow_io.text`: Text file with archive support.
-- `tensorflow_io.pcap`: Pcap network packet capture file support.
-- `tensorflow_io.azure`: Microsoft Azure Storage support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/azure/README.md).
-- `tensorflow_io.bigquery`: Google Cloud BigQuery support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/bigquery/README.md).
-- `tensorflow_io.gcs`: GCS Configuration support.
-- `tensorflow_io.prometheus`: Prometheus observation data support.
-- `tensorflow_io.dicom`: DICOM Image file format support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/dicom/README.md).
-- `tensorflow_io.json`: JSON file support. Usage guide [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/json/README.md).
-
-## Installation
-
-### Python Package
-
-The `tensorflow-io` Python package could be installed with pip directly:
-```sh
-$ pip install tensorflow-io
-```
-
-People who are a little more adventurous can also try our nightly binaries:
-```sh
-$ pip install tensorflow-io-nightly
-```
-
 The use of tensorflow-io is straightforward with keras. Below is the example
 of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
 data processing replaced by tensorflow-io:
 
 ```python
 import tensorflow as tf
-import tensorflow_io.mnist as mnist_io
+import tensorflow_io as tfio
 
-# Read MNIST into tf.data.Dataset
-d_train = mnist_io.MNISTDataset(
-    'train-images-idx3-ubyte.gz',
-    'train-labels-idx1-ubyte.gz',
-    batch=1)
+# Read MNIST into Dataset
+d_train = tfio.IODataset.from_mnist(
+    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz",
+    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
 
 # By default image data is uint8 so conver to float32.
 d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
@@ -85,8 +43,29 @@ model.fit(d_train, epochs=5, steps_per_epoch=10000)
 ```
 
 Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
-files are assumed to have been downloaded and saved to the local directory.
-Compression files (e.g. gzip) could be detected and uncompressed automatically.
+files' URL address are directly passes to `tfio.IODataset.from_mnist`, the API
+used to create MNIST Dataset. We are able to do that because `tensorflow-io`
+support `HTTP` file system out of the box. There is no need to download and
+save files to local directory any more. Note we are also passing the compressed
+files (gzip) as is, since `tensorflow-io` is able to detect and uncompress
+automatically for MNIST dataset if needed.
+
+Please check the official [documenation](https://www.tensorflow.org/io) for more
+detailed usages.
+
+## Installation
+
+### Python Package
+
+The `tensorflow-io` Python package could be installed with pip directly:
+```sh
+$ pip install tensorflow-io
+```
+
+People who are a little more adventurous can also try our nightly binaries:
+```sh
+$ pip install tensorflow-io-nightly
+```
 
 ### R Package
 
