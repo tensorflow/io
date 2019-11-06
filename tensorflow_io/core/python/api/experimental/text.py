@@ -14,4 +14,7 @@
 # ==============================================================================
 """tensorflow_io.experimental.text"""
 
+from tensorflow_io.core.python.experimental.text_ops import TextOutputSequence # pylint: disable=unused-import
 from tensorflow_io.core.python.experimental.text_ops import decode_libsvm # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.text_ops import re2_full_match # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.text_ops import read_text # pylint: disable=unused-import

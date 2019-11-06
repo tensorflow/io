@@ -35,3 +35,32 @@ def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
   labels, indices, values, shape = core_ops.io_decode_libsvm(
       content, num_features, dtype=dtype, label_dtype=label_dtype)
   return sparse.SparseTensor(indices, values, shape), labels
+
+def re2_full_match(input, pattern): # pylint: disable=redefined-builtin
+  """Extract regex groups
+
+  Args:
+    input: A `tf.string` tensor
+    pattern: A pattern string.
+  """
+  return core_ops.io_re2_full_match(input, pattern)
+
+def read_text(filename, **kwargs):
+  """read_text"""
+  memory = kwargs.get("memory", "")
+  offset = kwargs.get("offset", 0)
+  length = kwargs.get("length", -1)
+  return core_ops.io_read_text(
+      filename, offset=offset, length=length, memory=memory)
+
+class TextOutputSequence(object):
+  """TextOutputSequence"""
+
+  def __init__(self, filenames):
+    """Create a `TextOutputSequence`.
+    """
+    self._filenames = filenames
+    self._resource = core_ops.io_text_output_sequence(destination=filenames)
+
+  def setitem(self, index, item):
+    core_ops.io_text_output_sequence_set_item(self._resource, index, item)
