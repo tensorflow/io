@@ -365,6 +365,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
             return errors::Internal("Failed to do topic configuration:", *it,
                                     "error:", errstr);
           }
+          LOG(INFO) << "Kafka topic configuration: " << *it;
         }
 
         result = conf->set("default_topic_conf", topic_conf.get(), errstr);
@@ -384,6 +385,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
             return errors::Internal("Failed to do global configuration: ", *it,
                                     "error:", errstr);
           }
+          LOG(INFO) << "Kafka global configuration: " << *it;
         }
 
         result = conf->set("event_cb", &kafka_event_cb, errstr);
@@ -416,6 +418,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
               topic_partition_->partition(), ", ", topic_partition_->offset(),
               "]:", RdKafka::err2str(err));
         }
+        LOG(INFO) << "Kafka stream starts with current offset: " << topic_partition_->offset();
 
         return Status::OK();
       }

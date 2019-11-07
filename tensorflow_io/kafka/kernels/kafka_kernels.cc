@@ -109,6 +109,7 @@ class KafkaReadable : public IOReadableInterface {
           return errors::Internal("failed to do global configuration: ", metadata[i], "error:", errstr);
         }
       }
+      LOG(INFO) << "Kafka configuration: " << metadata[i];
     }
     if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) != RdKafka::Conf::CONF_OK) {
       return errors::Internal("failed to set default_topic_conf:", errstr);
@@ -242,6 +243,7 @@ class KafkaReadable : public IOReadableInterface {
       }
       index_ = 0;
       offset_ = subscription_->offset();
+      LOG(INFO) << "Kafka stream starts with current offset: " << subscription_->offset();
     }
 
     while (consumer_.get() != nullptr && index_ < stop) {
