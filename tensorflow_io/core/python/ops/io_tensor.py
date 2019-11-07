@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import audio_io_tensor_ops
 from tensorflow_io.core.python.ops import json_io_tensor_ops
@@ -196,6 +197,24 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """
 
   #=============================================================================
+  # Graph mode
+  #=============================================================================
+
+  @classmethod
+  def graph(cls, dtype):
+    """Obtain a GraphIOTensor to be used in graph mode.
+
+    Args:
+      dtype: Data type of the GraphIOTensor.
+
+    Returns:
+      A class of `GraphIOTensor`.
+    """
+    cls = GraphIOTensor
+    cls._dtype = dtype
+    return cls
+
+  #=============================================================================
   # Factory Methods
   #=============================================================================
 
@@ -240,7 +259,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return audio_io_tensor_ops.AudioIOTensor(filename, internal=True) # pylint: disable=protected-access
+      return audio_io_tensor_ops.AudioIOTensor(filename, internal=True)
 
   @classmethod
   def from_json(cls,
@@ -465,3 +484,36 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
       return tiff_io_tensor_ops.TIFFIOTensor(filename, internal=True)
+
+class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
+  """GraphIOTensor is compatible in graph mode"""
+
+  #=============================================================================
+  # Factory Methods
+  #=============================================================================
+
+  @classmethod
+  def from_audio(cls,
+                 filename,
+                 **kwargs):
+    """Creates an `IOTensor` from an audio file.
+
+    The following audio file formats are supported:
+    - WAV
+
+    Args:
+      filename: A string, the filename of an audio file.
+      dtype: Data type of the audio file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+      resource = core_ops.io_wav_readable_init(filename)
+      dtype = cls._dtype
+      shape, _, rate = core_ops.io_wav_readable_spec(resource)
+      shape = tf.unstack(shape)
+      return audio_io_tensor_ops.AudioGraphIOTensor(
+          resource, shape, dtype, rate, internal=True)

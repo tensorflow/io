@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import hdf5_dataset_ops
 from tensorflow_io.core.python.ops import avro_dataset_ops
@@ -42,8 +43,8 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
 
   Note while `IODataset` is a subclass of `tf.data.Dataset`, definitive
   does not necessarily apply to all `tf.data.Dataset`. A `tf.data.Dataset`
-  could also be a `IOStreamDataset` where data generation may last forever
-  and/or non-repeatable. `IOStreamDataset` is only safe to be passed to
+  could also be a `StreamIODataset` where data generation may last forever
+  and/or non-repeatable. `StreamIODataset` is only safe to be passed to
   `tf.keras` for inference purposes.
 
   Examples of `IODataset` include `AudioIODataset` which is based on data
@@ -61,6 +62,37 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   ```
 
   """
+
+  #=============================================================================
+  # Graph mode
+  #=============================================================================
+
+  @classmethod
+  def graph(cls, dtype):
+    """Obtain a GraphIODataset to be used in graph mode.
+
+    Args:
+      dtype: Data type of the GraphIODataset.
+
+    Returns:
+      A class of `GraphIODataset`.
+    """
+    cls = GraphIODataset
+    cls._dtype = dtype
+    return cls
+
+  #=============================================================================
+  # Stream mode
+  #=============================================================================
+
+  @classmethod
+  def stream(cls):
+    """Obtain a non-repeatable StreamIODataset to be used.
+
+    Returns:
+      A class of `StreamIODataset`.
+    """
+    return StreamIODataset
 
   #=============================================================================
   # Factory Methods
@@ -294,18 +326,18 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       return pcap_dataset_ops.PcapIODataset(
           filename, internal=True, **kwargs)
 
-class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=protected-access
-  """IOStreamDataset
+class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=protected-access
+  """StreamIODataset
 
-  An `IOStreamDataset` is a subclass of `tf.data.Dataset` that does not have
+  An `StreamIODataset` is a subclass of `tf.data.Dataset` that does not have
   to be definitive, with data backed by IO operations. The data generated from
-  `IOStreamDataset` may run forever (unbounded). A re-run of `IOStreamDataset`
+  `StreamIODataset` may run forever (unbounded). A re-run of `StreamIODataset`
   could also have a completely different sequence of data (non-repeatable).
-  While `IOStreamDataset` could be passed to `tf.keras`, is only suited for
+  While `StreamIODataset` could be passed to `tf.keras`, is only suited for
   inference purposes. As a comparision, `IODataset` could be used for both
   training and inference purposes.
 
-  Examples of `IOStreamDataset` include `KafkaIOStreamDataset` which is from
+  Examples of `StreamIODataset` include `KafkaStreamIODataset` which is from
   a Kafka server, without a definitive beginning offset, or without an end
   offset.
 
@@ -315,12 +347,11 @@ class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=prote
   >>> import tensorflow as tf
   >>> import tensorflow_io as tfio
   >>>
-  >>> kafka = tfio.IOStreamDataset.from_kafka("test-topic", offset=0)
+  >>> kafka = tfio.StreamIODataset.from_kafka("test-topic", offset=0)
   >>>
   ```
 
   """
-
   #=============================================================================
   # Factory Methods
   #=============================================================================
@@ -354,12 +385,42 @@ class IOStreamDataset(io_dataset_ops._IOStreamDataset):  # pylint: disable=prote
       name: A name prefix for the IODataset (optional).
 
     Returns:
-      A `IOStreamDataset`.
+      A `StreamIODataset`.
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
-      return kafka_dataset_ops.KafkaIOStreamDataset(
+      return kafka_dataset_ops.KafkaStreamIODataset(
           topic, partition=partition, offset=offset,
           servers=kwargs.get("servers", None),
           configuration=kwargs.get("configuration", None),
           internal=True)
+
+class GraphIODataset(tf.data.Dataset):
+  """GraphIODataset"""
+  #=============================================================================
+  # Factory Methods
+  #=============================================================================
+
+  @classmethod
+  def from_audio(cls,
+                 filename,
+                 **kwargs):
+    """Creates an `GraphIODataset` from an audio file.
+
+    The following audio file formats are supported:
+    - WAV
+
+    Args:
+      filename: A string, the filename of an audio file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+      resource = core_ops.io_wav_readable_init(filename)
+      dtype = cls._dtype
+      shape, _, _ = core_ops.io_wav_readable_spec(resource)
+      return audio_dataset_ops.AudioGraphIODataset(
+          resource, shape, dtype, internal=True)

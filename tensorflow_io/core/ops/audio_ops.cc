@@ -35,7 +35,7 @@ REGISTER_OP("IO>WAVReadableSpec")
   .Output("dtype: int64")
   .Output("rate: int32")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
+    c->set_output(0, c->MakeShape({2}));
     c->set_output(1, c->MakeShape({}));
     c->set_output(2, c->Scalar());
      return Status::OK();
@@ -46,14 +46,9 @@ REGISTER_OP("IO>WAVReadableRead")
   .Input("start: int64")
   .Input("stop: int64")
   .Output("value: dtype")
-  .Attr("shape: shape")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
     return Status::OK();
    });
 

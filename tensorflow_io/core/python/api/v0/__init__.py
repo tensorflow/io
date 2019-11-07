@@ -16,6 +16,6 @@
 
 # tensorflow_io.core.python.ops is implicitly imported (along with file system)
 from tensorflow_io.core.python.ops.io_tensor import IOTensor
-from tensorflow_io.core.python.ops.io_dataset import IODataset, IOStreamDataset
+from tensorflow_io.core.python.ops.io_dataset import IODataset
 
 from tensorflow_io.core.python.api.v0 import image
