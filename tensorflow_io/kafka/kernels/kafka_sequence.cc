@@ -94,6 +94,7 @@ class KafkaOutputSequence : public OutputSequence {
           return errors::Internal("failed to do global configuration: ", metadata[i], "error:", errstr);
         }
       }
+      LOG(INFO) << "Kafka configuration: " << metadata[i];
     }
     if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) != RdKafka::Conf::CONF_OK) {
       return errors::Internal("failed to set default_topic_conf:", errstr);
@@ -107,6 +108,7 @@ class KafkaOutputSequence : public OutputSequence {
       if ((result = conf->set("bootstrap.servers", bootstrap_servers, errstr)) != RdKafka::Conf::CONF_OK) {
         return errors::Internal("failed to set bootstrap.servers [", bootstrap_servers, "]:", errstr);
       }
+      LOG(INFO) << "Kafka default bootstrap server: " << bootstrap_servers;
     }
 
     producer_.reset(RdKafka::Producer::create(conf.get(), errstr));
