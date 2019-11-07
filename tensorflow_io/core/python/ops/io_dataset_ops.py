@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""_IODataset and _IOStreamDataset"""
+"""_IODataset and _StreamIODataset"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,15 +21,15 @@ import sys
 
 import tensorflow as tf
 
-class _IOStreamDataset(tf.compat.v2.data.Dataset):
-  """_IOStreamDataset"""
+class _StreamIODataset(tf.compat.v2.data.Dataset):
+  """_StreamIODataset"""
 
   def __init__(self, function, internal=True, **kwargs):
     if not internal:
-      raise ValueError("IOStreamDataset constructor is private; please use one "
+      raise ValueError("StreamIODataset constructor is private; please use one "
                        "of the factory methods instead (e.g., "
                        "IODataset.from_kafka())")
-    with tf.name_scope("IOStreamDataset"):
+    with tf.name_scope("StreamIODataset"):
       capacity = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(lambda index: function(index, index+capacity))
@@ -40,7 +40,7 @@ class _IOStreamDataset(tf.compat.v2.data.Dataset):
 
       self._function = function
       self._dataset = dataset
-      super(_IOStreamDataset, self).__init__(
+      super(_StreamIODataset, self).__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -50,7 +50,7 @@ class _IOStreamDataset(tf.compat.v2.data.Dataset):
   def element_spec(self):
     return self._dataset.element_spec
 
-class _IODataset(_IOStreamDataset):
+class _IODataset(_StreamIODataset):
   """_IODataset"""
 
   def __init__(self, function, internal=False, **kwargs):
