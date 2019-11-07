@@ -80,7 +80,7 @@ class AudioGraphIOTensor(object):
         self._resource, 0, -1, dtype=self._dtype)
 
   #=============================================================================
-  # Indexing
+  # Indexing and slicing
   #=============================================================================
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
@@ -92,6 +92,10 @@ class AudioGraphIOTensor(object):
     if tf.shape(item)[0] == 0:
       raise IndexError("index %s is out of range" % key)
     return item[0]
+
+  def __len__(self):
+    """Returns the total number of items of this IOTensor."""
+    return self._shape[0]
 
   #=============================================================================
   # Accessors
