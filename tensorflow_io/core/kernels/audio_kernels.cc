@@ -67,18 +67,15 @@ Status ValidateWAVHeader(struct WAVHeader *header) {
   return Status::OK();
 }
 
-class WAVReadable : public IOReadableInterface {
- public:
-  WAVReadable(Env* env)
-  : env_(env) {}
 
-  ~WAVReadable() {}
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
-    if (input.size() > 1) {
-      return errors::InvalidArgument("more than 1 filename is not supported");
-    }
-    const string& filename = input[0];
-    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+class WAVReadableResource : public ResourceBase {
+ public:
+  WAVReadableResource(Env* env) : env_(env) {}
+  ~WAVReadableResource() {}
+
+  Status Init(const string& input) {
+    const string& filename = input;
+    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     StringPiece result;
@@ -148,37 +145,22 @@ class WAVReadable : public IOReadableInterface {
 
     return Status::OK();
   }
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(TensorShape* shape, DataType* dtype, int32 *rate) {
     *shape = shape_;
     *dtype = dtype_;
+    *rate = header_.nSamplesPerSec;
     return Status::OK();
   }
 
-  Status Extra(const string& component, std::vector<Tensor>* extra) override {
-    // Expose a sample `rate`
-    Tensor rate(DT_INT32, TensorShape({}));
-    rate.scalar<int32>()() = header_.nSamplesPerSec;
-    extra->push_back(rate);
+  Status Peek(const int64 start, const int64 stop, TensorShape* shape) {
+    int64 sample_stop = (stop < 0) ? (shape_.dim_size(0)) : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
+    int64 sample_start = (start >= sample_stop) ? sample_stop : start;
+    *shape = TensorShape({sample_stop - sample_start, header_.nChannels});
     return Status::OK();
   }
-
-  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
-    (*record_read) = 0;
-    if (start >= shape_.dim_size(0)) {
-      return Status::OK();
-    }
-    int64 element_start = start < shape_.dim_size(0) ? start : shape_.dim_size(0);
-    int64 element_stop = stop < shape_.dim_size(0) ? stop : shape_.dim_size(0);
-
-    if (element_start > element_stop) {
-      return errors::InvalidArgument("dataset selection is out of boundary");
-    }
-    if (element_start == element_stop) {
-      return Status::OK();
-    }
-
-    const int64 sample_start = element_start;
-    const int64 sample_stop = element_stop;
+  Status Read(const int64 start, Tensor* value) {
+    const int64 sample_start = start;
+    const int64 sample_stop = start + value->shape().dim_size(0);
 
     int64 sample_offset = 0;
     if (header_.riff_size + 8 != file_size_) {
@@ -242,14 +224,10 @@ class WAVReadable : public IOReadableInterface {
       position += head.size;
     } while (position < filesize);
 
-    (*record_read) = element_stop - element_start;
-
     return Status::OK();
   }
-
   string DebugString() const override {
-    mutex_lock l(mu_);
-    return strings::StrCat("WAVReadable");
+    return "WAVReadableResource";
   }
  private:
   mutable mutex mu_;
@@ -262,12 +240,102 @@ class WAVReadable : public IOReadableInterface {
   int64 header_length_;
 };
 
+class WAVReadableInitOp : public ResourceOpKernel<WAVReadableResource> {
+ public:
+  explicit WAVReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<WAVReadableResource>(context) {
+    env_ = context->env();
+  }
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<WAVReadableResource>::Compute(context);
+
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+  }
+  Status CreateResource(WAVReadableResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new WAVReadableResource(env_);
+    return Status::OK();
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+
+class WAVReadableSpecOp : public OpKernel {
+ public:
+  explicit WAVReadableSpecOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    WAVReadableResource* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    TensorShape shape;
+    DataType dtype;
+    int32 rate;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    Tensor* shape_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({2}), &shape_tensor));
+    shape_tensor->flat<int64>()(0) = shape.dim_size(0);
+    shape_tensor->flat<int64>()(1) = shape.dim_size(1);
+
+    Tensor* dtype_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({}), &dtype_tensor));
+    dtype_tensor->scalar<int64>()() = dtype;
+
+    Tensor* rate_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(2, TensorShape({}), &rate_tensor));
+    rate_tensor->scalar<int32>()() = rate;
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+class WAVReadableReadOp : public OpKernel {
+ public:
+  explicit WAVReadableReadOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    WAVReadableResource* resource;
+    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    int64 start = start_tensor->scalar<int64>()();
+
+    const Tensor* stop_tensor;
+    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    int64 stop = stop_tensor->scalar<int64>()();
+    TensorShape value_shape;
+    OP_REQUIRES_OK(context, resource->Peek(start, stop, &value_shape));
+
+    Tensor* value_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(0, value_shape, &value_tensor));
+    if (value_shape.dim_size(0) > 0) {
+      OP_REQUIRES_OK(context, resource->Read(start, value_tensor));
+    }
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
 REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<WAVReadable>);
+                        WAVReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<WAVReadable>);
+                        WAVReadableSpecOp);
 REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableRead").Device(DEVICE_CPU),
-                        IOReadableReadOp<WAVReadable>);
+                        WAVReadableReadOp);
 
 }  // namespace data
 }  // namespace tensorflow

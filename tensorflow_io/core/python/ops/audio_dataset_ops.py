@@ -17,36 +17,52 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 
-class _AudioIODatasetFunction(object):
-  def __init__(self, resource, shape, dtype):
-    self._resource = resource
-    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-    self._dtype = dtype
-  def __call__(self, start, stop):
-    return core_ops.io_wav_readable_read(
-        self._resource, start=start, stop=stop,
-        shape=self._shape, dtype=self._dtype)
+class AudioGraphIODataset(tf.data.Dataset):
+  """AudioGraphIODataset"""
 
-class AudioIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
+  def __init__(self,
+               resource,
+               shape, dtype,
+               internal=True):
+    """AudioGraphIODataset."""
+    with tf.name_scope("AudioGraphIODataset"):
+      assert internal
+
+      capacity = 1024 #kwargs.get("capacity", 4096)
+
+      self._resource = resource
+      dataset = tf.data.Dataset.range(0, shape[0], capacity)
+      dataset = dataset.map(lambda index: core_ops.io_wav_readable_read(
+          resource, index, index+capacity, dtype=dtype))
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda v: tf.greater(tf.shape(v)[0], 0)))
+      dataset = dataset.unbatch()
+      self._dataset = dataset
+      super(AudioGraphIODataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class AudioIODataset(AudioGraphIODataset):
   """AudioIODataset"""
 
   def __init__(self,
                filename,
                internal=True):
     """AudioIODataset."""
-    with tf.name_scope("AudioIODataset") as scope:
-      resource = core_ops.io_wav_readable_init(
-          filename,
-          container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+    with tf.name_scope("FromAudio"):
+      resource = core_ops.io_wav_readable_init(filename)
       shape, dtype, _ = core_ops.io_wav_readable_spec(resource)
-      shape = tf.TensorShape(shape.numpy())
+      shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
       super(AudioIODataset, self).__init__(
-          _AudioIODatasetFunction(resource, shape, dtype), internal=internal)
+          resource, shape, dtype, internal=internal)

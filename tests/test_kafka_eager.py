@@ -23,8 +23,6 @@ import pytest
 import numpy as np
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
@@ -110,7 +108,7 @@ def test_avro_kafka_dataset():
   np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
 
 def test_kafka_stream_dataset():
-  dataset = tfio.IOStreamDataset.from_kafka("test").batch(2)
+  dataset = tfio.IODataset.stream().from_kafka("test").batch(2)
   assert np.all([
       e.numpy().tolist() for e in dataset] == np.asarray([
           ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))

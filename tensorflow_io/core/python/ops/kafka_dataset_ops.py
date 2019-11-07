@@ -55,8 +55,8 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
       super(KafkaIODataset, self).__init__(
           _KafkaIODatasetFunction(resource), internal=internal)
 
-class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=protected-access
-  """KafkaIOStreamDataset"""
+class KafkaStreamIODataset(io_dataset_ops._StreamIODataset): # pylint: disable=protected-access
+  """KafkaStreamIODataset"""
 
   def __init__(self,
                topic,
@@ -65,8 +65,8 @@ class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=p
                servers,
                configuration,
                internal=True):
-    """KafkaIOStreamDataset."""
-    with tf.name_scope("KafkaIOStreamDataset") as scope:
+    """KafkaStreamIODataset."""
+    with tf.name_scope("KafkaStreamIODataset") as scope:
       subscription = "%s:%d:%d" % (topic, partition, offset)
       metadata = [e for e in configuration or []]
       if servers is not None:
@@ -76,5 +76,5 @@ class KafkaIOStreamDataset(io_dataset_ops._IOStreamDataset): # pylint: disable=p
           container=scope,
           shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
 
-      super(KafkaIOStreamDataset, self).__init__(
+      super(KafkaStreamIODataset, self).__init__(
           _KafkaIODatasetFunction(resource), internal=internal)

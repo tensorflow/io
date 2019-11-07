@@ -17,33 +17,95 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class _AudioIOTensorFunction(object):
-  """_AudioIOTensorFunction"""
-  def __init__(self, function, resource, shape, dtype):
-    self._function = function
-    self._resource = resource
-    self._length = shape[0]
-    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-    self._dtype = dtype
-  def __call__(self, start, stop):
-    start, stop, _ = slice(start, stop).indices(self._length)
-    if start >= self._length:
-      raise IndexError("index %s is out of range" % slice(start, stop))
-    return self._function(
-        self._resource,
-        start=start, stop=stop,
-        shape=self._shape, dtype=self._dtype)
-  @property
-  def length(self):
-    return self._length
+class AudioGraphIOTensor(object):
+  """AudioGraphIOTensor"""
 
-class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
+  #=============================================================================
+  # Constructor (private)
+  #=============================================================================
+  def __init__(self,
+               resource,
+               shape, dtype, rate,
+               internal=False):
+    with tf.name_scope("AudioGraphIOTensor"):
+      assert internal
+      self._resource = resource
+      self._shape = shape
+      self._dtype = dtype
+      self._rate = rate
+      super(AudioGraphIOTensor, self).__init__()
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  @property
+  def shape(self):
+    """Returns the `TensorShape` that represents the shape of the tensor."""
+    return self._shape
+
+  @property
+  def dtype(self):
+    """Returns the `dtype` of elements in the tensor."""
+    return self._dtype
+
+  #=============================================================================
+  # String Encoding
+  #=============================================================================
+  def __repr__(self):
+    meta = "".join([", %s=%s" % (
+        k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
+            ) if isinstance(v, _IOTensorMeta)])
+    return "<%s: shape=%s, dtype=%s%s>" % (
+        self.__class__.__name__, self.shape, self.dtype, meta)
+
+  #=============================================================================
+  # Tensor Type Conversions
+  #=============================================================================
+
+  def to_tensor(self):
+    """Converts this `IOTensor` into a `tf.Tensor`.
+
+    Args:
+      name: A name prefix for the returned tensors (optional).
+
+    Returns:
+      A `Tensor` with value obtained from this `IOTensor`.
+    """
+    return core_ops.io_wav_readable_read(
+        self._resource, 0, -1, dtype=self._dtype)
+
+  #=============================================================================
+  # Indexing and slicing
+  #=============================================================================
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    if isinstance(key, slice):
+      return core_ops.io_wav_readable_read(
+          self._resource, key.start, key.stop, dtype=self._dtype)
+    item = core_ops.io_wav_readable_read(
+        self._resource, key, key + 1, dtype=self._dtype)
+    if tf.shape(item)[0] == 0:
+      raise IndexError("index %s is out of range" % key)
+    return item[0]
+
+  def __len__(self):
+    """Returns the total number of items of this IOTensor."""
+    return self._shape[0]
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+  @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
+  def rate(self):
+    """The sample `rate` of the audio stream"""
+    return self._rate
+
+class AudioIOTensor(AudioGraphIOTensor):
   """AudioIOTensor
 
   An `AudioIOTensor` is an `IOTensor` backed by audio files such as WAV
@@ -59,26 +121,10 @@ class AudioIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   def __init__(self,
                filename,
                internal=False):
-    with tf.name_scope("FromAudio") as scope:
-      resource = core_ops.io_wav_readable_init(
-          filename,
-          container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+    with tf.name_scope("FromAudio"):
+      resource = core_ops.io_wav_readable_init(filename)
       shape, dtype, rate = core_ops.io_wav_readable_spec(resource)
-      shape = tf.TensorShape(shape.numpy())
+      shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
-      spec = tf.TensorSpec(shape, dtype)
-      function = _AudioIOTensorFunction(
-          core_ops.io_wav_readable_read, resource, shape, dtype)
-      self._rate = rate.numpy()
       super(AudioIOTensor, self).__init__(
-          spec, function, internal=internal)
-
-  #=============================================================================
-  # Accessors
-  #=============================================================================
-
-  @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
-  def rate(self):
-    """The sample `rate` of the audio stream"""
-    return self._rate
+          resource, shape, dtype, rate, internal=internal)
