@@ -280,6 +280,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "parquet_ops",
+    srcs = [
+        "kernels/parquet_kernels.cc",
+        "ops/parquet_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/core:dataset_ops",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -297,6 +311,7 @@ cc_binary(
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:mnist_ops",
+        "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
@@ -307,7 +322,6 @@ cc_binary(
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/oss:oss_ops",
-        "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",

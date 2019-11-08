@@ -19,32 +19,6 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>ListParquetColumns")
-    .Input("filename: string")
-    .Input("memory: string")
-    .Output("columns: string")
-    .Output("dtypes: string")
-    .Output("shapes: int64")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
-
-REGISTER_OP("IO>ReadParquet")
-    .Input("filename: string")
-    .Input("column: string")
-    .Input("memory: string")
-    .Input("start: int64")
-    .Input("stop: int64")
-    .Attr("dtype: type")
-    .Output("output: dtype")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
 REGISTER_OP("IO>ParquetReadableInit")
   .Input("input: string")
   .Output("resource: resource")
