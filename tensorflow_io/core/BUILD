@@ -160,6 +160,8 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
+        "kernels/decode_dicom_data.cc",
+        "kernels/decode_dicom_image.cc",
         "kernels/font_opensans_regular.h",
         "kernels/image_bmp_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
@@ -167,12 +169,15 @@ cc_library(
         "kernels/image_openexr_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
+        "ops/decode_dicom_data_op.cc",
+        "ops/decode_dicom_image_op.cc",
         "ops/image_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        "@dcmtk",
         "@easyexif",
         "@freetype",
         "@giflib",
@@ -262,7 +267,6 @@ cc_binary(
         "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
-        "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/grpc:grpc_ops",

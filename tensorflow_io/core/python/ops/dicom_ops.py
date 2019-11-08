@@ -26,8 +26,8 @@ decode_dicom_data = dicom_ops.io_decode_dicom_data
 decode_dicom_image = dicom_ops.io_decode_dicom_image
 
 
-class tags(object): # pylint: disable=invalid-name
-  """tags"""
+class dicom_tags(object): # pylint: disable=invalid-name
+  """dicom_tags"""
 
   def __init__(self):
     pass
@@ -4074,4 +4074,3 @@ class tags(object): # pylint: disable=invalid-name
   Item = int('FFFEE000', 16)
   ItemDelimitationItem = int('FFFEE00D', 16)
   SequenceDelimitationItem = int('FFFEE0DD', 16)
-  
