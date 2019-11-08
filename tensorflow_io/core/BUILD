@@ -231,6 +231,20 @@ cc_library(
 )
 
 cc_library(
+    name = "avro_ops",
+    srcs = [
+        "kernels/avro_kernels.cc",
+        "ops/avro_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@avro",
+    ],
+)
+
+cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_kernels.cc",
@@ -272,11 +286,11 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:audio_ops",
+        "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:genome_ops",
