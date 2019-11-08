@@ -12,22 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Genome
+"""tensorflow_io.experimental.genome"""
 
-@@fastq_op
-"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from tensorflow_io.genome.python.ops.genome_ops import read_fastq, sequences_to_onehot
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    "read_fastq",
-    "sequences_to_onehot"
-]
-
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
+from tensorflow_io.core.python.experimental.genome_ops import read_fastq # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.genome_ops import sequences_to_onehot # pylint: disable=unused-import

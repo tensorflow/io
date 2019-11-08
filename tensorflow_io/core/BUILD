@@ -29,9 +29,6 @@ cc_library(
         "kernels/sequence_ops.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@libarchive",
@@ -48,9 +45,6 @@ cc_library(
         "kernels/io_stream.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@libarchive",
@@ -65,9 +59,6 @@ cc_library(
         "kernels/output_ops.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",
@@ -83,9 +74,6 @@ cc_library(
         "ops/core_ops.cc",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         ":dataset_ops",
@@ -250,6 +238,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "genome_ops",
+    srcs = [
+        "kernels/genome_fastq_kernels.cc",
+        "ops/genome_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@nucleus//:fastq_reader",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -263,12 +265,12 @@ cc_binary(
         "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
+        "//tensorflow_io/core:genome_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
-        "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",

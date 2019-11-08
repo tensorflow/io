@@ -16,7 +16,7 @@ limitations under the License.
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow/core/public/version.h"
-#include "kernels/sequence_ops.h"
+#include "tensorflow_io/core/kernels/sequence_ops.h"
 
 #include "rdkafkacpp.h"
 #include <deque>
