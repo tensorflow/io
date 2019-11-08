@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import platform
 
 import pytest
@@ -31,6 +32,9 @@ from tensorflow.compat.v1 import data    # pylint: disable=wrong-import-position
 from tensorflow.compat.v1 import gfile   # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io # pylint: disable=wrong-import-position
+
+if sys.platform == "darwin":
+  pytest.skip("ignite+java 10 is failing on macOS", allow_module_level=True)
 
 class __TestFS():                        # pylint: disable=invalid-name,old-style-class,no-init
   """The Apache Ignite servers have to setup before the test and tear down
