@@ -56,7 +56,7 @@ class GRPCDataset(data.Dataset):
     return dataset
 
   def __del__(self):
-    if self._grpc_server is not None:
+    if hasattr(self, '_grpc_server') and self._grpc_server is not None:
       self._grpc_server.stop()
 
   def _inputs(self):
