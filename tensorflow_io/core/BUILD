@@ -281,6 +281,20 @@ cc_library(
 )
 
 cc_library(
+    name = "hdf5_ops",
+    srcs = [
+        "kernels/hdf5_kernels.cc",
+        "ops/hdf5_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@hdf5",
+    ],
+)
+
+cc_library(
     name = "parquet_ops",
     srcs = [
         "kernels/parquet_kernels.cc",
@@ -308,6 +322,7 @@ cc_binary(
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:genome_ops",
+        "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:mnist_ops",
@@ -316,7 +331,6 @@ cc_binary(
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/grpc:grpc_ops",
-        "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",

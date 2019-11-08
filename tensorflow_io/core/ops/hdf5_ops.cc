@@ -59,30 +59,4 @@ REGISTER_OP("IO>HDF5ReadableRead")
     return Status::OK();
    });
 
-REGISTER_OP("IO>ListHDF5Datasets")
-    .Input("filename: string")
-    .Input("memory: string")
-    .Output("datasets: string")
-    .Output("dtypes: string")
-    .Output("shapes: int64")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-       return Status::OK();
-     });
-
-REGISTER_OP("IO>ReadHDF5")
-    .Input("filename: string")
-    .Input("dataset: string")
-    .Input("memory: string")
-    .Input("start: int64")
-    .Input("stop: int64")
-    .Attr("dtype: type")
-    .Output("output: dtype")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      c->set_output(0, c->UnknownShape());
-      return Status::OK();
-    });
-
 }  // namespace tensorflow
