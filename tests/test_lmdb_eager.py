@@ -23,7 +23,6 @@ import tempfile
 import numpy as np
 
 import tensorflow_io as tfio
-from tensorflow_io import lmdb as lmdb_io
 
 
 def test_lmdb_read_from_file():
@@ -43,35 +42,34 @@ def test_lmdb_read_from_file():
   for key in lmdb:
     assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
 
-  for func in [tfio.IODataset.from_lmdb, lmdb_io.LMDBDataset]:
-    lmdb_dataset = func(filename)
-    ii = 0
-    for vv in lmdb_dataset:
-      i = ii % 10
-      k, v = vv
-      assert k.numpy() == str(i).encode()
-      assert v.numpy() == str(chr(ord("a") + i)).encode()
-      ii += 1
-    assert ii == 10
+  lmdb_dataset = tfio.IODataset.from_lmdb(filename)
+  ii = 0
+  for vv in lmdb_dataset:
+    i = ii % 10
+    k, v = vv
+    assert k.numpy() == str(i).encode()
+    assert v.numpy() == str(chr(ord("a") + i)).encode()
+    ii += 1
+  assert ii == 10
 
-    lmdb_dataset = func(filename).batch(3)
-    i = 0
-    for vv in lmdb_dataset:
-      k, v = vv
-      if i < 9:
-        assert np.alltrue(k.numpy() == [
-            str(i).encode(),
-            str(i + 1).encode(),
-            str(i + 2).encode()])
-        assert np.alltrue(v.numpy() == [
-            str(chr(ord("a") + i)).encode(),
-            str(chr(ord("a") + i + 1)).encode(),
-            str(chr(ord("a") + i + 2)).encode()])
-      else:
-        assert k.numpy() == str(9).encode()
-        assert v.numpy() == str('j').encode()
-      i += 3
-    assert i == 12
+  lmdb_dataset = tfio.IODataset.from_lmdb(filename).batch(3)
+  i = 0
+  for vv in lmdb_dataset:
+    k, v = vv
+    if i < 9:
+      assert np.alltrue(k.numpy() == [
+          str(i).encode(),
+          str(i + 1).encode(),
+          str(i + 2).encode()])
+      assert np.alltrue(v.numpy() == [
+          str(chr(ord("a") + i)).encode(),
+          str(chr(ord("a") + i + 1)).encode(),
+          str(chr(ord("a") + i + 2)).encode()])
+    else:
+      assert k.numpy() == str(9).encode()
+      assert v.numpy() == str('j').encode()
+    i += 3
+  assert i == 12
 
   shutil.rmtree(tmp_path)
 

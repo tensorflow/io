@@ -104,6 +104,20 @@ cc_library(
 )
 
 cc_library(
+    name = "lmdb_ops",
+    srcs = [
+        "kernels/lmdb_kernels.cc",
+        "ops/lmdb_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@lmdb",
+    ],
+)
+
+cc_library(
     name = "mnist_ops",
     srcs = [
         "kernels/mnist_input.cc",
@@ -267,6 +281,7 @@ cc_binary(
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:genome_ops",
         "//tensorflow_io/core:image_ops",
+        "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
@@ -277,7 +292,6 @@ cc_binary(
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
-        "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
