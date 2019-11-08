@@ -66,6 +66,7 @@ jobs:
   - stage: build
     name: "Nightly Release Build on Linux"
     script:
+    - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     after_success: bash -x -e .travis/after-success.sh
 

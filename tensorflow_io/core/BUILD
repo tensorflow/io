@@ -9,6 +9,21 @@ load(
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 cc_library(
+    name = "cpuinfo",
+    srcs = [
+        "kernels/cpu_check.cc",
+        "kernels/cpu_info.cc",
+        "kernels/cpu_info.h",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+)
+
+cc_library(
     name = "sequence_ops",
     srcs = [
         "kernels/sequence_ops.h",
@@ -242,6 +257,7 @@ cc_binary(
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:core_ops",
+        "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:pcap_ops",
