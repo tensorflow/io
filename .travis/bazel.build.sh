@@ -57,6 +57,11 @@ if [[ "${BAZEL_CACHE}" != "" ]]; then
   args+=(--disk_cache=${BAZEL_CACHE})
 fi
 
+# Build with SSE4.2
+if [[ "${BAZEL_CPU_OPTIMIZATION}" == "yes" ]]; then
+  args+=(--copt=-msse4.2 --copt=-mavx)
+fi
+
 bazel build \
   "${args[@]}" \
   --noshow_progress \

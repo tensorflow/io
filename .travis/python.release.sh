@@ -37,7 +37,7 @@ if [[ $(uname) == "Darwin" ]]; then
   done
   ls wheelhouse/*
 else
-  docker run -i --rm -v $PWD:/v -w /v --net=host -e BAZEL_CACHE=${BAZEL_CACHE} gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.travis/bazel.build.sh $@
+  docker run -i --rm -v $PWD:/v -w /v --net=host -e BAZEL_CACHE=${BAZEL_CACHE} -e BAZEL_CPU_OPTIMIZATION=${BAZEL_CPU_OPTIMIZATION} gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.travis/bazel.build.sh $@
   sudo chown -R $(id -nu):$(id -ng) .
 
   for entry in 2.7 3.5 3.6 3.7; do
