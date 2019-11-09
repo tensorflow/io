@@ -111,6 +111,7 @@ def test_genome_phred_sequences_to_probability():
     example_quality = tf.constant(example_quality_list)
     converted_phred = genome_io.phred_sequences_to_probability(example_quality)
     out = sess.run(converted_phred)
+
   # Compare flat values
   assert np.allclose(out.flat_values.flatten(), expected_probabilities)
   # Ensure nested array lengths are correct

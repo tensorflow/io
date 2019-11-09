@@ -129,4 +129,5 @@ def phred_sequences_to_probability(phred_qualities):
     tf.RaggedTensor: The quality scores for each base in each sequence provided.
   """
   return tf.ragged.map_flat_values(_phred_sequence_to_probability,
-                                   tf.strings.bytes_split(phred_qualities)) # TODO (suyashkumar): handle non-statically known rank.
+                                   tf.strings.bytes_split(phred_qualities))
+
