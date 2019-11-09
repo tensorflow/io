@@ -66,6 +66,18 @@ REGISTER_OP("IO>DecodeWebP")
       return Status::OK();
     });
 
+REGISTER_OP("IO>DecodePnm")
+  .Input("input: string")
+  .Output("image: dtype")
+  .Attr("dtype: {uint8, uint16} = DT_UINT8")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    shape_inference::ShapeHandle unused;
+    TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+    c->set_output(0, c->MakeShape({
+        c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+  });
+
 REGISTER_OP("IO>DrawBoundingBoxesV3")
     .Input("images: T")
     .Input("boxes: float")

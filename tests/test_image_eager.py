@@ -144,6 +144,29 @@ def test_draw_bounding_box():
   # self.assertAllEqual(bb_image_v, ex_image_v)
   _ = tf.image.convert_image_dtype(bb_image_p, tf.uint8)
 
+def test_decode_ppm():
+  """Test case for decode_ppm"""
+  ppm_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "r-1316653631.481244-81973200.ppm")
+  png_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "r-1316653631.481244-81973200.png")
+  ppm = tfio.experimental.image.decode_pnm(tf.io.read_file(ppm_file))
+  png = tf.image.decode_png(tf.io.read_file(png_file))
+  assert np.all(ppm.numpy() == png.numpy())
+
+  pgm_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "d-1316653631.269651-68451027.pgm")
+  png_file = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "d-1316653631.269651-68451027.png")
+  pgm = tfio.experimental.image.decode_pnm(
+      tf.io.read_file(pgm_file), dtype=tf.uint16)
+  png = tf.image.decode_png(tf.io.read_file(png_file), dtype=tf.uint16)
+  assert np.all(pgm.numpy() == png.numpy())
+
 def test_encode_webp():
   """Test case for encode_bmp."""
   width = 51
