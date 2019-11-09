@@ -137,4 +137,3 @@ def phred_sequences_to_probability(phred_qualities):
   """
   return tf.ragged.map_flat_values(_phred_sequence_to_probability,
                                    tf.strings.bytes_split(phred_qualities))
-
