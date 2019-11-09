@@ -102,5 +102,27 @@ def test_genome_sequences_to_onehot():
 
   assert np.all(out.to_list() == expected)
 
+
+def test_genome_phred_sequences_to_probability():
+  example_quality_list = [b'BB<', b'ABFF']
+  expected_probabilities = [0.0005011872854083776, 0.0005011872854083776, 0.0019952619913965464, 0.0006309572490863502, 0.0005011872854083776, 0.00019952621369156986, 0.00019952621369156986]
+
+  with tf.compat.v1.Session() as sess:
+    example_quality = tf.constant(example_quality_list)
+    converted_phred = genome_io.phred_sequences_to_probability(example_quality)
+    out = sess.run(converted_phred)
+  # Compare flat values
+  assert np.allclose(out.flat_values.flatten(), expected_probabilities)
+  # Ensure nested array lengths are correct
+  assert np.all([len(a) == len(b) for a,b in zip(out.to_list(), example_quality_list)])
+
+def test_genome_phred_sequences_to_probability_with_other_genome_ops():
+  with tf.compat.v1.Session() as sess:
+    raw_data = genome_io.read_fastq(filename=fastq_path)
+    data = genome_io.phred_sequences_to_probability(
+      phred_qualities=raw_data.raw_quality)
+    out = sess.run(data)
+
+
 if __name__ == "__main__":
   test.main()
