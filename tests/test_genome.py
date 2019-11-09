@@ -105,7 +105,9 @@ def test_genome_sequences_to_onehot():
 
 def test_genome_phred_sequences_to_probability():
   example_quality_list = [b'BB<', b'ABFF']
-  expected_probabilities = [0.0005011872854083776, 0.0005011872854083776, 0.0019952619913965464, 0.0006309572490863502, 0.0005011872854083776, 0.00019952621369156986, 0.00019952621369156986]
+  expected_probabilities = [0.0005011872854083776, 0.0005011872854083776,
+      0.0019952619913965464, 0.0006309572490863502, 0.0005011872854083776,
+      0.00019952621369156986, 0.00019952621369156986]
 
   with tf.compat.v1.Session() as sess:
     example_quality = tf.constant(example_quality_list)

@@ -89,11 +89,16 @@ def sequences_to_onehot(sequences):
 
 
 @tf.function
-def _phred_byte_to_probability(phred_byte_string):
-  return tf.math.pow(10., -(tf.dtypes.cast(tf.strings.unicode_decode(
-    phred_byte_string,
-    "ASCII"),
-    dtype=tf.float32) - 33) / 10)
+def _decode_byte_str(b_str):
+  return tf.dtypes.cast(tf.strings.unicode_decode(b_str, "ASCII"), dtype=tf.float32)
+
+
+@tf.function
+def _phred_byte_to_probability(phred_byte_str):
+  return tf.math.pow(
+      10.,
+      -(_decode_byte_str(phred_byte_str) - 33) / 10
+  )
 
 
 @tf.function
@@ -101,6 +106,7 @@ def _phred_sequence_to_probability(seq_quality):
   return tf.map_fn(_phred_byte_to_probability,
                    seq_quality,
                    dtype=tf.float32)
+
 
 @tf.function
 def phred_sequences_to_probability(phred_qualities):
