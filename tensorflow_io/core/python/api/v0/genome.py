@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental.genome"""
+"""tensorflow_io.genome"""
 
-from tensorflow_io.core.python.experimental.genome_ops import read_fastq # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.genome_ops import sequences_to_onehot # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.genome_ops import sequences_to_onehot # pylint: disable=unused-import

@@ -34,7 +34,7 @@ def test_genome_fastq_reader():
   g1 = tf.compat.v1.Graph()
 
   with g1.as_default():
-    data = tfio.experimental.genome.read_fastq(filename=fastq_path)
+    data = tfio.genome.read_fastq(filename=fastq_path)
 
   sess = tf.compat.v1.Session(graph=g1)
   data_np = sess.run(data)
@@ -95,8 +95,8 @@ def test_genome_sequences_to_onehot():
       [[0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 1, 0]]]
 
   with tf.compat.v1.Session() as sess:
-    raw_data = tfio.experimental.genome.read_fastq(filename=fastq_path)
-    data = tfio.experimental.genome.sequences_to_onehot(
+    raw_data = tfio.genome.read_fastq(filename=fastq_path)
+    data = tfio.genome.sequences_to_onehot(
         sequences=raw_data.sequences)
     out = sess.run(data)
 

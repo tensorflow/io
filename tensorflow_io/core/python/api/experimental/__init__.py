@@ -18,6 +18,5 @@ from tensorflow_io.core.python.experimental.io_tensor import IOTensor
 from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
 
 from tensorflow_io.core.python.api.experimental import ffmpeg
-from tensorflow_io.core.python.api.experimental import genome
 from tensorflow_io.core.python.api.experimental import image
 from tensorflow_io.core.python.api.experimental import text

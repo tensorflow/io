@@ -18,4 +18,5 @@
 from tensorflow_io.core.python.ops.io_tensor import IOTensor
 from tensorflow_io.core.python.ops.io_dataset import IODataset
 
+from tensorflow_io.core.python.api.v0 import genome
 from tensorflow_io.core.python.api.v0 import image
