@@ -16,3 +16,4 @@
 
 from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
 from tensorflow_io.core.python.ops.genome_ops import sequences_to_onehot # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.genome_ops import phred_sequences_to_probability # pylint: disable=unused-import

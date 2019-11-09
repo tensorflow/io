@@ -111,7 +111,7 @@ def test_genome_phred_sequences_to_probability():
 
   with tf.compat.v1.Session() as sess:
     example_quality = tf.constant(example_quality_list)
-    converted_phred = genome_io.phred_sequences_to_probability(example_quality)
+    converted_phred = tfio.genome.phred_sequences_to_probability(example_quality)
     out = sess.run(converted_phred)
 
   # Compare flat values
@@ -121,8 +121,8 @@ def test_genome_phred_sequences_to_probability():
 
 def test_genome_phred_sequences_to_probability_with_other_genome_ops():
   with tf.compat.v1.Session() as sess:
-    raw_data = genome_io.read_fastq(filename=fastq_path)
-    data = genome_io.phred_sequences_to_probability(
+    raw_data = tfio.genome.read_fastq(filename=fastq_path)
+    data = tfio.genome.phred_sequences_to_probability(
       phred_qualities=raw_data.raw_quality)
     out = sess.run(data)
 

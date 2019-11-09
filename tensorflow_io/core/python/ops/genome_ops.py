@@ -90,7 +90,8 @@ def sequences_to_onehot(sequences):
 
 @tf.function
 def _decode_byte_str(b_str):
-  return tf.dtypes.cast(tf.strings.unicode_decode(b_str, "ASCII"), dtype=tf.float32)
+  return tf.dtypes.cast(
+      tf.strings.unicode_decode(b_str, "ASCII"), dtype=tf.float32)
 
 
 @tf.function
