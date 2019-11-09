@@ -12,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""tensorflow_io.genome"""
 
-# tensorflow_io.core.python.ops is implicitly imported (along with file system)
-from tensorflow_io.core.python.ops.io_tensor import IOTensor
-from tensorflow_io.core.python.ops.io_dataset import IODataset
-
-from tensorflow_io.core.python.api.v0 import genome
-from tensorflow_io.core.python.api.v0 import image
+from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.genome_ops import sequences_to_onehot # pylint: disable=unused-import

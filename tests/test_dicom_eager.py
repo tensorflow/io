@@ -22,9 +22,7 @@ import os
 import pytest
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
 # The DICOM sample files must be downloaded befor running the tests
 #
@@ -42,9 +40,9 @@ import tensorflow_io.dicom as dicom_io  # pylint: disable=wrong-import-position
 def test_dicom_input():
   """test_dicom_input
   """
-  _ = dicom_io.decode_dicom_data
-  _ = dicom_io.decode_dicom_image
-  _ = dicom_io.tags
+  _ = tfio.image.decode_dicom_data
+  _ = tfio.image.decode_dicom_image
+  _ = tfio.image.dicom_tags
 
 
 @pytest.mark.parametrize(
@@ -85,7 +83,7 @@ def test_decode_dicom_image(fname, exp_shape):
 
   file_contents = tf.io.read_file(filename=dcm_path)
 
-  dcm_image = dicom_io.decode_dicom_image(
+  dcm_image = tfio.image.decode_dicom_image(
       contents=file_contents,
       dtype=tf.float32,
       on_error='strict',
@@ -100,47 +98,47 @@ def test_decode_dicom_image(fname, exp_shape):
     [
         (
             'OT-MONO2-8-colon.dcm',
-            dicom_io.tags.StudyInstanceUID,
+            tfio.image.dicom_tags.StudyInstanceUID,
             b'1.3.46.670589.17.1.7.1.1.16'
         ),
         (
             'OT-MONO2-8-colon.dcm',
-            dicom_io.tags.Rows,
+            tfio.image.dicom_tags.Rows,
             b'512'
         ),
         (
             'OT-MONO2-8-colon.dcm',
-            dicom_io.tags.Columns,
+            tfio.image.dicom_tags.Columns,
             b'512'
         ),
         (
             'OT-MONO2-8-colon.dcm',
-            dicom_io.tags.SamplesperPixel,
+            tfio.image.dicom_tags.SamplesperPixel,
             b'1'
         ),
         (
             'US-PAL-8-10x-echo.dcm',
-            dicom_io.tags.StudyInstanceUID,
+            tfio.image.dicom_tags.StudyInstanceUID,
             b'999.999.3859744'
         ),
         (
             'US-PAL-8-10x-echo.dcm',
-            dicom_io.tags.SeriesInstanceUID,
+            tfio.image.dicom_tags.SeriesInstanceUID,
             b'999.999.94827453'
         ),
         (
             'US-PAL-8-10x-echo.dcm',
-            dicom_io.tags.NumberofFrames,
+            tfio.image.dicom_tags.NumberofFrames,
             b'10'
         ),
         (
             'US-PAL-8-10x-echo.dcm',
-            dicom_io.tags.Rows,
+            tfio.image.dicom_tags.Rows,
             b'430'
         ),
         (
             'US-PAL-8-10x-echo.dcm',
-            dicom_io.tags.Columns,
+            tfio.image.dicom_tags.Columns,
             b'600'
         ),
     ]
@@ -157,7 +155,7 @@ def test_decode_dicom_data(fname, tag, exp_value):
 
   file_contents = tf.io.read_file(filename=dcm_path)
 
-  dcm_data = dicom_io.decode_dicom_data(
+  dcm_data = tfio.image.decode_dicom_data(
       contents=file_contents,
       tags=tag
   )

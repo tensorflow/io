@@ -29,9 +29,6 @@ cc_library(
         "kernels/sequence_ops.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@libarchive",
@@ -48,9 +45,6 @@ cc_library(
         "kernels/io_stream.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@libarchive",
@@ -65,9 +59,6 @@ cc_library(
         "kernels/output_ops.h",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         "@local_config_tf//:libtensorflow_framework",
@@ -83,9 +74,6 @@ cc_library(
         "ops/core_ops.cc",
     ],
     copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
     linkstatic = True,
     deps = [
         ":dataset_ops",
@@ -112,6 +100,20 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:golang_ops.cc",
+    ],
+)
+
+cc_library(
+    name = "lmdb_ops",
+    srcs = [
+        "kernels/lmdb_kernels.cc",
+        "ops/lmdb_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@lmdb",
     ],
 )
 
@@ -160,6 +162,8 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
+        "kernels/decode_dicom_data.cc",
+        "kernels/decode_dicom_image.cc",
         "kernels/font_opensans_regular.h",
         "kernels/image_bmp_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
@@ -168,12 +172,15 @@ cc_library(
         "kernels/image_pnm_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
+        "ops/decode_dicom_data_op.cc",
+        "ops/decode_dicom_image_op.cc",
         "ops/image_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        "@dcmtk",
         "@easyexif",
         "@freetype",
         "@giflib",
@@ -225,6 +232,20 @@ cc_library(
 )
 
 cc_library(
+    name = "avro_ops",
+    srcs = [
+        "kernels/avro_kernels.cc",
+        "ops/avro_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@avro",
+    ],
+)
+
+cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_kernels.cc",
@@ -246,35 +267,76 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "genome_ops",
+    srcs = [
+        "kernels/genome_fastq_kernels.cc",
+        "ops/genome_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@nucleus//:fastq_reader",
+    ],
+)
+
+cc_library(
+    name = "hdf5_ops",
+    srcs = [
+        "kernels/hdf5_kernels.cc",
+        "ops/hdf5_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@hdf5",
+    ],
+)
+
+cc_library(
+    name = "parquet_ops",
+    srcs = [
+        "kernels/parquet_kernels.cc",
+        "ops/parquet_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/core:dataset_ops",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/avro:avro_ops",
         "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:audio_ops",
+        "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
+        "//tensorflow_io/core:genome_ops",
+        "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
+        "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:mnist_ops",
+        "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:text_ops",
-        "//tensorflow_io/dicom:dicom_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
-        "//tensorflow_io/genome:genome_ops",
         "//tensorflow_io/grpc:grpc_ops",
-        "//tensorflow_io/hdf5:hdf5_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
-        "//tensorflow_io/lmdb:lmdb_ops",
         "//tensorflow_io/oss:oss_ops",
-        "//tensorflow_io/parquet:parquet_ops",
         "//tensorflow_io/pubsub:pubsub_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",

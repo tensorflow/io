@@ -382,7 +382,7 @@ class StreamInput : public DataInput<T> {
     data->tensors_ = {
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
-        Tensor(DT_STRING, TensorShape({columns_.size()}))};
+        Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}))};
     data->tensors_[0].scalar<string>()() = endpoint_;
     data->tensors_[1].scalar<string>()() = schema_;
     for (size_t i = 0; i < columns_.size(); i++) {
@@ -446,7 +446,7 @@ class FileInput : public DataInput<T> {
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
-        Tensor(DT_STRING, TensorShape({columns_.size()}))};
+        Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}))};
     data->tensors_[0].scalar<string>()() = filename_;
     data->tensors_[1].scalar<string>()() = entryname_;
     data->tensors_[2].scalar<string>()() = filtername_;
@@ -547,7 +547,7 @@ class FileStreamInput : public DataInput<T> {
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
         Tensor(DT_STRING, TensorShape({})),
-        Tensor(DT_STRING, TensorShape({columns_.size()}))};
+        Tensor(DT_STRING, TensorShape({static_cast<int64>(columns_.size())}))};
     data->tensors_[0].scalar<string>()() = filename_;
     data->tensors_[1].scalar<string>()() = entryname_;
     data->tensors_[2].scalar<string>()() = filtername_;
