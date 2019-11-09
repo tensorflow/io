@@ -16,3 +16,6 @@
 
 from tensorflow_io.core.python.ops.image_ops import decode_webp # pylint: disable=unused-import
 from tensorflow_io.core.python.ops.image_ops import encode_bmp # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.dicom_ops import decode_dicom_data # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.dicom_ops import decode_dicom_image # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.dicom_ops import dicom_tags # pylint: disable=unused-import

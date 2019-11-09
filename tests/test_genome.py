@@ -23,7 +23,7 @@ import numpy as np
 
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
-import tensorflow_io.genome as genome_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 fastq_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -34,7 +34,7 @@ def test_genome_fastq_reader():
   g1 = tf.compat.v1.Graph()
 
   with g1.as_default():
-    data = genome_io.read_fastq(filename=fastq_path)
+    data = tfio.genome.read_fastq(filename=fastq_path)
 
   sess = tf.compat.v1.Session(graph=g1)
   data_np = sess.run(data)
@@ -95,8 +95,9 @@ def test_genome_sequences_to_onehot():
       [[0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 1, 0]]]
 
   with tf.compat.v1.Session() as sess:
-    raw_data = genome_io.read_fastq(filename=fastq_path)
-    data = genome_io.sequences_to_onehot(sequences=raw_data.sequences)
+    raw_data = tfio.genome.read_fastq(filename=fastq_path)
+    data = tfio.genome.sequences_to_onehot(
+        sequences=raw_data.sequences)
     out = sess.run(data)
 
   assert np.all(out.to_list() == expected)

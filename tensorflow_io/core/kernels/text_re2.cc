@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "kernels/output_ops.h"
+#include "tensorflow/core/framework/op_kernel.h"
 #include "re2/re2.h"
 
 namespace tensorflow {

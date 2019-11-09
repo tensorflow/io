@@ -48,8 +48,6 @@ install:
   if [[ $(uname) == "Darwin" ]]; then
     bash -x -e tests/test_kafka/kafka_test.sh start kafka ;
     bash -x -e tests/test_azure/start_azure.sh ;
-    bash -x -e tests/test_dicom/dicom_samples.sh download ;
-    bash -x -e tests/test_dicom/dicom_samples.sh extract ;
   fi
 
 stages:

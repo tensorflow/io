@@ -25,10 +25,7 @@ import numpy as np
 import h5py
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
-from tensorflow_io import hdf5 as hdf5_io # pylint: disable=wrong-import-position
 
 def test_hdf5_list_dataset():
   """test_hdf5_list_dataset"""
@@ -84,11 +81,6 @@ def test_hdf5_u1():
 
   hdf5 = tfio.IOTensor.from_hdf5(filename)
   np.all(hdf5('/uint').to_tensor().numpy() == data)
-
-  dataset = hdf5_io.list_hdf5_datasets(filename)
-  keys = list(dataset.keys())
-  keys.sort()
-  np.all(keys == ['float', 'int', 'uint'])
 
   shutil.rmtree(tmp_path)
 
