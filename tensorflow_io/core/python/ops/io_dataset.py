@@ -447,6 +447,11 @@ class GraphIODataset(tf.data.Dataset):
             filename, int(stream[2:]))
         dtype = cls._dtype
         return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
-          resource, dtype, internal=True)
-      else:
-        assert stream.startswith("a:")
+            resource, dtype, internal=True)
+      elif stream.startswith("v:"):
+        resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
+            filename, int(stream[2:]))
+        dtype = cls._dtype
+        return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
+            resource, dtype, internal=True)
+      return None

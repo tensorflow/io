@@ -29,18 +29,6 @@ if sys.platform == "darwin":
 
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-def test_video_dataset():
-  """test_video_dataset"""
-  num_repeats = 2
-
-  video_dataset = tfio.IODataset.from_ffmpeg(
-      video_path, "v:0").repeat(num_repeats)
-
-  i = 0
-  for v in video_dataset:
-    assert v.shape == (320, 560, 3)
-    i += 1
-  assert i == 166 * num_repeats
 
 audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
