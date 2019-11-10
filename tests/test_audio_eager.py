@@ -80,7 +80,7 @@ def test_audio_io_tensor_24(audio_data_24, io_tensor_func):
   assert audio_tensor.shape == audio_value.shape
   assert np.all(audio_tensor.to_tensor() == audio_value)
   for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
-    indices = range(0, 22050, step)
+    indices = list(range(0, 22050, step))
     # TODO: -1 vs. 22050 might need fix
     for (start, stop) in zip(indices, indices[1:] + [22050]):
       audio_tensor_value = audio_tensor[start:stop]
@@ -155,7 +155,7 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
   assert audio_tensor.shape == audio_value.shape
   assert np.all(audio_tensor.to_tensor() == audio_value)
   for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
-    indices = range(0, 5760, step)
+    indices = list(range(0, 5760, step))
     # TODO: -1 vs. 5760 might need fix
     for (start, stop) in zip(indices, indices[1:] + [5760]):
       audio_tensor_value = audio_tensor[start:stop]
