@@ -84,7 +84,7 @@ def sequences_to_onehot(sequences):
         sequence_splits.size(), global_nucleotide_idx)
   return tf.RaggedTensor.from_row_splits(
       values=all_onehot_nucleotides.stack(),
-      row_splits=sequence_splits.stack()
+      row_splits=tf.cast(sequence_splits.stack(), tf.int64)
   )
 
 
