@@ -25,6 +25,7 @@ REGISTER_OP("IO>ReadFastq")
     .Output("raw_quality: string")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
 
