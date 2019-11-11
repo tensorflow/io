@@ -58,7 +58,7 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         self, self._grpc_server)
     port = self._grpc_server.add_insecure_port("localhost:0")
     self._endpoint = "localhost:" + str(port)
-    print ("started a fake server on :" + self._endpoint)
+    print("started a fake server on :" + self._endpoint)
 
   def start(self):
     self._grpc_server.start()
@@ -74,7 +74,7 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         self._table_id + "/" + str(stream_index)
 
   def CreateReadSession(self, request, context):
-    print ("called CreateReadSession on a fake server")
+    print("called CreateReadSession on a fake server")
     self._project_id = request.table_reference.project_id
     self._table_id = request.table_reference.table_id
     self._dataset_id = request.table_reference.dataset_id
@@ -89,10 +89,10 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     return response
 
   def ReadRows(self, request, context):
-    print ("called ReadRows on a fake server")
+    print("called ReadRows on a fake server")
     response = storage_pb2.ReadRowsResponse()
     stream_index = self._streams.index(request.read_position.stream.name)
-    if stream_index >= 0 and stream_index < len(
+    if 0 <= stream_index < len(
         self._avro_serialized_rows_per_stream):
       response.avro_rows.serialized_binary_rows = \
           self._avro_serialized_rows_per_stream[stream_index]
@@ -166,44 +166,44 @@ class BigqueryOpsTest(test.TestCase):
   }"""
 
   STREAM_1_ROWS = [
-    {
-      "string": "string1",
-      "boolean": True,
-      "int": 10,
-      "long": 100,
-      "float": 1000.0,
-      "double": 10000.0
-    },
-    {
-      "string": "string2",
-      "boolean": False,
-      "int": 12,
-      "long": 102,
-      "float": 1002.0,
-      "double": 10002.0
-    }
+      {
+          "string": "string1",
+          "boolean": True,
+          "int": 10,
+          "long": 100,
+          "float": 1000.0,
+          "double": 10000.0
+      },
+      {
+          "string": "string2",
+          "boolean": False,
+          "int": 12,
+          "long": 102,
+          "float": 1002.0,
+          "double": 10002.0
+      }
   ]
   STREAM_2_ROWS = [
-    {
-      "string": "string2",
-      "boolean": True,
-      "int": 20,
-      "long": 200,
-      "float": 2000.0,
-      "double": 20000.0
-    },
-    {
-      # Empty record, all values are null
-    }
+      {
+          "string": "string2",
+          "boolean": True,
+          "int": 20,
+          "long": 200,
+          "float": 2000.0,
+          "double": 20000.0
+      },
+      {
+          # Empty record, all values are null
+      }
   ]
 
   DEFAULT_VALUES = {
-    'boolean': False,
-    'double': 0.0,
-    'float': 0.0,
-    'int': 0,
-    'long': 0,
-    'string': ''
+      'boolean': False,
+      'double': 0.0,
+      'float': 0.0,
+      'int': 0,
+      'long': 0,
+      'string': ''
   }
 
   @staticmethod
@@ -287,8 +287,16 @@ class BigqueryOpsTest(test.TestCase):
         self.PARENT,
         self.GCP_PROJECT_ID,
         self.TABLE_ID,
-        self.DATASET_ID, ["string", "boolean", "int", "long", "float", "double"],
-        [dtypes.string, dtypes.bool, dtypes.int32, dtypes.int64, dtypes.float32, dtypes.float64],
+        self.DATASET_ID,
+        ["string", "boolean", "int", "long", "float", "double"],
+        [
+            dtypes.string,
+            dtypes.bool,
+            dtypes.int32,
+            dtypes.int64,
+            dtypes.float32,
+            dtypes.float64
+        ],
         requested_streams=2)
 
     streams_list = read_session.get_streams()
@@ -318,8 +326,16 @@ class BigqueryOpsTest(test.TestCase):
         self.PARENT,
         self.GCP_PROJECT_ID,
         self.TABLE_ID,
-        self.DATASET_ID, ["string", "boolean", "int", "long", "float", "double"],
-        [dtypes.string, dtypes.bool, dtypes.int32, dtypes.int64, dtypes.float32, dtypes.float64],
+        self.DATASET_ID,
+        ["string", "boolean", "int", "long", "float", "double"],
+        [
+            dtypes.string,
+            dtypes.bool,
+            dtypes.int32,
+            dtypes.int64,
+            dtypes.float32,
+            dtypes.float64
+        ],
         requested_streams=2)
 
     dataset = read_session.parallel_read_rows()
