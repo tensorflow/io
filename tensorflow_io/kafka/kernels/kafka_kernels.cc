@@ -321,15 +321,18 @@ REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableRead").Device(DEVICE_CPU),
 class DecodeAvroOp : public OpKernel {
  public:
   explicit DecodeAvroOp(OpKernelConstruction* context) : OpKernel(context) {
-   OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
   }
 
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
+    const Tensor* schema_tensor;
+    OP_REQUIRES_OK(context, context->input("schema", &schema_tensor));
+    const string& schema = schema_tensor->scalar<string>()();
+
     avro::ValidSchema avro_schema;
-    std::istringstream ss(schema_);
+    std::istringstream ss(schema);
     string error;
     OP_REQUIRES(context, (avro::compileJsonSchema(ss, avro_schema, error)), errors::Unimplemented("Avro schema error: ", error));
 
@@ -435,8 +438,6 @@ class DecodeAvroOp : public OpKernel {
       }
     }
   }
-private:
-  string schema_;
 };
 
 class EncodeAvroOp : public OpKernel {

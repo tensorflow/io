@@ -31,9 +31,10 @@ REGISTER_OP("IO>EncodeAvro")
 
 REGISTER_OP("IO>DecodeAvro")
   .Input("input: string")
+  .Input("schema: T")
   .Output("value: dtype")
-  .Attr("schema: string")
   .Attr("dtype: list({float,double,int32,int64,string})")
+  .Attr("T: {string, resource}")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     for (int64 i = 0; i < c->num_outputs(); i++) {
       c->set_output(i, c->input(0));
