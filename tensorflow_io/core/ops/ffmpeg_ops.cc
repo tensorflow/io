@@ -70,4 +70,47 @@ REGISTER_OP("IO>FfmpegDecodeVideo")
     return Status::OK();
   });
 
+REGISTER_OP("IO>FfmpegAudioReadableInit")
+  .Input("input: string")
+  .Input("index: int64")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
+
+REGISTER_OP("IO>FfmpegAudioReadableNext")
+  .Input("input: resource")
+  .Input("reset: bool")
+  .Output("value: dtype")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
+
+REGISTER_OP("IO>FfmpegVideoReadableInit")
+  .Input("input: string")
+  .Input("index: int64")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
+
+REGISTER_OP("IO>FfmpegVideoReadableNext")
+  .Input("input: resource")
+  .Input("reset: bool")
+  .Output("value: dtype")
+  .Attr("dtype: type")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
+    return Status::OK();
+   });
+
 }  // namespace tensorflow

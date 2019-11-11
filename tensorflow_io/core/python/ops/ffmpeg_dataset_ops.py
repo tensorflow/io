@@ -18,9 +18,76 @@ from __future__ import division
 from __future__ import print_function
 
 import uuid
+import sys
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset_ops
+
+class FFmpegAudioGraphIODataset(tf.data.Dataset):
+  """FFmpegAudioGraphIODataset"""
+
+  def __init__(self,
+               resource, dtype,
+               internal=True):
+    """FFmpegAudioGraphIODataset."""
+    with tf.name_scope("FFmpegAudioGraphIODataset"):
+      from tensorflow_io.core.python.ops import ffmpeg_ops
+      assert internal
+
+      self._resource = resource
+      dataset = tf.data.Dataset.range(0, sys.maxsize)
+      dataset = dataset.map(lambda e: e == 0)
+      dataset = dataset.map(
+          lambda reset: ffmpeg_ops.io_ffmpeg_audio_readable_next(
+              resource, reset, dtype=dtype))
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda v: tf.greater(tf.shape(v)[0], 0)))
+      dataset = dataset.unbatch()
+      self._dataset = dataset
+      super(FFmpegAudioGraphIODataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class FFmpegVideoGraphIODataset(tf.data.Dataset):
+  """FFmpegVideoGraphIODataset"""
+
+  def __init__(self,
+               resource, dtype,
+               internal=True):
+    """FFmpegVideoGraphIODataset."""
+    with tf.name_scope("FFmpegVideoGraphIODataset"):
+      from tensorflow_io.core.python.ops import ffmpeg_ops
+      assert internal
+
+      self._resource = resource
+      dataset = tf.data.Dataset.range(0, sys.maxsize)
+      dataset = dataset.map(lambda e: e == 0)
+      dataset = dataset.map(
+          lambda reset: ffmpeg_ops.io_ffmpeg_video_readable_next(
+              resource, reset, dtype=dtype))
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda v: tf.greater(tf.shape(v)[0], 0)))
+      dataset = dataset.unbatch()
+      self._dataset = dataset
+      super(FFmpegVideoGraphIODataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+
 
 class _FFmpegIODatasetFunction(object):
   def __init__(self, function, resource, component, shape, dtype):

@@ -64,3 +64,7 @@ io_ffmpeg_readable_init = _ffmpeg_ops.io_ffmpeg_readable_init
 io_ffmpeg_readable_spec = _ffmpeg_ops.io_ffmpeg_readable_spec
 io_ffmpeg_readable_read = _ffmpeg_ops.io_ffmpeg_readable_read
 io_ffmpeg_decode_video = _ffmpeg_ops.io_ffmpeg_decode_video
+io_ffmpeg_audio_readable_init = _ffmpeg_ops.io_ffmpeg_audio_readable_init
+io_ffmpeg_audio_readable_next = _ffmpeg_ops.io_ffmpeg_audio_readable_next
+io_ffmpeg_video_readable_init = _ffmpeg_ops.io_ffmpeg_video_readable_init
+io_ffmpeg_video_readable_next = _ffmpeg_ops.io_ffmpeg_video_readable_next

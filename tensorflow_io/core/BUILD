@@ -207,6 +207,7 @@ cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
         "kernels/ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels_deprecated.cc",
         "ops/ffmpeg_ops.cc",
     ],
     copts = tf_io_copts(),
@@ -221,6 +222,7 @@ cc_library(
     name = "ffmpeg_2.8_ops",
     srcs = [
         "kernels/ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels_deprecated.cc",
         "ops/ffmpeg_ops.cc",
     ],
     copts = tf_io_copts(),
