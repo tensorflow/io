@@ -424,3 +424,34 @@ class GraphIODataset(tf.data.Dataset):
       shape, _, _ = core_ops.io_wav_readable_spec(resource)
       return audio_dataset_ops.AudioGraphIODataset(
           resource, shape, dtype, internal=True)
+
+  @classmethod
+  def from_ffmpeg(cls,
+                  filename,
+                  stream,
+                  **kwargs):
+    """Creates an `GraphIODataset` from a media file by FFmpeg.
+
+    Args:
+      filename: A string, the filename of a media file.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+      from tensorflow_io.core.python.ops import ffmpeg_ops
+      if stream.startswith("a:"):
+        resource = ffmpeg_ops.io_ffmpeg_audio_readable_init(
+            filename, int(stream[2:]))
+        dtype = cls._dtype
+        return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
+            resource, dtype, internal=True)
+      elif stream.startswith("v:"):
+        resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
+            filename, int(stream[2:]))
+        dtype = cls._dtype
+        return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
+            resource, dtype, internal=True)
+      return None

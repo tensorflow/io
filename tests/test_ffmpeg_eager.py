@@ -29,45 +29,10 @@ if sys.platform == "darwin":
 
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4")
-def test_video_dataset():
-  """test_video_dataset"""
-  num_repeats = 2
-
-  video_dataset = tfio.IODataset.from_ffmpeg(
-      video_path, "v:0").repeat(num_repeats)
-
-  i = 0
-  for v in video_dataset:
-    assert v.shape == (320, 560, 3)
-    i += 1
-  assert i == 166 * num_repeats
 
 audio_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "test_audio", "mono_10khz.wav")
-
-def test_audio_dataset():
-  """Test Audio Dataset"""
-  with open(audio_path, 'rb') as f:
-    wav_contents = f.read()
-  audio_v = tf.audio.decode_wav(wav_contents)
-
-  f = lambda x: float(x) / (1 << 15)
-
-  audio_dataset = tfio.IODataset.from_ffmpeg(audio_path, "a:0")
-  i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v.numpy())
-    i += 1
-  assert i == 5760
-
-  audio_dataset = tfio.IODataset.from_ffmpeg(audio_path, "a:0").batch(2)
-  i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v[0].numpy())
-    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
-    i += 2
-  assert i == 5760
 
 def test_ffmpeg_io_tensor_audio():
   """test_ffmpeg_io_tensor_audio"""
