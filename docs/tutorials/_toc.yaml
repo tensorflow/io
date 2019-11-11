@@ -16,5 +16,5 @@
 toc:
 - title: "BigQuery"
   path: /io/tutorials/bigquery
-- title: "Dicom"
+- title: "Decode DICOM files for medical imaging"
   path: /io/tutorials/dicom
