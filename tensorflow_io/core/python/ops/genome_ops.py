@@ -84,5 +84,56 @@ def sequences_to_onehot(sequences):
         sequence_splits.size(), global_nucleotide_idx)
   return tf.RaggedTensor.from_row_splits(
       values=all_onehot_nucleotides.stack(),
-      row_splits=sequence_splits.stack()
+      row_splits=tf.cast(sequence_splits.stack(), tf.int64)
   )
+
+
+@tf.function
+def _decode_byte_str(b_str):
+  return tf.dtypes.cast(
+      tf.strings.unicode_decode(b_str, "ASCII"), dtype=tf.float32)
+
+
+@tf.function
+def _phred_byte_to_probability(phred_byte_str):
+  return tf.math.pow(
+      10.,
+      -(_decode_byte_str(phred_byte_str) - 33) / 10
+  )
+
+
+@tf.function
+def _phred_sequence_to_probability(seq_quality):
+  return tf.map_fn(_phred_byte_to_probability,
+                   seq_quality,
+                   dtype=tf.float32)
+
+
+@tf.function
+def phred_sequences_to_probability(phred_qualities):
+  """Converts raw phred quality scores into base-calling error probabilities.
+
+  For each ASCII encoded phred quality score (X), the probability that there
+  was an error calling that base is computed by:
+
+  P = 10 ^ (-(X - 33) / 10)
+
+  This is assuming an "ASCII base" of 33.
+
+  The input is a tf.string tensor of ASCII encoded phred qualities,
+  one string per DNA sequence, with each character representing the quality
+  of a nucelotide.
+
+  For example:
+  phred_qualities = [["BB<"], ["BBBB"]]
+
+  Args:
+    phred_qualities: A tf.string tensor where each string represents the phred
+                     quality of a DNA sequence. Each character in the string
+                     is the ASCII representation of the phred quality number.
+
+  Returns:
+    tf.RaggedTensor: The quality scores for each base in each sequence provided.
+  """
+  return tf.ragged.map_flat_values(_phred_sequence_to_probability,
+                                   tf.strings.bytes_split(phred_qualities))
