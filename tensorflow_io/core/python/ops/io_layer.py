@@ -18,8 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import text_io_layer_ops
+from tensorflow_io.core.python.ops import kafka_io_layer_ops
 
 class IOLayer(tf.keras.layers.Layer):
   """IOLayer
@@ -50,3 +50,27 @@ class IOLayer(tf.keras.layers.Layer):
       A class of `TextIOLayer`.
     """
     return text_io_layer_ops.TextIOLayer(filename)
+
+  #=============================================================================
+  # KafkaIOLayer
+  #=============================================================================
+
+  @classmethod
+  def kafka(cls, topic, partition=0, servers=None, configuration=None):
+    """Obtain a KafkaIOLayer to be used with tf.keras.
+
+    Args:
+      topic: A `tf.string` tensor containing topic.
+      partition: A `tf.int32` tensor containing partition.
+      servers: A list of bootstrap servers.
+      configurations: A `tf.string` tensor containing global configuration
+        properties in [Key=Value] format,eg.
+        ["enable.auto.commit=false", "heartbeat.interval.ms=2000"],
+        please refer to 'Global configuration properties'
+        in librdkafka doc.
+
+    Returns:
+      A class of `KafkaIOLayer`.
+    """
+    return kafka_io_layer_ops.KafkaIOLayer(
+        topic, partition, servers, configuration)
