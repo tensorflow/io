@@ -58,7 +58,7 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         self, self._grpc_server)
     port = self._grpc_server.add_insecure_port("localhost:0")
     self._endpoint = "localhost:" + str(port)
-    print ("started server on :" + self._endpoint)
+    print("started a fake server on :" + self._endpoint)
 
   def start(self):
     self._grpc_server.start()
@@ -74,7 +74,7 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         self._table_id + "/" + str(stream_index)
 
   def CreateReadSession(self, request, context):
-    print ("called CreateReadSession on server")
+    print("called CreateReadSession on a fake server")
     self._project_id = request.table_reference.project_id
     self._table_id = request.table_reference.table_id
     self._dataset_id = request.table_reference.dataset_id
@@ -89,10 +89,10 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     return response
 
   def ReadRows(self, request, context):
-    print ("called ReadRows on server")
+    print("called ReadRows on a fake server")
     response = storage_pb2.ReadRowsResponse()
     stream_index = self._streams.index(request.read_position.stream.name)
-    if stream_index >= 0 and stream_index < len(
+    if 0 <= stream_index < len(
         self._avro_serialized_rows_per_stream):
       response.avro_rows.serialized_binary_rows = \
           self._avro_serialized_rows_per_stream[stream_index]
@@ -104,10 +104,10 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
 class BigqueryOpsTest(test.TestCase):
   """Tests for BigQuery adapter."""
 
-  GCP_PROJECT_ID = "bigquery-public-data"
-  DATASET_ID = "usa_names"
-  TABLE_ID = "usa_1910_current"
-  PARENT = "projects/some_parent"
+  GCP_PROJECT_ID = "test_project_id"
+  DATASET_ID = "test_dataset"
+  TABLE_ID = "test_table"
+  PARENT = "projects/test_parent"
 
   AVRO_SCHEMA = """
       {
@@ -115,42 +115,96 @@ class BigqueryOpsTest(test.TestCase):
       "name": "__root__",
       "fields": [
           {
-              "name": "state",
+              "name": "string",
               "type": [
                   "null",
                   "string"
               ],
-              "doc": "2-digit state code"
+              "doc": "nullable string"
           },
           {
-              "name": "name",
+              "name": "boolean",
               "type": [
                   "null",
-                  "string"
+                  "boolean"
               ],
-              "doc": "Given name of a person at birth"
+              "doc": "nullable boolean"
           },
           {
-              "name": "number",
+              "name": "int",
+              "type": [
+                  "null",
+                  "int"
+              ],
+              "doc": "nullable int"
+          },
+          {
+              "name": "long",
               "type": [
                   "null",
                   "long"
               ],
-              "doc": "Number of occurrences of the name"
+              "doc": "nullable long"
+          },
+          {
+              "name": "float",
+              "type": [
+                  "null",
+                  "float"
+              ],
+              "doc": "nullable float"
+          },
+          {
+              "name": "double",
+              "type": [
+                  "null",
+                  "double"
+              ],
+              "doc": "nullable double"
           }
       ]
   }"""
 
-  STREAM_1_ROWS = [{
-      "state": "wa",
-      "name": "Andrew",
-      "number": 1
-  }, {
-      "state": "wa",
-      "name": "Eva",
-      "number": 2
-  }]
-  STREAM_2_ROWS = [{"state": "ny", "name": "Emma", "number": 10}]
+  STREAM_1_ROWS = [
+      {
+          "string": "string1",
+          "boolean": True,
+          "int": 10,
+          "long": 100,
+          "float": 1000.0,
+          "double": 10000.0
+      },
+      {
+          "string": "string2",
+          "boolean": False,
+          "int": 12,
+          "long": 102,
+          "float": 1002.0,
+          "double": 10002.0
+      }
+  ]
+  STREAM_2_ROWS = [
+      {
+          "string": "string2",
+          "boolean": True,
+          "int": 20,
+          "long": 200,
+          "float": 2000.0,
+          "double": 20000.0
+      },
+      {
+          # Empty record, all values are null
+      }
+  ]
+
+  DEFAULT_VALUES = {
+      'boolean': False,
+      'double': 0.0,
+      'float': 0.0,
+      'int': 0,
+      'long': 0,
+      'string': ''
+  }
 
   @staticmethod
   def _serialize_to_avro(rows, schema):
@@ -233,8 +287,16 @@ class BigqueryOpsTest(test.TestCase):
         self.PARENT,
         self.GCP_PROJECT_ID,
         self.TABLE_ID,
-        self.DATASET_ID, ["state", "name", "number"],
-        [dtypes.string, dtypes.string, dtypes.int64],
+        self.DATASET_ID,
+        ["string", "boolean", "int", "long", "float", "double"],
+        [
+            dtypes.string,
+            dtypes.bool,
+            dtypes.int32,
+            dtypes.int64,
+            dtypes.float32,
+            dtypes.float64
+        ],
         requested_streams=2)
 
     streams_list = read_session.get_streams()
@@ -252,6 +314,8 @@ class BigqueryOpsTest(test.TestCase):
     itr2 = iter(dataset2)
     self.assertEqual(self.STREAM_2_ROWS[0],
                      self._normalize_dictionary(itr2.get_next()))
+    self.assertEqual(self.DEFAULT_VALUES,
+                     self._normalize_dictionary(itr2.get_next()))
     with self.assertRaises(errors.OutOfRangeError):
       itr2.get_next()
 
@@ -262,8 +326,16 @@ class BigqueryOpsTest(test.TestCase):
         self.PARENT,
         self.GCP_PROJECT_ID,
         self.TABLE_ID,
-        self.DATASET_ID, ["state", "name", "number"],
-        [dtypes.string, dtypes.string, dtypes.int64],
+        self.DATASET_ID,
+        ["string", "boolean", "int", "long", "float", "double"],
+        [
+            dtypes.string,
+            dtypes.bool,
+            dtypes.int32,
+            dtypes.int64,
+            dtypes.float32,
+            dtypes.float64
+        ],
         requested_streams=2)
 
     dataset = read_session.parallel_read_rows()
@@ -273,6 +345,8 @@ class BigqueryOpsTest(test.TestCase):
     self.assertEqual(self.STREAM_2_ROWS[0],
                      self._normalize_dictionary(itr.get_next()))
     self.assertEqual(self.STREAM_1_ROWS[1],
+                     self._normalize_dictionary(itr.get_next()))
+    self.assertEqual(self.DEFAULT_VALUES,
                      self._normalize_dictionary(itr.get_next()))
 
 if __name__ == "__main__":
