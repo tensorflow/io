@@ -29,6 +29,16 @@ REGISTER_OP("IO>EncodeAvro")
     return Status::OK();
    });
 
+REGISTER_OP("IO>DecodeAvroInit")
+  .Input("input: string")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn([](shape_inference::InferenceContext* c) {
+    c->set_output(0, c->Scalar());
+    return Status::OK();
+   });
+
 REGISTER_OP("IO>DecodeAvro")
   .Input("input: string")
   .Input("schema: T")
