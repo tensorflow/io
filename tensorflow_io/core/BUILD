@@ -251,6 +251,7 @@ cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_kernels.cc",
+"kernels/text_layer_kernel.cc",
         "kernels/libsvm_kernels.cc",
         "kernels/text_kernels.cc",
         "kernels/text_re2.cc",
