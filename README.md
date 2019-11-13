@@ -50,7 +50,7 @@ save files to local directory any more. Note we are also passing the compressed
 files (gzip) as is, since `tensorflow-io` is able to detect and uncompress
 automatically for MNIST dataset if needed.
 
-Please check the official [documenation](https://www.tensorflow.org/io) for more
+Please check the official [documentation](https://www.tensorflow.org/io) for more
 detailed usages.
 
 ## Installation
