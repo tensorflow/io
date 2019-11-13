@@ -33,6 +33,10 @@ class ValueStore;
 using ValueStoreUniquePtr = std::unique_ptr<ValueStore>;
 class ValueStore {
 public:
+  // Virtual destructor ensures the derived class's destructor is called and
+  // clean up its memory.
+  virtual ~ValueStore() {}
+
   // Make a dense tensor from this value store given the default values and the resolved shape
   // Assumes the tensor has been initialized and allocated!
   virtual Status MakeDense(Tensor* tensor, const TensorShape& resolved_shape, const Tensor& defaults) const = 0;
