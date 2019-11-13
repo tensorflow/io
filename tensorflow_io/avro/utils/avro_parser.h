@@ -34,6 +34,10 @@ public:
   // Constructor
   AvroParser(const string& key);
 
+  // Virtual destructor ensures the derived class's destructor is called and
+  // clean up its memory.
+  virtual ~AvroParser() {}
+
   // Parse will traverse the sub-tree of this value and fill all values into `parsed_values`
   // may also read from parsed values if filtering
   virtual Status Parse(std::map<string, ValueStoreUniquePtr>* parsed_values,
