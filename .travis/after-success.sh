@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
+if [[ (( ${TRAVIS_BRANCH} == "master" ) ||  ( ${TRAVIS_BRANCH} == "R0.91" )) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
 
   twine upload wheelhouse/tensorflow_io_nightly-*.whl
 
