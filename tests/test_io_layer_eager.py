@@ -78,15 +78,14 @@ def test_text_io_layer(fashion_mnist):
   f, filename = tempfile.mkstemp()
   os.close(f)
 
-  io_layer = tfio.IOLayer.text(filename)
-
   io_model = tf.keras.models.Model(
       inputs=model.input,
-      outputs=io_layer(processing_layer(model.layers[-1].output)))
+      outputs=tfio.IOLayer.text(filename)(
+          processing_layer(model.layers[-1].output)))
 
   predictions = io_model.predict(images)
 
-  io_layer.sync()
+  io_model.layers[-1].sync()
 
   f = tf.data.TextLineDataset(filename)
   lines = [line for line in f]
@@ -103,15 +102,15 @@ def test_kafka_io_layer(fashion_mnist):
   # Reading from `test_e(time)e` we should get the same result
   channel = "e{}e".format(time.time())
   topic = "io-layer-test-"+channel
-  io_layer = tfio.IOLayer.kafka(topic)
 
   io_model = tf.keras.models.Model(
       inputs=model.input,
-      outputs=io_layer(processing_layer(model.layers[-1].output)))
+      outputs=tfio.IOLayer.kafka(topic)(
+          processing_layer(model.layers[-1].output)))
 
   predictions = io_model.predict(images)
 
-  io_layer.sync()
+  io_model.layers[-1].sync()
 
   f = kafka_io.KafkaDataset(topics=[topic], group="test", eof=True)
   lines = [line for line in f]
