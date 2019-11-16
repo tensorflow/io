@@ -95,4 +95,27 @@ REGISTER_OP("IO>KafkaOutputSequenceFlush")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
+
+
+REGISTER_OP("IO>LayerKafkaCall")
+  .Input("input: T")
+  .Input("content: string")
+  .Input("resource: resource")
+  .Output("output: T")
+  .Attr("T: type")
+  .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("IO>LayerKafkaInit")
+  .Input("topic: string")
+  .Input("partition: int32")
+  .Input("metadata: string")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("IO>LayerKafkaSync")
+  .Input("resource: resource")
+  .SetShapeFn(shape_inference::ScalarShape);
+
 }  // namespace tensorflow

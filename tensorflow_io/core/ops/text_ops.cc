@@ -46,6 +46,25 @@ REGISTER_OP("IO>RE2FullMatch")
       return Status::OK();
     });
 
+REGISTER_OP("IO>LayerTextCall")
+  .Input("input: T")
+  .Input("content: string")
+  .Input("resource: resource")
+  .Output("output: T")
+  .Attr("T: type")
+  .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("IO>LayerTextInit")
+  .Input("input: string")
+  .Output("resource: resource")
+  .Attr("container: string = ''")
+  .Attr("shared_name: string = ''")
+  .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("IO>LayerTextSync")
+  .Input("resource: resource")
+  .SetShapeFn(shape_inference::ScalarShape);
+
 REGISTER_OP("IO>ReadText")
     .Input("filename: string")
     .Input("memory: string")
