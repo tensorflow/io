@@ -69,54 +69,60 @@ def fixture_fashion_mnist():
 
   return model, test_images, predictions, MNISTClassNamesLayer()
 
-def test_text_io_layer(fashion_mnist):
+# Note: IOLayerHelper need to have:
+# 1) func(): returns the layer creation function
+# 2) check(): returns the check function
+class TextIOLayerHelper(object):
+  """TextIOLayerHelper"""
+  def func(self):
+    f, filename = tempfile.mkstemp()
+    os.close(f)
+    self._filename = filename
+    return tfio.IOLayer.text(filename)
+  def check(self, images, predictions):
+    f = tf.data.TextLineDataset(self._filename)
+    lines = [line for line in f]
+    assert np.all(lines == predictions)
+
+    assert len(lines) == len(images)
+
+class KafkaIOLayerHelper(object):
+  """KafkaIOLayerHelper"""
+  def func(self):
+    channel = "e{}e".format(time.time())
+    self._topic = "io-layer-test-"+channel
+    return tfio.IOLayer.kafka(self._topic)
+  def check(self, images, predictions):
+    f = kafka_io.KafkaDataset(topics=[self._topic], group="test", eof=True)
+    lines = [line for line in f]
+    assert np.all(lines == predictions)
+
+    assert len(lines) == len(images)
+
+@pytest.mark.parametrize(
+    ("helper"),
+    [
+        (TextIOLayerHelper()),
+        (KafkaIOLayerHelper()),
+    ],
+    ids=["text", "kafka"],
+)
+def test_io_layer(fashion_mnist, helper):
   """test_text_io_layer"""
   model, images, predictions, processing_layer = fashion_mnist
 
   model.summary()
 
-  f, filename = tempfile.mkstemp()
-  os.close(f)
-
   io_model = tf.keras.models.Model(
       inputs=model.input,
-      outputs=tfio.IOLayer.text(filename)(
+      outputs=helper.func()(
           processing_layer(model.layers[-1].output)))
 
   predictions = io_model.predict(images)
 
   io_model.layers[-1].sync()
 
-  f = tf.data.TextLineDataset(filename)
-  lines = [line for line in f]
-  assert np.all(lines == predictions)
-
-  assert len(lines) == len(images)
-
-def test_kafka_io_layer(fashion_mnist):
-  """test_kafka_io_layer"""
-  model, images, predictions, processing_layer = fashion_mnist
-
-  model.summary()
-
-  # Reading from `test_e(time)e` we should get the same result
-  channel = "e{}e".format(time.time())
-  topic = "io-layer-test-"+channel
-
-  io_model = tf.keras.models.Model(
-      inputs=model.input,
-      outputs=tfio.IOLayer.kafka(topic)(
-          processing_layer(model.layers[-1].output)))
-
-  predictions = io_model.predict(images)
-
-  io_model.layers[-1].sync()
-
-  f = kafka_io.KafkaDataset(topics=[topic], group="test", eof=True)
-  lines = [line for line in f]
-  assert np.all(lines == predictions)
-
-  assert len(lines) == len(images)
+  helper.check(images, predictions)
 
 if __name__ == "__main__":
   test.main()
