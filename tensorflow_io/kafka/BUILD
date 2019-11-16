@@ -12,6 +12,7 @@ cc_library(
     srcs = [
         "kernels/kafka_dataset_ops.cc",
         "kernels/kafka_kernels.cc",
+        "kernels/kafka_layer_kernels.cc",
         "kernels/kafka_sequence.cc",
         "ops/dataset_ops.cc",
         "ops/kafka_ops.cc",

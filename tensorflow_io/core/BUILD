@@ -253,6 +253,7 @@ cc_library(
         "kernels/csv_kernels.cc",
         "kernels/libsvm_kernels.cc",
         "kernels/text_kernels.cc",
+        "kernels/text_layer_kernels.cc",
         "kernels/text_re2.cc",
         "kernels/text_sequence.cc",
         "ops/libsvm_ops.cc",
