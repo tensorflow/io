@@ -18,38 +18,42 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 REGISTER_OP("IO>WAVReadableInit")
-  .Input("input: string")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>WAVReadableSpec")
-  .Input("input: resource")
-  .Output("shape: int64")
-  .Output("dtype: int64")
-  .Output("rate: int32")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({2}));
-    c->set_output(1, c->MakeShape({}));
-    c->set_output(2, c->Scalar());
-     return Status::OK();
-   });
+    .Input("input: resource")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .Output("rate: int32")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({2}));
+      c->set_output(1, c->MakeShape({}));
+      c->set_output(2, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>WAVReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("value: dtype")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
 
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow
