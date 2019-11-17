@@ -1,0 +1,17 @@
+name: macOS
+
+on: [pull_request]
+
+jobs:
+  build-macos:
+    name: build-macos
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: Run build script
+        run: |
+          set -x -e
+          git log --pretty -2
+          echo "SUCCESS"
+          exit 1
