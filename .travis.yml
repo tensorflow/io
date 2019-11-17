@@ -57,7 +57,11 @@ jobs:
   include:
   - stage: build
     name: "Lint (Python+Bazel)"
-    script: bash -x -e .travis/lint.sh
+    script:
+    - export BAZEL_VERSION=0.29.0 BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+    - curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+    - sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+    - bash -x -e .travis/lint.sh
 
   - stage: build
     name: "Nightly Release Build on Linux"

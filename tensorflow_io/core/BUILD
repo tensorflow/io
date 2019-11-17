@@ -164,7 +164,6 @@ cc_library(
     srcs = [
         "kernels/decode_dicom_data.cc",
         "kernels/decode_dicom_image.cc",
-        "kernels/font_opensans_regular.h",
         "kernels/image_bmp_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_kernels.cc",
@@ -180,6 +179,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        "//third_party:font",
         "@dcmtk",
         "@easyexif",
         "@freetype",
