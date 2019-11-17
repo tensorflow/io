@@ -16,3 +16,17 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [],
 )
+
+cc_library(
+    name = "font",
+    srcs = [
+        "font/font_opensans_regular.h",
+    ],
+    hdrs = [
+    ],
+    copts = [
+    ],
+    includes = ["font"],
+    visibility = ["//visibility:public"],
+    deps = [],
+)
