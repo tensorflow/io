@@ -15,7 +15,7 @@ if [[ "$#" -gt 0 && "$1" == "clang" ]]; then
   done
 fi
 if [[ "$#" -gt 0 && "$1" == "clang-git-diff" ]]; then
-  for f in $(git diff --name-status master -- '*.cc' '*.h' | awk '{print $2}'); do
+  for f in $(git diff --name-status master -- 'tensorflow_io/*.cc' 'tensorflow_io/*.h' | awk '{print $2}'); do
     diff -u <(cat $f) <(bazel run @llvm_toolchain//:bin/clang-format -- --style=google $f)
   done
 fi
