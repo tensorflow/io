@@ -75,6 +75,7 @@ jobs:
     os: osx
     osx_image: xcode10
     script:
+    - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
@@ -84,6 +85,7 @@ jobs:
     os: osx
     osx_image: xcode10
     script:
+    - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
@@ -93,6 +95,7 @@ jobs:
     os: osx
     osx_image: xcode10
     script:
+    - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
@@ -102,6 +105,7 @@ jobs:
     os: osx
     osx_image: xcode10
     script:
+    - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
     - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
