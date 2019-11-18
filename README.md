@@ -11,7 +11,8 @@
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/tfio)](https://cran.r-project.org/package=tfio)
 
 TensorFlow I/O is a collection of file systems and file formats that are not
-available in TensorFlow's built-in support.
+available in TensorFlow's built-in support. A full list of supported file systems
+and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
 The use of tensorflow-io is straightforward with keras. Below is the example
 of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
