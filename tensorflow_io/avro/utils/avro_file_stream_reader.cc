@@ -102,10 +102,11 @@ Status AvroFileStreamReader::OnWorkStartup() {
 }
 
 Status AvroFileStreamReader::Read(AvroResult* result) {
+  std::map<string, ValueStoreUniquePtr> key_to_value;
 
   auto read_value = [&](avro::GenericDatum& d) { return reader_->read(d); };
   uint64 batch_size = 0;
-  TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value_, read_value,
+  TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value, read_value,
     reader_schema_, config_.batch_size, &batch_size));
   VLOG(5) << "Read and parsed " << batch_size << " elements";
 
@@ -123,7 +124,7 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
 
   for (size_t i_sparse = 0; i_sparse < n_sparse; ++i_sparse) {
     const AvroParseConfig::Sparse& sparse = config_.sparse[i_sparse];
-    const ValueStoreUniquePtr& value_store = key_to_value_[sparse.feature_name];
+    const ValueStoreUniquePtr& value_store = key_to_value[sparse.feature_name];
 
     VLOG(5) << "Converting sparse feature " << sparse.feature_name;
     VLOG(5) << "Contents of value store " << (*value_store).ToString(10);
@@ -159,7 +160,7 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
   for (size_t i_dense = 0; i_dense < n_dense; ++i_dense) {
     const AvroParseConfig::Dense& dense = config_.dense[i_dense];
 
-    const ValueStoreUniquePtr& value_store = key_to_value_[dense.feature_name];
+    const ValueStoreUniquePtr& value_store = key_to_value[dense.feature_name];
 
     TensorShape default_shape;
     Tensor default_value;

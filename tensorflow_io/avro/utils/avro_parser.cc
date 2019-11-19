@@ -21,11 +21,11 @@ namespace data {
 // ------------------------------------------------------------
 AvroParser::AvroParser(const string& key) : key_(key) { }
 
-const std::vector<AvroParserSharedPtr>& AvroParser::GetChildren() const {
+const std::vector<AvroParserSharedPtr> AvroParser::GetChildren() const {
   return children_;
 }
 
-const std::vector<AvroParserSharedPtr>& AvroParser::GetFinalDescendents() const {
+const std::vector<AvroParserSharedPtr> AvroParser::GetFinalDescendents() const {
   // If this parser is terminal there are no final descendents
   if (IsTerminal()) {
     return final_descendents_;
