@@ -404,10 +404,6 @@ Status AvroParserTree::AddFinishMarks(std::map<string, ValueStoreUniquePtr>* key
 }
 
 Status AvroParserTree::InitializeValueBuffers(std::map<string, ValueStoreUniquePtr>* key_to_value) {
-  // Remove all existing entries, because we'll create new ones
-  (*key_to_value).clear();
-
-
   // For all keys -- that hold the user defined name -- and their data types add a buffer
   for (const auto& key_and_type : keys_and_types_) {
 

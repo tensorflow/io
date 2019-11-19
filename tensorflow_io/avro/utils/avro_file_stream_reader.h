@@ -151,9 +151,6 @@ private:
   // The parser tree that this reader leverages to parse the data into tensors
   AvroParserTree avro_parser_tree_;
 
-  // Key to value mapping
-  std::map<string, ValueStoreUniquePtr> key_to_value_;
-
   // Cache allocator here to avoid lock contention in `tensorflow::cpu_allocator()`
   Allocator* allocator_;
 };
