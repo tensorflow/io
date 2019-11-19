@@ -209,11 +209,13 @@ def test_audio_io_dataset(audio_data, io_dataset_func):
   assert i == 5760
 
 @pytest.mark.parametrize(
-    ("io_tensor_func"),
+    ("io_tensor_func", "num_parallel_calls"),
     [
-        (tfio.IOTensor.graph(tf.int16).from_audio),
+        (tfio.IOTensor.graph(tf.int16).from_audio, 1),
+        (tfio.IOTensor.graph(tf.int16).from_audio, 2),
         pytest.param(
             tfio.IOTensor.from_ffmpeg,
+            1,
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -223,9 +225,10 @@ def test_audio_io_dataset(audio_data, io_dataset_func):
             ],
         ),
     ],
-    ids=["from_audio", "from_ffmpeg"],
+    ids=["from_audio", "from_audio_parallel", "from_ffmpeg"],
 )
-def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func):
+def test_audio_io_tensor_with_dataset(
+    audio_data, io_tensor_func, num_parallel_calls):
   """test_audio_io_dataset_with_dataset"""
   audio_path, audio_value, audio_rate = audio_data
 
@@ -245,7 +248,7 @@ def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func):
     audio = io_tensor_func(filename)
     return audio[position:position+100], audio.rate
 
-  dataset = dataset.map(func)
+  dataset = dataset.map(func, num_parallel_calls=num_parallel_calls)
 
   item = 0
   for (data, rate) in dataset:
