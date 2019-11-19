@@ -12,20 +12,19 @@
 
 ```python
 >>> import os
->>> import tensorflow as tf
+>>> import tensorflow as tf    # Assuming TensorFlow >= 2.0
 >>> import tensorflow_io as tfio
 >>>
 >>> os.environ['TF_AZURE_STORAGE_KEY'] = 'my-storage-key'
 >>>
->>> with tf.gfile.Open("az://myaccount/mycontainer/hello.txt", mode='w') as w:
+>>> with tf.io.gfile.GFile("az://myaccount/mycontainer/hello.txt", mode='w') as w:
 >>>   w.write("Hello, world!")
 >>>
->>> with tf.gfile.Open("az://myaccount/mycontainer/hello.txt", mode='r') as r:
+>>> with tf.io.gfile.GFile("az://myaccount/mycontainer/hello.txt", mode='r') as r:
 >>>   print(r.read())
 
 Hello, world!
 ```
-
 ## TODO
 
 - Support OAuth
