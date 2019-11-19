@@ -47,20 +47,20 @@ public:
   inline void AddChild(const AvroParserSharedPtr& child) { children_.push_back(child); }
 
   // public for testing
-  const std::vector<AvroParserSharedPtr>& GetChildren() const;
+  const std::vector<AvroParserSharedPtr> GetChildren() const;
 
   // Convert the avro parser into a human readable string representation
   virtual string ToString(int level = 0) const = 0;
 
   // Get the key for this avro parser -- this key can be used to map to values
-  inline const string& GetKey() const { return key_; }
+  inline const string GetKey() const { return key_; }
 
   // Get the supported avro types for this parser
   virtual std::set<avro::Type> GetSupportedTypes() const = 0;
 
 protected:
   // Get the final descendents for this avro parser
-  const std::vector<AvroParserSharedPtr>& GetFinalDescendents() const;
+  const std::vector<AvroParserSharedPtr> GetFinalDescendents() const;
 
   // Convert all children into a string representation
   string ChildrenToString(int level) const;
