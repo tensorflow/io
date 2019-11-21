@@ -33,6 +33,7 @@ from tensorflow.python.platform import tf_logging
 from tensorflow.python.data.util import structure
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import sparse_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource, DatasetV1Adapter
 from tensorflow.python.data.experimental.ops import optimization
@@ -517,7 +518,19 @@ def make_avro_dataset(
             features, x), num_parallel_calls=num_parallel_calls)
 
     # Take care of sparse shape assignment in features
+  def reshape_sp_function(tensor_features):
+    """Note, that sparse merge produces a rank of 2*n instead of n+1 when merging n dimensional tensors.
+    But the index is produced with rank n+1. We correct the shape here through this method.
+    :param tensor_features: the output features dict from avrodataset
+    """
+    for feature_name, feature in features.items():
+      if isinstance(feature, parsing_ops.SparseFeature) and isinstance(feature.size, list) and len(feature.size) > 1:
+        # Have -1 for unknown batch
+        reshape = [-1] + list(feature.size)
+        tensor_features[feature_name] = sparse_ops.sparse_reshape(tensor_features[feature_name], reshape)
+    return tensor_features
 
+  dataset = dataset.map(reshape_sp_function, num_parallel_calls=num_parallel_calls)
 
   if len(label_keys) > 0:
     dataset = dataset.map(
