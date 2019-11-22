@@ -59,7 +59,7 @@ fi
 
 # Build with SSE4.2 and O2
 if [[ "${BAZEL_CPU_OPTIMIZATION}" == "yes" ]]; then
-  args+=(--copt=-msse4.2 --copt=-mavx --compilation_mode=opt)
+  args+=(--copt=-msse4.2 --copt=-mavx)
 fi
 
 bazel build \
