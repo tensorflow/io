@@ -23,16 +23,13 @@ import logging
 import numpy as np
 import os
 import re
-import six
 import tempfile
 
 from tensorflow.core.protobuf import config_pb2
 from tensorflow.python.framework import test_util, sparse_tensor
 from tensorflow.python.framework.errors import OpError, OutOfRangeError
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow_io.avro.python.ops import avro_dataset
-from tensorflow_io.avro.python.utils.avro_serialization import \
-    AvroRecordsToFile
+from tensorflow_io.avro import make_avro_dataset, AvroRecordsToFile
 
 
 @test_util.run_all_in_graph_and_eager_modes
@@ -49,7 +46,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
 
         return [filename]
 
-    def _assert_same_ranks(self, expected_data, actual_data_iterator):
+    def _assert_same_ranks(self, expected_data, actual_data):
         def __assert_same_ranks(expected_tensors, actual_tensors_iterator):
             assert len(expected_tensors) == len(actual_tensors_iterator), \
                 "Expected {} pairs but " "got {} pairs".format(
@@ -68,25 +65,25 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
                     assert actual_tensor_iterator.shape.rank == len(expected_tensor.shape)
 
         if isinstance(expected_data, tuple):
-            assert isinstance(actual_data_iterator, tuple), \
-                "Found type {} but expected type {}".format(type(actual_data_iterator),
+            assert isinstance(actual_data, tuple), \
+                "Found type {} but expected type {}".format(type(actual_data),
                                                             tuple)
             assert len(expected_data) == 2, \
                 "Found {} components in expected dataset but must have {}" \
                     .format(len(expected_data), 2)
 
-            assert len(actual_data_iterator) == 2, \
+            assert len(actual_data) == 2, \
                 "Found {} components in actual dataset but expected {}" \
-                    .format(len(actual_data_iterator), 2)
+                    .format(len(actual_data), 2)
 
             expected_features, expected_labels = expected_data
-            actual_features_iter, actual_labels_iter = actual_data_iterator
+            actual_features_iter, actual_labels_iter = actual_data
 
             __assert_same_ranks(expected_features, actual_features_iter)
             __assert_same_ranks(expected_labels, actual_labels_iter)
 
         else:
-            __assert_same_ranks(expected_data, actual_data_iterator)
+            __assert_same_ranks(expected_data, actual_data)
 
     def _assert_same_data(self, expected_data, actual_data):
         if isinstance(expected_data, tuple):
@@ -141,36 +138,69 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
             self._assert_same_tensor(actual_tensor=actual_tensor,
                                      expected_tensor=expected_tensor)
 
+    def assertValuesEqual(self, expected, actual):
+        print(expected)
+        print(actual)
+
+        """Asserts that two values are equal."""
+        if sparse_tensor.is_sparse(expected):
+            self.assertAllEqual(expected.indices, actual.indices)
+            self.assertAllEqual(expected.values, actual.values)
+            self.assertAllEqual(expected.dense_shape, actual.dense_shape)
+        else:
+            self.assertAllEqual(expected, actual)
+
+    def assertDataEqual(self, expected, actual):
+
+        def _assertEqual(_expected, _actual):
+            for name, datum in _expected.items():
+                self.assertValuesEqual(expected=datum, actual=_actual[name])
+
+        if isinstance(expected, tuple):
+            assert isinstance(expected, tuple), \
+                "Found type {} but expected type {}".format(type(actual), tuple)
+            assert len(expected) == 2, \
+                "Found {} components in expected dataset but must have {}" \
+                    .format(len(expected), 2)
+
+            assert len(actual) == 2, \
+                "Found {} components in actual dataset but expected {}" \
+                    .format(len(actual), 2)
+
+            expected_features, expected_labels = expected
+            actual_features, actual_labels = actual
+
+            _assertEqual(expected_features, actual_features)
+            _assertEqual(expected_labels, actual_labels)
+
+        else:
+            _assertEqual(expected, actual)
+
+
     def _verify_output(self, expected_data, actual_dataset, **kwargs):
 
-        # Turn off any parallelism and random for testing
-        config = config_pb2.ConfigProto(
-            intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        next_data = iter(actual_dataset)
 
-        with self.test_session(config=config) as sess:
+        for expected in expected_data:
+            self.assertDataEqual(expected=expected, actual=next(next_data))
 
-            iterator = actual_dataset.make_initializable_iterator()
-            next_element = iterator.get_next()
-            sess.run(iterator.initializer)
+            # self._assert_same_ranks(expected_data=expected_datum,
+            #                         actual_data=actual_data)
+            # # Tried to leverage assertAllSame or assertAllEqual but that does
+            # # not handle string values properly
+            # self._assert_same_data(expected_data=expected_datum,
+            #                        actual_data=actual_data)
 
-            for expected_datum in expected_data:
-                self._assert_same_ranks(expected_data=expected_datum,
-                                        actual_data_iterator=next_element)
-                # Tried to leverage assertAllSame or assertAllEqual but that does
-                # not handle string values properly
-                self._assert_same_data(expected_data=expected_datum,
-                                       actual_data=sess.run(next_element))
-
-            if not kwargs.get("skip_out_of_range_error", False):
-                with self.assertRaises(OutOfRangeError):
-                    sess.run(next_element)
+        # if not kwargs.get("skip_out_of_range_error", False):
+        #     with self.assertRaises(OutOfRangeError):
+        #         next(next_data)
 
     def _test_pass_dataset(self, writer_schema, record_data, expected_data,
                            features, reader_schema, batch_size, **kwargs):
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
-        actual_dataset = avro_dataset.make_avro_dataset_v1(
+        actual_dataset = make_avro_dataset(
             filenames=filenames, reader_schema=reader_schema,
             features=features, batch_size=batch_size,
             shuffle=kwargs.get("shuffle", None),
@@ -186,21 +216,13 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
-        actual_dataset = avro_dataset.make_avro_dataset_v1(
+        actual_dataset = make_avro_dataset(
             filenames=filenames, reader_schema=reader_schema,
             features=features, batch_size=batch_size,
             shuffle=kwargs.get("shuffle", None),
             num_epochs=kwargs.get("num_epochs", None))
 
-        # Turn off any parallelism and random for testing
-        config = config_pb2.ConfigProto(
-            intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
+        next_data = iter(actual_dataset)
 
-        with self.test_session(config=config) as sess:
-
-            iterator = actual_dataset.make_initializable_iterator()
-            next_element = iterator.get_next()
-            sess.run(iterator.initializer)
-
-            with self.assertRaises(OpError):
-                sess.run(next_element)
+        with self.assertRaises(OpError):
+            next(next_data)

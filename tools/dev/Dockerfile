@@ -1,6 +1,6 @@
 FROM tensorflow/tensorflow:custom-op-ubuntu16
 
-RUN apt-get update && \
+RUN rm /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-get update && \
     apt-get install -y \
     git \
     gcc \
@@ -42,6 +42,7 @@ RUN echo ". /miniconda/etc/profile.d/conda.sh" >> ~/.bashrc && \
 ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
+    avro-python3 \
     pytest \
     pytest-benchmark \
     pylint \
