@@ -535,7 +535,8 @@ def make_avro_dataset(
   if len(label_keys) > 0:
     dataset = dataset.map(
         lambda x: (x, {label_key_: x.pop(label_key_)
-                       for label_key_ in label_keys}))
+                       for label_key_ in label_keys}),
+        num_parallel_calls=num_parallel_calls)
 
   dataset = dataset.prefetch(prefetch_buffer_size)
 
