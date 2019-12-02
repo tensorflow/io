@@ -76,8 +76,8 @@ jobs:
     osx_image: xcode10
     script:
     - export BAZEL_CPU_OPTIMIZATION=yes
-    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER} & sleep 1800; kill $!
-    - echo bash -x -e .travis/wheel.test.sh
+    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+    - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
@@ -86,8 +86,8 @@ jobs:
     osx_image: xcode10
     script:
     - export BAZEL_CPU_OPTIMIZATION=yes
-    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER} & sleep 1800; kill $!
-    - echo bash -x -e .travis/wheel.test.sh
+    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+    - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
@@ -96,8 +96,8 @@ jobs:
     osx_image: xcode10
     script:
     - export BAZEL_CPU_OPTIMIZATION=yes
-    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER} & sleep 1800; kill $!
-    - echo bash -x -e .travis/wheel.test.sh
+    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+    - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
@@ -106,8 +106,8 @@ jobs:
     osx_image: xcode10
     script:
     - export BAZEL_CPU_OPTIMIZATION=yes
-    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER} & sleep 1800; kill $!
-    - echo bash -x -e .travis/wheel.test.sh
+    - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
+    - bash -x -e .travis/wheel.test.sh
     after_success: bash -x -e .travis/after-success.sh
 
 notifications:
