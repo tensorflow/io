@@ -1,3 +1,24 @@
+# Release 0.10.0
+
+## Major Features
+* Add Kafka message key support.
+* Add support to calculate Phred Quality Scores (Genome).
+* Add PBM(PPM/PGM) image support.
+* Add OpenEXR format support.
+* Use balanced sharding strategy in bigquery read session.
+* Add `decode_jpeg_exif` to support extract orientation information.
+* Enable SSE4.2 and AVX for macOS and Linux build.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Amarpreet Singh, Mark Daoust, Olivier Martin, Peter Götz,
+Soroush Radpour, Suyash Kumar, Yong Tang, Yuan Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.9.1
 
 ## Major Features
