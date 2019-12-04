@@ -78,7 +78,7 @@ class TextIOLayerHelper(object):
     f, filename = tempfile.mkstemp()
     os.close(f)
     self._filename = filename
-    return tfio.IOLayer.text(filename)
+    return tfio.experimental.IOLayer.text(filename)
   def check(self, images, predictions):
     f = tf.data.TextLineDataset(self._filename)
     lines = [line for line in f]
@@ -91,7 +91,7 @@ class KafkaIOLayerHelper(object):
   def func(self):
     channel = "e{}e".format(time.time())
     self._topic = "io-layer-test-"+channel
-    return tfio.IOLayer.kafka(self._topic)
+    return tfio.experimental.IOLayer.kafka(self._topic)
   def check(self, images, predictions):
     f = kafka_io.KafkaDataset(topics=[self._topic], group="test", eof=True)
     lines = [line for line in f]

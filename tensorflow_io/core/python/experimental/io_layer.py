@@ -18,8 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_io.core.python.ops import text_io_layer_ops
-from tensorflow_io.core.python.ops import kafka_io_layer_ops
+from tensorflow_io.core.python.experimental import text_io_layer_ops
+from tensorflow_io.core.python.experimental import kafka_io_layer_ops
 
 class IOLayer(tf.keras.layers.Layer):
   """IOLayer
