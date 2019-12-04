@@ -278,5 +278,29 @@ class KafkaDatasetTest(test.TestCase):
       with self.assertRaises(errors.OutOfRangeError):
         sess.run(get_next)
 
+  def test_kafka_dataset_with_key(self):
+    """Tests for KafkaDataset."""
+    topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+    num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+    batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+
+    repeat_dataset = kafka_io.KafkaDataset(
+        topics, group="test", eof=True, message_key=True).repeat(num_epochs)
+    batch_dataset = repeat_dataset.batch(batch_size)
+
+    iterator = data.Iterator.from_structure(batch_dataset.output_types)
+    init_op = iterator.make_initializer(repeat_dataset)
+    get_next = iterator.get_next()
+
+    with self.cached_session() as sess:
+      # Basic test: read from topic 0.
+      sess.run(init_op, feed_dict={topics: ["key-test:0:0:4"], num_epochs: 1})
+      for i in range(5):
+        self.assertEqual(
+            (("D" + str(i)).encode(), ("K" + str(i%2)).encode()),
+            sess.run(get_next))
+      with self.assertRaises(errors.OutOfRangeError):
+        sess.run(get_next)
+
 if __name__ == "__main__":
   test.main()

@@ -47,7 +47,8 @@ class KafkaDataset(data.Dataset):
                eof=False,
                timeout=1000,
                config_global=None,
-               config_topic=None):
+               config_topic=None,
+               message_key=False):
     """Create a KafkaReader.
 
     Args:
@@ -70,6 +71,7 @@ class KafkaDataset(data.Dataset):
                     eg. ["auto.offset.reset=earliest"],
                     please refer to 'Topic configuration properties'
                     in librdkafka doc.
+      message_key: If True, the kafka will output both message value and key.
     """
     self._topics = tf.convert_to_tensor(
         topics, dtype=dtypes.string, name="topics")
@@ -86,6 +88,7 @@ class KafkaDataset(data.Dataset):
     config_topic = config_topic if config_topic else []
     self._config_topic = tf.convert_to_tensor(
         config_topic, dtype=dtypes.string, name="config_topic")
+    self._message_key = message_key
     super(KafkaDataset, self).__init__()
 
   def _inputs(self):
@@ -94,19 +97,24 @@ class KafkaDataset(data.Dataset):
   def _as_variant_tensor(self):
     return core_ops.io_kafka_dataset(self._topics, self._servers,
                                      self._group, self._eof, self._timeout,
-                                     self._config_global, self._config_topic)
+                                     self._config_global, self._config_topic,
+                                     self._message_key)
 
   @property
   def output_classes(self):
-    return tf.Tensor
+    return (tf.Tensor) if not self._message_key else (tf.Tensor, tf.Tensor)
 
   @property
   def output_shapes(self):
-    return tf.TensorShape([])
+    return (
+        tf.TensorShape([])) if not self._message_key else (
+            tf.TensorShape([]), tf.TensorShape([]))
 
   @property
   def output_types(self):
-    return dtypes.string
+    return (
+        dtypes.string) if not self._message_key else (
+            dtypes.string, dtypes.string)
 
 def write_kafka(message,
                 topic,

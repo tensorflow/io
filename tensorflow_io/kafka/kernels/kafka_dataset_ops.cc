@@ -66,9 +66,11 @@ class KafkaDatasetOp : public DatasetOpKernel {
     for (int i = 0; i < config_topic_tensor->NumElements(); ++i) {
       config_topic.push_back(config_topic_tensor->flat<string>()(i));
     }
+    bool message_key = false;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<bool>(ctx, "message_key", &message_key));
 
     *output = new Dataset(ctx, std::move(topics), servers, group, eof, timeout,
-                          std::move(config_global), std::move(config_topic));
+                          std::move(config_global), std::move(config_topic), message_key);
   }
 
  private:
@@ -77,7 +79,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
     Dataset(OpKernelContext* ctx, std::vector<string> topics,
             const string& servers, const string& group, const bool eof,
             const int64 timeout, std::vector<string> config_global,
-            std::vector<string> config_topic)
+            std::vector<string> config_topic, const bool message_key)
         : DatasetBase(DatasetContext(ctx)),
           topics_(std::move(topics)),
           servers_(servers),
@@ -85,7 +87,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
           eof_(eof),
           timeout_(timeout),
           config_global_(std::move(config_global)),
-          config_topic_(std::move(config_topic)) {}
+          config_topic_(std::move(config_topic)),
+          message_key_(message_key) {}
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
@@ -94,11 +97,20 @@ class KafkaDatasetOp : public DatasetOpKernel {
     }
 
     const DataTypeVector& output_dtypes() const override {
+      if (message_key_) {
+        static DataTypeVector* dtypes = new DataTypeVector({DT_STRING, DT_STRING});
+        return *dtypes;
+      }
       static DataTypeVector* dtypes = new DataTypeVector({DT_STRING});
       return *dtypes;
     }
 
     const std::vector<PartialTensorShape>& output_shapes() const override {
+      if (message_key_) {
+        static std::vector<PartialTensorShape>* shapes =
+            new std::vector<PartialTensorShape>({{}, {}});
+        return *shapes;
+      }
       static std::vector<PartialTensorShape>* shapes =
           new std::vector<PartialTensorShape>({{}});
       return *shapes;
@@ -124,9 +136,11 @@ class KafkaDatasetOp : public DatasetOpKernel {
       TF_RETURN_IF_ERROR(b->AddVector(config_global_, &config_global));
       Node* config_topic = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(config_topic_, &config_topic));
+      Node* message_key = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(message_key_, &message_key));
       TF_RETURN_IF_ERROR(
           b->AddDataset(this, {topics, servers, group, eof, timeout,
-                        config_global, config_topic}, output));
+                        config_global, config_topic, message_key}, output));
       return Status::OK();
     }
 
@@ -197,6 +211,15 @@ class KafkaDatasetOp : public DatasetOpKernel {
                     std::string(static_cast<const char*>(message->payload()),
                                 message->len());
                 out_tensors->emplace_back(std::move(line_tensor));
+                if (dataset()->message_key_) {
+                  Tensor key_tensor(cpu_allocator(), DT_STRING, {});
+                  if (message->key() != nullptr) {
+                    key_tensor.scalar<string>()() = string(*message->key());
+                  } else {
+                    key_tensor.scalar<string>()() = "";
+                  }
+                  out_tensors->emplace_back(std::move(key_tensor));
+                }
                 *end_of_sequence = false;
                 // Sync offset
                 offset_ = message->offset();
@@ -449,6 +472,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
     const int64 timeout_;
     const std::vector<string> config_global_;
     const std::vector<string> config_topic_;
+    const bool message_key_;
   };
 };
 
