@@ -107,6 +107,25 @@ def test_avro_kafka_dataset():
   entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
   np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
 
+def test_avro_kafka_dataset_with_resource():
+  """test_avro_kafka_dataset_with_resource"""
+  schema = ('{"type":"record","name":"myrecord","fields":['
+            '{"name":"f1","type":"string"},'
+            '{"name":"f2","type":"long"},'
+            '{"name":"f3","type":["null","string"],"default":null}'
+            ']}"')
+  schema_resource = kafka_io.decode_avro_init(schema)
+  dataset = kafka_io.KafkaDataset(
+      ["avro-test:0"], group="avro-test", eof=True)
+  # remove kafka framing
+  dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
+  # deserialize avro
+  dataset = dataset.map(
+      lambda e: kafka_io.decode_avro(
+          e, schema=schema_resource, dtype=[tf.string, tf.int64, tf.string]))
+  entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
+  np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
+
 def test_kafka_stream_dataset():
   dataset = tfio.IODataset.stream().from_kafka("test").batch(2)
   assert np.all([

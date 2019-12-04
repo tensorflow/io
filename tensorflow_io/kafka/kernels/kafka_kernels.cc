@@ -318,30 +318,72 @@ REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInit").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<KafkaReadable>);
 
+class DecodeAvroResource : public ResourceBase {
+ public:
+  DecodeAvroResource(Env* env) : env_(env) {}
+  ~DecodeAvroResource() {}
+
+  Status Init(const string& input) {
+    mutex_lock lock(mu_);
+    schema_ = input;
+    schema_stream_ = std::istringstream(schema_);
+
+    string error;
+    if (!(avro::compileJsonSchema(schema_stream_, avro_schema_, error))) {
+      return errors::Unimplemented("Avro schema error: ", error);
+    }
+
+    return Status::OK();
+  }
+  const avro::ValidSchema& avro_schema() {
+    return avro_schema_;
+  }
+  string DebugString() const override {
+    return "DecodeAvroResource";
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  string schema_ GUARDED_BY(mu_);
+  std::istringstream schema_stream_;
+  avro::ValidSchema avro_schema_;
+};
+
 class DecodeAvroOp : public OpKernel {
  public:
   explicit DecodeAvroOp(OpKernelConstruction* context) : OpKernel(context) {
-   OP_REQUIRES_OK(context, context->GetAttr("schema", &schema_));
+    env_ = context->env();
   }
 
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    avro::ValidSchema avro_schema;
-    std::istringstream ss(schema_);
-    string error;
-    OP_REQUIRES(context, (avro::compileJsonSchema(ss, avro_schema, error)), errors::Unimplemented("Avro schema error: ", error));
+    DecodeAvroResource* resource;
+    std::unique_ptr<DecodeAvroResource> resource_scope;
+    if (context->input_dtype(1) == DT_RESOURCE) {
+      OP_REQUIRES_OK(context, GetResourceFromContext(context, "schema", &resource));
+    } else {
+      const Tensor* schema_tensor;
+      OP_REQUIRES_OK(context, context->input("schema", &schema_tensor));
+      const string& schema = schema_tensor->scalar<string>()();
 
-    avro::GenericDatum datum(avro_schema);
+      resource_scope.reset(new DecodeAvroResource(env_));
+      OP_REQUIRES_OK(context, resource_scope->Init(schema));
+      resource_scope->Ref();
+      resource = resource_scope.get();
+    }
+    core::ScopedUnref unref(resource);
+
     std::vector<Tensor*> value;
-    value.reserve(avro_schema.root()->names());
-    for (size_t i = 0; i < avro_schema.root()->names(); i++) {
+    value.reserve(resource->avro_schema().root()->names());
+    for (size_t i = 0; i < resource->avro_schema().root()->names(); i++) {
       Tensor* value_tensor = nullptr;
       OP_REQUIRES_OK(context, context->allocate_output(static_cast<int64>(i), input_tensor->shape(), &value_tensor));
       value.push_back(value_tensor);
     }
 
+    avro::GenericDatum datum(resource->avro_schema());
     for (int64 entry_index = 0; entry_index < input_tensor->NumElements(); entry_index++) {
       const string& entry = input_tensor->flat<string>()(entry_index);
       std::unique_ptr<avro::InputStream> in = avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
@@ -350,7 +392,7 @@ class DecodeAvroOp : public OpKernel {
       d->init(*in);
       avro::decode(*d, datum);
       const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
-      for (int i = 0; i < avro_schema.root()->names(); i++) {
+      for (int i = 0; i < resource->avro_schema().root()->names(); i++) {
         const avro::GenericDatum& field = record.fieldAt(i);
         switch(field.type()) {
         case avro::AVRO_NULL:
@@ -435,8 +477,9 @@ class DecodeAvroOp : public OpKernel {
       }
     }
   }
-private:
-  string schema_;
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
 };
 
 class EncodeAvroOp : public OpKernel {
@@ -525,12 +568,37 @@ class EncodeAvroOp : public OpKernel {
 private:
   string schema_;
 };
+class DecodeAvroInitOp : public ResourceOpKernel<DecodeAvroResource> {
+ public:
+  explicit DecodeAvroInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<DecodeAvroResource>(context) {
+    env_ = context->env();
+  }
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<DecodeAvroResource>::Compute(context);
 
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+  }
+  Status CreateResource(DecodeAvroResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new DecodeAvroResource(env_);
+    return Status::OK();
+  }
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
 
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU),
                         DecodeAvroOp);
 REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvro").Device(DEVICE_CPU),
                         EncodeAvroOp);
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvroInit").Device(DEVICE_CPU),
+                        DecodeAvroInitOp);
 
 }  // namespace data
 }  // namespace tensorflow
