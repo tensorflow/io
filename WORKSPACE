@@ -646,3 +646,27 @@ llvm_toolchain(
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
 
 llvm_register_toolchains()
+
+http_archive(
+    name = "vorbis",
+    build_file = "//third_party:vorbis.BUILD",
+    sha256 = "43fc4bc34f13da15b8acfa72fd594678e214d1cab35fc51d3a54969a725464eb",
+    strip_prefix = "vorbis-1.3.6",
+    urls = [
+        "https://github.com/xiph/vorbis/archive/v1.3.6.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "ogg",
+    build_file = "//third_party:ogg.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:ogg.patch",
+    ],
+    sha256 = "3da31a4eb31534b6f878914b7379b873c280e610649fe5c07935b3d137a828bc",
+    strip_prefix = "ogg-1.3.4",
+    urls = [
+        "https://github.com/xiph/ogg/archive/v1.3.4.tar.gz",
+    ],
+)

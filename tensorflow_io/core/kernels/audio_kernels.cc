@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
+#include "vorbis/codec.h"
+#include "vorbis/vorbisfile.h"
 
 namespace tensorflow {
 namespace data {
@@ -76,12 +78,21 @@ Status ValidateWAVHeader(struct WAVHeader* header) {
   return Status::OK();
 }
 
-class WAVReadableResource : public ResourceBase {
+class AudioReadableResourceBase : public ResourceBase {
+ public:
+  virtual Status Init(const string& input) = 0;
+  virtual Status Read(const int64 start, Tensor* value) = 0;
+  virtual Status Spec(TensorShape* shape, DataType* dtype, int32* rate) = 0;
+  virtual Status Peek(const int64 start, const int64 stop,
+                      TensorShape* shape) = 0;
+};
+
+class WAVReadableResource : public AudioReadableResourceBase {
  public:
   WAVReadableResource(Env* env) : env_(env) {}
   ~WAVReadableResource() {}
 
-  Status Init(const string& input) {
+  Status Init(const string& input) override {
     mutex_lock l(mu_);
     const string& filename = input;
     file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
@@ -158,26 +169,31 @@ class WAVReadableResource : public ResourceBase {
 
     shape_ = TensorShape({nSamples, header_.nChannels});
 
-    return Status::OK();
-  }
-  Status Spec(TensorShape* shape, DataType* dtype, int32* rate) {
-    mutex_lock l(mu_);
-    *shape = shape_;
-    *dtype = dtype_;
-    *rate = header_.nSamplesPerSec;
+    rate_ = header_.nSamplesPerSec;
+
     return Status::OK();
   }
 
-  Status Peek(const int64 start, const int64 stop, TensorShape* shape) {
+  Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
+    mutex_lock l(mu_);
+    *shape = shape_;
+    *dtype = dtype_;
+    *rate = rate_;
+    return Status::OK();
+  }
+
+  Status Peek(const int64 start, const int64 stop,
+              TensorShape* shape) override {
     mutex_lock l(mu_);
     int64 sample_stop =
         (stop < 0) ? (shape_.dim_size(0))
                    : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
     int64 sample_start = (start >= sample_stop) ? sample_stop : start;
-    *shape = TensorShape({sample_stop - sample_start, header_.nChannels});
+    *shape = TensorShape({sample_stop - sample_start, shape_.dim_size(1)});
     return Status::OK();
   }
-  Status Read(const int64 start, Tensor* value) {
+
+  Status Read(const int64 start, Tensor* value) override {
     mutex_lock l(mu_);
     const int64 sample_start = start;
     const int64 sample_stop = start + value->shape().dim_size(0);
@@ -290,29 +306,226 @@ class WAVReadableResource : public ResourceBase {
   uint64 file_size_ GUARDED_BY(mu_);
   DataType dtype_;
   TensorShape shape_;
+  int64 rate_;
+
   struct WAVHeader header_;
   int64 header_length_;
 };
 
-class WAVReadableInitOp : public ResourceOpKernel<WAVReadableResource> {
+class OggVorbisStream {
  public:
-  explicit WAVReadableInitOp(OpKernelConstruction* context)
-      : ResourceOpKernel<WAVReadableResource>(context) {
+  OggVorbisStream(SizedRandomAccessFile* file, int64 size)
+      : file(file), size(size), offset(0) {}
+  ~OggVorbisStream() {}
+
+  static size_t ReadCallback(void* ptr, size_t size, size_t count,
+                             void* stream) {
+    OggVorbisStream* p = static_cast<OggVorbisStream*>(stream);
+    StringPiece result;
+    Status status = p->file->Read(p->offset, size * count, &result, (char*)ptr);
+    size_t items = result.size() / size;
+    p->offset += items * size;
+    return items;
+  }
+
+  static int SeekCallback(void* stream, ogg_int64_t offset, int origin) {
+    OggVorbisStream* p = static_cast<OggVorbisStream*>(stream);
+    switch (origin) {
+      case SEEK_SET:
+        if (offset < 0 || offset > p->size) {
+          return -1;
+        }
+        p->offset = offset;
+        break;
+      case SEEK_CUR:
+        if (p->offset + offset < 0 || p->offset + offset > p->size) {
+          return -1;
+        }
+        p->offset += offset;
+        break;
+      case SEEK_END:
+        if (p->size + offset < 0 || p->size + offset > p->size) {
+          return -1;
+        }
+        p->offset = p->size + offset;
+        break;
+      default:
+        return -1;
+    }
+    return 0;
+  }
+
+  static long TellCallback(void* stream) {
+    OggVorbisStream* p = static_cast<OggVorbisStream*>(stream);
+    return p->offset;
+  }
+
+  SizedRandomAccessFile* file = nullptr;
+  int64 size = 0;
+  long offset = 0;
+};
+
+static ov_callbacks OggVorbisCallbacks = {
+    (size_t(*)(void*, size_t, size_t, void*))OggVorbisStream::ReadCallback,
+    (int (*)(void*, ogg_int64_t, int))OggVorbisStream::SeekCallback,
+    (int (*)(void*))NULL, (long (*)(void*))OggVorbisStream::TellCallback};
+
+class OggReadableResource : public AudioReadableResourceBase {
+ public:
+  OggReadableResource(Env* env) : env_(env) {}
+  ~OggReadableResource() {}
+
+  Status Init(const string& input) override {
+    mutex_lock l(mu_);
+    const string& filename = input;
+    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    stream_.reset(new OggVorbisStream(file_.get(), file_size_));
+    int returned = ov_open_callbacks(stream_.get(), &ogg_vorbis_file_, NULL, -1,
+                                     OggVorbisCallbacks);
+    if (returned < 0) {
+      return errors::InvalidArgument(
+          "could not open input as an OggVorbis file: ", returned);
+    }
+
+    vorbis_info* vi = ov_info(&ogg_vorbis_file_, -1);
+    int64 samples = ov_pcm_total(&ogg_vorbis_file_, -1);
+    int64 channels = vi->channels;
+    int64 rate = vi->rate;
+
+    shape_ = TensorShape({samples, channels});
+    dtype_ = DT_INT16;
+    rate_ = rate;
+
+    return Status::OK();
+  }
+
+  Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
+    mutex_lock l(mu_);
+    *shape = shape_;
+    *dtype = dtype_;
+    *rate = rate_;
+    return Status::OK();
+  }
+
+  Status Peek(const int64 start, const int64 stop,
+              TensorShape* shape) override {
+    mutex_lock l(mu_);
+    int64 sample_stop =
+        (stop < 0) ? (shape_.dim_size(0))
+                   : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
+    int64 sample_start = (start >= sample_stop) ? sample_stop : start;
+    *shape = TensorShape({sample_stop - sample_start, shape_.dim_size(1)});
+    return Status::OK();
+  }
+
+  Status Read(const int64 start, Tensor* value) override {
+    mutex_lock l(mu_);
+    const int64 sample_start = start;
+    const int64 sample_stop = start + value->shape().dim_size(0);
+
+    int returned = ov_pcm_seek(&ogg_vorbis_file_, sample_start);
+    if (returned < 0) {
+      return errors::InvalidArgument("seek failed: ", returned);
+    }
+
+    int bitstream = 0;
+    long bytes_read = 0;
+    long bytes_to_read = value->NumElements() * sizeof(int16);
+    while (bytes_read < bytes_to_read) {
+      long chunk = ov_read(&ogg_vorbis_file_,
+                           (char*)value->flat<int16>().data() + bytes_read,
+                           bytes_to_read - bytes_read, 0, 2, 1, &bitstream);
+      if (chunk < 0) {
+        return errors::InvalidArgument("read failed: ", chunk);
+      }
+      if (chunk == 0) {
+        return errors::InvalidArgument("not enough data: ");
+      }
+      bytes_read += chunk;
+    }
+    return Status::OK();
+  }
+  string DebugString() const override { return "OggReadableResource"; }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+  DataType dtype_;
+  TensorShape shape_;
+  int64 rate_;
+
+  OggVorbis_File ogg_vorbis_file_;
+  std::unique_ptr<OggVorbisStream> stream_;
+};
+
+class AudioReadableResource : public AudioReadableResourceBase {
+ public:
+  AudioReadableResource(Env* env) : env_(env), resource_(nullptr) {}
+  ~AudioReadableResource() {}
+
+  Status Init(const string& input) override {
+    mutex_lock l(mu_);
+    std::unique_ptr<tensorflow::RandomAccessFile> file;
+    TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(input, &file));
+    char header[4];
+    StringPiece result;
+    TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
+    if (memcmp(header, "RIFF", 4) == 0) {
+      resource_.reset(new WAVReadableResource(env_));
+    } else if (memcmp(header, "OggS", 4) == 0) {
+      resource_.reset(new OggReadableResource(env_));
+    } else {
+      return errors::InvalidArgument("unknown header: ", header);
+    }
+    return resource_->Init(input);
+  }
+  Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
+    mutex_lock l(mu_);
+    return resource_->Spec(shape, dtype, rate);
+  }
+  Status Peek(const int64 start, const int64 stop,
+              TensorShape* shape) override {
+    mutex_lock l(mu_);
+    return resource_->Peek(start, stop, shape);
+  }
+  Status Read(const int64 start, Tensor* value) override {
+    mutex_lock l(mu_);
+    return resource_->Read(start, value);
+  }
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return resource_->DebugString();
+  }
+
+ protected:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<AudioReadableResourceBase> resource_ GUARDED_BY(mu_);
+};
+
+class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
+ public:
+  explicit AudioReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<AudioReadableResource>(context) {
     env_ = context->env();
   }
 
  private:
   void Compute(OpKernelContext* context) override {
-    ResourceOpKernel<WAVReadableResource>::Compute(context);
+    ResourceOpKernel<AudioReadableResource>::Compute(context);
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
     OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
   }
-  Status CreateResource(WAVReadableResource** resource)
+  Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *resource = new WAVReadableResource(env_);
+    *resource = new AudioReadableResource(env_);
     return Status::OK();
   }
 
@@ -321,15 +534,15 @@ class WAVReadableInitOp : public ResourceOpKernel<WAVReadableResource> {
   Env* env_ GUARDED_BY(mu_);
 };
 
-class WAVReadableSpecOp : public OpKernel {
+class AudioReadableSpecOp : public OpKernel {
  public:
-  explicit WAVReadableSpecOp(OpKernelConstruction* context)
+  explicit AudioReadableSpecOp(OpKernelConstruction* context)
       : OpKernel(context) {
     env_ = context->env();
   }
 
   void Compute(OpKernelContext* context) override {
-    WAVReadableResource* resource;
+    AudioReadableResource* resource;
     OP_REQUIRES_OK(context,
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
@@ -360,15 +573,15 @@ class WAVReadableSpecOp : public OpKernel {
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
 };
-class WAVReadableReadOp : public OpKernel {
+class AudioReadableReadOp : public OpKernel {
  public:
-  explicit WAVReadableReadOp(OpKernelConstruction* context)
+  explicit AudioReadableReadOp(OpKernelConstruction* context)
       : OpKernel(context) {
     env_ = context->env();
   }
 
   void Compute(OpKernelContext* context) override {
-    WAVReadableResource* resource;
+    AudioReadableResource* resource;
     OP_REQUIRES_OK(context,
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
@@ -395,12 +608,12 @@ class WAVReadableReadOp : public OpKernel {
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
 };
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableInit").Device(DEVICE_CPU),
-                        WAVReadableInitOp);
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableSpec").Device(DEVICE_CPU),
-                        WAVReadableSpecOp);
-REGISTER_KERNEL_BUILDER(Name("IO>WAVReadableRead").Device(DEVICE_CPU),
-                        WAVReadableReadOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
+                        AudioReadableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
+                        AudioReadableSpecOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
+                        AudioReadableReadOp);
 
 }  // namespace
 }  // namespace data
