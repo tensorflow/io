@@ -24,4 +24,5 @@ cc_library(
         "@arrow",
         "@jsoncpp_git//:jsoncpp",
     ],
+    alwayslink = 1,
 )

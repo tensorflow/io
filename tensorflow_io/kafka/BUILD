@@ -25,4 +25,5 @@ cc_library(
         "@avro",
         "@kafka",
     ],
+    alwayslink = 1,
 )

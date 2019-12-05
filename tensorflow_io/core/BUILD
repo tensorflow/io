@@ -21,6 +21,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -35,6 +36,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -51,6 +53,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -64,6 +67,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -79,6 +83,7 @@ cc_library(
         ":dataset_ops",
         "@curl",
     ],
+    alwayslink = 1,
 )
 
 go_binary(
@@ -101,6 +106,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:golang_ops.cc",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -115,6 +121,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@lmdb",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -128,6 +135,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -142,6 +150,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:go_ops",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -157,6 +166,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -188,6 +198,7 @@ cc_library(
         "@libwebp",
         "@openexr",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -201,6 +212,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -216,6 +228,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_3_4//:ffmpeg",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -231,6 +244,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@ffmpeg_2_8//:ffmpeg",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -245,6 +259,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@avro",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -268,6 +283,7 @@ cc_library(
         "//tensorflow_io/core:sequence_ops",
         "@com_googlesource_code_re2//:re2",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -282,6 +298,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@nucleus//:fastq_reader",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -296,6 +313,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@hdf5",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -310,6 +328,7 @@ cc_library(
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/core:dataset_ops",
     ],
+    alwayslink = 1,
 )
 
 cc_binary(

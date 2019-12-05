@@ -44,6 +44,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -61,6 +62,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 # using cc_test in tensorflow_io currently results in segmentation fault. Using cc_binary is an interim solution.
@@ -102,6 +104,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 # A library for use in the bigtable kernels.
@@ -116,4 +119,5 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
