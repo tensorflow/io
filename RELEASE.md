@@ -1,3 +1,40 @@
+# Release 0.10.0
+
+## Major Features
+* Add Kafka message key support.
+* Add support to calculate Phred Quality Scores (Genome).
+* Add PBM(PPM/PGM) image support.
+* Add OpenEXR format support.
+* Use balanced sharding strategy in bigquery read session.
+* Add `decode_jpeg_exif` to support extract orientation information.
+* Enable SSE4.2 and AVX for macOS and Linux build.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Amarpreet Singh, Mark Daoust, Olivier Martin, Peter Götz,
+Soroush Radpour, Suyash Kumar, Yong Tang, Yuan Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.9.1
+
+## Major Features
+* `tensorflow_io.bigquery`: Fixes for Google Cloud BigQuery for Tensorflow 2.0
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Amarpreet Singh, Bryan Cutler, Damien Pontifex, Duke Wang,
+Jiacheng Xu, Marcelo Lerendegui, Mark Daoust, Ouwen Huang, Suyash Kumar,
+Yong Tang, Yuan Tang, henrytansetiawan
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.9.0
 
 Release 0.9.0 is the first release that is fully compatible with
@@ -18,6 +55,22 @@ of features and contributors.
 * `tensorflow_io.audio`: WAV format now support 24 bit audio streams.
 * `tensorflow_io.text`: Regex capture group (`re2_full_match`) support.
 * manylinux2010 compliant on Linux.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Amarpreet Singh, Bryan Cutler, Damien Pontifex, Duke Wang,
+Jiacheng Xu, Marcelo Lerendegui, Mark Daoust, Ouwen Huang, Suyash Kumar,
+Yong Tang, Yuan Tang, henrytansetiawan
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.8.1
+
+## Major Features
+* `tensorflow_io.bigquery`: Fixes for Google Cloud BigQuery for Tensorflow 1.15.
 
 ## Thanks to our Contributors
 
@@ -52,6 +105,36 @@ This release contains contributions from many people:
 Aleksey Vlasenko, Amarpreet Singh, Bryan Cutler, Damien Pontifex, Duke Wang,
 Jiacheng Xu, Marcelo Lerendegui, Mark Daoust, Ouwen Huang, Suyash Kumar,
 Yong Tang, Yuan Tang, henrytansetiawan
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.7.2
+
+## Major Features
+* `tensorflow_io.bigquery`: Fixes for Google Cloud BigQuery for Tensorflow 1.14
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Anton Dmitriev, Bryan Cutler, Damien Pontifex, Ivelin Ivanov,
+Jiacheng Xu, Misha Brukman, Russell Power, Yong Tang, Yuan Tang, zhjunqin
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.7.1
+
+## Major Features
+* `tensorflow_io.bigquery`: Fixes for Google Cloud BigQuery for Tensorflow 1.14
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Anton Dmitriev, Bryan Cutler, Damien Pontifex, Ivelin Ivanov,
+Jiacheng Xu, Misha Brukman, Russell Power, Yong Tang, Yuan Tang, zhjunqin
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
