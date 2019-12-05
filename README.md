@@ -24,7 +24,7 @@ import tensorflow_io as tfio
 
 # Read MNIST into Dataset
 d_train = tfio.IODataset.from_mnist(
-    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz",
+    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
     'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
 
 # By default image data is uint8 so conver to float32.
