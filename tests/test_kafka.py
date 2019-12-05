@@ -134,8 +134,8 @@ class KafkaDatasetTest(test.TestCase):
       get_next = iterator.get_next()
 
       it = tf.data.experimental.make_saveable_from_iterator(iterator)
-      g.add_to_collection(tf.GraphKeys.SAVEABLE_OBJECTS, it)
-      saver = tf.train.Saver()
+      g.add_to_collection(tf.compat.v1.GraphKeys.SAVEABLE_OBJECTS, it)
+      saver = tf.compat.v1.train.Saver()
 
       model_file = "/tmp/test-kafka-model"
       with self.cached_session() as sess:
