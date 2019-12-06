@@ -419,9 +419,9 @@ class GraphIODataset(tf.data.Dataset):
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_wav_readable_init(filename)
+      resource = core_ops.io_audio_readable_init(filename)
       dtype = cls._dtype
-      shape, _, _ = core_ops.io_wav_readable_spec(resource)
+      shape, _, _ = core_ops.io_audio_readable_spec(resource)
       return audio_dataset_ops.AudioGraphIODataset(
           resource, shape, dtype, internal=True)
 
