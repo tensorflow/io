@@ -35,7 +35,7 @@ class AudioGraphIODataset(tf.data.Dataset):
 
       self._resource = resource
       dataset = tf.data.Dataset.range(0, shape[0], capacity)
-      dataset = dataset.map(lambda index: core_ops.io_wav_readable_read(
+      dataset = dataset.map(lambda index: core_ops.io_audio_readable_read(
           resource, index, index+capacity, dtype=dtype))
       dataset = dataset.apply(
           tf.data.experimental.take_while(
@@ -60,8 +60,8 @@ class AudioIODataset(AudioGraphIODataset):
                internal=True):
     """AudioIODataset."""
     with tf.name_scope("FromAudio"):
-      resource = core_ops.io_wav_readable_init(filename)
-      shape, dtype, _ = core_ops.io_wav_readable_spec(resource)
+      resource = core_ops.io_audio_readable_init(filename)
+      shape, dtype, _ = core_ops.io_audio_readable_spec(resource)
       shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
       super(AudioIODataset, self).__init__(

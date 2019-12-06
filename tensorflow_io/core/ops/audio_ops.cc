@@ -21,7 +21,7 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-REGISTER_OP("IO>WAVReadableInit")
+REGISTER_OP("IO>AudioReadableInit")
     .Input("input: string")
     .Output("resource: resource")
     .Attr("container: string = ''")
@@ -31,7 +31,7 @@ REGISTER_OP("IO>WAVReadableInit")
       return Status::OK();
     });
 
-REGISTER_OP("IO>WAVReadableSpec")
+REGISTER_OP("IO>AudioReadableSpec")
     .Input("input: resource")
     .Output("shape: int64")
     .Output("dtype: int64")
@@ -43,7 +43,7 @@ REGISTER_OP("IO>WAVReadableSpec")
       return Status::OK();
     });
 
-REGISTER_OP("IO>WAVReadableRead")
+REGISTER_OP("IO>AudioReadableRead")
     .Input("input: resource")
     .Input("start: int64")
     .Input("stop: int64")

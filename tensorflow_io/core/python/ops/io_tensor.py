@@ -249,6 +249,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     The following audio file formats are supported:
     - WAV
+    - OGG
 
     Args:
       filename: A string, the filename of an audio file.
@@ -500,6 +501,7 @@ class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-acces
 
     The following audio file formats are supported:
     - WAV
+    - OGG
 
     Args:
       filename: A string, the filename of an audio file.
@@ -511,9 +513,9 @@ class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-acces
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_wav_readable_init(filename)
+      resource = core_ops.io_audio_readable_init(filename)
       dtype = cls._dtype
-      shape, _, rate = core_ops.io_wav_readable_spec(resource)
+      shape, _, rate = core_ops.io_audio_readable_spec(resource)
       shape = tf.unstack(shape)
       return audio_io_tensor_ops.AudioGraphIOTensor(
           resource, shape, dtype, rate, internal=True)

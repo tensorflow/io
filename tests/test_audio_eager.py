@@ -54,6 +54,46 @@ def fixture_audio_data_24():
   rate = tf.constant(44100)
   return path, value, rate
 
+@pytest.fixture(name="audio_data_ogg", scope="module")
+def fixture_audio_data_ogg():
+  """fixture_audio_data_ogg"""
+  ogg_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "Crescendo_example.ogg")
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "Crescendo_example.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+  rate = audio.sample_rate
+  return ogg_path, value, rate
+
+@pytest.mark.parametrize(
+    ("io_tensor_func"),
+    [
+        (tfio.IOTensor.from_audio),
+    ],
+    ids=["from_audio"],
+)
+def test_audio_io_tensor_ogg(audio_data_ogg, io_tensor_func):
+  """test_audio_io_tensor_ogg"""
+  audio_path, audio_value, audio_rate = audio_data_ogg
+
+  audio_tensor = io_tensor_func(audio_path)
+  assert audio_tensor.rate == audio_rate
+  assert audio_tensor.shape == audio_value.shape
+  assert np.all(audio_tensor.to_tensor() == audio_value)
+  for step in [101, 501, 1001, 5001]:
+    indices = list(range(0, 258300, step))
+    # TODO: -1 vs. 258300 might need fix
+    for (start, stop) in zip(indices, indices[1:] + [258300]):
+      audio_tensor_value = audio_tensor[start:stop]
+      audio_value_value = audio_value[start:stop]
+      assert audio_tensor_value.shape == audio_value_value.shape
+      assert np.all(audio_tensor_value == audio_value_value)
+
+
 @pytest.mark.parametrize(
     ("io_tensor_func"),
     [
