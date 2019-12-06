@@ -207,7 +207,6 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
-        (tfio.IODataset.from_audio),
         pytest.param(
             lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
             marks=[
@@ -225,7 +224,7 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
             ],
         ),
     ],
-    ids=["from_audio", "from_ffmpeg", "from_ffmpeg(eager)"],
+    ids=["from_ffmpeg", "from_ffmpeg(eager)"],
 )
 def test_audio_io_dataset(audio_data, io_dataset_func):
   """test_audio_io_dataset"""
@@ -303,7 +302,6 @@ def test_audio_io_tensor_with_dataset(
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
-        (tfio.IODataset.graph(tf.int16).from_audio),
         pytest.param(
             lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
             marks=[
@@ -313,7 +311,7 @@ def test_audio_io_tensor_with_dataset(
             ],
         ),
     ],
-    ids=["from_audio", "from_ffmpeg"],
+    ids=["from_ffmpeg"],
 )
 def test_audio_io_dataset_with_dataset(audio_data, io_dataset_func):
   """test_audio_io_dataset_with_dataset"""
