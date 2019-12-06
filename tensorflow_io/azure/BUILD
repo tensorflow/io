@@ -21,6 +21,7 @@ cc_library(
         ":azfs_readonly_memory_region",
         ":azfs_writable_file",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -38,6 +39,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -53,6 +55,7 @@ cc_library(
     deps = [
         ":azfs_client",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -68,6 +71,7 @@ cc_library(
     deps = [
         ":azfs_client",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
@@ -81,6 +85,7 @@ cc_library(
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
+    alwayslink = 1,
 )
 
 # bazel test \

@@ -25,4 +25,5 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
     ],
+    alwayslink = 1,
 )
