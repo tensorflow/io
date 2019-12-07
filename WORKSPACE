@@ -670,3 +670,13 @@ http_archive(
         "https://github.com/xiph/ogg/archive/v1.3.4.tar.gz",
     ],
 )
+
+http_archive(
+    name = "flac",
+    build_file = "//third_party:flac.BUILD",
+    sha256 = "668cdeab898a7dd43cf84739f7e1f3ed6b35ece2ef9968a5c7079fe9adfe1689",
+    strip_prefix = "flac-1.3.3",
+    urls = [
+        "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
+    ],
+)
