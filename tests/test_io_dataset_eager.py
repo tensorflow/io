@@ -133,16 +133,9 @@ def fixture_audio_flac():
 
   return args, func, expected
 
-# This test is both a benchmark and a basic dataset operations
-# that make sure dataset works in tf.keras inference.
+# This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
 #   entries = [e for e in dataset]
-#
-# This test by default invokes benchmark, but could be for non-benchmark
-# with `--benchmark-disable`.
-@pytest.mark.benchmark(
-    group="io_dataset",
-)
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
@@ -160,16 +153,12 @@ def fixture_audio_flac():
         "audio[flac]",
     ],
 )
-def test_io_dataset_basic(benchmark, fixture_lookup, io_dataset_fixture):
-  """test_io_dataset_benchmark"""
+def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_basic"""
   args, func, expected = fixture_lookup(io_dataset_fixture)
 
-  def f(v):
-    dataset = func(v)
-    entries = [e for e in dataset]
-    return entries
-
-  entries = benchmark(f, args)
+  dataset = func(args)
+  entries = [e for e in dataset]
 
   assert len(entries) == len(expected)
   assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
@@ -337,3 +326,41 @@ def test_io_dataset_in_dataset_parallel(
     assert i == len(expected)
     item += 1
   assert item == 2
+
+# This test is a benchmark for dataset, could invoke/skip/disalbe through:
+#   --benchmark-only
+#   --benchmark-skip
+#   --benchmark-disable
+@pytest.mark.benchmark(
+    group="io_dataset",
+)
+@pytest.mark.parametrize(
+    ("io_dataset_fixture"),
+    [
+        pytest.param("lmdb"),
+        pytest.param("audio_wav"),
+        pytest.param("audio_wav_24"),
+        pytest.param("audio_ogg"),
+        pytest.param("audio_flac"),
+    ],
+    ids=[
+        "lmdb",
+        "audio[wav]",
+        "audio[wav/24bit]",
+        "audio[ogg]",
+        "audio[flac]",
+    ],
+)
+def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_benchmark"""
+  args, func, expected = fixture_lookup(io_dataset_fixture)
+
+  def f(v):
+    dataset = func(v)
+    entries = [e for e in dataset]
+    return entries
+
+  entries = benchmark(f, args)
+
+  assert len(entries) == len(expected)
+  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
