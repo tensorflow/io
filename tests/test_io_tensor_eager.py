@@ -65,14 +65,12 @@ def fixture_audio_wav_24():
   """fixture_audio_wav_24"""
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.wav")
-  # raw was geenrated from:
-  # $ sox example_0.5s.wav example_0.5s.s32
+      "test_audio", "ZASFX_ADSR_no_sustain.24.wav")
   raw_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.s32")
+      "test_audio", "ZASFX_ADSR_no_sustain.24.s32")
   value = np.fromfile(raw_path, np.int32)
-  value = np.reshape(value, [22050, 2])
+  value = np.reshape(value, [14336, 2])
   value = tf.constant(value)
 
   args = path
@@ -86,14 +84,12 @@ def fixture_audio_wav_24():
 @pytest.fixture(name="audio_ogg", scope="module")
 def fixture_audio_ogg():
   """fixture_audio_ogg"""
-  # File is from the following with wav generated from `oggdec`.
-  # https://en.wikipedia.org/wiki/File:Crescendo_example.ogg
   ogg_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "Crescendo_example.ogg")
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "Crescendo_example.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
@@ -109,14 +105,12 @@ def fixture_audio_ogg():
 @pytest.fixture(name="audio_flac", scope="module")
 def fixture_audio_flac():
   """fixture_audio_flac"""
-  # Sample from the following:
-  # https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/audio-samples.html
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "gs-16b-2c-44100hz.flac")
+      "test_audio", "ZASFX_ADSR_no_sustain.flac")
   wav_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "gs-16b-2c-44100hz.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
@@ -191,18 +185,8 @@ def test_io_tensor(fixture_lookup, io_tensor_fixture):
     [
         pytest.param("audio_wav"),
         pytest.param("audio_wav_24"),
-        pytest.param(
-            "audio_ogg",
-            marks=[
-                pytest.mark.skip(reason="TODO(performance)"),
-            ],
-        ),
-        pytest.param(
-            "audio_flac",
-            marks=[
-                pytest.mark.skip(reason="TODO(performance)"),
-            ],
-        ),
+        pytest.param("audio_ogg"),
+        pytest.param("audio_flac"),
     ],
     ids=[
         "audio[wav]",
