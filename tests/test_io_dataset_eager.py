@@ -92,6 +92,8 @@ def fixture_audio_wav_24():
 @pytest.fixture(name="audio_ogg", scope="module")
 def fixture_audio_ogg():
   """fixture_audio_ogg"""
+  # File is from the following with wav generated from `oggdec`.
+  # https://en.wikipedia.org/wiki/File:Crescendo_example.ogg
   # The length is too long so cut the first 10000 samples.
   ogg_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
