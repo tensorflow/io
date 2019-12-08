@@ -52,12 +52,20 @@ def fixture_lmdb(request):
 
   return args, func, expected
 
+# Source of audio are based on the following:
+#   https://commons.wikimedia.org/wiki/File:ZASFX_ADSR_no_sustain.ogg
+# OGG: ZASFX_ADSR_no_sustain.ogg.
+# WAV: oggdec ZASFX_ADSR_no_sustain.ogg # => ZASFX_ADSR_no_sustain.wav
+# WAV (24 bit):
+#   sox ZASFX_ADSR_no_sustain.wav -b 24 ZASFX_ADSR_no_sustain.24.wav
+#   sox ZASFX_ADSR_no_sustain.24.wav ZASFX_ADSR_no_sustain.24.s32
+# FLAC: ffmpeg -i ZASFX_ADSR_no_sustain.wav ZASFX_ADSR_no_sustain.flac
 @pytest.fixture(name="audio_wav", scope="module")
 def fixture_audio_wav():
   """fixture_audio_wav"""
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "mono_10khz.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
@@ -73,14 +81,12 @@ def fixture_audio_wav_24():
   """fixture_audio_wav_24"""
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.wav")
-  # raw was geenrated from:
-  # $ sox example_0.5s.wav example_0.5s.s32
+      "test_audio", "ZASFX_ADSR_no_sustain.24.wav")
   raw_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.s32")
+      "test_audio", "ZASFX_ADSR_no_sustain.24.s32")
   value = np.fromfile(raw_path, np.int32)
-  value = np.reshape(value, [22050, 2])
+  value = np.reshape(value, [14336, 2])
   value = tf.constant(value)
 
   args = path
@@ -92,21 +98,18 @@ def fixture_audio_wav_24():
 @pytest.fixture(name="audio_ogg", scope="module")
 def fixture_audio_ogg():
   """fixture_audio_ogg"""
-  # File is from the following with wav generated from `oggdec`.
-  # https://en.wikipedia.org/wiki/File:Crescendo_example.ogg
-  # The length is too long so cut the first 10000 samples.
   ogg_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "Crescendo_example.ogg")
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "Crescendo_example.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value[:10000], tf.int16)
+  value = tf.cast(value, tf.int16)
 
   args = ogg_path
-  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args).take(10000)
+  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args)
   expected = [v for _, v in enumerate(value)]
 
   return args, func, expected
@@ -114,25 +117,53 @@ def fixture_audio_ogg():
 @pytest.fixture(name="audio_flac", scope="module")
 def fixture_audio_flac():
   """fixture_audio_flac"""
-  # Sample from the following:
-  # https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/audio-samples.html
-  # The length is too long so cut the first 10000 samples.
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "gs-16b-2c-44100hz.flac")
+      "test_audio", "ZASFX_ADSR_no_sustain.flac")
   wav_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "gs-16b-2c-44100hz.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value[:10000], tf.int16)
+  value = tf.cast(value, tf.int16)
 
   args = path
-  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args).take(10000)
+  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args)
   expected = [v for _, v in enumerate(value)]
 
   return args, func, expected
 
+# This test make sure dataset works in tf.keras inference.
+# The requirement for tf.keras inference is the support of `iter()`:
+#   entries = [e for e in dataset]
+@pytest.mark.parametrize(
+    ("io_dataset_fixture"),
+    [
+        pytest.param("lmdb"),
+        pytest.param("audio_wav"),
+        pytest.param("audio_wav_24"),
+        pytest.param("audio_ogg"),
+        pytest.param("audio_flac"),
+    ],
+    ids=[
+        "lmdb",
+        "audio[wav]",
+        "audio[wav/24bit]",
+        "audio[ogg]",
+        "audio[flac]",
+    ],
+)
+def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_basic"""
+  args, func, expected = fixture_lookup(io_dataset_fixture)
+
+  dataset = func(args)
+  entries = [e for e in dataset]
+
+  assert len(entries) == len(expected)
+  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+
+# This test makes sure basic dataset operations (take, batch) work.
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
@@ -155,24 +186,11 @@ def fixture_audio_flac():
         "audio[flac]",
     ],
 )
-def test_io_dataset(fixture_lookup, io_dataset_fixture):
-  """test_io_dataset"""
+def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_basic_operation"""
   args, func, expected = fixture_lookup(io_dataset_fixture)
 
   dataset = func(args)
-
-  # Run of dataset iteration
-  entries = [e for e in dataset]
-
-  assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
-
-  # A re-run of dataset iteration will yield the same result,
-  # this is needed for training with tf.keras
-  entries = [e for e in dataset]
-
-  assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
 
   # Test of take
   expected_taken = expected[:5]
@@ -183,8 +201,8 @@ def test_io_dataset(fixture_lookup, io_dataset_fixture):
       np.array_equal(a, b) for (a, b) in zip(entries_taken, expected_taken)])
 
   # Test of batch
-  indices = list(range(0, len(entries), 3))
-  indices = list(zip(indices, indices[1:] + [len(entries)]))
+  indices = list(range(0, len(expected), 3))
+  indices = list(zip(indices, indices[1:] + [len(expected)]))
   expected_batched = [expected[i:j] for i, j in indices]
 
   entries_batched = [e for e in dataset.batch(3)]
@@ -194,7 +212,98 @@ def test_io_dataset(fixture_lookup, io_dataset_fixture):
       all([np.array_equal(i, j) for (i, j) in zip(a, b)]) for (a, b) in zip(
           entries_batched, expected_batched)])
 
-  # Test of dataset within dataset
+# This test makes sure dataset works in tf.keras training.
+# The requirement for tf.keras training is the support of multiple `iter()`
+# runs with consistent result:
+#   entries_1 = [e for e in dataset]
+#   entries_2 = [e for e in dataset]
+#   assert entries_1 = entries_2
+@pytest.mark.parametrize(
+    ("io_dataset_fixture"),
+    [
+        pytest.param(
+            "lmdb",
+            marks=[
+                pytest.mark.xfail(reason="TODO"),
+            ],
+        ),
+        pytest.param("audio_wav"),
+        pytest.param("audio_wav_24"),
+        pytest.param("audio_ogg"),
+        pytest.param("audio_flac"),
+    ],
+    ids=[
+        "lmdb",
+        "audio[wav]",
+        "audio[wav/24bit]",
+        "audio[ogg]",
+        "audio[flac]",
+    ],
+)
+def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_for_training"""
+  args, func, expected = fixture_lookup(io_dataset_fixture)
+
+  dataset = func(args)
+
+  # Run of dataset iteration
+  entries = [e for e in dataset]
+
+  assert len(entries) == len(expected)
+  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+
+  # A re-run of dataset iteration yield the same results, needed for training.
+  entries = [e for e in dataset]
+
+  assert len(entries) == len(expected)
+  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+
+# This test makes sure dataset in dataet and parallelism work.
+# It is not needed for tf.keras but could be useful
+# for complex data processing.
+@pytest.mark.parametrize(
+    ("io_dataset_fixture", "num_parallel_calls"),
+    [
+        pytest.param(
+            "lmdb", None,
+            marks=[
+                pytest.mark.skip(reason="TODO"),
+            ],
+        ),
+        pytest.param(
+            "lmdb", 2,
+            marks=[
+                pytest.mark.skip(reason="TODO"),
+            ],
+        ),
+        pytest.param("audio_wav", None),
+        pytest.param("audio_wav", 2),
+        pytest.param("audio_wav_24", None),
+        pytest.param("audio_wav_24", 2),
+        pytest.param("audio_ogg", None),
+        pytest.param("audio_ogg", 2),
+        pytest.param("audio_flac", None),
+        pytest.param("audio_flac", 2),
+    ],
+    ids=[
+        "lmdb",
+        "lmdb|2",
+        "audio[wav]",
+        "audio[wav]|2",
+        "audio[wav/24bit]",
+        "audio[wav/24bit]|2",
+        "audio[ogg]",
+        "audio[ogg]|2",
+        "audio[flac]",
+        "audio[flac]|2",
+    ],
+)
+def test_io_dataset_in_dataset_parallel(
+    fixture_lookup, io_dataset_fixture, num_parallel_calls):
+  """test_io_dataset_in_dataset_parallel"""
+  args, func, expected = fixture_lookup(io_dataset_fixture)
+
+  dataset = func(args)
 
   # Note: @tf.function is actually not needed, as tf.data.Dataset
   # will automatically wrap the `func` into a graph anyway.
@@ -203,23 +312,25 @@ def test_io_dataset(fixture_lookup, io_dataset_fixture):
   def f(v):
     return func(v)
 
-  args_dataset = tf.data.Dataset.from_tensor_slices([args])
+  args_dataset = tf.data.Dataset.from_tensor_slices([args, args])
 
-  # Test with num_parallel_calls None, 1, 2
-  for num_parallel_calls in [None, 1, 2]:
-    dataset = args_dataset.map(f, num_parallel_calls=num_parallel_calls)
+  dataset = args_dataset.map(f, num_parallel_calls=num_parallel_calls)
 
-    item = 0
-    # Notice dataset in dataset:
-    for d in dataset:
-      i = 0
-      for v in d:
-        assert np.array_equal(expected[i], v)
-        i += 1
-      assert i == len(expected)
-      item += 1
-    assert item == 1
+  item = 0
+  # Notice dataset in dataset:
+  for d in dataset:
+    i = 0
+    for v in d:
+      assert np.array_equal(expected[i], v)
+      i += 1
+    assert i == len(expected)
+    item += 1
+  assert item == 2
 
+# This test is a benchmark for dataset, could invoke/skip/disalbe through:
+#   --benchmark-only
+#   --benchmark-skip
+#   --benchmark-disable
 @pytest.mark.benchmark(
     group="io_dataset",
 )
