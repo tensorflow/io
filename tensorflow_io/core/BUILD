@@ -211,6 +211,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        "@flac",
         "@vorbis",
     ],
     alwayslink = 1,
