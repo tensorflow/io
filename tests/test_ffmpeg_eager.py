@@ -45,14 +45,6 @@ def test_ffmpeg_io_tensor_audio():
   assert np.all(audio[0:5760].numpy() == ffmpeg[0:5760].numpy())
   assert len(audio) == len(ffmpeg)
 
-  audio_24bit_path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.wav")
-  audio_24bit = tfio.IOTensor.from_ffmpeg(audio_24bit_path)
-  assert audio_24bit('a:0').shape.as_list() == [None, 2]
-  assert audio_24bit('a:0').dtype == tf.int32
-  assert audio_24bit('a:0').rate == 44100
-
 # Disable as the mkv file is large. Run locally
 # by pulling test file while is located in:
 # https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv

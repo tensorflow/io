@@ -42,14 +42,12 @@ def fixture_audio_data_24():
   """fixture_audio_data_24"""
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.wav")
-  # raw was geenrated from:
-  # $ sox example_0.5s.wav example_0.5s.s32
+      "test_audio", "ZASFX_ADSR_no_sustain.24.wav")
   raw_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "example_0.5s.s32")
+      "test_audio", "ZASFX_ADSR_no_sustain.24.s32")
   value = np.fromfile(raw_path, np.int32)
-  value = np.reshape(value, [22050, 2])
+  value = np.reshape(value, [14336, 2])
   value = tf.constant(value)
   rate = tf.constant(44100)
   return path, value, rate
@@ -79,9 +77,9 @@ def test_audio_io_tensor_24(audio_data_24, io_tensor_func):
   assert audio_tensor.shape == audio_value.shape
   assert np.all(audio_tensor.to_tensor() == audio_value)
   for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
-    indices = list(range(0, 22050, step))
-    # TODO: -1 vs. 22050 might need fix
-    for (start, stop) in zip(indices, indices[1:] + [22050]):
+    indices = list(range(0, 14336, step))
+    # TODO: -1 vs. 14336 might need fix
+    for (start, stop) in zip(indices, indices[1:] + [14336]):
       audio_tensor_value = audio_tensor[start:stop]
       audio_value_value = audio_value[start:stop]
       assert audio_tensor_value.shape == audio_value_value.shape
@@ -115,7 +113,7 @@ def test_audio_io_dataset_24(audio_data_24, io_dataset_func):
     assert value.shape == [2]
     assert np.all(audio_value[i] == value)
     i += 1
-  assert i == 22050
+  assert i == 14336
 
   audio_dataset = io_dataset_func(audio_path).batch(2)
 
@@ -125,7 +123,7 @@ def test_audio_io_dataset_24(audio_data_24, io_dataset_func):
     assert np.all(audio_value[i] == value[0])
     assert np.all(audio_value[i + 1] == value[1])
     i += 2
-  assert i == 22050
+  assert i == 14336
 
 @pytest.mark.parametrize(
     ("io_tensor_func"),
