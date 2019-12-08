@@ -25,7 +25,6 @@ from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import hdf5_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
-from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
 from tensorflow_io.core.python.ops import csv_io_tensor_ops
 from tensorflow_io.core.python.ops import avro_io_tensor_ops
@@ -322,27 +321,6 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
           servers=kwargs.get("servers", None),
           configuration=kwargs.get("configuration", None),
           internal=True)
-
-  @classmethod
-  def from_prometheus(cls,
-                      query,
-                      **kwargs):
-    """Creates an `IOTensor` from a prometheus query.
-
-    Args:
-      query: A string, the query string for prometheus.
-      endpoint: A string, the server address of prometheus, by default
-       `http://localhost:9090`.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A (`IOTensor`, `IOTensor`) tuple that represents `timestamp`
-        and `value`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromPrometheus")):
-      return prometheus_io_tensor_ops.PrometheusIOTensor(
-          query, endpoint=kwargs.get("endpoint", None), internal=True)
 
   @classmethod
   def from_feather(cls,
