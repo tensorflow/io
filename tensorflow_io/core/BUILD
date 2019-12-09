@@ -95,7 +95,9 @@ go_binary(
     deps = [
         "@com_github_prometheus_client_golang//api:go_default_library",
         "@com_github_prometheus_client_golang//api/prometheus/v1:go_default_library",
+        "@com_github_prometheus_client_model//go:go_default_library",
         "@com_github_prometheus_common//model:go_default_library",
+        "@com_github_prometheus_prom2json//:go_default_library",
     ],
 )
 

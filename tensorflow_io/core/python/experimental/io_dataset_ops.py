@@ -27,6 +27,19 @@ class IODataset(io_dataset.IODataset):
   """IODataset"""
 
   #=============================================================================
+  # Stream mode
+  #=============================================================================
+
+  @classmethod
+  def stream(cls):
+    """Obtain a non-repeatable StreamIODataset to be used.
+
+    Returns:
+      A class of `StreamIODataset`.
+    """
+    return StreamIODataset
+
+  #=============================================================================
   # Factory Methods
   #=============================================================================
 
@@ -79,3 +92,28 @@ class IODataset(io_dataset.IODataset):
     with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
       return image_dataset_ops.TIFFIODataset(
           filename, internal=True)
+
+class StreamIODataset(tf.data.Dataset):
+  """StreamIODataset"""
+
+  @classmethod
+  def from_prometheus_scrape(cls,
+                             metric,
+                             endpoint,
+                             interval=None,
+                             **kwargs):
+    """Creates an `StreamIODataset` from a prometheus scrape endpoint.
+
+    Args:
+      metric: A string, the name of the metric to scrape.
+      endpoint: A string, the address of prometheus scrape endpoint.
+      interval: An integer, the time interval to scrape, by default 1s.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromPrometheusScrape")):
+      from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
+      return prometheus_dataset_ops.PrometheusScrapeStreamIODataset(
+          metric, endpoint, interval=interval, internal=True)

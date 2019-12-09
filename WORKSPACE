@@ -510,6 +510,25 @@ go_repository(
     tag = "v0.9.3",
 )
 
+go_repository(
+    name = "com_github_matttproud_golang_protobuf_extensionsn",
+    commit = "c182affec369e30f25d3eb8cd8a478dee585ae7d",
+    importpath = "github.com/matttproud/golang_protobuf_extensions",
+)
+
+go_repository(
+    name = "com_github_prometheus_client_model",
+    commit = "14fe0d1b01d4d5fc031dd4bec1823bd3ebbe8016",
+    importpath = "github.com/prometheus/client_model",
+)
+
+go_repository(
+    name = "com_github_prometheus_prom2json",
+    build_extra_args = ["-exclude=vendor"],
+    importpath = "github.com/prometheus/prom2json",
+    tag = "v1.2.2",
+)
+
 http_archive(
     name = "dcmtk",
     build_file = "//third_party:dcmtk.BUILD",
