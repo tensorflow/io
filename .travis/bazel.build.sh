@@ -59,7 +59,7 @@ fi
 
 # Build with SSE4.2 and AVX
 if [[ "${BAZEL_CPU_OPTIMIZATION}" == "yes" ]]; then
-  args+=(--copt=-msse4.2 --copt=-mavx)
+  args+=(--copt=-msse4.2 --copt=-mavx --compilation_mode=opt)
 fi
 
 bazel build \
