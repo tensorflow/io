@@ -77,9 +77,9 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIODataset`.
     """
-    cls = GraphIODataset
-    cls._dtype = dtype
-    return cls
+    v = GraphIODataset
+    v._dtype = dtype # pylint: disable=protected-access
+    return v
 
   #=============================================================================
   # Stream mode
@@ -326,6 +326,29 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       return pcap_dataset_ops.PcapIODataset(
           filename, internal=True, **kwargs)
 
+  @classmethod
+  def from_prometheus(cls,
+                      query,
+                      length,
+                      offset=None,
+                      endpoint=None):
+    """Creates an `GraphIODataset` from a prometheus endpoint.
+
+    Args:
+      query: A string, the query string for prometheus.
+      length: An integer, the length of the query (in seconds).
+      offset: An integer, the a millisecond-precision timestamp, by default
+        the time when graph runs.
+      endpoint: A string, the server address of prometheus, by default
+        `http://localhost:9090`.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    return GraphIODataset.from_prometheus(
+        query, length, offset=offset, endpoint=endpoint)
+
 class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=protected-access
   """StreamIODataset
 
@@ -441,17 +464,43 @@ class GraphIODataset(tf.data.Dataset):
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       if stream.startswith("a:"):
         resource = ffmpeg_ops.io_ffmpeg_audio_readable_init(
             filename, int(stream[2:]))
         dtype = cls._dtype
         return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
             resource, dtype, internal=True)
-      elif stream.startswith("v:"):
+
+      if stream.startswith("v:"):
         resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
             filename, int(stream[2:]))
         dtype = cls._dtype
         return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
             resource, dtype, internal=True)
+
       return None
+
+  @classmethod
+  def from_prometheus(cls,
+                      query,
+                      length,
+                      offset=None,
+                      endpoint=None):
+    """Creates an `GraphIODataset` from a prometheus endpoint.
+
+    Args:
+      query: A string, the query string for prometheus.
+      length: An integer, the length of the query (in seconds).
+      offset: An integer, the a millisecond-precision timestamp, by default
+        the time when graph runs.
+      endpoint: A string, the server address of prometheus, by default
+        `http://localhost:9090`.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
+    return prometheus_dataset_ops.PrometheusGraphIODataset(
+        query, length, offset=offset, endpoint=endpoint)

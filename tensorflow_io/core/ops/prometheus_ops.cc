@@ -18,44 +18,54 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 REGISTER_OP("IO>PrometheusReadableInit")
-  .Input("input: string")
-  .Input("metadata: string")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>PrometheusReadableSpec")
-  .Input("input: resource")
-  .Output("shape: int64")
-  .Output("dtype: int64")
-  .Attr("component: string")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Output("start: int64")
+    .Output("stop: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>PrometheusReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("component: string")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("timestamp: int64")
+    .Output("value: float64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
+REGISTER_OP("IO>PrometheusScrape")
+    .Input("metric: string")
+    .Input("endpoint: string")
+    .Input("index: int64")
+    .Output("timestamp: int64")
+    .Output("value: float64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->Scalar());
+      return Status::OK();
+    });
+
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

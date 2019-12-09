@@ -24,3 +24,4 @@ _golang_ops = _load_library('libtensorflow_io_golang.so')
 io_prometheus_readable_init = _golang_ops.io_prometheus_readable_init
 io_prometheus_readable_spec = _golang_ops.io_prometheus_readable_spec
 io_prometheus_readable_read = _golang_ops.io_prometheus_readable_read
+io_prometheus_scrape = _golang_ops.io_prometheus_scrape
