@@ -24,6 +24,6 @@ fi
 if $PYTHON -c "import tensorflow as tf" &> /dev/null; then
     echo 'using installed tensorflow'
 else
-    $PYTHON -m pip install $(python setup.py --package-version)
+    $PYTHON -m pip install $($PYTHON setup.py --package-version)
 fi
 $PYTHON third_party/tf/configure.py
