@@ -47,18 +47,29 @@ def fixture_audio_wav():
   """fixture_audio_wav"""
   path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "mono_10khz.wav")
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
 
   args = path
   func = lambda e: tfio.IOTensor.graph(tf.int16).from_audio(e)
-  expected = [v for _, v in enumerate(value)]
-  meta_func = lambda e: e.rate
-  meta_expected = 10000
+  expected = value
 
-  return args, func, expected, meta_func, meta_expected
+  return args, func, expected
+
+@pytest.fixture(name="audio_rate_wav", scope="module")
+def fixture_audio_rate_wav():
+  """fixture_audio_rate_wav"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+
+  args = path
+  func = lambda e: tfio.IOTensor.graph(tf.int16).from_audio(e).rate
+  expected = tf.constant(44100)
+
+  return args, func, expected
 
 @pytest.fixture(name="audio_wav_24", scope="module")
 def fixture_audio_wav_24():
@@ -75,11 +86,22 @@ def fixture_audio_wav_24():
 
   args = path
   func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args)
-  expected = [v for _, v in enumerate(value)]
-  meta_func = lambda e: e.rate
-  meta_expected = 44100
+  expected = value
 
-  return args, func, expected, meta_func, meta_expected
+  return args, func, expected
+
+@pytest.fixture(name="audio_rate_wav_24", scope="module")
+def fixture_audio_rate_wav_24():
+  """fixture_audio_rate_wav_24"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.24.wav")
+
+  args = path
+  func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args).rate
+  expected = tf.constant(44100)
+
+  return args, func, expected
 
 @pytest.fixture(name="audio_ogg", scope="module")
 def fixture_audio_ogg():
@@ -96,11 +118,22 @@ def fixture_audio_ogg():
 
   args = ogg_path
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
-  expected = [v for _, v in enumerate(value)]
-  meta_func = lambda e: e.rate
-  meta_expected = 44100
+  expected = value
 
-  return args, func, expected, meta_func, meta_expected
+  return args, func, expected
+
+@pytest.fixture(name="audio_rate_ogg", scope="module")
+def fixture_audio_rate_ogg():
+  """fixture_audio_rate_ogg"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
+
+  args = path
+  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
+  expected = tf.constant(44100)
+
+  return args, func, expected
 
 @pytest.fixture(name="audio_flac", scope="module")
 def fixture_audio_flac():
@@ -117,12 +150,24 @@ def fixture_audio_flac():
 
   args = path
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
-  expected = [v for _, v in enumerate(value)]
-  meta_func = lambda e: e.rate
-  meta_expected = 44100
+  expected = value
 
-  return args, func, expected, meta_func, meta_expected
+  return args, func, expected
 
+@pytest.fixture(name="audio_rate_flac", scope="module")
+def fixture_audio_rate_flac():
+  """fixture_audio_rate_flac"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.flac")
+
+  args = path
+  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
+  expected = tf.constant(44100)
+
+  return args, func, expected
+
+# slice (__getitem__) is the most basic operation for IOTensor
 @pytest.mark.parametrize(
     ("io_tensor_fixture"),
     [
@@ -138,45 +183,148 @@ def fixture_audio_flac():
         "audio[flac]",
     ],
 )
-def test_io_tensor(fixture_lookup, io_tensor_fixture):
-  """test_io_tensor"""
-  args, func, expected, meta_func, meta_expected = fixture_lookup(
-      io_tensor_fixture)
+def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
+  """test_io_tensor_slice"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
 
   io_tensor = func(args)
-  io_tensor_meta = meta_func(io_tensor)
-
-  # Test meta
-  assert io_tensor_meta == meta_expected
 
   # Test to_tensor
   entries = io_tensor.to_tensor()
   assert len(entries) == len(expected)
   assert np.array_equal(entries, expected)
 
-  # Test of io_tensor within dataset
+  # Test __getitem__, use 7 to partition
+  indices = list(range(0, len(expected), 7))
+  for start, stop in list(zip(indices, indices[1:] + [len(expected)])):
+    assert np.array_equal(io_tensor[start:stop], expected[start:stop])
+
+# slice (__getitem__) could also be inside dataset for GraphIOTensor
+@pytest.mark.parametrize(
+    ("io_tensor_fixture", "num_parallel_calls"),
+    [
+        pytest.param("audio_wav", None),
+        pytest.param("audio_wav", 2),
+        pytest.param("audio_wav_24", None),
+        pytest.param("audio_wav_24", 2),
+        pytest.param("audio_ogg", None),
+        pytest.param("audio_ogg", 2),
+        pytest.param("audio_flac", None),
+        pytest.param("audio_flac", 2),
+    ],
+    ids=[
+        "audio[wav]",
+        "audio[wav]|2",
+        "audio[wav/24bit]",
+        "audio[wav/24bit]|2",
+        "audio[ogg]",
+        "audio[ogg]|2",
+        "audio[flac]",
+        "audio[flac]|2",
+    ],
+)
+def test_io_tensor_slice_in_dataset(
+    fixture_lookup, io_tensor_fixture, num_parallel_calls):
+  """test_io_tensor_slice_in_dataset"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
+
+  # Test to_tensor within dataset
 
   # Note: @tf.function is actually not needed, as tf.data.Dataset
   # will automatically wrap the `func` into a graph anyway.
   # The following is purely for explanation purposes.
   @tf.function
-  def f(v):
-    return func(v)[0:1000]
+  def f(e):
+    return func(e).to_tensor()
 
-  args_dataset = tf.data.Dataset.from_tensor_slices([args])
+  dataset = tf.data.Dataset.from_tensor_slices([args, args])
+  dataset = dataset.map(f, num_parallel_calls=num_parallel_calls)
 
-  # Test with num_parallel_calls None, 1, 2
-  for num_parallel_calls in [None, 1, 2]:
-    dataset = args_dataset.map(f, num_parallel_calls=num_parallel_calls)
+  item = 0
+  for entries in dataset:
+    assert len(entries) == len(expected)
+    assert np.array_equal(entries, expected)
+    item += 1
+  assert item == 2
 
-    item = 0
-    # Notice dataset in dataset:
-    for entries in dataset:
-      assert len(entries) == len(expected[:1000])
-      assert np.array_equal(entries, expected[:1000])
-      item += 1
-    assert item == 1
+  # Note: @tf.function is actually not needed, as tf.data.Dataset
+  # will automatically wrap the `func` into a graph anyway.
+  # The following is purely for explanation purposes.
+  @tf.function
+  def g(e):
+    return func(e)[0:100]
 
+  dataset = tf.data.Dataset.from_tensor_slices([args, args])
+  dataset = dataset.map(g, num_parallel_calls=num_parallel_calls)
+
+  item = 0
+  for entries in dataset:
+    assert len(entries) == len(expected[:100])
+    assert np.array_equal(entries, expected[:100])
+    item += 1
+  assert item == 2
+
+# meta is supported for IOTensor
+@pytest.mark.parametrize(
+    ("io_tensor_fixture"),
+    [
+        pytest.param("audio_rate_wav"),
+        pytest.param("audio_rate_wav_24"),
+        pytest.param("audio_rate_ogg"),
+        pytest.param("audio_rate_flac"),
+    ],
+    ids=[
+        "audio[rate][wav]",
+        "audio[rate][wav/24bit]",
+        "audio[rate][ogg]",
+        "audio[rate][flac]",
+    ],
+)
+def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
+  """test_io_tensor_slice"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
+
+  # Test meta data attached to IOTensor
+  meta = func(args)
+  assert meta == expected
+
+# meta inside dataset is also supported for GraphIOTensor
+@pytest.mark.parametrize(
+    ("io_tensor_fixture"),
+    [
+        pytest.param("audio_rate_wav"),
+        pytest.param("audio_rate_wav_24"),
+        pytest.param("audio_rate_ogg"),
+        pytest.param("audio_rate_flac"),
+    ],
+    ids=[
+        "audio[rate][wav]",
+        "audio[rate][wav/24bit]",
+        "audio[rate][ogg]",
+        "audio[rate][flac]",
+    ],
+)
+def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
+  """test_io_tensor_slice"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
+
+  # Note: @tf.function is actually not needed, as tf.data.Dataset
+  # will automatically wrap the `func` into a graph anyway.
+  # The following is purely for explanation purposes.
+  @tf.function
+  def f(e):
+    return func(e)
+
+  dataset = tf.data.Dataset.from_tensor_slices([args, args])
+  dataset = dataset.map(f)
+
+  item = 0
+  for meta in dataset:
+    assert meta == expected
+    item += 1
+  assert item == 2
+
+# This is the basic benchmark for IOTensor.
 @pytest.mark.benchmark(
     group="io_tensor",
 )
@@ -197,8 +345,7 @@ def test_io_tensor(fixture_lookup, io_tensor_fixture):
 )
 def test_io_tensor_benchmark(benchmark, fixture_lookup, io_tensor_fixture):
   """test_io_tensor_benchmark"""
-  args, func, expected, _, _ = fixture_lookup(
-      io_tensor_fixture)
+  args, func, expected = fixture_lookup(io_tensor_fixture)
 
   def f(v):
     io_tensor = func(v)
