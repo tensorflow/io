@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset
 from tensorflow_io.core.python.experimental import libsvm_dataset_ops
 from tensorflow_io.core.python.experimental import image_dataset_ops
+from tensorflow_io.core.python.experimental import pubsub_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -117,3 +118,24 @@ class StreamIODataset(tf.data.Dataset):
       from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
       return prometheus_dataset_ops.PrometheusScrapeStreamIODataset(
           metric, endpoint, interval=interval, internal=True)
+
+  @classmethod
+  def from_pubsub(cls,
+                  subscription,
+                  endpoint=None,
+                  timeout=10000,
+                  **kwargs):
+    """Creates an `StreamIODataset` from a pubsub endpoint.
+
+    Args:
+      subscription: A string, the subscription of the pubsub messages.
+      endpoint: A string, the address of pubsub endpoint.
+      timeout: An integer, the timeout of the pubsub pull.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromPubSub")):
+      return pubsub_dataset_ops.PubSubStreamIODataset(
+          subscription, endpoint=endpoint, timeout=timeout, internal=True)

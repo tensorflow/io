@@ -18,14 +18,33 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
-REGISTER_OP("IO>PubSubDataset")
-    .Input("subscriptions: string")
-    .Input("server: string")
-    .Input("eof: bool")
-    .Input("timeout: int64")
-    .Output("handle: variant")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+REGISTER_OP("IO>PubSubReadableInit")
+    .Input("input: string")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
+REGISTER_OP("IO>PubSubReadableRead")
+    .Input("input: resource")
+    .Input("index: int64")
+    .Output("id: string")
+    .Output("data: string")
+    .Output("time: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      c->set_output(2, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow
