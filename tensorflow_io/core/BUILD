@@ -335,6 +335,22 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "pubsub_ops",
+    srcs = [
+        "kernels/pubsub_kernels.cc",
+        "ops/pubsub_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_googleapis//google/pubsub/v1:pubsub_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -355,6 +371,7 @@ cc_binary(
         "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
+        "//tensorflow_io/core:pubsub_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/grpc:grpc_ops",
@@ -363,7 +380,6 @@ cc_binary(
         "//tensorflow_io/kafka:kafka_ops",
         "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/oss:oss_ops",
-        "//tensorflow_io/pubsub:pubsub_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
