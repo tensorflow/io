@@ -69,9 +69,10 @@ class PubSubReadableResource : public ResourceBase {
 
     return Status::OK();
   }
-  Status Peek(int64* record) {
+  Status Read(std::function<Status(const TensorShape& shape, Tensor** id_tensor,
+                                   Tensor** data_tensor, Tensor** time_tensor)>
+                  allocate_func) {
     mutex_lock l(mu_);
-    *record = 0;
     if (stub_.get() == nullptr) {
       return errors::OutOfRange("EOF reached");
     }
@@ -82,6 +83,9 @@ class PubSubReadableResource : public ResourceBase {
           std::chrono::milliseconds(timeout_);
       context.set_deadline(deadline);
     }
+    Tensor* id_tensor;
+    Tensor* data_tensor;
+    Tensor* time_tensor;
     while (true) {
       PullRequest request;
       request.set_subscription(subscription_);
@@ -94,19 +98,24 @@ class PubSubReadableResource : public ResourceBase {
       }
       if (response.received_messages().size() == 0 && timeout_ > 0) {
         // break subscription if there is a timeout, and no message.
+        TF_RETURN_IF_ERROR(allocate_func(TensorShape({0}), &id_tensor,
+                                         &data_tensor, &time_tensor));
         stub_.reset(nullptr);
         return Status::OK();
       }
       if (response.received_messages().size() != 0) {
-        message_id_ =
+        TF_RETURN_IF_ERROR(allocate_func(TensorShape({1}), &id_tensor,
+                                         &data_tensor, &time_tensor));
+        id_tensor->scalar<string>()() =
             std::string((response.received_messages(0).message().message_id()));
-        message_data_ =
+        data_tensor->scalar<string>()() =
             std::string((response.received_messages(0).message().data()));
-        message_time_ =
+        time_tensor->scalar<int64>()() =
             response.received_messages(0).message().publish_time().seconds() *
                 1000 +
             response.received_messages(0).message().publish_time().nanos() /
                 1000000;
+
         // Acknowledge
         AcknowledgeRequest acknowledge;
         acknowledge.add_ack_ids(response.received_messages(0).ack_id());
@@ -115,18 +124,9 @@ class PubSubReadableResource : public ResourceBase {
         ClientContext ack_context;
         status = stub_->Acknowledge(&ack_context, acknowledge, &empty);
 
-        *record = 1;
         return Status::OK();
       }
     }
-    return Status::OK();
-  }
-  Status Read(Tensor* id_tensor, Tensor* data_tensor, Tensor* time_tensor) {
-    mutex_lock l(mu_);
-
-    id_tensor->scalar<string>()() = message_id_;
-    data_tensor->scalar<string>()() = message_data_;
-    time_tensor->scalar<int64>()() = message_time_;
     return Status::OK();
   }
   string DebugString() const override {
@@ -194,21 +194,15 @@ class PubSubReadableReadOp : public OpKernel {
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
-    int64 record = 0;
-    OP_REQUIRES_OK(context, resource->Peek(&record));
-    TensorShape shape({record});
-
-    Tensor* id_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(0, shape, &id_tensor));
-    Tensor* data_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(1, shape, &data_tensor));
-    Tensor* time_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(2, shape, &time_tensor));
-
-    if (record > 0) {
-      OP_REQUIRES_OK(context,
-                     resource->Read(id_tensor, data_tensor, time_tensor));
-    }
+    OP_REQUIRES_OK(
+        context, resource->Read([&](const TensorShape& shape,
+                                    Tensor** id_tensor, Tensor** data_tensor,
+                                    Tensor** time_tensor) -> Status {
+          TF_RETURN_IF_ERROR(context->allocate_output(0, shape, id_tensor));
+          TF_RETURN_IF_ERROR(context->allocate_output(1, shape, data_tensor));
+          TF_RETURN_IF_ERROR(context->allocate_output(2, shape, time_tensor));
+          return Status::OK();
+        }));
   }
 
  private:
