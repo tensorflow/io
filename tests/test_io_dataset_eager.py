@@ -54,62 +54,35 @@ def fixture_lmdb(request):
 
   return args, func, expected
 
-@pytest.fixture(name="prometheus_value")
-def fixture_prometheus_value():
+@pytest.fixture(name="prometheus")
+def fixture_prometheus():
   """fixture_prometheus"""
-
-  args = "coredns_dns_request_count_total"
-  def func(q):
-    v = tfio.IODataset.from_prometheus(q, 5)
-    v = v.map(lambda v: v.value)
-    return v
-  expected = [np.float64(6.0) for _ in range(5)]
-
-  return args, func, expected
-
-@pytest.fixture(name="prometheus_timestamp")
-def fixture_prometheus_timestamp():
-  """fixture_prometheus_timestamp"""
 
   offset = int(round(time.time() * 1000))
   args = "coredns_dns_request_count_total"
   def func(q):
     v = tfio.IODataset.from_prometheus(q, 5, offset=offset)
-    v = v.map(lambda v: v.timestamp)
+    v = v.map(lambda v: tf.stack([tf.cast(v.timestamp - offset, tf.float64), v.value]))
     return v
-  expected = [offset + i for i in range(-5000, 0, 1000)]
+  expected = [[np.float64(i), 6.0] for i in range(-5000, 0, 1000)]
 
   return args, func, expected
 
 # prometheus scrape stream never repeat so
 # we only test basic operation to make sure it could
 # be used in inference
-@pytest.fixture(name="prometheus_scrape_value")
-def fixture_prometheus_scrape_value():
-  """fixture_prometheus_scrape_value"""
-
-  args = "coredns_dns_request_count_total"
-  def func(q):
-    v = tfio.experimental.IODataset.stream().from_prometheus_scrape(
-        q, "http://localhost:9153/metrics").take(5)
-    v = v.map(lambda v: v.value)
-    return v
-  expected = [np.float64(6.0) for _ in range(5)]
-
-  return args, func, expected
-
-@pytest.fixture(name="prometheus_scrape_timestamp")
-def fixture_prometheus_scrape_timestamp():
-  """fixture_prometheus_scrape_timestamp"""
+@pytest.fixture(name="prometheus_scrape")
+def fixture_prometheus_scrape():
+  """fixture_prometheus_scrape"""
 
   timestamp = int(round(time.time() * 1000))
   args = "coredns_dns_request_count_total"
   def func(q):
     v = tfio.experimental.IODataset.stream().from_prometheus_scrape(
         q, "http://localhost:9153/metrics").take(5)
-    v = v.map(lambda v: v.timestamp > timestamp)
+    v = v.map(lambda v: tf.stack([v.value, tf.cast(v.timestamp > timestamp, tf.float64)]))
     return v
-  expected = [True for _ in range(5)]
+  expected = [[6.0, 1.0] for _ in range(5)]
 
   return args, func, expected
 
@@ -202,15 +175,7 @@ def fixture_audio_flac():
     [
         pytest.param("lmdb"),
         pytest.param(
-            "prometheus_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp",
+            "prometheus",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -222,15 +187,7 @@ def fixture_audio_flac():
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param(
-            "prometheus_scrape_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_scrape_timestamp",
+            "prometheus_scrape",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -240,14 +197,12 @@ def fixture_audio_flac():
     ],
     ids=[
         "lmdb",
-        "prometheus[value]",
-        "prometheus[timestamp]",
+        "prometheus",
         "audio[wav]",
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
-        "prometheus[scrape/value]",
-        "prometheus[scrape/timestamp]",
+        "prometheus[scrape]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -271,15 +226,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp",
+            "prometheus",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -291,15 +238,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param(
-            "prometheus_scrape_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_scrape_timestamp",
+            "prometheus_scrape",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -309,14 +248,12 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
     ],
     ids=[
         "lmdb",
-        "prometheus[value]",
-        "prometheus[timestamp]",
+        "prometheus",
         "audio[wav]",
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
-        "prometheus[scrape/value]",
-        "prometheus[scrape/timestamp]",
+        "prometheus[scrape]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -361,15 +298,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp",
+            "prometheus",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -383,8 +312,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
     ],
     ids=[
         "lmdb",
-        "prometheus[value]",
-        "prometheus[timestamp]",
+        "prometheus",
         "audio[wav]",
         "audio[wav/24bit]",
         "audio[ogg]",
@@ -428,7 +356,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus_value", None,
+            "prometheus", None,
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -436,23 +364,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus_value", 2,
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp", None,
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp", 2,
+            "prometheus", 2,
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -471,10 +383,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
     ids=[
         "lmdb",
         "lmdb|2",
-        "prometheus[value]",
-        "prometheus[value]|2",
-        "prometheus[timestamp]",
-        "prometheus[timestamp]|2",
+        "prometheus",
+        "prometheus|2",
         "audio[wav]",
         "audio[wav]|2",
         "audio[wav/24bit]",
@@ -526,15 +436,7 @@ def test_io_dataset_in_dataset_parallel(
     [
         pytest.param("lmdb"),
         pytest.param(
-            "prometheus_value",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
-        pytest.param(
-            "prometheus_timestamp",
+            "prometheus",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -548,8 +450,7 @@ def test_io_dataset_in_dataset_parallel(
     ],
     ids=[
         "lmdb",
-        "prometheus[value]",
-        "prometheus[timestamp]",
+        "prometheus",
         "audio[wav]",
         "audio[wav/24bit]",
         "audio[ogg]",
