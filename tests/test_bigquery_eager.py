@@ -31,8 +31,8 @@ from tensorflow.python.framework import ops
 from tensorflow import test
 from tensorflow_io.bigquery import BigQueryTestClient
 
-import google.cloud.bigquery.storage.v1beta1.storage_pb2_grpc as storage_pb2_grpc
-import google.cloud.bigquery.storage.v1beta1.storage_pb2 as storage_pb2
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
