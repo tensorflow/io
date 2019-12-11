@@ -11,7 +11,11 @@ cc_library(
     name = "avro_ops",
     srcs = [
         "kernels/avro_dataset.cc",
+        "kernels/avro_record_dataset_op.cc",
         "ops/avro_ops.cc",
+    ],
+    hdrs = [
+        "kernels/avro_record_dataset_op.h",
     ],
     copts = tf_io_copts(),
     includes = [
@@ -78,6 +82,8 @@ cc_library(
             "utils/avro_parser_tree.h",
             "utils/parse_avro_attrs.h",
             "utils/avro_file_stream_reader.h",
+            "utils/avro_record_reader.h",
+            "utils/name_utils.h",  # TODO(fraudies): Remove when migrating to TF 2.0, use TF implementation
             ],
     deps = [
         "//tensorflow_io/core:dataset_ops",
@@ -93,6 +99,8 @@ cc_library(
             "utils/avro_parser_tree.cc",
             "utils/parse_avro_attrs.cc",
             "utils/avro_file_stream_reader.cc",
+            "utils/avro_record_reader.cc",
+            "utils/name_utils.cc", # TODO(fraudies): Remove when migrating to TF 2.0, use TF implementation
             ],
     deps = [
         ":avro_utils_api",

@@ -170,7 +170,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
-        actual_dataset = avro_dataset.make_avro_dataset_v1(
+        actual_dataset = avro_dataset.make_avro_dataset(
             filenames=filenames, reader_schema=reader_schema,
             features=features, batch_size=batch_size,
             shuffle=kwargs.get("shuffle", None),
@@ -186,7 +186,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
-        actual_dataset = avro_dataset.make_avro_dataset_v1(
+        actual_dataset = avro_dataset.make_avro_dataset(
             filenames=filenames, reader_schema=reader_schema,
             features=features, batch_size=batch_size,
             shuffle=kwargs.get("shuffle", None),

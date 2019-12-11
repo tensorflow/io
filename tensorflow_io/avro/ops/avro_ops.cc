@@ -21,6 +21,24 @@ namespace tensorflow {
 
 using ::tensorflow::shape_inference::ShapeHandle;
 
+// Adjusted from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/dataset_ops.cc
+REGISTER_OP("AvroRecordDataset")
+    .Input("filenames: string")
+    .Input("buffer_size: int64")
+    .Output("handle: variant")
+    .SetIsStateful()  // TODO(b/123753214): Source dataset ops must be marked
+                      // stateful to inhibit constant folding.
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      VLOG(4) << "Create avro record dataset";
+      // `filenames` must be a scalar or a vector
+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(0), 1, &unused));
+      // `buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      return shape_inference::ScalarShape(c);
+    });
+
+
 REGISTER_OP("AvroDataset")
     .Input("filenames: string")
     .Input("batch_size: int64")
