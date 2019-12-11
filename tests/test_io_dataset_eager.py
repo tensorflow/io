@@ -242,14 +242,7 @@ def fixture_audio_flac():
                     reason="TODO macOS does not support prometheus"),
             ],
         ),
-        pytest.param(
-            "pubsub",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
+        pytest.param("pubsub"),
     ],
     ids=[
         "lmdb",
@@ -302,14 +295,6 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
                     reason="TODO macOS does not support prometheus"),
             ],
         ),
-        pytest.param(
-            "pubsub",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus"),
-            ],
-        ),
     ],
     ids=[
         "lmdb",
@@ -319,7 +304,6 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "audio[ogg]",
         "audio[flac]",
         "prometheus[scrape]",
-        "pubsub",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
