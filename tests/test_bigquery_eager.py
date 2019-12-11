@@ -31,8 +31,8 @@ from tensorflow.python.framework import ops
 from tensorflow import test
 from tensorflow_io.bigquery import BigQueryTestClient
 
-import google.cloud.bigquery.storage.v1beta1.storage_pb2_grpc as storage_pb2_grpc
-import google.cloud.bigquery.storage.v1beta1.storage_pb2 as storage_pb2
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()
@@ -73,7 +73,8 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     return self._project_id + "/" + self._dataset_id + "/" + \
         self._table_id + "/" + str(stream_index)
 
-  def CreateReadSession(self, request, context):
+  def CreateReadSession(self, request, context): # pylint: disable=unused-argument
+    """CreateReadSession"""
     print("called CreateReadSession on a fake server")
     self._project_id = request.table_reference.project_id
     self._table_id = request.table_reference.table_id
@@ -88,7 +89,8 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
       stream.name = stream_name
     return response
 
-  def ReadRows(self, request, context):
+  def ReadRows(self, request, context): # pylint: disable=unused-argument
+    """ReadRows"""
     print("called ReadRows on a fake server")
     response = storage_pb2.ReadRowsResponse()
     stream_index = self._streams.index(request.read_position.stream.name)
