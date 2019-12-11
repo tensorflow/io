@@ -54,6 +54,54 @@ def fixture_lmdb(request):
 
   return args, func, expected
 
+@pytest.fixture(name="pubsub")
+def fixture_pubsub(request):
+  """fixture_pubsub"""
+  from google.cloud import pubsub_v1 # pylint: disable=import-outside-toplevel
+
+  channel = "e{}e".format(time.time())
+
+  os.environ['PUBSUB_EMULATOR_HOST'] = 'localhost:8085'
+  publisher = pubsub_v1.PublisherClient()
+  topic_path = publisher.topic_path(
+      "pubsub-project", "pubsub_topic_"+channel)
+  publisher.create_topic(topic_path)
+  # print('Topic created: {}'.format(topic))
+  subscriber = pubsub_v1.SubscriberClient()
+  subscription_path = subscriber.subscription_path(
+      "pubsub-project",
+      "pubsub_subscription_{}".format(channel))
+  subscription = subscriber.create_subscription(
+      subscription_path, topic_path, retain_acked_messages=True)
+  print('Subscription created: {}'.format(subscription))
+  for n in range(0, 10):
+    data_v = u'Message number {}'.format(n)
+    # Data must be a bytestring
+    data_v = data_v.encode('utf-8')
+    # When you publish a message, the client returns a future.
+    future = publisher.publish(topic_path, data=data_v)
+    print('Published {} of message ID {}.'.format(data_v, future.result()))
+  print('Published messages.')
+
+  def fin():
+    subscription_path = subscriber.subscription_path(
+        "pubsub-project",
+        "pubsub_subscription_{}".format(channel))
+    subscriber.delete_subscription(subscription_path)
+    print('Subscription {} deleted.'.format(subscription_path))
+  request.addfinalizer(fin)
+
+  args = ("projects/pubsub-project/"
+          "subscriptions/pubsub_subscription_{}".format(channel))
+  def func(q):
+    v = tfio.experimental.IODataset.stream().from_pubsub(
+        q, endpoint="http://localhost:8085", timeout=5000)
+    v = v.map(lambda e: e.data)
+    return v
+  expected = ['Message number {}'.format(n).encode() for n in range(10)]
+
+  return args, func, expected
+
 @pytest.fixture(name="prometheus")
 def fixture_prometheus():
   """fixture_prometheus"""
@@ -194,6 +242,7 @@ def fixture_audio_flac():
                     reason="TODO macOS does not support prometheus"),
             ],
         ),
+        pytest.param("pubsub"),
     ],
     ids=[
         "lmdb",
@@ -203,6 +252,7 @@ def fixture_audio_flac():
         "audio[ogg]",
         "audio[flac]",
         "prometheus[scrape]",
+        "pubsub",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
