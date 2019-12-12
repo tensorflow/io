@@ -13,13 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/io_interface.h"
-#include "tensorflow_io/core/kernels/io_stream.h"
+#include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/framework/resource_op_kernel.h"
 
+#include <H5Cpp.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <H5Cpp.h>
 
 namespace tensorflow {
 namespace data {
@@ -28,11 +27,11 @@ namespace {
 class HDF5FileImage {
  public:
   HDF5FileImage(Env* env, const string& filename, const string& optional_memory)
-  : filename_(filename)
-  , optional_memory_(optional_memory)
-  , file_(nullptr) {
+      : filename_(filename), optional_memory_(optional_memory), file_(nullptr) {
     if (optional_memory.size() != 0) {
-      file_image_ = H5LTopen_file_image((void *)optional_memory_.data(), optional_memory_.size(), H5LT_FILE_IMAGE_DONT_COPY | H5LT_FILE_IMAGE_DONT_RELEASE);
+      file_image_ = H5LTopen_file_image(
+          (void*)optional_memory_.data(), optional_memory_.size(),
+          H5LT_FILE_IMAGE_DONT_COPY | H5LT_FILE_IMAGE_DONT_RELEASE);
       file_.reset(new H5::H5File());
       file_.get()->setId(file_image_);
     } else if (filename.find("://") == string::npos) {
@@ -48,7 +47,9 @@ class HDF5FileImage {
           buffer_memory_.resize(size);
           status = file->Read(0, size, &result, &buffer_memory_[0]);
           if (status.ok()) {
-            file_image_ = H5LTopen_file_image((void *)buffer_memory_.data(), buffer_memory_.size(), H5LT_FILE_IMAGE_DONT_COPY | H5LT_FILE_IMAGE_DONT_RELEASE);
+            file_image_ = H5LTopen_file_image(
+                (void*)buffer_memory_.data(), buffer_memory_.size(),
+                H5LT_FILE_IMAGE_DONT_COPY | H5LT_FILE_IMAGE_DONT_RELEASE);
             file_.reset(new H5::H5File());
             file_.get()->setId(file_image_);
           }
@@ -64,10 +65,7 @@ class HDF5FileImage {
     file_.reset(nullptr);
   }
 
-  H5::H5File *GetFile() const {
-    return file_.get();
-  }
-
+  H5::H5File* GetFile() const { return file_.get(); }
 
  private:
   string filename_;
@@ -78,80 +76,68 @@ class HDF5FileImage {
 };
 
 class HDF5Iterate {
-public:
-  HDF5Iterate(haddr_t root)
-  : parent_(root) {
-    groups_[root] = "";
-  }
+ public:
+  HDF5Iterate(haddr_t root) : parent_(root) { groups_[root] = ""; }
   ~HDF5Iterate() {}
 
-  static herr_t Iterate(hid_t loc_id, const char *name, const H5L_info_t *info, void *operator_data) {
-    HDF5Iterate *p = (HDF5Iterate *)operator_data;
+  static herr_t Iterate(hid_t loc_id, const char* name, const H5L_info_t* info,
+                        void* operator_data) {
+    HDF5Iterate* p = (HDF5Iterate*)operator_data;
 
     H5O_info_t iteminfo;
-    herr_t err = H5Oget_info_by_name (loc_id, name, &iteminfo, H5P_DEFAULT);
+    herr_t err = H5Oget_info_by_name(loc_id, name, &iteminfo, H5P_DEFAULT);
 
     switch (iteminfo.type) {
-    case H5O_TYPE_GROUP:
-      if (p->groups_.find(iteminfo.addr) == p->groups_.end()) {
-        haddr_t parent = p->parent_;
-        p->groups_[iteminfo.addr] = p->groups_[parent] + "/" + name;
-        p->parent_ = iteminfo.addr;
-        err = H5Literate_by_name(loc_id, name, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, HDF5Iterate::Iterate, operator_data, H5P_DEFAULT);
-        p->parent_ = parent;
-      }
-      break;
-    case H5O_TYPE_DATASET: {
+      case H5O_TYPE_GROUP:
+        if (p->groups_.find(iteminfo.addr) == p->groups_.end()) {
+          haddr_t parent = p->parent_;
+          p->groups_[iteminfo.addr] = p->groups_[parent] + "/" + name;
+          p->parent_ = iteminfo.addr;
+          err = H5Literate_by_name(loc_id, name, H5_INDEX_NAME, H5_ITER_NATIVE,
+                                   NULL, HDF5Iterate::Iterate, operator_data,
+                                   H5P_DEFAULT);
+          p->parent_ = parent;
+        }
+        break;
+      case H5O_TYPE_DATASET: {
         string dataset = p->groups_[p->parent_] + "/" + name;
         p->datasets_.emplace_back(dataset);
-      }
-      break;
-    case H5O_TYPE_NAMED_DATATYPE:
-      break;
-    default:
-      break;
+      } break;
+      case H5O_TYPE_NAMED_DATATYPE:
+        break;
+      default:
+        break;
     }
     return err;
   }
- 
+
   std::vector<string> datasets_;
   std::unordered_map<haddr_t, string> groups_;
   haddr_t parent_;
 };
-
-
-class HDF5Readable : public IOReadableInterface {
+class HDF5ReadableResource : public ResourceBase {
  public:
-  HDF5Readable(Env* env)
-  : env_(env) {}
+  HDF5ReadableResource(Env* env) : env_(env) {}
+  ~HDF5ReadableResource() {}
 
-  ~HDF5Readable() {}
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
-    if (input.size() > 1) {
-      return errors::InvalidArgument("more than 1 filename is not supported");
-    }
-    const string& filename = input[0];
-    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
-    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+  Status Init(const string& input, std::vector<string>* components) {
+    mutex_lock l(mu_);
 
-    file_image_.reset(new HDF5FileImage(env_, filename, ""));
-    H5::H5File *file = file_image_->GetFile();
+    file_image_.reset(new HDF5FileImage(env_, input, ""));
+    H5::H5File* file = file_image_->GetFile();
     if (file == nullptr) {
-      return errors::InvalidArgument("unable to open hdf5 file: ", filename);
+      return errors::InvalidArgument("unable to open hdf5 file: ", input);
     }
 
     H5O_info_t info;
     file->getObjinfo(info);
     HDF5Iterate data(info.addr);
-    herr_t err = H5Literate(file->getId(), H5_INDEX_NAME, H5_ITER_NATIVE, NULL, HDF5Iterate::Iterate, (void *)&data);
-    for (size_t i = 0; i < data.datasets_.size(); i++) {
-      columns_.emplace_back(data.datasets_[i]);
-      columns_index_[data.datasets_[i]] = i;
-    }
+    herr_t err = H5Literate(file->getId(), H5_INDEX_NAME, H5_ITER_NATIVE, NULL,
+                            HDF5Iterate::Iterate, (void*)&data);
 
-    for (size_t i = 0; i < columns_.size(); i++) {
+    for (size_t i = 0; i < data.datasets_.size(); i++) {
       ::tensorflow::DataType dtype;
-      string dataset = columns_[i];
+      string dataset = data.datasets_[i];
       H5::DataSet data_set = file->openDataSet(dataset);
 
       H5::DataSpace data_space = data_set.getSpace();
@@ -160,24 +146,59 @@ class HDF5Readable : public IOReadableInterface {
       data_space.getSimpleExtentDims(dims.data());
 
       H5::DataType data_type = data_set.getDataType();
-      hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-      if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
-        dtype = DT_INT8;
-      } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
-        dtype = DT_UINT8;
-      } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
-        dtype = DT_INT32;
-      } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
-        dtype = DT_UINT32;
-      } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
-        dtype = DT_INT64;
-      } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
-        dtype = DT_FLOAT;
-      } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
-        dtype = DT_DOUBLE;
-      } else {
-        return errors::InvalidArgument("unsupported data type: ", native_type);
+      switch (data_type.getClass()) {
+        case H5T_INTEGER:
+          switch (data_type.getSize()) {
+            case 1:
+              dtype = static_cast<H5::IntType&>(data_type).getSign() ? DT_INT8
+                                                                     : DT_UINT8;
+              break;
+            case 2:
+              dtype = static_cast<H5::IntType&>(data_type).getSign()
+                          ? DT_INT16
+                          : DT_UINT16;
+              break;
+            case 4:
+              dtype = static_cast<H5::IntType&>(data_type).getSign()
+                          ? DT_INT32
+                          : DT_UINT32;
+              break;
+            case 8:
+              dtype = static_cast<H5::IntType&>(data_type).getSign()
+                          ? DT_INT64
+                          : DT_UINT64;
+              break;
+            default:
+              return errors::InvalidArgument("unsupported data type size for ",
+                                             dataset, ": ",
+                                             data_type.getSize());
+          }
+          break;
+        case H5T_FLOAT:
+          switch (data_type.getSize()) {
+            case 4:
+              dtype = DT_FLOAT;
+              break;
+            case 8:
+              dtype = DT_DOUBLE;
+              break;
+            default:
+              return errors::InvalidArgument("unsupported data type size for ",
+                                             dataset, ": ",
+                                             data_type.getSize());
+          }
+          break;
+        case H5T_STRING:
+          dtype = DT_STRING;
+          break;
+        case H5T_VLEN:
+          dtype = DT_STRING;
+          break;
+        default:
+          return errors::InvalidArgument("unsupported data class for ", dataset,
+                                         ": ", data_type.getClass());
       }
+
       dtypes_.emplace_back(dtype);
       absl::InlinedVector<int64, 4> shape_dims(rank);
       for (int r = 0; r < rank; r++) {
@@ -185,46 +206,64 @@ class HDF5Readable : public IOReadableInterface {
       }
       shapes_.emplace_back(TensorShape(shape_dims));
     }
-    return Status::OK();
-  }
-  Status Components(std::vector<string>* components) override {
-    components->clear();
-    for (size_t i = 0; i < columns_.size(); i++) {
-      components->push_back(columns_[i]);
+
+    columns_index_.reserve(data.datasets_.size());
+    components->reserve(data.datasets_.size());
+    for (size_t i = 0; i < data.datasets_.size(); i++) {
+      columns_index_[data.datasets_[i]] = i;
+      components->emplace_back(data.datasets_[i]);
     }
+
     return Status::OK();
   }
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
-    const int64 column_index = columns_index_[component];
+  Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
+    mutex_lock l(mu_);
+
+    std::unordered_map<std::string, int64>::const_iterator lookup =
+        columns_index_.find(component);
+    if (lookup == columns_index_.end()) {
+      return errors::InvalidArgument("dataset ", component, " not found");
+    }
+    const int64 column_index = lookup->second;
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
     return Status::OK();
   }
+  Status Read(const string& component, const int64 start,
+              const TensorShape& shape,
+              std::function<Status(const TensorShape& shape, Tensor** value)>
+                  allocate_func) {
+    mutex_lock l(mu_);
 
-  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
-    if (columns_index_.find(component) == columns_index_.end()) {
-      return errors::InvalidArgument("component ", component, " is invalid");
+    std::unordered_map<std::string, int64>::const_iterator lookup =
+        columns_index_.find(component);
+    if (lookup == columns_index_.end()) {
+      return errors::InvalidArgument("dataset ", component, " not found");
     }
-    int64 column_index = columns_index_[component];
+    const int64 column_index = lookup->second;
 
-    (*record_read) = 0;
-    if (start >= shapes_[column_index].dim_size(0)) {
-      return Status::OK();
-    }
-    const string& column = component;
-    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
-    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
-
-    if (element_start > element_stop) {
-      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
-    }
-    if (element_start == element_stop) {
+    Tensor* value;
+    TF_RETURN_IF_ERROR(allocate_func(shape, &value));
+    if (shape.dim_size(0) == 0) {
       return Status::OK();
     }
 
-    H5::H5File *file = file_image_->GetFile();
+    int64 element_start = start;
+
+    if (element_start > shapes_[column_index].dim_size(0)) {
+      return errors::InvalidArgument(
+          "start ", element_start, " out of boundary: ", shapes_[column_index]);
+    }
+    int64 element_stop = element_start + shape.dim_size(0);
+    if (element_stop > shapes_[column_index].dim_size(0)) {
+      return errors::InvalidArgument(
+          "start ", element_start, " and shape ", shape,
+          " out of boundary: ", shapes_[column_index]);
+    }
+
+    H5::H5File* file = file_image_->GetFile();
     try {
-      H5::DataSet data_set = file->openDataSet(column);
+      H5::DataSet data_set = file->openDataSet(component);
       H5::DataSpace data_space = data_set.getSpace();
 
       int rank = data_space.getSimpleExtentNdims();
@@ -238,57 +277,245 @@ class HDF5Readable : public IOReadableInterface {
 
       H5::DataSpace memory_space(dims.size(), dims.data());
 
-      data_space.selectHyperslab(H5S_SELECT_SET, dims.data(), dims_start.data());
+      data_space.selectHyperslab(H5S_SELECT_SET, dims.data(),
+                                 dims_start.data());
 
       H5::DataType data_type = data_set.getDataType();
-      hid_t native_type = H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-      if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
-        data_set.read(value->flat<int8>().data(), H5::PredType::NATIVE_INT8, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
-        data_set.read(value->flat<uint8>().data(), H5::PredType::NATIVE_UINT8, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_INT)) {
-        data_set.read(value->flat<int32>().data(), H5::PredType::NATIVE_INT, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
-        data_set.read(value->flat<uint32>().data(), H5::PredType::NATIVE_UINT32, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_LONG)) {
-        data_set.read(value->flat<int64>().data(), H5::PredType::NATIVE_LONG, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
-        data_set.read(value->flat<float>().data(), H5::PredType::NATIVE_FLOAT, memory_space, data_space);
-      } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
-        data_set.read(value->flat<double>().data(), H5::PredType::NATIVE_DOUBLE, memory_space, data_space);
-      } else {
-        return errors::Unimplemented("data type not supported yet: ", data_set.getTypeClass());
+      switch (data_type.getClass()) {
+        case H5T_INTEGER:
+        case H5T_FLOAT: {
+          hid_t native_type =
+              H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
+          if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
+            data_set.read(value->flat<uint8>().data(),
+                          H5::PredType::NATIVE_UINT8, memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_UINT16)) {
+            data_set.read(value->flat<uint16>().data(),
+                          H5::PredType::NATIVE_UINT16, memory_space,
+                          data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
+            data_set.read(value->flat<uint32>().data(),
+                          H5::PredType::NATIVE_UINT32, memory_space,
+                          data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_UINT64)) {
+            data_set.read(value->flat<uint64>().data(),
+                          H5::PredType::NATIVE_UINT64, memory_space,
+                          data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
+            data_set.read(value->flat<int8>().data(), H5::PredType::NATIVE_INT8,
+                          memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_INT16)) {
+            data_set.read(value->flat<int16>().data(),
+                          H5::PredType::NATIVE_INT16, memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_INT32)) {
+            data_set.read(value->flat<int32>().data(),
+                          H5::PredType::NATIVE_INT32, memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_INT64)) {
+            data_set.read(value->flat<int64>().data(),
+                          H5::PredType::NATIVE_INT64, memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
+            data_set.read(value->flat<float>().data(),
+                          H5::PredType::NATIVE_FLOAT, memory_space, data_space);
+          } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
+            data_set.read(value->flat<double>().data(),
+                          H5::PredType::NATIVE_DOUBLE, memory_space,
+                          data_space);
+          } else {
+            return errors::Unimplemented("native data type not supported yet: ",
+                                         native_type);
+          }
+        } break;
+        case H5T_STRING: {
+          int64 total = value->NumElements();
+          std::unique_ptr<char[]> buffer(new char[data_type.getSize() * total]);
+          data_set.read(buffer.get(), data_type, memory_space, data_space);
+
+          switch (static_cast<H5::StrType&>(data_type).getStrpad()) {
+            case H5T_STR_NULLTERM:
+              for (int64 i = 0; i < value->NumElements(); i++) {
+                const char* p =
+                    (const char*)(buffer.get() + data_type.getSize() * i);
+                size_t len = 0;
+                while (len < data_type.getSize() && p[len] != 0x00) {
+                  len++;
+                }
+                value->flat<string>()(i) = string(p, len);
+              }
+              break;
+            case H5T_STR_NULLPAD:
+              for (int64 i = 0; i < value->NumElements(); i++) {
+                const char* p =
+                    (const char*)(buffer.get() + data_type.getSize() * i);
+                size_t len = data_type.getSize();
+                while (len > 0 && p[len - 1] == 0x00) {
+                  len--;
+                }
+                value->flat<string>()(i) = string(p, len);
+              }
+              break;
+            case H5T_STR_SPACEPAD:
+              return errors::InvalidArgument(
+                  "string pad type not supported: ",
+                  static_cast<H5::StrType&>(data_type).getStrpad());
+          }
+        } break;
+        case H5T_VLEN: {
+          int64 total = value->NumElements();
+          std::unique_ptr<hvl_t[]> buffer(new hvl_t[total]);
+          data_set.read(buffer.get(), data_type, memory_space, data_space);
+          for (int64 i = 0; i < value->NumElements(); i++) {
+            hvl_t* h = (hvl_t*)(buffer.get()) + i;
+            value->flat<string>()(i) = string((const char*)(h->p), h->len);
+          }
+        } break;
+        default:
+          return errors::Unimplemented("data type class not supported yet: ",
+                                       data_type.getClass());
       }
-    } catch(H5::FileIException e){
-      return errors::InvalidArgument("unable to open dataset", e.getCDetailMsg());
-    } 
-    (*record_read) = element_stop - element_start;
+    } catch (H5::FileIException e) {
+      return errors::InvalidArgument("unable to open dataset",
+                                     e.getCDetailMsg());
+    }
+
+    return Status::OK();
+  }
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return "HDF5ReadableResource";
+  }
+
+ protected:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<HDF5FileImage> file_image_ GUARDED_BY(mu_);
+
+  std::vector<DataType> dtypes_ GUARDED_BY(mu_);
+  std::vector<TensorShape> shapes_ GUARDED_BY(mu_);
+  std::unordered_map<string, int64> columns_index_ GUARDED_BY(mu_);
+};
+
+class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
+ public:
+  explicit HDF5ReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<HDF5ReadableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<HDF5ReadableResource>::Compute(context);
+
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+    const string& input = input_tensor->scalar<string>()();
+
+    std::vector<string> components;
+    OP_REQUIRES_OK(context, resource_->Init(input, &components));
+
+    Tensor* components_tensor = nullptr;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(
+                       1, TensorShape({static_cast<int64>(components.size())}),
+                       &components_tensor));
+    for (size_t i = 0; i < components.size(); i++) {
+      components_tensor->flat<string>()(i) = components[i];
+    }
+  }
+  Status CreateResource(HDF5ReadableResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new HDF5ReadableResource(env_);
     return Status::OK();
   }
 
-  string DebugString() const override {
-    mutex_lock l(mu_);
-    return strings::StrCat("HDF5Readable");
-  }
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
-  std::unique_ptr<HDF5FileImage> file_image_;
+};
+class HDF5ReadableSpecOp : public OpKernel {
+ public:
+  explicit HDF5ReadableSpecOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
 
-  std::vector<DataType> dtypes_;
-  std::vector<TensorShape> shapes_;
-  std::vector<string> columns_;
-  std::unordered_map<string, int64> columns_index_;
+  void Compute(OpKernelContext* context) override {
+    HDF5ReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* component_tensor;
+    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
+    const string& component = component_tensor->scalar<string>()();
+
+    TensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(component, &shape, &dtype));
+
+    Tensor* shape_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(
+                                0, TensorShape({shape.dims()}), &shape_tensor));
+    for (int64 i = 0; i < shape.dims(); i++) {
+      shape_tensor->flat<int64>()(i) = shape.dim_size(i);
+    }
+
+    Tensor* dtype_tensor = nullptr;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(1, TensorShape({}), &dtype_tensor));
+    dtype_tensor->scalar<int64>()() = dtype;
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
 };
 
+class HDF5ReadableReadOp : public OpKernel {
+ public:
+  explicit HDF5ReadableReadOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    HDF5ReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    const int64 start = start_tensor->scalar<int64>()();
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+    TensorShape shape(shape_tensor->flat<int64>());
+
+    const Tensor* component_tensor;
+    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
+    const string& component = component_tensor->scalar<string>()();
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(component, start, shape,
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInit").Device(DEVICE_CPU),
-                        IOInterfaceInitOp<HDF5Readable>);
+                        HDF5ReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableSpec").Device(DEVICE_CPU),
-                        IOInterfaceSpecOp<HDF5Readable>);
+                        HDF5ReadableSpecOp);
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableRead").Device(DEVICE_CPU),
-                        IOReadableReadOp<HDF5Readable>);
+                        HDF5ReadableReadOp);
+
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow
