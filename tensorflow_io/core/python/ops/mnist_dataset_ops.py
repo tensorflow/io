@@ -19,9 +19,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import data_ops
 
-class MNISTLabelIODataset(data_ops.Dataset):
+class MNISTLabelIODataset(tf.data.Dataset):
   """A MNISTLabelIODataset"""
 
   def __init__(self, filename):
@@ -29,14 +28,24 @@ class MNISTLabelIODataset(data_ops.Dataset):
     Args:
       filename: A `tf.string` tensor containing filename.
     """
-    dtypes = [tf.uint8]
-    shapes = [tf.TensorShape([])]
-    super(MNISTLabelIODataset, self).__init__(
-        core_ops.io_mnist_label_dataset,
-        core_ops.io_mnist_label_input(filename, ["none", "gz"]),
-        0, dtypes, shapes)
+    _, compression = core_ops.io_file_info(filename)
+    dataset = tf.data.FixedLengthRecordDataset(
+        filename, 1, header_bytes=8, compression_type=compression)
+    dataset = dataset.map(lambda e: tf.io.decode_raw(e, tf.uint8))
+    dataset = dataset.unbatch()
 
-class MNISTImageIODataset(data_ops.Dataset):
+    self._dataset = dataset
+    super(MNISTLabelIODataset, self).__init__(
+        self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class MNISTImageIODataset(tf.data.Dataset):
   """A MNISTImageIODataset
   """
 
@@ -45,18 +54,39 @@ class MNISTImageIODataset(data_ops.Dataset):
     Args:
       filename: A `tf.string` tensor containing filename.
     """
-    dtypes = [tf.uint8]
-    shapes = [tf.TensorShape([None, None])]
+    _, compression = core_ops.io_file_info(filename)
+    rows = tf.io.decode_raw(
+        core_ops.io_file_read(filename, 8, 4, compression=compression),
+        tf.int32, little_endian=False)
+    cols = tf.io.decode_raw(
+        core_ops.io_file_read(filename, 12, 4, compression=compression),
+        tf.int32, little_endian=False)
+    lens = rows[0] * cols[0]
+
+    dataset = tf.data.FixedLengthRecordDataset(
+        filename, tf.cast(lens, tf.int64),
+        header_bytes=16, compression_type=compression)
+    dataset = dataset.map(
+        lambda e: tf.io.decode_raw(e, tf.uint8))
+    dataset = dataset.map(
+        lambda e: tf.reshape(e, tf.concat([rows, cols], axis=0)))
+
+    self._dataset = dataset
     super(MNISTImageIODataset, self).__init__(
-        core_ops.io_mnist_image_dataset,
-        core_ops.io_mnist_image_input(filename, ["none", "gz"]),
-        0, dtypes, shapes)
+        self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
 
 def MNISTIODataset(images=None, labels=None, internal=True):
   """MNISTIODataset"""
   assert internal, ("MNISTIODataset constructor is private; please use one "
                     "of the factory methods instead (e.g., "
-                    "IODataset.from_avro())")
+                    "IODataset.from_mnist())")
 
   assert images is not None or labels is not None, (
       "images and labels could not be all None")
@@ -72,4 +102,4 @@ def MNISTIODataset(images=None, labels=None, internal=True):
   if labels is None:
     return images_dataset
 
-  return data_ops.Dataset.zip((images_dataset, labels_dataset))
+  return tf.data.Dataset.zip((images_dataset, labels_dataset))

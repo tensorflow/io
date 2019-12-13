@@ -127,20 +127,6 @@ cc_library(
 )
 
 cc_library(
-    name = "mnist_ops",
-    srcs = [
-        "kernels/mnist_input.cc",
-        "ops/mnist_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
     name = "prometheus_ops",
     srcs = [
         "kernels/prometheus_kernels.cc",
@@ -351,6 +337,20 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "file_ops",
+    srcs = [
+        "kernels/file_kernels.cc",
+        "ops/file_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -364,11 +364,11 @@ cc_binary(
         "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
+        "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:genome_ops",
         "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
-        "//tensorflow_io/core:mnist_ops",
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:pubsub_ops",

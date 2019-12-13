@@ -28,11 +28,89 @@ import pytest
 import tensorflow as tf
 import tensorflow_io as tfio
 
+def element_equal(x, y):
+  if not isinstance(x, tuple):
+    return np.array_equal(x, y)
+  for a, b in zip(list(x), list(y)):
+    if not np.array_equal(a, b):
+      return False
+  return True
+
+def element_slice(e, i, j):
+  entries = e[i:j]
+  if not isinstance(entries[0], tuple):
+    return entries
+  elements = [[] for _ in entries[0]]
+  for entry in entries:
+    for k, v in enumerate(list(entry)):
+      elements[k].append(v)
+  return [np.stack(element) for element in elements]
+
 @pytest.fixture(name="fixture_lookup")
 def fixture_lookup_func(request):
   def _fixture_lookup(name):
     return request.getfixturevalue(name)
   return _fixture_lookup
+
+@pytest.fixture(name="mnist")
+def fixture_mnist():
+  """fixture_mnist"""
+  mnist_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "mnist.npz")
+  with np.load(mnist_filename) as f:
+    x_test, y_test = f['x_test'], f['y_test']
+
+  image_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-images-idx3-ubyte")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-labels-idx1-ubyte")
+
+  # no need to test all, just take first 1000
+
+  args = tf.stack([image_filename, label_filename])
+  def func(e):
+    image_filename, label_filename = e[0], e[1]
+    return tfio.IODataset.from_mnist(
+        images=image_filename, labels=label_filename).take(1000)
+  expected = [(x_test[i], y_test[i]) for i in range(1000)]
+
+  return args, func, expected
+
+@pytest.fixture(name="mnist_gz")
+def fixture_mnist_gz():
+  """fixture_mnist_gz"""
+  mnist_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "mnist.npz")
+  with np.load(mnist_filename) as f:
+    x_test, y_test = f['x_test'], f['y_test']
+
+  image_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-images-idx3-ubyte.gz")
+  label_filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_mnist",
+      "t10k-labels-idx1-ubyte.gz")
+
+  # no need to test all, just take first 1000
+
+  args = tf.stack([image_filename, label_filename])
+  def func(e):
+    image_filename, label_filename = e[0], e[1]
+    return tfio.IODataset.from_mnist(
+        images=image_filename, labels=label_filename).take(1000)
+  expected = [(x_test[i], y_test[i]) for i in range(1000)]
+
+  return args, func, expected
 
 @pytest.fixture(name="lmdb")
 def fixture_lmdb(request):
@@ -221,6 +299,8 @@ def fixture_audio_flac():
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
+        pytest.param("mnist"),
+        pytest.param("mnist_gz"),
         pytest.param("lmdb"),
         pytest.param(
             "prometheus",
@@ -245,6 +325,8 @@ def fixture_audio_flac():
         pytest.param("pubsub"),
     ],
     ids=[
+        "mnist",
+        "mnist[gz]",
         "lmdb",
         "prometheus",
         "audio[wav]",
@@ -263,12 +345,14 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
   entries = [e for e in dataset]
 
   assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+  assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
 
 # This test makes sure basic dataset operations (take, batch) work.
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
+        pytest.param("mnist"),
+        pytest.param("mnist_gz"),
         pytest.param(
             "lmdb",
             marks=[
@@ -297,6 +381,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         ),
     ],
     ids=[
+        "mnist",
+        "mnist[gz]",
         "lmdb",
         "prometheus",
         "audio[wav]",
@@ -318,18 +404,18 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
 
   assert len(entries_taken) == len(expected_taken)
   assert all([
-      np.array_equal(a, b) for (a, b) in zip(entries_taken, expected_taken)])
+      element_equal(a, b) for (a, b) in zip(entries_taken, expected_taken)])
 
   # Test of batch
   indices = list(range(0, len(expected), 3))
   indices = list(zip(indices, indices[1:] + [len(expected)]))
-  expected_batched = [expected[i:j] for i, j in indices]
 
+  expected_batched = [element_slice(expected, i, j) for i, j in indices]
   entries_batched = [e for e in dataset.batch(3)]
 
   assert len(entries_batched) == len(expected_batched)
   assert all([
-      all([np.array_equal(i, j) for (i, j) in zip(a, b)]) for (a, b) in zip(
+      all([element_equal(i, j) for (i, j) in zip(a, b)]) for (a, b) in zip(
           entries_batched, expected_batched)])
 
 # This test makes sure dataset works in tf.keras training.
@@ -341,6 +427,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
+        pytest.param("mnist"),
+        pytest.param("mnist_gz"),
         pytest.param(
             "lmdb",
             marks=[
@@ -361,6 +449,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_flac"),
     ],
     ids=[
+        "mnist",
+        "mnist[gz]",
         "lmdb",
         "prometheus",
         "audio[wav]",
@@ -379,13 +469,13 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
   entries = [e for e in dataset]
 
   assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+  assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
 
   # A re-run of dataset iteration yield the same results, needed for training.
   entries = [e for e in dataset]
 
   assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+  assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
 
 # This test makes sure dataset in dataet and parallelism work.
 # It is not needed for tf.keras but could be useful
@@ -393,6 +483,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
 @pytest.mark.parametrize(
     ("io_dataset_fixture", "num_parallel_calls"),
     [
+        pytest.param("mnist", None),
+        pytest.param("mnist", 2),
+        pytest.param("mnist_gz", None),
+        pytest.param("mnist_gz", 2),
         pytest.param(
             "lmdb", None,
             marks=[
@@ -431,6 +525,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_flac", 2),
     ],
     ids=[
+        "mnist",
+        "mnist|2",
+        "mnist[gz]",
+        "mnist[gz]|2",
         "lmdb",
         "lmdb|2",
         "prometheus",
@@ -468,7 +566,7 @@ def test_io_dataset_in_dataset_parallel(
   for d in dataset:
     i = 0
     for v in d:
-      assert np.array_equal(expected[i], v)
+      assert element_equal(expected[i], v)
       i += 1
     assert i == len(expected)
     item += 1
@@ -484,6 +582,7 @@ def test_io_dataset_in_dataset_parallel(
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
+        pytest.param("mnist"),
         pytest.param("lmdb"),
         pytest.param(
             "prometheus",
@@ -499,6 +598,7 @@ def test_io_dataset_in_dataset_parallel(
         pytest.param("audio_flac"),
     ],
     ids=[
+        "mnist",
         "lmdb",
         "prometheus",
         "audio[wav]",
@@ -519,4 +619,4 @@ def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
   entries = benchmark(f, args)
 
   assert len(entries) == len(expected)
-  assert all([np.array_equal(a, b) for (a, b) in zip(entries, expected)])
+  assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
