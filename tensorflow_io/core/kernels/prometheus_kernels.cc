@@ -26,10 +26,10 @@ class SeriesReadableResourceBase : public ResourceBase {
   virtual Status Init(const string& input,
                       const std::vector<string>& metadata) = 0;
   virtual Status Spec(int64* start, int64* stop) = 0;
-  virtual Status Peek(const int64 start, const int64 stop,
-                      TensorShape* shape) = 0;
-  virtual Status Read(const int64 start, const int64 stop, Tensor* timestamp,
-                      Tensor* value) = 0;
+  virtual Status Read(const int64 start, const int64 stop,
+                      std::function<Status(const TensorShape& shape,
+                                           Tensor** timestamp, Tensor** value)>
+                          allocate_func) = 0;
 };
 
 class PrometheusReadableResource : public SeriesReadableResourceBase {
@@ -84,15 +84,18 @@ class PrometheusReadableResource : public SeriesReadableResourceBase {
     *stop = stop_;
     return Status::OK();
   }
-  Status Peek(const int64 start, const int64 stop,
-              TensorShape* shape) override {
+  Status Read(const int64 start, const int64 stop,
+              std::function<Status(const TensorShape& shape, Tensor** timestamp,
+                                   Tensor** value)>
+                  allocate_func) override {
     mutex_lock l(mu_);
     int64 interval = (stop - start) / 1000;
-    *shape = TensorShape({interval});
-    return Status::OK();
-  }
-  Status Read(const int64 start, const int64 stop, Tensor* timestamp,
-              Tensor* value) override {
+
+    Tensor* value;
+    Tensor* timestamp;
+    TF_RETURN_IF_ERROR(
+        allocate_func(TensorShape({interval}), &timestamp, &value));
+
     GoString endpoint_go = {endpoint_.c_str(),
                             static_cast<int64>(endpoint_.size())};
     GoString query_go = {query_.c_str(), static_cast<int64>(query_.size())};
@@ -108,7 +111,6 @@ class PrometheusReadableResource : public SeriesReadableResourceBase {
       return errors::InvalidArgument("unable to query prometheus");
     }
 
-    mutex_lock l(mu_);
     return Status::OK();
   }
   string DebugString() const override {
@@ -208,25 +210,22 @@ class PrometheusReadableReadOp : public OpKernel {
 
     const Tensor* start_tensor;
     OP_REQUIRES_OK(context, context->input("start", &start_tensor));
-    int64 start = start_tensor->scalar<int64>()();
+    const int64 start = start_tensor->scalar<int64>()();
 
     const Tensor* stop_tensor;
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
-    int64 stop = stop_tensor->scalar<int64>()();
+    const int64 stop = stop_tensor->scalar<int64>()();
 
-    TensorShape shape;
-    OP_REQUIRES_OK(context, resource->Peek(start, stop, &shape));
-
-    Tensor* timestamp_tensor = nullptr;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(0, shape, &timestamp_tensor));
-
-    Tensor* value_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(1, shape, &value_tensor));
-    if (shape.dim_size(0) > 0) {
-      OP_REQUIRES_OK(
-          context, resource->Read(start, stop, timestamp_tensor, value_tensor));
-    }
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(
+            start, stop,
+            [&](const TensorShape& shape, Tensor** timestamp,
+                Tensor** value) -> Status {
+              TF_RETURN_IF_ERROR(context->allocate_output(0, shape, timestamp));
+              TF_RETURN_IF_ERROR(context->allocate_output(1, shape, value));
+              return Status::OK();
+            }));
   }
 
  private:
