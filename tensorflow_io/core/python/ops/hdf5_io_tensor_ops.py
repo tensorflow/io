@@ -23,6 +23,25 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
 
+class _HDF5IOTensorFunction(object):
+  """_HDF5IOTensorFunction will translate call"""
+  def __init__(self, function, resource, component, shape, dtype):
+    self._function = function
+    self._resource = resource
+    self._component = component
+    self._length = shape[0]
+    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    start, stop, _ = slice(start, stop).indices(self._length)
+    shape = tf.TensorShape([stop - start]).concatenate(self._shape[1:])
+    return self._function(
+        self._resource, start=start, shape=shape,
+        component=self._component, dtype=self._dtype)
+  @property
+  def length(self):
+    return self._length
+
 class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
   """HDF5IOTensor"""
 
@@ -33,6 +52,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
                filename,
                internal=False):
     with tf.name_scope("HDF5IOTensor") as scope:
+      # TODO: unique shared_name might be removed if HDF5 is thead-safe?
       resource, columns = core_ops.io_hdf5_readable_init(
           filename,
           container=scope,
@@ -44,7 +64,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
+        function = _HDF5IOTensorFunction(
             core_ops.io_hdf5_readable_read,
             resource, column, shape, dtype)
         elements.append(
