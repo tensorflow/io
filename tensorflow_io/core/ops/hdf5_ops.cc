@@ -18,45 +18,47 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 REGISTER_OP("IO>HDF5ReadableInit")
-  .Input("input: string")
-  .Output("resource: resource")
-  .Output("components: string")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .SetIsStateful()
+    .Input("input: string")
+    .Output("resource: resource")
+    .Output("components: string")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>HDF5ReadableSpec")
-  .Input("input: resource")
-  .Output("shape: int64")
-  .Output("dtype: int64")
-  .Attr("component: string")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("component: string")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>HDF5ReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("component: string")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("shape: int64")
+    .Input("component: string")
+    .Output("value: dtype")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle shape;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &shape));
+      c->set_output(0, shape);
+      return Status::OK();
+    });
 
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

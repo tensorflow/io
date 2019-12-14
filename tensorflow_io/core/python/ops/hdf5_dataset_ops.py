@@ -21,21 +21,8 @@ import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 
-class _HDF5IODatasetFunction(object):
-  def __init__(self, function, resource, component, shape, dtype):
-    self._function = function
-    self._resource = resource
-    self._component = component
-    self._shape = tf.TensorShape([None]).concatenate(shape[1:])
-    self._dtype = dtype
-  def __call__(self, start, stop):
-    return self._function(
-        self._resource, start=start, stop=stop,
-        component=self._component, shape=self._shape, dtype=self._dtype)
-
-class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
+class HDF5IODataset(tf.data.Dataset):
   """HDF5IODataset"""
 
   def __init__(self,
@@ -44,16 +31,42 @@ class HDF5IODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acce
                internal=True):
     """HDF5IODataset."""
     with tf.name_scope("HDF5IODataset") as scope:
+      assert internal
+
+      # TODO: unique shared_name might be removed if HDF5 is thead-safe?
       resource, _ = core_ops.io_hdf5_readable_init(
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
-      shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
       dtype = tf.as_dtype(dtype.numpy())
-      capacity = 4096
-      super(HDF5IODataset, self).__init__(
-          _HDF5IODatasetFunction(
-              core_ops.io_hdf5_readable_read,
-              resource, dataset, shape, dtype),
-          capacity=capacity, internal=internal)
+
+      self._resource = resource
+      self._component = dataset
+      self._shape = shape
+      self._dtype = dtype
+
+      step = 1024
+      indices_start = tf.data.Dataset.range(0, shape[0], step)
+      indices_stop = indices_start.skip(1).concatenate(
+          tf.data.Dataset.from_tensor_slices([shape[0]]))
+      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
+      def f(start, stop):
+        shape = tf.concat(
+            [tf.convert_to_tensor([stop - start], tf.int64), self._shape[1:]],
+            axis=0)
+        return core_ops.io_hdf5_readable_read(
+            self._resource, start=start, shape=shape,
+            component=self._component, dtype=self._dtype)
+      dataset = dataset.map(f)
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      super(HDF5IODataset, self).__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
