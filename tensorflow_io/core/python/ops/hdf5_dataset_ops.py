@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import uuid
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -28,10 +30,14 @@ class HDF5IODataset(tf.data.Dataset):
                dataset,
                internal=True):
     """HDF5IODataset."""
-    with tf.name_scope("HDF5IODataset"):
+    with tf.name_scope("HDF5IODataset") as scope:
       assert internal
 
-      resource, _ = core_ops.io_hdf5_readable_init(filename)
+      # TODO: unique shared_name might be removed if HDF5 is thead-safe?
+      resource, _ = core_ops.io_hdf5_readable_init(
+          filename,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
       dtype = tf.as_dtype(dtype.numpy())
 

@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import uuid
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
@@ -49,8 +51,12 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
   def __init__(self,
                filename,
                internal=False):
-    with tf.name_scope("HDF5IOTensor"):
-      resource, columns = core_ops.io_hdf5_readable_init(filename)
+    with tf.name_scope("HDF5IOTensor") as scope:
+      # TODO: unique shared_name might be removed if HDF5 is thead-safe?
+      resource, columns = core_ops.io_hdf5_readable_init(
+          filename,
+          container=scope,
+          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
