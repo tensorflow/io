@@ -82,10 +82,11 @@ Status ValidateWAVHeader(struct WAVHeader* header) {
 class AudioReadableResourceBase : public ResourceBase {
  public:
   virtual Status Init(const string& input) = 0;
-  virtual Status Read(const int64 start, Tensor* value) = 0;
+  virtual Status Read(
+      const int64 start, const int64 stop,
+      std::function<Status(const TensorShape& shape, Tensor** value)>
+          allocate_func) = 0;
   virtual Status Spec(TensorShape* shape, DataType* dtype, int32* rate) = 0;
-  virtual Status Peek(const int64 start, const int64 stop,
-                      TensorShape* shape) = 0;
 };
 
 class WAVReadableResource : public AudioReadableResourceBase {
@@ -183,21 +184,18 @@ class WAVReadableResource : public AudioReadableResourceBase {
     return Status::OK();
   }
 
-  Status Peek(const int64 start, const int64 stop,
-              TensorShape* shape) override {
+  Status Read(const int64 start, const int64 stop,
+              std::function<Status(const TensorShape& shape, Tensor** value)>
+                  allocate_func) override {
     mutex_lock l(mu_);
     int64 sample_stop =
         (stop < 0) ? (shape_.dim_size(0))
                    : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
     int64 sample_start = (start >= sample_stop) ? sample_stop : start;
-    *shape = TensorShape({sample_stop - sample_start, shape_.dim_size(1)});
-    return Status::OK();
-  }
 
-  Status Read(const int64 start, Tensor* value) override {
-    mutex_lock l(mu_);
-    const int64 sample_start = start;
-    const int64 sample_stop = start + value->shape().dim_size(0);
+    Tensor* value;
+    TF_RETURN_IF_ERROR(allocate_func(
+        TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
 
     int64 sample_offset = 0;
     if (header_.riff_size + 8 != file_size_) {
@@ -410,21 +408,18 @@ class OggReadableResource : public AudioReadableResourceBase {
     return Status::OK();
   }
 
-  Status Peek(const int64 start, const int64 stop,
-              TensorShape* shape) override {
+  Status Read(const int64 start, const int64 stop,
+              std::function<Status(const TensorShape& shape, Tensor** value)>
+                  allocate_func) override {
     mutex_lock l(mu_);
     int64 sample_stop =
         (stop < 0) ? (shape_.dim_size(0))
                    : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
     int64 sample_start = (start >= sample_stop) ? sample_stop : start;
-    *shape = TensorShape({sample_stop - sample_start, shape_.dim_size(1)});
-    return Status::OK();
-  }
 
-  Status Read(const int64 start, Tensor* value) override {
-    mutex_lock l(mu_);
-    const int64 sample_start = start;
-    const int64 sample_stop = start + value->shape().dim_size(0);
+    Tensor* value;
+    TF_RETURN_IF_ERROR(allocate_func(
+        TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
 
     int returned = ov_pcm_seek(&ogg_vorbis_file_, sample_start);
     if (returned < 0) {
@@ -662,21 +657,19 @@ class FlacReadableResource : public AudioReadableResourceBase {
     return Status::OK();
   }
 
-  Status Peek(const int64 start, const int64 stop,
-              TensorShape* shape) override {
+  Status Read(const int64 start, const int64 stop,
+              std::function<Status(const TensorShape& shape, Tensor** value)>
+                  allocate_func) override {
     mutex_lock l(mu_);
     int64 sample_stop =
         (stop < 0) ? (shape_.dim_size(0))
                    : (stop < shape_.dim_size(0) ? stop : shape_.dim_size(0));
     int64 sample_start = (start >= sample_stop) ? sample_stop : start;
-    *shape = TensorShape({sample_stop - sample_start, shape_.dim_size(1)});
-    return Status::OK();
-  }
 
-  Status Read(const int64 start, Tensor* value) override {
-    mutex_lock l(mu_);
-    const int64 sample_start = start;
-    const int64 sample_stop = start + value->shape().dim_size(0);
+    Tensor* value;
+    TF_RETURN_IF_ERROR(allocate_func(
+        TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
+
     stream_decoder_->SetTensor(sample_start, value);
     if (!FLAC__stream_decoder_seek_absolute(decoder_.get(), sample_start)) {
       return errors::InvalidArgument("unable to seek to: ", sample_start);
@@ -732,14 +725,11 @@ class AudioReadableResource : public AudioReadableResourceBase {
     mutex_lock l(mu_);
     return resource_->Spec(shape, dtype, rate);
   }
-  Status Peek(const int64 start, const int64 stop,
-              TensorShape* shape) override {
+  Status Read(const int64 start, const int64 stop,
+              std::function<Status(const TensorShape& shape, Tensor** value)>
+                  allocate_func) override {
     mutex_lock l(mu_);
-    return resource_->Peek(start, stop, shape);
-  }
-  Status Read(const int64 start, Tensor* value) override {
-    mutex_lock l(mu_);
-    return resource_->Read(start, value);
+    return resource_->Read(start, stop, allocate_func);
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -839,15 +829,15 @@ class AudioReadableReadOp : public OpKernel {
     const Tensor* stop_tensor;
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
-    TensorShape value_shape;
-    OP_REQUIRES_OK(context, resource->Peek(start, stop, &value_shape));
 
-    Tensor* value_tensor = nullptr;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(0, value_shape, &value_tensor));
-    if (value_shape.dim_size(0) > 0) {
-      OP_REQUIRES_OK(context, resource->Read(start, value_tensor));
-    }
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(start, stop,
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
   }
 
  private:
