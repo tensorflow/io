@@ -22,6 +22,7 @@ namespace io {
 namespace {
 
 REGISTER_OP("IO>HDF5ReadableInit")
+    .SetIsStateful()
     .Input("input: string")
     .Output("resource: resource")
     .Output("components: string")
