@@ -31,6 +31,7 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 namespace {
 
 constexpr char kOSSCredentialsDefaultFile[] = ".osscredentials";
@@ -494,6 +495,7 @@ private:
 };
 } // namespace
 
+
 OSSFileSystem::OSSFileSystem()
 {
 
@@ -842,7 +844,7 @@ Status OSSFileSystem::GetChildren(const std::string& dir, std::vector<std::strin
 
 Status OSSFileSystem::GetMatchingPaths(const std::string& pattern,
                                        std::vector<std::string>* results) {
-  return internal::GetMatchingPaths(this, Env::Default(), pattern, results);
+  return tensorflow::internal::GetMatchingPaths(this, Env::Default(), pattern, results);
 }
 
 Status OSSFileSystem::_DeleteObjectInternal(const oss_request_options_t* options,
@@ -1278,4 +1280,5 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname, int64* undel
 
 }
 
+} // end namespace io
 } // end namespace tensorflow

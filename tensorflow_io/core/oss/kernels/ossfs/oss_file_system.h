@@ -32,6 +32,7 @@ limitations under the License.
 #include "tensorflow/core/platform/env.h"
 
 namespace tensorflow {
+namespace io {
 
 /// Aliyun oss implementation of a file system.
 class OSSFileSystem : public FileSystem {
@@ -143,6 +144,7 @@ class OSSFileSystem : public FileSystem {
   TF_DISALLOW_COPY_AND_ASSIGN(OSSFileSystem);
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILE_SYSTEM_H_
