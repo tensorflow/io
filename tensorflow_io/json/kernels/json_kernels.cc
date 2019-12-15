@@ -15,7 +15,6 @@ limitations under the License.
 
 #include <iostream>
 #include <fstream>
-#include "tensorflow_io/core/kernels/dataset_ops.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/env.h"
