@@ -17,6 +17,7 @@ limitations under the License.
 #include "logging.h"
 
 namespace tensorflow {
+namespace io {
 
 /// \brief Splits a Azure path to a account, container and object.
 ///
@@ -163,4 +164,5 @@ azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
   return blob_client_wrapper;
 }
 
+}  // namespace io
 }  // namespace tensorflow
