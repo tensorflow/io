@@ -19,20 +19,18 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from tensorflow import dtypes
-from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
 
-class KinesisDataset(data.Dataset):
+class KinesisIODataset(tf.data.Dataset):
   """A Kinesis Dataset that consumes the message.
 
   Kinesis is a managed service provided by AWS for data streaming.
   This dataset reads messages from Kinesis with each message presented
   as a `tf.string`.
 
-  For example, we can construct and use the KinesisDataset as follows:
+  For example, we can construct and use the KinesisIODataset as follows:
   ```python
-  dataset = KinesisDataset(
+  dataset = KinesisIODataset(
       "kinesis_stream_name", read_indefinitely=False)
   next = dataset.make_one_shot_iterator().get_next()
   with tf.Session() as sess:
@@ -46,7 +44,7 @@ class KinesisDataset(data.Dataset):
   Since Kinesis is a data streaming service, data may not be available
   at the time it is being read. The argument `read_indefinitely` is
   used to control the behavior in this situation. If `read_indefinitely`
-  is `True`, then `KinesisDataset` will keep retrying to retrieve data
+  is `True`, then `KinesisIODataset` will keep retrying to retrieve data
   from the stream. If `read_indefinitely` is `False`, an `OutOfRangeError`
   is returned immediately instead.
   """
@@ -54,44 +52,37 @@ class KinesisDataset(data.Dataset):
   def __init__(self,
                stream,
                shard="",
-               read_indefinitely=True,
-               interval=100000):
-    """Create a KinesisDataset.
+               internal=False):
+    """Create a KinesisIODataset.
 
     Args:
       stream: A `tf.string` tensor containing the name of the stream.
       shard: A `tf.string` tensor containing the id of the shard.
-      read_indefinitely: If `True`, the Kinesis dataset will keep retry
-        again on `EOF` after the `interval` period. If `False`, then
-        the dataset will stop on `EOF`. The default value is `True`.
-      interval: The interval for the Kinesis Client to wait before
-        it tries to get records again (in millisecond).
     """
-    self._stream = tf.convert_to_tensor(
-        stream, dtype=dtypes.string, name="stream")
-    self._shard = tf.convert_to_tensor(
-        shard, dtype=dtypes.string, name="shard")
-    self._read_indefinitely = tf.convert_to_tensor(
-        read_indefinitely, dtype=dtypes.bool, name="read_indefinitely")
-    self._interval = tf.convert_to_tensor(
-        interval, dtype=dtypes.int64, name="interval")
-    super(KinesisDataset, self).__init__()
+    with tf.name_scope("KinesisIODataset"):
+      assert internal
+
+      metadata = []
+      metadata.append("shard=%s" % shard)
+      resource = core_ops.io_kinesis_readable_init(stream, metadata)
+
+      self._resource = resource
+
+      dataset = tf.data.experimental.Counter()
+      dataset = dataset.map(
+          lambda _: core_ops.io_kinesis_readable_read(self._resource))
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda v: tf.greater(tf.shape(v.data)[0], 0)))
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      super(KinesisIODataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
     return []
 
-  def _as_variant_tensor(self):
-    return core_ops.io_kinesis_dataset(
-        self._stream, self._shard, self._read_indefinitely, self._interval)
-
   @property
-  def output_classes(self):
-    return tf.Tensor
-
-  @property
-  def output_shapes(self):
-    return tf.TensorShape([])
-
-  @property
-  def output_types(self):
-    return dtypes.string
+  def element_spec(self):
+    return self._dataset.element_spec

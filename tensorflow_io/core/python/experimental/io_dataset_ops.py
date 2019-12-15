@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_dataset
 from tensorflow_io.core.python.experimental import libsvm_dataset_ops
 from tensorflow_io.core.python.experimental import image_dataset_ops
+from tensorflow_io.core.python.experimental import kinesis_dataset_ops
 from tensorflow_io.core.python.experimental import pubsub_dataset_ops
 from tensorflow_io.core.python.experimental import grpc_dataset_ops
 
@@ -94,6 +95,25 @@ class IODataset(io_dataset.IODataset):
     with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
       return image_dataset_ops.TIFFIODataset(
           filename, internal=True)
+
+  @classmethod
+  def from_kinesis(cls,
+                   stream,
+                   shard="",
+                   **kwargs):
+    """Creates an `IODataset` from a Kinesis stream.
+
+    Args:
+      stream: A string, the stream name.
+      shard: A string, the shard of kinesis.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromKinesis")):
+      return kinesis_dataset_ops.KinesisIODataset(
+          stream, shard, internal=True)
 
 class StreamIODataset(tf.data.Dataset):
   """StreamIODataset"""

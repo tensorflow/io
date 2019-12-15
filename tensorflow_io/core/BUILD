@@ -337,6 +337,22 @@ cc_library(
 )
 
 cc_library(
+    name = "kinesis_ops",
+    srcs = [
+        "kernels/kinesis_kernels.cc",
+        "ops/kinesis_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@aws",
+        "@curl",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "file_ops",
     srcs = [
         "kernels/file_kernels.cc",
@@ -387,6 +403,7 @@ cc_binary(
         "//tensorflow_io/core:grpc_ops",
         "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
+        "//tensorflow_io/core:kinesis_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
@@ -396,7 +413,6 @@ cc_binary(
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",
-        "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/oss:oss_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
