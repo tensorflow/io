@@ -47,7 +47,7 @@ class FFmpegStream {
   , nb_frames_(-1)
   , packet_scope_(nullptr, [](AVPacket* p) { if (p != nullptr) { av_packet_unref(p); }})
   { }
-  ~FFmpegStream() {}
+  virtual ~FFmpegStream() {}
   virtual Status Open(int64 media, int64 index) {
     offset_ = 0;
     AVFormatContext *format_context; 
@@ -345,7 +345,7 @@ class FFmpegAudioStream : public FFmpegStream {
 class FFmpegAudioReadableResource : public ResourceBase {
  public:
   FFmpegAudioReadableResource(Env* env) : env_(env) {}
-  ~FFmpegAudioReadableResource() {}
+  virtual ~FFmpegAudioReadableResource() {}
 
   Status Init(const string& input, const int64 index) {
     filename_ = input;
@@ -595,7 +595,7 @@ class FFmpegVideoStream : public FFmpegStream {
 class FFmpegVideoReadableResource : public ResourceBase {
  public:
   FFmpegVideoReadableResource(Env* env) : env_(env) {}
-  ~FFmpegVideoReadableResource() {}
+  virtual ~FFmpegVideoReadableResource() {}
 
   Status Init(const string& input, const int64 index) {
     filename_ = input;
