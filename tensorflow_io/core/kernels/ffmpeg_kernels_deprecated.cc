@@ -76,7 +76,7 @@ class FFmpegReadStream {
   , format_context_(nullptr, [](AVFormatContext* p) { if (p != nullptr) { avformat_close_input(&p); av_free(p); } })
   , io_context_(nullptr, [](AVIOContext* p) { if (p != nullptr) { av_free(p); } })
   , stream_index_(-1) { }
-  ~FFmpegReadStream() {}
+  virtual ~FFmpegReadStream() {}
 
   int64 Streams() {
     return format_context_.get()->nb_streams;
@@ -586,7 +586,7 @@ class FFmpegReadable : public IOReadableInterface {
   FFmpegReadable(Env* env)
   : env_(env) {}
 
-  ~FFmpegReadable() {}
+  virtual ~FFmpegReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
