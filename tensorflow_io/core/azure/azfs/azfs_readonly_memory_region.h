@@ -39,4 +39,3 @@ class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H
-
