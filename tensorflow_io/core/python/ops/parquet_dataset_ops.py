@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import sys
 import uuid
+import collections
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -81,7 +82,8 @@ class ParquetIODataset(tf.compat.v2.data.Dataset):
       if len(columns_dataset) == 1:
         dataset = columns_dataset[0]
       else:
-        dataset = tf.compat.v2.data.Dataset.zip(tuple(columns_dataset))
+        dataset = tf.compat.v2.data.Dataset.zip(
+            collections.OrderedDict(list(zip(columns, columns_dataset))))
       dataset = dataset.unbatch()
 
       self._function = columns_function
