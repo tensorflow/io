@@ -21,11 +21,11 @@ limitations under the License.
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow/core/platform/env.h"
-#include "tensorflow_io/azure/azfs/azfs.h"
-#include "tensorflow_io/azure/azfs/azfs_client.h"
-#include "tensorflow_io/azure/azfs/azfs_random_access_file.h"
-#include "tensorflow_io/azure/azfs/azfs_readonly_memory_region.h"
-#include "tensorflow_io/azure/azfs/azfs_writable_file.h"
+#include "tensorflow_io/core/azure/azfs/azfs.h"
+#include "tensorflow_io/core/azure/azfs/azfs_client.h"
+#include "tensorflow_io/core/azure/azfs/azfs_random_access_file.h"
+#include "tensorflow_io/core/azure/azfs/azfs_readonly_memory_region.h"
+#include "tensorflow_io/core/azure/azfs/azfs_writable_file.h"
 
 #include "blob/blob_client.h"
 #include "storage_account.h"
@@ -33,6 +33,7 @@ limitations under the License.
 #include "storage_errno.h"
 
 namespace tensorflow {
+namespace io {
 
 Status AzBlobFileSystem::NewRandomAccessFile(
     const std::string &filename, std::unique_ptr<RandomAccessFile> *result) {
@@ -137,12 +138,14 @@ Status AzBlobFileSystem::GetChildren(const std::string &dir,
   std::string continuation_token;
   if (container.empty()) {
     // TODO: iterate while continuation_token isn't empty
-    auto list_containers = blob_client.list_containers_segmented("", continuation_token, INT_MAX);
+    auto list_containers =
+        blob_client.list_containers_segmented("", continuation_token, INT_MAX);
     std::transform(
-      begin(list_containers), end(list_containers), std::back_inserter(*result), 
-      [](azure::storage_lite::list_containers_item item) -> std::string {
-        return item.name;
-    });
+        begin(list_containers), end(list_containers),
+        std::back_inserter(*result),
+        [](azure::storage_lite::list_containers_item item) -> std::string {
+          return item.name;
+        });
     return Status::OK();
   }
 
@@ -150,8 +153,8 @@ Status AzBlobFileSystem::GetChildren(const std::string &dir,
     object += "/";
   }
 
-  auto list_blobs =
-      blob_client.list_blobs_segmented(container, "/", continuation_token, object);
+  auto list_blobs = blob_client.list_blobs_segmented(
+      container, "/", continuation_token, object);
   if (errno != 0) {
     return errors::Internal("Failed to get child of ", dir, " (",
                             errno_to_string(), ")");
@@ -161,8 +164,7 @@ Status AzBlobFileSystem::GetChildren(const std::string &dir,
   result->reserve(blobs.size());
   std::transform(
       std::begin(blobs), std::end(blobs), std::back_inserter(*result),
-      [&object](
-          azure::storage_lite::list_blobs_segmented_item list_blob_item)
+      [&object](azure::storage_lite::list_blobs_segmented_item list_blob_item)
           -> std::string {
         // Remove the prefix from the name
         auto blob_name = list_blob_item.name;
@@ -384,8 +386,7 @@ Status AzBlobFileSystem::IsDirectory(const std::string &fname) {
 
   auto container_exists = blob_client.container_exists(container);
   if (!container_exists) {
-    return errors::NotFound("The specified folder ", fname,
-                            " was not found");
+    return errors::NotFound("The specified folder ", fname, " was not found");
   }
 
   if (!object.empty()) {
@@ -430,13 +431,15 @@ Status AzBlobFileSystem::ListResources(
   if (container.empty()) {
     std::vector<azure::storage_lite::list_containers_item> containers;
     do {
-      auto list_containers_response = blob_client.list_containers_segmented("", continuation_token);
+      auto list_containers_response =
+          blob_client.list_containers_segmented("", continuation_token);
       if (errno != 0) {
-        return errors::Internal("Failed to get containers of account ", dir, " (",
-                                errno_to_string(), ")");
+        return errors::Internal("Failed to get containers of account ", dir,
+                                " (", errno_to_string(), ")");
       }
 
-      containers.insert(containers.end(), list_containers_response.begin(), list_containers_response.end());
+      containers.insert(containers.end(), list_containers_response.begin(),
+                        list_containers_response.end());
     } while (!continuation_token.empty());
 
     std::transform(
@@ -464,11 +467,12 @@ Status AzBlobFileSystem::ListResources(
     results->reserve(blobs.size());
     std::transform(
         blobs.begin(), blobs.end(), std::back_inserter(*results),
-        [](azure::storage_lite::list_blobs_segmented_item
-               list_blob_item) -> std::string { return list_blob_item.name; });
+        [](azure::storage_lite::list_blobs_segmented_item list_blob_item)
+            -> std::string { return list_blob_item.name; });
   }
 
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

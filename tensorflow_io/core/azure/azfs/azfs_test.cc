@@ -12,52 +12,53 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-	
-#include "tensorflow_io/azure/azfs/azfs.h"
+
+#include "tensorflow_io/core/azure/azfs/azfs.h"
 #include "gtest/gtest.h"
 
-#define EXPECT_OK(val) \
-	EXPECT_EQ(val, Status::OK())
+#define EXPECT_OK(val) EXPECT_EQ(val, Status::OK())
 
 namespace tensorflow {
+namespace io {
 namespace {
 
+using namespace tensorflow::io;
+
 class AzBlobFileSystemTest : public ::testing::Test {
-protected:
-	AzBlobFileSystemTest() {}
+ protected:
+  AzBlobFileSystemTest() {}
 
-	std::string PathTo(const std::string& path) {
-		return "az://devstoreaccount1/aztest" + path;
-	}
+  std::string PathTo(const std::string& path) {
+    return "az://devstoreaccount1/aztest" + path;
+  }
 
-	Status WriteString(const std::string& fname, const std::string& content) {
-		std::unique_ptr<WritableFile> writer;
-		TF_RETURN_IF_ERROR(fs.NewWritableFile(fname, &writer));
-		TF_RETURN_IF_ERROR(writer->Append(content));
-		TF_RETURN_IF_ERROR(writer->Close());
-		return Status::OK();
-	}
+  Status WriteString(const std::string& fname, const std::string& content) {
+    std::unique_ptr<WritableFile> writer;
+    TF_RETURN_IF_ERROR(fs.NewWritableFile(fname, &writer));
+    TF_RETURN_IF_ERROR(writer->Append(content));
+    TF_RETURN_IF_ERROR(writer->Close());
+    return Status::OK();
+  }
 
-	Status ReadAll(const std::string& fname, std::string* content) {
-		std::unique_ptr<RandomAccessFile> reader;
-		TF_RETURN_IF_ERROR(fs.NewRandomAccessFile(fname, &reader));
+  Status ReadAll(const std::string& fname, std::string* content) {
+    std::unique_ptr<RandomAccessFile> reader;
+    TF_RETURN_IF_ERROR(fs.NewRandomAccessFile(fname, &reader));
 
-		uint64 file_size = 0;
-		TF_RETURN_IF_ERROR(fs.GetFileSize(fname, &file_size));
+    uint64 file_size = 0;
+    TF_RETURN_IF_ERROR(fs.GetFileSize(fname, &file_size));
 
-		StringPiece result;
-		char* strdata = &(*content)[0];
-		TF_RETURN_IF_ERROR(
-				reader->Read(0, file_size, &result, strdata));
-		if (file_size != result.size()) {
-			return errors::DataLoss("expected ", file_size, " got ", result.size(),
-															" bytes");
-		}
+    StringPiece result;
+    char* strdata = &(*content)[0];
+    TF_RETURN_IF_ERROR(reader->Read(0, file_size, &result, strdata));
+    if (file_size != result.size()) {
+      return errors::DataLoss("expected ", file_size, " got ", result.size(),
+                              " bytes");
+    }
 
-		*content = std::string(result);
+    *content = std::string(result);
 
-		return Status::OK();
-	}
+    return Status::OK();
+  }
 
   void SetUp() override {
     // Create container
@@ -69,13 +70,13 @@ protected:
     // fs.DeleteDir(PathTo(""));
   }
 
-	AzBlobFileSystem fs;
+  AzBlobFileSystem fs;
 };
 
 TEST_F(AzBlobFileSystemTest, ContainerShouldBeDirectory) {
-	auto container_path = PathTo("");
-	auto is_dir = fs.IsDirectory(container_path);
-	EXPECT_EQ(is_dir, Status::OK());
+  auto container_path = PathTo("");
+  auto is_dir = fs.IsDirectory(container_path);
+  EXPECT_EQ(is_dir, Status::OK());
 }
 
 TEST_F(AzBlobFileSystemTest, NewRandomAccessFile) {
@@ -91,8 +92,7 @@ TEST_F(AzBlobFileSystemTest, NewRandomAccessFile) {
   EXPECT_OK(fs.NewRandomAccessFile(fname, &reader));
 
   StringPiece result;
-  EXPECT_OK(
-      reader->Read(0, content.size(), &result, nullptr));
+  EXPECT_OK(reader->Read(0, content.size(), &result, nullptr));
   EXPECT_EQ(content, result);
 
   EXPECT_OK(reader->Read(offset, size, &result, nullptr));
@@ -100,29 +100,29 @@ TEST_F(AzBlobFileSystemTest, NewRandomAccessFile) {
 }
 
 TEST_F(AzBlobFileSystemTest, NewWritableFile) {
-	std::unique_ptr<WritableFile> writer;
-	const std::string fname = PathTo("/WritableFile");
-	EXPECT_OK(fs.NewWritableFile(fname, &writer));
-	EXPECT_OK(writer->Append("content1,"));
-	EXPECT_OK(writer->Append("content2"));
-	EXPECT_OK(writer->Flush());
-	EXPECT_OK(writer->Sync());
-	EXPECT_OK(writer->Close());
+  std::unique_ptr<WritableFile> writer;
+  const std::string fname = PathTo("/WritableFile");
+  EXPECT_OK(fs.NewWritableFile(fname, &writer));
+  EXPECT_OK(writer->Append("content1,"));
+  EXPECT_OK(writer->Append("content2"));
+  EXPECT_OK(writer->Flush());
+  EXPECT_OK(writer->Sync());
+  EXPECT_OK(writer->Close());
 
-	std::string content;
-	EXPECT_OK(ReadAll(fname, &content));
-	EXPECT_EQ("content1,content2", content);
+  std::string content;
+  EXPECT_OK(ReadAll(fname, &content));
+  EXPECT_EQ("content1,content2", content);
 }
 
 TEST_F(AzBlobFileSystemTest, NewAppendableFile) {
-	std::unique_ptr<WritableFile> writer;
+  std::unique_ptr<WritableFile> writer;
 
-	const std::string fname = PathTo("/AppendableFile");
-	EXPECT_OK(WriteString(fname, "test"));
+  const std::string fname = PathTo("/AppendableFile");
+  EXPECT_OK(WriteString(fname, "test"));
 
-	EXPECT_OK(fs.NewAppendableFile(fname, &writer));
-	EXPECT_OK(writer->Append("content"));
-	EXPECT_OK(writer->Close());
+  EXPECT_OK(fs.NewAppendableFile(fname, &writer));
+  EXPECT_OK(writer->Append("content"));
+  EXPECT_OK(writer->Close());
 }
 
 TEST_F(AzBlobFileSystemTest, NewReadOnlyMemoryRegionFromFile) {
@@ -147,7 +147,6 @@ TEST_F(AzBlobFileSystemTest, FileExists) {
 }
 
 TEST_F(AzBlobFileSystemTest, GetChildren) {
-
   const auto base = PathTo("/GetChildren");
   EXPECT_OK(fs.CreateDir(base));
 
@@ -174,7 +173,7 @@ TEST_F(AzBlobFileSystemTest, DeleteFile) {
 TEST_F(AzBlobFileSystemTest, DeleteRecursively) {
   const std::string fname = PathTo("/recursive");
 
-  for (const auto& ext : { ".txt", ".md" }) {
+  for (const auto& ext : {".txt", ".md"}) {
     for (int i = 0; i < 3; ++i) {
       const auto this_fname = fname + "/" + std::to_string(i) + ext;
       (void)WriteString(this_fname, "");
@@ -277,4 +276,5 @@ TEST_F(AzBlobFileSystemTest, GetMatchingPaths_FilenameWildcard) {
 }
 
 }  // namespace
+}  // namespace io
 }  // namespace tensorflow

@@ -13,28 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H
-#define TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H
-
-#include <memory>
+#ifndef TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
+#define TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
 
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 
-class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
+class AzBlobRandomAccessFile : public RandomAccessFile {
  public:
-  AzBlobReadOnlyMemoryRegion(std::unique_ptr<char[]> data, uint64 length)
-      : data_(std::move(data)), length_(length) {}
-  const void* data() override { return reinterpret_cast<void*>(data_.get()); }
-  uint64 length() override { return length_; }
+  AzBlobRandomAccessFile(const std::string& account,
+                         const std::string& container,
+                         const std::string& object);
+  Status Read(uint64 offset, size_t n, StringPiece* result,
+              char* scratch) const override;
 
  private:
-  std::unique_ptr<char[]> data_;
-  uint64 length_;
+  std::string account_;
+  std::string container_;
+  std::string object_;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H
-
+#endif  // TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H

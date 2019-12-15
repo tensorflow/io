@@ -391,7 +391,6 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/azure:azfs_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/bigtable:bigtable_ops",
         "//tensorflow_io/core:audio_ops",
@@ -409,6 +408,7 @@ cc_binary(
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:pubsub_ops",
         "//tensorflow_io/core:text_ops",
+        "//tensorflow_io/core/azure:azfs_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
