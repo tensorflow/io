@@ -180,6 +180,18 @@ def fixture_pubsub(request):
 
   return args, func, expected
 
+@pytest.fixture(name="grpc")
+def fixture_grpc():
+  """fixture_grpc"""
+
+  data = [[i, i+1, i+2] for i in range(0, 5000)]
+
+  args = np.asarray(data)
+  func = lambda e: tfio.experimental.IODataset.stream().from_grpc_numpy(e)
+  expected = data
+
+  return args, func, expected
+
 @pytest.fixture(name="prometheus")
 def fixture_prometheus():
   """fixture_prometheus"""
@@ -382,6 +394,7 @@ def fixture_hdf5(request):
         ),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
+        pytest.param("grpc"),
     ],
     ids=[
         "mnist",
@@ -395,6 +408,7 @@ def fixture_hdf5(request):
         "prometheus[scrape]",
         "pubsub",
         "hdf5",
+        "grpc",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -440,6 +454,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param("hdf5"),
+        pytest.param("grpc"),
     ],
     ids=[
         "mnist",
@@ -452,6 +467,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "audio[flac]",
         "prometheus[scrape]",
         "hdf5",
+        "grpc",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -510,6 +526,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
+        pytest.param("grpc"),
     ],
     ids=[
         "mnist",
@@ -521,6 +538,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "audio[ogg]",
         "audio[flac]",
         "hdf5",
+        "grpc",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):

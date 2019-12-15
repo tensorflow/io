@@ -18,28 +18,34 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
-REGISTER_OP("IO>GRPCInput")
-    .Input("source: string")
-    .Output("handle: variant")
-    .Attr("columns: list(string) = []")
-    .Attr("schema: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
-
-REGISTER_OP("IO>GRPCDataset")
-    .Input("input: T")
-    .Input("batch: int64")
-    .Output("handle: variant")
-    .Attr("output_types: list(type) >= 1")
-    .Attr("output_shapes: list(shape) >= 1")
-    .Attr("T: {string, variant} = DT_VARIANT")
+REGISTER_OP("IO>GRPCReadableInit")
     .SetIsStateful()
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
+REGISTER_OP("IO>GRPCReadableRead")
+    .SetIsStateful()
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("shape: int64")
+    .Output("value: dtype")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle shape;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &shape));
+      c->set_output(0, shape);
+      return Status::OK();
+    });
+
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

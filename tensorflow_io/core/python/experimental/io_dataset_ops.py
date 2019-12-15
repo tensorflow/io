@@ -23,6 +23,7 @@ from tensorflow_io.core.python.ops import io_dataset
 from tensorflow_io.core.python.experimental import libsvm_dataset_ops
 from tensorflow_io.core.python.experimental import image_dataset_ops
 from tensorflow_io.core.python.experimental import pubsub_dataset_ops
+from tensorflow_io.core.python.experimental import grpc_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -139,3 +140,17 @@ class StreamIODataset(tf.data.Dataset):
     with tf.name_scope(kwargs.get("name", "IOFromPubSub")):
       return pubsub_dataset_ops.PubSubStreamIODataset(
           subscription, endpoint=endpoint, timeout=timeout, internal=True)
+
+  @classmethod
+  def from_grpc_numpy(cls, a, **kwargs):
+    """Creates an `StreamIODataset` from numpy array through grpc.
+
+    Args:
+      a: A numpy array.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromGRPC")):
+      return grpc_dataset_ops.GRPCStreamIODataset.from_numpy(a, internal=True)
