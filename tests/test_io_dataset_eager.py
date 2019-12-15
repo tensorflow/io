@@ -248,8 +248,7 @@ def fixture_kinesis(request):
     dataset = dataset.map(lambda e: (e.data, e.partition))
     dataset = dataset.take(10)
     return dataset
-  expected = list(
-      zip(map(lambda v: v.encode(), val), map(lambda k: k.encode(), key)))
+  expected = list(zip([v.encode() for v in val], [k.encode() for k in key]))
 
   return args, func, expected
 
@@ -421,7 +420,14 @@ def fixture_hdf5(request):
                     reason="TODO macOS does not support prometheus"),
             ],
         ),
-        pytest.param("kinesis"),
+        pytest.param(
+            "kinesis",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="TODO macOS does not support kinesis"),
+            ],
+        ),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
     ],
