@@ -12,21 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""GRPCInput
-
-@@GRPCDataset
-"""
-
+"""grpc"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.grpc.python.ops.grpc_ops import GRPCDataset
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    "GRPCDataset",
-]
-
-remove_undocumented(__name__)
+import endpoint_pb2

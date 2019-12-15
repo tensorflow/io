@@ -42,7 +42,6 @@ cc_library(
 cc_library(
     name = "dataset_ops",
     srcs = [
-        "kernels/dataset_ops.h",
         "kernels/io_interface.h",
         "kernels/io_stream.h",
     ],
@@ -351,6 +350,25 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "grpc_ops",
+    srcs = [
+        "kernels/grpc_kernels.cc",
+        "ops/grpc_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    includes = [
+        ".",
+    ],
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core/grpc:endpoint_cc_grpc",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -366,6 +384,7 @@ cc_binary(
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:genome_ops",
+        "//tensorflow_io/core:grpc_ops",
         "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
@@ -374,7 +393,6 @@ cc_binary(
         "//tensorflow_io/core:pubsub_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/gcs:gcs_config_ops",
-        "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
         "//tensorflow_io/kafka:kafka_ops",

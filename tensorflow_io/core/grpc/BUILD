@@ -4,10 +4,6 @@ package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-load(
-    "//third_party/tf:tensorflow_io.bzl",
-    "tf_io_copts",
-)
 
 proto_library(
     name = "endpoint_proto",
@@ -25,28 +21,6 @@ cc_grpc_library(
     srcs = [":endpoint_proto"],
     grpc_only = True,
     deps = [":endpoint_cc_proto"],
-)
-
-cc_library(
-    name = "grpc_ops",
-    srcs = [
-        "kernels/grpc_input.cc",
-        "ops/grpc_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    includes = [
-        ".",
-    ],
-    linkstatic = True,
-    deps = [
-        ":endpoint_cc_grpc",
-        "//tensorflow_io/core:dataset_ops",
-        "@com_github_grpc_grpc//:grpc++",
-        "@libarchive",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
-    ],
-    alwayslink = 1,
 )
 
 py_proto_library(

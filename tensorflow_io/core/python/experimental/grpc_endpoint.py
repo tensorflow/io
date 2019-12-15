@@ -27,27 +27,12 @@ import tensorflow as tf
 
 # In case test is done with TFIO_DATAPATH specified, the
 # import path need to be extended to capture generated grpc files:
-grpcpath = os.path.join(os.path.dirname(__file__), "..", "..")
+grpcpath = os.path.join(os.path.dirname(__file__), "..", "..", "grpc")
 datapath = os.environ.get('TFIO_DATAPATH')
 if datapath is not None:
-  grpcpath = os.path.join(datapath, "tensorflow_io", "grpc")
-grpcpath = os.path.abspath(grpcpath)
+  grpcpath = os.path.join(datapath, "tensorflow_io", "core", "grpc")
 sys.path.append(grpcpath)
-
-import endpoint_pb2      # pylint: disable=wrong-import-position
-# For some reason generated code in grpc uses:
-# from tensorflow_io.grpc import endpoint_pb2
-# so below is needed
-class MetaPathFinder(object):
-  def find_module(self, fullname, _):
-    if fullname == "tensorflow_io.grpc.endpoint_pb2":
-      return self
-    return None
-  def load_module(self, fullname):
-    if fullname == "tensorflow_io.grpc.endpoint_pb2":
-      return endpoint_pb2
-    return None
-sys.meta_path.append(MetaPathFinder())
+import endpoint_pb2 # pylint: disable=wrong-import-position
 import endpoint_pb2_grpc # pylint: disable=wrong-import-position
 
 class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
