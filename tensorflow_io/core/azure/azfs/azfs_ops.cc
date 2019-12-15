@@ -18,7 +18,11 @@ limitations under the License.
 #include "tensorflow_io/core/azure/azfs/azfs.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
-REGISTER_FILE_SYSTEM("az", AzBlobFileSystem);
+REGISTER_FILE_SYSTEM("az", io::AzBlobFileSystem);
 
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

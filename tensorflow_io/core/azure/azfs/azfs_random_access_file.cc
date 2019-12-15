@@ -21,6 +21,7 @@ limitations under the License.
 #include "tensorflow_io/core/azure/azfs/azfs_random_access_file.h"
 
 namespace tensorflow {
+namespace io {
 
 AzBlobRandomAccessFile::AzBlobRandomAccessFile(const std::string &account,
                                                const std::string &container,
@@ -83,4 +84,5 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow

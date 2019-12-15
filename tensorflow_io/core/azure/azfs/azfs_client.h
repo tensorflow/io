@@ -30,6 +30,7 @@ limitations under the License.
 constexpr char kAzBlobEndpoint[] = ".blob.core.windows.net";
 
 namespace tensorflow {
+namespace io {
 
 /// \brief Splits a Azure path to a account, container and object.
 ///
@@ -45,6 +46,7 @@ std::string errno_to_string();
 azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
     const std::string &account);
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif

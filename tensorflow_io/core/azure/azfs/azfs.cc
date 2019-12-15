@@ -33,6 +33,7 @@ limitations under the License.
 #include "storage_errno.h"
 
 namespace tensorflow {
+namespace io {
 
 Status AzBlobFileSystem::NewRandomAccessFile(
     const std::string &filename, std::unique_ptr<RandomAccessFile> *result) {
@@ -471,4 +472,5 @@ Status AzBlobFileSystem::ListResources(
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow
