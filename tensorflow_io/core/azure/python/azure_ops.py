@@ -29,12 +29,12 @@ def authenticate_with_device_code(account_name):
     account_name (str): The storage account name for which to authenticate
   """
 
-  import urllib
-  import json
-  import os
-  from tensorflow.python.platform import tf_logging as log
+  import urllib # pylint: disable=import-outside-toplevel
+  import json # pylint: disable=import-outside-toplevel
+  import os # pylint: disable=import-outside-toplevel
+  from tensorflow.python.platform import tf_logging as log # pylint: disable=import-outside-toplevel
   try:
-    from adal import AuthenticationContext
+    from adal import AuthenticationContext # pylint: disable=import-outside-toplevel
   except ModuleNotFoundError:
     log.error('Please install adal library with `python -m pip install -U adal`'
               'to use the device code authentication method')

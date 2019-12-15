@@ -13,27 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
-#define TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
+#include "tensorflow/core/platform/env.h"
 
-#include "tensorflow/core/platform/file_system.h"
+#include "tensorflow_io/core/azure/azfs/azfs.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
-class AzBlobRandomAccessFile : public RandomAccessFile {
- public:
-  AzBlobRandomAccessFile(const std::string& account,
-                         const std::string& container,
-                         const std::string& object);
-  Status Read(uint64 offset, size_t n, StringPiece* result,
-              char* scratch) const override;
+REGISTER_FILE_SYSTEM("az", io::AzBlobFileSystem);
 
- private:
-  std::string account_;
-  std::string container_;
-  std::string object_;
-};
-
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow
-
-#endif  // TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H

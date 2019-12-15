@@ -25,8 +25,9 @@ limitations under the License.
 #include "blob/blob_client.h"
 
 namespace tensorflow {
+namespace io {
 
-//class AzBlobFileSystem;
+// class AzBlobFileSystem;
 
 /// Azure Blob Storage implementation of a file system.
 class AzBlobFileSystem : public FileSystem {
@@ -75,12 +76,12 @@ class AzBlobFileSystem : public FileSystem {
   void FlushCaches() override;
 
  private:
-  Status ListResources(
-      const std::string& dir, const std::string& delimiter,
-      azure::storage_lite::blob_client_wrapper& blob_client,
-      std::vector<std::string>* results) const;
+  Status ListResources(const std::string& dir, const std::string& delimiter,
+                       azure::storage_lite::blob_client_wrapper& blob_client,
+                       std::vector<std::string>* results) const;
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_AZURE_AZFS_H_

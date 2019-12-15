@@ -22,9 +22,10 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
+namespace io {
 
 class AzBlobWritableFile : public WritableFile {
-public:
+ public:
   AzBlobWritableFile(const std::string &account, const std::string &container,
                      const std::string &object);
   ~AzBlobWritableFile() override;
@@ -33,7 +34,7 @@ public:
   Status Flush() override;
   Status Sync() override;
 
-private:
+ private:
   Status SyncImpl();
   Status CheckWritable() const;
   std::string account_;
@@ -41,9 +42,10 @@ private:
   std::string object_;
   std::string tmp_content_filename_;
   std::ofstream outfile_;
-  bool sync_needed_; // whether there is buffered data that needs to be synced
+  bool sync_needed_;  // whether there is buffered data that needs to be synced
 };
 
-} // namespace tensorflow
+}  // namespace io
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_IO_AZURE_AZFS_WRITABLE_FILE_H
+#endif  // TENSORFLOW_IO_AZURE_AZFS_WRITABLE_FILE_H

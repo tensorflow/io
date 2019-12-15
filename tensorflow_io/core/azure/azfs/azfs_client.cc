@@ -13,10 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/azure/azfs/azfs_client.h"
+#include "tensorflow_io/core/azure/azfs/azfs_client.h"
 #include "logging.h"
 
 namespace tensorflow {
+namespace io {
 
 /// \brief Splits a Azure path to a account, container and object.
 ///
@@ -63,28 +64,44 @@ Status ParseAzBlobPath(StringPiece fname, bool empty_object_ok,
 std::string errno_to_string() {
   switch (errno) {
     /* common errors */
-    case invalid_parameters: return "invalid_parameters";
+    case invalid_parameters:
+      return "invalid_parameters";
     /* client level */
-    case client_init_fail: return "client_init_fail";
-    case client_already_init: return "client_already_init";
-    case client_not_init: return "client_not_init";
+    case client_init_fail:
+      return "client_init_fail";
+    case client_already_init:
+      return "client_already_init";
+    case client_not_init:
+      return "client_not_init";
     /* container level */
-    case container_already_exists: return "container_already_exists";
-    case container_not_exists: return "container_not_exists";
-    case container_name_invalid: return "container_name_invalid";
-    case container_create_fail: return "container_create_fail";
-    case container_delete_fail: return "container_delete_fail";
+    case container_already_exists:
+      return "container_already_exists";
+    case container_not_exists:
+      return "container_not_exists";
+    case container_name_invalid:
+      return "container_name_invalid";
+    case container_create_fail:
+      return "container_create_fail";
+    case container_delete_fail:
+      return "container_delete_fail";
     /* blob level */
-    case blob__already_exists: return "blob__already_exists";
-    case blob_not_exists: return "blob_not_exists";
-    case blob_name_invalid: return "blob_name_invalid";
-    case blob_delete_fail: return "blob_delete_fail";
-    case blob_list_fail: return "blob_list_fail";
-    case blob_copy_fail: return "blob_copy_fail";
-    case blob_no_content_range: return "blob_no_content_range";
+    case blob__already_exists:
+      return "blob__already_exists";
+    case blob_not_exists:
+      return "blob_not_exists";
+    case blob_name_invalid:
+      return "blob_name_invalid";
+    case blob_delete_fail:
+      return "blob_delete_fail";
+    case blob_list_fail:
+      return "blob_list_fail";
+    case blob_copy_fail:
+      return "blob_copy_fail";
+    case blob_no_content_range:
+      return "blob_no_content_range";
     /* unknown error */
     case unknown_error:
-    default: 
+    default:
       return "unknown_error - " + std::to_string(errno);
   }
 }
@@ -93,8 +110,8 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
     const std::string &account) {
   const auto key = std::getenv("TF_AZURE_STORAGE_KEY");
   if (key != nullptr) {
-    return std::make_shared<azure::storage_lite::shared_key_credential>(
-        account, key);
+    return std::make_shared<azure::storage_lite::shared_key_credential>(account,
+                                                                        key);
   } else {
     return std::make_shared<azure::storage_lite::anonymous_credential>();
   }
@@ -102,48 +119,50 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
 
 azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
     const std::string &account) {
-
-  azure::storage_lite::logger::set_logger([](azure::storage_lite::log_level level, const std::string& log_msg) {
-      switch(level) {
-        case azure::storage_lite::log_level::info:
-          _TF_LOG_INFO << log_msg;
-          break;
-        case  azure::storage_lite::log_level::error:
-        case azure::storage_lite::log_level::critical:
-          _TF_LOG_ERROR << log_msg;
-          break;
-        case azure::storage_lite::log_level::warn:
-          _TF_LOG_WARNING << log_msg;
-          break;
-        case azure::storage_lite::log_level::trace:
-        case azure::storage_lite::log_level::debug:
-        default:
-          break;
-      }
-  });
+  azure::storage_lite::logger::set_logger(
+      [](azure::storage_lite::log_level level, const std::string &log_msg) {
+        switch (level) {
+          case azure::storage_lite::log_level::info:
+            _TF_LOG_INFO << log_msg;
+            break;
+          case azure::storage_lite::log_level::error:
+          case azure::storage_lite::log_level::critical:
+            _TF_LOG_ERROR << log_msg;
+            break;
+          case azure::storage_lite::log_level::warn:
+            _TF_LOG_WARNING << log_msg;
+            break;
+          case azure::storage_lite::log_level::trace:
+          case azure::storage_lite::log_level::debug:
+          default:
+            break;
+        }
+      });
 
   const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
   if (use_dev_account != nullptr) {
-    auto storage_account = azure::storage_lite::storage_account::development_storage_account();
-    auto blob_client = std::make_shared<azure::storage_lite::blob_client>(storage_account, 10);
+    auto storage_account =
+        azure::storage_lite::storage_account::development_storage_account();
+    auto blob_client =
+        std::make_shared<azure::storage_lite::blob_client>(storage_account, 10);
     azure::storage_lite::blob_client_wrapper blob_client_wrapper(blob_client);
     return blob_client_wrapper;
   }
 
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
   const auto use_https = use_http_env == nullptr;
-  const auto blob_endpoint = std::string(std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT") ?: "");
+  const auto blob_endpoint =
+      std::string(std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT") ?: "");
 
   auto credentials = get_credential(account);
-  auto storage_account =
-      std::make_shared<azure::storage_lite::storage_account>(
-          account, credentials, use_https, blob_endpoint);
-  auto blob_client = std::make_shared<azure::storage_lite::blob_client>(
-      storage_account, 10);
-  azure::storage_lite::blob_client_wrapper blob_client_wrapper(
-      blob_client);
+  auto storage_account = std::make_shared<azure::storage_lite::storage_account>(
+      account, credentials, use_https, blob_endpoint);
+  auto blob_client =
+      std::make_shared<azure::storage_lite::blob_client>(storage_account, 10);
+  azure::storage_lite::blob_client_wrapper blob_client_wrapper(blob_client);
 
   return blob_client_wrapper;
 }
 
+}  // namespace io
 }  // namespace tensorflow

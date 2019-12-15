@@ -17,10 +17,11 @@ limitations under the License.
 #include <string>
 
 #include "tensorflow/core/lib/io/path.h"
-#include "tensorflow_io/azure/azfs/azfs_client.h"
-#include "tensorflow_io/azure/azfs/azfs_random_access_file.h"
+#include "tensorflow_io/core/azure/azfs/azfs_client.h"
+#include "tensorflow_io/core/azure/azfs/azfs_random_access_file.h"
 
 namespace tensorflow {
+namespace io {
 
 AzBlobRandomAccessFile::AzBlobRandomAccessFile(const std::string &account,
                                                const std::string &container,
@@ -58,7 +59,8 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
     oss.rdbuf()->pubsetbuf(scratch, bytes_to_read);
 #endif
 
-    blob_client.download_blob_to_stream(container_, object_, offset, bytes_to_read, oss);
+    blob_client.download_blob_to_stream(container_, object_, offset,
+                                        bytes_to_read, oss);
     if (errno != 0) {
       *result = StringPiece("", 0);
       return errors::Internal("Failed to get contents of az://", account_,
@@ -83,4 +85,5 @@ Status AzBlobRandomAccessFile::Read(uint64 offset, size_t n,
   return Status::OK();
 }
 
+}  // namespace io
 }  // namespace tensorflow
