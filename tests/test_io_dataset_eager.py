@@ -212,6 +212,47 @@ def fixture_prometheus_scrape():
 
   return args, func, expected
 
+@pytest.fixture(name="kinesis")
+def fixture_kinesis(request):
+  """fixture_kinesis"""
+  import boto3 # pylint: disable=import-outside-toplevel
+
+  val = [("D" + str(i)) for i in range(10)]
+  key = [("TensorFlow" + str(i)) for i in range(10)]
+
+  os.environ['AWS_ACCESS_KEY_ID'] = 'ACCESS_KEY'
+  os.environ['AWS_SECRET_ACCESS_KEY'] = 'SECRET_KEY'
+  os.environ['KINESIS_USE_HTTPS'] = '0'
+  os.environ['KINESIS_ENDPOINT'] = 'localhost:4568'
+
+  client = boto3.client(
+      'kinesis', region_name='us-east-1',
+      endpoint_url='http://localhost:4568')
+
+  # Setup the Kinesis with 1 shard.
+  stream_name = "kinesis_e{}e".format(time.time())
+  client.create_stream(StreamName=stream_name, ShardCount=1)
+  # Wait until stream exists, default is 10 * 18 seconds.
+  client.get_waiter('stream_exists').wait(StreamName=stream_name)
+  for v, k in zip(val, key):
+    client.put_record(StreamName=stream_name, Data=v, PartitionKey=k)
+  def fin():
+    client.delete_stream(StreamName=stream_name)
+    # Wait until stream deleted, default is 10 * 18 seconds.
+    client.get_waiter('stream_not_exists').wait(StreamName=stream_name)
+  request.addfinalizer(fin)
+
+  args = stream_name
+  def func(q):
+    dataset = tfio.experimental.IODataset.from_kinesis(q)
+    dataset = dataset.map(lambda e: (e.data, e.partition))
+    dataset = dataset.take(10)
+    return dataset
+  expected = list(
+      zip(map(lambda v: v.encode(), val), map(lambda k: k.encode(), key)))
+
+  return args, func, expected
+
 # Source of audio are based on the following:
 #   https://commons.wikimedia.org/wiki/File:ZASFX_ADSR_no_sustain.ogg
 # OGG: ZASFX_ADSR_no_sustain.ogg.
@@ -380,6 +421,7 @@ def fixture_hdf5(request):
                     reason="TODO macOS does not support prometheus"),
             ],
         ),
+        pytest.param("kinesis"),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
     ],
@@ -393,6 +435,7 @@ def fixture_hdf5(request):
         "audio[ogg]",
         "audio[flac]",
         "prometheus[scrape]",
+        "kinesis",
         "pubsub",
         "hdf5",
     ],
