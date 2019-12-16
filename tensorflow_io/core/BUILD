@@ -162,6 +162,7 @@ cc_library(
         "kernels/decode_dicom_data.cc",
         "kernels/decode_dicom_image.cc",
         "kernels/image_bmp_kernels.cc",
+        "kernels/image_hdr_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_kernels.cc",
         "kernels/image_openexr_kernels.cc",
@@ -184,6 +185,7 @@ cc_library(
         "@libtiff",
         "@libwebp",
         "@openexr",
+        "@stb",
     ],
     alwayslink = 1,
 )
