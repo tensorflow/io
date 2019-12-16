@@ -699,3 +699,13 @@ http_archive(
         "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
     ],
 )
+
+http_archive(
+    name = "stb",
+    build_file = "//third_party:stb.BUILD",
+    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
+    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
+    urls = [
+        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
+    ],
+)

@@ -245,6 +245,23 @@ def test_openexr_io_tensor():
   assert np.all(g == exr_0_g)
   assert np.all(r == exr_0_r)
 
+def test_decode_hdr():
+  """Test case for decode_hdr"""
+   # image from http://gl.ict.usc.edu/Data/HighResProbes/
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_image", "glacier.hdr")
+  filename = "file://" + filename
+
+  contents = tf.io.read_file(filename)
+  hdr = tfio.experimental.image.decode_hdr(contents)
+  assert hdr.dtype == tf.float32
+  assert hdr.shape == [1024, 2048, 3]
+  rgb = tf.image.convert_image_dtype(hdr, tf.uint8)
+  _ = tf.image.encode_png(rgb)
+  # TODO: compare with generated png
+  # tf.io.write_file('sample.png', png)
+
 
 if __name__ == "__main__":
   test.main()

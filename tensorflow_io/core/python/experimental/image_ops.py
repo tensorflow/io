@@ -129,3 +129,16 @@ def decode_pnm(contents, dtype=tf.uint8, name=None):
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
   return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)
+
+def decode_hdr(contents, name=None):
+  """
+  Decode a HDR-encoded image to a uint8 tensor.
+
+  Args:
+    contents: A `Tensor` of type `string`. 0-D.  The HDR-encoded image.
+    name: A name for the operation (optional).
+
+  Returns:
+    A `Tensor` of type `float` and shape of `[height, width, 3]` (RGB).
+  """
+  return core_ops.io_decode_hdr(contents, name=name)
