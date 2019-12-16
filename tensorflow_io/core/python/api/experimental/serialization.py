@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental"""
+"""tensorflow_io.experimental.serialization"""
 
-from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
-from tensorflow_io.core.python.experimental.io_tensor import IOTensor
-from tensorflow_io.core.python.experimental.io_layer import IOLayer
-
-from tensorflow_io.core.python.api.experimental import serialization
-from tensorflow_io.core.python.api.experimental import ffmpeg
-from tensorflow_io.core.python.api.experimental import image
-from tensorflow_io.core.python.api.experimental import text
+from tensorflow_io.core.python.experimental.serialization_ops import decode_json # pylint: disable=unused-import
