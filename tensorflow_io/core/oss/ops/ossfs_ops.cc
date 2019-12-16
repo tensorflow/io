@@ -15,10 +15,14 @@ limitations under the License.
 
 #include "tensorflow/core/platform/env.h"
 
-#include "tensorflow_io/oss/kernels/ossfs/oss_file_system.h"
+#include "tensorflow_io/core/oss/kernels/ossfs/oss_file_system.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 REGISTER_FILE_SYSTEM("oss", OSSFileSystem);
 
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow
