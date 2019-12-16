@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import collections
 import numpy as np
 
 import tensorflow as tf
@@ -109,7 +110,13 @@ def test_parquet():
     v5 = 1.1111111 * i
     v6 = b"parquet%03d" % i
     v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
-    p0, p1, p2, p4, p5, p6, p7 = v
+    p0 = v['boolean_field']
+    p1 = v['int32_field']
+    p2 = v['int64_field']
+    p4 = v['float_field']
+    p5 = v['double_field']
+    p6 = v['ba_field']
+    p7 = v['flba_field']
     assert v0 == p0.numpy()
     assert v1 == p1.numpy()
     assert v2 == p2.numpy()
@@ -128,16 +135,29 @@ def test_parquet_partition():
     parquet = tfio.IOTensor.from_parquet(
         filename, capacity=capacity)
     assert np.all(
-        parquet("int32_field").to_tensor().numpy() == [i for i in range(500)])
+        parquet("int32_field").to_tensor().numpy() == list(range(500)))
     for step in [
         1, 2, 3,
         10, 11, 12, 13,
         50, 51, 52, 53]:
       indices = list(range(0, 100, step))
       for start, stop in zip(indices, indices[1:] + [100]):
-        expected = [i for i in range(start, stop)]
+        expected = list(range(start, stop))
         items = parquet("int32_field")[start:stop]
         assert np.all(items.numpy() == expected)
+
+def test_parquet_dataset_ordered_dict():
+  """Test case for order and dict of parquet dataset"""
+  parquet = tfio.IODataset.from_parquet(filename)
+  assert parquet.element_spec == collections.OrderedDict([
+      (b'boolean_field', tf.TensorSpec(shape=(), dtype=tf.bool)),
+      (b'int32_field', tf.TensorSpec(shape=(), dtype=tf.int32)),
+      (b'int64_field', tf.TensorSpec(shape=(), dtype=tf.int64)),
+      (b'int96_field', tf.TensorSpec(shape=(), dtype=tf.int64)),
+      (b'float_field', tf.TensorSpec(shape=(), dtype=tf.float32)),
+      (b'double_field', tf.TensorSpec(shape=(), dtype=tf.float64)),
+      (b'ba_field', tf.TensorSpec(shape=(), dtype=tf.string)),
+      (b'flba_field', tf.TensorSpec(shape=(), dtype=tf.string))])
 
 if __name__ == "__main__":
   test.main()
