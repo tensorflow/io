@@ -27,11 +27,12 @@ limitations under the License.
 #include "oss_util.h"
 
 #include "tensorflow/core/lib/core/status.h"
+#include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/file_system.h"
 #include "tensorflow/core/platform/mutex.h"
-#include "tensorflow/core/platform/env.h"
 
 namespace tensorflow {
+namespace io {
 
 /// Aliyun oss implementation of a file system.
 class OSSFileSystem : public FileSystem {
@@ -81,51 +82,39 @@ class OSSFileSystem : public FileSystem {
  private:
   Status _CreateDirInternal(aos_pool_t* pool,
                             const oss_request_options_t* options,
-                            const string& bucket,
-                            const string& dirname);
+                            const string& bucket, const string& dirname);
 
-  Status _StatInternal(aos_pool_t* pool,
-                       const oss_request_options_t* options,
-                       const string& bucket,
-                       const string& object,
+  Status _StatInternal(aos_pool_t* pool, const oss_request_options_t* options,
+                       const string& bucket, const string& object,
                        FileStatistics* stat);
 
   Status _DeleteObjectInternal(const oss_request_options_t* options,
-                               const string& bucket,
-                               const string& object);
+                               const string& bucket, const string& object);
 
   Status _RetrieveObjectMetadata(aos_pool_t* pool,
                                  const oss_request_options_t* options,
-                                 const string& bucket,
-                                 const string& object,
+                                 const string& bucket, const string& object,
                                  FileStatistics* stat);
 
   aos_status_t* _RenameFileInternal(const oss_request_options_t* oss_options,
-                            aos_pool_t* pool,
-                            const aos_string_t& source_bucket,
-                            const aos_string_t& source_object,
-                            const aos_string_t& dest_bucket,
-                            const aos_string_t& dest_object);
+                                    aos_pool_t* pool,
+                                    const aos_string_t& source_bucket,
+                                    const aos_string_t& source_object,
+                                    const aos_string_t& dest_bucket,
+                                    const aos_string_t& dest_object);
 
-  Status _ListObjects(aos_pool_t* pool,
-                      const oss_request_options_t* options,
-                      const string& bucket,
-                      const string& key,
-                      std::vector<string>* result,
-                      bool return_all = true,
+  Status _ListObjects(aos_pool_t* pool, const oss_request_options_t* options,
+                      const string& bucket, const string& key,
+                      std::vector<string>* result, bool return_all = true,
                       bool return_full_path = false,
                       bool should_remove_suffix = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
 
-  Status _ParseOSSURIPath(
-      const StringPiece fname,
-      std::string& bucket,
-      std::string& object,
-      std::string& host,
-      std::string& access_id,
-      std::string& access_key);
+  Status _ParseOSSURIPath(const StringPiece fname, std::string& bucket,
+                          std::string& object, std::string& host,
+                          std::string& access_id, std::string& access_key);
 
   // The number of bytes to read ahead for buffering purposes
   //  in the RandomAccessFile implementation. Defaults to 5Mb.
@@ -143,6 +132,7 @@ class OSSFileSystem : public FileSystem {
   TF_DISALLOW_COPY_AND_ASSIGN(OSSFileSystem);
 };
 
+}  // namespace io
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILE_SYSTEM_H_
