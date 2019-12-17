@@ -27,14 +27,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
+from operator import itemgetter
+
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.util import structure
 from tensorflow.python.framework import dtypes
-from tensorflow_io import _load_library
+from tensorflow.python.framework import tensor_spec
+from tensorflow_io.core.python.ops import core_ops
 
-
-_bigquery_so = _load_library("_bigquery.so")
 
 
 class BigQueryClient(object):
@@ -44,16 +45,11 @@ class BigQueryClient(object):
   `readSession` method to initiate a BigQuery read session.
   """
 
-  def __init__(self, client_resource=None):
+  def __init__(self):
     """Creates a BigQueryClient to start BigQuery read sessions.
 
-    Args:
-      client_resource: client resource (optional).
     """
-
-    if client_resource is None:
-      client_resource = _bigquery_so.big_query_client()
-    self._client_resource = client_resource
+    self._client_resource = core_ops.io_big_query_client()
 
   def read_session(self,
                    parent,
@@ -126,7 +122,7 @@ class BigQueryClient(object):
     if not output_types:
       output_types = [dtypes.string] * len(selected_fields)
 
-    (streams, avro_schema) = _bigquery_so.big_query_read_session(
+    (streams, avro_schema) = core_ops.io_big_query_read_session(
         client=self._client_resource,
         parent=parent,
         project_id=project_id,
@@ -223,10 +219,21 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
 
   def __init__(self, client_resource, selected_fields, output_types,
                avro_schema, stream):
-    self._structure = structure.NestedStructure(
-        tuple(structure.TensorStructure(dtype, []) for dtype in output_types))
 
-    variant_tensor = _bigquery_so.big_query_dataset(
+    # selected_fields and corresponding output_types have to be sorted because
+    # of b/141251314
+    sorted_fields_with_types = sorted(
+        zip(selected_fields, output_types),
+        key=itemgetter(0))
+    selected_fields, output_types = list(zip(*sorted_fields_with_types))
+    selected_fields = list(selected_fields)
+    output_types = list(output_types)
+
+    self._element_spec = collections.OrderedDict(zip(
+        selected_fields,
+        (tensor_spec.TensorSpec([], dtype) for dtype in output_types)))
+
+    variant_tensor = core_ops.io_big_query_dataset(
         client=client_resource,
         selected_fields=selected_fields,
         output_types=output_types,
@@ -235,5 +242,20 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
     super(_BigQueryDataset, self).__init__(variant_tensor)
 
   @property
-  def _element_structure(self):
-    return self._structure
+  def element_spec(self):
+    return self._element_spec
+
+
+class BigQueryTestClient(BigQueryClient):
+  """BigQueryTestClient is the entrypoint for interacting with Fake Cloud BigQuery service."""
+
+  # pylint: disable=super-init-not-called
+  def __init__(self, fake_server_address):
+    """Creates a BigQueryTestClient to start BigQuery read sessions.
+
+    Args:
+      fake_server_address: url for service faking Cloud BigQuery Storage API.
+    """
+
+    self._client_resource = core_ops.io_big_query_test_client(
+        fake_server_address)

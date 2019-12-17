@@ -137,8 +137,6 @@ cc_library(
         "src/tinycthread.h",
         "src/tinycthread_extra.c",
         "src/tinycthread_extra.h",
-        "src/xxhash.c",
-        "src/xxhash.h",
     ],
     hdrs = [
         "config.h",
@@ -155,7 +153,8 @@ cc_library(
     linkopts = ["-lpthread"],
     visibility = ["//visibility:public"],
     deps = [
+        "@arrow",
         "@boringssl//:ssl",
-        "@com_github_madler_zlib//:z",
+        "@zlib",
     ],
 )

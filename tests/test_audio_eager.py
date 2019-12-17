@@ -18,35 +18,293 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
+import pytest
+import numpy as np
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io.audio as audio_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
-audio_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "test_audio", "mono_10khz.wav")
+@pytest.fixture(name="audio_data", scope="module")
+def fixture_audio_data():
+  """fixture_audio_data"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "mono_10khz.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+  rate = audio.sample_rate
+  return path, value, rate
 
-def test_audio_dataset():
-  """Test Audio Dataset"""
-  with open(audio_path, 'rb') as f:
-    wav_contents = f.read()
-  audio_v = tf.audio.decode_wav(wav_contents)
+@pytest.fixture(name="audio_data_24", scope="module")
+def fixture_audio_data_24():
+  """fixture_audio_data_24"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "example_0.5s.wav")
+  # raw was geenrated from:
+  # $ sox example_0.5s.wav example_0.5s.s32
+  raw_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "example_0.5s.s32")
+  value = np.fromfile(raw_path, np.int32)
+  value = np.reshape(value, [22050, 2])
+  value = tf.constant(value)
+  rate = tf.constant(44100)
+  return path, value, rate
 
-  f = lambda x: float(x) / (1 << 15)
+@pytest.mark.parametrize(
+    ("io_tensor_func"),
+    [
+        (tfio.IOTensor.from_audio),
+        pytest.param(
+            lambda f: tfio.IOTensor.from_ffmpeg(f)("a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+                pytest.mark.xfail(
+                    reason="does not support 24 bit yet"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_ffmpeg"],
+)
+def test_audio_io_tensor_24(audio_data_24, io_tensor_func):
+  """test_audio_io_tensor_24"""
+  audio_path, audio_value, audio_rate = audio_data_24
 
-  audio_dataset = audio_io.WAVDataset([audio_path])
+  audio_tensor = io_tensor_func(audio_path)
+  assert audio_tensor.rate == audio_rate
+  assert audio_tensor.shape == audio_value.shape
+  assert np.all(audio_tensor.to_tensor() == audio_value)
+  for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
+    indices = list(range(0, 22050, step))
+    # TODO: -1 vs. 22050 might need fix
+    for (start, stop) in zip(indices, indices[1:] + [22050]):
+      audio_tensor_value = audio_tensor[start:stop]
+      audio_value_value = audio_value[start:stop]
+      assert audio_tensor_value.shape == audio_value_value.shape
+      assert np.all(audio_tensor_value == audio_value_value)
+
+
+@pytest.mark.parametrize(
+    ("io_dataset_func"),
+    [
+        (tfio.IODataset.from_audio),
+        pytest.param(
+            lambda f: tfio.IODataset.from_ffmpeg(f, "a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+                pytest.mark.xfail(
+                    reason="does not support 24 bit yet"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_ffmpeg"],
+)
+def test_audio_io_dataset_24(audio_data_24, io_dataset_func):
+  """test_audio_io_dataset_24"""
+  audio_path, audio_value, _ = audio_data_24
+
+  audio_dataset = io_dataset_func(audio_path)
+
   i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v.numpy())
+  for value in audio_dataset:
+    assert value.shape == [2]
+    assert np.all(audio_value[i] == value)
+    i += 1
+  assert i == 22050
+
+  audio_dataset = io_dataset_func(audio_path).batch(2)
+
+  i = 0
+  for value in audio_dataset:
+    assert value.shape == [2, 2]
+    assert np.all(audio_value[i] == value[0])
+    assert np.all(audio_value[i + 1] == value[1])
+    i += 2
+  assert i == 22050
+
+@pytest.mark.parametrize(
+    ("io_tensor_func"),
+    [
+        (tfio.IOTensor.from_audio),
+        pytest.param(
+            lambda f: tfio.IOTensor.from_ffmpeg(f)("a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+                pytest.mark.xfail(
+                    reason="shape does not work correctly yet"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_ffmpeg"],
+)
+def test_audio_io_tensor(audio_data, io_tensor_func):
+  """test_audio_io_tensor"""
+  audio_path, audio_value, audio_rate = audio_data
+
+  audio_tensor = io_tensor_func(audio_path)
+  assert audio_tensor.rate == audio_rate
+  assert audio_tensor.shape == audio_value.shape
+  assert np.all(audio_tensor.to_tensor() == audio_value)
+  for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
+    indices = list(range(0, 5760, step))
+    # TODO: -1 vs. 5760 might need fix
+    for (start, stop) in zip(indices, indices[1:] + [5760]):
+      audio_tensor_value = audio_tensor[start:stop]
+      audio_value_value = audio_value[start:stop]
+      assert audio_tensor_value.shape == audio_value_value.shape
+      assert np.all(audio_tensor_value == audio_value_value)
+
+
+@pytest.mark.parametrize(
+    ("io_dataset_func"),
+    [
+        (tfio.IODataset.from_audio),
+        pytest.param(
+            lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+            ],
+        ),
+        pytest.param(
+            lambda f: tfio.IODataset.from_ffmpeg(f, "a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_ffmpeg", "from_ffmpeg(eager)"],
+)
+def test_audio_io_dataset(audio_data, io_dataset_func):
+  """test_audio_io_dataset"""
+  audio_path, audio_value, _ = audio_data
+
+  audio_dataset = io_dataset_func(audio_path)
+
+  i = 0
+  for value in audio_dataset:
+    assert audio_value[i] == value
     i += 1
   assert i == 5760
 
-  audio_dataset = audio_io.WAVDataset([audio_path], batch=2)
+  audio_dataset = io_dataset_func(audio_path).batch(2)
+
   i = 0
-  for v in audio_dataset:
-    assert audio_v.audio[i].numpy() == f(v[0].numpy())
-    assert audio_v.audio[i + 1].numpy() == f(v[1].numpy())
+  for value in audio_dataset:
+    assert audio_value[i] == value[0]
+    assert audio_value[i + 1] == value[1]
     i += 2
   assert i == 5760
+
+@pytest.mark.parametrize(
+    ("io_tensor_func", "num_parallel_calls"),
+    [
+        (tfio.IOTensor.graph(tf.int16).from_audio, 1),
+        (tfio.IOTensor.graph(tf.int16).from_audio, 2),
+        pytest.param(
+            tfio.IOTensor.from_ffmpeg,
+            1,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+                pytest.mark.xfail(
+                    reason="does not work in graph yet"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_audio_parallel", "from_ffmpeg"],
+)
+def test_audio_io_tensor_with_dataset(
+    audio_data, io_tensor_func, num_parallel_calls):
+  """test_audio_io_dataset_with_dataset"""
+  audio_path, audio_value, audio_rate = audio_data
+
+  filename_dataset = tf.data.Dataset.from_tensor_slices(
+      [audio_path, audio_path])
+  position_dataset = tf.data.Dataset.from_tensor_slices(
+      [tf.constant(1000, tf.int64), tf.constant(2000, tf.int64)])
+
+  dataset = tf.data.Dataset.zip((filename_dataset, position_dataset))
+
+  # Note: @tf.function is actually not needed, as tf.data.Dataset
+  # will automatically wrap the `func` into a graph anyway.
+  # The following is purely for explanation purposes.
+  # Return: audio chunk from position:position+100, and the rate.
+  @tf.function
+  def func(filename, position):
+    audio = io_tensor_func(filename)
+    return audio[position:position+100], audio.rate
+
+  dataset = dataset.map(func, num_parallel_calls=num_parallel_calls)
+
+  item = 0
+  for (data, rate) in dataset:
+    assert audio_rate == rate
+    assert data.shape == (100, 1)
+    position = 1000 if item == 0 else 2000
+    for i in range(100):
+      assert audio_value[position + i] == data[i]
+    item += 1
+  assert item == 2
+
+@pytest.mark.parametrize(
+    ("io_dataset_func"),
+    [
+        (tfio.IODataset.graph(tf.int16).from_audio),
+        pytest.param(
+            lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "darwin",
+                    reason="macOS does not support FFmpeg"),
+            ],
+        ),
+    ],
+    ids=["from_audio", "from_ffmpeg"],
+)
+def test_audio_io_dataset_with_dataset(audio_data, io_dataset_func):
+  """test_audio_io_dataset_with_dataset"""
+  audio_path, audio_value, _ = audio_data
+
+  filename_dataset = tf.data.Dataset.from_tensor_slices(
+      [audio_path, audio_path])
+  position_dataset = tf.data.Dataset.from_tensor_slices(
+      [tf.constant(1000, tf.int64), tf.constant(2000, tf.int64)])
+
+  dataset = tf.data.Dataset.zip((filename_dataset, position_dataset))
+
+  # Note: @tf.function is actually not needed, as tf.data.Dataset
+  # will automatically wrap the `func` into a graph anyway.
+  # The following is purely for explanation purposes.
+  # Return: an embedded dataset (in an outer dataset) for position:position+100
+  @tf.function
+  def func(filename, position):
+    audio_dataset = io_dataset_func(filename)
+    return audio_dataset.skip(position).take(100)
+
+  dataset = dataset.map(func)
+
+  item = 0
+  # Notice audio_dataset in dataset:
+  for audio_dataset in dataset:
+    position = 1000 if item == 0 else 2000
+    i = 0
+    for value in audio_dataset:
+      assert audio_value[position + i] == value
+      i += 1
+    assert i == 100
+    item += 1
+  assert item == 2

@@ -22,35 +22,45 @@ import time
 import subprocess
 import sys
 import pytest
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io.prometheus as prometheus_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 if sys.platform == "darwin":
   pytest.skip(
       "prometheus is not supported on macOS yet", allow_module_level=True)
 
-def test_prometheus_input():
-  """test_prometheus_input
-  """
+def test_prometheus():
+  """test_prometheus"""
   for _ in range(6):
     subprocess.call(["dig", "@localhost", "-p", "1053", "www.google.com"])
     time.sleep(1)
   time.sleep(2)
-  prometheus_dataset = prometheus_io.PrometheusDataset(
-      "http://localhost:9090",
-      schema="coredns_dns_request_count_total[5s]",
-      batch=2)
-  i = 0
-  for k, v in prometheus_dataset:
-    print("K, V: ", k.numpy(), v.numpy())
-    if i == 4:
-      # Last entry guaranteed 6.0
-      assert v.numpy() == 6.0
-    i += 2
-  assert i == 6
+  prometheus = tfio.IOTensor.from_prometheus(
+      "coredns_dns_request_count_total[5s]")
+  assert prometheus.index.shape == [5]
+  assert prometheus.index.dtype == tf.int64
+  assert prometheus.value.shape == [5, 1]
+  assert prometheus.value.dtype == tf.float64
+  # last value should be 6.0
+  assert prometheus.value.to_tensor().numpy()[4] == 6.0
+
+  # test with sklearn.preprocessing, and expect the same as with numpy
+  numpy_data = prometheus.value.to_tensor().numpy()
+
+  prometheus_scaler = MinMaxScaler()
+  prometheus_scaler.fit(prometheus.value)
+  prometheus_transformed = prometheus_scaler.transform(prometheus.value)
+
+  numpy_scaler = MinMaxScaler()
+  numpy_scaler.fit(numpy_data)
+  numpy_transformed = numpy_scaler.transform(numpy_data)
+
+  assert prometheus_scaler.data_max_ == numpy_scaler.data_max_
+  assert prometheus_scaler.data_min_ == numpy_scaler.data_min_
+  assert np.all(prometheus_transformed == numpy_transformed)
 
 if __name__ == "__main__":
   test.main()

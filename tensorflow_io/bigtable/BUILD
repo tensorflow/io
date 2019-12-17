@@ -1,13 +1,29 @@
 # Cloud Bigtable client for TensorFlow
 licenses(["notice"])  # Apache 2.0
 
+package(default_visibility = ["//visibility:public"])
+
 load(
-    "//tensorflow_io:tensorflow_io.bzl",
+    "//third_party/tf:tensorflow_io.bzl",
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_bigtable.so",
+py_library(
+    name = "bigtable",
+    srcs = [
+        "__init__.py",
+        "python/__init__.py",
+        "python/ops/__init__.py",
+        "python/ops/bigtable_api.py",
+    ],
+    data = [
+        "//tensorflow_io/core:python/ops/libtensorflow_io.so",
+    ],
+    srcs_version = "PY2AND3",
+)
+
+cc_library(
+    name = "bigtable_ops",
     srcs = [
         "kernels/bigtable_kernels.cc",
         "kernels/bigtable_lookup_dataset_op.cc",
@@ -21,7 +37,7 @@ cc_binary(
         "ops/bigtable_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         ":bigtable_lib_cc",
         "@com_github_googleapis_google_cloud_cpp//google/cloud/bigtable:bigtable_client",
@@ -53,6 +69,15 @@ cc_binary(
     srcs = [
         "kernels/test_kernels/bigtable_test_client_test.cc",
     ],
+    copts = [
+        "-pthread",
+        "-std=c++11",
+        "-DNDEBUG",
+    ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": ["-lrt"],
+    }),
     deps = [
         ":bigtable_lib_cc",
         ":bigtable_test_client",

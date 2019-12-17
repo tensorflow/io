@@ -19,38 +19,42 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import tempfile
 import numpy as np
 
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
-import tensorflow_io.text as text_io # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
-def test_text_input():
-  """test_text_input
-  """
-  text_filename = os.path.join(
+def test_read_text():
+  """test_read_text"""
+  filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
-  with open(text_filename, 'rb') as f:
-    lines = [line.strip() for line in f]
-  text_filename = "file://" + text_filename
+  with open(filename, 'rb') as f:
+    lines = [line for line in f]
+  filename = "file://" + filename
 
-  gzip_text_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt.gz")
-  gzip_text_filename = "file://" + gzip_text_filename
+  filesize = tf.io.gfile.GFile(filename).size()
 
-  lines = lines * 3
-  filenames = [text_filename, gzip_text_filename, text_filename]
-  text_dataset = text_io.TextDataset(filenames, batch=2)
-  i = 0
-  for v in text_dataset:
-    assert lines[i] == v.numpy()[0]
-    i += 1
-    if i < len(lines):
-      assert lines[i] == v.numpy()[1]
-      i += 1
-  assert i == len(lines)
+  offset = 0
+  offsets = []
+  for line in lines:
+    offsets.append(offset)
+    offset += len(line)
+
+  lines = list(zip(offsets, lines))
+
+  for offset, length in [
+      (0, -1), (1, -1), (1000, -1), (100, 1000), (1000, 10000)]:
+    entries = tfio.experimental.text.read_text(
+        filename, offset=offset, length=length)
+    if length < 0:
+      length = filesize - offset
+    expected = [
+        line for (k, line) in lines if k >= offset and k < offset + length]
+    assert entries.shape == len(expected)
+    for k, v in enumerate(expected):
+      assert entries[k].numpy().decode() + "\n" == v.decode()
 
 
 def test_text_output_sequence():
@@ -80,7 +84,7 @@ def test_text_output_sequence():
   class OutputCallback(tf.keras.callbacks.Callback):
     """OutputCallback"""
     def __init__(self, filename, batch_size):
-      self._sequence = text_io.TextOutputSequence(filename)
+      self._sequence = tfio.experimental.text.TextOutputSequence(filename)
       self._batch_size = batch_size
 
     def on_predict_batch_end(self, batch, logs=None):
@@ -101,6 +105,33 @@ def test_text_output_sequence():
   assert len(lines) == len(predictions)
   for line, prediction in zip(lines, predictions):
     assert line == prediction
+
+def test_re2_extract():
+  """test_text_input
+  """
+  filename = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
+  with open(filename, 'rb') as f:
+    lines = [line.strip() for line in f]
+  filename = "file://" + filename
+
+  dataset = tf.data.TextLineDataset(filename).map(
+      lambda x: tfio.experimental.text.re2_full_match(
+          x, ".+(ipsum).+(dolor).+"))
+  i = 0
+  for v in dataset:
+    r, g = v
+    if re.match(".+(ipsum).+(dolor).+".encode(), lines[i]):
+      assert r.numpy()
+      assert g[0].numpy().decode() == "ipsum"
+      assert g[1].numpy().decode() == "dolor"
+    else:
+      assert not r.numpy()
+      assert g[0].numpy().decode() == ""
+      assert g[1].numpy().decode() == ""
+    i += 1
+  assert i == len(lines)
+
 
 if __name__ == "__main__":
   test.main()

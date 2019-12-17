@@ -1,1 +1,5 @@
 font_*.h linguist-generated=true
+dwaLookups.* linguist-generated=true
+b44ExpLogTable.* linguist-generated=true
+toFloat.* linguist-generated=true
+eLut.* linguist-generated=true

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -204,7 +204,7 @@ class BigtableSampleKeyPairsDatasetOp : public DatasetOpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(
-    Name("BigtableSampleKeyPairsDataset").Device(DEVICE_CPU),
+    Name("IO>BigtableSampleKeyPairsDataset").Device(DEVICE_CPU),
     BigtableSampleKeyPairsDatasetOp);
 
 }  // namespace

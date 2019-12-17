@@ -2,9 +2,20 @@ workspace(name = "org_tensorflow_io")
 
 load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
 tf_configure(
     name = "local_config_tf",
+)
+
+http_archive(
+    name = "com_google_absl",
+    sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
+    strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
+    urls = [
+        "http://mirror.tensorflow.org/github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+        "https://github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
+    ],
 )
 
 http_archive(
@@ -18,7 +29,7 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_madler_zlib",
+    name = "zlib",
     build_file = "//third_party:zlib.BUILD",
     sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
     strip_prefix = "zlib-1.2.11",
@@ -94,11 +105,11 @@ http_archive(
     patches = [
         "//third_party:parquet.patch",
     ],
-    sha256 = "3219c4e87e7cf979017f0cc5bc5dd6a3611d0fc750e821911fab998599dc125b",
-    strip_prefix = "arrow-apache-arrow-0.11.1",
+    sha256 = "69d9de9ec60a3080543b28a5334dbaf892ca34235b8bd8f8c1c01a33253926c1",
+    strip_prefix = "arrow-apache-arrow-0.14.1",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz",
+        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
     ],
 )
 
@@ -117,11 +128,11 @@ http_archive(
 http_archive(
     name = "thrift",
     build_file = "//third_party:thrift.BUILD",
-    sha256 = "0e324569321a1b626381baabbb98000c8dd3a59697292dbcc71e67135af0fefd",
-    strip_prefix = "thrift-0.11.0",
+    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
+    strip_prefix = "thrift-0.12.0",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.11.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.11.0.tar.gz",
+        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
+        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
     ],
 )
 
@@ -169,17 +180,6 @@ http_archive(
 )
 
 http_archive(
-    name = "libav_9_20",
-    build_file = "//third_party:libav_9_20.BUILD",
-    sha256 = "ecc2389bc857602450196c9240e1ebc59066980f5d42e977efe0f498145775d4",
-    strip_prefix = "libav-9.20",
-    urls = [
-        "https://mirror.bazel.build/github.com/libav/libav/archive/v9.20.tar.gz",
-        "https://github.com/libav/libav/archive/v9.20.tar.gz",
-    ],
-)
-
-http_archive(
     name = "lmdb",
     build_file = "//third_party:lmdb.BUILD",
     sha256 = "f3927859882eb608868c8c31586bb7eb84562a40a6bf5cc3e13b6b564641ea28",
@@ -190,15 +190,12 @@ http_archive(
     ],
 )
 
-http_archive(
+# TODO: replace with release version
+new_git_repository(
     name = "libtiff",
     build_file = "//third_party:libtiff.BUILD",
-    sha256 = "2c52d11ccaf767457db0c46795d9c7d1a8d8f76f68b0b800a3dfe45786b996e4",
-    strip_prefix = "tiff-4.0.10",
-    urls = [
-        "https://mirror.bazel.build/download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-        "https://download.osgeo.org/libtiff/tiff-4.0.10.tar.gz",
-    ],
+    commit = "43b0c984f0a2c81565b05b6590bf9de7df612477",
+    remote = "https://gitlab.com/libtiff/libtiff.git",
 )
 
 http_archive(
@@ -225,34 +222,46 @@ http_archive(
 
 http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "1bf082fb3016154d3f806da8eb5876caf05743da4b2e8130fadd000df74b5bb6",
-    strip_prefix = "grpc-1.21.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/grpc/grpc/archive/v1.21.1.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.21.1.tar.gz",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:grpc.patch",
     ],
-)
-
-# 3.7.1 with a fix to BUILD file
-http_archive(
-    name = "com_google_protobuf",
-    sha256 = "1c020fafc84acd235ec81c6aac22d73f23e85a700871466052ff231d69c1b17a",
-    strip_prefix = "protobuf-5902e759108d14ee8e6b0b07653dac2f4e70ac73",
+    sha256 = "6dc4f122527670099124a71d8a180b0b074a18efa939173d6c3a0673229f57d3",
+    strip_prefix = "grpc-e68ce1164b49529de12fbba63d53f081aef5c90e",
     urls = [
-        "http://mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/5902e759108d14ee8e6b0b07653dac2f4e70ac73.tar.gz",
+        "https://github.com/grpc/grpc/archive/e68ce1164b49529de12fbba63d53f081aef5c90e.tar.gz",
     ],
-)
-
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
-    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
 )
 
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+)
+
+pip_repositories()
+
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
+pip_install()
+
+# TODO(https://github.com/grpc/grpc/issues/19835): Remove.
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+
+upb_deps()
+
+load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
+
+apple_rules_dependencies()
+
+load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+
+apple_support_dependencies()
 
 http_archive(
     name = "giflib",
@@ -267,28 +276,21 @@ http_archive(
 
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    sha256 = "3abe2cf553ce33ff58d23848ae716cd2fcabfd454b89f6f65a92ed261244c1df",
-    strip_prefix = "google-cloud-cpp-0.11.0",
+    sha256 = "35058ff14e4f9f49f78da2f1bbf1c03f27e8e40ec65c51f62720346e99803392",
+    strip_prefix = "google-cloud-cpp-0.13.0",
     urls = [
-        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v0.11.0.tar.gz",
+        "https://mirror.bazel.build/github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
     ],
 )
 
-# Manually load com_google_googleapis as we need a patch for pubsub
-# The patch file was generated from:
-# diff -Naur a b > third_party/googleapis.patch
 http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:googleapis.patch",
-    ],
-    sha256 = "90bcdf27b41b1c3900838fe4edaf89080ca67026608817946b4ae5e2b925c711",
-    strip_prefix = "googleapis-7152063cb170d23c5c110e243711d8eb6fda6a1c",
+    sha256 = "cb531e445115e28054a33ad968c2d7d8ade4693721866ce1b9adf9a78762c032",
+    strip_prefix = "googleapis-960b76b1f0c46d12610088977d1129cc7405f3dc",
     urls = [
-        "https://github.com/googleapis/googleapis/archive/7152063cb170d23c5c110e243711d8eb6fda6a1c.tar.gz",
+        "https://github.com/googleapis/googleapis/archive/960b76b1f0c46d12610088977d1129cc7405f3dc.tar.gz",
     ],
 )
 
@@ -442,15 +444,10 @@ http_archive(
 http_archive(
     name = "avro",
     build_file = "//third_party:avro.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:avro.patch",
-    ],
-    sha256 = "42fbe407263ec174d448121cd0e20adcd75c43cb9f192b97476d9b99fa69faf3",
-    strip_prefix = "avro-release-1.9.0-rc4/lang/c++",
+    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
+    strip_prefix = "avro-release-1.9.1/lang/c++",
     urls = [
-        "https://mirror.bazel.build/github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
-        "https://github.com/apache/avro/archive/release-1.9.0-rc4.tar.gz",
+        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
     ],
 )
 
@@ -476,28 +473,19 @@ http_archive(
     ],
 )
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# Note: patch is needed as we need to resolve multiple zlib dependencies.
-# Patch was created with:
-# diff -Naur a b > rules_go.patch
 http_archive(
     name = "io_bazel_rules_go",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:rules_go.patch",
-    ],
-    sha256 = "f04d2373bcaf8aa09bccb08a98a57e721306c8f6043a2a0ee610fd6853dcde3d",
+    sha256 = "ae8c36ff6e565f674c7a3692d6a9ea1096e4c1ade497272c2108a810fb39acd2",
     urls = [
-        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/0.18.6/rules_go-0.18.6.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/0.18.6/rules_go-0.18.6.tar.gz",
+        "https://storage.googleapis.com/bazel-mirror/github.com/bazelbuild/rules_go/releases/download/0.19.4/rules_go-0.19.4.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/0.19.4/rules_go-0.19.4.tar.gz",
     ],
 )
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "3c681998538231a2d24d0c07ed5a7658cb72bfb5fd4bf9911157c0e9ac6a2687",
-    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.17.0/bazel-gazelle-0.17.0.tar.gz"],
+    sha256 = "7fc87f4170011201b1690326e8c16c5d802836e3a0d617d8f75c3af2b23180c4",
+    urls = ["https://github.com/bazelbuild/bazel-gazelle/releases/download/0.18.2/bazel-gazelle-0.18.2.tar.gz"],
 )
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
@@ -521,3 +509,140 @@ go_repository(
     importpath = "github.com/prometheus/client_golang",
     tag = "v0.9.3",
 )
+
+http_archive(
+    name = "dcmtk",
+    build_file = "//third_party:dcmtk.BUILD",
+    sha256 = "a93ff354fae091689a0740a1000cde7d4378fdf733aef9287a70d7091efa42c0",
+    strip_prefix = "dcmtk-3.6.4",
+    urls = [
+        "https://dicom.offis.de/download/dcmtk/dcmtk364/dcmtk-3.6.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "nucleus",
+    build_file = "//third_party:nucleus.BUILD",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:nucleus.patch",
+    ],
+    sha256 = "aa865d3509ba8f3527392303bd95a11f48f19e68197b3d1d0bae9fab004bee87",
+    strip_prefix = "nucleus-0.4.1",
+    urls = [
+        "https://github.com/google/nucleus/archive/0.4.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bzip2",
+    build_file = "//third_party:bzip2.BUILD",
+    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
+    strip_prefix = "bzip2-1.0.8",
+    urls = [
+        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_googlesource_code_cctz",
+    strip_prefix = "cctz-master",
+    urls = ["https://github.com/google/cctz/archive/master.zip"],
+)
+
+# This is the 1.9 release of htslib.
+http_archive(
+    name = "htslib",
+    build_file = "//third_party:htslib.BUILD",
+    sha256 = "c4d3ae84014f8a80f5011521f391e917bc3b4f6ebd78e97f238472e95849ec14",
+    strip_prefix = "htslib-1.9",
+    urls = [
+        "https://github.com/samtools/htslib/archive/1.9.zip",
+    ],
+)
+
+http_archive(
+    name = "io_bazel_rules_closure",
+    sha256 = "43c9b882fa921923bcba764453f4058d102bece35a37c9f6383c713004aacff1",
+    strip_prefix = "rules_closure-9889e2348259a5aad7e805547c1a0cf311cfcd91",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",
+        "https://github.com/bazelbuild/rules_closure/archive/9889e2348259a5aad7e805547c1a0cf311cfcd91.tar.gz",  # 2018-12-21
+    ],
+)
+
+# bazel_skylib is now a required dependency of protobuf_archive.
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
+    strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
+    urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
+)
+
+http_archive(
+    name = "double_conversion",
+    build_file = "//third_party:double_conversion.BUILD",
+    sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
+    strip_prefix = "double-conversion-3992066a95b823efc8ccc1baf82a1cfc73f6e9b8",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
+        "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
+    ],
+)
+
+http_archive(
+    name = "rapidjson",
+    build_file = "//third_party:rapidjson.BUILD",
+    sha256 = "bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e",
+    strip_prefix = "rapidjson-1.1.0",
+    urls = [
+        "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "xz",
+    build_file = "//third_party:xz.BUILD",
+    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
+    strip_prefix = "xz-5.2.4",
+    urls = [
+        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "easyexif",
+    build_file = "//third_party:easyexif.BUILD",
+    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
+    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
+    urls = [
+        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "openexr",
+    build_file = "//third_party:openexr.BUILD",
+    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
+    strip_prefix = "openexr-2.4.0",
+    urls = [
+        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_grail_bazel_toolchain",
+    strip_prefix = "bazel-toolchain-0.4.4",
+    urls = ["https://github.com/grailbio/bazel-toolchain/archive/0.4.4.tar.gz"],
+)
+
+load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
+
+llvm_toolchain(
+    name = "llvm_toolchain",
+    llvm_version = "8.0.0",
+)
+
+load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
+
+llvm_register_toolchains()

@@ -27,11 +27,9 @@ import tempfile
 
 import tensorflow as tf
 from tensorflow import dtypes
-from tensorflow.compat.v2 import data
-from tensorflow.python.data.ops.dataset_ops import flat_structure
+from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.util import structure as structure_lib
-from tensorflow_io import _load_library
-arrow_ops = _load_library('_arrow_ops.so')
+from tensorflow_io.core.python.ops import core_ops
 
 if hasattr(tf, "nest"):
   from tensorflow import nest # pylint: disable=ungrouped-imports
@@ -89,7 +87,7 @@ def arrow_schema_to_tensor_types(schema):
   return tensor_types, tensor_shapes
 
 
-class ArrowBaseDataset(data.Dataset):
+class ArrowBaseDataset(dataset_ops.DatasetV2):
   """Base class for Arrow Datasets to provide columns used in record batches
   and corresponding output tensor types, shapes and classes.
   """
@@ -122,21 +120,24 @@ class ArrowBaseDataset(data.Dataset):
         dtypes.string,
         name="batch_mode")
     if batch_size is not None or batch_mode == 'auto':
+      spec_batch_size = batch_size if batch_mode == 'drop_remainder' else None
       # pylint: disable=protected-access
-      self._structure = self._structure._batch(
-          batch_size if batch_mode == 'drop_remainder' else None)
+      self._structure = nest.map_structure(
+          lambda component_spec: component_spec._batch(spec_batch_size),
+          self._structure)
+      print(self._flat_structure)
     variant_tensor = make_variant_fn(
         columns=self._columns,
         batch_size=self._batch_size,
         batch_mode=self._batch_mode,
-        **flat_structure(self))
+        **self._flat_structure)
     super(ArrowBaseDataset, self).__init__(variant_tensor)
 
   def _inputs(self):
     return []
 
   @property
-  def _element_structure(self):
+  def element_spec(self):
     return self._structure
 
   @property
@@ -162,13 +163,14 @@ class ArrowDataset(ArrowBaseDataset):
                output_types,
                output_shapes=None,
                batch_size=None,
-               batch_mode='keep_remainder'):
+               batch_mode='keep_remainder',
+               arrow_buffer=None):
     """Create an ArrowDataset from a Tensor of serialized batches.
     This constructor requires pyarrow to be installed.
 
     Args:
       serialized_batches: A string Tensor as a serialized buffer containing
-                          Arrow record batches as Arrow file format
+                          Arrow record batches in Arrow File format
       columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
@@ -181,9 +183,39 @@ class ArrowDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      arrow_buffer: Optional Arrow Buffer containing Arrow record batches in
+                    Arrow File format. This will share the Arrow buffer with
+                    the C++ kernel by address for zero-copy. Only supported if
+                    the kernel process is local, with TensorFlow in eager mode.
+                    If this is used, set `serialized_batches` to `None`.
     """
+    if serialized_batches is not None:
+      make_variant_fn = partial(
+          core_ops.io_arrow_serialized_dataset,
+          serialized_batches)
+    elif arrow_buffer is None:
+      raise ValueError("Must set either serialzied_batches or arrow_buffer")
+    elif not tf.executing_eagerly():
+      raise ValueError("Using arrow_buffer for zero-copy only supported in "
+                       "TensorFlow Eager mode.")
+    else:
+      address_int = arrow_buffer.address
+      buffer_address = tf.convert_to_tensor(
+          address_int,
+          dtype=dtypes.uint64,
+          name="buffer_address")
+      buffer_size = tf.convert_to_tensor(
+          arrow_buffer.size,
+          dtype=dtypes.int64,
+          name="buffer_size")
+      make_variant_fn = partial(
+          core_ops.io_arrow_zero_copy_dataset,
+          buffer_address,
+          buffer_size)
+      # Keep a reference to the arrow buffers used
+      self._arrow_buffer_refs = [arrow_buffer]
     super(ArrowDataset, self).__init__(
-        partial(arrow_ops.arrow_dataset, serialized_batches),
+        make_variant_fn,
         columns,
         output_types,
         output_shapes,
@@ -193,9 +225,9 @@ class ArrowDataset(ArrowBaseDataset):
   @classmethod
   def from_record_batches(cls,
                           record_batches,
-                          columns,
                           output_types,
                           output_shapes=None,
+                          columns=None,
                           batch_size=None,
                           batch_mode='keep_remainder'):
     """Create an ArrowDataset directly from Arrow record batches.
@@ -203,7 +235,6 @@ class ArrowDataset(ArrowBaseDataset):
 
     Args:
       record_batches: An Arrow record batch or sequence of record batches
-      columns: A list of column indices to be used in the Dataset
       output_types: Tensor dtypes of the output tensors
       output_shapes: TensorShapes of the output tensors or None to
                      infer partial
@@ -215,6 +246,7 @@ class ArrowDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      columns: A list of column indices to be used in the Dataset
     """
     import pyarrow as pa
     if isinstance(record_batches, pa.RecordBatch):
@@ -222,22 +254,33 @@ class ArrowDataset(ArrowBaseDataset):
     if columns is None:
       columns = tuple(range(record_batches[0].num_columns))
     assert record_batches
-    buf = io.BytesIO()
-    writer = pa.RecordBatchFileWriter(buf, record_batches[0].schema)
-    for batch in record_batches:
-      writer.write_batch(batch)
-    writer.close()
-    serialized_batches = tf.convert_to_tensor(
-        buf.getvalue(),
-        dtype=dtypes.string,
-        name="serialized_batches")
+    if tf.executing_eagerly():
+      sink = pa.BufferOutputStream()
+      writer = pa.RecordBatchFileWriter(sink, record_batches[0].schema)
+      for batch in record_batches:
+        writer.write_batch(batch)
+      writer.close()
+      serialized_batches = None
+      arrow_buffer = sink.getvalue()
+    else:
+      buf = io.BytesIO()
+      writer = pa.RecordBatchFileWriter(buf, record_batches[0].schema)
+      for batch in record_batches:
+        writer.write_batch(batch)
+      writer.close()
+      serialized_batches = tf.convert_to_tensor(
+          buf.getvalue(),
+          dtype=dtypes.string,
+          name="serialized_batches")
+      arrow_buffer = None
     return cls(
         serialized_batches,
         columns,
         output_types,
         output_shapes,
-        batch_size,
-        batch_mode)
+        batch_size=batch_size,
+        batch_mode=batch_mode,
+        arrow_buffer=arrow_buffer)
 
   @classmethod
   def from_pandas(cls,
@@ -272,11 +315,11 @@ class ArrowDataset(ArrowBaseDataset):
     output_types, output_shapes = arrow_schema_to_tensor_types(batch.schema)
     return cls.from_record_batches(
         batch,
-        columns,
         output_types,
         output_shapes,
-        batch_size,
-        batch_mode)
+        columns=columns,
+        batch_size=batch_size,
+        batch_mode=batch_mode)
 
 
 class ArrowFeatherDataset(ArrowBaseDataset):
@@ -316,7 +359,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="filenames")
     super(ArrowFeatherDataset, self).__init__(
-        partial(arrow_ops.arrow_feather_dataset, filenames),
+        partial(core_ops.io_arrow_feather_dataset, filenames),
         columns,
         output_types,
         output_shapes,
@@ -377,7 +420,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     Args:
       endpoints: A `tf.string` tensor, Python list or scalar string defining the
                  input stream.
-                 `endpoints` could have the following formats:
+                 `endpoints` supports the following formats:
                    - "host:port": IPv4 address (default)
                    - "tcp://<host:port>": IPv4 address,
                    - "unix://<path>": local path as unix socket address,
@@ -401,7 +444,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
         dtype=dtypes.string,
         name="endpoints")
     super(ArrowStreamDataset, self).__init__(
-        partial(arrow_ops.arrow_stream_dataset, endpoints),
+        partial(core_ops.io_arrow_stream_dataset, endpoints),
         columns,
         output_types,
         output_shapes,
@@ -422,7 +465,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     Args:
       endpoints: A `tf.string` tensor, Python list or scalar string defining the
                  input stream.
-                 `endpoints` could have the following formats:
+                 `endpoints` supports the following formats:
                    - "host:port": IPv4 address (default)
                    - "tcp://<host:port>": IPv4 address,
                    - "unix://<path>": local path as unix socket address,
@@ -457,7 +500,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                           output_shapes=None,
                           columns=None,
                           batch_size=None,
-                          batch_mode='keep_remainder'):
+                          batch_mode='keep_remainder',
+                          record_batch_iter_factory=None):
     """Create an ArrowStreamDataset by serving a sequence of Arrow record
     batches in a background thread.
     This constructor requires pyarrow to be installed.
@@ -476,6 +520,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   "keep_remainder" (default, keeps partial batch data),
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
+      record_batch_iter_factory: Optional factory to create additional record
+                                 batch iterators for multiple iterations.
     """
     import pyarrow as pa
 
@@ -500,20 +546,28 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
     def run_server():
       """serve record batches"""
-      conn, _ = sock.accept()
-      outfile = conn.makefile(mode='wb')
-      writer = None
-      for batch in record_batch_iter:
-        if writer is None:
-          writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
-        writer.write_batch(batch)
-      writer.close()
-      outfile.close()
-      conn.close()
+      curr_iter = record_batch_iter
+      while True:
+        conn, _ = sock.accept()
+        outfile = conn.makefile(mode='wb')
+        writer = None
+        try:
+          for batch in curr_iter:
+            if writer is None:
+              writer = pa.RecordBatchStreamWriter(outfile, batch.schema)
+            writer.write_batch(batch)
+          if record_batch_iter_factory is not None:
+            curr_iter = record_batch_iter_factory()
+        finally:
+          if writer is not None:
+            writer.close()
+          outfile.close()
+          conn.close()
       sock.close()
 
     # Run the server in a thread
     server = threading.Thread(target=run_server)
+    server.daemon = True
     server.start()
 
     if columns is None:
@@ -538,7 +592,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
     This constructor requires pandas and pyarrow to be installed.
 
     Args:
-      df: A Pandas DataFrame or sequence of DataFrames
+      data_frames: A Pandas DataFrame or sequence of DataFrames
       columns: Optional column indices to use, if None all are used
       preserve_index: Flag to include the DataFrame index as the last column
       batch_size: Batch size of output tensors, setting a batch size here
@@ -559,9 +613,9 @@ class ArrowStreamDataset(ArrowBaseDataset):
 
         # If batching, slice DataFrame and convert to record batches
         if batch_size is not None:
-          step = -(-len(df) // batch_size)  # Compute step size (round int up)
-          for start in range(0, len(df), step):
-            df_slice = df[start:start + step]
+          # Pandas will produce a partial batch if there is a remainder
+          for i in range(0, len(df), batch_size):
+            df_slice = df[i:i + batch_size]
             batch = pa.RecordBatch.from_pandas(
                 df_slice, preserve_index=preserve_index)
             yield batch
@@ -581,4 +635,17 @@ class ArrowStreamDataset(ArrowBaseDataset):
         output_types,
         output_shapes,
         batch_size=batch_size,
-        batch_mode='keep_remainder')
+        batch_mode='keep_remainder',
+        record_batch_iter_factory=gen_record_batches)
+
+def list_feather_columns(filename, **kwargs):
+  """list_feather_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_feather_columns only support eager mode")
+  memory = kwargs.get("memory", "")
+  columns, dtypes_, shapes = core_ops.io_list_feather_columns(
+      filename, memory=memory)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes_), tf.unstack(shapes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
+          column, dtype, shape) in entries])

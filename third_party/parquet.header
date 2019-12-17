@@ -10,15 +10,15 @@
 #
 # docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header
 apt-get -y -qq update && apt-get -y -qq install libtool automake curl g++ pkg-config make bison flex libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-system-dev libboost-test-dev libssl-dev libtool bison flex pkg-config cmake
-curl -OL https://github.com/apache/thrift/archive/0.11.0.tar.gz
-tar -xzf 0.11.0.tar.gz
-(cd thrift-0.11.0 && ./bootstrap.sh && ./configure --prefix=/usr && make install)
-curl -OL https://github.com/apache/arrow/archive/apache-arrow-0.11.1.tar.gz
-tar -xzf apache-arrow-0.11.1.tar.gz
-cp -r arrow-apache-arrow-0.11.1 a
-cp -r arrow-apache-arrow-0.11.1 b
-mkdir arrow-apache-arrow-0.11.1/cpp/release
-(cd arrow-apache-arrow-0.11.1/cpp/release && cmake .. -DARROW_PARQUET=ON && make parquet)
-cp arrow-apache-arrow-0.11.1/cpp/release/src/parquet/*.h b/cpp/src/parquet
-cp arrow-apache-arrow-0.11.1/cpp/release/src/parquet/*.cpp b/cpp/src/parquet
+curl -OL https://github.com/apache/thrift/archive/0.12.0.tar.gz
+tar -xzf 0.12.0.tar.gz
+(cd thrift-0.12.0 && ./bootstrap.sh && ./configure --prefix=/usr && make install)
+curl -OL https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz
+tar -xzf apache-arrow-0.14.1.tar.gz
+cp -r arrow-apache-arrow-0.14.1 a
+cp -r arrow-apache-arrow-0.14.1 b
+mkdir arrow-apache-arrow-0.14.1/cpp/release
+(cd arrow-apache-arrow-0.14.1/cpp/release && cmake .. -DARROW_PARQUET=ON && make parquet)
+cp arrow-apache-arrow-0.14.1/cpp/release/src/parquet/*.h b/cpp/src/parquet
+cp arrow-apache-arrow-0.14.1/cpp/release/src/parquet/*.cpp b/cpp/src/parquet
 diff -Naur a b > parquet.patch

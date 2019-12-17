@@ -24,9 +24,8 @@ import tensorflow as tf
 class BaseDataset(tf.compat.v2.data.Dataset):
   """A Base Dataset"""
 
-  def __init__(self, variant, batch, dtypes, shapes):
+  def __init__(self, variant, dtypes, shapes):
     """Create a Base Dataset."""
-    self._batch = 0 if batch is None else batch
     self._dtypes = dtypes
     self._shapes = shapes
     super(BaseDataset, self).__init__(variant)
@@ -35,15 +34,15 @@ class BaseDataset(tf.compat.v2.data.Dataset):
     return []
 
   @property
-  def _element_structure(self):
+  def element_spec(self):
     e = [
-        tf.data.experimental.TensorStructure(
-            p, q.as_list()) for (p, q) in zip(
-                self._dtypes, self._shapes)
+        tf.TensorSpec(
+            p.as_list(), q) for (p, q) in zip(
+                self._shapes, self._dtypes)
     ]
     if len(e) == 1:
       return e[0]
-    return tf.data.experimental.NestedStructure(tuple(e))
+    return tuple(e)
 
 class Dataset(BaseDataset):
   """A Dataset that takes DataInput"""
@@ -59,4 +58,4 @@ class Dataset(BaseDataset):
         self._data_input,
         self._batch,
         output_types=self._dtypes,
-        output_shapes=self._shapes), self._batch, self._dtypes, self._shapes)
+        output_shapes=self._shapes), self._dtypes, self._shapes)

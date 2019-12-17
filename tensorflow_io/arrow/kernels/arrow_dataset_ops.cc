@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@ limitations under the License.
 ==============================================================================*/
 
 #include "arrow/api.h"
-#include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io-util.h"
-#include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 #define CHECK_ARROW(arrow_status)             \
   do {                                        \
@@ -31,6 +32,7 @@ limitations under the License.
   } while (false)
 
 namespace tensorflow {
+namespace data {
 
 enum ArrowBatchMode {
   BATCH_KEEP_REMAINDER,
@@ -96,8 +98,10 @@ class ArrowColumnTypeChecker : public arrow::TypeVisitor {
   // Check scalar types with arrow::adapters::tensorflow
   arrow::Status CheckScalarType(std::shared_ptr<arrow::DataType> scalar_type) {
     DataType converted_type;
-    ARROW_RETURN_NOT_OK(arrow::adapters::tensorflow::GetTensorFlowType(
-        scalar_type, &converted_type));
+    ::tensorflow::Status status = GetTensorFlowType(scalar_type, &converted_type);
+    if (!status.ok()) {
+      return ::arrow::Status::Invalid(status);
+    }
     if (converted_type != expected_type_) {
       return arrow::Status::TypeError(
           "Arrow type mismatch: expected dtype=" +
@@ -294,7 +298,7 @@ class ArrowDatasetBase : public DatasetBase {
 
       // If in initial state, setup and read first batch
       if (current_batch_ == nullptr && current_row_idx_ == 0) {
-        TF_RETURN_IF_ERROR(SetupStreamsLocked());
+        TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
       }
 
       std::vector<Tensor>* result_tensors = out_tensors;
@@ -309,7 +313,7 @@ class ArrowDatasetBase : public DatasetBase {
       // Try to go to next batch if consumed all rows in current batch
       if (current_batch_ != nullptr &&
           current_row_idx_ >= current_batch_->num_rows()) {
-        TF_RETURN_IF_ERROR(NextStreamLocked());
+        TF_RETURN_IF_ERROR(NextStreamLocked(ctx->env()));
       }
 
       // Check if reached end of stream
@@ -465,11 +469,12 @@ class ArrowDatasetBase : public DatasetBase {
     }
 
     // Setup Arrow record batch consumer and initialze current_batch_
-    virtual Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+    virtual Status SetupStreamsLocked(Env* env)
+        EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
     // Get the next Arrow record batch, if available. If not then
     // current_batch_ will be set to nullptr to indicate no further batches.
-    virtual Status NextStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    virtual Status NextStreamLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       current_batch_ = nullptr;
       current_row_idx_ = 0;
       return Status::OK();
@@ -519,11 +524,7 @@ class ArrowOpKernelBase : public DatasetOpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_shapes", &output_shapes_));
     for (const DataType& dt : output_types_) {
       std::shared_ptr<arrow::DataType> arrow_type;
-      auto status = arrow::adapters::tensorflow::GetArrowType(dt, &arrow_type);
-      OP_REQUIRES(ctx, status.ok(),
-                  errors::InvalidArgument(
-                      "Arrow type is unsupported for output_type dtype=" +
-                      std::to_string(dt)));
+      OP_REQUIRES_OK(ctx, GetArrowType(dt, &arrow_type));
     }
     for (const PartialTensorShape& pts : output_shapes_) {
       OP_REQUIRES(ctx, -1 <= pts.dims() && pts.dims() <= 2,
@@ -583,11 +584,157 @@ class ArrowOpKernelBase : public DatasetOpKernel {
   std::vector<PartialTensorShape> output_shapes_;
 };
 
-// Op to create an ArrowDataset that consumes Arrow record batches from
-// memory in a Python process, or a Pandas DataFrame.
-class ArrowDatasetOp : public ArrowOpKernelBase {
+// Op to create an ArrowZeroCopyDataset that consumes Arrow record batches
+// from a memory buffer address owned in Python.
+class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
  public:
-  explicit ArrowDatasetOp(OpKernelConstruction* ctx) : ArrowOpKernelBase(ctx) {}
+  explicit ArrowZeroCopyDatasetOp(OpKernelConstruction* ctx)
+      : ArrowOpKernelBase(ctx) {}
+
+  virtual void MakeArrowDataset(
+      OpKernelContext* ctx,
+      const std::vector<int32>& columns,
+      const int64 batch_size,
+      const ArrowBatchMode batch_mode,
+      const DataTypeVector& output_types,
+      const std::vector<PartialTensorShape>& output_shapes,
+      ArrowDatasetBase** output) override {
+    uintptr_t buffer_address;
+    OP_REQUIRES_OK(
+        ctx,
+        ParseScalarArgument<uintptr_t>(ctx, "buffer_address", &buffer_address));
+    const uint8_t* buffer = reinterpret_cast<const uint8_t*>(buffer_address);
+
+    int64_t buffer_size;
+    OP_REQUIRES_OK(
+        ctx,
+        ParseScalarArgument<int64_t>(ctx, "buffer_size", &buffer_size));
+    *output = new Dataset(
+        ctx,
+        buffer,
+        buffer_size,
+        columns,
+        batch_size,
+        batch_mode,
+        output_types_,
+        output_shapes_);
+  }
+
+ private:
+  class Dataset : public ArrowDatasetBase {
+   public:
+    Dataset(OpKernelContext* ctx,
+            const uint8_t* buffer_ptr,
+            const int64 buffer_size,
+            const std::vector<int32>& columns,
+            const int64 batch_size,
+            const ArrowBatchMode batch_mode,
+            const DataTypeVector& output_types,
+            const std::vector<PartialTensorShape>& output_shapes)
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
+              output_types, output_shapes),
+          buffer_ptr_(buffer_ptr), buffer_size_(buffer_size) {}
+
+    string DebugString() const override {
+      return "ArrowZeroCopyDatasetOp::Dataset";
+    }
+
+   protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* buffer = nullptr;
+      uintptr_t buffer_temp = reinterpret_cast<uintptr_t>(buffer_ptr_);
+      uint64 buffer_address = buffer_temp;
+      TF_RETURN_IF_ERROR(b->AddScalar(buffer_address, &buffer));
+      Node* size = nullptr;
+      TF_RETURN_IF_ERROR(
+          b->AddScalar(static_cast<int64>(buffer_size_), &size));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      Node* batch_size = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
+      Node* batch_mode = nullptr;
+      string batch_mode_str;
+      TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
+      TF_RETURN_IF_ERROR(
+          b->AddDataset(
+            this,
+            {buffer, size, columns, batch_size, batch_mode},
+            output));
+      return Status::OK();
+    }
+
+    std::unique_ptr<IteratorBase> MakeIteratorInternal(
+        const string& prefix) const override {
+      return std::unique_ptr<IteratorBase>(
+          new Iterator({this, strings::StrCat(prefix, "::Arrow")}));
+    }
+
+   private:
+    class Iterator : public ArrowBaseIterator<Dataset> {
+     public:
+      explicit Iterator(const Params& params)
+          : ArrowBaseIterator<Dataset>(params) {}
+
+     private:
+      Status SetupStreamsLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        buffer_ = std::make_shared<arrow::Buffer>(
+            dataset()->buffer_ptr_,
+            dataset()->buffer_size_);
+        buffer_reader_ = std::make_shared<arrow::io::BufferReader>(buffer_);
+        CHECK_ARROW(
+            arrow::ipc::RecordBatchFileReader::Open(
+              buffer_reader_.get(),
+              buffer_->size(),
+              &reader_));
+        num_batches_ = reader_->num_record_batches();
+        if (num_batches_ > 0) {
+          CHECK_ARROW(
+              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
+        }
+        return Status::OK();
+      }
+
+      Status NextStreamLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
+        if (++current_batch_idx_ < num_batches_) {
+          CHECK_ARROW(
+              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+        }
+        return Status::OK();
+      }
+
+      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::ResetStreamsLocked();
+        reader_.reset();
+        current_batch_idx_ = 0;
+        num_batches_ = 0;
+      }
+
+      std::shared_ptr<arrow::Buffer> buffer_ GUARDED_BY(mu_);
+      std::shared_ptr<arrow::io::BufferReader> buffer_reader_ GUARDED_BY(mu_);
+      std::shared_ptr<arrow::ipc::RecordBatchFileReader> reader_
+          GUARDED_BY(mu_);
+      int current_batch_idx_ GUARDED_BY(mu_) = 0;
+      int num_batches_ GUARDED_BY(mu_) = 0;
+    };
+
+    const uint8_t* buffer_ptr_;
+    const int64 buffer_size_;
+  };
+};
+
+// Op to create an ArrowSerializedDataset that consumes Arrow record batches
+// serialized in a Tensor buffer.
+class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
+ public:
+  explicit ArrowSerializedDatasetOp(OpKernelConstruction* ctx)
+      : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
       OpKernelContext* ctx,
@@ -629,20 +776,25 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
           batches_(std::move(batches_tensor)) {
     }
 
-    string DebugString() const override { return "ArrowDatasetOp::Dataset"; }
+    string DebugString() const override {
+      return "ArrowSerializedDatasetOp::Dataset";
+    }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b,
                               Node** output) const override {
       Node* batches = nullptr;
-      if (ctx->optimization_only()) {
-        TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
-        DCHECK_NE(ctx->input_list(), nullptr);
-        ctx->input_list()->emplace_back(batches->name(), batches_);
-      } else {
-        TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
-      }
+      // optimization_only has been removed in
+      // https://github.com/tensorflow/tensorflow/commit/6d8f05acd72df61e5f4e5b4c72837b7caed3e942#diff-5eac6c133a3a701a696767960e796bd3
+      //if (ctx->optimization_only()) {
+      //  TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
+      //  DCHECK_NE(ctx->input_list(), nullptr);
+      //  ctx->input_list()->emplace_back(batches->name(), batches_);
+      //} else {
+      //  TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
+      //}
+      TF_RETURN_IF_ERROR(b->AddTensor(batches_, &batches));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;
@@ -672,7 +824,8 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      Status SetupStreamsLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& batches = dataset()->batches_.scalar<string>()();
         auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
@@ -687,8 +840,9 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      Status NextStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        ArrowBaseIterator<Dataset>::NextStreamLocked();
+      Status NextStreamLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < num_batches_) {
           CHECK_ARROW(
               reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
@@ -718,8 +872,6 @@ class ArrowDatasetOp : public ArrowOpKernelBase {
 // ideal for simple writing of Pandas DataFrames.
 class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
  public:
-  //using DatasetOpKernel::DatasetOpKernel;
-
   explicit ArrowFeatherDatasetOp(OpKernelConstruction* ctx)
       : ArrowOpKernelBase(ctx) {}
 
@@ -805,10 +957,22 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      Status SetupStreamsLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& filename = dataset()->filenames_[current_file_idx_];
-        std::shared_ptr<arrow::io::ReadableFile> in_file;
-        CHECK_ARROW(arrow::io::ReadableFile::Open(filename, &in_file));
+
+        // Init a TF file from the filename and determine size
+        // TODO: set optional memory to nullptr until input arg is added
+        std::shared_ptr<SizedRandomAccessFile> tf_file(
+            new SizedRandomAccessFile(env, filename, nullptr, 0));
+        uint64 size;
+        TF_RETURN_IF_ERROR(tf_file->GetFileSize(&size));
+
+        // Wrap the TF file in Arrow interface to be used in Feather reader
+        std::shared_ptr<ArrowRandomAccessFile> in_file(
+            new ArrowRandomAccessFile(tf_file.get(), size));
+
+        // Create the Feather reader
         std::unique_ptr<arrow::ipc::feather::TableReader> reader;
         CHECK_ARROW(arrow::ipc::feather::TableReader::Open(in_file, &reader));
 
@@ -836,14 +1000,15 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      Status NextStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        ArrowBaseIterator<Dataset>::NextStreamLocked();
+      Status NextStreamLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < record_batches_.size()) {
           current_batch_ = record_batches_[current_batch_idx_];
         } else if (++current_file_idx_ < dataset()->filenames_.size()) {
           current_batch_idx_ = 0;
           record_batches_.clear();
-          SetupStreamsLocked();
+          return SetupStreamsLocked(env);
         }
         return Status::OK();
       }
@@ -956,7 +1121,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      Status SetupStreamsLocked()
+      Status SetupStreamsLocked(Env* env)
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& endpoint = dataset()->endpoints_[current_endpoint_idx_];
         string endpoint_type;
@@ -982,13 +1147,14 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      Status NextStreamLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        ArrowBaseIterator<Dataset>::NextStreamLocked();
+      Status NextStreamLocked(Env* env)
+          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
         if (current_batch_ == nullptr &&
             ++current_endpoint_idx_ < dataset()->endpoints_.size()) {
           reader_.reset();
-          SetupStreamsLocked();
+          SetupStreamsLocked(env);
         }
         return Status::OK();
       }
@@ -1009,13 +1175,17 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   };
 };
 
-REGISTER_KERNEL_BUILDER(Name("ArrowDataset").Device(DEVICE_CPU),
-                        ArrowDatasetOp);
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowZeroCopyDataset").Device(DEVICE_CPU),
+                        ArrowZeroCopyDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("ArrowFeatherDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowSerializedDataset").Device(DEVICE_CPU),
+                        ArrowSerializedDatasetOp);
+
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowFeatherDataset").Device(DEVICE_CPU),
                         ArrowFeatherDatasetOp);
 
-REGISTER_KERNEL_BUILDER(Name("ArrowStreamDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
 
+}  // namespace data
 }  // namespace tensorflow

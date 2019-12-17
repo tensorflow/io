@@ -13,55 +13,60 @@
 # limitations under the License.
 # ==============================================================================
 """JSONDataset"""
-import json
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
-# from tensorflow_io.core.python.ops import data_ops as data_ops
-# from tensorflow_io.core.python.ops import core_ops as json_ops
-# from tensorflow_io import _load_library
-# json_ops = _load_library('_json_ops.so')
+from tensorflow_io.core.python.ops import data_ops
+from tensorflow_io.core.python.ops import core_ops
 
+def list_json_columns(filename):
+  """list_json_columns"""
+  if not tf.executing_eagerly():
+    raise NotImplementedError("list_json_columns only support eager mode")
+  columns, dtypes = core_ops.io_list_json_columns(filename)
+  entries = zip(tf.unstack(columns), tf.unstack(dtypes))
+  return dict([(column.numpy().decode(), tf.TensorSpec(
+      tf.TensorShape([None]),
+      dtype.numpy().decode(),
+      column.numpy().decode())) for (
+          column, dtype) in entries])
 
-# class JSONDataset(data_ops.Dataset):
-#   """A JSONLabelDataset. JSON (JavaScript Object Notation) is a lightweight data-interchange format.
-#   """
+def read_json(filename, column):
+  """read_json"""
+  return core_ops.io_read_json(
+      filename, column.name, dtype=column.dtype)
 
-#   def __init__(self, filenames, batch=None):
-#     """Create a JSONLabelDataset.
+class JSONDataset(data_ops.BaseDataset):
+  """A JSONLabelDataset. JSON (JavaScript Object Notation) is a lightweight data-interchange format.
+  """
 
-#     Args:
-#       filenames: A `tf.string` tensor containing one or more filenames.
-#     """
-    # batch = 0 if batch is None else batch
-    # dtypes = [tf.float64, tf.string]
-    # shapes = [
-    # tf.TensorShape([]), tf.TensorShape([])] if batch == 0 else [
-    # tf.TensorShape([None]), tf.TensorShape([None])]
-    # super(JSONDataset, self).__init__(
-    # json_ops.json_dataset,
-    # json_ops.json_input(filenames),
-    # batch, dtypes, shapes)
+  def __init__(self, filename, columns, **kwargs):
+    """Create a JSONLabelDataset.
 
-
-def JSONDataset(filenames, columns=None):
-  """Start with JSON parser in python to add tests."""
-  jsondataset = []
-  jsondataset = JSONParser(filenames, columns)
-  return tf.data.Dataset.from_tensor_slices(jsondataset)
-
-
-def JSONParser(filenames, columns):
-  """JSON parser in Python for testing."""
-  with open(filenames) as json_file:
-    data = json.load(json_file)
-  dataset = []
-  for sample in data:
-    sampledata = []
-    if columns is None:
-      for key in sorted(sample):
-        sampledata.append(sample[key])
+    Args:
+      filename: A string containing one or more filenames.
+      columns: A list of strings containing the columns to extract.
+    """
+    if not tf.executing_eagerly():
+      self._dtypes = kwargs.get("dtype")
     else:
-      for key in columns:
-        if  key in sample:
-          sampledata.append(sample[key])
-    dataset.append(sampledata)
-  return dataset
+      all_columns = list_json_columns(filename)
+      for column in columns:
+        if column not in all_columns:
+          raise ValueError(
+              "There is no column named {} in the {}".format(filename, column))
+      self._dtypes = [all_columns[column].dtype for column in columns]
+
+    self._shapes = [tf.TensorShape([None])] * len(columns)
+
+    datasets = []
+    for i, column in enumerate(columns):
+      datasets.append(data_ops.Dataset.from_tensors(
+          core_ops.io_read_json(filename, column, dtype=self._dtypes[i])))
+
+    self._dataset = tf.compat.v2.data.Dataset.zip(tuple(datasets))
+
+    super(JSONDataset, self).__init__(
+        self._dataset._variant_tensor, self._dtypes, self._shapes) # pylint: disable=protected-access

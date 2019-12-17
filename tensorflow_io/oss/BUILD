@@ -5,19 +5,19 @@ package(
 licenses(["notice"])  # Apache 2.0
 
 load(
-    "//tensorflow_io:tensorflow_io.bzl",
+    "//third_party/tf:tensorflow_io.bzl",
     "tf_io_copts",
 )
 
-cc_binary(
-    name = "python/ops/_oss_ops.so",
+cc_library(
+    name = "oss_ops",
     srcs = [
         "kernels/ossfs/oss_file_system.cc",
         "kernels/ossfs/oss_file_system.h",
         "ops/ossfs_ops.cc",
     ],
     copts = tf_io_copts(),
-    linkshared = 1,
+    linkstatic = True,
     deps = [
         "@aliyun_oss_c_sdk",
         "@local_config_tf//:libtensorflow_framework",

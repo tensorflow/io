@@ -15,10 +15,15 @@
 # ==============================================================================
 
 rm -f .bazelrc
-if python -c "import tensorflow as tf" &> /dev/null; then
+
+PYTHON=python
+if [[ "$#" -gt 0 ]]; then
+  PYTHON=$1
+fi
+
+if $PYTHON -c "import tensorflow as tf" &> /dev/null; then
     echo 'using installed tensorflow'
 else
-    pip install tensorflow
+    $PYTHON -m pip install $(python setup.py --package-version)
 fi
-python -m pip install grpcio-tools
-python config_helper.py
+$PYTHON third_party/tf/configure.py

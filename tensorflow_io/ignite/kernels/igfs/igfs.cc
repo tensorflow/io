@@ -65,8 +65,7 @@ IGFS::IGFS()
         }
       }()),
       fs_name_(GetEnvOrElse("IGFS_FS_NAME", "default_fs")) {
-  LOG(INFO) << "IGFS created [host=" << host_ << ", port=" << port_
-            << ", fs_name=" << fs_name_ << "]";
+
 }
 
 IGFS::~IGFS() {

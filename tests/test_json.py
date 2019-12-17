@@ -19,37 +19,41 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import numpy as np
+import pytest
+
 import tensorflow as tf
-import tensorflow_io.json as json_io
+tf.compat.v1.disable_eager_execution()
+import tensorflow_io.json as json_io # pylint: disable=wrong-import-position
 
 
-def test_json():
-  """test_json"""
-  feature_filename = os.path.join(
+def test_json_dataset():
+  """Test case for JSONDataset."""
+  filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_json",
       "feature.json")
-  label_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_json",
-      "label.json")
-  d_train_feature = json_io.JSONDataset(
-      feature_filename,
-  )
-  d_train_label = json_io.JSONDataset(
-      label_filename,
-  )
+  filename = "file://" + filename
 
-  d_train = tf.data.Dataset.zip((
-      d_train_feature,
-      d_train_label
-  ))
-  model = tf.keras.models.Sequential([
-      tf.keras.layers.Dense(2, input_shape=(1,)),
-  ])
-  model.compile(optimizer='sgd', loss='mse', metrics=['accuracy'])
+  num_repeats = 2
+  dataset = json_io.JSONDataset(
+      filename, ["floatfeature", "integerfeature"], dtype=[tf.float64, tf.int64]
+  ).repeat(num_repeats).apply(tf.data.experimental.unbatch())
 
-  model.fit(d_train, epochs=5)
+  iterator = tf.compat.v1.data.make_initializable_iterator(dataset)
+  init_op = iterator.initializer
+  get_next = iterator.get_next()
+
+  test_json = [(1.1, 2), (2.1, 3)]
+  with tf.compat.v1.Session() as sess:
+    sess.run(init_op)
+    for _ in range(num_repeats):
+      for i in range(2):
+        (floatf, intf) = test_json[i]
+        vv = sess.run(get_next)
+        np.allclose((floatf, intf), vv)
+    with pytest.raises(tf.errors.OutOfRangeError):
+      sess.run(get_next)
 
 if __name__ == "__main__":
   test.main()

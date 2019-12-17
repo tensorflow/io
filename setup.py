@@ -43,10 +43,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import sys
 
+from setuptools import Command
 from setuptools import find_packages
 from setuptools import setup
+from setuptools.command.install import install as InstallCommandBase
 from setuptools.dist import Distribution
 
 REQUIRED_PACKAGES = [
@@ -61,6 +64,89 @@ class BinaryDistribution(Distribution):
   def has_ext_modules(self):
     return True
 
+class InstallCommand(InstallCommandBase):
+  \"\"\"Override the dir where the headers go.\"\"\"
+
+  def finalize_options(self):
+    ret = InstallCommandBase.finalize_options(self)
+    self.install_headers = os.path.join(self.install_purelib, 'tensorflow_core',
+                                        'include')
+    self.install_lib = self.install_platlib
+    return ret
+
+
+class InstallHeaders(Command):
+  \"\"\"Override how headers are copied.
+
+  The install_headers that comes with setuptools copies all files to
+  the same directory. But we need the files to be in a specific directory
+  hierarchy for -I <include_dir> to work correctly.
+  \"\"\"
+  description = 'install C/C++ header files'
+
+  user_options = [('install-dir=', 'd',
+                   'directory to install header files to'),
+                  ('force', 'f',
+                   'force installation (overwrite existing files)'),
+                 ]
+
+  boolean_options = ['force']
+
+  def initialize_options(self):
+    self.install_dir = None
+    self.force = 0
+    self.outfiles = []
+
+  def finalize_options(self):
+    self.set_undefined_options('install',
+                               ('install_headers', 'install_dir'),
+                               ('force', 'force'))
+
+  def mkdir_and_copy_file(self, header):
+    install_dir = os.path.join(self.install_dir, os.path.dirname(header))
+    # Get rid of some extra intervening directories so we can have fewer
+    # directories for -I
+    install_dir = re.sub('/google/protobuf_archive/src', '', install_dir)
+    install_dir = re.sub('/include/tensorflow_core/', '/include/tensorflow/',
+                         install_dir)
+
+    # Copy external code headers into tensorflow_core/include.
+    # A symlink would do, but the wheel file that gets created ignores
+    # symlink within the directory hierarchy.
+    # NOTE(keveman): Figure out how to customize bdist_wheel package so
+    # we can do the symlink.
+    external_header_locations = [
+        'tensorflow_core/include/external/eigen_archive/',
+        'tensorflow_core/include/external/com_google_absl/',
+    ]
+    for location in external_header_locations:
+      if location in install_dir:
+        extra_dir = install_dir.replace(location, '')
+        if not os.path.exists(extra_dir):
+          self.mkpath(extra_dir)
+        self.copy_file(header, extra_dir)
+
+    if not os.path.exists(install_dir):
+      self.mkpath(install_dir)
+    return self.copy_file(header, install_dir)
+
+  def run(self):
+    hdrs = self.distribution.headers
+    if not hdrs:
+      return
+
+    self.mkpath(self.install_dir)
+    for header in hdrs:
+      (out, _) = self.mkdir_and_copy_file(header)
+      self.outfiles.append(out)
+
+  def get_inputs(self):
+    return self.distribution.headers or []
+
+  def get_outputs(self):
+    return self.outfiles
+
+
 setup(
     name=project_name,
     version=__version__,
@@ -74,6 +160,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     distclass=BinaryDistribution,
+    cmdclass={},
     # PyPI package information.
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -82,7 +169,6 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Scientific/Engineering :: Mathematics',
@@ -94,12 +180,24 @@ setup(
 )
 """
 
-package = 'tensorflow>=1.14.0,<1.15.0'
-version = '0.7.0'
-project = 'tensorflow-io'
+# read package and version from:
+# tensorflow_io/core/python/ops/version_ops.py
+with open("tensorflow_io/core/python/ops/version_ops.py") as f:
+  entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
+  assert sum(e.startswith("package = ") for e in entries) == 1
+  assert sum(e.startswith("version = ") for e in entries) == 1
+  package = list([
+      e[10:] for e in entries if e.startswith("package = ")])[0].strip("'")
+  version = list([
+      e[10:] for e in entries if e.startswith("version = ")])[0].strip("'")
+  assert package != ""
+  assert version != ""
+
 if '--package-version' in sys.argv:
   print(package)
   sys.exit(0)
+
+project = 'tensorflow-io'
 
 # Note: import setuptools later to avoid unnecessary dependency
 from setuptools import sandbox # pylint: disable=wrong-import-position
@@ -111,14 +209,9 @@ if '--nightly' in sys.argv:
   sys.argv.remove('--nightly')
   sys.argv.pop(nightly_idx)
 
-if '--preview' in sys.argv:
-  preview_idx = sys.argv.index('--preview')
-  version = version + ".dev" + sys.argv[preview_idx + 1]
-  package = 'tensorflow==2.0.0b1'
-  project = 'tensorflow-io-2.0-preview'
-  sys.argv.remove('--preview')
-  sys.argv.pop(preview_idx)
-
+print("setup.py - project = '{}'".format(project))
+print("setup.py - package = '{}'".format(package))
+print("setup.py - version = '{}'".format(version))
 
 rootpath = tempfile.mkdtemp()
 print("setup.py - create {} and copy tensorflow_io".format(rootpath))
@@ -131,8 +224,9 @@ with open(os.path.join(rootpath, "MANIFEST.in"), "w") as f:
 print("setup.py - create {}/setup.py with required = '{}', "
       "project_name = '{}' and __version__ = {}".format(
           rootpath, package, project, version))
+cmdclass = "{'install_headers':InstallHeaders,'install':InstallCommand,}"
 with open(os.path.join(rootpath, "setup.py"), "w") as f:
-  f.write(content.format(package, version, project))
+  f.write(content.format(package, version, project, cmdclass))
 
 datapath = None
 if '--data' in sys.argv:
@@ -151,6 +245,20 @@ if datapath is not None:
       for filename in [
           f for f in filenames if fnmatch.fnmatch(
               f, "*.so") or fnmatch.fnmatch(f, "*.py")]:
+        # NOTE:
+        # cc_grpc_library will generate a lib<name>_cc_grpc.so
+        # proto_library will generate a lib<name>_proto.so
+        # both .so files are not needed in final wheel.
+        # The cc_grpc_library only need to pass `linkstatic = True`
+        # to the underlying native.cc_library. It is not exposed
+        # but we applied a patch (see third_party/grpc.patch) so
+        # cc_grpc_library is covered and lib<name>_cc_grpc.so will
+        # not be generated.
+        # proto_library is a native library in bazel which we could
+        # not patch easily.
+        # For that reason we skip lib<name>_proto.so here:
+        if filename.endswith("_proto.so"):
+          continue
         src = os.path.join(rootname, filename)
         dst = os.path.join(
             rootpath,

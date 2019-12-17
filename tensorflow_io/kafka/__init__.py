@@ -17,6 +17,9 @@
 @@KafkaOutputSequence
 @@KafkaDataset
 @@write_kafka
+@@decode_avro
+@@encode_avro
+@@decode_avro_init
 """
 
 from __future__ import absolute_import
@@ -26,6 +29,9 @@ from __future__ import print_function
 from tensorflow_io.kafka.python.ops.kafka_ops import KafkaOutputSequence
 from tensorflow_io.kafka.python.ops.kafka_dataset_ops import KafkaDataset
 from tensorflow_io.kafka.python.ops.kafka_dataset_ops import write_kafka
+from tensorflow_io.kafka.python.ops.kafka_dataset_ops import decode_avro
+from tensorflow_io.kafka.python.ops.kafka_dataset_ops import encode_avro
+from tensorflow_io.kafka.python.ops.kafka_dataset_ops import decode_avro_init
 
 from tensorflow.python.util.all_util import remove_undocumented
 

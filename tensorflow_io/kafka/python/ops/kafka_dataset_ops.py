@@ -17,11 +17,24 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
 import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io import _load_library
-kafka_ops = _load_library('_kafka_ops.so')
+from tensorflow_io.core.python.ops import core_ops
+
+decode_avro_init = core_ops.io_decode_avro_init
+decode_avro = core_ops.io_decode_avro
+encode_avro = core_ops.io_encode_avro
+
+warnings.warn(
+    "implementation of existing tensorflow_io.kafka.KafkaDataset is "
+    "deprecated and will be replaced with the implementation in "
+    "tensorflow_io.core.python.ops.kafka_dataset_ops.KafkaDataset, "
+    "please check the doc of new implementation for API changes",
+    DeprecationWarning)
+
 
 class KafkaDataset(data.Dataset):
   """A Kafka Dataset that consumes the message.
@@ -34,7 +47,8 @@ class KafkaDataset(data.Dataset):
                eof=False,
                timeout=1000,
                config_global=None,
-               config_topic=None):
+               config_topic=None,
+               message_key=False):
     """Create a KafkaReader.
 
     Args:
@@ -57,6 +71,7 @@ class KafkaDataset(data.Dataset):
                     eg. ["auto.offset.reset=earliest"],
                     please refer to 'Topic configuration properties'
                     in librdkafka doc.
+      message_key: If True, the kafka will output both message value and key.
     """
     self._topics = tf.convert_to_tensor(
         topics, dtype=dtypes.string, name="topics")
@@ -73,27 +88,33 @@ class KafkaDataset(data.Dataset):
     config_topic = config_topic if config_topic else []
     self._config_topic = tf.convert_to_tensor(
         config_topic, dtype=dtypes.string, name="config_topic")
+    self._message_key = message_key
     super(KafkaDataset, self).__init__()
 
   def _inputs(self):
     return []
 
   def _as_variant_tensor(self):
-    return kafka_ops.kafka_dataset(self._topics, self._servers,
-                                   self._group, self._eof, self._timeout,
-                                   self._config_global, self._config_topic)
+    return core_ops.io_kafka_dataset(self._topics, self._servers,
+                                     self._group, self._eof, self._timeout,
+                                     self._config_global, self._config_topic,
+                                     self._message_key)
 
   @property
   def output_classes(self):
-    return tf.Tensor
+    return (tf.Tensor) if not self._message_key else (tf.Tensor, tf.Tensor)
 
   @property
   def output_shapes(self):
-    return tf.TensorShape([])
+    return (
+        tf.TensorShape([])) if not self._message_key else (
+            tf.TensorShape([]), tf.TensorShape([]))
 
   @property
   def output_types(self):
-    return dtypes.string
+    return (
+        dtypes.string) if not self._message_key else (
+            dtypes.string, dtypes.string)
 
 def write_kafka(message,
                 topic,
@@ -109,5 +130,5 @@ def write_kafka(message,
   Returns:
       A `Tensor` of type `string`. 0-D.
   """
-  return kafka_ops.write_kafka(
+  return core_ops.io_write_kafka(
       message=message, topic=topic, servers=servers, name=name)

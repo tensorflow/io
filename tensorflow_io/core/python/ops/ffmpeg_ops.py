@@ -18,10 +18,10 @@ from __future__ import division
 from __future__ import print_function
 
 import ctypes
-
-from tensorflow_io import _load_library
-
 import _ctypes
+
+from tensorflow_io.core.python.ops import _load_library
+
 
 def _load_dependency_and_library(p):
   """load_dependency_and_library"""
@@ -58,15 +58,13 @@ _ffmpeg_ops = _load_dependency_and_library({
         "libavutil-ffmpeg.so.54",
         "libswscale-ffmpeg.so.3",
     ],
-    'libtensorflow_io_libav_9.20.so': [
-        "libavformat.so.54",
-        "libavcodec.so.54",
-        "libavutil.so.52",
-        "libswscale.so.2",
-    ],
 })
 
-audio_input = _ffmpeg_ops.audio_input
-video_input = _ffmpeg_ops.video_input
-audio_dataset = _ffmpeg_ops.audio_dataset
-video_dataset = _ffmpeg_ops.video_dataset
+io_ffmpeg_readable_init = _ffmpeg_ops.io_ffmpeg_readable_init
+io_ffmpeg_readable_spec = _ffmpeg_ops.io_ffmpeg_readable_spec
+io_ffmpeg_readable_read = _ffmpeg_ops.io_ffmpeg_readable_read
+io_ffmpeg_decode_video = _ffmpeg_ops.io_ffmpeg_decode_video
+io_ffmpeg_audio_readable_init = _ffmpeg_ops.io_ffmpeg_audio_readable_init
+io_ffmpeg_audio_readable_next = _ffmpeg_ops.io_ffmpeg_audio_readable_next
+io_ffmpeg_video_readable_init = _ffmpeg_ops.io_ffmpeg_video_readable_init
+io_ffmpeg_video_readable_next = _ffmpeg_ops.io_ffmpeg_video_readable_next

@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ class ArrowStreamClient : public arrow::io::InputStream {
 
   arrow::Status Connect();
   arrow::Status Close() override;
+  bool closed() const override;
   arrow::Status Tell(int64_t* position) const override;
   arrow::Status Read(int64_t nbytes, int64_t* bytes_read, void* out) override;
   arrow::Status Read(int64_t nbytes,

@@ -208,7 +208,6 @@ class ArrowDatasetTest(test.TestCase):
     # test all columns selected
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes)
     self.run_test_case(dataset, truth_data)
@@ -217,9 +216,9 @@ class ArrowDatasetTest(test.TestCase):
     columns = (1, 3, len(truth_data.output_types) - 1)
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        columns,
         tuple([truth_data.output_types[c] for c in columns]),
-        tuple([truth_data.output_shapes[c] for c in columns]))
+        tuple([truth_data.output_shapes[c] for c in columns]),
+        columns=columns)
     self.run_test_case(dataset, truth_data)
 
     # test construction from pd.DataFrame
@@ -278,6 +277,14 @@ class ArrowDatasetTest(test.TestCase):
     # test single file
     dataset = arrow_io.ArrowFeatherDataset(
         f.name,
+        list(range(len(truth_data.output_types))),
+        truth_data.output_types,
+        truth_data.output_shapes)
+    self.run_test_case(dataset, truth_data)
+
+    # test single file with 'file://' prefix
+    dataset = arrow_io.ArrowFeatherDataset(
+        "file://{}".format(f.name),
         list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes)
@@ -485,6 +492,24 @@ class ArrowDatasetTest(test.TestCase):
         preserve_index=True)
     self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
+  def test_stream_from_pandas_remainder(self):
+    """Test stream from Pandas that produces partial batch"""
+    batch_size = len(self.scalar_data[0]) - 1
+
+    truth_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=batch_size,
+        preserve_index=False)
+    self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
   def test_stream_from_pandas_iter(self):
     """test_stream_from_pandas_iter"""
 
@@ -527,6 +552,34 @@ class ArrowDatasetTest(test.TestCase):
         preserve_index=False)
     self.run_test_case(dataset, truth_data)
 
+  def test_stream_from_pandas_repeat(self):
+    """test_stream_from_pandas_repeat"""
+
+    batch_data = TruthData(
+        self.scalar_data,
+        self.scalar_dtypes,
+        self.scalar_shapes)
+
+    batch = self.make_record_batch(batch_data)
+    df = batch.to_pandas()
+
+    num_repeat = 10
+
+    dataset = arrow_io.ArrowStreamDataset.from_pandas(
+        df,
+        batch_size=2,
+        preserve_index=False).repeat(num_repeat)
+
+    # patch columns attr so run_test_case can use
+    dataset.columns = list(range(len(batch_data.output_types)))
+
+    truth_data = TruthData(
+        [d * num_repeat for d in batch_data.data],
+        batch_data.output_types,
+        batch_data.output_shapes)
+
+    self.run_test_case(dataset, truth_data, batch_size=2)
+
   def test_bool_array_type(self):
     """
     NOTE: need to test this seperately because to_pandas fails with
@@ -543,9 +596,9 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        (0,),
         truth_data.output_types,
-        truth_data.output_shapes)
+        truth_data.output_shapes,
+        columns=(0,))
     self.run_test_case(dataset, truth_data)
 
   def test_incorrect_column_type(self):
@@ -556,7 +609,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         tuple([dtypes.int32 for _ in truth_data.output_types]),
         truth_data.output_shapes)
     with self.assertRaisesRegex(errors.OpError, 'Arrow type mismatch'):
@@ -573,7 +625,6 @@ class ArrowDatasetTest(test.TestCase):
     batch = self.make_record_batch(truth_data)
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batch,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes)
 
@@ -699,7 +750,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_mode='auto')
@@ -730,7 +780,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -762,7 +811,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -790,7 +838,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         batches,
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -813,7 +860,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         [batch],
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -834,7 +880,6 @@ class ArrowDatasetTest(test.TestCase):
 
     dataset = arrow_io.ArrowDataset.from_record_batches(
         [batch],
-        list(range(len(truth_data.output_types))),
         truth_data.output_types,
         truth_data.output_shapes,
         batch_size=batch_size)
@@ -853,10 +898,43 @@ class ArrowDatasetTest(test.TestCase):
     with self.assertRaisesRegex(ValueError, 'Unsupported batch_mode.*doh'):
       arrow_io.ArrowDataset.from_record_batches(
           [self.make_record_batch(truth_data)],
-          list(range(len(truth_data.output_types))),
           truth_data.output_types,
           truth_data.output_shapes,
           batch_mode='doh')
+
+  def test_arrow_list_feather_columns(self):
+    """test_arrow_list_feather_columns"""
+    # Feather files currently do not support columns of list types
+    truth_data = TruthData(self.scalar_data, self.scalar_dtypes,
+                           self.scalar_shapes)
+
+    batch = self.make_record_batch(truth_data)
+    df = batch.to_pandas()
+
+    # Create a tempfile that is deleted after tests run
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      write_feather(df, f)
+
+    # test single file
+    # prefix "file://" to test scheme file system (e.g., s3, gcs, azfs, ignite)
+    columns = arrow_io.list_feather_columns("file://" + f.name)
+    for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
+      assert columns[name].name == name
+      assert columns[name].dtype == dtype
+      assert columns[name].shape == [4]
+
+    # test memory
+    with open(f.name, 'rb') as ff:
+      memory = ff.read()
+    # when memory is provided filename doesn't matter:
+    columns = arrow_io.list_feather_columns("file:///non_exist", memory=memory)
+    for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
+      assert columns[name].name == name
+      assert columns[name].dtype == dtype
+      assert columns[name].shape == [4]
+
+    os.unlink(f.name)
+
 
 
 if __name__ == "__main__":

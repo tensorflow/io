@@ -1,0 +1,12 @@
+diff -Naur a/examples/low-level-api/reader-writer.cc b/examples/low-level-api/reader-writer.cc
+--- a/examples/low-level-api/reader-writer.cc	2019-10-09 05:21:28.534220084 +0000
++++ b/examples/low-level-api/reader-writer.cc	2019-10-09 06:04:53.748332246 +0000
+@@ -139,7 +139,7 @@
+       hello[7] = static_cast<char>(static_cast<int>('0') + i / 100);
+       hello[8] = static_cast<char>(static_cast<int>('0') + (i / 10) % 10);
+       hello[9] = static_cast<char>(static_cast<int>('0') + i % 10);
+-      if (i % 2 == 0) {
++      if (1) {
+         int16_t definition_level = 1;
+         value.ptr = reinterpret_cast<const uint8_t*>(&hello[0]);
+         value.len = FIXED_LENGTH;

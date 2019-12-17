@@ -98,7 +98,7 @@ class BigQueryClientOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryClient").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryClient").Device(DEVICE_CPU),
                         BigQueryClientOp);
 
 class BigQueryReadSessionOp : public OpKernel {
@@ -146,7 +146,10 @@ class BigQueryReadSessionOp : public OpKernel {
     *createReadSessionRequest.mutable_read_options()
          ->mutable_selected_fields() = {selected_fields_.begin(),
                                         selected_fields_.end()};
+    createReadSessionRequest.mutable_read_options()->set_row_restriction(
+        row_restriction_);                                        
     createReadSessionRequest.set_requested_streams(requested_streams_);
+    createReadSessionRequest.set_sharding_strategy(apiv1beta1::ShardingStrategy::BALANCED);
     createReadSessionRequest.set_format(apiv1beta1::DataFormat::AVRO);
     VLOG(3) << "createReadSessionRequest: "
             << createReadSessionRequest.DebugString();
@@ -206,7 +209,7 @@ class BigQueryReadSessionOp : public OpKernel {
   bool initialized_ GUARDED_BY(mu_) = false;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigQueryReadSession").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReadSession").Device(DEVICE_CPU),
                         BigQueryReadSessionOp);
 
 }  // namespace

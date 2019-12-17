@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -100,13 +100,17 @@ arrow::Status ArrowStreamClient::Connect() {
 
 arrow::Status ArrowStreamClient::Close() {
   int status = close(sock_);
-  sock_ = 1;
+  sock_ = -1;
 
   if (status != 0) {
     return arrow::Status::IOError("Failed to correctly close connection");
   }
 
   return arrow::Status::OK();
+}
+
+bool ArrowStreamClient::closed() const {
+  return sock_ == -1;
 }
 
 arrow::Status ArrowStreamClient::Tell(int64_t* position) const {
@@ -117,8 +121,9 @@ arrow::Status ArrowStreamClient::Tell(int64_t* position) const {
 arrow::Status ArrowStreamClient::Read(int64_t nbytes,
                                       int64_t* bytes_read,
                                       void* out) {
-  // TODO: look into why 0 bytes are requested
+  // TODO: 0 bytes requested when message body length == 0
   if (nbytes == 0) {
+    *bytes_read = 0;
     return arrow::Status::OK();
   }
 
