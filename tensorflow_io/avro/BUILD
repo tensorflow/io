@@ -14,9 +14,6 @@ cc_library(
         "kernels/avro_record_dataset_op.cc",
         "ops/avro_ops.cc",
     ],
-    hdrs = [
-        "kernels/avro_record_dataset_op.h",
-    ],
     copts = tf_io_copts(),
     includes = [
         ".",
