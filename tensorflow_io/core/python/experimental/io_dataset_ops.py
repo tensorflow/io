@@ -25,6 +25,7 @@ from tensorflow_io.core.python.experimental import image_dataset_ops
 from tensorflow_io.core.python.experimental import kinesis_dataset_ops
 from tensorflow_io.core.python.experimental import pubsub_dataset_ops
 from tensorflow_io.core.python.experimental import grpc_dataset_ops
+from tensorflow_io.core.python.experimental import file_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -114,6 +115,24 @@ class IODataset(io_dataset.IODataset):
     with tf.name_scope(kwargs.get("name", "IOFromKinesis")):
       return kinesis_dataset_ops.KinesisIODataset(
           stream, shard, internal=True)
+
+  @classmethod
+  def to_file(cls,
+              dataset,
+              filename,
+              **kwargs):
+    """Write dataset to a file.
+
+    Args:
+      dataset: A dataset whose content will be written to.
+      filename: A string, the filename of the file to write to.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      The number of records written.
+    """
+    with tf.name_scope(kwargs.get("name", "IOToText")):
+      return file_dataset_ops.to_file(dataset, filename)
 
 class StreamIODataset(tf.data.Dataset):
   """StreamIODataset"""
