@@ -369,6 +369,21 @@ cc_library(
 )
 
 cc_library(
+    name = "serialization_ops",
+    srcs = [
+        "kernels/serialization_kernels.cc",
+        "ops/serialization_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@rapidjson",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "grpc_ops",
     srcs = [
         "kernels/grpc_kernels.cc",
@@ -424,6 +439,7 @@ cc_binary(
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:pubsub_ops",
+        "//tensorflow_io/core:serialization_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/core/azure:azfs_ops",
         "//tensorflow_io/core/oss:oss_ops",
