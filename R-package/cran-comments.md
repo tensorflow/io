@@ -13,4 +13,4 @@
 
 ## Comments
 
-The examples are wrapped in `\dontrun{}` block and most of the tests are skipped via `skip_on_cran()` since they can only be run when both Python and TensorFlow are installed but this is currently not viable on CRAN test machines.
+This is a minor release to resolve warnings and notes in CRAN check result since the required environments are not available on CRAN test machines.
