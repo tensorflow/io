@@ -4,10 +4,18 @@
 \alias{make_libsvm_dataset}
 \title{Create a Dataset from LibSVM files.}
 \usage{
-make_libsvm_dataset(file_names, num_features, dtype = NULL,
-  label_dtype = NULL, batch_size = 1, compression_type = "",
-  buffer_size = NULL, num_parallel_parser_calls = NULL,
-  drop_final_batch = FALSE, prefetch_buffer_size = 0)
+make_libsvm_dataset(
+  file_names,
+  num_features,
+  dtype = NULL,
+  label_dtype = NULL,
+  batch_size = 1,
+  compression_type = "",
+  buffer_size = NULL,
+  num_parallel_parser_calls = NULL,
+  drop_final_batch = FALSE,
+  prefetch_buffer_size = 0
+)
 }
 \arguments{
 \item{file_names}{A \code{tf.string} tensor containing one or more filenames.}
