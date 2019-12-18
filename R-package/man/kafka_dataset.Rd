@@ -4,12 +4,17 @@
 \alias{kafka_dataset}
 \title{Creates a \code{KafkaDataset}.}
 \usage{
-kafka_dataset(topics, servers = "localhost", group = "", eof = FALSE,
-  timeout = 1000)
+kafka_dataset(
+  topics,
+  servers = "localhost",
+  group = "",
+  eof = FALSE,
+  timeout = 1000
+)
 }
 \arguments{
 \item{topics}{A \code{tf.string} tensor containing one or more subscriptions, in
-the format of \code{[topic:partition:offset:length]}, by default length is -1
+the format of \verb{[topic:partition:offset:length]}, by default length is -1
 for unlimited.}
 
 \item{servers}{A list of bootstrap servers.}

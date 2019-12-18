@@ -7,8 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>R interface to TensorFlow IO • tfio</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/flatly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- sticky kit --><script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <script src="../extra.js"></script><meta property="og:title" content="R interface to TensorFlow IO">
 <meta property="og:description" content="">
@@ -31,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tfio</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.4.1</span>
       </span>
     </div>
 
@@ -72,7 +73,8 @@
 <!--/.navbar -->
 
       
-      </header><div class="row">
+
+      </header><script src="introduction_files/jquery-1.11.3/jquery.min.js"></script><script src="introduction_files/elevate-section-attrs-2.0/elevate-section-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1>R interface to TensorFlow IO</h1>
@@ -100,19 +102,19 @@
 </ul>
 <p>We provide a reference Dockerfile <a href="https://github.com/tensorflow/io/blob/master/R-package/scripts/Dockerfile">here</a> for you so that you can use the R package directly for testing. You can build it via:</p>
 <pre><code>docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .</code></pre>
-<p>Inside the container, you can start your R session, instantiate a <code>SequenceFileDataset</code> from an example <a href="https://wiki.apache.org/hadoop/SequenceFile">Hadoop SequenceFile</a> <a href="https://github.com/tensorflow/io/blob/master/R-package/tests/testthat/testdata/string.seq">string.seq</a>, and then use any <a href="https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations">transformation functions</a> provided by <a href="https://tensorflow.rstudio.com/tools/tfdatasets/">tfdatasets package</a> on the dataset like the following:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(tfio)</a>
-<a class="sourceLine" id="cb2-2" title="2">dataset &lt;-<span class="st"> </span><span class="kw"><a href="../reference/sequence_file_dataset.html">sequence_file_dataset</a></span>(<span class="st">"R-package/tests/testthat/testdata/string.seq"</span>) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-3" title="3"><span class="st">    </span><span class="kw"><a href="https://www.rdocumentation.org/packages/tfdatasets/topics/dataset_repeat">dataset_repeat</a></span>(<span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb2-4" title="4"></a>
-<a class="sourceLine" id="cb2-5" title="5">sess &lt;-<span class="st"> </span>tf<span class="op">$</span><span class="kw">Session</span>()</a>
-<a class="sourceLine" id="cb2-6" title="6">iterator &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/tfdatasets/topics/make-iterator">make_iterator_one_shot</a></span>(dataset)</a>
-<a class="sourceLine" id="cb2-7" title="7">next_batch &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/tfdatasets/topics/iterator_get_next">iterator_get_next</a></span>(iterator)</a>
-<a class="sourceLine" id="cb2-8" title="8"></a>
-<a class="sourceLine" id="cb2-9" title="9"><span class="kw"><a href="https://www.rdocumentation.org/packages/tfdatasets/topics/until_out_of_range">until_out_of_range</a></span>({</a>
-<a class="sourceLine" id="cb2-10" title="10">  batch &lt;-<span class="st"> </span>sess<span class="op">$</span><span class="kw">run</span>(next_batch)</a>
-<a class="sourceLine" id="cb2-11" title="11">  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(batch)</a>
-<a class="sourceLine" id="cb2-12" title="12">})</a></code></pre></div>
+<p>Inside the container, you can start your R session, instantiate a <code>SequenceFileDataset</code> from an example <a href="https://cwiki.apache.org/confluence/display/hadoop/SequenceFile">Hadoop SequenceFile</a> <a href="https://github.com/tensorflow/io/blob/master/R-package/tests/testthat/testdata/string.seq">string.seq</a>, and then use any <a href="https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations">transformation functions</a> provided by <a href="https://tensorflow.rstudio.com/tools/tfdatasets/">tfdatasets package</a> on the dataset like the following:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(tfio)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>dataset &lt;-<span class="st"> </span><span class="kw"><a href="../reference/sequence_file_dataset.html">sequence_file_dataset</a></span>(<span class="st">"R-package/tests/testthat/testdata/string.seq"</span>) <span class="op">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="st">    </span><span class="kw"><a href="https://rdrr.io/pkg/tfdatasets/man/dataset_repeat.html">dataset_repeat</a></span>(<span class="dv">2</span>)</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>sess &lt;-<span class="st"> </span>tf<span class="op">$</span><span class="kw">Session</span>()</span>
+<span id="cb2-6"><a href="#cb2-6"></a>iterator &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/pkg/tfdatasets/man/make-iterator.html">make_iterator_one_shot</a></span>(dataset)</span>
+<span id="cb2-7"><a href="#cb2-7"></a>next_batch &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/pkg/tfdatasets/man/iterator_get_next.html">iterator_get_next</a></span>(iterator)</span>
+<span id="cb2-8"><a href="#cb2-8"></a></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="kw"><a href="https://rdrr.io/pkg/tfdatasets/man/until_out_of_range.html">until_out_of_range</a></span>({</span>
+<span id="cb2-10"><a href="#cb2-10"></a>  batch &lt;-<span class="st"> </span>sess<span class="op">$</span><span class="kw">run</span>(next_batch)</span>
+<span id="cb2-11"><a href="#cb2-11"></a>  <span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(batch)</span>
+<span id="cb2-12"><a href="#cb2-12"></a>})</span></code></pre></div>
 <p>You’ll see the key-value pairs from <code>string.seq</code> file are printed as follows:</p>
 <pre><code>[1] "001"      "VALUE001"
 [1] "002"      "VALUE002"
@@ -133,6 +135,7 @@
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+
         <div id="tocnav">
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>
@@ -145,17 +148,20 @@
 </div>
 
 
+
       <footer><div class="copyright">
   <p>Developed by TensorFlow IO Contributors, Yuan Tang.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
 </div>
+
       </footer>
 </div>
 
   
+
 
   </body>
 </html>

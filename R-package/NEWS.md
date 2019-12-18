@@ -1,3 +1,7 @@
+# tfio 0.4.1
+
+This is a minor release to resolve warnings and notes in CRAN check result.
+
 # tfio 0.4.0
 
 ## Major Features
