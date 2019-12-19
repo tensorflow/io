@@ -1,7 +1,8 @@
-FROM tensorflow/tensorflow:custom-op-ubuntu16
+#FROM tensorflow/tensorflow:custom-op-ubuntu16
+FROM docker.artifactory-test.corp.linkedin.com/tensorflow/tensorflow-builder:0.0.1
 
-RUN apt-get update && \
-    apt-get install -y \
+RUN yum update && \
+    yum install -y \
     git \
     gcc \
     g++ \
@@ -42,6 +43,7 @@ RUN echo ". /miniconda/etc/profile.d/conda.sh" >> ~/.bashrc && \
 ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
+    avro-python3 \
     pytest \
     pylint \
     boto3 \
