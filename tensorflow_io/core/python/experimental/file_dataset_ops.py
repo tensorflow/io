@@ -33,7 +33,6 @@ def to_file(dataset, filename):
               lambda e: (e, tf.constant(True))))
   dataset = dataset.map(
       lambda entry, final: core_ops.io_file_call(entry, final, resource))
-  dataset = dataset.map(
-      lambda e: tf.shape(e))
+  dataset = dataset.map(tf.shape)
 
   return dataset.reduce(0, lambda x, y: x + y)

@@ -147,13 +147,16 @@ class FileResource : public ResourceBase {
     }
     return Status::OK();
   }
+  Status Sync() {
+    file_->Flush();
+    return Status::OK();
+  }
   Status Close() {
     file_.reset(nullptr);
     return Status::OK();
   }
-  string DebugString() const override {
-    return "FileResource";
-  }
+  string DebugString() const override { return "FileResource"; }
+
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
@@ -166,6 +169,7 @@ class FileInitOp : public ResourceOpKernel<FileResource> {
       : ResourceOpKernel<FileResource>(context) {
     env_ = context->env();
   }
+
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<FileResource>::Compute(context);
@@ -180,10 +184,12 @@ class FileInitOp : public ResourceOpKernel<FileResource> {
     *resource = new FileResource(env_);
     return Status::OK();
   }
+
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
 };
+
 class FileCallOp : public OpKernel {
  public:
   explicit FileCallOp(OpKernelConstruction* context) : OpKernel(context) {
@@ -204,15 +210,36 @@ class FileCallOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("final", &final_tensor));
 
     FileResource* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "resource", &resource));
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
     core::ScopedUnref unref(resource);
 
     OP_REQUIRES_OK(context, resource->Write(*input_tensor));
 
     if (final_tensor->scalar<bool>()()) {
-    OP_REQUIRES_OK(context, resource->Close());
+      OP_REQUIRES_OK(context, resource->Close());
     }
   }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class FileSyncOp : public OpKernel {
+ public:
+  explicit FileSyncOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    FileResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
+    core::ScopedUnref unref(resource);
+    OP_REQUIRES_OK(context, resource->Sync());
+  }
+
  private:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
@@ -223,6 +250,7 @@ REGISTER_KERNEL_BUILDER(Name("IO>FileRead").Device(DEVICE_CPU), FileReadOp);
 
 REGISTER_KERNEL_BUILDER(Name("IO>FileInit").Device(DEVICE_CPU), FileInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>FileCall").Device(DEVICE_CPU), FileCallOp);
+REGISTER_KERNEL_BUILDER(Name("IO>FileSync").Device(DEVICE_CPU), FileSyncOp);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow

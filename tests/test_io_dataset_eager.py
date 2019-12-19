@@ -830,8 +830,8 @@ def test_io_dataset_to_in_dataset(fixture_lookup, io_dataset_fixture):
     dataset = dataset.map(tf.strings.as_string)
     dataset = dataset.map(lambda e: e + "\n")
 
-    return func(dataset, args)
-    
+    return func(dataset, v)
+
   dataset = tf.data.Dataset.from_tensor_slices([args])
   dataset = dataset.map(f)
 
