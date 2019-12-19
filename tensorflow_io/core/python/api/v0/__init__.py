@@ -17,25 +17,5 @@
 # tensorflow_io.core.python.ops is implicitly imported (along with file system)
 from tensorflow_io.core.python.ops.io_dataset import IODataset
 from tensorflow_io.core.python.ops.io_tensor import IOTensor
-
-<<<<<<< HEAD:tensorflow_io/avro/__init__.py
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# TODO(fraudies): See how we can leverage tf.export here for V1/V2 compatibility
-from tensorflow_io.avro.python.ops.avro_dataset import make_avro_dataset_v1, \
-    make_avro_dataset
-
-from tensorflow.python.util.all_util import remove_undocumented
-
-_allowed_symbols = [
-    "make_avro_dataset_v1",
-    "make_avro_dataset",
-]
-
-remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)
-=======
 from tensorflow_io.core.python.api.v0 import genome
 from tensorflow_io.core.python.api.v0 import image
->>>>>>> upstream/branch-v0.10.0:tensorflow_io/core/python/api/v0/__init__.py
