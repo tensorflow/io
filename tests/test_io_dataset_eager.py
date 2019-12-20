@@ -370,8 +370,9 @@ def fixture_hdf5(request):
     f.create_dataset('int64', data=np.asarray(data, np.int64), dtype='i8')
     f.create_dataset('float32', data=np.asarray(data, np.float32), dtype='f4')
     f.create_dataset('float64', data=np.asarray(data, np.float64), dtype='f8')
+    f.create_dataset('complex64', data=np.asarray(complex_data, np.complex64))
+    f.create_dataset('complex128', data=np.asarray(complex_data, np.complex128))
     f.create_dataset('string', data=np.asarray(string_data, '<S5'))
-    f.create_dataset('complex', data=np.asarray(complex_data, np.complex))
   args = filename
   def func(args):
     """func"""
@@ -385,10 +386,11 @@ def fixture_hdf5(request):
     i64 = tfio.IODataset.from_hdf5(args, dataset='/int64')
     f32 = tfio.IODataset.from_hdf5(args, dataset='/float32')
     f64 = tfio.IODataset.from_hdf5(args, dataset='/float64')
+    c64 = tfio.IODataset.from_hdf5(args, dataset='/complex64')
+    c128 = tfio.IODataset.from_hdf5(args, dataset='/complex128')
     ss = tfio.IODataset.from_hdf5(args, dataset='/string')
-    complex = tfio.IODataset.from_hdf5(args, dataset='/complex')
     return tf.data.Dataset.zip(
-        (u8, u16, u32, u64, i8, i16, i32, i64, f32, f64, ss, complex))
+        (u8, u16, u32, u64, i8, i16, i32, i64, f32, f64, c64, c128, ss))
   expected = list(zip(
       (np.asarray(data, np.uint8) % 256).tolist(),
       np.asarray(data, np.uint16).tolist(),
@@ -400,8 +402,9 @@ def fixture_hdf5(request):
       np.asarray(data, np.int64).tolist(),
       np.asarray(data, np.float32).tolist(),
       np.asarray(data, np.float64).tolist(),
-      np.asarray(string_data, '<S5').tolist(),
-      np.asarray(complex_data, np.complex).tolist()))
+      np.asarray(complex_data, np.complex64).tolist(),
+      np.asarray(complex_data, np.complex128).tolist(),
+      np.asarray(string_data, '<S5').tolist()))
   def fin():
     shutil.rmtree(tmp_path)
   request.addfinalizer(fin)

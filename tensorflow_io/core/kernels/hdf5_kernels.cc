@@ -226,6 +226,9 @@ class HDF5ReadableResource : public ResourceBase {
           switch (static_cast<H5::CompType&>(data_type)
                       .getMemberDataType(0)
                       .getSize()) {
+            case 4:
+              dtype = DT_COMPLEX64;
+              break;
             case 8:
               dtype = DT_COMPLEX128;
               break;
@@ -364,6 +367,10 @@ class HDF5ReadableResource : public ResourceBase {
         case DT_DOUBLE:
           data_set.read(value->flat<double>().data(), data_type, memory_space,
                         data_space);
+          break;
+        case DT_COMPLEX64:
+          data_set.read(value->flat<complex64>().data(), data_type,
+                        memory_space, data_space);
           break;
         case DT_COMPLEX128:
           data_set.read(value->flat<complex128>().data(), data_type,
