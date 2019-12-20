@@ -411,6 +411,25 @@ def fixture_hdf5(request):
 
   return args, func, expected
 
+@pytest.fixture(name="to_file")
+def fixture_to_file(request):
+  """fixture_to_file"""
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "data.text")
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  args = filename
+  func = tfio.experimental.IODataset.to_file
+  def data_func(filename):
+    with open(filename, "r") as f:
+      lines = list(f)
+    return lines
+
+  return args, func, data_func
+
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
 #   entries = [e for e in dataset]
@@ -775,3 +794,58 @@ def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
 
   assert len(entries) == len(expected)
   assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
+
+@pytest.mark.parametrize(
+    ("io_dataset_fixture"),
+    [
+        pytest.param("to_file"),
+    ],
+    ids=[
+        "to_file",
+    ],
+)
+def test_io_dataset_to(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_to"""
+  args, func, data_func = fixture_lookup(io_dataset_fixture)
+
+  dataset = tf.data.Dataset.range(1000)
+  dataset = dataset.batch(15)
+  dataset = dataset.map(tf.strings.as_string)
+  dataset = dataset.map(lambda e: e + "\n")
+
+  entries = func(dataset, args)
+  assert (entries) == 1000
+
+  lines = data_func(args)
+  return np.all(lines == ["{}\n".format(i) for i in range(1000)])
+
+@pytest.mark.parametrize(
+    ("io_dataset_fixture"),
+    [
+        pytest.param("to_file"),
+    ],
+    ids=[
+        "to_file",
+    ],
+)
+def test_io_dataset_to_in_dataset(fixture_lookup, io_dataset_fixture):
+  """test_io_dataset_to_in_dataset"""
+  args, func, data_func = fixture_lookup(io_dataset_fixture)
+
+  def f(v):
+    dataset = tf.data.Dataset.range(1000)
+    dataset = dataset.batch(15)
+    dataset = dataset.map(tf.strings.as_string)
+    dataset = dataset.map(lambda e: e + "\n")
+
+    return func(dataset, v)
+
+  dataset = tf.data.Dataset.from_tensor_slices([args])
+  dataset = dataset.map(f)
+
+  entries = list(dataset)
+
+  assert entries == [1000]
+
+  lines = data_func(args)
+  return np.all(lines == ["{}\n".format(i) for i in range(1000)])
