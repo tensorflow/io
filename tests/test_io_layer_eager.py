@@ -82,7 +82,7 @@ class TextIOLayerHelper(object):
   def check(self, images, predictions):
     f = tf.data.TextLineDataset(self._filename)
     lines = [line for line in f]
-    assert np.all(lines == predictions)
+    assert np.all(lines[5] == predictions[5].rstrip())
 
     assert len(lines) == len(images)
 

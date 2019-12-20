@@ -42,6 +42,26 @@ REGISTER_OP("IO>FileRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>FileInit")
+    .SetIsStateful()
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("IO>FileCall")
+    .SetIsStateful()
+    .Input("input: string")
+    .Input("final: bool")
+    .Input("resource: resource")
+    .Output("output: string")
+    .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("IO>FileSync")
+    .Input("resource: resource")
+    .SetShapeFn(shape_inference::ScalarShape);
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

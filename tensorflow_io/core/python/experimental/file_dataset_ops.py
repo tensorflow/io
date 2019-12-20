@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""TextIOLayer"""
+"""FileDataset"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,25 +20,19 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class TextIOLayer(tf.keras.layers.Layer):
-  """TextIOLayer
+@tf.function
+def to_file(dataset, filename):
+  """to_file"""
+  resource = core_ops.io_file_init(filename)
 
-  """
-  #=============================================================================
-  # TextIOLayer
-  #=============================================================================
-  def __init__(self, filename):
-    """Obtain a text file IO layer to be used with tf.keras."""
-    self._resource = core_ops.io_file_init(filename)
-    super(TextIOLayer, self).__init__(trainable=False)
+  dataset = dataset.map(
+      lambda e: (e, tf.constant(False)))
+  dataset = dataset.concatenate(
+      tf.data.Dataset.from_tensor_slices(
+          [tf.constant([], tf.string)]).map(
+              lambda e: (e, tf.constant(True))))
+  dataset = dataset.map(
+      lambda entry, final: core_ops.io_file_call(entry, final, resource))
+  dataset = dataset.map(tf.shape)
 
-  def sync(self):
-    core_ops.io_file_sync(self._resource)
-
-  def call(self, inputs):
-    content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
-    if inputs.dtype != tf.string:
-      content = tf.strings.as_string(content)
-    content = tf.strings.reduce_join(content, axis=1, separator=',')
-    content = content + tf.constant(["\n"])
-    return core_ops.io_file_call(content, False, self._resource)
+  return dataset.reduce(0, lambda x, y: x + y)
