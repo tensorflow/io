@@ -117,7 +117,8 @@ class HDF5Iterate {
 };
 class HDF5ReadableResource : public ResourceBase {
  public:
-  HDF5ReadableResource(Env* env) : env_(env) {}
+  HDF5ReadableResource(Env* env)
+      : env_(env), complex_names_(std::pair<string, string>("r", "i")) {}
   ~HDF5ReadableResource() {}
 
   Status Init(const string& input, std::vector<string>* components) {
@@ -193,6 +194,51 @@ class HDF5ReadableResource : public ResourceBase {
           break;
         case H5T_VLEN:
           dtype = DT_STRING;
+          break;
+        case H5T_COMPOUND:
+          if (static_cast<H5::CompType&>(data_type).getNmembers() != 2) {
+            return errors::InvalidArgument(
+                "unsupported compound members for ", dataset, ": ",
+                static_cast<H5::CompType&>(data_type).getNmembers());
+          }
+          if (static_cast<H5::CompType&>(data_type).getMemberName(0) !=
+                  complex_names_.first ||
+              static_cast<H5::CompType&>(data_type).getMemberName(1) !=
+                  complex_names_.second) {
+            return errors::InvalidArgument(
+                "unsupported compound member names for ", dataset, ": ",
+                static_cast<H5::CompType&>(data_type).getMemberName(0), ", ",
+                static_cast<H5::CompType&>(data_type).getMemberName(1));
+          }
+          if (static_cast<H5::CompType&>(data_type).getMemberDataType(0) !=
+              static_cast<H5::CompType&>(data_type).getMemberDataType(1)) {
+            return errors::InvalidArgument(
+                "unsupported compound with different data type for ", dataset,
+                ": ", static_cast<H5::CompType&>(data_type).getMemberClass(0),
+                ", ", static_cast<H5::CompType&>(data_type).getMemberClass(1));
+          }
+          if (static_cast<H5::CompType&>(data_type).getMemberClass(0) !=
+              H5T_FLOAT) {
+            return errors::InvalidArgument(
+                "unsupported compound with non-float data class for ", dataset,
+                ": ", static_cast<H5::CompType&>(data_type).getMemberClass(0));
+          }
+          switch (static_cast<H5::CompType&>(data_type)
+                      .getMemberDataType(0)
+                      .getSize()) {
+            case 4:
+              dtype = DT_COMPLEX64;
+              break;
+            case 8:
+              dtype = DT_COMPLEX128;
+              break;
+            default:
+              return errors::InvalidArgument(
+                  "unsupported data type size for compound", dataset, ": ",
+                  static_cast<H5::CompType&>(data_type)
+                      .getMemberDataType(0)
+                      .getSize());
+          }
           break;
         default:
           return errors::InvalidArgument("unsupported data class for ", dataset,
@@ -281,93 +327,107 @@ class HDF5ReadableResource : public ResourceBase {
                                  dims_start.data());
 
       H5::DataType data_type = data_set.getDataType();
-      switch (data_type.getClass()) {
-        case H5T_INTEGER:
-        case H5T_FLOAT: {
-          hid_t native_type =
-              H5Tget_native_type(data_type.getId(), H5T_DIR_ASCEND);
-          if (H5Tequal(native_type, H5T_NATIVE_UINT8)) {
-            data_set.read(value->flat<uint8>().data(),
-                          H5::PredType::NATIVE_UINT8, memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_UINT16)) {
-            data_set.read(value->flat<uint16>().data(),
-                          H5::PredType::NATIVE_UINT16, memory_space,
-                          data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_UINT32)) {
-            data_set.read(value->flat<uint32>().data(),
-                          H5::PredType::NATIVE_UINT32, memory_space,
-                          data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_UINT64)) {
-            data_set.read(value->flat<uint64>().data(),
-                          H5::PredType::NATIVE_UINT64, memory_space,
-                          data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_INT8)) {
-            data_set.read(value->flat<int8>().data(), H5::PredType::NATIVE_INT8,
-                          memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_INT16)) {
-            data_set.read(value->flat<int16>().data(),
-                          H5::PredType::NATIVE_INT16, memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_INT32)) {
-            data_set.read(value->flat<int32>().data(),
-                          H5::PredType::NATIVE_INT32, memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_INT64)) {
-            data_set.read(value->flat<int64>().data(),
-                          H5::PredType::NATIVE_INT64, memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_FLOAT)) {
-            data_set.read(value->flat<float>().data(),
-                          H5::PredType::NATIVE_FLOAT, memory_space, data_space);
-          } else if (H5Tequal(native_type, H5T_NATIVE_DOUBLE)) {
-            data_set.read(value->flat<double>().data(),
-                          H5::PredType::NATIVE_DOUBLE, memory_space,
-                          data_space);
-          } else {
-            return errors::Unimplemented("native data type not supported yet: ",
-                                         native_type);
-          }
-        } break;
-        case H5T_STRING: {
-          int64 total = value->NumElements();
-          std::unique_ptr<char[]> buffer(new char[data_type.getSize() * total]);
-          data_set.read(buffer.get(), data_type, memory_space, data_space);
+      switch (dtypes_[column_index]) {
+        case DT_UINT8:
+          data_set.read(value->flat<uint8>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_UINT16:
+          data_set.read(value->flat<uint16>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_UINT32:
+          data_set.read(value->flat<uint32>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_UINT64:
+          data_set.read(value->flat<uint64>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_INT8:
+          data_set.read(value->flat<int8>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_INT16:
+          data_set.read(value->flat<int16>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_INT32:
+          data_set.read(value->flat<int32>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_INT64:
+          data_set.read(value->flat<int64>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_FLOAT:
+          data_set.read(value->flat<float>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_DOUBLE:
+          data_set.read(value->flat<double>().data(), data_type, memory_space,
+                        data_space);
+          break;
+        case DT_COMPLEX64:
+          data_set.read(value->flat<complex64>().data(), data_type,
+                        memory_space, data_space);
+          break;
+        case DT_COMPLEX128:
+          data_set.read(value->flat<complex128>().data(), data_type,
+                        memory_space, data_space);
+          break;
+        case DT_STRING:
+          switch (data_type.getClass()) {
+            case H5T_STRING: {
+              int64 total = value->NumElements();
+              std::unique_ptr<char[]> buffer(
+                  new char[data_type.getSize() * total]);
+              data_set.read(buffer.get(), data_type, memory_space, data_space);
 
-          switch (static_cast<H5::StrType&>(data_type).getStrpad()) {
-            case H5T_STR_NULLTERM:
-              for (int64 i = 0; i < value->NumElements(); i++) {
-                const char* p =
-                    (const char*)(buffer.get() + data_type.getSize() * i);
-                size_t len = 0;
-                while (len < data_type.getSize() && p[len] != 0x00) {
-                  len++;
-                }
-                value->flat<string>()(i) = string(p, len);
+              switch (static_cast<H5::StrType&>(data_type).getStrpad()) {
+                case H5T_STR_NULLTERM:
+                  for (int64 i = 0; i < value->NumElements(); i++) {
+                    const char* p =
+                        (const char*)(buffer.get() + data_type.getSize() * i);
+                    size_t len = 0;
+                    while (len < data_type.getSize() && p[len] != 0x00) {
+                      len++;
+                    }
+                    value->flat<string>()(i) = string(p, len);
+                  }
+                  break;
+                case H5T_STR_NULLPAD:
+                  for (int64 i = 0; i < value->NumElements(); i++) {
+                    const char* p =
+                        (const char*)(buffer.get() + data_type.getSize() * i);
+                    size_t len = data_type.getSize();
+                    while (len > 0 && p[len - 1] == 0x00) {
+                      len--;
+                    }
+                    value->flat<string>()(i) = string(p, len);
+                  }
+                  break;
+                case H5T_STR_SPACEPAD:
+                  return errors::InvalidArgument(
+                      "string pad type not supported: ",
+                      static_cast<H5::StrType&>(data_type).getStrpad());
               }
-              break;
-            case H5T_STR_NULLPAD:
+            } break;
+            case H5T_VLEN: {
+              int64 total = value->NumElements();
+              std::unique_ptr<hvl_t[]> buffer(new hvl_t[total]);
+              data_set.read(buffer.get(), data_type, memory_space, data_space);
               for (int64 i = 0; i < value->NumElements(); i++) {
-                const char* p =
-                    (const char*)(buffer.get() + data_type.getSize() * i);
-                size_t len = data_type.getSize();
-                while (len > 0 && p[len - 1] == 0x00) {
-                  len--;
-                }
-                value->flat<string>()(i) = string(p, len);
+                hvl_t* h = (hvl_t*)(buffer.get()) + i;
+                value->flat<string>()(i) = string((const char*)(h->p), h->len);
               }
-              break;
-            case H5T_STR_SPACEPAD:
-              return errors::InvalidArgument(
-                  "string pad type not supported: ",
-                  static_cast<H5::StrType&>(data_type).getStrpad());
+            } break;
+            default:
+              return errors::Unimplemented(
+                  "data type class for string not supported: ",
+                  data_type.getClass());
           }
-        } break;
-        case H5T_VLEN: {
-          int64 total = value->NumElements();
-          std::unique_ptr<hvl_t[]> buffer(new hvl_t[total]);
-          data_set.read(buffer.get(), data_type, memory_space, data_space);
-          for (int64 i = 0; i < value->NumElements(); i++) {
-            hvl_t* h = (hvl_t*)(buffer.get()) + i;
-            value->flat<string>()(i) = string((const char*)(h->p), h->len);
-          }
-        } break;
+          break;
         default:
           return errors::Unimplemented("data type class not supported yet: ",
                                        data_type.getClass());
@@ -392,6 +452,8 @@ class HDF5ReadableResource : public ResourceBase {
   std::vector<DataType> dtypes_ GUARDED_BY(mu_);
   std::vector<TensorShape> shapes_ GUARDED_BY(mu_);
   std::unordered_map<string, int64> columns_index_ GUARDED_BY(mu_);
+
+  std::pair<string, string> complex_names_ GUARDED_BY(mu_);
 };
 
 class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
