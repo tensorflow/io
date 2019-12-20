@@ -1,0 +1,15 @@
+name: Presummit
+
+on: [pull_request]
+
+jobs:
+  lint:
+    name: Lint (Python+Bazel)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - name: Run Lint Script
+        run: |
+          set -x -e
+          git log --pretty -2
+          echo Success
