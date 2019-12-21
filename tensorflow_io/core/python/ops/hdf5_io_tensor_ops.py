@@ -64,12 +64,19 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
         shape = tf.TensorShape(shape.numpy())
         dtype = tf.as_dtype(dtype.numpy())
         spec = tf.TensorSpec(shape, dtype, column)
-        function = _HDF5IOTensorFunction(
-            core_ops.io_hdf5_readable_read,
-            resource, column, shape, dtype)
-        elements.append(
-            io_tensor_ops.BaseIOTensor(
-                spec, function, internal=internal))
+        if shape.rank == 0:
+          value = core_ops.io_hdf5_readable_read(
+              resource, 0, shape, column, dtype)
+          elements.append(
+              io_tensor_ops.ScalarIOTensor(
+                  spec, value, internal=internal))
+        else:
+          function = _HDF5IOTensorFunction(
+              core_ops.io_hdf5_readable_read,
+              resource, column, shape, dtype)
+          elements.append(
+              io_tensor_ops.BaseIOTensor(
+                  spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
       super(HDF5IOTensor, self).__init__(
           spec, columns, elements,
