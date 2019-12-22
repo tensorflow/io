@@ -278,6 +278,43 @@ class BaseIOTensor(_IOTensor):
     with tf.name_scope(kwargs.get("name", "IOToTensor")):
       return self.__getitem__(slice(None, None))
 
+class ScalarIOTensor(BaseIOTensor):
+  """ScalarIOTensor
+
+  A `ScalarIOTensor` is an `IOTensor` from a scalar `Tensor`.
+  """
+
+  def __init__(self,
+               spec,
+               tensor,
+               internal=False):
+    tensor = tf.convert_to_tensor(tensor)
+
+    self._tensor = tensor
+    super(ScalarIOTensor, self).__init__(
+        spec, None, internal=internal)
+
+  #=============================================================================
+  # Tensor Type Conversions
+  #=============================================================================
+
+  def to_tensor(self, **kwargs):
+    """Converts this `IOTensor` into a `tf.Tensor`.
+
+    Example:
+
+    ```python
+    ```
+
+    Args:
+      name: A name prefix for the returned tensors (optional).
+
+    Returns:
+      A `Tensor` with value obtained from this `IOTensor`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOToTensor")):
+      return self._tensor
+
 class TensorIOTensor(BaseIOTensor):
   """TensorIOTensor
 

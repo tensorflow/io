@@ -192,6 +192,77 @@ def fixture_hdf5(request):
 
   return args, func, expected
 
+@pytest.fixture(name="hdf5_scalar", scope="module")
+def fixture_hdf5_scalar(request):
+  """fixture_hdf5_scalar"""
+  import h5py # pylint: disable=import-outside-toplevel
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "test.h5")
+
+  with h5py.File(filename, 'w') as f:
+    f.create_dataset('int8', data=np.int8(123))
+    f.create_dataset('int16', data=np.int16(123))
+    f.create_dataset('int32', data=np.int32(123))
+    f.create_dataset('int64', data=np.int64(123))
+    f.create_dataset('float32', data=np.float32(1.23))
+    f.create_dataset('float64', data=np.float64(1.23))
+    f.create_dataset('complex64', data=np.complex64(12+3j))
+    f.create_dataset('complex128', data=np.complex128(12+3j))
+    f.create_dataset('string', data=np.dtype('<S5').type("D123D"))
+  args = filename
+  def func(args):
+    """func"""
+    i8 = tfio.IOTensor.from_hdf5(args)('/int8')
+    i16 = tfio.IOTensor.from_hdf5(args)('/int16')
+    i32 = tfio.IOTensor.from_hdf5(args)('/int32')
+    i64 = tfio.IOTensor.from_hdf5(args)('/int64')
+    f32 = tfio.IOTensor.from_hdf5(args)('/float32')
+    f64 = tfio.IOTensor.from_hdf5(args)('/float64')
+    c64 = tfio.IOTensor.from_hdf5(args)('/complex64')
+    c128 = tfio.IOTensor.from_hdf5(args)('/complex128')
+    ss = tfio.IOTensor.from_hdf5(args)('/string')
+    return [i8, i16, i32, i64, f32, f64, c64, c128, ss]
+
+  expected = [
+      np.int8(123),
+      np.int16(123),
+      np.int32(123),
+      np.int64(123),
+      np.float32(1.23),
+      np.float64(1.23),
+      np.complex64(12+3j),
+      np.complex128(12+3j),
+      np.dtype('<S5').type("D123D"),
+  ]
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  return args, func, expected
+
+# scalar is a special IOTensor that is alias to Tensor
+@pytest.mark.parametrize(
+    ("io_tensor_fixture"),
+    [
+        pytest.param("hdf5_scalar"),
+    ],
+    ids=[
+        "hdf5",
+    ],
+)
+def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
+  """test_io_tensor_scalar"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
+
+  values = func(args)
+
+  # Test to_tensor
+  entries = [value.to_tensor() for value in values]
+  assert len(entries) == len(expected)
+  assert np.all([v == e for v, e in zip(entries, expected)])
+
 # slice (__getitem__) is the most basic operation for IOTensor
 @pytest.mark.parametrize(
     ("io_tensor_fixture"),
