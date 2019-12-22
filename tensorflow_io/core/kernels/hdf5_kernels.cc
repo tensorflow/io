@@ -290,43 +290,51 @@ class HDF5ReadableResource : public ResourceBase {
 
     Tensor* value;
     TF_RETURN_IF_ERROR(allocate_func(shape, &value));
-    if (shape.dim_size(0) == 0) {
-      return Status::OK();
-    }
 
-    int64 element_start = start;
+    if (shape.dims() > 0) {
+      if (shape.dim_size(0) == 0) {
+        return Status::OK();
+      }
 
-    if (element_start > shapes_[column_index].dim_size(0)) {
-      return errors::InvalidArgument(
-          "start ", element_start, " out of boundary: ", shapes_[column_index]);
-    }
-    int64 element_stop = element_start + shape.dim_size(0);
-    if (element_stop > shapes_[column_index].dim_size(0)) {
-      return errors::InvalidArgument(
-          "start ", element_start, " and shape ", shape,
-          " out of boundary: ", shapes_[column_index]);
+      int64 element_start = start;
+
+      if (element_start > shapes_[column_index].dim_size(0)) {
+        return errors::InvalidArgument(
+            "start ", element_start,
+            " out of boundary: ", shapes_[column_index]);
+      }
+      int64 element_stop = element_start + shape.dim_size(0);
+      if (element_stop > shapes_[column_index].dim_size(0)) {
+        return errors::InvalidArgument(
+            "start ", element_start, " and shape ", shape,
+            " out of boundary: ", shapes_[column_index]);
+      }
     }
 
     H5::H5File* file = file_image_->GetFile();
     try {
       H5::DataSet data_set = file->openDataSet(component);
-      H5::DataSpace data_space = data_set.getSpace();
-
-      int rank = data_space.getSimpleExtentNdims();
-      absl::InlinedVector<hsize_t, 4> dims(rank);
-      data_space.getSimpleExtentDims(dims.data());
-
-      // Find the border of the dims start and dims
-      absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
-      dims_start[0] = element_start;
-      dims[0] = element_stop - element_start;
-
-      H5::DataSpace memory_space(dims.size(), dims.data());
-
-      data_space.selectHyperslab(H5S_SELECT_SET, dims.data(),
-                                 dims_start.data());
-
       H5::DataType data_type = data_set.getDataType();
+      H5::DataSpace memory_space = H5::DataSpace::ALL;
+      H5::DataSpace data_space = H5::DataSpace::ALL;
+
+      if (shape.dims() != 0) {
+        data_space = data_set.getSpace();
+
+        int rank = data_space.getSimpleExtentNdims();
+        absl::InlinedVector<hsize_t, 4> dims(rank);
+        data_space.getSimpleExtentDims(dims.data());
+
+        // Find the border of the dims start and dims
+        absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
+        dims_start[0] = start;
+        dims[0] = shape.dim_size(0);
+
+        memory_space = H5::DataSpace(dims.size(), dims.data());
+
+        data_space.selectHyperslab(H5S_SELECT_SET, dims.data(),
+                                   dims_start.data());
+      }
       switch (dtypes_[column_index]) {
         case DT_UINT8:
           data_set.read(value->flat<uint8>().data(), data_type, memory_space,
