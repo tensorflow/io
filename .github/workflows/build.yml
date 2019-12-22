@@ -179,4 +179,6 @@ jobs:
       - name: Test Linux
         run: |
           set -x -e
-          sudo bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
+            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
