@@ -315,12 +315,11 @@ class HDF5ReadableResource : public ResourceBase {
     try {
       H5::DataSet data_set = file->openDataSet(component);
       H5::DataType data_type = data_set.getDataType();
+      H5::DataSpace data_space = data_set.getSpace();
+
       H5::DataSpace memory_space = H5::DataSpace::ALL;
-      H5::DataSpace data_space = H5::DataSpace::ALL;
 
       if (shape.dims() != 0) {
-        data_space = data_set.getSpace();
-
         int rank = data_space.getSimpleExtentNdims();
         absl::InlinedVector<hsize_t, 4> dims(rank);
         data_space.getSimpleExtentDims(dims.data());
@@ -386,41 +385,54 @@ class HDF5ReadableResource : public ResourceBase {
           break;
         case DT_STRING:
           switch (data_type.getClass()) {
-            case H5T_STRING: {
-              int64 total = value->NumElements();
-              std::unique_ptr<char[]> buffer(
-                  new char[data_type.getSize() * total]);
-              data_set.read(buffer.get(), data_type, memory_space, data_space);
+            case H5T_STRING:
+              if (data_set.getStrType().isVariableStr()) {
+                int64 total = value->NumElements();
+                std::unique_ptr<char*[]> buffer(new char*[total]);
+                data_set.read(buffer.get(), data_set.getStrType(), memory_space,
+                              data_space);
+                for (int64 i = 0; i < value->NumElements(); i++) {
+                  char* p = (char*)(buffer.get()[i]);
+                  value->flat<string>()(i) = string(p);
+                }
+                H5::DataSet::vlenReclaim(buffer.get(), data_type, data_space);
+              } else {
+                int64 total = value->NumElements();
+                std::unique_ptr<char[]> buffer(
+                    new char[data_type.getSize() * total]);
+                data_set.read(buffer.get(), data_type, memory_space,
+                              data_space);
 
-              switch (static_cast<H5::StrType&>(data_type).getStrpad()) {
-                case H5T_STR_NULLTERM:
-                  for (int64 i = 0; i < value->NumElements(); i++) {
-                    const char* p =
-                        (const char*)(buffer.get() + data_type.getSize() * i);
-                    size_t len = 0;
-                    while (len < data_type.getSize() && p[len] != 0x00) {
-                      len++;
+                switch (static_cast<H5::StrType&>(data_type).getStrpad()) {
+                  case H5T_STR_NULLTERM:
+                    for (int64 i = 0; i < value->NumElements(); i++) {
+                      const char* p =
+                          (const char*)(buffer.get() + data_type.getSize() * i);
+                      size_t len = 0;
+                      while (len < data_type.getSize() && p[len] != 0x00) {
+                        len++;
+                      }
+                      value->flat<string>()(i) = string(p, len);
                     }
-                    value->flat<string>()(i) = string(p, len);
-                  }
-                  break;
-                case H5T_STR_NULLPAD:
-                  for (int64 i = 0; i < value->NumElements(); i++) {
-                    const char* p =
-                        (const char*)(buffer.get() + data_type.getSize() * i);
-                    size_t len = data_type.getSize();
-                    while (len > 0 && p[len - 1] == 0x00) {
-                      len--;
+                    break;
+                  case H5T_STR_NULLPAD:
+                    for (int64 i = 0; i < value->NumElements(); i++) {
+                      const char* p =
+                          (const char*)(buffer.get() + data_type.getSize() * i);
+                      size_t len = data_type.getSize();
+                      while (len > 0 && p[len - 1] == 0x00) {
+                        len--;
+                      }
+                      value->flat<string>()(i) = string(p, len);
                     }
-                    value->flat<string>()(i) = string(p, len);
-                  }
-                  break;
-                case H5T_STR_SPACEPAD:
-                  return errors::InvalidArgument(
-                      "string pad type not supported: ",
-                      static_cast<H5::StrType&>(data_type).getStrpad());
+                    break;
+                  case H5T_STR_SPACEPAD:
+                    return errors::InvalidArgument(
+                        "string pad type not supported: ",
+                        static_cast<H5::StrType&>(data_type).getStrpad());
+                }
               }
-            } break;
+              break;
             case H5T_VLEN: {
               int64 total = value->NumElements();
               std::unique_ptr<hvl_t[]> buffer(new hvl_t[total]);
@@ -429,6 +441,7 @@ class HDF5ReadableResource : public ResourceBase {
                 hvl_t* h = (hvl_t*)(buffer.get()) + i;
                 value->flat<string>()(i) = string((const char*)(h->p), h->len);
               }
+              H5::DataSet::vlenReclaim(buffer.get(), data_type, data_space);
             } break;
             default:
               return errors::Unimplemented(
