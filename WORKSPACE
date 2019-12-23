@@ -229,9 +229,9 @@ http_archive(
     ],
 )
 
-load("@rules_python//python:pip.bzl", "pip3_import")
+load("@rules_python//python:pip.bzl", "pip_import")
 
-pip3_import(
+pip_import(
     name = "lint_dependencies",
     requirements = "//tools/lint:requirements.txt",
 )
