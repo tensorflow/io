@@ -24,6 +24,6 @@ fi
 # while below checks the lint
 bazel run --noshow_progress --noshow_loading_progress --verbose_failures --test_output=errors --run_under="cd $PWD && " @com_github_bazelbuild_buildtools//buildifier:buildifier -- --mode=diff $(find . -type f \( -name WORKSPACE -or -name BUILD -or -name '*.BUILD' \))
 
-docker run -i -t --rm -v $PWD:/v -w /v --net=host python:2.7-slim bash -x -e .travis/lint.sh python
+docker run -i --rm -v $PWD:/v -w /v --net=host python:2.7-slim bash -x -e .travis/lint.sh python
 
 

@@ -1,0 +1,184 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  BAZEL_VERSION: 0.29.0
+  BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Run Lint Script
+        run: |
+          set -x -e
+          git log --pretty -1
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          bash -x -e .travis/lint.sh
+
+  macos-bazel:
+    name: Bazel macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Bazel on macOS
+        run: |
+          set -x -e
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          sudo python3 -m pip install $(python3 setup.py --package-version)
+          python3 third_party/tf/configure.py
+          bazel build \
+            ${BAZEL_OPTIMIZATION} \
+            --copt -mmacosx-version-min=10.13 \
+            --linkopt -mmacosx-version-min=10.13 \
+            --noshow_progress \
+            --noshow_loading_progress \
+            --verbose_failures \
+            --test_output=errors \
+            //tensorflow_io/...
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+
+  macos-wheel:
+    needs: macos-bazel
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python: ['3.5', '3.6', '3.7']
+    name: Wheel ${{ matrix.python }} macOS
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Wheel ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python -m pip install -U wheel setuptools
+          python --version
+          python setup.py --data bazel-bin -q bdist_wheel
+      - name: Auditwheel ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python -m pip install twine delocate
+          delocate-wheel --version
+          ls dist/*
+          for f in dist/*.whl; do
+            delocate-wheel -w wheelhouse  $f
+          done
+          ls wheelhouse/*
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: wheelhouse
+      - name: Setup ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          bash -x -e tests/test_kafka/kafka_test.sh start kafka
+          bash -x -e tests/test_azure/start_azure.sh
+          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+      - name: Install ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python --version
+          (cd wheelhouse && python -m pip install *.whl)
+      - name: Test ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python --version
+          bash -x -e .github/workflows/build.wheel.sh python
+
+  linux-bazel:
+    name: Bazel Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Bazel on Linux
+        run: |
+          set -x -e
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            -e BAZEL_VERSION=${BAZEL_VERSION} \
+            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
+            gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
+          sudo chown -R $(id -nu):$(id -ng) .
+          sudo find build/tensorflow_io -name '*runfiles*' | sudo xargs rm -rf
+          sudo cp .bazelrc build/tensorflow_io/
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: build/tensorflow_io
+
+  linux-wheel:
+    needs: linux-bazel
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
+        python: ['3.5', '3.6', '3.7']
+        exclude:
+          - os: ubuntu-16.04
+            python: '3.6'
+          - os: ubuntu-16.04
+            python: '3.7'
+          - os: ubuntu-18.04
+            python: '3.5'
+    name: Wheel ${{ matrix.python }} Linux
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - name: Wheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          mv bazel-bin/tensorflow_io/.bazelrc .
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
+      - name: Auditwheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          ls dist/*
+          for f in dist/*.whl; do
+            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/third_party/tf/auditwheel repair --plat manylinux2010_x86_64 $f
+          done
+          sudo chown -R $(id -nu):$(id -ng) .
+          ls wheelhouse/*
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: wheelhouse
+      - name: Setup Linux
+        run: |
+          set -x -e
+          bash -x -e tests/test_ignite/start_ignite.sh
+          bash -x -e tests/test_kafka/kafka_test.sh start kafka
+          bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+          bash -x -e tests/test_prometheus/prometheus_test.sh start
+          bash -x -e tests/test_azure/start_azure.sh
+      - name: Test Linux
+        run: |
+          set -x -e
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
+            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
