@@ -221,6 +221,26 @@ http_archive(
 )
 
 http_archive(
+    name = "rules_python",
+    sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
+    strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
+    urls = [
+        "https://github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
+    ],
+)
+
+load("@rules_python//python:pip.bzl", "pip_import")
+
+pip_import(
+    name = "lint_dependencies",
+    requirements = "//tools/lint:requirements.txt",
+)
+
+load("@lint_dependencies//:requirements.bzl", "pip_install")
+
+pip_install()
+
+http_archive(
     name = "com_github_grpc_grpc",
     patch_args = ["-p1"],
     patches = [
@@ -237,7 +257,7 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+load("@rules_python//python:pip.bzl", "pip_import", "pip_repositories")
 
 pip_import(
     name = "grpc_python_dependencies",
