@@ -283,22 +283,6 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
-      - name: Setup ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          bash -x -e tests/test_kafka/kafka_test.sh start kafka
-          bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
-      - name: Install ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          python --version
-          (cd wheelhouse && python -m pip install *.whl)
-      - name: Test ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          python --version
-          bash -x -e .github/workflows/build.wheel.sh python
 
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
@@ -345,21 +329,6 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
-      - name: Setup Linux
-        run: |
-          set -x -e
-          bash -x -e tests/test_ignite/start_ignite.sh
-          bash -x -e tests/test_kafka/kafka_test.sh start kafka
-          bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
-          bash -x -e tests/test_prometheus/prometheus_test.sh start
-          bash -x -e tests/test_azure/start_azure.sh
-      - name: Test Linux
-        run: |
-          set -x -e
-          docker run -i --rm -v $PWD:/v -w /v --net=host \
-            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
-            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
 
   nightly:
     name: Nightly
