@@ -11,6 +11,20 @@ env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
+  build-number:
+    name: Build Number
+    if: github.event_name == 'push'
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: einaregilsson/build-number@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/upload-artifact@v1
+        with:
+          name: BUILD_NUMBER
+          path: BUILD_NUMBER
+
   lint:
     name: Lint
     runs-on: ubuntu-18.04
@@ -227,25 +241,10 @@ jobs:
           name: tensorflow-io-release
           path: wheelhouse
 
-  build-number:
-    name: Build Number
-    if: github.event_name == 'push'
-    needs: release
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: einaregilsson/build-number@v2
-        with:
-          token: ${{secrets.github_token}}
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/upload-artifact@v1
-        with:
-          name: BUILD_NUMBER
-          path: BUILD_NUMBER
-
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: build-number
+    needs: [build-number, release]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -288,7 +287,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: build-number
+    needs: [build-number, release]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
