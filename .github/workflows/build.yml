@@ -11,20 +11,6 @@ env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
-  build-number:
-    name: Build Number
-    if: github.event_name == 'push'
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: einaregilsson/build-number@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/upload-artifact@v1
-        with:
-          name: BUILD_NUMBER
-          path: BUILD_NUMBER
-
   lint:
     name: Lint
     runs-on: ubuntu-18.04
@@ -241,10 +227,24 @@ jobs:
           name: tensorflow-io-release
           path: wheelhouse
 
+  build-number:
+    name: Build Number
+    if: github.event_name == 'push'
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: einaregilsson/build-number@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/upload-artifact@v1
+        with:
+          name: BUILD_NUMBER
+          path: BUILD_NUMBER
+
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: [build-number, lint, macos-bazel]
+    needs: [lint, build-number, macos-bazel]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -283,11 +283,27 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
+      - name: Setup ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          bash -x -e tests/test_kafka/kafka_test.sh start kafka
+          bash -x -e tests/test_azure/start_azure.sh
+          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+      - name: Install ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python --version
+          (cd wheelhouse && python -m pip install *.whl)
+      - name: Test ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python --version
+          bash -x -e .github/workflows/build.wheel.sh python
 
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [build-number, lint, linux-bazel]
+    needs: [lint, build-number, linux-bazel]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -329,6 +345,21 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
+      - name: Setup Linux
+        run: |
+          set -x -e
+          bash -x -e tests/test_ignite/start_ignite.sh
+          bash -x -e tests/test_kafka/kafka_test.sh start kafka
+          bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+          bash -x -e tests/test_prometheus/prometheus_test.sh start
+          bash -x -e tests/test_azure/start_azure.sh
+      - name: Test Linux
+        run: |
+          set -x -e
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
+            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
 
   nightly:
     name: Nightly
