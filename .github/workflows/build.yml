@@ -2,8 +2,6 @@ name: GitHub CI
 
 on:
   push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -182,3 +180,45 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
+
+  release:
+    name: release
+    if: github.event_name == 'push'
+    needs: [lint, linux-bazel, macos-bazel]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: einaregilsson/build-number@v2
+        with:
+          token: ${{secrets.github_token}}
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/upload-artifact@v1
+        with:
+          name: BUILD_NUMBER
+          path: BUILD_NUMBER
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.7-wheel
+          path: macOS-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.6-wheel
+          path: macOS-3.6-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.5-wheel
+          path: macOS-3.5-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.7-wheel
+          path: Linux-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.6-wheel
+          path: Linux-3.6-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.5-wheel
+          path: Linux-3.5-wheel
+      - run: |
+          ls -la Linux-3.5-wheel/
+          ls -la macOS-3.5-wheel/
