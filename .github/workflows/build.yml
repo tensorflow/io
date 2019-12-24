@@ -212,8 +212,20 @@ jobs:
           name: Linux-3.7-wheel
           path: Linux-3.7-wheel
       - run: |
-          ls -la Linux-3.5-wheel/
-          ls -la macOS-3.5-wheel/
+          set -e -x
+          mkdir -p wheelhouse
+          cp macOS-3.5-wheel/*.whl wheelhouse/
+          cp macOS-3.6-wheel/*.whl wheelhouse/
+          cp macOS-3.7-wheel/*.whl wheelhouse/
+          cp Linux-3.5-wheel/*.whl wheelhouse/
+          cp Linux-3.6-wheel/*.whl wheelhouse/
+          cp Linux-3.7-wheel/*.whl wheelhouse/
+          ls -la wheelhouse/
+          sha256sum wheelhouse/*.whl
+      - uses: actions/upload-artifact@v1
+        with:
+          name: tensorflow-io-release
+          path: wheelhouse
 
   build-number:
     name: Build Number
@@ -268,6 +280,10 @@ jobs:
             delocate-wheel -w wheelhouse  $f
           done
           ls wheelhouse/*
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-nightly
+          path: wheelhouse
 
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
@@ -310,3 +326,53 @@ jobs:
           done
           sudo chown -R $(id -nu):$(id -ng) .
           ls wheelhouse/*
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-nightly
+          path: wheelhouse
+
+  nightly:
+    name: Nightly
+    if: github.event_name == 'push'
+    needs: [linux-nightly, macos-nightly]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.5-nightly
+          path: macOS-3.5-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.6-nightly
+          path: macOS-3.6-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.7-nightly
+          path: macOS-3.7-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.5-nightly
+          path: Linux-3.5-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.6-nightly
+          path: Linux-3.6-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.7-nightly
+          path: Linux-3.7-nightly
+      - run: |
+          set -e -x
+          mkdir -p dist
+          cp macOS-3.5-nightly/*.whl dist/
+          cp macOS-3.6-nightly/*.whl dist/
+          cp macOS-3.7-nightly/*.whl dist/
+          cp Linux-3.5-nightly/*.whl dist/
+          cp Linux-3.6-nightly/*.whl dist/
+          cp Linux-3.7-nightly/*.whl dist/
+          ls -la dist/
+          sha256sum dist/*.whl
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: github-tensorflow-io-nightly
+          password: ${{ secrets.github_tensorflow_io_nightly }}
