@@ -197,28 +197,109 @@ jobs:
           path: BUILD_NUMBER
       - uses: actions/download-artifact@v1
         with:
-          name: macOS-3.7-wheel
-          path: macOS-3.7-wheel
+          name: macOS-3.5-wheel
+          path: macOS-3.5-wheel
       - uses: actions/download-artifact@v1
         with:
           name: macOS-3.6-wheel
           path: macOS-3.6-wheel
       - uses: actions/download-artifact@v1
         with:
-          name: macOS-3.5-wheel
-          path: macOS-3.5-wheel
+          name: macOS-3.7-wheel
+          path: macOS-3.7-wheel
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.7-wheel
-          path: Linux-3.7-wheel
+          name: Linux-3.5-wheel
+          path: Linux-3.5-wheel
       - uses: actions/download-artifact@v1
         with:
           name: Linux-3.6-wheel
           path: Linux-3.6-wheel
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.5-wheel
-          path: Linux-3.5-wheel
+          name: Linux-3.7-wheel
+          path: Linux-3.7-wheel
       - run: |
           ls -la Linux-3.5-wheel/
           ls -la macOS-3.5-wheel/
+
+  macos-nightly:
+    if: github.event_name == 'push'
+    needs: release
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python: ['3.5', '3.6', '3.7']
+    name: Nightly ${{ matrix.python }} macOS
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Wheel ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python -m pip install -U wheel setuptools
+          python --version
+          python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+      - name: Auditwheel ${{ matrix.python }} macOS
+        run: |
+          set -x -e
+          python -m pip install twine delocate
+          delocate-wheel --version
+          ls dist/*
+          for f in dist/*.whl; do
+            delocate-wheel -w wheelhouse  $f
+          done
+          ls wheelhouse/*
+
+  linux-nightly:
+    if: github.event_name == 'push'
+    needs: release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
+        python: ['3.5', '3.6', '3.7']
+        exclude:
+          - os: ubuntu-16.04
+            python: '3.6'
+          - os: ubuntu-16.04
+            python: '3.7'
+          - os: ubuntu-18.04
+            python: '3.5'
+    name: Nightly ${{ matrix.python }} Linux
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - name: Wheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          mv bazel-bin/tensorflow_io/.bazelrc .
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+      - name: Auditwheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          ls dist/*
+          for f in dist/*.whl; do
+            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/third_party/tf/auditwheel repair --plat manylinux2010_x86_64 $f
+          done
+          sudo chown -R $(id -nu):$(id -ng) .
+          ls wheelhouse/*
