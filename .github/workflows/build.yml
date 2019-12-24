@@ -404,5 +404,5 @@ jobs:
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
         with:
-          user: github-tensorflow-io-nightly
+          user: __token__
           password: ${{ secrets.github_tensorflow_io_nightly }}
