@@ -53,12 +53,12 @@ jobs:
           path: bazel-bin/tensorflow_io
 
   macos-wheel:
+    name: Wheel ${{ matrix.python }} macOS
     needs: macos-bazel
     runs-on: macos-latest
     strategy:
       matrix:
         python: ['3.5', '3.6', '3.7']
-    name: Wheel ${{ matrix.python }} macOS
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -127,6 +127,7 @@ jobs:
           path: build/tensorflow_io
 
   linux-wheel:
+    name: Wheel ${{ matrix.python }} Linux
     needs: linux-bazel
     runs-on: ${{ matrix.os }}
     strategy:
@@ -140,7 +141,6 @@ jobs:
             python: '3.7'
           - os: ubuntu-18.04
             python: '3.5'
-    name: Wheel ${{ matrix.python }} Linux
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -182,19 +182,11 @@ jobs:
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
 
   release:
-    name: release
+    name: Release
     if: github.event_name == 'push'
-    needs: [lint, linux-bazel, macos-bazel]
+    needs: [lint, linux-wheel, macos-wheel]
     runs-on: ubuntu-18.04
     steps:
-      - uses: einaregilsson/build-number@v2
-        with:
-          token: ${{secrets.github_token}}
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/upload-artifact@v1
-        with:
-          name: BUILD_NUMBER
-          path: BUILD_NUMBER
       - uses: actions/download-artifact@v1
         with:
           name: macOS-3.5-wheel
@@ -223,14 +215,29 @@ jobs:
           ls -la Linux-3.5-wheel/
           ls -la macOS-3.5-wheel/
 
-  macos-nightly:
+  build-number:
+    name: Build Number
     if: github.event_name == 'push'
     needs: release
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: einaregilsson/build-number@v2
+        with:
+          token: ${{secrets.github_token}}
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/upload-artifact@v1
+        with:
+          name: BUILD_NUMBER
+          path: BUILD_NUMBER
+
+  macos-nightly:
+    name: Nightly ${{ matrix.python }} macOS
+    if: github.event_name == 'push'
+    needs: build-number
     runs-on: macos-latest
     strategy:
       matrix:
         python: ['3.5', '3.6', '3.7']
-    name: Nightly ${{ matrix.python }} macOS
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -263,8 +270,9 @@ jobs:
           ls wheelhouse/*
 
   linux-nightly:
+    name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: release
+    needs: build-number
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -277,7 +285,6 @@ jobs:
             python: '3.7'
           - os: ubuntu-18.04
             python: '3.5'
-    name: Nightly ${{ matrix.python }} Linux
     steps:
       - uses: actions/download-artifact@v1
         with:
