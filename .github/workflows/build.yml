@@ -232,10 +232,10 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-18.04
     steps:
-      - uses: einaregilsson/build-number@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - run: echo "Build number is $BUILD_NUMBER"
+      - run: |
+          set -e -x
+          BUILD_NUMBER=$(date "+%Y%m%d%H%M%S")
+          echo ${BUILD_NUMBER} > BUILD_NUMBER
       - uses: actions/upload-artifact@v1
         with:
           name: BUILD_NUMBER
