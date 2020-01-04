@@ -33,8 +33,8 @@ from operator import itemgetter
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import tensor_spec
-from tensorflow_io.core.python.ops import core_ops
 from tensorflow.python.util import deprecation
+from tensorflow_io.core.python.ops import core_ops
 
 
 
@@ -180,10 +180,10 @@ class BigQueryReadSession(object):
                             self._output_types, self._avro_schema, stream)
 
   @deprecation.deprecated_args(
-    None,
-    "If sloppy execution is desired,"
-    "use `tf.data.Options.experimental_deterministic`.",
-    'sloppy')
+      None,
+      "If sloppy execution is desired,"
+      "use `tf.data.Options.experimental_deterministic`.",
+      'sloppy')
   def parallel_read_rows(self, cycle_length=None, sloppy=False, block_length=1,
                          num_parallel_calls=None):
     """Retrieves rows from the BigQuery service in parallel streams.
@@ -223,10 +223,10 @@ class BigQueryReadSession(object):
       cycle_length = self._requested_streams
     streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
     option = streams_ds.options()
-    if sloppy == True:
+    if sloppy is True:
       option.experimental_deterministic = False
       streams_ds = streams_ds.with_options(option)
-    elif sloppy == False:
+    elif sloppy is False:
       option.experimental_deterministic = True
       streams_ds = streams_ds.with_options(option)
 
