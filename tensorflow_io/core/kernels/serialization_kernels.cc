@@ -343,8 +343,6 @@ class EncodeAvroOp : public OpKernel {
       avro::GenericDatum datum(avro_schema);
       OP_REQUIRES_OK(context, ProcessEntry(values, "", datum));
 
-      //      avro::GenericRecord& record = datum.value<avro::GenericRecord>();
-
       avro::EncoderPtr e = avro::binaryEncoder();
       e->init(*o);
       avro::encode(*e, datum);
@@ -366,8 +364,8 @@ class EncodeAvroOp : public OpKernel {
       case avro::AVRO_FIXED:
       case avro::AVRO_ENUM:
         return ProcessPrimitive(values, name, datum);
-      // case avro::AVRO_RECORD:
-      //  return ProcessRecord(values, name, datum);
+      case avro::AVRO_RECORD:
+        return ProcessRecord(values, name, datum);
       default:
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
@@ -395,6 +393,7 @@ class EncodeAvroOp : public OpKernel {
       return errors::InvalidArgument("unable to find: ", name);
     }
     const Tensor* value_tensor = lookup->second;
+
     switch (datum.type()) {
       case avro::AVRO_BOOL:
         datum.value<bool>() = value_tensor->scalar<bool>()();

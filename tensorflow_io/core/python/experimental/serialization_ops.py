@@ -143,3 +143,26 @@ def decode_avro(data, schema, name=None):
   values = core_ops.io_decode_avro_v(
       data, names, schema, shapes, dtypes, name=name)
   return tf.nest.pack_sequence_as(specs, values)
+
+def encode_avro(data, schema, name=None):
+  """
+  Encode Tendsors into Avro string.
+
+  Args:
+    data: A list of Tensors to encode.
+    schema: A string of the Avro schema.
+    name: A name for the operation (optional).
+
+  Returns:
+    An Avro-encoded string Tensor.
+  """
+  specs = process_entry(json.loads(schema), '')
+
+  entries = tf.nest.flatten(specs)
+  names = [e.name for e in entries]
+
+  data = tf.nest.flatten(data)
+
+  values = core_ops.io_encode_avro_v(
+      data, names, schema, name=name)
+  return values
