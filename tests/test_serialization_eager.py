@@ -17,11 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import numpy as np
-import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio
+
+import pytest
 
 @pytest.fixture(name="fixture_lookup")
 def fixture_lookup_func(request):
@@ -87,50 +89,65 @@ def fixture_json():
 
   return data, value, specs
 
+
+@pytest.fixture(name="avro", scope="module")
+def fixture_avro():
+  """fixture_avro"""
+  avro_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "weather.avro")
+  with open(avro_path, "rb") as f:
+    data = f.read()
+  value = {
+      "station": tf.constant("011990-99999", tf.string),
+      "time": tf.constant(-619524000000, tf.int64),
+      "temp": tf.constant(0, tf.int32),
+  }
+  avsc_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "weather.avsc")
+  with open(avsc_path, "rb") as f:
+    specs = f.read()
+
+  return data, value, specs
+
 @pytest.mark.parametrize(
-    ("serialization_fixture", "decode_func", "encode_func"),
+    ("decode_fixture", "decode_function"),
     [
-        pytest.param(
-            "json",
-            tfio.experimental.serialization.decode_json,
-            #tfio.experimental.serialization.encode_json),
-            None),
+        pytest.param("json", tfio.experimental.serialization.decode_json),
+        pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
     ids=[
         "json",
+        "avro",
     ],
 )
-def test_serialization(
-      fixture_lookup, serialization_fixture, decode_func, encode_func):
+def test_serialization_decode(fixture_lookup, decode_fixture, decode_function):
   """test_serialization_decode"""
-  data, expected, specs = fixture_lookup(serialization_fixture)
+  data, expected, specs = fixture_lookup(decode_fixture)
 
-  value = decode_func(data, specs)
+  value = decode_function(data, specs)
   tf.nest.assert_same_structure(value, expected)
   assert all([
       np.array_equal(v, e) for v, e in zip(
           tf.nest.flatten(value), tf.nest.flatten(expected))])
 
 @pytest.mark.parametrize(
-    ("serialization_fixture", "decode_func", "encode_func"),
+    ("decode_fixture", "decode_function"),
     [
-        pytest.param(
-            "json",
-            tfio.experimental.serialization.decode_json,
-            #tfio.experimental.serialization.encode_json),
-            None),
+        pytest.param("json", tfio.experimental.serialization.decode_json),
     ],
     ids=[
         "json",
     ],
 )
-def test_serialization_in_dataset(
-    fixture_lookup, serialization_fixture, decode_func, encode_func):
+def test_serialization_decode_in_dataset(
+    fixture_lookup, decode_fixture, decode_function):
   """test_serialization_decode_in_dataset"""
-  data, expected, specs = fixture_lookup(serialization_fixture)
+  data, expected, specs = fixture_lookup(decode_fixture)
 
   dataset = tf.data.Dataset.from_tensor_slices([data, data])
-  dataset = dataset.map(lambda e: decode_func(e, specs))
+  dataset = dataset.map(lambda e: decode_function(e, specs))
   entries = list(dataset)
 
   assert len(entries) == 2
