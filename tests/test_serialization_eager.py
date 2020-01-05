@@ -88,40 +88,49 @@ def fixture_json():
   return data, value, specs
 
 @pytest.mark.parametrize(
-    ("decode_fixture", "decode_function"),
+    ("serialization_fixture", "decode_func", "encode_func"),
     [
-        pytest.param("json", tfio.experimental.serialization.decode_json),
+        pytest.param(
+            "json",
+            tfio.experimental.serialization.decode_json,
+            #tfio.experimental.serialization.encode_json),
+            None),
     ],
     ids=[
         "json",
     ],
 )
-def test_serialization_decode(fixture_lookup, decode_fixture, decode_function):
+def test_serialization(
+      fixture_lookup, serialization_fixture, decode_func, encode_func):
   """test_serialization_decode"""
-  data, expected, specs = fixture_lookup(decode_fixture)
+  data, expected, specs = fixture_lookup(serialization_fixture)
 
-  value = decode_function(data, specs)
+  value = decode_func(data, specs)
   tf.nest.assert_same_structure(value, expected)
   assert all([
       np.array_equal(v, e) for v, e in zip(
           tf.nest.flatten(value), tf.nest.flatten(expected))])
 
 @pytest.mark.parametrize(
-    ("decode_fixture", "decode_function"),
+    ("serialization_fixture", "decode_func", "encode_func"),
     [
-        pytest.param("json", tfio.experimental.serialization.decode_json),
+        pytest.param(
+            "json",
+            tfio.experimental.serialization.decode_json,
+            #tfio.experimental.serialization.encode_json),
+            None),
     ],
     ids=[
         "json",
     ],
 )
-def test_serialization_decode_in_dataset(
-    fixture_lookup, decode_fixture, decode_function):
+def test_serialization_in_dataset(
+    fixture_lookup, serialization_fixture, decode_func, encode_func):
   """test_serialization_decode_in_dataset"""
-  data, expected, specs = fixture_lookup(decode_fixture)
+  data, expected, specs = fixture_lookup(serialization_fixture)
 
   dataset = tf.data.Dataset.from_tensor_slices([data, data])
-  dataset = dataset.map(lambda e: decode_function(e, specs))
+  dataset = dataset.map(lambda e: decode_func(e, specs))
   entries = list(dataset)
 
   assert len(entries) == 2
