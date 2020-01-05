@@ -15,3 +15,4 @@
 """tensorflow_io.experimental.serialization"""
 
 from tensorflow_io.core.python.experimental.serialization_ops import decode_json # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.serialization_ops import decode_avro # pylint: disable=unused-import

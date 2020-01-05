@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -46,14 +48,14 @@ def named_spec(specs, name=''):
   return
 
 
-def decode_json(json, specs, name=None):
+def decode_json(data, specs, name=None):
   """
   Decode JSON string into Tensors.
 
   TODO: support batch (1-D) input
 
   Args:
-    json: A String Tensor. The JSON strings to decode.
+    data: A String Tensor. The JSON strings to decode.
     specs: A structured TensorSpecs describing the signature
       of the JSON elements.
     name: A name for the operation (optional).
@@ -69,5 +71,75 @@ def decode_json(json, specs, name=None):
   shapes = [e.shape for e in named]
   dtypes = [e.dtype for e in named]
 
-  values = core_ops.io_decode_json(json, names, shapes, dtypes, name=name)
+  values = core_ops.io_decode_json(data, names, shapes, dtypes, name=name)
+  return tf.nest.pack_sequence_as(specs, values)
+
+
+def process_primitive(data, name):
+  """process_primitive"""
+  if data == "boolean":
+    return tf.TensorSpec(tf.TensorShape([]), tf.bool, name)
+  elif data == "int":
+    return tf.TensorSpec(tf.TensorShape([]), tf.int32, name)
+  elif data == "long":
+    return tf.TensorSpec(tf.TensorShape([]), tf.int64, name)
+  elif data == "float":
+    return tf.TensorSpec(tf.TensorShape([]), tf.float32, name)
+  elif data == "double":
+    return tf.TensorSpec(tf.TensorShape([]), tf.float64, name)
+  assert data == "bytes" or data == "string"
+  return tf.TensorSpec(tf.TensorShape([]), tf.string, name)
+
+def process_record(data, name):
+  """process_record"""
+  return dict([(
+      v["name"],
+      process_entry(v, "{}/{}".format(name, v["name"]))
+  ) for v in data['fields']])
+
+def process_union(data, name):
+  """process_union"""
+  entries = [e for e in data["type"] if e != "null"]
+  assert len(entries) == 1
+  return process_primitive(entries[0], name)
+
+def process_entry(data, name):
+  """process_entry"""
+  if data["type"] == "record":
+    return process_record(data, name)
+  elif data["type"] == "enum":
+    assert False
+  elif data["type"] == "array":
+    assert False
+  elif data["type"] == "map":
+    assert False
+  elif data["type"] == "fixed":
+    assert False
+  elif isinstance(data["type"], list):
+    return process_union(data, name)
+  return process_primitive(data["type"], name)
+
+def decode_avro(data, schema, name=None):
+  """
+  Decode Avro string into Tensors.
+
+  TODO: support batch (1-D) input
+
+  Args:
+    data: A String Tensor. The Avro strings to decode.
+    schema: A string of the Avro schema.
+    name: A name for the operation (optional).
+
+  Returns:
+    A structured Tensors.
+  """
+  specs = process_entry(json.loads(schema), '')
+
+  entries = tf.nest.flatten(specs)
+  names = [e.name for e in entries]
+  shapes = [e.shape for e in entries]
+  dtypes = [e.dtype for e in entries]
+
+  values = core_ops.io_decode_avro_v(
+      data, names, schema, shapes, dtypes, name=name)
   return tf.nest.pack_sequence_as(specs, values)
