@@ -123,8 +123,6 @@ def decode_avro(data, schema, name=None):
   """
   Decode Avro string into Tensors.
 
-  TODO: support batch (1-D) input
-
   Args:
     data: A String Tensor. The Avro strings to decode.
     schema: A string of the Avro schema.

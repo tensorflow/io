@@ -19,13 +19,14 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import pytest
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_io as tfio # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
+
+import pytest
 
 def test_kafka_io_tensor():
   kafka = tfio.IOTensor.from_kafka("test")
@@ -95,17 +96,16 @@ def test_avro_kafka_dataset():
             '{"name":"f1","type":"string"},'
             '{"name":"f2","type":"long"},'
             '{"name":"f3","type":["null","string"],"default":null}'
-            ']}"')
+            ']}')
   dataset = kafka_io.KafkaDataset(
       ["avro-test:0"], group="avro-test", eof=True)
   # remove kafka framing
   dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
   # deserialize avro
   dataset = dataset.map(
-      lambda e: kafka_io.decode_avro(
-          e, schema=schema, dtype=[tf.string, tf.int64, tf.string]))
-  entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
-  np.all(entries == [('value1', 1), ('value2', 2), ('value3', 3)])
+      lambda e: tfio.experimental.serialization.decode_avro(e, schema=schema))
+  entries = [(e["f1"], e["f2"], e["f3"]) for e in dataset]
+  np.all(entries == [('value1', 1, ""), ('value2', 2, ""), ('value3', 3, "")])
 
 def test_avro_kafka_dataset_with_resource():
   """test_avro_kafka_dataset_with_resource"""
@@ -147,12 +147,11 @@ def test_kafka_io_dataset():
 def test_avro_encode_decode():
   """test_avro_encode_decode"""
   schema = ('{"type":"record","name":"myrecord","fields":'
-            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}"')
+            '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}')
   value = [('value1', 1), ('value2', 2), ('value3', 3)]
   f1 = tf.cast([v[0] for v in value], tf.string)
   f2 = tf.cast([v[1] for v in value], tf.int64)
-  message = kafka_io.encode_avro([f1, f2], schema=schema)
-  entries = kafka_io.decode_avro(
-      message, schema=schema, dtype=[tf.string, tf.int64])
-  assert np.all(entries[1].numpy() == f2.numpy())
-  assert np.all(entries[0].numpy() == f1.numpy())
+  message = tfio.experimental.serialization.encode_avro([f1, f2], schema=schema)
+  entries = tfio.experimental.serialization.decode_avro(message, schema=schema)
+  assert np.all(entries["f1"].numpy() == f1.numpy())
+  assert np.all(entries["f2"].numpy() == f2.numpy())

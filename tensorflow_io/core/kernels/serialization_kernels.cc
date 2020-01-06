@@ -147,7 +147,6 @@ class DecodeAvroOp : public OpKernel {
     // TODO: support batch (1-D) input
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
 
     const Tensor* names_tensor;
     OP_REQUIRES_OK(context, context->input("names", &names_tensor));
@@ -175,18 +174,21 @@ class DecodeAvroOp : public OpKernel {
     OP_REQUIRES(context, (avro::compileJsonSchema(ss, avro_schema, error)),
                 errors::Unimplemented("Avro schema error: ", error));
 
-    avro::GenericDatum datum(avro_schema);
-    const string& entry = input;
-    std::unique_ptr<avro::InputStream> in =
-        avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
+    for (int64 entry_index = 0; entry_index < context->input(0).NumElements();
+         entry_index++) {
+      avro::GenericDatum datum(avro_schema);
+      const string& entry = input_tensor->flat<string>()(entry_index);
+      std::unique_ptr<avro::InputStream> in =
+          avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
 
-    avro::DecoderPtr d = avro::binaryDecoder();
-    d->init(*in);
-    avro::decode(*d, datum);
-
-    OP_REQUIRES_OK(context, ProcessEntry(values, "", datum));
+      avro::DecoderPtr d = avro::binaryDecoder();
+      d->init(*in);
+      avro::decode(*d, datum);
+      OP_REQUIRES_OK(context, ProcessEntry(entry_index, values, "", datum));
+    }
   }
-  Status ProcessEntry(std::unordered_map<string, Tensor*>& values,
+  Status ProcessEntry(const int64 index,
+                      std::unordered_map<string, Tensor*>& values,
                       const string& name, const avro::GenericDatum& datum) {
     switch (datum.type()) {
       case avro::AVRO_BOOL:
@@ -198,9 +200,11 @@ class DecodeAvroOp : public OpKernel {
       case avro::AVRO_BYTES:
       case avro::AVRO_FIXED:
       case avro::AVRO_ENUM:
-        return ProcessPrimitive(values, name, datum);
+        return ProcessPrimitive(index, values, name, datum);
+      case avro::AVRO_NULL:
+        return ProcessNull(index, values, name, datum);
       case avro::AVRO_RECORD:
-        return ProcessRecord(values, name, datum);
+        return ProcessRecord(index, values, name, datum);
       default:
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
@@ -209,17 +213,19 @@ class DecodeAvroOp : public OpKernel {
     return Status::OK();
   }
 
-  Status ProcessRecord(std::unordered_map<string, Tensor*>& values,
+  Status ProcessRecord(const int64 index,
+                       std::unordered_map<string, Tensor*>& values,
                        const string& name, const avro::GenericDatum& datum) {
     const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
     for (size_t i = 0; i < record.fieldCount(); i++) {
       string entry = name + "/" + record.schema()->nameAt(i);
       const avro::GenericDatum& field = record.fieldAt(i);
-      TF_RETURN_IF_ERROR(ProcessEntry(values, entry, field));
+      TF_RETURN_IF_ERROR(ProcessEntry(index, values, entry, field));
     }
     return Status::OK();
   }
-  Status ProcessPrimitive(std::unordered_map<string, Tensor*>& values,
+  Status ProcessPrimitive(const int64 index,
+                          std::unordered_map<string, Tensor*>& values,
                           const string& name, const avro::GenericDatum& datum) {
     std::unordered_map<string, Tensor*>::const_iterator lookup =
         values.find(name);
@@ -229,55 +235,89 @@ class DecodeAvroOp : public OpKernel {
     Tensor* value_tensor = lookup->second;
     switch (datum.type()) {
       case avro::AVRO_BOOL:
-        value_tensor->scalar<bool>()() = datum.value<bool>();
+        value_tensor->flat<bool>()(index) = datum.value<bool>();
         break;
       case avro::AVRO_INT:
-        value_tensor->scalar<int32>()() = datum.value<int32_t>();
+        value_tensor->flat<int32>()(index) = datum.value<int32_t>();
         break;
       case avro::AVRO_LONG:
-        value_tensor->scalar<int64>()() = datum.value<int64_t>();
+        value_tensor->flat<int64>()(index) = datum.value<int64_t>();
         break;
       case avro::AVRO_FLOAT:
-        value_tensor->scalar<float>()() = datum.value<float>();
+        value_tensor->flat<float>()(index) = datum.value<float>();
         break;
       case avro::AVRO_DOUBLE:
-        value_tensor->scalar<double>()() = datum.value<double>();
+        value_tensor->flat<double>()(index) = datum.value<double>();
         break;
       case avro::AVRO_STRING: {
         // make a concrete explicit copy as otherwise avro may override the
         // underlying buffer.
         const string& datum_value = datum.value<string>();
-        value_tensor->scalar<string>()().resize(datum_value.size());
+        value_tensor->flat<string>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->scalar<string>()()[0], &datum_value[0],
+          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_BYTES: {
         const std::vector<uint8_t>& datum_value =
             datum.value<std::vector<uint8_t>>();
-        value_tensor->scalar<string>()().resize(datum_value.size());
+        value_tensor->flat<string>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->scalar<string>()()[0], &datum_value[0],
+          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_FIXED: {
         const std::vector<uint8_t>& datum_value =
             datum.value<avro::GenericFixed>().value();
-        value_tensor->scalar<string>()().resize(datum_value.size());
+        value_tensor->flat<string>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->scalar<string>()()[0], &datum_value[0],
+          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_ENUM:
-        value_tensor->scalar<string>()() =
+        value_tensor->flat<string>()(index) =
             datum.value<avro::GenericEnum>().symbol();
         break;
       default:
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
+    }
+    return Status::OK();
+  }
+  Status ProcessNull(const int64 index,
+                     std::unordered_map<string, Tensor*>& values,
+                     const string& name, const avro::GenericDatum& datum) {
+    std::unordered_map<string, Tensor*>::const_iterator lookup =
+        values.find(name);
+    if (lookup == values.end()) {
+      return errors::InvalidArgument("unable to find: ", name);
+    }
+    Tensor* value_tensor = lookup->second;
+    switch (value_tensor->dtype()) {
+      case DT_BOOL:
+        value_tensor->flat<bool>()(index) = false;
+        break;
+      case DT_INT32:
+        value_tensor->flat<int32>()(index) = 0;
+        break;
+      case DT_INT64:
+        value_tensor->flat<int64>()(index) = 0;
+        break;
+      case DT_FLOAT:
+        value_tensor->flat<float>()(index) = 0.0;
+        break;
+      case DT_DOUBLE:
+        value_tensor->flat<double>()(index) = 0;
+        break;
+      case DT_STRING:
+        value_tensor->flat<string>()(index) = "";
+        break;
+      default:
+        return errors::InvalidArgument("data type not supported: ",
+                                       value_tensor->dtype());
     }
     return Status::OK();
   }
@@ -334,14 +374,13 @@ class EncodeAvroOp : public OpKernel {
     Tensor* value_tensor = nullptr;
     OP_REQUIRES_OK(context, context->allocate_output(
                                 0, context->input(0).shape(), &value_tensor));
-
     for (int64 entry_index = 0; entry_index < context->input(0).NumElements();
          entry_index++) {
       std::ostringstream ss;
       std::unique_ptr<avro::OutputStream> o = avro::ostreamOutputStream(ss);
 
       avro::GenericDatum datum(avro_schema);
-      OP_REQUIRES_OK(context, ProcessEntry(values, "", datum));
+      OP_REQUIRES_OK(context, ProcessEntry(entry_index, values, "", datum));
 
       avro::EncoderPtr e = avro::binaryEncoder();
       e->init(*o);
@@ -351,7 +390,8 @@ class EncodeAvroOp : public OpKernel {
     }
   }
 
-  Status ProcessEntry(const std::unordered_map<string, const Tensor*>& values,
+  Status ProcessEntry(const int64 index,
+                      const std::unordered_map<string, const Tensor*>& values,
                       const string& name, avro::GenericDatum& datum) {
     switch (datum.type()) {
       case avro::AVRO_BOOL:
@@ -363,9 +403,9 @@ class EncodeAvroOp : public OpKernel {
       case avro::AVRO_BYTES:
       case avro::AVRO_FIXED:
       case avro::AVRO_ENUM:
-        return ProcessPrimitive(values, name, datum);
+        return ProcessPrimitive(index, values, name, datum);
       case avro::AVRO_RECORD:
-        return ProcessRecord(values, name, datum);
+        return ProcessRecord(index, values, name, datum);
       default:
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
@@ -374,17 +414,19 @@ class EncodeAvroOp : public OpKernel {
     return Status::OK();
   }
 
-  Status ProcessRecord(const std::unordered_map<string, const Tensor*>& values,
+  Status ProcessRecord(const int64 index,
+                       const std::unordered_map<string, const Tensor*>& values,
                        const string& name, avro::GenericDatum& datum) {
     avro::GenericRecord& record = datum.value<avro::GenericRecord>();
     for (size_t i = 0; i < record.fieldCount(); i++) {
       string entry = name + "/" + record.schema()->nameAt(i);
       avro::GenericDatum& field = record.fieldAt(i);
-      TF_RETURN_IF_ERROR(ProcessEntry(values, entry, field));
+      TF_RETURN_IF_ERROR(ProcessEntry(index, values, entry, field));
     }
     return Status::OK();
   }
   Status ProcessPrimitive(
+      const int64 index,
       const std::unordered_map<string, const Tensor*>& values,
       const string& name, avro::GenericDatum& datum) {
     std::unordered_map<string, const Tensor*>::const_iterator lookup =
@@ -396,24 +438,24 @@ class EncodeAvroOp : public OpKernel {
 
     switch (datum.type()) {
       case avro::AVRO_BOOL:
-        datum.value<bool>() = value_tensor->scalar<bool>()();
+        datum.value<bool>() = value_tensor->flat<bool>()(index);
         break;
       case avro::AVRO_INT:
-        datum.value<int32_t>() = value_tensor->scalar<int32>()();
+        datum.value<int32_t>() = value_tensor->flat<int32>()(index);
         break;
       case avro::AVRO_LONG:
-        datum.value<int64_t>() = value_tensor->scalar<int64>()();
+        datum.value<int64_t>() = value_tensor->flat<int64>()(index);
         break;
       case avro::AVRO_FLOAT:
-        datum.value<float>() = value_tensor->scalar<float>()();
+        datum.value<float>() = value_tensor->flat<float>()(index);
         break;
       case avro::AVRO_DOUBLE:
-        datum.value<double>() = value_tensor->scalar<double>()();
+        datum.value<double>() = value_tensor->flat<double>()(index);
         break;
       case avro::AVRO_STRING: {
         // make a concrete explicit copy as otherwise avro may override the
         // underlying buffer.
-        const string& datum_value = value_tensor->scalar<string>()();
+        const string& datum_value = value_tensor->flat<string>()(index);
         datum.value<string>().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<string>()[0], &datum_value[0],
@@ -421,7 +463,7 @@ class EncodeAvroOp : public OpKernel {
         }
       } break;
       case avro::AVRO_BYTES: {
-        const string& datum_value = value_tensor->scalar<string>()();
+        const string& datum_value = value_tensor->flat<string>()(index);
         datum.value<std::vector<uint8_t>>().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<std::vector<uint8_t>>()[0], &datum_value[0],
@@ -429,7 +471,7 @@ class EncodeAvroOp : public OpKernel {
         }
       } break;
       case avro::AVRO_FIXED: {
-        const string& datum_value = value_tensor->scalar<string>()();
+        const string& datum_value = value_tensor->flat<string>()(index);
         datum.value<avro::GenericFixed>().value().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<avro::GenericFixed>().value()[0], &datum_value[0],
@@ -437,7 +479,8 @@ class EncodeAvroOp : public OpKernel {
         }
       } break;
       case avro::AVRO_ENUM:
-        datum.value<avro::GenericEnum>().set(value_tensor->scalar<string>()());
+        datum.value<avro::GenericEnum>().set(
+            value_tensor->flat<string>()(index));
         break;
       default:
         return errors::InvalidArgument("data type not supported: ",

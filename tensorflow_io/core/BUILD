@@ -377,8 +377,8 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@rapidjson",
         "@avro",
+        "@rapidjson",
     ],
     alwayslink = 1,
 )
