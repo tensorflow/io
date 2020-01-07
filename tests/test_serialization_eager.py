@@ -148,7 +148,7 @@ def test_serialization_decode(
 def test_serialization_encode(
     fixture_lookup, serialization_fixture, encode_function, decode_function):
   """test_serialization_encode"""
-  data, value, specs = fixture_lookup(serialization_fixture)
+  _, value, specs = fixture_lookup(serialization_fixture)
 
   returned = encode_function(value, specs)
   returned = decode_function(returned, specs)
