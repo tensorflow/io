@@ -102,7 +102,7 @@ def main(argv):
         code_url_prefix=code_url_prefix,
         private_map={'tfio': ['__version__', 'utils', 'version', 'core']},
         # This callback cleans up a lot of aliases caused by internal imports.
-        callbacks=[public_api.local_definitions_filter],
+        callbacks=[],
         search_hints=FLAGS.search_hints,
         site_path=FLAGS.site_path)
 
