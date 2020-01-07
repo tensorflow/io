@@ -495,10 +495,8 @@ class EncodeAvroOp : public OpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeJSON").Device(DEVICE_CPU), DecodeJSONOp);
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvroV").Device(DEVICE_CPU),
-                        DecodeAvroOp);
-REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvroV").Device(DEVICE_CPU),
-                        EncodeAvroOp);
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU), DecodeAvroOp);
+REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvro").Device(DEVICE_CPU), EncodeAvroOp);
 
 }  // namespace
 }  // namespace data

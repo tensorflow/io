@@ -131,6 +131,7 @@ def decode_avro(data, schema, name=None):
   Returns:
     A structured Tensors.
   """
+  # TODO: Use resource to reuse schema initialization
   specs = process_entry(json.loads(schema), '')
 
   entries = tf.nest.flatten(specs)
@@ -138,7 +139,7 @@ def decode_avro(data, schema, name=None):
   shapes = [e.shape for e in entries]
   dtypes = [e.dtype for e in entries]
 
-  values = core_ops.io_decode_avro_v(
+  values = core_ops.io_decode_avro(
       data, names, schema, shapes, dtypes, name=name)
   return tf.nest.pack_sequence_as(specs, values)
 
@@ -154,6 +155,7 @@ def encode_avro(data, schema, name=None):
   Returns:
     An Avro-encoded string Tensor.
   """
+  # TODO: Use resource to reuse schema initialization
   specs = process_entry(json.loads(schema), '')
 
   entries = tf.nest.flatten(specs)
@@ -161,6 +163,6 @@ def encode_avro(data, schema, name=None):
 
   data = tf.nest.flatten(data)
 
-  values = core_ops.io_encode_avro_v(
+  values = core_ops.io_encode_avro(
       data, names, schema, name=name)
   return values

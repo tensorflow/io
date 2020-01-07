@@ -47,7 +47,7 @@ REGISTER_OP("IO>DecodeJSON")
       return Status::OK();
     });
 
-REGISTER_OP("IO>DecodeAvroV")
+REGISTER_OP("IO>DecodeAvro")
     .Input("input: string")
     .Input("names: string")
     .Input("schema: string")
@@ -74,7 +74,7 @@ REGISTER_OP("IO>DecodeAvroV")
       return Status::OK();
     });
 
-REGISTER_OP("IO>EncodeAvroV")
+REGISTER_OP("IO>EncodeAvro")
     .Input("input: dtype")
     .Input("names: string")
     .Input("schema: string")

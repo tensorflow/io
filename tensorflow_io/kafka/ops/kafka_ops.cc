@@ -19,7 +19,7 @@ limitations under the License.
 
 namespace tensorflow {
 
-REGISTER_OP("IO>EncodeAvro")
+REGISTER_OP("IO>KafkaEncodeAvro")
   .Input("input: dtype")
   .Output("string: string")
   .Attr("schema: string")
@@ -29,7 +29,7 @@ REGISTER_OP("IO>EncodeAvro")
     return Status::OK();
    });
 
-REGISTER_OP("IO>DecodeAvroInit")
+REGISTER_OP("IO>KafkaDecodeAvroInit")
   .Input("input: string")
   .Output("resource: resource")
   .Attr("container: string = ''")
@@ -39,7 +39,7 @@ REGISTER_OP("IO>DecodeAvroInit")
     return Status::OK();
    });
 
-REGISTER_OP("IO>DecodeAvro")
+REGISTER_OP("IO>KafkaDecodeAvro")
   .Input("input: string")
   .Input("schema: T")
   .Output("value: dtype")
