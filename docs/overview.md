@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/tensorflow/community/blob/master/sigs/logos/SIGIO.png" width="60%"><br><br>
+  <img src="https://tensorflow.org/images/SIGIO.png" width="60%"><br><br>
 </div>
 
 -----------------
