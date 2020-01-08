@@ -30,10 +30,10 @@ from __future__ import print_function
 import collections
 from operator import itemgetter
 
-from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import tensor_spec
+from tensorflow.python.util import deprecation
 from tensorflow_io.core.python.ops import core_ops
 
 
@@ -179,7 +179,13 @@ class BigQueryReadSession(object):
     return _BigQueryDataset(self._client_resource, self._selected_fields,
                             self._output_types, self._avro_schema, stream)
 
-  def parallel_read_rows(self, cycle_length=None, sloppy=False, block_length=1):
+  @deprecation.deprecated_args(
+      None,
+      "If sloppy execution is desired,"
+      "use `tf.data.Options.experimental_deterministic`.",
+      'sloppy')
+  def parallel_read_rows(self, cycle_length=None, sloppy=False, block_length=1,
+                         num_parallel_calls=None):
     """Retrieves rows from the BigQuery service in parallel streams.
 
     ```
@@ -190,11 +196,21 @@ class BigQueryReadSession(object):
     Args:
       cycle_length: number of threads to run in parallel. If not specified, it
         is defaulted to the number of streams in a read session.
-      sloppy: If false, elements are produced in deterministic order. Otherwise,
+      sloppy: If false, elements are produced in deterministic order. If true,
         the implementation is allowed, for the sake of expediency, to produce
-        elements in a non-deterministic order.
+        elements in a non-deterministic order. Otherwise, whether the order is
+        deterministic or non-deterministic depends on the
+        `tf.data.Options.experimental_deterministic` value.
       block_length: The number of consecutive elements to pull from an input
         `Dataset` before advancing to the next input `Dataset`.
+      block_length: The number of consecutive elements to pull from an input
+        `Dataset` before advancing to the next input `Dataset`.
+      num_parallel_calls: If specified, the implementation creates a threadpool,
+        which is used to fetch inputs from cycle elements asynchronously and in
+        parallel. The default behavior is to fetch inputs from cycle elements
+        synchronously with no parallelism.
+        If the value `tf.data.experimental.AUTOTUNE` is used, then the number of
+        parallel calls is set dynamically based on available CPU.
 
     Returns:
       A `tf.data.Dataset` returning the row keys and the cell contents.
@@ -206,12 +222,19 @@ class BigQueryReadSession(object):
     if cycle_length is None:
       cycle_length = self._requested_streams
     streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
-    return streams_ds.apply(
-        interleave_ops.parallel_interleave(
-            self.read_rows,
-            cycle_length=cycle_length,
-            sloppy=sloppy,
-            block_length=block_length))
+    option = streams_ds.options()
+    if sloppy is True:
+      option.experimental_deterministic = False
+      streams_ds = streams_ds.with_options(option)
+    elif sloppy is False:
+      option.experimental_deterministic = True
+      streams_ds = streams_ds.with_options(option)
+
+    return streams_ds.interleave(
+        map_func=self.read_rows,
+        cycle_length=cycle_length,
+        block_length=block_length,
+        num_parallel_calls=num_parallel_calls)
 
 
 class _BigQueryDataset(dataset_ops.DatasetSource):
