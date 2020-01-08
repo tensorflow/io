@@ -1,0 +1,18 @@
+FROM docker.artifactory-test.corp.linkedin.com/tensorflow/tensorflow-builder:0.0.1 AS build
+# create a python3.7 virtual environment
+ENV VIRTUAL_ENV=/venv
+RUN python3.7 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# ARG PIP_ADD_PACKAGES=""
+ARG ARROW_VERSION=0.14.1
+RUN python -m pip install \
+    avro-python3 \
+    pytest \
+    pylint \
+    boto3 \
+    google-cloud-pubsub==0.39.1 \
+    pyarrow==${ARROW_VERSION} \
+    pandas \
+    fastavro \
+    gast==0.2.2
+ENV TFIO_DATAPATH=bazel-bin
