@@ -132,7 +132,7 @@ def decode_avro(data, schema, name=None):
     A structured Tensors.
   """
   # TODO: Use resource to reuse schema initialization
-  specs = process_entry(json.loads(schema), '')
+  specs = process_entry(json.loads(schema.decode()), '')
 
   entries = tf.nest.flatten(specs)
   names = [e.name for e in entries]
@@ -156,7 +156,7 @@ def encode_avro(data, schema, name=None):
     An Avro-encoded string Tensor.
   """
   # TODO: Use resource to reuse schema initialization
-  specs = process_entry(json.loads(schema), '')
+  specs = process_entry(json.loads(schema.decode()), '')
 
   entries = tf.nest.flatten(specs)
   names = [e.name for e in entries]
