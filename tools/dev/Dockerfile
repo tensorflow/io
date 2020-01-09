@@ -1,8 +1,7 @@
-#FROM tensorflow/tensorflow:custom-op-ubuntu16
-FROM docker.artifactory-test.corp.linkedin.com/tensorflow/tensorflow-builder:0.0.1
+FROM tensorflow/tensorflow:custom-op-ubuntu16
 
-RUN yum update && \
-    yum install -y \
+RUN rm /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-get update && \
+    apt-get install -y \
     git \
     gcc \
     g++ \
