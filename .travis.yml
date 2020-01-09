@@ -69,7 +69,7 @@ jobs:
     script:
     - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    after_success: bash -x -e .travis/after-success.sh
+    #after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
     name: "Nightly Release Build on macOS 2.7.13"
@@ -79,8 +79,8 @@ jobs:
     - for i in `seq 1 50`; do echo status update $i ; sleep 60; done &
     - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - bash -x -e .travis/wheel.test.sh
-    after_success: bash -x -e .travis/after-success.sh
+    #- bash -x -e .travis/wheel.test.sh
+    #after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
     name: "Nightly Release Build on macOS 3.5.3"
@@ -90,8 +90,8 @@ jobs:
     - for i in `seq 1 50`; do echo status update $i ; sleep 60; done &
     - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - bash -x -e .travis/wheel.test.sh
-    after_success: bash -x -e .travis/after-success.sh
+    #- bash -x -e .travis/wheel.test.sh
+    #after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
     name: "Nightly Release Build on macOS 3.6.2"
@@ -101,8 +101,8 @@ jobs:
     - for i in `seq 1 50`; do echo status update $i ; sleep 60; done &
     - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - bash -x -e .travis/wheel.test.sh
-    after_success: bash -x -e .travis/after-success.sh
+    #- bash -x -e .travis/wheel.test.sh
+    #after_success: bash -x -e .travis/after-success.sh
 
   - stage: build
     name: "Nightly Release Build on macOS 3.7.0"
@@ -112,8 +112,8 @@ jobs:
     - for i in `seq 1 50`; do echo status update $i ; sleep 60; done &
     - export BAZEL_CPU_OPTIMIZATION=yes
     - bash -x -e .travis/python.release.sh --nightly ${TRAVIS_BUILD_NUMBER}
-    - bash -x -e .travis/wheel.test.sh
-    after_success: bash -x -e .travis/after-success.sh
+    #- bash -x -e .travis/wheel.test.sh
+    #after_success: bash -x -e .travis/after-success.sh
 
 notifications:
 - email: false
