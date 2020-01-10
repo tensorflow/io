@@ -455,6 +455,52 @@ def fixture_numpy_structure():
 
   return args, func, expected
 
+@pytest.fixture(name="numpy_file_tuple")
+def fixture_numpy_file_tuple(request):
+  """fixture_numpy_file_tuple"""
+
+  d1 = [[i, i+1, i+2] for i in range(0, 5000)]
+  d2 = [[i+2, i+1, i] for i in range(0, 5000)]
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "numpy_file.npz")
+
+  np.savez(filename, np.asarray(d1), np.asarray(d2))
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  args = filename
+  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  expected = list(zip(d1, d2))
+
+  return args, func, expected
+
+@pytest.fixture(name="numpy_file_dict")
+def fixture_numpy_file_dict(request):
+  """fixture_numpy_file_dict"""
+
+  d1 = [[i, i+1, i+2] for i in range(0, 5000)]
+  d2 = [[i+2, i+1, i] for i in range(0, 5000)]
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "numpy_file.npz")
+
+  np.savez(filename, d2=np.asarray(d2), d1=np.asarray(d1))
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  args = filename
+  def func(f):
+    dataset = tfio.experimental.IODataset.from_numpy(f)
+    dataset = dataset.map(lambda e: (e['d1'], e['d2']))
+    return dataset
+  expected = list(zip(d1, d2))
+
+  return args, func, expected
 
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
@@ -498,6 +544,8 @@ def fixture_numpy_structure():
         pytest.param("grpc"),
         pytest.param("numpy"),
         pytest.param("numpy_structure"),
+        pytest.param("numpy_file_tuple"),
+        pytest.param("numpy_file_dict"),
     ],
     ids=[
         "mnist",
@@ -515,6 +563,8 @@ def fixture_numpy_structure():
         "grpc",
         "numpy",
         "numpy[structure]",
+        "numpy[file/tuple]",
+        "numpy[file/dict]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -563,6 +613,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param("grpc"),
         pytest.param("numpy"),
         pytest.param("numpy_structure"),
+        pytest.param("numpy_file_tuple"),
+        pytest.param("numpy_file_dict"),
     ],
     ids=[
         "mnist",
@@ -578,6 +630,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "grpc",
         "numpy",
         "numpy[structure]",
+        "numpy[file/tuple]",
+        "numpy[file/dict]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -639,6 +693,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("grpc"),
         pytest.param("numpy"),
         pytest.param("numpy_structure"),
+        pytest.param("numpy_file_tuple"),
+        pytest.param("numpy_file_dict"),
     ],
     ids=[
         "mnist",
@@ -653,6 +709,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "grpc",
         "numpy",
         "numpy[structure]",
+        "numpy[file/tuple]",
+        "numpy[file/dict]",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
@@ -809,6 +867,8 @@ def test_io_dataset_in_dataset_parallel(
         pytest.param("hdf5"),
         pytest.param("numpy"),
         pytest.param("numpy_structure"),
+        pytest.param("numpy_file_tuple"),
+        pytest.param("numpy_file_dict"),
     ],
     ids=[
         "mnist",
@@ -821,6 +881,8 @@ def test_io_dataset_in_dataset_parallel(
         "hdf5",
         "numpy",
         "numpy[structure]",
+        "numpy[file/tuple]",
+        "numpy[file/dict]",
     ],
 )
 def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):

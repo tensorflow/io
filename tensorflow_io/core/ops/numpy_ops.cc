@@ -23,13 +23,13 @@ namespace {
 
 REGISTER_OP("IO>NumpyInfo")
     .Input("filename: string")
-    .Output("arrays: string")
-    .Output("dtypes: string")
-    .Output("shapes: int64")
+    .Output("array: string")
+    .Output("shape: int64")
+    .Output("dtype: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      c->set_output(2, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
 

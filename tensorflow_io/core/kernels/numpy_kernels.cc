@@ -295,8 +295,8 @@ class NumpyInfoOp : public OpKernel {
     OP_REQUIRES_OK(context, env_->NewRandomAccessFile(filename, &file));
 
     std::vector<string> arrays;
-    std::vector<string> dtypes;
     std::vector<std::vector<int64>> shapes;
+    std::vector<int64> dtypes;
 
     struct zlib_fileopaque64_def fileopaque;
     fileopaque.offset = 0;
@@ -322,8 +322,8 @@ class NumpyInfoOp : public OpKernel {
       std::vector<int64> shape;
       OP_REQUIRES_OK(context, ParseNumpyHeader(&stream, &dtype, &shape));
       arrays.push_back("");
-      dtypes.push_back(::tensorflow::DataTypeString(dtype));
       shapes.push_back(shape);
+      dtypes.push_back(dtype);
     } else {
       unz_global_info64 gi;
       int err = unzGetGlobalInfo64(uf, &gi);
@@ -360,8 +360,8 @@ class NumpyInfoOp : public OpKernel {
         std::vector<int64> shape;
         OP_REQUIRES_OK(context, ParseNumpyHeader(&stream, &dtype, &shape));
         arrays.push_back(filename_inzip);
-        dtypes.push_back(::tensorflow::DataTypeString(dtype));
         shapes.push_back(shape);
+        dtypes.push_back(dtype);
 
         if ((i + 1) < gi.number_entry) {
           err = unzGoToNextFile(uf);
@@ -375,33 +375,34 @@ class NumpyInfoOp : public OpKernel {
 
     TensorShape output_shape = filename_tensor.shape();
     output_shape.AddDim(arrays.size());
-
-    Tensor* arrays_tensor;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(0, output_shape, &arrays_tensor));
-    Tensor* dtypes_tensor;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(1, output_shape, &dtypes_tensor));
-
+    TensorShape shapes_shape = output_shape;
     size_t maxrank = 0;
     for (size_t i = 0; i < shapes.size(); i++) {
       maxrank = maxrank > shapes[i].size() ? maxrank : shapes[i].size();
     }
-    output_shape.AddDim(maxrank);
+    shapes_shape.AddDim(maxrank);
+
+    Tensor* arrays_tensor;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(0, output_shape, &arrays_tensor));
 
     Tensor* shapes_tensor;
     OP_REQUIRES_OK(context,
-                   context->allocate_output(2, output_shape, &shapes_tensor));
+                   context->allocate_output(1, shapes_shape, &shapes_tensor));
+
+    Tensor* dtypes_tensor;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(2, output_shape, &dtypes_tensor));
 
     for (size_t i = 0; i < arrays.size(); i++) {
       arrays_tensor->flat<string>()(i) = arrays[i];
-      dtypes_tensor->flat<string>()(i) = dtypes[i];
       for (size_t j = 0; j < shapes[i].size(); j++) {
         shapes_tensor->flat<int64>()(i * maxrank + j) = shapes[i][j];
       }
       for (size_t j = shapes[i].size(); j < maxrank; j++) {
         shapes_tensor->flat<int64>()(i * maxrank + j) = -1;
       }
+      dtypes_tensor->flat<int64>()(i) = dtypes[i];
     }
   }
 
