@@ -8,6 +8,7 @@
 
 [![PyPI Status Badge](https://badge.fury.io/py/tensorflow-io.svg)](https://pypi.org/project/tensorflow-io/)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/tfio)](https://cran.r-project.org/package=tfio)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.tensorflow.org/io)
 
 TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support. A full list of supported file systems
