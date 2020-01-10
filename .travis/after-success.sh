@@ -16,7 +16,7 @@
 
 if [[ ( ${TRAVIS_BRANCH} == "master" ) && ( ${TRAVIS_EVENT_TYPE} != "pull_request" ) ]]; then
 
-  twine upload wheelhouse/tensorflow_io_nightly-*.whl
+  # twine upload wheelhouse/tensorflow_io_nightly-*.whl
 
   for entry in wheelhouse/tensorflow_io-*.whl ; do
     if [[ $(uname) == "Darwin" ]]; then
