@@ -9,27 +9,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow_io/avro/utils/value_buffer.h"
+#include "tensorflow_io/core/utils/avro/value_buffer.h"
 
 namespace tensorflow {
 namespace data {
 
 // Implementation of the shape builder
-ShapeBuilder::ShapeBuilder() : element_counter_(0), has_begin(false) {}
+ShapeBuilder::ShapeBuilder() : element_counter_(0), has_begin_(false) {}
 
 void ShapeBuilder::BeginMark() {
   element_info_.push_back(kBeginMark);
-  has_begin = true;
+  has_begin_ = true;
 }
 
 void ShapeBuilder::FinishMark() {
   // Only put the element count if there was a beginning, necessary for nested dimensions
-  if (has_begin) {
+  if (has_begin_) {
     element_info_.push_back(element_counter_);
     element_counter_ = 0;
   }
   element_info_.push_back(kFinishMark);
-  has_begin = false;
+  has_begin_ = false;
 }
 
 void ShapeBuilder::Increment() {
@@ -279,6 +279,53 @@ std::vector<size_t> ShapeBuilder::CumulativeProductOfDimensionsWithOneAtEnd(
   }
 
   return dims;
+}
+
+void ShapeBuilder::Merge(const ShapeBuilder& other) {
+  size_t n_dim(GetNumberOfDimensions());
+  // if this one is empty -- initial condition -- copy info
+  if (n_dim == 0) {
+    element_info_ = other.element_info_;
+    element_counter_ = 0;
+    has_begin_ = false;
+  } else if (n_dim == 1) {
+    // if both are scalar, then add counts
+    element_info_[1] += other.element_info_[1];
+  } else {
+    // remove 1 finish mark
+    element_info_.erase(element_info_.end()-1, element_info_.end());
+    // skip 1 begin mark when copying the other
+    element_info_.insert(element_info_.end(),
+                         other.element_info_.begin()+1, other.element_info_.end());
+  }
+}
+
+Status MergeAs(ValueStoreUniquePtr& merged,
+  const std::vector<ValueStoreUniquePtr>& buffers, DataType dtype) {
+  switch (dtype) {
+    case DT_FLOAT:
+      merged.reset(new FloatValueBuffer(buffers));
+      break;
+    case DT_DOUBLE:
+      merged.reset(new DoubleValueBuffer(buffers));
+      break;
+    case DT_INT64:
+      merged.reset(new LongValueBuffer(buffers));
+      break;
+    case DT_INT32:
+      merged.reset(new IntValueBuffer(buffers));
+      break;
+    case DT_BOOL:
+      merged.reset(new BoolValueBuffer(buffers));
+      break;
+    case DT_STRING:
+      merged.reset(new StringValueBuffer(buffers));
+      break;
+    default:
+      return errors::InvalidArgument("Received invalid type: ", DataTypeString(dtype));
+  }
+
+  return Status::OK();
 }
 
 }  // namespace data

@@ -16,8 +16,194 @@ limitations under the License.
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
+#include "tensorflow_io/core/utils/avro/parse_avro_attrs.h"
 
 namespace tensorflow {
+
+using ::tensorflow::shape_inference::ShapeHandle;
+
+// Copied verbatim from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
+// since this is not exposed publicly
+// Adds output shapes for dense tensors in Parse*Example ops.
+template <typename TensorShapeType>  // TensorShape or PartialTensorShape
+Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
+                            const ShapeHandle& prefix, shape_inference::InferenceContext* c,
+                            int* output_idx) {
+  for (const auto& dense_shape : dense_shapes) {
+    ShapeHandle s;
+    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(dense_shape, &s));
+    TF_RETURN_IF_ERROR(c->Concatenate(prefix, s, &s));
+    c->set_output((*output_idx)++, s);
+  }
+  return Status::OK();
+}
+
+// Copied verbatim from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
+// since this is not exposed publicly
+// Adds output shapes for sparse tensors in Parse*Example ops.
+void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
+                           int64 rank_delta, shape_inference::InferenceContext* c,
+                           int* output_idx) {
+  // Rank of SparseTensor is rank of input tensor plus rank_delta.
+  shape_inference::DimensionOrConstant rank(c->UnknownDim());
+  if (c->RankKnown(input_shape)) {
+    rank = c->Rank(input_shape) + rank_delta;
+  }
+  for (int i = 0; i < num_sparse; ++i) {  // sparse_indices
+    c->set_output((*output_idx)++, c->Matrix(c->UnknownDim(), rank));
+  }
+  for (int i = 0; i < num_sparse; ++i) {  // sparse_values
+    c->set_output((*output_idx)++, c->Vector(c->UnknownDim()));
+  }
+  for (int i = 0; i < num_sparse; ++i) {  // sparse_dense_shapes
+    c->set_output((*output_idx)++, c->Vector(rank));
+  }
+}
+
+// Adjusted from ParseExample and ParseExampleV2 here
+// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
+REGISTER_OP("IO>ParseAvro")
+    .Input("serialized: string")
+    .Input("reader_schema: string")
+    .Input("names: string")
+    .Input("sparse_keys: num_sparse * string")
+    .Input("dense_keys: num_dense * string")
+    .Input("dense_defaults: dense_types")
+    .Output("sparse_indices: num_sparse * int64")
+    .Output("sparse_values: sparse_types")
+    .Output("sparse_shapes: num_sparse * int64")
+    .Output("dense_values: dense_types")
+    .Attr("num_sparse: int >= 0")  // Inferred from sparse_keys
+    .Attr("num_dense: int >= 0")   // Inferred from dense_keys
+    .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("dense_shapes: list(shape) >= 0")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+
+      int64 num_dense;
+      int64 num_sparse;
+      std::vector<DataType> sparse_types;
+      std::vector<DataType> dense_types;
+      std::vector<PartialTensorShape> dense_shapes;
+
+      TF_RETURN_IF_ERROR(c->GetAttr("sparse_types", &sparse_types));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_types", &dense_types));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
+
+      num_dense = dense_types.size();
+      num_sparse = sparse_types.size();
+
+      // Add input checking
+      if (static_cast<size_t>(num_dense) != dense_shapes.size()) {
+        return errors::InvalidArgument("len(dense_keys) != len(dense_shapes)");
+      }
+      if (num_dense > std::numeric_limits<int32>::max()) {
+        return errors::InvalidArgument("num_dense too large");
+      }
+      for (const DataType& type : dense_types) {
+        TF_RETURN_IF_ERROR(data::CheckValidType(type));
+      }
+      for (const DataType& type : sparse_types) {
+        TF_RETURN_IF_ERROR(data::CheckValidType(type));
+      }
+
+      // Log schema if the user provided one at op kernel construction
+/*      string schema;
+      TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &schema));
+      if (schema.empty()) {
+        return errors::InvalidArgument("must provide non empty reader_schema");
+      }*/
+
+      ShapeHandle input;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &input));
+      ShapeHandle names;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &names));
+
+      int output_idx = 0;
+      AddSparseOutputShapes(num_sparse, input, 1, c, &output_idx);
+      TF_RETURN_IF_ERROR(
+          AddDenseOutputShapes(dense_shapes, input, c, &output_idx));
+      return Status::OK();
+    });
+
+// Adjusted from TFRecordDataset here
+// https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/core/ops/dataset_ops.cc
+REGISTER_OP("IO>AvroRecordDataset")
+    .Input("filenames: string")
+    .Input("buffer_size: int64")
+    .Input("reader_schema: string")
+    .Output("handle: variant")
+    .SetIsStateful()  // TODO(b/123753214): Source dataset ops must be marked
+                      // stateful to inhibit constant folding.
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      VLOG(4) << "Create avro record dataset";
+      // `filenames` must be a scalar or a vector
+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(0), 1, &unused));
+      // `buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      // `reader_schema` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      return shape_inference::ScalarShape(c);
+    });
+
+REGISTER_OP("IO>AvroDataset")
+    .Input("filenames: string")
+    .Input("batch_size: int64")
+    .Input("drop_remainder: bool")
+    .Input("dense_defaults: dense_types")
+    .Input("input_stream_buffer_size: int64")
+    .Input("avro_data_buffer_size: int64")
+    .Output("handle: variant")
+    .Attr("reader_schema: string")
+    .Attr("sparse_keys: list(string) >= 0")
+    .Attr("dense_keys: list(string) >= 0")
+    .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("dense_shapes: list(shape) >= 0")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+                                              // Output components will be
+                                              // sorted by key (dense_keys and
+                                              // sparse_keys combined) here.
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      int64 num_dense;
+      std::vector<DataType> sparse_types;
+      std::vector<DataType> dense_types;
+      std::vector<PartialTensorShape> dense_shapes;
+
+      TF_RETURN_IF_ERROR(c->GetAttr("sparse_types", &sparse_types));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_types", &dense_types));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
+
+      num_dense = dense_types.size();
+
+      // Add input checking
+      if (static_cast<size_t>(num_dense) != dense_shapes.size()) {
+        return errors::InvalidArgument("len(dense_keys) != len(dense_shapes)");
+      }
+      if (num_dense > std::numeric_limits<int32>::max()) {
+        return errors::InvalidArgument("num_dense_ too large");
+      }
+      for (const DataType& type : dense_types) {
+        TF_RETURN_IF_ERROR(data::CheckValidType(type));
+      }
+      for (const DataType& type : sparse_types) {
+        TF_RETURN_IF_ERROR(data::CheckValidType(type));
+      }
+
+      // Log schema if the user provided one at op kernel construction
+      string schema;
+      TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &schema));
+      if (schema.size()) {
+        VLOG(4) << "Avro parser for reader schema\n" << schema;
+      } else {
+        VLOG(4) << "Avro parser with default schema";
+      }
+
+      return shape_inference::ScalarShape(c);
+    });
 
 REGISTER_OP("IO>ListAvroColumns")
     .Input("filename: string")

@@ -16,11 +16,15 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow_io/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/utils/avro/avro_parser_tree.h"
 
 
 namespace tensorflow {
 namespace data {
+
+/* static */ constexpr const char* const AvroParserTree::kArrayAllElements;
+/* static */ constexpr const char* const AvroParserTree::kDefaultNamespace;
+
 
 // TODO(fraudies): Change log level from INFO to DEBUG for most items
 Status AvroParserTree::ParseValues(
@@ -28,7 +32,7 @@ Status AvroParserTree::ParseValues(
   const std::function<bool(avro::GenericDatum&)> read_value,
   const avro::ValidSchema& reader_schema,
   uint64 values_to_parse,
-  uint64* values_parsed) {
+  uint64* values_parsed) const {
 
   // See if we have any data in this batch
   avro::GenericDatum datum(reader_schema);
@@ -76,6 +80,30 @@ Status AvroParserTree::ParseValues(
   return Status::OK();
 }
 
+Status AvroParserTree::ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
+  const std::function<bool(avro::GenericDatum&)> read_value,
+  const avro::ValidSchema& reader_schema) const {
+
+  // new assignment of all buffers
+  TF_RETURN_IF_ERROR(InitializeValueBuffers(key_to_value));
+
+  // add being marks to all buffers for batch
+  TF_RETURN_IF_ERROR(AddBeginMarks(key_to_value));
+
+  avro::GenericDatum datum(reader_schema);
+
+  bool has_value = false;
+
+  while ((has_value = read_value(datum))) {
+      TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+  }
+
+  // add end marks to all buffers for batch
+  TF_RETURN_IF_ERROR(AddFinishMarks(key_to_value));
+
+  return Status::OK();
+}
+
 Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_namespace,
     const std::vector<KeyWithType>& keys_and_types) {
 
@@ -96,6 +124,8 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
   // Parse keys into prefixes and build map from key to type
   std::vector< std::vector<string> > prefixes;
   for (const KeyWithType& key_and_type : ordered_keys_and_types) {
+
+    VLOG(7) << "Add key prefix: " << key_and_type.first;
 
     // Built prefixes
     std::vector<string> key_prefixes = GetPartsWithoutAvroNamespace(key_and_type.first,
@@ -121,6 +151,11 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_nam
   TF_RETURN_IF_ERROR((*parser_tree).Build(
     (*parser_tree).root_.get(),
     (*prefix_tree.GetRoot()).GetChildren()));
+
+  // Note, we can initialize only after we built the entire parser tree
+  // Why? Because this will determine the final descendents for each
+  // node in the tree
+  (*parser_tree).Initialize();
 
   VLOG(7) << "Parser tree \n" << (*parser_tree).ToString();
 
@@ -171,6 +206,21 @@ Status AvroParserTree::Build(AvroParser* parent, const std::vector<PrefixTreeNod
     (*parent).AddChild(std::move(avro_parser));
   }
   return Status::OK();
+}
+
+void AvroParserTree::Initialize() {
+  // Compute final descendents for each node
+  std::queue<AvroParserSharedPtr> nodes;
+  nodes.push(root_);
+  while (!nodes.empty()) {
+    AvroParserSharedPtr node = nodes.front();
+    nodes.pop();
+    node->ComputeFinalDescendents();
+    const std::vector<AvroParserSharedPtr>& children = node->GetChildren();
+    for (const auto& child : children) {
+      nodes.push(child);
+    }
+  }
 }
 
 Status AvroParserTree::ValidateUniqueKeys(
@@ -224,7 +274,6 @@ std::vector<KeyWithType> AvroParserTree::OrderAndResolveKeyTypes(
   for (const KeyWithType& key_type : key_types) {
 
     const string& user_name = key_type.first;
-    DataType data_type = key_type.second;
 
     if (ContainsFilter(&lhs_name, &rhs_name, user_name)) {
 
@@ -403,7 +452,7 @@ Status AvroParserTree::AddFinishMarks(std::map<string, ValueStoreUniquePtr>* key
   return Status::OK();
 }
 
-Status AvroParserTree::InitializeValueBuffers(std::map<string, ValueStoreUniquePtr>* key_to_value) {
+Status AvroParserTree::InitializeValueBuffers(std::map<string, ValueStoreUniquePtr>* key_to_value) const {
   // For all keys -- that hold the user defined name -- and their data types add a buffer
   for (const auto& key_and_type : keys_and_types_) {
 
@@ -491,7 +540,7 @@ std::vector<string> AvroParserTree::GetPartsWithoutAvroNamespace(const string& u
 // Will remove the default avro namespace if it exists; otherwise the value won't change
 string AvroParserTree::RemoveDefaultAvroNamespace(const string& name) {
   if (str_util::StartsWith(name, kDefaultNamespace)) {
-    return name.substr(kDefaultNamespace.size() + 1, string::npos); // +1 to remove separator
+    return name.substr(strlen(kDefaultNamespace) + 1, string::npos); // +1 to remove separator
   } else {
     return name;
   }
@@ -503,9 +552,6 @@ string AvroParserTree::RemoveAddedDots(const string& name) {
   RE2::GlobalReplace(&removed, RE2("\\.:"), ":");
   return removed;
 }
-
-const string AvroParserTree::kArrayAllElements = "[*]";
-const string AvroParserTree::kDefaultNamespace = "default";
 
 }
 }

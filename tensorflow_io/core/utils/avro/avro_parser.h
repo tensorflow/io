@@ -17,7 +17,7 @@ limitations under the License.
 #include <queue>
 #include <set>
 #include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow_io/avro/utils/value_buffer.h"
+#include "tensorflow_io/core/utils/avro/value_buffer.h"
 #include "api/Generic.hh"
 #include "api/Types.hh"
 
@@ -37,6 +37,9 @@ public:
   // Virtual destructor ensures the derived class's destructor is called and
   // clean up its memory.
   virtual ~AvroParser() {}
+
+  // This must be called before using parsers for arrays once the entire tree is constructed
+  void ComputeFinalDescendents();
 
   // Parse will traverse the sub-tree of this value and fill all values into `parsed_values`
   // may also read from parsed values if filtering
@@ -81,7 +84,7 @@ private:
   std::vector<AvroParserSharedPtr> children_;
 
   // The final descendents of this parser are computed upon first call and then cached
-  mutable std::vector<AvroParserSharedPtr> final_descendents_;
+  std::vector<AvroParserSharedPtr> final_descendents_;
 };
 
 // Parser for primitive types

@@ -278,13 +278,16 @@ cc_library(
     name = "avro_ops",
     srcs = [
         "kernels/avro_kernels.cc",
+        "kernels/avro_dataset_kernels.cc",
+        "kernels/avro_record_dataset_kernels.cc",
+        "kernels/parse_avro_kernels.cc",
         "ops/avro_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@avro",
+        "//tensorflow_io/core/utils/avro:avro_utils",
     ],
     alwayslink = 1,
 )

@@ -11,7 +11,7 @@ limitations under the License.
 ==============================================================================*/
 #include <queue>
 #include <sstream>
-#include "tensorflow_io/avro/utils/avro_parser.h"
+#include "tensorflow_io/core/utils/avro/avro_parser.h"
 
 namespace tensorflow {
 namespace data {
@@ -25,34 +25,27 @@ const std::vector<AvroParserSharedPtr> AvroParser::GetChildren() const {
   return children_;
 }
 
-const std::vector<AvroParserSharedPtr> AvroParser::GetFinalDescendents() const {
-  // If this parser is terminal there are no final descendents
-  if (IsTerminal()) {
-    return final_descendents_;
+void AvroParser::ComputeFinalDescendents() {
+  std::queue<AvroParserSharedPtr> current;
+  const std::vector<AvroParserSharedPtr>& children = GetChildren();
+  for (const auto& child : children) {
+    current.push(child);
   }
-
-  // Compute the final descendents if we never computed them before
-  if (final_descendents_.size() == 0) {
-    std::queue<AvroParserSharedPtr> current;
-    const std::vector<AvroParserSharedPtr>& children = GetChildren();
-    for (const auto& child : children) {
-      current.push(child);
-    }
-    // Helper variable for children of subsequent nodes
-    while (!current.empty()) {
-      if ((*current.front()).IsTerminal()) {
-        // TODO(fraudies): Improve design to avoid cast; at least check outcome of cast
-        final_descendents_.push_back(current.front());
-      } else {
-        const std::vector<AvroParserSharedPtr>& children = (*current.front()).GetChildren();
-        for (const auto& child : children) {
-          current.push(child);
-        }
+  // Helper variable for children of subsequent nodes
+  while (!current.empty()) {
+    if ((*current.front()).IsTerminal()) {
+      final_descendents_.push_back(current.front());
+    } else {
+      const std::vector<AvroParserSharedPtr>& children = (*current.front()).GetChildren();
+      for (const auto& child : children) {
+        current.push(child);
       }
-      current.pop();
     }
+    current.pop();
   }
+}
 
+const std::vector<AvroParserSharedPtr> AvroParser::GetFinalDescendents() const {
   // Return the final descendents
   return final_descendents_;
 }
@@ -302,22 +295,22 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   const std::vector<AvroParserSharedPtr>& final_descendents(GetFinalDescendents());
 
-  // Add a begin mark to all value buffers under this array
+/*  // Add a begin mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
     // Assumes the key exists in the map
     (*(*values)[(*value_parser).GetKey()]).BeginMark();
-  }
+  }*/
 
   // For all children same datum
   for (const AvroParserSharedPtr& child : children) {
     TF_RETURN_IF_ERROR((*child).Parse(values, d));
   }
 
-  // Add a finish mark to all value buffers under this array
+/*  // Add a finish mark to all value buffers under this array
   for (const AvroParserSharedPtr& value_parser : final_descendents) {
     // Assumes the key exists in the map
     (*(*values)[(*value_parser).GetKey()]).FinishMark();
-  }
+  }*/
 
   return Status::OK();
 }

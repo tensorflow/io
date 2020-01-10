@@ -21,7 +21,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 
-#include "tensorflow_io/avro/utils/avro_file_stream_reader.h"
+#include "tensorflow_io/core/utils/avro/avro_file_stream_reader.h"
 
 // As boiler plate I used
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/dataset.h  DatasetBase
@@ -55,6 +55,8 @@ limitations under the License.
 
 namespace tensorflow {
 namespace data {
+namespace {
+
 
 class AvroDatasetOp : public DatasetOpKernel {
  public:
@@ -485,8 +487,9 @@ class AvroDatasetOp : public DatasetOpKernel {
 };  // class AvroDatasetOp
 
 // Register the kernel implementation for AvroDataset.
-REGISTER_KERNEL_BUILDER(Name("AvroDataset").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>AvroDataset").Device(DEVICE_CPU),
                         AvroDatasetOp);
 
+}  // namespace
 }  // namespace data
 }  // namespace tensorflow

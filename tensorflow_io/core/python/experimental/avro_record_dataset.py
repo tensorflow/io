@@ -1,3 +1,18 @@
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.readers import _create_or_validate_filenames_dataset, _create_dataset_reader
 from tensorflow.python.data.util import convert
@@ -12,12 +27,13 @@ _DEFAULT_READER_BUFFER_SIZE_BYTES = 256 * 1024  # 256 KB
 class _AvroRecordDataset(dataset_ops.DatasetSource):
     """A `Dataset` comprising records from one or more AvroRecord files."""
 
-    def __init__(self, filenames, buffer_size=None):
+    def __init__(self, filenames, buffer_size=None, reader_schema=None):
         """Creates a `AvroRecordDataset`.
         Args:
           filenames: A `tf.string` tensor containing one or more filenames.
           buffer_size: (Optional.) A `tf.int64` scalar representing the number of
             bytes in the read buffer. 0 means no buffering.
+          reader_schema: (Optional.) A `tf.string` scalar representing the reader schema or None
         """
         self._filenames = filenames
         self._buffer_size = convert.optional_param_to_tensor(
@@ -40,7 +56,8 @@ class AvroRecordDatasetV2(dataset_ops.DatasetV2):
     def __init__(self,
                  filenames,
                  buffer_size=None,
-                 num_parallel_reads=None):
+                 num_parallel_reads=None,
+                 reader_schema=None):
         """Creates a `AvroRecordDataset` to read one or more AvroRecord files.
         Args:
           filenames: A `tf.string` tensor or `tf.data.Dataset` containing one or
@@ -55,6 +72,8 @@ class AvroRecordDatasetV2(dataset_ops.DatasetV2):
             input pipeline is I/O bottlenecked, consider setting this parameter to a
             value greater than one to parallelize the I/O. If `None`, files will be
             read sequentially.
+          reader_schema: (Optional.) A `tf.string` scalar representing the reader
+            schema or None.
         Raises:
           TypeError: If any argument does not have the expected type.
           ValueError: If any argument does not have the expected shape.
@@ -64,9 +83,10 @@ class AvroRecordDatasetV2(dataset_ops.DatasetV2):
         self._filenames = filenames
         self._buffer_size = buffer_size
         self._num_parallel_reads = num_parallel_reads
+        self._reader_schema = reader_schema
 
         def creator_fn(filename):
-            return _AvroRecordDataset(filename, buffer_size)
+            return _AvroRecordDataset(filename, buffer_size, reader_schema)
 
         self._impl = _create_dataset_reader(creator_fn, filenames,
                                             num_parallel_reads)
