@@ -1,3 +1,20 @@
+# Release 0.11.0
+
+## Major Features
+* Add Ogg audio format support.
+* Add FLAC audio format support.
+* Add HDR image format support.
+* Extend HDF5 format support to all common types.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Mark Daoust, Yong Tang, Yuan Tang, pshiko
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.10.0
 
 ## Major Features
