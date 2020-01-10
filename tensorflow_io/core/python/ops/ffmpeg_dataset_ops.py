@@ -31,7 +31,7 @@ class FFmpegAudioGraphIODataset(tf.data.Dataset):
                internal=True):
     """FFmpegAudioGraphIODataset."""
     with tf.name_scope("FFmpegAudioGraphIODataset"):
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       assert internal
 
       self._resource = resource
@@ -63,7 +63,7 @@ class FFmpegVideoGraphIODataset(tf.data.Dataset):
                internal=True):
     """FFmpegVideoGraphIODataset."""
     with tf.name_scope("FFmpegVideoGraphIODataset"):
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       assert internal
 
       self._resource = resource
@@ -89,7 +89,7 @@ class FFmpegVideoGraphIODataset(tf.data.Dataset):
 
 
 
-class _FFmpegIODatasetFunction(object):
+class _FFmpegIODatasetFunction():
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
     self._resource = resource
@@ -110,7 +110,7 @@ class FFmpegIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-ac
                internal=True):
     """FFmpegIODataset."""
     with tf.name_scope("FFmpegIODataset") as scope:
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       resource, _ = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,

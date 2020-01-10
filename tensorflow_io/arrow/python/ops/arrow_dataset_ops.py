@@ -41,7 +41,7 @@ def arrow_to_tensor_type(pa_t):
   """Convert Arrow type to tuple of (Tensor dtype, shape dims).
   This function requires pyarrow to be installed.
   """
-  import pyarrow as pa
+  import pyarrow as pa # pylint: disable=import-outside-toplevel
   shape_dims = []  # initialize shape as scalar
   if pa.types.is_boolean(pa_t):
     tf_t = dtypes.bool
@@ -248,7 +248,7 @@ class ArrowDataset(ArrowBaseDataset):
                   "auto" (size to number of records in Arrow record batch)
       columns: A list of column indices to be used in the Dataset
     """
-    import pyarrow as pa
+    import pyarrow as pa # pylint: disable=import-outside-toplevel
     if isinstance(record_batches, pa.RecordBatch):
       record_batches = [record_batches]
     if columns is None:
@@ -307,7 +307,7 @@ class ArrowDataset(ArrowBaseDataset):
                   "drop_remainder" (discard partial batch data),
                   "auto" (size to number of records in Arrow record batch)
     """
-    import pyarrow as pa
+    import pyarrow as pa # pylint: disable=import-outside-toplevel
     if columns is not None:
       df = df.iloc[:, list(columns)]
     batch = pa.RecordBatch.from_pandas(df, preserve_index=preserve_index)
@@ -523,7 +523,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
       record_batch_iter_factory: Optional factory to create additional record
                                  batch iterators for multiple iterations.
     """
-    import pyarrow as pa
+    import pyarrow as pa # pylint: disable=import-outside-toplevel
 
     # Create a UDS server by default if not Windows
     if os.name != "nt":
@@ -600,8 +600,8 @@ class ArrowStreamDataset(ArrowBaseDataset):
                   efficient than using tf.data.Dataset.batch().
                   NOTE: Currently, only 'keep_remainder' batch mode supported
     """
-    import pandas as pd
-    import pyarrow as pa
+    import pandas as pd # pylint: disable=import-outside-toplevel
+    import pyarrow as pa # pylint: disable=import-outside-toplevel
     if isinstance(data_frames, pd.DataFrame):
       data_frames = [data_frames]
 
@@ -646,6 +646,6 @@ def list_feather_columns(filename, **kwargs):
   columns, dtypes_, shapes = core_ops.io_list_feather_columns(
       filename, memory=memory)
   entries = zip(tf.unstack(columns), tf.unstack(dtypes_), tf.unstack(shapes))
-  return dict([(column.numpy().decode(), tf.TensorSpec(
-      shape.numpy(), dtype.numpy().decode(), column.numpy().decode())) for (
-          column, dtype, shape) in entries])
+  return {column.numpy().decode(): tf.TensorSpec(
+      shape.numpy(), dtype.numpy().decode(), column.numpy().decode()) for (
+          column, dtype, shape) in entries}

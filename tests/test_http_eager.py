@@ -28,7 +28,7 @@ def test_http_file_system():
       os.path.dirname(os.path.abspath(__file__)),
       "test_http", "LICENSE-2.0.txt")
   with open(local_path) as f:
-    lines = [line for line in f]
+    lines = list(f)
   local = "".join(lines)
 
   filename = "http://www.apache.org/licenses/LICENSE-2.0.txt"

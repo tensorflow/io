@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
 
-class _HDF5IOTensorFunction(object):
+class _HDF5IOTensorFunction():
   """_HDF5IOTensorFunction will translate call"""
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function

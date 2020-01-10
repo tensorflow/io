@@ -23,7 +23,7 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class _AvroIODatasetFunction(object):
+class _AvroIODatasetFunction():
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
     self._resource = resource

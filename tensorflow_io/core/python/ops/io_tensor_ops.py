@@ -21,9 +21,8 @@ import tensorflow as tf
 
 class _IOTensorMeta(property):
   """_IOTensorMeta is a decorator that is viewable to __repr__"""
-  pass
 
-class _IOTensorComponentFunction(object):
+class _IOTensorComponentFunction():
   """_IOTensorComponentFunction will translate call"""
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function
@@ -43,7 +42,7 @@ class _IOTensorComponentFunction(object):
   def length(self):
     return self._length
 
-class _IOTensorIterablePartitionedFunction(object):
+class _IOTensorIterablePartitionedFunction():
   """PartitionedFunction will translate call to cached Function call"""
   # function: next call of the iterable
   def __init__(self, function, shape):
@@ -51,7 +50,7 @@ class _IOTensorIterablePartitionedFunction(object):
     self._partitions = []
     self._length = None
     self._slice_suffix_start = [0 for _ in shape[1:]]
-    self._slice_suffix_size = [e for e in shape[1:]]
+    self._slice_suffix_size = list(shape[1:])
   def __call__(self, start, stop):
     while self._length is None:
       # if stop is not None then resolved partitions have to cover stop
@@ -107,7 +106,7 @@ class _IOTensorIterablePartitionedFunction(object):
       items.append(item)
     return tf.concat(items, axis=0)
 
-class _IOTensorPartitionedFunction(object):
+class _IOTensorPartitionedFunction():
   """PartitionedFunction will translate call to cached Function call"""
   def __init__(self, func, partitions):
     self._func = func
@@ -136,7 +135,7 @@ class _IOTensorPartitionedFunction(object):
       items.append(item)
     return tf.concat(items, axis=0)
 
-class _IOTensor(object):
+class _IOTensor():
   """_IOTensor"""
 
   def __init__(self,
@@ -231,7 +230,7 @@ class BaseIOTensor(_IOTensor):
     spec = tf.TensorSpec(
         tf.TensorShape(self._function.length - size + 1).concatenate(size),
         self.dtype)
-    class _Function(object):
+    class _Function():
       """_Function"""
       def __init__(self, func, spec, size):
         self._func = func
@@ -326,7 +325,7 @@ class TensorIOTensor(BaseIOTensor):
                internal=False):
     tensor = tf.convert_to_tensor(tensor)
 
-    class _Function(object):
+    class _Function():
       """_Function"""
       def __init__(self, tensor):
         self._tensor = tensor

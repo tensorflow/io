@@ -18,9 +18,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.util.all_util import remove_undocumented
+
 # pylint: disable=line-too-long,wildcard-import,g-import-not-at-top
 from tensorflow_io.gcs.python.ops.gcs_config_ops import *
-from tensorflow.python.util.all_util import remove_undocumented
 
 _allowed_symbols = [
     'configure_colab_session',

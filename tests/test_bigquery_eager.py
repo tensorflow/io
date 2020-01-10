@@ -21,18 +21,18 @@ from __future__ import print_function
 import concurrent.futures
 from io import BytesIO
 import json
-import fastavro
 import grpc
 import tensorflow as tf
-
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
 from tensorflow.python.framework import ops
 from tensorflow import test
-from tensorflow_io.bigquery import BigQueryTestClient
-
 import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc
 import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2
+
+import fastavro
+
+from tensorflow_io.bigquery import BigQueryTestClient
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()

@@ -209,9 +209,9 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIOTensor`.
     """
-    cls = GraphIOTensor
-    cls._dtype = dtype
-    return cls
+    v = GraphIOTensor
+    v._dtype = dtype # pylint: disable=protected-access
+    return v
 
   #=============================================================================
   # Factory Methods

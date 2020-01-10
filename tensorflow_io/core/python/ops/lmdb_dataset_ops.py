@@ -23,7 +23,7 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class _LMDBIODatasetFunction(object):
+class _LMDBIODatasetFunction():
   def __init__(self, resource):
     self._resource = resource
   def __call__(self, start, stop):

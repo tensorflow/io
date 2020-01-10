@@ -139,7 +139,7 @@ def test_kafka_io_dataset():
   dataset = tfio.IODataset.from_kafka(
       "test", configuration=["fetch.min.bytes=2"]).batch(2)
   # repeat multiple times will result in the same result
-  for i in range(5):
+  for _ in range(5):
     assert np.all([
         e.numpy().tolist() for e in dataset] == np.asarray([
             ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
