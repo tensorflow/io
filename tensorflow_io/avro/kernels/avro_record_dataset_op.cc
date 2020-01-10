@@ -48,6 +48,9 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
     if (buffer_size > 0) {
       options_.buffer_size = buffer_size;
     }
+    if (!reader_schema.empty()) {
+      options_.reader_schema = reader_schema;
+    }
     VLOG(7) << "Created dataset with " << filenames_[0] << "... and buffer size " << buffer_size;
   }
 
@@ -124,11 +127,8 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
         if (reader_) {
           out_tensors->emplace_back(ctx->allocator({}), DT_STRING,
                                     TensorShape({}));
-          VLOG(7) << "Add string ";
           Status s =
               reader_->ReadRecord(&out_tensors->back().scalar<string>()());
-          VLOG(7) << "Added string '" << out_tensors->back().scalar<string>()() << "'";
-
           if (s.ok()) {
             *end_of_sequence = false;
             return Status::OK();
@@ -231,7 +231,40 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
 };
 
 
-REGISTER_KERNEL_BUILDER(Name("AvroRecordDataset").Device(DEVICE_CPU),
+AvroRecordDatasetOp::AvroRecordDatasetOp(OpKernelConstruction* ctx)
+    : DatasetOpKernel(ctx) {}
+
+void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
+                                      DatasetBase** output) {
+    const Tensor* filenames_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input(kFileNames, &filenames_tensor));
+    OP_REQUIRES(
+        ctx, filenames_tensor->dims() <= 1,
+        errors::InvalidArgument("`filenames` must be a scalar or a vector."));
+
+    std::vector<string> filenames;
+    filenames.reserve(filenames_tensor->NumElements());
+    for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
+      VLOG(2) << "Reading file: " << filenames_tensor->flat<string>()(i);
+      filenames.push_back(filenames_tensor->flat<string>()(i));
+    }
+
+    int64 buffer_size = -1;
+    OP_REQUIRES_OK(ctx,
+                   ParseScalarArgument<int64>(ctx, kBufferSize, &buffer_size));
+    OP_REQUIRES(ctx, buffer_size >= 0,
+                errors::InvalidArgument(
+                    "`buffer_size` must be >= 0 (0 == no buffering)"));
+    string reader_schema = "";
+    OP_REQUIRES_OK(ctx,
+                   ParseScalarArgument<string>(ctx, kReaderSchema, &reader_schema));
+
+    *output =
+        new Dataset(ctx, std::move(filenames), buffer_size, reader_schema);
+}
+
+namespace {
+REGISTER_KERNEL_BUILDER(Name("IO>AvroRecordDataset").Device(DEVICE_CPU),
                         AvroRecordDatasetOp);
 
 }  // namespace data

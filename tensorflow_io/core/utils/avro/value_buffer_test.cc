@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 #include "gtest/gtest.h"
 #include "tensorflow/core/framework/tensor_testutil.h" // tensor equals
-#include "tensorflow_io/avro/utils/value_buffer.h"
+#include "tensorflow_io/core/utils/avro/value_buffer.h"
 
 // Note, these tests do not cover all avro types, because there are enough tests
 // in avroc for that.

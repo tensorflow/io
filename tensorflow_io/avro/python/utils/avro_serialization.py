@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,21 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
-
 from io import BytesIO
 from avro.io import DatumReader, DatumWriter, BinaryDecoder, BinaryEncoder
 from avro.datafile import DataFileReader, DataFileWriter
-
-if six.PY2:
-    from avro.schema import parse as parse
-
-if six.PY3:
-    from avro.schema import Parse as parse
+from avro.schema import Parse as parse
 
 
 class AvroRecordsToFile(object):
@@ -52,7 +41,7 @@ class AvroRecordsToFile(object):
 
 
 class AvroFileToRecords(object):
-    def __init__(self, filename, reader_schema):
+    def __init__(self, filename, reader_schema=None):
         """
         Reads records as strings where each row is serialized separately
 
@@ -62,16 +51,10 @@ class AvroFileToRecords(object):
         :return: An array of serialized string with one string per record
         """
         self.records = []
-        schema_object = AvroParser(reader_schema).get_schema_object()
 
         with open(filename, 'rb') as file_handle:
-            if six.PY2:
-                datum_reader = DatumReader(readers_schema=schema_object)
-            elif six.PY3:
-                datum_reader = DatumReader(reader_schema=schema_object)
-            else:
-                raise RuntimeError("Only python 2 and python 3 are supported!")
-
+            datum_reader = DatumReader(reader_schema=AvroParser(reader_schema).get_schema_object()) \
+                if reader_schema else DatumReader()
             reader = DataFileReader(file_handle, datum_reader)
 
             self.records += [record for record in reader]
@@ -161,4 +144,3 @@ class AvroSerializer(object):
         writer = BytesIO()
         self.datum_writer.write(datum, BinaryEncoder(writer))
         return writer.getvalue()
-

@@ -14,56 +14,55 @@
 # ==============================================================================
 
 import numpy as np
-from tensorflow.python.platform import test
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
 from tensorflow.python.framework.errors import OpError
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.util import compat
 from tensorflow.python.framework import sparse_tensor
-from tensorflow_io.core.python.experimental.avro_dataset_ops import make_avro_dataset
+from tensorflow_io.core.python.experimental.parse_avro_ops import parse_avro
+
+from tensorflow_io.avro.python.utils.avro_serialization import AvroSerializer
 
 from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
 
 
 class AvroDatasetTest(AvroDatasetTestBase):
 
-    def _test_pass_dataset(self, writer_schema, record_data, expected_data,
-                           features, reader_schema, batch_size, **kwargs):
-        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
-                                                     records=record_data)
+    def assertDataEqual(self, expected, actual):
+        for name, datum in expected.items():
+            self.assertValuesEqual(expected=datum, actual=actual[name])
 
-        actual_dataset = make_avro_dataset(
-            filenames=filenames, reader_schema=reader_schema,
-            features=features, batch_size=batch_size,
-            shuffle=kwargs.get("shuffle", None),
-            num_epochs=kwargs.get("num_epochs", None),
-            label_keys=kwargs.get("label_keys", []))
+    @staticmethod
+    def _batcher(iterable, step):
+        n = len(iterable)
+        for ndx in range(0, n, step):
+            yield iterable[ndx:min(ndx + step, n)]
 
-        self._verify_output(expected_data=expected_data,
-                            actual_dataset=actual_dataset)
+    def _test_pass_dataset(self, reader_schema, record_data, expected_data, features, batch_size):
+        # Note, The batch size could be inferred from the expected data but found it better to be
+        # explicit here
+        serializer = AvroSerializer(reader_schema)
+        for expected_datum, actual_records in zip(expected_data, AvroDatasetTest._batcher(record_data, batch_size)):
+            # Get any key out of expected datum
+            actual_datum = parse_avro(serialized=[serializer.serialize(r) for r in actual_records],
+                                      reader_schema=reader_schema,
+                                      features=features)
+            self.assertDataEqual(expected=expected_datum,
+                                 actual=actual_datum)
 
-    def _test_fail_dataset(self, writer_schema, record_data, features,
-                           reader_schema, batch_size, **kwargs):
-        """
-        Note, this test method expects an op error will occur when calling next
-        """
-        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
-                                                     records=record_data)
-
-        actual_dataset = make_avro_dataset(
-            filenames=filenames, reader_schema=reader_schema,
-            features=features, batch_size=batch_size,
-            shuffle=kwargs.get("shuffle", None),
-            num_epochs=kwargs.get("num_epochs", None))
-
-        next_data = iter(actual_dataset)
-
-        with self.assertRaises(OpError):
-            next(next_data)
+    def _test_fail_dataset(self, reader_schema, record_data, features, batch_size, **kwargs):
+        parser_schema = kwargs.get("parser_schema", reader_schema)
+        serializer = AvroSerializer(reader_schema)
+        for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
+            # Get any key out of expected datum
+            with self.assertRaises(OpError):
+                _ = parse_avro(serialized=[serializer.serialize(r) for r in actual_records],
+                               reader_schema=parser_schema,
+                               features=features)
 
     def test_primitive_types(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "dataTypes",
               "fields": [
@@ -186,15 +185,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     ])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_fixed_enum_types(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "dataTypes",
               "fields": [
@@ -249,15 +247,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     ])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_batching(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -275,50 +272,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"int_value": ops.convert_to_tensor([0, 1])},
             {"int_value": ops.convert_to_tensor([2])}
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
-    def test_padding_from_default_with_drop_remainder(self):
-        writer_schema = """{
-                  "type": "record",
-                  "name": "row",
-                  "fields": [
-                      {
-                         "name": "fixed_len",
-                         "type": {
-                            "type": "array",
-                            "items": "int"
-                         }
-                      }
-                  ]}"""
-        record_data = [
-            {"fixed_len": [0]},
-            {"fixed_len": [1]},
-            {"fixed_len": [2]},
-            {"fixed_len": [3]}
-        ]
-        features = {
-            "fixed_len[*]": parsing_ops.FixedLenFeature([2], tf_types.int32,
-                                                        default_value=[0, 1])
-        }
-        # Note, last batch is dropped
-        expected_data = [
-            {"fixed_len[*]": ops.convert_to_tensor([[0, 1], [1, 1], [2, 1]])}
-        ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=None,
-                                skip_out_of_range_error=True)
-
-    def test_padding_from_default_without_drop_remainder(self):
-        writer_schema = """{
+    def test_padding_from_default(self):
+        reader_schema = """{
                   "type": "record",
                   "name": "row",
                   "fields": [
@@ -345,51 +306,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"fixed_len[*]": ops.convert_to_tensor([[0, 1], [1, 1], [2, 1]])},
             {"fixed_len[*]": ops.convert_to_tensor([[3, 1]])}
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1,
-                                skip_out_of_range_error=True)
-
-    def test_none_batch(self):
-        writer_schema = """{
-                  "type": "record",
-                  "name": "row",
-                  "fields": [
-                      {
-                         "name": "fixed_len",
-                         "type": {
-                            "type": "array",
-                            "items": "int"
-                         }
-                      }
-                  ]}"""
-        record_data = [
-            {"fixed_len": [0]},
-            {"fixed_len": [1]},
-            {"fixed_len": [2]},
-            {"fixed_len": [3]}
-        ]
-        features = {
-            "fixed_len[*]": parsing_ops.FixedLenFeature([], tf_types.int32,
-                                                        default_value=0)
-        }
-        # Note, last batch is dropped
-        expected_data = [
-            {"fixed_len[*]": ops.convert_to_tensor([0, 1, 2])}
-        ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=None,
-                                skip_out_of_range_error=True)
+                                batch_size=3)
 
     def test_batching_with_default(self):
-        writer_schema = """{
+        reader_schema = """{
                   "type": "record",
                   "name": "row",
                   "fields": [
@@ -419,163 +343,32 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 [6, 7, 8]])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
-
-    def test_labels(self):
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {"name": "feature1", "type": "int"},
-                  {"name": "label1", "type": "int"},
-                  {"name": "label2", "type": "int"}
-              ]}"""
-        record_data = [
-            {"feature1": 10, "label1": 0, "label2": 5},
-            {"feature1": 20, "label1": 1, "label2": 6},
-            {"feature1": 30, "label1": 2, "label2": 7}
-        ]
-        features = {
-            "feature1": parsing_ops.FixedLenFeature([], tf_types.int32),
-            "label1": parsing_ops.FixedLenFeature([], tf_types.int32),
-            "label2": parsing_ops.FixedLenFeature([], tf_types.int32)
-        }
-        expected_data = [
-            (
-                {"feature1": ops.convert_to_tensor([10, 20, 30])},
-                {"label1": ops.convert_to_tensor([0, 1, 2]), "label2": ops.convert_to_tensor([5, 6, 7])}
-            )
-        ]
-        label_keys = ["label1", "label2"]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3,
-                                num_epochs=1,
-                                label_keys=label_keys)
-
-    def test_larger_file_size(self):
-        # Added because of existing implementations had bug if the file
-        # size is larger than the buffer size
-        n_data = 1024
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {
-                     "name": "int_value",
-                     "type": "int"
-                  }
-              ]}"""
-        record_data = [dict([("int_value", datum)]) for datum in range(n_data)]
-        features = {
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
-        }
-        # Add batch dimension
-        expected_data = [
-            dict([("int_value", ops.convert_to_tensor([datum]))]) for datum in range(n_data)]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=1, num_epochs=1)
-
-    def test_schema_projection(self):
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {"name": "int_value", "type": "int"},
-                  {"name": "bool_value", "type": "boolean"}
-              ]}"""
-        reader_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {"name": "int_value", "type": "int"}
-              ]}"""
-        record_data = [
-            {"int_value": 0, "bool_value": True},
-            {"int_value": 1, "bool_value": False}
-        ]
-        features = {
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
-        }
-        expected_data = [
-            {"int_value": ops.convert_to_tensor([0, 1])}
-        ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=reader_schema,
-                                batch_size=2, num_epochs=1)
-
-    def test_schema_type_promotion(self):
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {"name": "int_value", "type": "int"},
-                  {"name": "long_value", "type": "long"}
-              ]}"""
-        reader_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {"name": "int_value", "type": "long"},
-                  {"name": "long_value", "type": "double"}
-              ]}"""
-        record_data = [
-            {"int_value": 0, "long_value": 111},
-            {"int_value": 1, "long_value": 222}
-        ]
-        features = {
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int64),
-            "long_value": parsing_ops.FixedLenFeature([], tf_types.double)
-        }
-        expected_data = [
-            {
-                "int_value": ops.convert_to_tensor([0, 1]),
-                "long_value": ops.convert_to_tensor([111.0, 222.0])
-            }
-        ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=reader_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_null_union_primitive_type(self):
-        writer_schema = """
-      {
-         "type":"record",
-         "name":"data_row",
-         "fields":[
-            {
-               "name":"multi_type",
-               "type":[
-                  "null",
-                  "boolean",
-                  "int",
-                  "long",
-                  "float",
-                  "double",
-                  "string"
-               ]
-            }
-         ]
-      }
-      """
+        reader_schema = """{
+             "type":"record",
+             "name":"data_row",
+             "fields":[
+                {
+                   "name":"multi_type",
+                   "type":[
+                      "null",
+                      "boolean",
+                      "int",
+                      "long",
+                      "float",
+                      "double",
+                      "string"
+                   ]
+                }
+             ]
+          }
+          """
         record_data = [
             {
                 "multi_type": 1.0
@@ -620,29 +413,27 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     ops.convert_to_tensor([compat.as_bytes("abc")])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=6, num_epochs=1)
+                                batch_size=6)
 
     def test_union_with_null(self):
-        writer_schema = """
-      {
-         "type": "record",
-         "name": "data_row",
-         "fields": [
-            {
-               "name": "possible_float_type",
-               "type": [
-                  "null",
-                  "float"
-               ]
-            }
-         ]
-      }
-      """
+        reader_schema = """{
+             "type": "record",
+             "name": "data_row",
+             "fields": [
+                {
+                   "name": "possible_float_type",
+                   "type": [
+                      "null",
+                      "float"
+                   ]
+                }
+             ]
+          }
+          """
         record_data = [
             {
                 "possible_float_type": 1.0
@@ -665,15 +456,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 "possible_float_type:float": ops.convert_to_tensor([1.0, -1.0])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_fixed_length_list(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -697,15 +487,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"int_list[*]": ops.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
         ]
 
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_fixed_length_with_default_vector(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -733,16 +522,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 [6, 7, 2]])
             }
         ]
-
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_fixed_length_with_default_scalar(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -770,16 +557,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 [6, 7, 0]])
             }
         ]
-
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_dense_2d(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -823,17 +608,15 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"int_list[*].nested_int_list[*]":
                  ops.convert_to_tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])}
         ]
-
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_dense_array_3d(self):
         # Here we use arrays directly for the nesting
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -851,6 +634,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
               }"""
         record_data = [
             {"int_list": [[0, 1, 2], [10, 11, 12], [20, 21, 22]]},
+            {"int_list": [[1, 2, 3], [11, 12, 13], [21, 22, 23]]},
         ]
         # Note, need to at least define the rank of the data, dimension can be unknown
         # This is a limitation inside TensorFlow where shape ranks need to be known
@@ -861,111 +645,18 @@ class AvroDatasetTest(AvroDatasetTestBase):
         # Note, the outer dimension is the batch dimension
         expected_data = [
             {"int_list[*][*]": ops.convert_to_tensor([
-                [[0, 1, 2], [10, 11, 12], [20, 21, 22]]
+                [[0, 1, 2], [10, 11, 12], [20, 21, 22]],
+                [[1, 2, 3], [11, 12, 13], [21, 22, 23]]
             ])},
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                batch_size=1, num_epochs=1,
-                                reader_schema=writer_schema)
-
-    def test_dense_record_3d(self):
-        # Here we use records for the nesting
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                  {
-                     "name": "int_list",
-                     "type": {
-                        "type": "array",
-                        "items":
-                          {
-                             "name" : "wrapper1",
-                             "type" : "record",
-                             "fields" : [
-                                {
-                                   "name": "nested_int_list",
-                                   "type": {
-                                      "type": "array",
-                                      "items":
-                                        {
-                                           "name" : "wrapper2",
-                                           "type" : "record",
-                                           "fields" : [
-                                              {
-                                                 "name": "nested_nested_int_list",
-                                                 "type":
-                                                    {
-                                                        "type": "array",
-                                                        "items": "int"
-                                                    }
-                                              }
-                                           ]
-                                        }
-                                   }
-                                }
-                             ]
-                          }
-                     }
-                  }
-              ]}"""
-        record_data = [
-            {"int_list": [
-                {"nested_int_list":
-                    [
-                        {"nested_nested_int_list": [1, 2, 3, 4]},
-                        {"nested_nested_int_list": [5, 6, 7, 8]}
-                    ]
-                },
-                {"nested_int_list":
-                    [
-                        {"nested_nested_int_list": [9, 10, 11, 12]},
-                        {"nested_nested_int_list": [13, 14, 15, 16]}
-                    ]
-                },
-                {"nested_int_list":
-                    [
-                        {"nested_nested_int_list": [17, 18, 19, 20]},
-                        {"nested_nested_int_list": [21, 22, 23, 24]}
-                    ]
-                },
-            ]}
-        ]
-        features = {
-            "int_list[*].nested_int_list[*].nested_nested_int_list[*]":
-                parsing_ops.FixedLenFeature([3, 2, 4], tf_types.int32)
-        }
-        expected_data = [
-            {"int_list[*].nested_int_list[*].nested_nested_int_list[*]": ops.convert_to_tensor(
-                [[
-                    [
-                        [1, 2, 3, 4],
-                        [5, 6, 7, 8]
-                    ],
-                    [
-                        [9, 10, 11, 12],
-                        [13, 14, 15, 16]
-                    ],
-                    [
-                        [17, 18, 19, 20],
-                        [21, 22, 23, 24]
-                    ]
-                ]]
-            )},
-        ]
-
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=1, num_epochs=1)
+                                batch_size=2)
 
     def test_sparse_feature(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -1012,106 +703,46 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 values=[6.0, 3.0],
                 dense_shape=[2, 4])}
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
-
-    def test_sparse_3d_feature(self):
-        writer_schema = """{
-              "type": "record",
-              "name": "row",
-              "fields": [
-                {
-                  "name": "sparse_type",
-                  "type": {
-                    "type": "array",
-                    "items": {
-                       "type": "record",
-                       "name": "sparse_triplet",
-                       "fields": [
-                          {
-                             "name":"first_index",
-                             "type":"long"
-                          },
-                          {
-                             "name":"second_index",
-                             "type":"long"
-                          },
-                          {
-                             "name":"value",
-                             "type":"float"
-                          }
-                       ]
-                    }
-                 }
-              }
-        ]}"""
-        record_data = [
-            {"sparse_type": [
-                {"first_index": 0, "second_index": 1, "value": 5.0},
-                {"first_index": 3, "second_index": 5, "value": 2.0}]
-            },
-            {"sparse_type": [
-                {"first_index": 0, "second_index": 1, "value": 7.0}]
-            }
-        ]
-        features = {
-            "sparse_type": parsing_ops.SparseFeature(index_key=["first_index", "second_index"],
-                                                     value_key="value",
-                                                     dtype=tf_types.float32,
-                                                     size=[4, 6])
-        }
-        expected_data = [
-            {"sparse_type": sparse_tensor.SparseTensorValue(
-                indices=[[0, 0, 1], [0, 3, 5], [1, 0, 1]],
-                values=[5.0, 2.0, 7.0],
-                dense_shape=[2, 4, 6])}
-        ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_type_reuse(self):
-        writer_schema = """
-      {
-        "type": "record",
-        "name": "row",
-        "fields": [
-          {
-            "name": "first_value",
-            "type": {
-              "type": "array",
-              "items": {
-                 "type": "record",
-                 "name": "Tuple",
-                 "fields": [
-                    {
-                       "name":"index",
-                       "type":"long"
-                    },
-                    {
-                       "name":"value",
-                       "type":"float"
-                    }
-                 ]
+        reader_schema = """{
+            "type": "record",
+            "name": "row",
+            "fields": [
+              {
+                "name": "first_value",
+                "type": {
+                  "type": "array",
+                  "items": {
+                     "type": "record",
+                     "name": "Tuple",
+                     "fields": [
+                        {
+                           "name":"index",
+                           "type":"long"
+                        },
+                        {
+                           "name":"value",
+                           "type":"float"
+                        }
+                     ]
+                  }
               }
-          }
-        },
-        {
-          "name": "second_value",
-          "type": {
-            "type": "array",
-            "items": "Tuple"
-          }
-        }
-      ]
-      }"""
+            },
+            {
+              "name": "second_value",
+              "type": {
+                "type": "array",
+                "items": "Tuple"
+              }
+            }
+          ]
+          }"""
         record_data = [
             {
                 "first_value": [{"index": 0, "value": 5.0}, {"index": 3, "value": 2.0}],
@@ -1144,15 +775,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     dense_shape=[2, 3])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_variable_length(self):
-        writer_schema = """{
+        reader_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
@@ -1181,16 +811,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 )
             }
         ]
-
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_variable_length_2d(self):
-        writer_schema = """{
+        reader_schema = """{
                   "type": "record",
                   "name": "row",
                   "fields": [
@@ -1222,16 +850,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 )
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_nesting(self):
-        writer_schema = """
-        {
+        reader_schema = """{
            "type": "record",
            "name": "nesting",
            "fields": [
@@ -1328,20 +954,19 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 "nested_record.nested_float_list[*]":
                     ops.convert_to_tensor([[0.0, 10.0], [-2.0, 7.0], [3.0, 4.0]]),
                 "list_of_records[0].first_name":
-                    ops.convert_to_tensor([[compat.as_bytes("Herbert")],
-                                           [compat.as_bytes("Doug")],
-                                           [compat.as_bytes("Karl")]])
+                    ops.convert_to_tensor([compat.as_bytes("Herbert"),
+                                           compat.as_bytes("Doug"),
+                                           compat.as_bytes("Karl")])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_parse_map_entry(self):
-        writer_schema = """
+        reader_schema = """
         {
            "type": "record",
            "name": "nesting",
@@ -1416,12 +1041,11 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 "map_of_records['second'].age": ops.convert_to_tensor([30, 66, 21])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+                                batch_size=3)
 
     def test_parse_int_as_long_fail(self):
         schema = """
@@ -1438,7 +1062,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"index": 0}]
         features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
-        self._test_fail_dataset(schema, record_data, features, schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_parse_int_as_sparse_type_fail(self):
         schema = """
@@ -1462,10 +1086,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     dtype=tf_types.float32,
                     size=10)
         }
-        self._test_fail_dataset(schema, record_data, features, schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_parse_float_as_double_fail(self):
-        writer_schema = """
+        schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1479,11 +1103,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"weight": 0.5}]
         features = {"weight": parsing_ops.FixedLenFeature([], tf_types.float64)}
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_fixed_length_without_proper_default_fail(self):
-        writer_schema = """
+        schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1509,11 +1132,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
         features = {
             "int_list_type": parsing_ops.FixedLenFeature([], tf_types.int32)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_wrong_spelling_of_feature_name_fail(self):
-        writer_schema = """
+        schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1525,11 +1147,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
         features = {
             "wrong_spelling": parsing_ops.FixedLenFeature([], tf_types.int32)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_wrong_index(self):
-        writer_schema = """
+        schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1562,11 +1183,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
             "list_of_records[2].name":
                 parsing_ops.FixedLenFeature([], tf_types.string)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_filter_with_variable_length(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1648,15 +1268,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                         dense_shape=[2, 2])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_filter_with_empty_result(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1708,15 +1327,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                         dense_shape=np.asarray([2, 0]))
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_filter_with_wrong_key_fail(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1749,11 +1367,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
             "guests[wrong_key='female'].name":
                 parsing_ops.VarLenFeature(tf_types.string)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(reader_schema, record_data, features, 1)
 
     def test_filter_with_wrong_pair_fail(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type":"record",
              "name":"data_row",
@@ -1786,11 +1403,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
             "guests[forgot_the_separator].name":
                 parsing_ops.VarLenFeature(tf_types.string)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(reader_schema, record_data, features, 1)
 
     def test_filter_with_too_many_separators_fail(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1823,11 +1439,10 @@ class AvroDatasetTest(AvroDatasetTestBase):
             "guests[used=too=many=separators].name":
                 parsing_ops.VarLenFeature(tf_types.string)
         }
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                writer_schema, 1)
+        self._test_fail_dataset(reader_schema, record_data, features, 1)
 
     def test_filter_for_nested_record(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1908,15 +1523,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                         dense_shape=[1, 1])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_filter_with_bytes_as_type(self):
-        writer_schema = """
+        reader_schema = """
           {
              "type": "record",
              "name": "data_row",
@@ -1989,15 +1603,14 @@ class AvroDatasetTest(AvroDatasetTestBase):
                         dense_shape=[2, 2])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_namespace(self):
-        writer_schema = """
+        reader_schema = """
           {
             "namespace": "com.test",
             "type": "record",
@@ -2029,210 +1642,181 @@ class AvroDatasetTest(AvroDatasetTestBase):
                     ])
             }
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
+        self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
                                 expected_data=expected_data,
                                 features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+                                batch_size=2)
 
     def test_broken_schema_fail(self):
-        writer_schema = """
-      {
-        "type": "record",
-        "name": "row",
-        "fields": [
-            {"name": "int_value", "type": "int"}
-        ]
-      }"""
+        valid_schema = """
+          {
+            "type": "record",
+            "name": "row",
+            "fields": [
+                {"name": "int_value", "type": "int"}
+            ]
+          }"""
         record_data = [
             {"int_value": 0}
         ]
         broken_schema = """
-      {
-        "type": "record",
-        "name": "row",
-        "fields": [
-            {"name": "index", "type": "int"},
-            {"name": "boolean_type"}
-        ]
-      }"""
+          {
+            "type": "record",
+            "name": "row",
+            "fields": [
+                {"name": "index", "type": "int"},
+                {"name": "boolean_type"}
+            ]
+          }"""
         features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                reader_schema=broken_schema, batch_size=1)
+        self._test_fail_dataset(valid_schema, record_data, features, 1,
+                                parser_schema=broken_schema)
 
-    # TODO(fraudies): Fixme, returns aa, aa instead of aa, bb
-    # def test_some_optimization_breaks_this(self):
-    #   schema = """
-    #     {
-    #       "type": "record",
-    #       "name": "simple",
-    #       "fields": [
-    #           {
-    #              "name":"string_value",
-    #              "type":"string"
-    #           }
-    #       ]
-    #     }"""
-    #   features = {
-    #     "string_value": parsing_ops.FixedLenFeature([], tf_types.string)
-    #   }
-    #   record_data = [
-    #     {
-    #       "string_value": "aa"
-    #     },
-    #     {
-    #       "string_value": "bb"
-    #     }
-    #   ]
-    #   expected_data = [
-    #     {
-    #       "string_value":
-    #         np.asarray([
-    #           compat.as_bytes("aa"),
-    #           compat.as_bytes("bb")
-    #         ])
-    #     }
-    #   ]
-    #   self._test_pass_dataset(writer_schema=schema,
-    #                           record_data=record_data,
-    #                           expected_data=expected_data,
-    #                           features=features,
-    #                           reader_schema=schema,
-    #                           batch_size=2, num_epochs=1)
-
-    def test_incompatible_schema_fail(self):
-        writer_schema = """
-      {
-        "type": "record",
-        "name": "row",
-        "fields": [
-            {"name": "int_value", "type": "int"}
-        ]
-      }"""
+    def test_some_optimization_broke_string_repeats_in_batch(self):
+        # In the past this test failed but now passes
+        reader_schema = """
+            {
+              "type": "record",
+              "name": "simple",
+              "fields": [
+                  {
+                     "name":"string_value",
+                     "type":"string"
+                  }
+              ]
+            }"""
+        features = {
+            "string_value": parsing_ops.FixedLenFeature([], tf_types.string)
+        }
         record_data = [
-            {"int_value": 0}
+            {
+                "string_value": "aa"
+            },
+            {
+                "string_value": "bb"
+            }
         ]
-        wrong_schema = """
-      {
-        "type": "record",
-        "name": "row",
-        "fields": [
-            {"name": "index", "type": "int"},
-            {"name": "crazy_type", "type": "boolean"}
+        expected_data = [
+            {
+                "string_value":
+                    np.asarray([
+                        compat.as_bytes("aa"),
+                        compat.as_bytes("bb")
+                    ])
+            }
         ]
-      }"""
-        features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
-        self._test_fail_dataset(writer_schema, record_data, features,
-                                reader_schema=wrong_schema, batch_size=1)
+        self._test_pass_dataset(reader_schema=reader_schema,
+                                record_data=record_data,
+                                expected_data=expected_data,
+                                features=features,
+                                batch_size=2)
 
-    # Not supported for now, will actually provide another dimension for filter
-    # that can't be properly coerced
-    # def test_filter_of_sparse_feature(self):
-    #   writer_schema = """
-    #     {
-    #        "type": "record",
-    #        "name": "data_row",
-    #        "fields": [
-    #           {
-    #              "name": "guests",
-    #              "type": {
-    #                 "type": "array",
-    #                 "items": {
-    #                    "type": "record",
-    #                    "name": "person",
-    #                    "fields": [
-    #                       {
-    #                          "name": "name",
-    #                          "type": "string"
-    #                       },
-    #                       {
-    #                          "name": "gender",
-    #                          "type": "string"
-    #                       },
-    #                       {
-    #                          "name": "address",
-    #                          "type": {
-    #                             "type": "array",
-    #                             "items": {
-    #                                "type": "record",
-    #                                "name": "postal",
-    #                                "fields": [
-    #                                   {
-    #                                      "name":"street",
-    #                                      "type":"string"
-    #                                   },
-    #                                   {
-    #                                      "name":"zip",
-    #                                      "type":"long"
-    #                                   },
-    #                                   {
-    #                                      "name":"street_no",
-    #                                      "type":"int"
-    #                                   }
-    #                                ]
-    #                             }
-    #                          }
-    #                       }
-    #                    ]
-    #                 }
-    #              }
-    #           }
-    #        ]
-    #     }
-    #     """
-    #   record_data = [{
-    #     "guests": [{
-    #       "name":
-    #         "Hans",
-    #       "gender":
-    #         "male",
-    #       "address": [{
-    #         "street": "California St",
-    #         "zip": 94040,
-    #         "state": "CA",
-    #         "street_no": 1
-    #       }, {
-    #         "street": "New York St",
-    #         "zip": 32012,
-    #         "state": "NY",
-    #         "street_no": 2
-    #       }]
-    #     }, {
-    #       "name":
-    #         "Mary",
-    #       "gender":
-    #         "female",
-    #       "address": [{
-    #         "street": "Ellis St",
-    #         "zip": 29040,
-    #         "state": "MA",
-    #         "street_no": 3
-    #       }]
-    #     }]
-    #   }]
-    #   features = {
-    #     "guests[gender='female'].address":
-    #       parsing_ops.SparseFeature(
-    #           index_key="zip",
-    #           value_key="street_no",
-    #           dtype=tf_types.int32,
-    #           size=94040)
-    #   }
-    #   expected_data = [
-    #     {
-    #       "guests[gender='female'].address":
-    #         sparse_tensor.SparseTensorValue(
-    #             np.asarray([[0, 29040]]), np.asarray([3]),
-    #             np.asarray([1, 94040]))
-    #     }
-    #   ]
-    #   self._test_pass_dataset(writer_schema=writer_schema,
-    #                           record_data=record_data,
-    #                           expected_data=expected_data,
-    #                           features=features,
-    #                           batch_size=2, num_epochs=1)
-
-
-if __name__ == "__main__":
-    test.main()
+    # Note current filters resolve to single item and we remove the dimension introduced by that
+    def test_filter_of_sparse_feature(self):
+        reader_schema = """
+            {
+               "type": "record",
+               "name": "data_row",
+               "fields": [
+                  {
+                     "name": "guests",
+                     "type": {
+                        "type": "array",
+                        "items": {
+                           "type": "record",
+                           "name": "person",
+                           "fields": [
+                              {
+                                 "name": "name",
+                                 "type": "string"
+                              },
+                              {
+                                 "name": "gender",
+                                 "type": "string"
+                              },
+                              {
+                                 "name": "address",
+                                 "type": {
+                                    "type": "array",
+                                    "items": {
+                                       "type": "record",
+                                       "name": "postal",
+                                       "fields": [
+                                          {
+                                             "name":"street",
+                                             "type":"string"
+                                          },
+                                          {
+                                             "name":"zip",
+                                             "type":"long"
+                                          },
+                                          {
+                                             "name":"street_no",
+                                             "type":"int"
+                                          }
+                                       ]
+                                    }
+                                 }
+                              }
+                           ]
+                        }
+                     }
+                  }
+               ]
+            }
+            """
+        record_data = [{
+            "guests": [{
+                "name":
+                    "Hans",
+                "gender":
+                    "male",
+                "address": [{
+                    "street": "California St",
+                    "zip": 94040,
+                    "state": "CA",
+                    "street_no": 1
+                }, {
+                    "street": "New York St",
+                    "zip": 32012,
+                    "state": "NY",
+                    "street_no": 2
+                }]
+            }, {
+                "name":
+                    "Mary",
+                "gender":
+                    "female",
+                "address": [{
+                    "street": "Ellis St",
+                    "zip": 29040,
+                    "state": "MA",
+                    "street_no": 3
+                }]
+            }]
+        }]
+        features = {
+            "guests[gender='female'].address":
+                parsing_ops.SparseFeature(
+                    index_key="zip",
+                    value_key="street_no",
+                    dtype=tf_types.int32,
+                    size=94040)
+        }
+        # Note, the filter introduces an additional index,
+        # because filters can have multiple items
+        expected_data = [
+            {
+                "guests[gender='female'].address":
+                    sparse_tensor.SparseTensorValue(
+                        np.asarray([[0, 0, 29040]]),
+                        np.asarray([3]),
+                        np.asarray([1, 1, 94040]))
+            }
+        ]
+        self._test_pass_dataset(reader_schema=reader_schema,
+                                record_data=record_data,
+                                expected_data=expected_data,
+                                features=features,
+                                batch_size=2)

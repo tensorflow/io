@@ -13,8 +13,8 @@ limitations under the License.
 #define TENSORFLOW_DATA_AVRO_PARSER_TREE_H_
 
 #include <vector>
-#include "tensorflow_io/avro/utils/avro_parser.h"
-#include "tensorflow_io/avro/utils/prefix_tree.h"
+#include "tensorflow_io/core/utils/avro/avro_parser.h"
+#include "tensorflow_io/core/utils/avro/prefix_tree.h"
 
 namespace tensorflow {
 namespace data {
@@ -71,7 +71,11 @@ public:
     const std::function<bool(avro::GenericDatum&)> read_value,
     const avro::ValidSchema& reader_schema,
     uint64 values_to_parse,
-    uint64* values_parsed);
+    uint64* values_parsed) const;
+
+  Status ParseValues(std::map<string,ValueStoreUniquePtr>* key_to_value,
+    const std::function<bool(avro::GenericDatum&)> read_value,
+    const avro::ValidSchema& reader_schema) const;
 
   // Returns the namespace for this parser
   inline string GetAvroNamespace() const { return avro_namespace_; }
@@ -86,16 +90,19 @@ public:
 private:
 
   // The separator that is expected in keys
-  static const char kSeparator = '.';
+  static constexpr const char kSeparator = '.';
 
   // The constant for all element keys
-  static const string kArrayAllElements;  // [*]
+  static constexpr const char* const kArrayAllElements = "[*]";
 
   // The constant for the default namespace -- used when the user did not define a namespace
-  static const string kDefaultNamespace;  // default
+  static constexpr const char* const kDefaultNamespace = "default";
 
   // Build the avro parser tree for the parent for the given children from a prefix tree
   Status Build(AvroParser* parent, const std::vector<PrefixTreeNodeSharedPtr>& children);
+
+  // Initialize will compute the final descendents for each node, called after build
+  void Initialize();
 
   // Resolve and set namespace
   // If no namespace has been provided aka avro_namespace = '', then this method resolves
@@ -113,7 +120,7 @@ private:
     const string& user_name, DataType data_type) const;
 
   // Initializes value buffers for all keys
-  Status InitializeValueBuffers(std::map<string, ValueStoreUniquePtr>* key_to_value);
+  Status InitializeValueBuffers(std::map<string, ValueStoreUniquePtr>* key_to_value) const;
 
   // Orders and resolves key types
   // The ordering is necessary to process any depends for filters first before

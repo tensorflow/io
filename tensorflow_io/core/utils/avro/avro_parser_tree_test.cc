@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "gtest/gtest.h"
 #include "tensorflow/core/framework/tensor_testutil.h"
-#include "tensorflow_io/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/utils/avro/avro_parser_tree.h"
 
 // Note, these tests do not cover all avro types, because there are enough tests
 // in avroc for that. Instead these tests only cover the wrapping in the mem readers

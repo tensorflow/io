@@ -54,15 +54,9 @@ private:
   std::unique_ptr<avro::GenericDatum> datum_;
   const AvroReaderOptions options_;
 
-  // Avro data file reader to read generic datum from file stream
+  // Handling avro data for decoding from file and encoding to string
   std::unique_ptr<avro::DataFileReader<avro::GenericDatum> > reader_;
-
-  // Avro
-  std::unique_ptr<avro::OutputStream> writer_stream_;
   avro::EncoderPtr encoder_; // note shared ptr
-  std::unique_ptr<avro::InputStream> reader_stream_;
-
-  // Avro schema
   avro::ValidSchema reader_schema_;
 };
 

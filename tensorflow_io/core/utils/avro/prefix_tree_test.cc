@@ -10,7 +10,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 #include "gtest/gtest.h"
-#include "tensorflow_io/avro/utils/prefix_tree.h"
+#include "tensorflow_io/core/utils/avro/prefix_tree.h"
 
 namespace tensorflow {
 namespace data {
