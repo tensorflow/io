@@ -57,7 +57,7 @@ docker run -i --rm -v $PWD:/v -w /v --net=host \
   gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
 
 docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host \
-  python:${PYTHON_VERSION}-slim python setup.py --data bazel-bin -q bdist_wheel
+  python:${PYTHON_VERSION}-slim python setup.py --data build -q bdist_wheel
 
 ls dist/*
 for f in dist/*.whl; do
