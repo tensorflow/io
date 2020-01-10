@@ -430,6 +430,32 @@ def fixture_to_file(request):
 
   return args, func, data_func
 
+@pytest.fixture(name="numpy")
+def fixture_numpy():
+  """fixture_numpy"""
+
+  data = [[i, i+1, i+2] for i in range(0, 5000)]
+
+  args = np.asarray(data)
+  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  expected = data
+
+  return args, func, expected
+
+@pytest.fixture(name="numpy_structure")
+def fixture_numpy_structure():
+  """fixture_numpy_structure"""
+
+  d1 = [[i, i+1, i+2] for i in range(0, 5000)]
+  d2 = [[i+2, i+1, i] for i in range(0, 5000)]
+
+  args = (np.asarray(d1), np.asarray(d2))
+  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  expected = list(zip(d1, d2))
+
+  return args, func, expected
+
+
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
 #   entries = [e for e in dataset]
@@ -470,6 +496,8 @@ def fixture_to_file(request):
         pytest.param("pubsub"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
+        pytest.param("numpy"),
+        pytest.param("numpy_structure"),
     ],
     ids=[
         "mnist",
@@ -485,6 +513,8 @@ def fixture_to_file(request):
         "pubsub",
         "hdf5",
         "grpc",
+        "numpy",
+        "numpy[structure]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -531,6 +561,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("hdf5"),
         pytest.param("grpc"),
+        pytest.param("numpy"),
+        pytest.param("numpy_structure"),
     ],
     ids=[
         "mnist",
@@ -544,6 +576,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "prometheus[scrape]",
         "hdf5",
         "grpc",
+        "numpy",
+        "numpy[structure]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -603,6 +637,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
+        pytest.param("numpy"),
+        pytest.param("numpy_structure"),
     ],
     ids=[
         "mnist",
@@ -615,6 +651,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "audio[flac]",
         "hdf5",
         "grpc",
+        "numpy",
+        "numpy[structure]",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
@@ -769,6 +807,8 @@ def test_io_dataset_in_dataset_parallel(
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
+        pytest.param("numpy"),
+        pytest.param("numpy_structure"),
     ],
     ids=[
         "mnist",
@@ -779,6 +819,8 @@ def test_io_dataset_in_dataset_parallel(
         "audio[ogg]",
         "audio[flac]",
         "hdf5",
+        "numpy",
+        "numpy[structure]",
     ],
 )
 def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):

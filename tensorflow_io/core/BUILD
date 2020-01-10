@@ -415,6 +415,20 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "numpy_ops",
+    srcs = [
+        "kernels/numpy_kernels.cc",
+        "ops/numpy_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -435,6 +449,7 @@ cc_binary(
         "//tensorflow_io/core:json_ops",
         "//tensorflow_io/core:kinesis_ops",
         "//tensorflow_io/core:lmdb_ops",
+        "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:pubsub_ops",

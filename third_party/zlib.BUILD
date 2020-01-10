@@ -7,6 +7,10 @@ cc_library(
     srcs = [
         "adler32.c",
         "compress.c",
+        "contrib/minizip/ioapi.c",
+        "contrib/minizip/ioapi.h",
+        "contrib/minizip/unzip.c",
+        "contrib/minizip/unzip.h",
         "crc32.c",
         "crc32.h",
         "deflate.c",
@@ -36,5 +40,8 @@ cc_library(
         "-Wno-shift-negative-value",
         "-DZ_HAVE_UNISTD_H",
     ],
-    includes = ["."],
+    includes = [
+        ".",
+        "contrib/minizip",
+    ],
 )

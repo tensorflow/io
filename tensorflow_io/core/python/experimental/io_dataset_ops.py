@@ -26,6 +26,7 @@ from tensorflow_io.core.python.experimental import kinesis_dataset_ops
 from tensorflow_io.core.python.experimental import pubsub_dataset_ops
 from tensorflow_io.core.python.experimental import grpc_dataset_ops
 from tensorflow_io.core.python.experimental import file_dataset_ops
+from tensorflow_io.core.python.experimental import numpy_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -115,6 +116,54 @@ class IODataset(io_dataset.IODataset):
     with tf.name_scope(kwargs.get("name", "IOFromKinesis")):
       return kinesis_dataset_ops.KinesisIODataset(
           stream, shard, internal=True)
+
+  @classmethod
+  def from_numpy(cls,
+                 a,
+                 **kwargs):
+    """Creates an `IODataset` from a TIFF file.
+
+    The `from_numpy` allows user to create a Dataset from a dict,
+    tuple, or individual element of numpy array_like. It also allows
+    user to create a Dataset from a numpy file (npy or npz).
+    The `Dataset` created through `from_numpy` has the same dtypes
+    as the input elements of array_like. The shapes of the `Dataset`
+    is similar to the input elements of array_like, except that the
+    first dimensions of the shapes are set to None. The reason is
+    that first dimensions of the iterated output which may not be
+    dividable to the total number of elements.
+
+    For example:
+    ```
+    import numpy as np
+    import tensorflow as tf
+    import tensorflow_io as tfio
+    a = (np.asarray([[0., 1.], [2., 3.], [4., 5.], [6., 7.], [8., 9.]]),
+         np.asarray([[10, 11], [12, 13], [14, 15], [16, 17], [18, 19]]))
+    d = tfio.experimental.IODataset.from_numpy(a).batch(2)
+    for i in d:
+      print(i.numpy())
+    # numbers of elements = [2, 2, 1] <= (5 / 2)
+    #
+    # ([[0., 1.], [2., 3.]], [[10, 11], [12, 13]]) # <= batch index 0
+    # ([[4., 5.], [6., 7.]], [[14, 15], [16, 17]]) # <= batch index 1
+    # ([[8., 9.]],           [[18, 19]])           # <= batch index 2
+    ```
+    Args:
+      a: dict, tuple, array_like or string
+        numpy array if the input type is array_like;
+        dict or tuple of numpy arrays if the input type is dict or tuple;
+        filename of numpy file (npy or npz) if the input type is string.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset` with the same dtypes as in array_like specified
+        in `a` or the array_like in numpy file (npy or npz) in `a`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromNumpy")):
+      return numpy_dataset_ops.NumpyIODataset(
+          a, internal=True)
 
   @classmethod
   def to_file(cls,
