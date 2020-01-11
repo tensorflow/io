@@ -437,7 +437,7 @@ def fixture_numpy():
   data = [[i, i+1, i+2] for i in range(0, 5000)]
 
   args = np.asarray(data)
-  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  func = tfio.experimental.IODataset.from_numpy
   expected = data
 
   return args, func, expected
@@ -450,7 +450,7 @@ def fixture_numpy_structure():
   d2 = [[i+2, i+1, i] for i in range(0, 5000)]
 
   args = (np.asarray(d1), np.asarray(d2))
-  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  func = tfio.experimental.IODataset.from_numpy
   expected = list(zip(d1, d2))
 
   return args, func, expected
@@ -472,7 +472,7 @@ def fixture_numpy_file_tuple(request):
   request.addfinalizer(fin)
 
   args = filename
-  func = lambda e: tfio.experimental.IODataset.from_numpy(e)
+  func = tfio.experimental.IODataset.from_numpy
   expected = list(zip(d1, d2))
 
   return args, func, expected

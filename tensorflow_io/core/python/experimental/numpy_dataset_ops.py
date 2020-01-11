@@ -57,11 +57,11 @@ class NumpyIODataset(tf.data.Dataset):
           except ValueError:
             pass
         if indices is not None:
-          values = [e for e in indices]
+          values = list(indices)
           values.sort()
           if not all([k == v for k, v in enumerate(values)]):
             indices = None
-        
+
         # if indices is continuously, then construct a tuple, otherwise a dict.
         if indices is not None:
           entries = dict(zip(indices, entries))
@@ -74,7 +74,7 @@ class NumpyIODataset(tf.data.Dataset):
           return 0, filename, entry.name, entry.shape, entry.dtype
 
       flatten = tf.nest.flatten(entries)
-      assert all([entry.shape[0]==flatten[0].shape[0] for entry in flatten])
+      assert all([entry.shape[0] == flatten[0].shape[0] for entry in flatten])
 
       params = [p(entry) for entry in flatten]
 
