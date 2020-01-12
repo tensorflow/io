@@ -1,6 +1,6 @@
 diff -Naur a/bazel/cc_grpc_library.bzl b/bazel/cc_grpc_library.bzl
---- a/bazel/cc_grpc_library.bzl	2019-10-24 18:22:38.817788818 +0000
-+++ b/bazel/cc_grpc_library.bzl	2019-10-24 18:23:25.991293690 +0000
+--- a/bazel/cc_grpc_library.bzl	2020-01-11 20:03:04.341285530 +0000
++++ b/bazel/cc_grpc_library.bzl	2020-01-11 20:04:13.221432657 +0000
 @@ -101,5 +101,6 @@
              deps = deps +
                     extra_deps +
@@ -9,14 +9,46 @@ diff -Naur a/bazel/cc_grpc_library.bzl b/bazel/cc_grpc_library.bzl
              **kwargs
          )
 diff -Naur a/bazel/python_rules.bzl b/bazel/python_rules.bzl
---- a/bazel/python_rules.bzl	2019-10-24 18:22:38.817788818 +0000
-+++ b/bazel/python_rules.bzl	2019-10-24 18:25:31.128668957 +0000
-@@ -175,7 +175,7 @@
+--- a/bazel/python_rules.bzl	2020-01-11 20:03:04.341285530 +0000
++++ b/bazel/python_rules.bzl	2020-01-11 20:15:24.257614990 +0000
+@@ -249,11 +249,11 @@
          srcs = [
              ":{}".format(codegen_grpc_target),
          ],
--        deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
-+        #deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
+-        deps = [
+-            Label("//src/python/grpcio/grpc:grpcio"),
+-        ] + deps + [
+-            ":{}".format(codegen_grpc_target),
+-        ],
++        #deps = [
++        #    Label("//src/python/grpcio/grpc:grpcio"),
++        #] + deps + [
++        #    ":{}".format(codegen_grpc_target),
++        #],
          **kwargs
      )
  
+diff -Naur a/third_party/py/python_configure.bzl b/third_party/py/python_configure.bzl
+--- a/third_party/py/python_configure.bzl	2020-01-11 20:03:14.291573914 +0000
++++ b/third_party/py/python_configure.bzl	2020-01-11 20:59:25.373077691 +0000
+@@ -307,13 +307,13 @@
+ 
+ def _python_autoconf_impl(repository_ctx):
+     """Implementation of the python_autoconf repository rule."""
+-    _create_single_version_package(
+-        repository_ctx,
+-        "_python2",
+-        _PYTHON2_BIN_PATH,
+-        "python",
+-        _PYTHON2_LIB_PATH,
+-    )
++    #_create_single_version_package(
++    #    repository_ctx,
++    #    "_python2",
++    #    _PYTHON2_BIN_PATH,
++    #    "python",
++    #    _PYTHON2_LIB_PATH,
++    #)
+     _create_single_version_package(
+         repository_ctx,
+         "_python3",
