@@ -135,7 +135,7 @@ def decode_dicom_data(
       tags=tags,
       name=name)
 
-class dicom_tags(object): # pylint: disable=invalid-name
+class dicom_tags(): # pylint: disable=invalid-name
   """dicom_tags"""
 
   def __init__(self):

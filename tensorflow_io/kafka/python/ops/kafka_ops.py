@@ -20,14 +20,14 @@ from __future__ import print_function
 from tensorflow_io.core.python.ops import core_ops
 
 
-class KafkaOutputSequence(object):
+class KafkaOutputSequence():
   """KafkaOutputSequence"""
 
   def __init__(self, topic, servers="localhost", configuration=None):
     """Create a `KafkaOutputSequence`.
     """
     self._topic = topic
-    metadata = [e for e in configuration or []]
+    metadata = list(configuration or [])
     if servers is not None:
       metadata.append("bootstrap.servers=%s" % servers)
     self._resource = core_ops.io_kafka_output_sequence(

@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class _IOTensorComponentLabelFunction(object):
+class _IOTensorComponentLabelFunction():
   """_IOTensorComponentLabelFunction"""
   def __init__(self, function, resource, component, shape, dtype):
     self._function = function

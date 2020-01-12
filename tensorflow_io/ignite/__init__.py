@@ -32,8 +32,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow_io.ignite.python.ops.ignite_dataset_ops import IgniteDataset
 from tensorflow.python.util.all_util import remove_undocumented
+from tensorflow_io.ignite.python.ops.ignite_dataset_ops import IgniteDataset
 
 _allowed_symbols = [
     "IgniteDataset",

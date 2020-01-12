@@ -53,7 +53,7 @@ def read_text(filename, **kwargs):
   return core_ops.io_read_text(
       filename, offset=offset, length=length, memory=memory)
 
-class TextOutputSequence(object):
+class TextOutputSequence():
   """TextOutputSequence"""
 
   def __init__(self, filenames):

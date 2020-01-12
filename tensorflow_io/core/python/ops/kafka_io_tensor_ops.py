@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class _KafkaIOTensorFunction(object):
+class _KafkaIOTensorFunction():
   """_KafkaIOTensorFunction"""
   def __init__(self, resource, capacity):
     self._resource = resource
@@ -54,7 +54,7 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
     """KafkaIOTensor."""
     with tf.name_scope("KafkaIOTensor") as scope:
       subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
-      metadata = [e for e in configuration or []]
+      metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(

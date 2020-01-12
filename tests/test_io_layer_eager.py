@@ -72,7 +72,7 @@ def fixture_fashion_mnist():
 # Note: IOLayerHelper need to have:
 # 1) func(): returns the layer creation function
 # 2) check(): returns the check function
-class TextIOLayerHelper(object):
+class TextIOLayerHelper():
   """TextIOLayerHelper"""
   def func(self):
     f, filename = tempfile.mkstemp()
@@ -81,12 +81,12 @@ class TextIOLayerHelper(object):
     return tfio.experimental.IOLayer.text(filename)
   def check(self, images, predictions):
     f = tf.data.TextLineDataset(self._filename)
-    lines = [line for line in f]
+    lines = list(f)
     assert np.all(lines[5] == predictions[5].rstrip())
 
     assert len(lines) == len(images)
 
-class KafkaIOLayerHelper(object):
+class KafkaIOLayerHelper():
   """KafkaIOLayerHelper"""
   def func(self):
     channel = "e{}e".format(time.time())
@@ -94,7 +94,7 @@ class KafkaIOLayerHelper(object):
     return tfio.experimental.IOLayer.kafka(self._topic)
   def check(self, images, predictions):
     f = kafka_io.KafkaDataset(topics=[self._topic], group="test", eof=True)
-    lines = [line for line in f]
+    lines = list(f)
     assert np.all(lines == predictions)
 
     assert len(lines) == len(images)

@@ -230,9 +230,9 @@ http_archive(
     ],
 )
 
-load("@rules_python//python:pip.bzl", "pip_import")
+load("@rules_python//python:pip.bzl", "pip3_import")
 
-pip_import(
+pip3_import(
     name = "lint_dependencies",
     requirements = "//tools/lint:requirements.txt",
 )
@@ -258,16 +258,14 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
 
-load("@rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+load("@rules_python//python:pip.bzl", "pip_repositories")
 
-pip_import(
+pip3_import(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
 pip_repositories()
-
-load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
 
 pip_install()
 

@@ -22,17 +22,17 @@ import concurrent.futures
 from io import BytesIO
 import json
 import fastavro
-import grpc
-import tensorflow as tf
+import grpc # pylint: disable=wrong-import-order
+import tensorflow as tf # pylint: disable=wrong-import-order
 
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import errors
-from tensorflow.python.framework import ops
-from tensorflow import test
-from tensorflow_io.bigquery import BigQueryTestClient
+from tensorflow.python.framework import dtypes # pylint: disable=wrong-import-order
+from tensorflow.python.framework import errors # pylint: disable=wrong-import-order
+from tensorflow.python.framework import ops # pylint: disable=wrong-import-order
+from tensorflow import test # pylint: disable=wrong-import-order
+from tensorflow_io.bigquery import BigQueryTestClient # pylint: disable=wrong-import-order
 
-import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc
-import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc # pylint: disable=wrong-import-order
+import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2 # pylint: disable=wrong-import-order
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
   tf.compat.v1.enable_eager_execution()

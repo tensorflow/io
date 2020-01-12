@@ -22,11 +22,9 @@ import os
 import tempfile
 
 import numpy as np
+
 import pandas as pd
 
-import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 import tensorflow_io as tfio # pylint: disable=wrong-import-position
 
 def test_csv_format():

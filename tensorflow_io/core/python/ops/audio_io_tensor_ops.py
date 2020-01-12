@@ -21,7 +21,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class AudioGraphIOTensor(object):
+class AudioGraphIOTensor():
   """AudioGraphIOTensor"""
 
   #=============================================================================

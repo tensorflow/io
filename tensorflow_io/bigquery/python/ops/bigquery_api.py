@@ -38,7 +38,7 @@ from tensorflow_io.core.python.ops import core_ops
 
 
 
-class BigQueryClient(object):
+class BigQueryClient():
   """BigQueryClient is the entrypoint for interacting with Cloud BigQuery in TF.
 
   BigQueryClient encapsulates a connection to Cloud BigQuery, and exposes the
@@ -138,7 +138,7 @@ class BigQueryClient(object):
                                self._client_resource)
 
 
-class BigQueryReadSession(object):
+class BigQueryReadSession():
   """Entry point for reading data from Cloud BigQuery."""
 
   def __init__(self, parent, project_id, table_id, dataset_id, selected_fields,
