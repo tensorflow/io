@@ -107,83 +107,41 @@ version of TensorFlow I/O according to the table below:
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
 
-### Build Status and CI
-
-| Build | Status |
-| --- | --- |
-| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
-| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
-| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
-| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
-
-Because of manylinux2010 requirement, TensorFlow I/O is built with
-Ubuntu:16.04 + Developer Toolset 7 (GCC 7.3) on Linux. Configuration
-with Ubuntu 16.04 with Developer Toolset 7 is not exactly straightforward.
-If the system have docker installed, then the following command
-will automatically build manylinux2010 compatible whl package:
-
-```sh
-bash -x -e .travis/python.release.sh
-```
-
-It takes some time to build, but once complete, there will be python
-`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
-directory.
-
-On macOS, the same command could be used though the script expect `python` in shell
-and will only generate a whl package that matches the version of `python` in shell. If
-you want to build a whl package for a specific python then you have to alias this version
-of python to `python` in shell.
-
-Note the above command is also the command we use when releasing packages for Linux and macOS.
-
-TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
-Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
-Again, because of the manylinux2010 requirement, on Linux whl packages are always
-built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
-with different python version to ensure a good coverage:
-
-| Python | Ubuntu 16.04| Ubuntu 18.04 | macOS + osx9 |
-| ------- | ----- | ------- | ------- |
-| 2.7 |  :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| 3.5 |  :heavy_check_mark: | N/A | :heavy_check_mark: |
-| 3.6 |  N/A | :heavy_check_mark: | :heavy_check_mark: |
-| 3.7 |  N/A | :heavy_check_mark: | N/A |
-
-
-TensorFlow I/O has integrations with may systems and cloud vendors such as
-Prometheus, Apache Kafka, Apache Ignite, Google Cloud PubSub, AWS Kinesis,
-Microsoft Azure Storage, Alibaba Cloud OSS etc.
-
-We tried our best to test against those systems in our continuous integration
-whenever possible. Some tests such as Prometheus, Kafka, and Ignite
-are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
-the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
-through official or non-official emulators. Offline tests are also performed whenever
-possible, though systems covered through offine tests may not have the same
-level of coverage as live systems or emulators.
-
-
-|  | Live System | Emulator| CI Integration |  Offline |
-| ------- | ----- | ----- | ----- | ----- |
-| Apache Kafka | :heavy_check_mark:  | | :heavy_check_mark:| |
-| Apache Ignite |  :heavy_check_mark: | |:heavy_check_mark:| |
-| Prometheus |  :heavy_check_mark: | |:heavy_check_mark:| |
-| Google PubSub |   | :heavy_check_mark: |:heavy_check_mark:| |
-| Azure Storage |   | :heavy_check_mark: |:heavy_check_mark:| |
-| AWS Kinesis |   | :heavy_check_mark: |:heavy_check_mark:| |
-| Alibaba Cloud OSS |   | | |  :heavy_check_mark: |
-| Google BigTable/BigQuery |   | to be added | | |
-
-Note:
-- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
-- Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
-- None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
-
-
 ## Development
 
 ### Python
+
+#### macOS
+
+On macOS Catalina or higher, it is possible to build tensorflow-io with
+system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
+
+To install latest tensorflow:
+```sh
+% sudo python3 -m pip install tensorflow
+```
+
+Note there is a bug in macOS's native python 3.7.3 that could be fixed with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+
+To install bazel 2.0.0:
+```sh
+% curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
+% sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
+```
+
+Then use the following to configure the bazel and build C++:
+```sh
+% ./configure.sh
+% bazel build -s --verbose_failures //tensorflow_io/...
+```
+
+The generated shared libraries (.so) are located in bazel-bin directory. With shared libraries
+available, it is possible to run tests with pytest, e.g.:
+```sh
+% TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+#### Linux
 
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
@@ -276,6 +234,80 @@ Tensorflow I/O is a community led open source project. As such, the project
 depends on public contributions, bug-fixes, and documentation. Please
 see [contribution guidelines](CONTRIBUTING.md) for a guide on how to
 contribute.
+
+### Build Status and CI
+
+| Build | Status |
+| --- | --- |
+| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
+| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
+| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
+| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
+
+Because of manylinux2010 requirement, TensorFlow I/O is built with
+Ubuntu:16.04 + Developer Toolset 7 (GCC 7.3) on Linux. Configuration
+with Ubuntu 16.04 with Developer Toolset 7 is not exactly straightforward.
+If the system have docker installed, then the following command
+will automatically build manylinux2010 compatible whl package:
+
+```sh
+bash -x -e .travis/python.release.sh
+```
+
+It takes some time to build, but once complete, there will be python
+`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
+directory.
+
+On macOS, the same command could be used though the script expect `python` in shell
+and will only generate a whl package that matches the version of `python` in shell. If
+you want to build a whl package for a specific python then you have to alias this version
+of python to `python` in shell.
+
+Note the above command is also the command we use when releasing packages for Linux and macOS.
+
+TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
+Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
+Again, because of the manylinux2010 requirement, on Linux whl packages are always
+built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
+with different python version to ensure a good coverage:
+
+| Python | Ubuntu 16.04| Ubuntu 18.04 | macOS + osx9 |
+| ------- | ----- | ------- | ------- |
+| 2.7 |  :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| 3.5 |  :heavy_check_mark: | N/A | :heavy_check_mark: |
+| 3.6 |  N/A | :heavy_check_mark: | :heavy_check_mark: |
+| 3.7 |  N/A | :heavy_check_mark: | N/A |
+
+
+TensorFlow I/O has integrations with may systems and cloud vendors such as
+Prometheus, Apache Kafka, Apache Ignite, Google Cloud PubSub, AWS Kinesis,
+Microsoft Azure Storage, Alibaba Cloud OSS etc.
+
+We tried our best to test against those systems in our continuous integration
+whenever possible. Some tests such as Prometheus, Kafka, and Ignite
+are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
+the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
+through official or non-official emulators. Offline tests are also performed whenever
+possible, though systems covered through offine tests may not have the same
+level of coverage as live systems or emulators.
+
+
+|  | Live System | Emulator| CI Integration |  Offline |
+| ------- | ----- | ----- | ----- | ----- |
+| Apache Kafka | :heavy_check_mark:  | | :heavy_check_mark:| |
+| Apache Ignite |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Prometheus |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Google PubSub |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Azure Storage |   | :heavy_check_mark: |:heavy_check_mark:| |
+| AWS Kinesis |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Alibaba Cloud OSS |   | | |  :heavy_check_mark: |
+| Google BigTable/BigQuery |   | to be added | | |
+
+Note:
+- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
+- Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
+- None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
+
 
 ## Community
 
