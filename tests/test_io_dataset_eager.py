@@ -572,7 +572,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
   args, func, expected = fixture_lookup(io_dataset_fixture)
 
   dataset = func(args)
-  entries = [e for e in dataset]
+  entries = list(dataset)
 
   assert len(entries) == len(expected)
   assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
@@ -642,7 +642,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
 
   # Test of take
   expected_taken = expected[:5]
-  entries_taken = [e for e in dataset.take(5)]
+  entries_taken = list(dataset.take(5))
 
   assert len(entries_taken) == len(expected_taken)
   assert all([
@@ -653,7 +653,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
   indices = list(zip(indices, indices[1:] + [len(expected)]))
 
   expected_batched = [element_slice(expected, i, j) for i, j in indices]
-  entries_batched = [e for e in dataset.batch(3)]
+  entries_batched = list(dataset.batch(3))
 
   assert len(entries_batched) == len(expected_batched)
   assert all([
@@ -720,13 +720,13 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
   dataset = func(args)
 
   # Run of dataset iteration
-  entries = [e for e in dataset]
+  entries = list(dataset)
 
   assert len(entries) == len(expected)
   assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
 
   # A re-run of dataset iteration yield the same results, needed for training.
-  entries = [e for e in dataset]
+  entries = list(dataset)
 
   assert len(entries) == len(expected)
   assert all([element_equal(a, b) for (a, b) in zip(entries, expected)])
@@ -891,7 +891,7 @@ def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
 
   def f(v):
     dataset = func(v)
-    entries = [e for e in dataset]
+    entries = list(dataset)
     return entries
 
   entries = benchmark(f, args)

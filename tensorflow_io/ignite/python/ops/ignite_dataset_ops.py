@@ -275,11 +275,10 @@ class TypeTreeNode(object): # pylint: disable=useless-object-inheritance
         object_type = types[self.type_id]
         return object_type[0]
       raise ValueError("Unsupported type [type_id=%d]" % self.type_id)
-    else:
-      output_types = {}
-      for field in self.fields:
-        output_types[field.name] = field.to_output_types()
-      return output_types
+    output_types = {}
+    for field in self.fields:
+      output_types[field.name] = field.to_output_types()
+    return output_types
 
   def to_flat(self):
     """Returns a list of node types."""
@@ -404,10 +403,9 @@ class IgniteClient(TcpClient):
         raise RuntimeError(
             "Handshake Error [result=%d, version=%d.%d.%d]" %
             (res, serv_ver_major, serv_ver_minor, serv_ver_patch))
-      else:
-        raise RuntimeError(
-            "Handshake Error [result=%d, version=%d.%d.%d, message='%s']" %
-            (res, serv_ver_major, serv_ver_minor, serv_ver_patch, err_msg))
+      raise RuntimeError(
+          "Handshake Error [result=%d, version=%d.%d.%d, message='%s']" %
+          (res, serv_ver_major, serv_ver_minor, serv_ver_patch, err_msg))
 
   def get_cache_type(self, cache_name):
     """Collects type information about objects stored in the specified cache."""
@@ -430,9 +428,8 @@ class IgniteClient(TcpClient):
       err_msg = self._parse_string()
       if err_msg is None:
         raise RuntimeError("Scan Query Error [status=%s]" % status)
-      else:
-        raise RuntimeError(
-            "Scan Query Error [status=%s, message='%s']" % (status, err_msg))
+      raise RuntimeError(
+          "Scan Query Error [status=%s, message='%s']" % (status, err_msg))
 
     self.read_long()  # Cursor id
     row_count = self.read_int()
@@ -644,8 +641,7 @@ class IgniteClient(TcpClient):
       if err_msg is None:
         raise RuntimeError("Get Binary Type Error [status=%d, message='%s']" %
                            (status, err_msg))
-      else:
-        raise RuntimeError("Get Binary Type Error [status=%d]" % status)
+      raise RuntimeError("Get Binary Type Error [status=%d]" % status)
 
     binary_type_exists = self.read_byte()
 

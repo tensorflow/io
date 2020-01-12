@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_dataset_ops
 
-class _KafkaIODatasetFunction(object):
+class _KafkaIODatasetFunction():
   def __init__(self, resource):
     self._resource = resource
   def __call__(self, start, stop):
@@ -45,7 +45,7 @@ class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-acc
     """KafkaIODataset."""
     with tf.name_scope("KafkaIODataset") as scope:
       subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
-      metadata = [e for e in configuration or []]
+      metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(
@@ -68,7 +68,7 @@ class KafkaStreamIODataset(io_dataset_ops._StreamIODataset): # pylint: disable=p
     """KafkaStreamIODataset."""
     with tf.name_scope("KafkaStreamIODataset") as scope:
       subscription = "%s:%d:%d" % (topic, partition, offset)
-      metadata = [e for e in configuration or []]
+      metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(

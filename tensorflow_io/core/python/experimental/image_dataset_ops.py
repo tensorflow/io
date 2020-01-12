@@ -32,7 +32,7 @@ class TIFFIODataset(tf.data.Dataset):
                        "IODataset.from_pcap())")
     with tf.name_scope("TIFFIODataset"):
       content = tf.io.read_file(filename)
-      dtype, dtype = core_ops.io_decode_tiff_info(content)
+      _, dtype = core_ops.io_decode_tiff_info(content)
       # use dtype's rank to find out the number of elements
       dataset = tf.data.Dataset.range(
           tf.cast(tf.shape(dtype)[0], tf.int64))

@@ -23,7 +23,7 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class _IOTensorMappingFunction(object):
+class _IOTensorMappingFunction():
   def __init__(self, function, resource):
     self._function = function
     self._resource = resource
@@ -47,7 +47,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
       spec = (tf.TensorSpec(tf.TensorShape([None]), tf.string),
               tf.TensorSpec(tf.TensorShape([None]), tf.string))
 
-      class _IterableInit(object):
+      class _IterableInit():
         def __init__(self, func, filename):
           self._func = func
           self._filename = filename
@@ -58,7 +58,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
                 container=scope,
                 shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))
 
-      class _IterableNext(object):
+      class _IterableNext():
         def __init__(self, func, shape, dtype):
           self._func = func
           self._shape = shape

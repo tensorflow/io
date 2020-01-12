@@ -26,7 +26,6 @@ fi
 
 pylint_func() {
   echo $1 $2
-  return # TODO: enable after python 2 deprecation
   $pylint_path $2
 }
 

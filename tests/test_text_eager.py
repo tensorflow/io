@@ -31,7 +31,7 @@ def test_read_text():
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
   with open(filename, 'rb') as f:
-    lines = [line for line in f]
+    lines = list(f)
   filename = "file://" + filename
 
   filesize = tf.io.gfile.GFile(filename).size()
@@ -51,7 +51,7 @@ def test_read_text():
     if length < 0:
       length = filesize - offset
     expected = [
-        line for (k, line) in lines if k >= offset and k < offset + length]
+        line for (k, line) in lines if offset <= k < offset + length]
     assert entries.shape == len(expected)
     for k, v in enumerate(expected):
       assert entries[k].numpy().decode() + "\n" == v.decode()

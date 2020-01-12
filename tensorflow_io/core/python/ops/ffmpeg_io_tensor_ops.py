@@ -22,7 +22,7 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 
-class _FFmpegIOTensorFunction(object):
+class _FFmpegIOTensorFunction():
   """_FFmpegIOTensorFuntion"""
   def __init__(self, function, resource, component, shape, dtype, capacity):
     self._function = function
@@ -84,7 +84,7 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
                filename,
                internal=False):
     with tf.name_scope("FFmpegIOTensor") as scope:
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       resource, columns = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,
