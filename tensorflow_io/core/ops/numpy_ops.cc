@@ -33,6 +33,17 @@ REGISTER_OP("IO>NumpyInfo")
       return Status::OK();
     });
 
+REGISTER_OP("IO>NumpySpec")
+    .Input("filename: string")
+    .Input("array: string")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({}));
+      return Status::OK();
+    });
+
 REGISTER_OP("IO>NumpyRead")
     .Input("address: int64")
     .Input("filename: string")

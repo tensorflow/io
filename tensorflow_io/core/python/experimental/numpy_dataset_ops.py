@@ -30,16 +30,58 @@ class NumpyIODataset(tf.data.Dataset):
     with tf.name_scope("NumpyIODataset"):
       assert internal
 
-      if not isinstance(a, str):
-        entries = a
+      entries = a
 
-        def p(entry):
-          address, _ = entry.__array_interface__['data']
-          shape = entry.shape
-          dtype = tf.as_dtype(entry.dtype)
-          return address, "", "", shape, dtype
-      else:
-        filename = a
+      def p(entry):
+        address, _ = entry.__array_interface__['data']
+        shape = entry.shape
+        dtype = tf.as_dtype(entry.dtype)
+        return address, "", "", shape, dtype
+
+      flatten = tf.nest.flatten(entries)
+      assert all([entry.shape[0] == flatten[0].shape[0] for entry in flatten])
+
+      params = [p(entry) for entry in flatten]
+
+      def f(start, stop):
+        return tf.nest.pack_sequence_as(
+            entries,
+            [
+                core_ops.io_numpy_read(
+                    address=address, filename=filename, array=array,
+                    shape=shape, start=start, stop=stop, dtype=dtype
+                ) for address, filename, array, shape, dtype in params])
+
+      step = 1024
+      total = tf.constant(flatten[0].shape[0], tf.int64)
+      indices_start = tf.data.Dataset.range(0, total, step)
+      indices_stop = indices_start.skip(1).concatenate(
+          tf.data.Dataset.from_tensor_slices([total]))
+      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
+      dataset = dataset.map(f)
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      self._holder = [np.array(entry, copy=False) for entry in flatten]
+      super(NumpyIODataset, self).__init__(
+          self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class NumpyFileIODataset(tf.data.Dataset):
+  """NumpyFileIODataset"""
+
+  def __init__(self, filename, spec=None, internal=True):
+    """NumpyFileIODataset."""
+    with tf.name_scope("NumpyFileIODataset"):
+      assert internal
+
+      if tf.executing_eagerly():
         arrays, shapes, dtypes = core_ops.io_numpy_info(filename=filename)
         arrays = tf.unstack(arrays)
         shapes = tf.unstack(shapes)
@@ -70,13 +112,30 @@ class NumpyIODataset(tf.data.Dataset):
           indices = [index.numpy().decode() for index in tf.unstack(arrays)]
           entries = dict(zip(indices, entries))
 
-        def p(entry):
-          return 0, filename, entry.name, entry.shape, entry.dtype
+        flatten = tf.nest.flatten(entries)
+        shapes = [entry.shape for entry in flatten]
+        assert all([shape[0] == shapes[0][0] for shape in shapes])
+      else:
+        assert spec is not None
+        if isinstance(spec, tuple):
+          entries = tuple([tf.TensorSpec(
+              None,
+              (v if isinstance(v, tf.dtypes.DType) else v.dtype),
+              "arr_{}".format(i)) for i, v in enumerate(spec)])
+        else:
+          entries = {k: tf.TensorSpec(
+              None,
+              (v if isinstance(v, tf.dtypes.DType) else v.dtype),
+              k) for k, v in spec.items()}
+        flatten = tf.nest.flatten(entries)
+        def shape_f(entry):
+          shape, _ = core_ops.io_numpy_spec(filename=filename, array=entry.name)
+          return shape
+        shapes = [shape_f(entry) for entry in flatten]
 
-      flatten = tf.nest.flatten(entries)
-      assert all([entry.shape[0] == flatten[0].shape[0] for entry in flatten])
-
-      params = [p(entry) for entry in flatten]
+      def p(entry, shape):
+        return 0, filename, entry.name, shape, entry.dtype
+      params = [p(entry, shape) for entry, shape in zip(flatten, shapes)]
 
       def f(start, stop):
         return tf.nest.pack_sequence_as(
@@ -88,7 +147,7 @@ class NumpyIODataset(tf.data.Dataset):
                 ) for address, filename, array, shape, dtype in params])
 
       step = 1024
-      total = tf.constant(flatten[0].shape[0], tf.int64)
+      total = tf.cast(shapes[0][0], tf.int64)
       indices_start = tf.data.Dataset.range(0, total, step)
       indices_stop = indices_start.skip(1).concatenate(
           tf.data.Dataset.from_tensor_slices([total]))
@@ -97,9 +156,7 @@ class NumpyIODataset(tf.data.Dataset):
       dataset = dataset.unbatch()
 
       self._dataset = dataset
-      if isinstance(a, str):
-        self._holder = [np.array(entry, copy=False) for entry in flatten]
-      super(NumpyIODataset, self).__init__(
+      super(NumpyFileIODataset, self).__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
