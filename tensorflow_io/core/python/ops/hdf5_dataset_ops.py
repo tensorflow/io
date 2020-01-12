@@ -28,19 +28,24 @@ class HDF5IODataset(tf.data.Dataset):
   def __init__(self,
                filename,
                dataset,
+               spec=None,
                internal=True):
     """HDF5IODataset."""
-    with tf.name_scope("HDF5IODataset") as scope:
+    with tf.name_scope("HDF5IODataset"):
       assert internal
 
       # TODO: unique shared_name might be removed if HDF5 is thead-safe?
       resource, _ = core_ops.io_hdf5_readable_init(
           filename,
-          container=scope,
+          container="",
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
-      dtype = tf.as_dtype(dtype.numpy())
-
+      if tf.executing_eagerly():
+        shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
+        dtype = tf.as_dtype(dtype.numpy())
+      else:
+        assert spec is not None
+        shape, _ = core_ops.io_hdf5_readable_spec(resource, dataset)
+        dtype = spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
       self._resource = resource
       self._component = dataset
       self._shape = shape
