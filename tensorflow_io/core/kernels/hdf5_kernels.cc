@@ -566,18 +566,31 @@ class HDF5ReadableReadOp : public OpKernel {
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
-    const Tensor* start_tensor;
-    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
-    const int64 start = start_tensor->scalar<int64>()();
+    const Tensor* component_tensor;
+    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
+    const string& component = component_tensor->scalar<string>()();
 
     const Tensor* shape_tensor;
     OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
     TensorShape shape(shape_tensor->flat<int64>());
 
-    const Tensor* component_tensor;
-    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    const string& component = component_tensor->scalar<string>()();
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    int64 start = start_tensor->scalar<int64>()();
 
+    const Tensor* stop_tensor;
+    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    int64 stop = stop_tensor->scalar<int64>()();
+    if (shape.dims() > 0) {
+      if (stop < 0 || stop > shape.dim_size(0)) {
+        stop = shape.dim_size(0);
+      }
+      if (start > stop) {
+        start = stop;
+      }
+
+      shape.set_dim(0, stop - start);
+    }
     OP_REQUIRES_OK(
         context,
         resource->Read(component, start, shape,

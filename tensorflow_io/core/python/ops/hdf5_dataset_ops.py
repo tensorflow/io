@@ -57,12 +57,9 @@ class HDF5IODataset(tf.data.Dataset):
           tf.data.Dataset.from_tensor_slices([shape[0]]))
       dataset = tf.data.Dataset.zip((indices_start, indices_stop))
       def f(start, stop):
-        shape = tf.concat(
-            [tf.convert_to_tensor([stop - start], tf.int64), self._shape[1:]],
-            axis=0)
         return core_ops.io_hdf5_readable_read(
-            self._resource, start=start, shape=shape,
-            component=self._component, dtype=self._dtype)
+            self._resource, component=self._component,
+            shape=self._shape, start=start, stop=stop, dtype=self._dtype)
       dataset = dataset.map(f)
       dataset = dataset.unbatch()
 
