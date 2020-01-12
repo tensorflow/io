@@ -243,14 +243,10 @@ pip_install()
 
 http_archive(
     name = "com_github_grpc_grpc",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:grpc.patch",
-    ],
-    sha256 = "6dc4f122527670099124a71d8a180b0b074a18efa939173d6c3a0673229f57d3",
-    strip_prefix = "grpc-e68ce1164b49529de12fbba63d53f081aef5c90e",
+    sha256 = "2fcb7f1ab160d6fd3aaade64520be3e5446fc4c6fa7ba6581afdc4e26094bd81",
+    strip_prefix = "grpc-1.26.0",
     urls = [
-        "https://github.com/grpc/grpc/archive/e68ce1164b49529de12fbba63d53f081aef5c90e.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.26.0.tar.gz",
     ],
 )
 

@@ -16,7 +16,7 @@
 
 rm -f .bazelrc
 
-PYTHON=python
+PYTHON=python3
 if [[ "$#" -gt 0 ]]; then
   PYTHON=$1
 fi

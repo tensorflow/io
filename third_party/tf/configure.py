@@ -85,6 +85,9 @@ def write_config():
         library_name = "lib" + library_name + ".so"
       bazel_rc.write('build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'
                      .format(library_name))
+      # Needed for GRPC build
+      if sys.platform == "darwin":
+        bazel_rc.write('build --copt -DGRPC_BAZEL_BUILD\n')
       bazel_rc.close()
   except OSError:
     print("ERROR: Writing .bazelrc")

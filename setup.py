@@ -250,14 +250,11 @@ if datapath is not None:
         # proto_library will generate a lib<name>_proto.so
         # both .so files are not needed in final wheel.
         # The cc_grpc_library only need to pass `linkstatic = True`
-        # to the underlying native.cc_library. It is not exposed
-        # but we applied a patch (see third_party/grpc.patch) so
-        # cc_grpc_library is covered and lib<name>_cc_grpc.so will
-        # not be generated.
-        # proto_library is a native library in bazel which we could
-        # not patch easily.
-        # For that reason we skip lib<name>_proto.so here:
-        if filename.endswith("_proto.so"):
+        # to the underlying native.cc_library. However it is not
+        # exposed. proto_library is a native library in bazel which
+        # we could not patch easily as well.
+        # For that reason we skip lib<name>_cc_grpc.so and lib<name>_proto.so:
+        if filename.endswith("_cc_grpc.so") or filename.endswith("_proto.so"):
           continue
         src = os.path.join(rootname, filename)
         dst = os.path.join(
