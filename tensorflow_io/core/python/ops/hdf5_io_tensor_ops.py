@@ -107,6 +107,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
   #=============================================================================
   def __init__(self,
                filename,
+               spec=None,
                internal=False):
     with tf.name_scope("HDF5IOTensor") as scope:
       # TODO: unique shared_name might be removed if HDF5 is thead-safe?
@@ -114,18 +115,38 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
           filename,
           container=scope,
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      columns = tf.unstack(columns)
+
       def f(column):
         shape, dtype = core_ops.io_hdf5_readable_spec(resource, column)
         return shape, dtype
-      entries = [f(column) for column in columns]
-      shapes, dtypes = zip(*entries)
-      shapes, dtypes = list(shapes), list(dtypes)
-      dtypes = [tf.as_dtype(dtype.numpy()) for dtype in dtypes]
 
-      entries = [
-          tf.TensorSpec(shape, dtype, column) for (
-              shape, dtype, column) in zip(shapes, dtypes, columns)]
+      if tf.executing_eagerly():
+        columns = tf.unstack(columns)
+        entries = [f(column) for column in columns]
+        shapes, dtypes = zip(*entries)
+        shapes, dtypes = list(shapes), list(dtypes)
+        dtypes = [tf.as_dtype(dtype.numpy()) for dtype in dtypes]
+        entries = [
+            tf.TensorSpec(shape, dtype, column) for (
+                shape, dtype, column) in zip(shapes, dtypes, columns)]
+      else:
+        assert spec is not None
+
+        entries = spec.items()
+        columns, entries = zip(*entries)
+        columns, entries = list(columns), list(entries)
+
+        dtypes = [
+            entry if isinstance(
+                entry, tf.dtypes.DType) else entry.dtype for entry in entries]
+
+        entries = [f(column) for column in columns]
+        shapes, _ = zip(*entries)
+        shapes = list(shapes)
+
+        entries = [
+            tf.TensorSpec(None, dtype, column) for (
+                dtype, column) in zip(dtypes, columns)]
 
       def g(entry, shape):
         return BaseHDF5GraphIOTensor(
