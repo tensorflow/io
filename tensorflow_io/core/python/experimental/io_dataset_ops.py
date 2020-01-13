@@ -118,14 +118,11 @@ class IODataset(io_dataset.IODataset):
           stream, shard, internal=True)
 
   @classmethod
-  def from_numpy(cls,
-                 a,
-                 **kwargs):
-    """Creates an `IODataset` from a TIFF file.
+  def from_numpy(cls, a, **kwargs):
+    """Creates an `IODataset` from Numpy arrays.
 
     The `from_numpy` allows user to create a Dataset from a dict,
-    tuple, or individual element of numpy array_like. It also allows
-    user to create a Dataset from a numpy file (npy or npz).
+    tuple, or individual element of numpy array_like.
     The `Dataset` created through `from_numpy` has the same dtypes
     as the input elements of array_like. The shapes of the `Dataset`
     is similar to the input elements of array_like, except that the
@@ -150,20 +147,55 @@ class IODataset(io_dataset.IODataset):
     # ([[8., 9.]],           [[18, 19]])           # <= batch index 2
     ```
     Args:
-      a: dict, tuple, array_like or string
+      a: dict, tuple, or array_like
         numpy array if the input type is array_like;
-        dict or tuple of numpy arrays if the input type is dict or tuple;
-        filename of numpy file (npy or npz) if the input type is string.
+        dict or tuple of numpy arrays if the input type is dict or tuple.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
       A `IODataset` with the same dtypes as in array_like specified
-        in `a` or the array_like in numpy file (npy or npz) in `a`.
+        in `a`.
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromNumpy")):
       return numpy_dataset_ops.NumpyIODataset(
           a, internal=True)
+
+
+  @classmethod
+  def from_numpy_file(cls, filename, spec=None, **kwargs):
+    """Creates an `IODataset` from a Numpy file.
+
+    The `from_numpy_file` allows user to create a Dataset from
+    a numpy file (npy or npz). The `Dataset` created through
+    `from_numpy_file` has the same dtypes as the elements in numpy
+    file. The shapes of the Dataset is similar to the elements of
+    numpy file, except the first dimensions of the shapes are set
+    to None. The reason is that first dimensions of the iterated
+    output which may not be dividable to the total number of elements.
+    In case numpy file consists of unnamed elements, a tuple of numpy
+    arrays are returned, otherwise a dict is returned for named
+    elements.
+    ```
+    Args:
+      filename: filename of numpy file (npy or npz).
+      spec: A tuple of tf.TensorSpec or dtype, or a dict of
+        `name:tf.TensorSpec` or `name:dtype` pairs to specify the dtypes
+        in each element of the numpy file. In eager mode spec is automatically
+        probed. In graph spec must be provided. If a tuple is provided for
+        spec then it is assumed that numpy file consists of `arr_0`, `arr_2`...
+        If a dict is provided then numpy file should consists of named
+        elements.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IODataset` with the same dtypes as of the array_like in numpy
+        file (npy or npz).
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromNumpyFile")):
+      return numpy_dataset_ops.NumpyFileIODataset(
+          filename, spec=spec, internal=True)
 
   @classmethod
   def to_file(cls,
