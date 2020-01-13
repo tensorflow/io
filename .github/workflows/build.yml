@@ -377,3 +377,30 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.github_tensorflow_io_nightly }}
+
+  windows-bazel:
+    name: Bazel Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.7.5']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: numworks/setup-msys2@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Bazel on Windows
+        shell: cmd
+        run: |
+          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
+          echo export BAZEL_VC=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/VC/  >>D:\a\_temp\msys\msys64\home\runneradmin\.bash_profile
+          echo export BAZEL_PATH=/d/a/io/io/bazel-%BAZEL_VERSION%-windows-x86_64.exe  >>D:\a\_temp\msys\msys64\home\runneradmin\.bash_profile
+          echo export PATH=/c/hostedtoolcache/windows/Python/${{ matrix.python-version }}/x64/:$PATH  >>D:\a\_temp\msys\msys64\home\runneradmin\.bash_profile
+          python --version
+          python -m pip --version
+          python -m pip install wheel setuptools
+          which python
+          cp /c/hostedtoolcache/windows/Python/${{ matrix.python-version }}/x64/python /c/hostedtoolcache/windows/Python/${{ matrix.python-version }}/x64/python3
+          python3 --version
+          msys2do .github/workflows/build.windows.sh
