@@ -278,6 +278,99 @@ class ZipObjectInputStream : public io::InputStreamInterface {
   int64 offset_ = 0;
   bool final_ = false;
 };
+
+Status NumpyInfo(const string& filename, const int64 size,
+                 std::unique_ptr<tensorflow::RandomAccessFile>& file,
+                 std::vector<string>* arrays,
+                 std::vector<std::vector<int64>>* shapes,
+                 std::vector<int64>* dtypes) {
+  struct zlib_fileopaque64_def fileopaque;
+  fileopaque.offset = 0;
+  fileopaque.length = size;
+  fileopaque.file = file.get();
+
+  zlib_filefunc64_def filefunc;
+  memset(&filefunc, 0x00, sizeof(zlib_filefunc64_def));
+  filefunc.zopen64_file = filefunc_open64;
+  filefunc.zread_file = filefunc_read;
+  filefunc.zwrite_file = filefunc_write;
+  filefunc.ztell64_file = filefunc_tell64;
+  filefunc.zseek64_file = filefunc_seek64;
+  filefunc.zclose_file = filefunc_close;
+  filefunc.zerror_file = filefunc_error;
+  filefunc.opaque = (voidpf)&fileopaque;
+
+  unzFile uf = unzOpen2_64(filename.c_str(), &filefunc);
+  if (uf == NULL) {
+    // Not a zip file, try normal file
+    io::RandomAccessInputStream stream(file.get());
+    ::tensorflow::DataType dtype;
+    std::vector<int64> shape;
+    TF_RETURN_IF_ERROR(ParseNumpyHeader(&stream, &dtype, &shape));
+    arrays->push_back("");
+    shapes->push_back(shape);
+    dtypes->push_back(dtype);
+  } else {
+    std::unique_ptr<unzFile, void (*)(unzFile*)> unzFile_scope_(
+        &uf, [](unzFile* p) {
+          if (p != nullptr) {
+            unzClose(*p);
+          }
+        });
+    unz_global_info64 gi;
+    int err = unzGetGlobalInfo64(uf, &gi);
+    if (err != UNZ_OK) {
+      return errors::InvalidArgument("error with zipfile in unzGetGlobalInfo: ",
+                                     err);
+    }
+    for (uLong i = 0; i < gi.number_entry; i++) {
+      char filename_inzip[256];
+      unz_file_info64 file_info;
+
+      err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
+                                    sizeof(filename_inzip), NULL, 0, NULL, 0);
+      if (err != UNZ_OK) {
+        errors::InvalidArgument("error with zipfile in unzGetCurrentFileInfo: ",
+                                err);
+      }
+
+      size_t filename_inzip_len = strlen(filename_inzip);
+      if (filename_inzip_len <= 4 ||
+          memcmp(&filename_inzip[filename_inzip_len - 4], ".npy", 4)) {
+        return errors::InvalidArgument("invalid name in zipfile: ",
+                                       filename_inzip);
+      }
+      filename_inzip[filename_inzip_len - 4] = 0x00;
+
+      err = unzOpenCurrentFile(uf);
+      if (err != UNZ_OK) {
+        return errors::InvalidArgument(
+            "error with zipfile in unzOpenCurrentFile: ", err);
+      }
+
+      ZipObjectInputStream stream(uf);
+
+      ::tensorflow::DataType dtype;
+      std::vector<int64> shape;
+
+      TF_RETURN_IF_ERROR(ParseNumpyHeader(&stream, &dtype, &shape));
+      arrays->push_back(filename_inzip);
+      shapes->push_back(shape);
+      dtypes->push_back(dtype);
+
+      if ((i + 1) < gi.number_entry) {
+        err = unzGoToNextFile(uf);
+        if (err != UNZ_OK) {
+          return errors::InvalidArgument(
+              "error with zipfile in unzGoToNextFile: ", err);
+        }
+      }
+    }
+  }
+
+  return Status::OK();
+}
+
 class NumpyInfoOp : public OpKernel {
  public:
   explicit NumpyInfoOp(OpKernelConstruction* context) : OpKernel(context) {
@@ -298,80 +391,8 @@ class NumpyInfoOp : public OpKernel {
     std::vector<std::vector<int64>> shapes;
     std::vector<int64> dtypes;
 
-    struct zlib_fileopaque64_def fileopaque;
-    fileopaque.offset = 0;
-    fileopaque.length = size;
-    fileopaque.file = file.get();
-
-    zlib_filefunc64_def filefunc;
-    memset(&filefunc, 0x00, sizeof(zlib_filefunc64_def));
-    filefunc.zopen64_file = filefunc_open64;
-    filefunc.zread_file = filefunc_read;
-    filefunc.zwrite_file = filefunc_write;
-    filefunc.ztell64_file = filefunc_tell64;
-    filefunc.zseek64_file = filefunc_seek64;
-    filefunc.zclose_file = filefunc_close;
-    filefunc.zerror_file = filefunc_error;
-    filefunc.opaque = (voidpf)&fileopaque;
-
-    unzFile uf = unzOpen2_64(filename.c_str(), &filefunc);
-    if (uf == NULL) {
-      // Not a zip file, try normal file
-      io::RandomAccessInputStream stream(file.get());
-      ::tensorflow::DataType dtype;
-      std::vector<int64> shape;
-      OP_REQUIRES_OK(context, ParseNumpyHeader(&stream, &dtype, &shape));
-      arrays.push_back("");
-      shapes.push_back(shape);
-      dtypes.push_back(dtype);
-    } else {
-      unz_global_info64 gi;
-      int err = unzGetGlobalInfo64(uf, &gi);
-      OP_REQUIRES(context, (err == UNZ_OK),
-                  errors::InvalidArgument(
-                      "error with zipfile in unzGetGlobalInfo: ", err));
-      for (uLong i = 0; i < gi.number_entry; i++) {
-        char filename_inzip[256];
-        unz_file_info64 file_info;
-
-        err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
-                                      sizeof(filename_inzip), NULL, 0, NULL, 0);
-        OP_REQUIRES(context, (err == UNZ_OK),
-                    errors::InvalidArgument(
-                        "error with zipfile in unzGetCurrentFileInfo: ", err));
-
-        size_t filename_inzip_len = strlen(filename_inzip);
-        if (filename_inzip_len <= 4 ||
-            memcmp(&filename_inzip[filename_inzip_len - 4], ".npy", 4)) {
-          OP_REQUIRES(context, false,
-                      errors::InvalidArgument("invalid name in zipfile: ",
-                                              filename_inzip));
-        }
-        filename_inzip[filename_inzip_len - 4] = 0x00;
-
-        err = unzOpenCurrentFile(uf);
-        OP_REQUIRES(context, (err == UNZ_OK),
-                    errors::InvalidArgument(
-                        "error with zipfile in unzOpenCurrentFile: ", err));
-
-        ZipObjectInputStream stream(uf);
-
-        ::tensorflow::DataType dtype;
-        std::vector<int64> shape;
-        OP_REQUIRES_OK(context, ParseNumpyHeader(&stream, &dtype, &shape));
-        arrays.push_back(filename_inzip);
-        shapes.push_back(shape);
-        dtypes.push_back(dtype);
-
-        if ((i + 1) < gi.number_entry) {
-          err = unzGoToNextFile(uf);
-          OP_REQUIRES(context, (err == UNZ_OK),
-                      errors::InvalidArgument(
-                          "error with zipfile in unzGoToNextFile: ", err));
-        }
-      }
-      unzClose(uf);
-    }
+    OP_REQUIRES_OK(context,
+                   NumpyInfo(filename, size, file, &arrays, &shapes, &dtypes));
 
     TensorShape output_shape = filename_tensor.shape();
     output_shape.AddDim(arrays.size());
@@ -404,6 +425,68 @@ class NumpyInfoOp : public OpKernel {
       }
       dtypes_tensor->flat<int64>()(i) = dtypes[i];
     }
+  }
+
+ private:
+  mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class NumpySpecOp : public OpKernel {
+ public:
+  explicit NumpySpecOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor& filename_tensor = context->input(0);
+    const string filename = filename_tensor.scalar<string>()();
+
+    const Tensor& array_tensor = context->input(1);
+    const string array = array_tensor.scalar<string>()();
+
+    uint64 size;
+    OP_REQUIRES_OK(context, env_->GetFileSize(filename, &size));
+
+    std::unique_ptr<tensorflow::RandomAccessFile> file;
+    OP_REQUIRES_OK(context, env_->NewRandomAccessFile(filename, &file));
+
+    std::vector<string> arrays;
+    std::vector<std::vector<int64>> shapes;
+    std::vector<int64> dtypes;
+
+    OP_REQUIRES_OK(context,
+                   NumpyInfo(filename, size, file, &arrays, &shapes, &dtypes));
+
+    std::vector<int64> shape;
+    int64 dtype = DT_INVALID;
+    for (size_t i = 0; i < arrays.size(); i++) {
+      if (arrays[i] == array) {
+        shape = shapes[i];
+        dtype = dtypes[i];
+        break;
+      }
+    }
+    OP_REQUIRES(context, (dtype != DT_INVALID),
+                errors::InvalidArgument("unable to find array ", array, " in ",
+                                        filename));
+
+    TensorShape dtype_shape = filename_tensor.shape();
+    TensorShape shape_shape = dtype_shape;
+    shape_shape.AddDim(shape.size());
+
+    Tensor* shape_tensor;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(0, shape_shape, &shape_tensor));
+
+    Tensor* dtype_tensor;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(1, dtype_shape, &dtype_tensor));
+
+    for (size_t i = 0; i < shape.size(); i++) {
+      shape_tensor->flat<int64>()(i) = shape[i];
+    }
+    dtype_tensor->scalar<int64>()() = dtype;
   }
 
  private:
@@ -607,6 +690,7 @@ class NumpyReadOp : public OpKernel {
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>NumpyInfo").Device(DEVICE_CPU), NumpyInfoOp);
+REGISTER_KERNEL_BUILDER(Name("IO>NumpySpec").Device(DEVICE_CPU), NumpySpecOp);
 REGISTER_KERNEL_BUILDER(Name("IO>NumpyRead").Device(DEVICE_CPU), NumpyReadOp);
 
 }  // namespace

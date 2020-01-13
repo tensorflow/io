@@ -472,7 +472,7 @@ def fixture_numpy_file_tuple(request):
   request.addfinalizer(fin)
 
   args = filename
-  func = tfio.experimental.IODataset.from_numpy
+  func = tfio.experimental.IODataset.from_numpy_file
   expected = list(zip(d1, d2))
 
   return args, func, expected
@@ -495,7 +495,57 @@ def fixture_numpy_file_dict(request):
 
   args = filename
   def func(f):
-    dataset = tfio.experimental.IODataset.from_numpy(f)
+    dataset = tfio.experimental.IODataset.from_numpy_file(f)
+    dataset = dataset.map(lambda e: (e['d1'], e['d2']))
+    return dataset
+  expected = list(zip(d1, d2))
+
+  return args, func, expected
+
+@pytest.fixture(name="numpy_file_tuple_graph")
+def fixture_numpy_file_tuple_graph(request):
+  """fixture_numpy_file_tuple_graph"""
+
+  d1 = [[i, i+1, i+2] for i in range(0, 5000)]
+  d2 = [[i+2, i+1, i] for i in range(0, 5000)]
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "numpy_file.npz")
+
+  np.savez(filename, np.asarray(d1), np.asarray(d2))
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  args = filename
+  def func(f):
+    return tfio.experimental.IODataset.from_numpy_file(
+        f, spec=(tf.int64, tf.int64))
+  expected = list(zip(d1, d2))
+
+  return args, func, expected
+
+@pytest.fixture(name="numpy_file_dict_graph")
+def fixture_numpy_file_dict_graph(request):
+  """fixture_numpy_file_dict_graph"""
+
+  d1 = [[i, i+1, i+2] for i in range(0, 5000)]
+  d2 = [[i+2, i+1, i] for i in range(0, 5000)]
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "numpy_file.npz")
+
+  np.savez(filename, d2=np.asarray(d2), d1=np.asarray(d1))
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  args = filename
+  def func(f):
+    dataset = tfio.experimental.IODataset.from_numpy_file(
+        f, spec={'d1': tf.int64, 'd2': tf.int64})
     dataset = dataset.map(lambda e: (e['d1'], e['d2']))
     return dataset
   expected = list(zip(d1, d2))
@@ -789,6 +839,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
                 pytest.mark.skip(reason="TODO"),
             ],
         ),
+        pytest.param("numpy_file_tuple_graph", None),
+        pytest.param("numpy_file_tuple_graph", 2),
+        pytest.param("numpy_file_dict_graph", None),
+        pytest.param("numpy_file_dict_graph", 2),
     ],
     ids=[
         "mnist",
@@ -809,6 +863,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "audio[flac]|2",
         "hdf5",
         "hdf5|2",
+        "numpy[file/tuple]",
+        "numpy[file/tuple]|2",
+        "numpy[file/dict]",
+        "numpy[file/dict]|2",
     ],
 )
 def test_io_dataset_in_dataset_parallel(
