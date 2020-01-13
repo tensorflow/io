@@ -1,0 +1,12 @@
+diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
+--- a/toolchain/internal/configure.bzl	2020-01-13 15:40:42.000000000 -0800
++++ b/toolchain/internal/configure.bzl	2020-01-13 15:55:38.000000000 -0800
+@@ -36,6 +36,8 @@
+     return ("\n" + 12 * " ").join(["\"%s\"," % d for d in dirs])
+ 
+ def llvm_toolchain_impl(rctx):
++    if rctx.os.name != "mac os x" and rctx.os.name != "linux":
++        return
+     repo_path = str(rctx.path(""))
+     relative_path_prefix = "external/%s/" % rctx.name
+     if rctx.attr.absolute_paths:

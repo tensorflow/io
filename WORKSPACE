@@ -666,6 +666,10 @@ http_archive(
 
 http_archive(
     name = "com_grail_bazel_toolchain",
+    patch_args = ["-p1"],
+    patches = [
+        "//third_party:llvm_toolchain.patch",
+    ],
     strip_prefix = "bazel-toolchain-0.4.4",
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/0.4.4.tar.gz"],
 )
@@ -676,10 +680,6 @@ llvm_toolchain(
     name = "llvm_toolchain",
     llvm_version = "8.0.0",
 )
-
-load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
-
-llvm_register_toolchains()
 
 http_archive(
     name = "vorbis",
