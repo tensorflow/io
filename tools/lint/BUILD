@@ -21,6 +21,7 @@ py_binary(
     main = "pylint_python.py",
     deps = [
         requirement("pylint"),
+        requirement("wrapt"),
         requirement("astroid"),
         requirement("isort"),
         requirement("lazy_object_proxy"),

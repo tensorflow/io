@@ -54,7 +54,7 @@ set -e
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find -f tensorflow_io tests -type f \
+            find tensorflow_io tests -type f \
                 \( -name '*.py' \) \
         ) ; do \
         pylint_func $mode "$i" ; \
