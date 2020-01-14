@@ -21,12 +21,13 @@ from __future__ import print_function
 import time
 import numpy as np
 
+import pytest
+
 import tensorflow as tf
 import tensorflow_io as tfio
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io # pylint: disable=wrong-import-position
 
-import pytest
 
 def test_kafka_io_tensor():
   kafka = tfio.IOTensor.from_kafka("test")

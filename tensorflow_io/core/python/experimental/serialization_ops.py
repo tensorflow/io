@@ -79,23 +79,22 @@ def process_primitive(data, name):
   """process_primitive"""
   if data == "boolean":
     return tf.TensorSpec(tf.TensorShape([]), tf.bool, name)
-  elif data == "int":
+  if data == "int":
     return tf.TensorSpec(tf.TensorShape([]), tf.int32, name)
-  elif data == "long":
+  if data == "long":
     return tf.TensorSpec(tf.TensorShape([]), tf.int64, name)
-  elif data == "float":
+  if data == "float":
     return tf.TensorSpec(tf.TensorShape([]), tf.float32, name)
-  elif data == "double":
+  if data == "double":
     return tf.TensorSpec(tf.TensorShape([]), tf.float64, name)
-  assert data == "bytes" or data == "string"
+  assert data in ("bytes", "string")
   return tf.TensorSpec(tf.TensorShape([]), tf.string, name)
 
 def process_record(data, name):
   """process_record"""
-  return dict([(
-      v["name"],
-      process_entry(v, "{}/{}".format(name, v["name"]))
-  ) for v in data['fields']])
+  return {
+      v["name"]: process_entry(
+          v, "{}/{}".format(name, v["name"])) for v in data['fields']}
 
 def process_union(data, name):
   """process_union"""
@@ -107,15 +106,15 @@ def process_entry(data, name):
   """process_entry"""
   if data["type"] == "record":
     return process_record(data, name)
-  elif data["type"] == "enum":
+  if data["type"] == "enum":
     assert False
-  elif data["type"] == "array":
+  if data["type"] == "array":
     assert False
-  elif data["type"] == "map":
+  if data["type"] == "map":
     assert False
-  elif data["type"] == "fixed":
+  if data["type"] == "fixed":
     assert False
-  elif isinstance(data["type"], list):
+  if isinstance(data["type"], list):
     return process_union(data, name)
   return process_primitive(data["type"], name)
 

@@ -20,10 +20,11 @@ from __future__ import print_function
 import os
 import numpy as np
 
+import pytest
+
 import tensorflow as tf
 import tensorflow_io as tfio
 
-import pytest
 
 @pytest.fixture(name="fixture_lookup")
 def fixture_lookup_func(request):
