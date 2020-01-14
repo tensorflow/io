@@ -22,7 +22,7 @@ def write_config():
   """Retrive compile and link information from tensorflow and write to .bazelrc."""
 
   cflags = tf.sysconfig.get_compile_flags()
-
+  print("INFO: tf.sysconfig.get_compile_flags()=", cflags)
   inc_regex = re.compile("^-I")
   opt_regex = re.compile("^-D")
 
@@ -40,7 +40,7 @@ def write_config():
 
   if len(include_list) != 1:
     print("ERROR: Expected a single include directory in " +
-          "tf.sysconfig.get_compile_flags()")
+          "tf.sysconfig.get_compile_flags(): ", include_list)
     exit(1)
 
 
@@ -51,7 +51,8 @@ def write_config():
   libdir_list = []
 
   lib = tf.sysconfig.get_link_flags()
-
+  print("INFO: tf.sysconfig.get_link_flags()=", lib)
+  print("INFO: platform=", sys.platform)
   for arg in lib:
     if library_regex.match(arg):
       library_list.append(arg)
@@ -61,8 +62,8 @@ def write_config():
       print("WARNING: Unexpected link flag item {}".format(arg))
 
   if len(library_list) != 1 or len(libdir_list) != 1:
-    print("ERROR: Expected exactly one lib and one libdir in" +
-          "tf.sysconfig.get_link_flags()")
+    print("ERROR: Expected exactly one lib and one libdir in " +
+          "tf.sysconfig.get_link_flags()", library_list, libdir_list)
     exit(1)
 
   try:
