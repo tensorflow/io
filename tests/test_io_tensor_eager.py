@@ -192,6 +192,30 @@ def fixture_hdf5(request):
 
   return args, func, expected
 
+@pytest.fixture(name="hdf5_graph", scope="module")
+def fixture_hdf5_graph(request):
+  """fixture_hdf5_graph"""
+  import h5py # pylint: disable=import-outside-toplevel
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "test.h5")
+
+  data = list(range(5000))
+
+  with h5py.File(filename, 'w') as f:
+    f.create_dataset('float64', data=np.asarray(data, np.float64), dtype='f8')
+  args = filename
+  def func(args):
+    return tfio.IOTensor.from_hdf5(
+        args, spec={'/float64': tf.float64})('/float64')
+  expected = np.asarray(data, np.float64).tolist()
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  return args, func, expected
+
 @pytest.fixture(name="hdf5_scalar", scope="module")
 def fixture_hdf5_scalar(request):
   """fixture_hdf5_scalar"""
@@ -309,18 +333,8 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_ogg", 2),
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
-        pytest.param(
-            "hdf5", None,
-            marks=[
-                pytest.mark.skip(reason="TODO"),
-            ],
-        ),
-        pytest.param(
-            "hdf5", 2,
-            marks=[
-                pytest.mark.skip(reason="TODO"),
-            ],
-        ),
+        pytest.param("hdf5_graph", None),
+        pytest.param("hdf5_graph", 2),
     ],
     ids=[
         "audio[wav]",

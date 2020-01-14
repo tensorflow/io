@@ -28,19 +28,24 @@ class HDF5IODataset(tf.data.Dataset):
   def __init__(self,
                filename,
                dataset,
+               spec=None,
                internal=True):
     """HDF5IODataset."""
-    with tf.name_scope("HDF5IODataset") as scope:
+    with tf.name_scope("HDF5IODataset"):
       assert internal
 
       # TODO: unique shared_name might be removed if HDF5 is thead-safe?
       resource, _ = core_ops.io_hdf5_readable_init(
           filename,
-          container=scope,
+          container="",
           shared_name="%s/%s" % (filename, uuid.uuid4().hex))
-      shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
-      dtype = tf.as_dtype(dtype.numpy())
-
+      if tf.executing_eagerly():
+        shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
+        dtype = tf.as_dtype(dtype.numpy())
+      else:
+        assert spec is not None
+        shape, _ = core_ops.io_hdf5_readable_spec(resource, dataset)
+        dtype = spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
       self._resource = resource
       self._component = dataset
       self._shape = shape
@@ -52,12 +57,9 @@ class HDF5IODataset(tf.data.Dataset):
           tf.data.Dataset.from_tensor_slices([shape[0]]))
       dataset = tf.data.Dataset.zip((indices_start, indices_stop))
       def f(start, stop):
-        shape = tf.concat(
-            [tf.convert_to_tensor([stop - start], tf.int64), self._shape[1:]],
-            axis=0)
         return core_ops.io_hdf5_readable_read(
-            self._resource, start=start, shape=shape,
-            component=self._component, dtype=self._dtype)
+            self._resource, component=self._component,
+            shape=self._shape, start=start, stop=stop, dtype=self._dtype)
       dataset = dataset.map(f)
       dataset = dataset.unbatch()
 

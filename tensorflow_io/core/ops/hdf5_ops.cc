@@ -47,14 +47,21 @@ REGISTER_OP("IO>HDF5ReadableSpec")
 
 REGISTER_OP("IO>HDF5ReadableRead")
     .Input("input: resource")
-    .Input("start: int64")
-    .Input("shape: int64")
     .Input("component: string")
-    .Output("value: dtype")
+    .Input("shape: int64")
+    .Input("start: int64")
+    .Input("stop: int64")
     .Attr("dtype: type")
+    .Output("value: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle full;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &full));
+      if (!(c->RankKnown(full) && c->Rank(full) > 0)) {
+        c->set_output(0, full);
+        return Status::OK();
+      }
       shape_inference::ShapeHandle shape;
-      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &shape));
+      TF_RETURN_IF_ERROR(c->ReplaceDim(full, 0, c->UnknownDim(), &shape));
       c->set_output(0, shape);
       return Status::OK();
     });
