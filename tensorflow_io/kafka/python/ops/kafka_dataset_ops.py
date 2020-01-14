@@ -24,9 +24,9 @@ from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
 
-decode_avro_init = core_ops.io_decode_avro_init
-decode_avro = core_ops.io_decode_avro
-encode_avro = core_ops.io_encode_avro
+decode_avro_init = core_ops.io_kafka_decode_avro_init
+decode_avro = core_ops.io_kafka_decode_avro
+encode_avro = core_ops.io_kafka_encode_avro
 
 warnings.warn(
     "implementation of existing tensorflow_io.kafka.KafkaDataset is "

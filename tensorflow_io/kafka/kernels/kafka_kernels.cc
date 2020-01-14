@@ -593,11 +593,11 @@ class DecodeAvroInitOp : public ResourceOpKernel<DecodeAvroResource> {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvro").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaDecodeAvro").Device(DEVICE_CPU),
                         DecodeAvroOp);
-REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvro").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaEncodeAvro").Device(DEVICE_CPU),
                         EncodeAvroOp);
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeAvroInit").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaDecodeAvroInit").Device(DEVICE_CPU),
                         DecodeAvroInitOp);
 
 }  // namespace data

@@ -17,11 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import numpy as np
-import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio
+
+import pytest
 
 @pytest.fixture(name="fixture_lookup")
 def fixture_lookup_func(request):
@@ -87,46 +89,97 @@ def fixture_json():
 
   return data, value, specs
 
+
+@pytest.fixture(name="avro", scope="module")
+def fixture_avro():
+  """fixture_avro"""
+  avro_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "weather.avro")
+  with open(avro_path, "rb") as f:
+    data = f.read()
+  value = {
+      "station": tf.constant("011990-99999", tf.string),
+      "time": tf.constant(-619524000000, tf.int64),
+      "temp": tf.constant(0, tf.int32),
+  }
+  avsc_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_avro", "weather.avsc")
+  with open(avsc_path, "rb") as f:
+    specs = f.read()
+
+  return data, value, specs
+
 @pytest.mark.parametrize(
-    ("decode_fixture", "decode_function"),
+    ("serialization_fixture", "decode_function"),
     [
         pytest.param("json", tfio.experimental.serialization.decode_json),
+        pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
     ids=[
         "json",
+        "avro",
     ],
 )
-def test_serialization_decode(fixture_lookup, decode_fixture, decode_function):
+def test_serialization_decode(
+    fixture_lookup, serialization_fixture, decode_function):
   """test_serialization_decode"""
-  data, expected, specs = fixture_lookup(decode_fixture)
+  data, value, specs = fixture_lookup(serialization_fixture)
 
-  value = decode_function(data, specs)
-  tf.nest.assert_same_structure(value, expected)
+  returned = decode_function(data, specs)
+  tf.nest.assert_same_structure(value, returned)
   assert all([
-      np.array_equal(v, e) for v, e in zip(
-          tf.nest.flatten(value), tf.nest.flatten(expected))])
+      np.array_equal(v, r) for v, r in zip(
+          tf.nest.flatten(value), tf.nest.flatten(returned))])
 
 @pytest.mark.parametrize(
-    ("decode_fixture", "decode_function"),
+    ("serialization_fixture", "encode_function", "decode_function"),
+    [
+        pytest.param(
+            "avro",
+            tfio.experimental.serialization.encode_avro,
+            tfio.experimental.serialization.decode_avro),
+    ],
+    ids=[
+        "avro",
+    ],
+)
+def test_serialization_encode(
+    fixture_lookup, serialization_fixture, encode_function, decode_function):
+  """test_serialization_encode"""
+  _, value, specs = fixture_lookup(serialization_fixture)
+
+  returned = encode_function(value, specs)
+  returned = decode_function(returned, specs)
+  tf.nest.assert_same_structure(value, returned)
+  assert all([
+      np.array_equal(v, r) for v, r in zip(
+          tf.nest.flatten(value), tf.nest.flatten(returned))])
+
+@pytest.mark.parametrize(
+    ("serialization_fixture", "decode_function"),
     [
         pytest.param("json", tfio.experimental.serialization.decode_json),
+        pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
     ids=[
         "json",
+        "avro",
     ],
 )
 def test_serialization_decode_in_dataset(
-    fixture_lookup, decode_fixture, decode_function):
+    fixture_lookup, serialization_fixture, decode_function):
   """test_serialization_decode_in_dataset"""
-  data, expected, specs = fixture_lookup(decode_fixture)
+  data, value, specs = fixture_lookup(serialization_fixture)
 
   dataset = tf.data.Dataset.from_tensor_slices([data, data])
   dataset = dataset.map(lambda e: decode_function(e, specs))
   entries = list(dataset)
 
   assert len(entries) == 2
-  for value in entries:
-    tf.nest.assert_same_structure(value, expected)
+  for returned in entries:
+    tf.nest.assert_same_structure(value, returned)
     assert all([
-        np.array_equal(v, e) for v, e in zip(
-            tf.nest.flatten(value), tf.nest.flatten(expected))])
+        np.array_equal(v, r) for v, r in zip(
+            tf.nest.flatten(value), tf.nest.flatten(returned))])
