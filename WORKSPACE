@@ -261,6 +261,8 @@ pip3_import(
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
 pip_repositories()
 
 pip_install()
@@ -676,10 +678,6 @@ llvm_toolchain(
     name = "llvm_toolchain",
     llvm_version = "8.0.0",
 )
-
-load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
-
-llvm_register_toolchains()
 
 http_archive(
     name = "vorbis",
