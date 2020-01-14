@@ -187,12 +187,16 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   def from_hdf5(cls,
                 filename,
                 dataset,
+                spec=None,
                 **kwargs):
     """Creates an `IODataset` from a hdf5 file's dataset object.
 
     Args:
       filename: A string, the filename of a hdf5 file.
       dataset: A string, the dataset name within hdf5 file.
+      spec: A tf.TensorSpec or a dtype (e.g., tf.int64) of the
+        dataset. In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -201,7 +205,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
       return hdf5_dataset_ops.HDF5IODataset(
-          filename, dataset, internal=True)
+          filename, dataset, spec=spec, internal=True)
 
   @classmethod
   def from_avro(cls,
