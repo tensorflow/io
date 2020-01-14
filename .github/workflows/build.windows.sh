@@ -6,6 +6,6 @@ python3 --version
 
 cat .bazelrc
 
-${BAZEL_PATH:=bazel} build -s --verbose_failures //tensorflow_io/...
+${BAZEL_PATH:=bazel} build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
 
 exit $?
