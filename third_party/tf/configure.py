@@ -52,19 +52,19 @@ def write_config():
 
   lib = tf.sysconfig.get_link_flags()
   print("INFO: tf.sysconfig.get_link_flags()=", lib)
-  print("INFO: platform=", sys.platform)
-  for arg in lib:
-    if library_regex.match(arg):
-      library_list.append(arg)
-    elif libdir_regex.match(arg):
-      libdir_list.append(arg)
-    else:
-      print("WARNING: Unexpected link flag item {}".format(arg))
+  if sys.platform != "win32":
+    for arg in lib:
+      if library_regex.match(arg):
+        library_list.append(arg)
+      elif libdir_regex.match(arg):
+        libdir_list.append(arg)
+      else:
+        print("WARNING: Unexpected link flag item {}".format(arg))
 
-  if len(library_list) != 1 or len(libdir_list) != 1:
-    print("ERROR: Expected exactly one lib and one libdir in " +
-          "tf.sysconfig.get_link_flags()", library_list, libdir_list)
-    exit(1)
+    if len(library_list) != 1 or len(libdir_list) != 1:
+      print("ERROR: Expected exactly one lib and one libdir in " +
+            "tf.sysconfig.get_link_flags()", library_list, libdir_list)
+      exit(1)
 
   try:
 
@@ -75,15 +75,22 @@ def write_config():
       bazel_rc.write('build --action_env TF_HEADER_DIR="{}"\n'
                      .format(include_list[0][2:]))
 
-      bazel_rc.write('build --action_env TF_SHARED_LIBRARY_DIR="{}"\n'
-                     .format(libdir_list[0][2:]))
-      library_name = library_list[0][2:]
-      if library_name.startswith(":"):
-        library_name = library_name[1:]
-      elif sys.platform == "darwin":
-        library_name = "lib" + library_name + ".dylib"
+      if sys.platform == "win32":
+        library_dir = include_list[0][2:-7] + "python"
       else:
-        library_name = "lib" + library_name + ".so"
+        library_dir = libdir_list[0][2:]
+      bazel_rc.write('build --action_env TF_SHARED_LIBRARY_DIR="{}"\n'
+                     .format(library_dir))
+      if sys.platform == "win32":
+        library_name = "_pywrap_tensorflow_internal.lib"
+      else:
+        library_name = library_list[0][2:]
+        if library_name.startswith(":"):
+          library_name = library_name[1:]
+        elif sys.platform == "darwin":
+          library_name = "lib" + library_name + ".dylib"
+        else:
+          library_name = "lib" + library_name + ".so"
       bazel_rc.write('build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'
                      .format(library_name))
       # Needed for GRPC build
