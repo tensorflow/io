@@ -75,6 +75,14 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: dist
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '8.x'
+      - name: Setup ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          bash -x -e tests/test_azure/start_azure.sh
       - name: Install ${{ matrix.python }} Windows
         shell: cmd
         run: |
