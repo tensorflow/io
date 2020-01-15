@@ -1,29 +1,25 @@
 #!/bin/bash
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+#
+# Copyright 2015 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#    http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
+#
+# Ship the environment to the C++ action
+#
+set -eu
 
-rm -f .bazelrc
+# Set-up the environment
 
-PYTHON=python3
-if [[ "$#" -gt 0 ]]; then
-  PYTHON=$1
-fi
 
-if $PYTHON -c "import tensorflow as tf" &> /dev/null; then
-    echo 'using installed tensorflow'
-else
-    $PYTHON -m pip install $($PYTHON setup.py --package-version)
-fi
-$PYTHON tools/build/configure.py
+# Call the C++ compiler
+/dt7/usr/bin/gcc "$@"

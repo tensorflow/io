@@ -1,11 +1,13 @@
 workspace(name = "org_tensorflow_io")
 
-load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//third_party/toolchains/tf:tf_configure.bzl", "tf_configure")
 
-tf_configure(
-    name = "local_config_tf",
-)
+tf_configure(name = "local_config_tf")
+
+load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
+
+cuda_configure(name = "local_config_cuda")
 
 http_archive(
     name = "com_google_absl",
