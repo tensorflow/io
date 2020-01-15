@@ -52,6 +52,11 @@ if [[ $(python -c "import sys;print(sys.version[0])") == "2" ]]; then
   exit 0
 fi
 
+if [[ $(python3 -c 'import sys;print("{}.{}".format(sys.version_info[0],sys.version_info[1]))') == "3.4" ]]; then
+  echo Python 3.4 has been deprecated.
+  exit 0
+fi
+
 export CC_OPT_FLAGS='-mavx'
 export TF_NEED_CUDA="1"
 export TF_CUDA_VERSION="10.1"
