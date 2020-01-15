@@ -47,6 +47,8 @@ python --version
 python -m pip --version
 docker  --version
 
+echo Disabled for now.
+exit 0
 if [[ $(python -c "import sys;print(sys.version[0])") == "2" ]]; then
   echo Python 2 has been deprecated.
   exit 0
