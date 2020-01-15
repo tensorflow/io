@@ -1101,7 +1101,7 @@ def _create_local_cuda_repository(repository_ctx):
 
     # Set up crosstool/
     cc = find_cc(repository_ctx)
-    cc_fullpath =  "crosstool/" + cc
+    cc_fullpath = "crosstool/" + cc
 
     host_compiler_includes = get_cxx_inc_directories(
         repository_ctx,
