@@ -113,6 +113,7 @@ cc_library(
         "@curl",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [],
+        "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "@util_linux//:uuid",
         ],

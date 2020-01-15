@@ -17,8 +17,8 @@ limitations under the License.
 #include <string>
 
 #include "tensorflow/core/lib/io/path.h"
-#include "tensorflow_io/core/azure/azfs/azfs_client.h"
-#include "tensorflow_io/core/azure/azfs/azfs_random_access_file.h"
+#include "tensorflow_io/core/kernels/azfs/azfs_client.h"
+#include "tensorflow_io/core/kernels/azfs/azfs_random_access_file.h"
 
 namespace tensorflow {
 namespace io {

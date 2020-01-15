@@ -430,42 +430,83 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "azfs_ops",
+    srcs = [
+        "kernels/azfs/azfs.cc",
+        "kernels/azfs/azfs.h",
+        "kernels/azfs/azfs_client.cc",
+        "kernels/azfs/azfs_client.h",
+        "kernels/azfs/azfs_ops.cc",
+        "kernels/azfs/azfs_random_access_file.cc",
+        "kernels/azfs/azfs_random_access_file.h",
+        "kernels/azfs/azfs_readonly_memory_region.h",
+        "kernels/azfs/azfs_writable_file.cc",
+        "kernels/azfs/azfs_writable_file.h",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@com_github_azure_azure_storage_cpplite//:azure",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+# bazel test \
+#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
+#   //tensorflow_io/azure:azfs_cc_test
+cc_test(
+    name = "azfs_cc_test",
+    srcs = ["kernels/azfs/azfs_test.cc"],
+    deps = [
+        ":azfs_ops",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/bigquery:bigquery_ops",
-        "//tensorflow_io/bigtable:bigtable_ops",
-        "//tensorflow_io/core:audio_ops",
-        "//tensorflow_io/core:avro_ops",
-        "//tensorflow_io/core:core_ops",
-        "//tensorflow_io/core:cpuinfo",
-        "//tensorflow_io/core:file_ops",
-        "//tensorflow_io/core:genome_ops",
-        "//tensorflow_io/core:grpc_ops",
-        "//tensorflow_io/core:hdf5_ops",
-        "//tensorflow_io/core:image_ops",
-        "//tensorflow_io/core:json_ops",
-        "//tensorflow_io/core:kinesis_ops",
-        "//tensorflow_io/core:lmdb_ops",
-        "//tensorflow_io/core:numpy_ops",
-        "//tensorflow_io/core:parquet_ops",
-        "//tensorflow_io/core:pcap_ops",
-        "//tensorflow_io/core:pubsub_ops",
-        "//tensorflow_io/core:serialization_ops",
-        "//tensorflow_io/core:text_ops",
-        "//tensorflow_io/core/azure:azfs_ops",
-        "//tensorflow_io/core/oss:oss_ops",
-        "//tensorflow_io/gcs:gcs_config_ops",
-        "//tensorflow_io/ignite:ignite_ops",
-        "//tensorflow_io/kafka:kafka_ops",
-        "@libarchive",
+        "//tensorflow_io/core:azfs_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
-        "@xz//:lzma",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "//tensorflow_io/arrow:arrow_ops",
+            "//tensorflow_io/bigquery:bigquery_ops",
+            "//tensorflow_io/bigtable:bigtable_ops",
+            "//tensorflow_io/core:audio_ops",
+            "//tensorflow_io/core:avro_ops",
+            "//tensorflow_io/core:core_ops",
+            "//tensorflow_io/core:cpuinfo",
+            "//tensorflow_io/core:file_ops",
+            "//tensorflow_io/core:genome_ops",
+            "//tensorflow_io/core:grpc_ops",
+            "//tensorflow_io/core:hdf5_ops",
+            "//tensorflow_io/core:image_ops",
+            "//tensorflow_io/core:json_ops",
+            "//tensorflow_io/core:kinesis_ops",
+            "//tensorflow_io/core:lmdb_ops",
+            "//tensorflow_io/core:numpy_ops",
+            "//tensorflow_io/core:parquet_ops",
+            "//tensorflow_io/core:pcap_ops",
+            "//tensorflow_io/core:pubsub_ops",
+            "//tensorflow_io/core:serialization_ops",
+            "//tensorflow_io/core:text_ops",
+            "//tensorflow_io/core/oss:oss_ops",
+            "//tensorflow_io/gcs:gcs_config_ops",
+            "//tensorflow_io/ignite:ignite_ops",
+            "//tensorflow_io/kafka:kafka_ops",
+            "@libarchive",
+            "@xz//:lzma",
+        ],
+    }),
 )
 
 cc_binary(

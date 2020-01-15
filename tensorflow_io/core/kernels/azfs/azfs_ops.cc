@@ -15,7 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/platform/env.h"
 
-#include "tensorflow_io/core/azure/azfs/azfs.h"
+#include "tensorflow_io/core/kernels/azfs/azfs.h"
 
 namespace tensorflow {
 namespace io {

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/azure/azfs/azfs_writable_file.h"
-#include "tensorflow_io/core/azure/azfs/azfs_client.h"
+#include "tensorflow_io/core/kernels/azfs/azfs_writable_file.h"
+#include "tensorflow_io/core/kernels/azfs/azfs_client.h"
 
 namespace tensorflow {
 namespace io {
