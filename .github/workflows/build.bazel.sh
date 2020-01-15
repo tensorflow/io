@@ -31,7 +31,7 @@ python3 -m pip --version
 python3 -m pip install -q ${TENSORFLOW_INSTALL}
 python3 -m pip install gast==0.2.2
 
-python3 third_party/tf/configure.py
+python3 tools/build/configure.py
 
 cat .bazelrc
 

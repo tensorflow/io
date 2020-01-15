@@ -39,7 +39,7 @@ jobs:
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo python3 -m pip install $(python3 setup.py --package-version)
-          python3 third_party/tf/configure.py
+          python3 tools/build/configure.py
           bazel build \
             ${BAZEL_OPTIMIZATION} \
             --copt -mmacosx-version-min=10.13 \
