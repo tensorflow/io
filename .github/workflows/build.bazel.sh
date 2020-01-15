@@ -31,13 +31,13 @@ python3 -m pip --version
 python3 -m pip install -q ${TENSORFLOW_INSTALL}
 python3 -m pip install gast==0.2.2
 
-python3 third_party/tf/configure.py
+python3 tools/build/configure.py
 
 cat .bazelrc
 
 bazel build \
-  --crosstool_top=//third_party/toolchain:toolchain \
-  ${BAZEL_CPU_OPTIMIZATION} \
+  --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain \
+  ${BAZEL_OPTIMIZATION} \
   --noshow_progress \
   --noshow_loading_progress \
   --verbose_failures \

@@ -24,9 +24,9 @@ tfio_*.tar.gz
 
 # Setuptools
 *.egg-info
-build/
-dist
-wheelhouse
+/build
+/dist
+/wheelhouse
 
 # Lint
 .pylint

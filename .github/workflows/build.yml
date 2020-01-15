@@ -39,7 +39,7 @@ jobs:
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo python3 -m pip install $(python3 setup.py --package-version)
-          python3 third_party/tf/configure.py
+          python3 tools/build/configure.py
           bazel build \
             ${BAZEL_OPTIMIZATION} \
             --copt -mmacosx-version-min=10.13 \
@@ -159,7 +159,7 @@ jobs:
           set -x -e
           ls dist/*
           for f in dist/*.whl; do
-            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/third_party/tf/auditwheel repair --plat manylinux2010_x86_64 $f
+            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
           done
           sudo chown -R $(id -nu):$(id -ng) .
           ls wheelhouse/*
@@ -323,7 +323,7 @@ jobs:
           set -x -e
           ls dist/*
           for f in dist/*.whl; do
-            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/third_party/tf/auditwheel repair --plat manylinux2010_x86_64 $f
+            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
           done
           sudo chown -R $(id -nu):$(id -ng) .
           ls wheelhouse/*

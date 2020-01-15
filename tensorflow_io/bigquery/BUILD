@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load(
-    "//third_party/tf:tensorflow_io.bzl",
+    "//:tools/build/tensorflow_io.bzl",
     "tf_io_copts",
 )
 
