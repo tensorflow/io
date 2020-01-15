@@ -688,7 +688,7 @@ def find_cuda_config(repository_ctx, cuda_libraries):
     """Returns CUDA config dictionary from running find_cuda_config.py"""
     exec_result = repository_ctx.execute([
         _get_python_bin(repository_ctx),
-        repository_ctx.path(Label("//gpu:find_cuda_config.py")),
+        repository_ctx.path(Label("//third_party/toolchains/gpu:find_cuda_config.py")),
     ] + cuda_libraries)
     if exec_result.return_code:
         auto_configure_fail("Failed to run find_cuda_config.py: %s" % exec_result.stderr)
@@ -745,14 +745,14 @@ def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
         out = tpl.replace(":", "/")
     repository_ctx.template(
         out,
-        Label("//gpu/%s.tpl" % tpl),
+        Label("//third_party/toolchains/gpu/%s.tpl" % tpl),
         substitutions,
     )
 
 def _file(repository_ctx, label):
     repository_ctx.template(
         label.replace(":", "/"),
-        Label("//gpu/%s.tpl" % label),
+        Label("//third_party/toolchains/gpu/%s.tpl" % label),
         {},
     )
 
