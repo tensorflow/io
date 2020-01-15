@@ -266,7 +266,7 @@ jobs:
           python --version
           python -m pip install -U pytest
           rm -rf tensorflow_io
-          (cd tests && python -m pytest -s -v test_text_eager.py -k re2)
+          (cd tests && python -m pytest -s -v test_azure.py)
 
   release:
     name: Release
