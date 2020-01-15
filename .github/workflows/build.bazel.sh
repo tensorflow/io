@@ -36,7 +36,7 @@ python3 tools/build/configure.py
 cat .bazelrc
 
 bazel build \
-  --crosstool_top=//third_party/toolchain:toolchain \
+  --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain \
   ${BAZEL_CPU_OPTIMIZATION} \
   --noshow_progress \
   --noshow_loading_progress \
