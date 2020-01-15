@@ -37,7 +37,7 @@ cat .bazelrc
 
 bazel build \
   --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain \
-  ${BAZEL_CPU_OPTIMIZATION} \
+  ${BAZEL_OPTIMIZATION} \
   --noshow_progress \
   --noshow_loading_progress \
   --verbose_failures \
