@@ -4,7 +4,7 @@ licenses(["notice"])  # Apache 2.0
 package(default_visibility = ["//visibility:public"])
 
 load(
-    "//third_party/tf:tensorflow_io.bzl",
+    "//:tools/build/tensorflow_io.bzl",
     "tf_io_copts",
 )
 
