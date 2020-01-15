@@ -113,7 +113,7 @@ def test_re2_extract():
       os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt")
   with open(filename, 'rb') as f:
     lines = [line.strip() for line in f]
-  filename = "file://" + filename
+  #filename = "file://" + filename
 
   dataset = tf.data.TextLineDataset(filename).map(
       lambda x: tfio.experimental.text.re2_full_match(
