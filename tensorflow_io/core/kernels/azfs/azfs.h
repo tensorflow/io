@@ -19,10 +19,15 @@ limitations under the License.
 #include <memory>
 #include <string>
 
+#include "blob/blob_client.h"
+
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/file_system.h"
 
-#include "blob/blob_client.h"
+#if defined(_WIN32)
+#undef DeleteFile
+#undef CopyFile
+#endif
 
 namespace tensorflow {
 namespace io {

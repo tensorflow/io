@@ -229,20 +229,31 @@ cc_library(
         "include/curl/system.h",
         "include/curl/typecheck-gcc.h",
     ],
-    copts = [
-        "-Iexternal/curl/lib",
-        "-D_GNU_SOURCE",
-        "-DBUILDING_LIBCURL",
-        "-DHAVE_CONFIG_H",
-        "-DCURL_DISABLE_FTP",
-        "-DCURL_DISABLE_NTLM",  # turning it off in configure is not enough
-        "-DHAVE_LIBZ",
-        "-DHAVE_ZLIB_H",
-        "-Wno-string-plus-int",
-        "-DCURL_MAX_WRITE_SIZE=65536",
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-string-plus-int",
+        ],
+    }),
+    defines = [
+        "CURL_STATICLIB",
+        "BUILDING_LIBCURL",
+        "HAVE_CONFIG_H",
+        "CURL_DISABLE_FTP",
+        "CURL_DISABLE_NTLM",  # turning it off in configure is not enough
+        "HAVE_LIBZ",
+        "HAVE_ZLIB_H",
+        "CURL_MAX_WRITE_SIZE=65536",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "_GNU_SOURCE",
+        ],
+    }),
+    includes = [
+        "include",
+        "lib",
     ],
-    defines = ["CURL_STATICLIB"],
-    includes = ["include"],
     linkopts = select({
         "@bazel_tools//src/conditions:darwin": [
             "-Wl,-framework",
@@ -250,6 +261,7 @@ cc_library(
             "-Wl,-framework",
             "-Wl,Security",
         ],
+        "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": ["-lrt"],
     }),
     visibility = ["//visibility:public"],

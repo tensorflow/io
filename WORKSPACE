@@ -46,7 +46,6 @@ http_archive(
     sha256 = "e9c37986337743f37fd14fe8737f246e97aec94b39d1b71e8a5973f72a9fc4f5",
     strip_prefix = "curl-7.60.0",
     urls = [
-        "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
         "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
     ],
 )
@@ -204,11 +203,10 @@ http_archive(
 http_archive(
     name = "com_github_azure_azure_storage_cpplite",
     build_file = "//third_party:azure.BUILD",
-    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
-    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
+    sha256 = "597d9894061f4871a909f1c2c3f56725a69c188ea17784cc71e1e170687faf00",
+    strip_prefix = "azure-storage-cpplite-0.2.0",
     urls = [
-        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
-        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
+        "https://github.com/Azure/azure-storage-cpplite/archive/v0.2.0.tar.gz",
     ],
 )
 

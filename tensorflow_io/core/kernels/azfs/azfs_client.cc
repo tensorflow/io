@@ -151,8 +151,8 @@ azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
 
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
   const auto use_https = use_http_env == nullptr;
-  const auto blob_endpoint =
-      std::string(std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT") ?: "");
+  const auto endpoint_env = std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT");
+  const auto blob_endpoint = std::string(endpoint_env ? endpoint_env : "");
 
   auto credentials = get_credential(account);
   auto storage_account = std::make_shared<azure::storage_lite::storage_account>(
