@@ -34,7 +34,7 @@ cc_library(
         "lib/curl_fnmatch.h",
         "lib/curl_gethostname.c",
         "lib/curl_gethostname.h",
-"lib/socks_sspi.c"
+"lib/socks_sspi.c",
 "lib/socks_gssapi.c",
         "lib/curl_gssapi.h",
         "lib/curl_hmac.h",
