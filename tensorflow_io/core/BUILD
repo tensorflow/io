@@ -450,6 +450,7 @@ cc_library(
         "@com_github_azure_azure_storage_cpplite//:azure",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
+ "@com_google_absl//absl/strings",
     ],
     alwayslink = 1,
 )
