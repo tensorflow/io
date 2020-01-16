@@ -108,7 +108,13 @@ cc_library(
     defines = [
         "azure_storage_lite_EXPORTS",
         "USE_OPENSSL",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "WIN32_LEAN_AND_MEAN",
+        ],
+        "//conditions:default": [
+        ],
+    }),
     includes = ["include"],
     textual_hdrs = [
         "include/constants.dat",
