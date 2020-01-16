@@ -32,8 +32,7 @@ RUN conda create -y -q -n tfio-dev python=3.6 ${CONDA_ADD_PACKAGES}
 
 ADD . /tensorflow-io
 RUN cd /tensorflow-io && ./configure.sh
-
 RUN cd /tensorflow-io && bazel build -s --verbose_failures //tensorflow_io/core/...
 
-# Publish artifact in dist folder
+# Package and publish into the `dist` folder
 RUN cd /tensorflow-io && python setup.py --data bazel-bin sdist

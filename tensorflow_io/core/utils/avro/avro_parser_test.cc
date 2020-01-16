@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <memory>
 #include "gtest/gtest.h"
-#include "tensorflow_io/avro/utils/avro_parser.h"
+#include "tensorflow_io/core/utils/avro/avro_parser.h"
 
 namespace tensorflow {
 namespace data {

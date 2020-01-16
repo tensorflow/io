@@ -15,7 +15,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
-#include "tensorflow_io/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/utils/avro/avro_parser_tree.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "api/Stream.hh"
 #include "api/DataFile.hh"

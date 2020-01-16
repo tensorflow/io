@@ -17,7 +17,7 @@ limitations under the License.
 #include <queue>
 #include <set>
 #include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow_io/avro/utils/value_buffer.h"
+#include "tensorflow_io/core/utils/avro/value_buffer.h"
 #include "api/Generic.hh"
 #include "api/Types.hh"
 
