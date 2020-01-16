@@ -16,6 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
 #define TENSORFLOW_IO_AZURE_AZFS_RANDOM_ACCESS_FILE_H
 
+#undef DeleteFile
+#undef CopyFile
+#undef TranslateName
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {

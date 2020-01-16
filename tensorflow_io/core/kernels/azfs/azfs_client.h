@@ -25,6 +25,9 @@ limitations under the License.
 #include "storage_errno.h"
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/lib/strings/str_util.h"
+#undef DeleteFile
+#undef CopyFile
+#undef TranslateName
 #include "tensorflow/core/platform/file_system.h"
 
 constexpr char kAzBlobEndpoint[] = ".blob.core.windows.net";

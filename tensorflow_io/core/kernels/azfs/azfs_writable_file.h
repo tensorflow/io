@@ -19,6 +19,9 @@ limitations under the License.
 #include <fstream>
 #include <string>
 
+#undef DeleteFile
+#undef CopyFile
+#undef TranslateName
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {

@@ -17,7 +17,9 @@ limitations under the License.
 #define TENSORFLOW_IO_AZURE_AZFS_READONLY_MEMORY_REGION_H
 
 #include <memory>
-
+#undef DeleteFile
+#undef CopyFile
+#undef TranslateName
 #include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
