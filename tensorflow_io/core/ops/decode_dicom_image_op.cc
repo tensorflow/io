@@ -28,6 +28,11 @@ REGISTER_OP("IO>DecodeDICOMImage")
     .Attr("color_dim: bool = true")
     .Attr("on_error: {'strict', 'skip', 'lossy'} = 'skip'")
     .Attr("scale: {'auto', 'preserve'} = 'preserve'")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
+                                     c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    })
     .Doc(R"doc(
 loads a dicom image file and returns its pixel information in the specified output format
 )doc");

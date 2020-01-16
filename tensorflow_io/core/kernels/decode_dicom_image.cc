@@ -93,8 +93,8 @@ class DecodeDICOMImageOp : public OpKernel {
 
     DicomImage *image = NULL;
     try {
-      image =
-          new DicomImage(&dicom_file, EXS_Unknown, CIF_DecompressCompletePixelData);
+      image = new DicomImage(&dicom_file, EXS_Unknown,
+                             CIF_DecompressCompletePixelData);
     } catch (...) {
       image = NULL;
     }
@@ -129,16 +129,10 @@ class DecodeDICOMImageOp : public OpKernel {
 
     // Create an output tensor shape
     TensorShape out_shape;
-    if ((samples_per_pixel == 1) && (color_dim_ == false)) {
-      out_shape = TensorShape({static_cast<int64>(frameCount),
-                               static_cast<int64>(frameHeight),
-                               static_cast<int64>(frameWidth)});
-    } else {
-      out_shape = TensorShape({static_cast<int64>(frameCount),
-                               static_cast<int64>(frameHeight),
-                               static_cast<int64>(frameWidth),
-                               static_cast<int64>(samples_per_pixel)});
-    }
+    out_shape = TensorShape({static_cast<int64>(frameCount),
+                             static_cast<int64>(frameHeight),
+                             static_cast<int64>(frameWidth),
+                             static_cast<int64>(samples_per_pixel)});
 
     // Check if output type is ok for image
     if (pixelDepth > sizeof(dtype) * 8) {
@@ -262,7 +256,7 @@ class DecodeDICOMImageOp : public OpKernel {
 
 // Register the CPU kernels.
 #define REGISTER_DECODE_DICOM_IMAGE_CPU(dtype)                 \
-  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")             \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")          \
                               .Device(DEVICE_CPU)              \
                               .TypeConstraint<dtype>("dtype"), \
                           DecodeDICOMImageOp<dtype>);
