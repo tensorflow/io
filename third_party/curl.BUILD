@@ -212,6 +212,15 @@ cc_library(
         "lib/wildcard.h",
         "lib/x509asn1.h",
     ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "lib/asyn-thread.c",
+            "lib/inet_ntop.c",
+            "lib/system_win32.c",
+            "lib/x509asn1.c",
+            "lib/vtls/schannel.c",
+            "lib/vtls/schannel_verify.c",
+            "lib/idn_win32.c",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "lib/vtls/darwinssl.c",
         ],
@@ -243,10 +252,12 @@ cc_library(
         "CURL_DISABLE_NTLM",  # turning it off in configure is not enough
         "HAVE_LIBZ",
         "HAVE_ZLIB_H",
-        "CURL_MAX_WRITE_SIZE=65536",
     ] + select({
-        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:windows": [
+            "CURL_MAX_WRITE_SIZE=16384",
+        ],
         "//conditions:default": [
+            "CURL_MAX_WRITE_SIZE=65536",
             "_GNU_SOURCE",
         ],
     }),
@@ -261,13 +272,20 @@ cc_library(
             "-Wl,-framework",
             "-Wl,Security",
         ],
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": ["-lrt"],
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:ws2_32.lib",
+            "-DEFAULTLIB:advapi32.lib",
+            "-DEFAULTLIB:crypt32.lib",
+            "-DEFAULTLIB:Normaliz.lib",
+        ],
+        "//conditions:default": [
+            "-lrt",
+        ],
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@boringssl//:ssl",
         "@zlib",
+        "@boringssl//:ssl",
     ],
 )
 
