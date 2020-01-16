@@ -23,6 +23,10 @@ REGISTER_OP("IO>DecodeDICOMData")
     .Input("contents: string")
     .Input("tags: uint32")
     .Output("tag_values: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->input(1));
+      return Status::OK();
+    })
     .Doc(R"doc(
 loads a dicom file and returns the specified tags values as string.
 )doc");
