@@ -105,10 +105,9 @@ cc_library(
     hdrs = [
         "include/blob/blob_client.h",
     ],
-    copts = ["-std=c++11"],
     defines = [
-        "USE_OPENSSL",
         "azure_storage_lite_EXPORTS",
+        "USE_OPENSSL",
     ],
     includes = ["include"],
     textual_hdrs = [
@@ -116,13 +115,14 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@boringssl//:crypto",
         "@curl",
     ] + select({
-        "@bazel_tools//src/conditions:darwin": [],
         "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
+        "@bazel_tools//src/conditions:darwin": [
             "@util_linux//:uuid",
+        ],
+        "//conditions:default": [
+            "@boringssl//:crypto",
         ],
     }),
 )

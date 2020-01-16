@@ -1,0 +1,15 @@
+diff -Naur a/src/blob/blob_client_wrapper.cpp b/src/blob/blob_client_wrapper.cpp
+--- a/src/blob/blob_client_wrapper.cpp	2020-01-15 14:06:53.000000000 -0800
++++ b/src/blob/blob_client_wrapper.cpp	2020-01-15 18:25:58.000000000 -0800
+@@ -549,7 +549,11 @@
+ 
+         off_t get_file_size(const char* path)
+         {
++#if defined(_WIN32)
++            struct __stat64 st;
++#else
+             struct stat st;
++#endif
+             if(stat(path, &st) == 0)
+             {
+                 return st.st_size;
