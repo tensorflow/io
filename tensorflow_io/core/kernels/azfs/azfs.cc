@@ -33,6 +33,11 @@ limitations under the License.
 #include "storage_errno.h"
 
 namespace tensorflow {
+
+string FileSystem::TranslateNameA(const string& name) const {
+return TranslateName(name);
+}
+}
 namespace io {
 
 Status AzBlobFileSystem::NewRandomAccessFile(
