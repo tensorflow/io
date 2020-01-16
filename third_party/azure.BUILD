@@ -131,4 +131,14 @@ cc_library(
             "@boringssl//:crypto",
         ],
     }),
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [
+        ],
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:Rpcrt4.lib",
+        ],
+        "//conditions:default": [
+        ],
+    }),
+
 )
