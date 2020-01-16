@@ -36,10 +36,13 @@ cc_library(
         "zutil.h",
     ],
     hdrs = ["zlib.h"],
-    copts = [
-        "-Wno-shift-negative-value",
-        "-DZ_HAVE_UNISTD_H",
-    ],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-shift-negative-value",
+            "-DZ_HAVE_UNISTD_H",
+        ],
+    }),
     includes = [
         ".",
         "contrib/minizip",
