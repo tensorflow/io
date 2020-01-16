@@ -237,12 +237,43 @@ cc_library(
     name = "avro_ops",
     srcs = [
         "kernels/avro_kernels.cc",
+        "kernels/avro_dataset_kernels.cc",
         "ops/avro_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
+        ":avro_utils",
+    ],
+)
+
+cc_library(
+    name = "avro_utils_api",
+    hdrs = ["utils/avro/prefix_tree.h",
+            "utils/avro/value_buffer.h",
+            "utils/avro/avro_parser.h",
+            "utils/avro/avro_parser_tree.h",
+            "utils/avro/parse_avro_attrs.h",
+            "utils/avro/avro_file_stream_reader.h",
+            ],
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
+
+cc_library(
+    name = "avro_utils",
+    srcs = ["utils/avro/prefix_tree.cc",
+            "utils/avro/value_buffer.cc",
+            "utils/avro/avro_parser.cc",
+            "utils/avro/avro_parser_tree.cc",
+            "utils/avro/parse_avro_attrs.cc",
+            "utils/avro/avro_file_stream_reader.cc",
+            ],
+    deps = [
+        ":avro_utils_api",
         "@avro",
     ],
 )
@@ -337,7 +368,7 @@ cc_binary(
         "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
-        # "//tensorflow_io/kafka:kafka_ops",  disabled due to compile error with istringstream on rhel7 gcc
+        # "//tensorflow_io/kafka:kafka_ops",  TODO(fraudies): Enable once we are on a gcc 7.x
         "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/pubsub:pubsub_ops",

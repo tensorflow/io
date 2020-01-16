@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,8 +40,7 @@ from tensorflow.python.ops import sparse_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow.python.data.experimental.ops import readers
-from tensorflow_io.core.python.ops import core_ops as avro_ops
-
+from tensorflow_io.core.python.ops import core_ops
 
 # Note: I've hidden the dataset because it does not apply the mapping for
 # sparse tensors
@@ -84,26 +83,7 @@ class _AvroDataset(DatasetSource):
         self._sparse_types = sparse_types
         self._dense_keys = dense_keys
         self._dense_defaults = dense_defaults_vec
-        #self._dense_shapes = dense_shapes
         self._dense_types = dense_types
-
-        # constant_drop_remainder = tensor_util.constant_value(self._drop_remainder)
-
-        # pylint: disable=protected-access
-        # batch_dimension = tensor_util.constant_value(self._batch_size) if constant_drop_remainder else None
-
-        # if constant_drop_remainder:
-        #     # NOTE(mrry): `constant_drop_remainder` may be `None` (unknown statically)
-        #     # or `False` (explicitly retaining the remainder).
-        #     self._element_spec = self._element_spec._batch(
-        #         tensor_util.constant_value(self._batch_size))
-        # else:
-        #     self._element_spec = self._element_spec._batch(None)
-        #
-        # dense_output_shapes = [input_dataset_shape.concatenate(shape)
-        #                        for shape in dense_shape_as_shape]
-        # sparse_output_shapes = [input_dataset_shape.concatenate([None])
-        #                         for _ in range(len(sparse_keys))]
 
 
         output_shapes = dict(
@@ -121,20 +101,6 @@ class _AvroDataset(DatasetSource):
         self._element_spec = structure.convert_legacy_structure(
             output_types, output_shapes, output_classes)
 
-        # dense_structure = {
-        #   key: structure.TensorSpec(flat_type, flat_shape)
-        #   for key, flat_type, flat_shape in zip(
-        #       dense_keys, dense_types, dense_shapes)}
-        # sparse_structure = {
-        #   key: structure.SparseTensorSpec(flat_type, flat_shape)
-        #   for key, flat_type, flat_shape in zip(
-        #       sparse_keys, sparse_types, sparse_dense_shapes)}
-        #
-        # self._structure = structure.NestedStructure(
-        #     {**dense_structure, **sparse_structure})
-        # self._structure = structure.convert_legacy_structure(
-        #     output_types, output_shapes, output_classes)
-
         constant_drop_remainder = tensor_util.constant_value(self._drop_remainder)
         # pylint: disable=protected-access
         if constant_drop_remainder:
@@ -151,15 +117,10 @@ class _AvroDataset(DatasetSource):
                 self._element_spec)
 
         # With batch dimension
-        self._dense_shapes = [spec.shape for spec in nest.flatten(self._element_spec) if isinstance(spec, tensor_spec.TensorSpec)]
+        self._dense_shapes = [spec.shape for spec in nest.flatten(self._element_spec)
+                              if isinstance(spec, tensor_spec.TensorSpec)]
 
-        #all_shapes = nest.map_structure(lambda component_spec: component_spec.shape(), self._element_spec)
-        # Note order may not be correct
-        #self._dense_shapes = all_shapes[:len(dense_shapes)]
-
-        #self._dense_shapes = self._element_structure._flat_shapes[:len(dense_shapes)]
-
-        variant_tensor = (avro_ops.avro_dataset(
+        variant_tensor = (core_ops.io_avro_dataset(
             filenames=self._filenames, # pylint: disable=protected-access
             batch_size=self._batch_size,
             drop_remainder=self._drop_remainder,
@@ -308,7 +269,9 @@ class _AvroDataset(DatasetSource):
                 key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
                 default_value = ops.convert_to_tensor(
                     default_value, dtype=dense_types[i], name=key_name)
-                default_value = array_ops.reshape(default_value, dense_shape)
+                # If we have a shape and the first dimension is not None
+                if dense_shape.rank and dense_shape.dims[0].value:
+                    default_value = array_ops.reshape(default_value, dense_shape)
             # ************* END difference: This part is different from the originally copied code *****************
             dense_defaults_vec.append(default_value)
 
@@ -411,15 +374,6 @@ class _AvroDataset(DatasetSource):
                         raise ValueError("Missing type for feature %s." % key)
                     if feature.shape is None:
                         raise ValueError("Missing shape for feature %s." % key)
-                    feature_tensor_shape = tensor_shape.as_shape(feature.shape)
-                    if (feature.shape and feature_tensor_shape.ndims and
-                            feature_tensor_shape.dims[0].value is None):
-                        raise ValueError("First dimension of shape for feature %s unknown. "
-                                         "Consider using FixedLenSequenceFeature." % key)
-                    if (feature.shape is not None and
-                            not feature_tensor_shape.is_fully_defined()):
-                        raise ValueError("All dimensions of shape for feature %s need to be "
-                                         "known but received %s." % (key, str(feature.shape)))
                     dense_keys.append(key)
                     dense_shapes.append(feature.shape)
                     dense_types.append(feature.dtype)

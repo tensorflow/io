@@ -16,7 +16,7 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow_io/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/utils/avro/avro_parser_tree.h"
 
 
 namespace tensorflow {
