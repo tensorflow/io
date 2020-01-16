@@ -284,8 +284,8 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib",
         "@boringssl//:ssl",
+        "@zlib",
     ],
 )
 
@@ -305,6 +305,9 @@ genrule(
         "#endif",
         "",
         "#if defined(_WIN32)",
+        "#include <BaseTsd.h>",
+        "typedef SSIZE_T ssize_t;",
+        "#  define _SSIZE_T_DEFINED",
         "#  include \"lib/config-win32.h\"",
         "#  define BUILDING_LIBCURL 1",
         "#  define CURL_DISABLE_CRYPTO_AUTH 1",
