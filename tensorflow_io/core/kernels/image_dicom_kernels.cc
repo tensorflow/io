@@ -44,6 +44,8 @@ typedef uint64_t
     Uint64;  // Uint64 not present in tensorflow::custom-op docker image dcmtk
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 template <typename dtype>
 class DecodeDICOMImageOp : public OpKernel {
@@ -93,8 +95,8 @@ class DecodeDICOMImageOp : public OpKernel {
 
     DicomImage *image = NULL;
     try {
-      image =
-          new DicomImage(&dicom_file, EXS_Unknown, CIF_DecompressCompletePixelData);
+      image = new DicomImage(&dicom_file, EXS_Unknown,
+                             CIF_DecompressCompletePixelData);
     } catch (...) {
       image = NULL;
     }
@@ -129,16 +131,10 @@ class DecodeDICOMImageOp : public OpKernel {
 
     // Create an output tensor shape
     TensorShape out_shape;
-    if ((samples_per_pixel == 1) && (color_dim_ == false)) {
-      out_shape = TensorShape({static_cast<int64>(frameCount),
-                               static_cast<int64>(frameHeight),
-                               static_cast<int64>(frameWidth)});
-    } else {
-      out_shape = TensorShape({static_cast<int64>(frameCount),
-                               static_cast<int64>(frameHeight),
-                               static_cast<int64>(frameWidth),
-                               static_cast<int64>(samples_per_pixel)});
-    }
+    out_shape = TensorShape({static_cast<int64>(frameCount),
+                             static_cast<int64>(frameHeight),
+                             static_cast<int64>(frameWidth),
+                             static_cast<int64>(samples_per_pixel)});
 
     // Check if output type is ok for image
     if (pixelDepth > sizeof(dtype) * 8) {
@@ -260,9 +256,68 @@ class DecodeDICOMImageOp : public OpKernel {
   bool color_dim_;
 };
 
+class DecodeDICOMDataOp : public OpKernel {
+ public:
+  explicit DecodeDICOMDataOp(OpKernelConstruction *context)
+      : OpKernel(context) {}
+
+  ~DecodeDICOMDataOp() {}
+
+  void Compute(OpKernelContext *context) override {
+    // Grab the input file content tensor
+    const Tensor &in_contents = context->input(0);
+    OP_REQUIRES(context, TensorShapeUtils::IsScalar(in_contents.shape()),
+                errors::InvalidArgument("DecodeDICOMData expects input content "
+                                        "tensor to be scalar, but had shape: ",
+                                        in_contents.shape().DebugString()));
+
+    const auto in_contents_scalar = in_contents.scalar<string>()();
+
+    const Tensor *in_tags;
+    OP_REQUIRES_OK(context, context->input("tags", &in_tags));
+    auto in_tags_flat = in_tags->flat<uint32>();
+
+    // Create an output tensor
+    Tensor *out_tag_values = NULL;
+    OP_REQUIRES_OK(context, context->allocate_output(0, in_tags->shape(),
+                                                     &out_tag_values));
+
+    auto out_tag_values_flat = out_tag_values->flat<string>();
+
+    DcmInputBufferStream dataBuf;
+    dataBuf.setBuffer(in_contents_scalar.data(), in_contents_scalar.length());
+    dataBuf.setEos();
+
+    DcmFileFormat dfile;
+    dfile.transferInit();
+    OFCondition cond = dfile.read(dataBuf);
+    dfile.transferEnd();
+
+    DcmDataset *dset = dfile.getDataset();
+    DcmMetaInfo *meta = dfile.getMetaInfo();
+
+    for (unsigned int tag_i = 0; tag_i < in_tags_flat.size(); ++tag_i) {
+      uint32 tag_value = in_tags_flat(tag_i);
+      uint16 tag_group_number = (uint16)((tag_value & 0xFFFF0000) >> 16);
+      uint16 tag_element_number = (uint16)((tag_value & 0x0000FFFF) >> 0);
+      DcmTag tag(tag_group_number, tag_element_number);
+
+      OFString val;
+      if (dset->tagExists(tag)) {
+        dset->findAndGetOFStringArray(tag, val);
+      } else if (meta->tagExists(tag)) {
+        meta->findAndGetOFStringArray(tag, val);
+      } else {
+        val = OFString("");
+      }
+      out_tag_values_flat(tag_i) = val.c_str();
+    }
+  }
+};
+
 // Register the CPU kernels.
 #define REGISTER_DECODE_DICOM_IMAGE_CPU(dtype)                 \
-  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")             \
+  REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMImage")          \
                               .Device(DEVICE_CPU)              \
                               .TypeConstraint<dtype>("dtype"), \
                           DecodeDICOMImageOp<dtype>);
@@ -277,4 +332,9 @@ REGISTER_DECODE_DICOM_IMAGE_CPU(double);
 
 #undef REGISTER_DECODE_DICOM_IMAGE_CPU
 
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeDICOMData").Device(DEVICE_CPU),
+                        DecodeDICOMDataOp);
+
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

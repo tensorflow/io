@@ -18,6 +18,8 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 
 namespace tensorflow {
+namespace io {
+namespace {
 
 REGISTER_OP("IO>DecodeTiffInfo")
     .Input("input: string")
@@ -139,4 +141,37 @@ REGISTER_OP("IO>DecodeHdr")
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), 3}));
       return Status::OK();
     });
+
+REGISTER_OP("IO>DecodeDICOMImage")
+    .Input("contents: string")
+    .Output("output: dtype")
+    .Attr(
+        "dtype: {uint8, uint16, uint32, uint64, float16, float, double} = "
+        "DT_UINT16")
+    .Attr("color_dim: bool = true")
+    .Attr("on_error: {'strict', 'skip', 'lossy'} = 'skip'")
+    .Attr("scale: {'auto', 'preserve'} = 'preserve'")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
+                                     c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    })
+    .Doc(R"doc(
+loads a dicom image file and returns its pixel information in the specified output format
+)doc");
+
+REGISTER_OP("IO>DecodeDICOMData")
+    .Input("contents: string")
+    .Input("tags: uint32")
+    .Output("tag_values: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->input(1));
+      return Status::OK();
+    })
+    .Doc(R"doc(
+loads a dicom file and returns the specified tags values as string.
+)doc");
+
+}  // namespace
+}  // namespace io
 }  // namespace tensorflow

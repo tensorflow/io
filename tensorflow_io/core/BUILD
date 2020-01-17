@@ -159,9 +159,8 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
-        "kernels/decode_dicom_data.cc",
-        "kernels/decode_dicom_image.cc",
         "kernels/image_bmp_kernels.cc",
+        "kernels/image_dicom_kernels.cc",
         "kernels/image_hdr_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_kernels.cc",
@@ -169,8 +168,6 @@ cc_library(
         "kernels/image_pnm_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
-        "ops/decode_dicom_data_op.cc",
-        "ops/decode_dicom_image_op.cc",
         "ops/image_ops.cc",
     ],
     copts = tf_io_copts(),
