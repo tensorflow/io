@@ -18,6 +18,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import sys
 import shutil
 import tempfile
 import numpy as np
@@ -42,7 +43,9 @@ def test_lmdb_read_from_file():
   for key in lmdb:
     assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
 
-  shutil.rmtree(tmp_path)
+  # TODO: Not working for Windows yet
+  if sys.platform in ("linux", "darwin"):
+    shutil.rmtree(tmp_path)
 
 if __name__ == "__main__":
   test.main()

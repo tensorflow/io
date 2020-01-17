@@ -13,6 +13,7 @@ def tf_io_copts():
                 "/wd4577",
                 "/DNOGDI",
                 "/UTF_COMPILE_LIBRARY",
+                "/DNDEBUG",
             ],
             "@bazel_tools//src/conditions:darwin": [
                 "-std=c++11",
