@@ -235,9 +235,13 @@ cc_library(
 
 cc_library(
     name = "avro_ops",
+    hdrs = [
+        "kernels/avro_record_dataset_kernels.h",
+    ],
     srcs = [
         "kernels/avro_kernels.cc",
         "kernels/avro_dataset_kernels.cc",
+        "kernels/avro_record_dataset_kernels.cc",
         "ops/avro_ops.cc",
     ],
     copts = tf_io_copts(),
@@ -256,6 +260,8 @@ cc_library(
             "utils/avro/avro_parser_tree.h",
             "utils/avro/parse_avro_attrs.h",
             "utils/avro/avro_file_stream_reader.h",
+            "utils/avro/name_utils.h", # TODO(fraudies): delete when tensorflow/core/kernels/data/name_utils.h visible
+            "utils/avro/avro_record_reader.h",
             ],
     deps = [
         "//tensorflow_io/core:dataset_ops",
@@ -271,6 +277,8 @@ cc_library(
             "utils/avro/avro_parser_tree.cc",
             "utils/avro/parse_avro_attrs.cc",
             "utils/avro/avro_file_stream_reader.cc",
+            "utils/avro/name_utils.cc", # TODO(fraudies): delete when tensorflow/core/kernels/data/name_utils.h visible
+            "utils/avro/avro_record_reader.cc",
             ],
     deps = [
         ":avro_utils_api",

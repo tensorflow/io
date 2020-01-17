@@ -18,6 +18,7 @@ from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
 from tensorflow_io.core.python.experimental.io_tensor import IOTensor
 from tensorflow_io.core.python.experimental.io_layer import IOLayer
 from tensorflow_io.core.python.experimental.avro_dataset_ops import make_avro_dataset
+from tensorflow_io.core.python.experimental.avro_record_dataset_ops import AvroRecordDataset
 
 from tensorflow_io.core.python.api.experimental import ffmpeg
 from tensorflow_io.core.python.api.experimental import image
