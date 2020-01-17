@@ -456,7 +456,7 @@ jobs:
           @echo on
           python --version
           python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
           ls -la dist
       - uses: actions/upload-artifact@v1
         with:
