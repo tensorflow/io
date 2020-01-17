@@ -246,10 +246,14 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       return errors::OutOfRange("EOF reached");
     }
     int ret;
+    av_init_packet(&packet_);
     do {
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
         break;
+      }
+      if (packet_.stream_index != stream_index_) {
+        av_packet_unref(&packet_);
       }
     } while (packet_.stream_index != stream_index_);
     int got_frame;
@@ -258,6 +262,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       while (packet_.size > 0) {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
+      av_packet_unref(&packet_);
       return Status::OK();
     }
     // final cache clean up
