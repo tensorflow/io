@@ -162,6 +162,22 @@ def test_decode_dicom_data(fname, tag, exp_value):
 
   assert dcm_data.numpy() == exp_value
 
+def test_dicom_image_shape():
+  """test_decode_dicom_image"""
+
+  dcm_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_dicom",
+      'US-PAL-8-10x-echo.dcm'
+  )
+
+  dataset = tf.data.Dataset.from_tensor_slices([dcm_path])
+  dataset = dataset.map(tf.io.read_file)
+  dataset = dataset.map(
+      lambda e: tfio.image.decode_dicom_image(e, dtype=tf.uint16))
+  dataset = dataset.map(
+      lambda e: tf.image.resize(e, (224, 224)))
+
 
 if __name__ == "__main__":
   test.main()
