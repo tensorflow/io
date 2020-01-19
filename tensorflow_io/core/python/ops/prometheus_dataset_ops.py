@@ -119,7 +119,7 @@ class PrometheusScrapeStreamIODataset(tf.data.Dataset):
 
       interval = 1000000 if interval is None else interval
 
-      dataset = tf.data.Dataset.range(0, 10, 1)
+      dataset = tf.data.experimental.Counter(start=0, step=1, dtype=tf.int64)
       dataset = dataset.map(lambda i: golang_ops.io_prometheus_scrape(metric, endpoint, i))
       dataset = dataset.apply(sleep(interval))
 
