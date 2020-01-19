@@ -335,7 +335,8 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
                       query,
                       length,
                       offset=None,
-                      endpoint=None):
+                      endpoint=None,
+                      spec=None):
     """Creates an `GraphIODataset` from a prometheus endpoint.
 
     Args:
@@ -345,13 +346,17 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
         the time when graph runs.
       endpoint: A string, the server address of prometheus, by default
         `http://localhost:9090`.
+      spec: A structured tf.TensorSpec of the dataset.
+        The format should be {"job": {"instance": {"name": tf.TensorSpec}}}.
+        In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
       name: A name prefix for the IODataset (optional).
 
     Returns:
       A `IODataset`.
     """
     return GraphIODataset.from_prometheus(
-        query, length, offset=offset, endpoint=endpoint)
+        query, length, offset=offset, endpoint=endpoint, spec=spec)
 
 class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=protected-access
   """StreamIODataset
@@ -490,7 +495,8 @@ class GraphIODataset(tf.data.Dataset):
                       query,
                       length,
                       offset=None,
-                      endpoint=None):
+                      endpoint=None,
+                      spec=None):
     """Creates an `GraphIODataset` from a prometheus endpoint.
 
     Args:
@@ -500,6 +506,10 @@ class GraphIODataset(tf.data.Dataset):
         the time when graph runs.
       endpoint: A string, the server address of prometheus, by default
         `http://localhost:9090`.
+      spec: A structured tf.TensorSpec of the dataset.
+        The format should be {"job": {"instance": {"name": tf.TensorSpec}}}.
+        In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
       name: A name prefix for the IODataset (optional).
 
     Returns:
@@ -507,4 +517,4 @@ class GraphIODataset(tf.data.Dataset):
     """
     from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
     return prometheus_dataset_ops.PrometheusGraphIODataset(
-        query, length, offset=offset, endpoint=endpoint)
+        query, length, offset=offset, endpoint=endpoint, spec=spec)
