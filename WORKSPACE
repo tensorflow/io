@@ -22,10 +22,10 @@ http_archive(
 http_archive(
     name = "freetype",
     build_file = "//third_party:freetype.BUILD",
-    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
-    strip_prefix = "freetype-2.10.0",
+    sha256 = "3a60d391fd579440561bf0e7f31af2222bc610ad6ce4d9d7bd2165bca8669110",
+    strip_prefix = "freetype-2.10.1",
     urls = [
-        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
     ],
 )
 
