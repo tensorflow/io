@@ -166,9 +166,12 @@ class PrometheusReadableResource : public ResourceBase {
     GoString query_go = {query_.c_str(), static_cast<int64>(query_.size())};
 
     for (size_t index = 0; index < jobs.size(); index++) {
-      GoString job_go = {jobs[index].data(), jobs[index].size()};
-      GoString instance_go = {instances[index].data(), instances[index].size()};
-      GoString name_go = {names[index].data(), names[index].size()};
+      GoString job_go = {jobs[index].data(),
+                         static_cast<ptrdiff_t>(jobs[index].size())};
+      GoString instance_go = {instances[index].data(),
+                              static_cast<ptrdiff_t>(instances[index].size())};
+      GoString name_go = {names[index].data(),
+                          static_cast<ptrdiff_t>(names[index].size())};
       GoSlice timestamp_go = {timestamp->flat<int64>().data(),
                               timestamp->NumElements(),
                               timestamp->NumElements()};
