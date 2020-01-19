@@ -178,7 +178,6 @@ cc_library(
         "@dcmtk",
         "@easyexif",
         "@freetype",
-        "@giflib",
         "@libtiff",
         "@libwebp",
         "@openexr",
