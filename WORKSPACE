@@ -20,6 +20,16 @@ http_archive(
 )
 
 http_archive(
+    name = "easyexif",
+    build_file = "//third_party:easyexif.BUILD",
+    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
+    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
+    urls = [
+        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -632,16 +642,6 @@ http_archive(
     strip_prefix = "xz-5.2.4",
     urls = [
         "https://tukaani.org/xz/xz-5.2.4.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "easyexif",
-    build_file = "//third_party:easyexif.BUILD",
-    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
-    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
-    urls = [
-        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
     ],
 )
 

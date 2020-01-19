@@ -164,12 +164,12 @@ cc_library(
         "kernels/image_pnm_kernels.cc",
         "kernels/image_webp_kernels.cc",
         "kernels/image_font_kernels.cc",
+        "kernels/image_jpeg_kernels.cc",
+        "kernels/image_hdr_kernels.cc",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "kernels/image_dicom_kernels.cc",
-            "kernels/image_hdr_kernels.cc",
-            "kernels/image_jpeg_kernels.cc",
             "kernels/image_openexr_kernels.cc",
             "kernels/image_tiff_kernels.cc",
         ],
@@ -179,16 +179,16 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
-        "@libwebp",
+        "@easyexif",
         "@freetype",
+        "@libwebp",
+        "@stb",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "@dcmtk",
-            "@easyexif",
             "@libtiff",
             "@openexr",
-            "@stb",
         ],
     }),
     alwayslink = 1,
