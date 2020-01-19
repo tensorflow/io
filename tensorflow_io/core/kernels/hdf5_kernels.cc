@@ -124,10 +124,12 @@ class HDF5ReadableResource : public ResourceBase {
   Status Init(const string& input, std::vector<string>* components) {
     mutex_lock l(mu_);
 
-    file_image_.reset(new HDF5FileImage(env_, input, ""));
+    filename_ = input;
+
+    file_image_.reset(new HDF5FileImage(env_, filename_, ""));
     H5::H5File* file = file_image_->GetFile();
     if (file == nullptr) {
-      return errors::InvalidArgument("unable to open hdf5 file: ", input);
+      return errors::InvalidArgument("unable to open hdf5 file: ", filename_);
     }
 
     H5O_info_t info;
@@ -454,8 +456,11 @@ class HDF5ReadableResource : public ResourceBase {
                                        data_type.getClass());
       }
     } catch (H5::FileIException e) {
-      return errors::InvalidArgument("unable to open dataset",
-                                     e.getCDetailMsg());
+      return errors::InvalidArgument("unable to open dataset file ", filename_,
+                                     ": ", e.getCDetailMsg());
+    } catch (H5::DataSetIException e) {
+      return errors::InvalidArgument("unable to process dataset file",
+                                     filename_, ": ", e.getCDetailMsg());
     }
 
     return Status::OK();
@@ -468,6 +473,7 @@ class HDF5ReadableResource : public ResourceBase {
  protected:
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
+  string filename_ GUARDED_BY(mu_);
   std::unique_ptr<HDF5FileImage> file_image_ GUARDED_BY(mu_);
 
   std::vector<DataType> dtypes_ GUARDED_BY(mu_);
