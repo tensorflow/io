@@ -282,17 +282,6 @@ load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependen
 apple_support_dependencies()
 
 http_archive(
-    name = "giflib",
-    build_file = "//third_party:giflib.BUILD",
-    sha256 = "34a7377ba834397db019e8eb122e551a49c98f49df75ec3fcc92b9a794a4f6d1",
-    strip_prefix = "giflib-5.1.4",
-    urls = [
-        "https://mirror.bazel.build/ufpr.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
-        "http://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
-    ],
-)
-
-http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
     sha256 = "35058ff14e4f9f49f78da2f1bbf1c03f27e8e40ec65c51f62720346e99803392",
     strip_prefix = "google-cloud-cpp-0.13.0",
