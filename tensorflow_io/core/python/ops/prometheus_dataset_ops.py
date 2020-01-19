@@ -21,8 +21,8 @@ import tensorflow as tf
 from tensorflow.python.data.experimental.ops.sleep import sleep
 from tensorflow_io.core.python.ops import golang_ops
 
-class PrometheusGraphIODataset(tf.data.Dataset):
-  """PrometheusGraphIODataset"""
+class PrometheusIODataset(tf.data.Dataset):
+  """PrometheusIODataset"""
 
   def __init__(self,
                query,
@@ -30,8 +30,8 @@ class PrometheusGraphIODataset(tf.data.Dataset):
                offset=None,
                endpoint=None,
                spec=None, internal=True):
-    """PrometheusGraphIODataset."""
-    with tf.name_scope("PrometheusGraphIODataset"):
+    """PrometheusIODataset."""
+    with tf.name_scope("PrometheusIODataset"):
       assert internal
 
       metadata = []
@@ -95,7 +95,7 @@ class PrometheusGraphIODataset(tf.data.Dataset):
       dataset = dataset.map(f)
       dataset = dataset.unbatch()
       self._dataset = dataset
-      super(PrometheusGraphIODataset, self).__init__(
+      super(PrometheusIODataset, self).__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -106,7 +106,7 @@ class PrometheusGraphIODataset(tf.data.Dataset):
     return self._dataset.element_spec
 
 class PrometheusScrapeStreamIODataset(tf.data.Dataset):
-  """PrometheusScrapeStreamGraphIODataset"""
+  """PrometheusScrapeStreamIODataset"""
 
   def __init__(self,
                metric,

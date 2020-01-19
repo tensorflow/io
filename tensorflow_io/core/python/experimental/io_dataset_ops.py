@@ -198,6 +198,35 @@ class IODataset(io_dataset.IODataset):
           filename, spec=spec, internal=True)
 
   @classmethod
+  def from_prometheus(cls,
+                      query,
+                      length,
+                      offset=None,
+                      endpoint=None,
+                      spec=None):
+    """Creates an `GraphIODataset` from a prometheus endpoint.
+
+    Args:
+      query: A string, the query string for prometheus.
+      length: An integer, the length of the query (in seconds).
+      offset: An integer, the a millisecond-precision timestamp, by default
+        the time when graph runs.
+      endpoint: A string, the server address of prometheus, by default
+        `http://localhost:9090`.
+      spec: A structured tf.TensorSpec of the dataset.
+        The format should be {"job": {"instance": {"name": tf.TensorSpec}}}.
+        In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
+    return prometheus_dataset_ops.PrometheusIODataset(
+        query, length, offset=offset, endpoint=endpoint, spec=spec)
+
+  @classmethod
   def to_file(cls,
               dataset,
               filename,
