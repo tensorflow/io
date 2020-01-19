@@ -20,12 +20,32 @@ http_archive(
 )
 
 http_archive(
+    name = "freetype",
+    build_file = "//third_party:freetype.BUILD",
+    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
+    strip_prefix = "freetype-2.10.0",
+    urls = [
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "easyexif",
     build_file = "//third_party:easyexif.BUILD",
     sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
     strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
     urls = [
         "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "stb",
+    build_file = "//third_party:stb.BUILD",
+    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
+    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
+    urls = [
+        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
     ],
 )
 
@@ -468,17 +488,6 @@ http_archive(
 )
 
 http_archive(
-    name = "freetype",
-    build_file = "//third_party:freetype.BUILD",
-    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
-    strip_prefix = "freetype-2.10.0",
-    urls = [
-        "https://mirror.bazel.build/download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "jsoncpp_git",
     build_file = "//third_party:jsoncpp.BUILD",
     sha256 = "c49deac9e0933bcb7044f08516861a2d560988540b23de2ac1ad443b219afdb6",
@@ -699,15 +708,5 @@ http_archive(
     strip_prefix = "flac-1.3.3",
     urls = [
         "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "stb",
-    build_file = "//third_party:stb.BUILD",
-    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
-    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
-    urls = [
-        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
     ],
 )

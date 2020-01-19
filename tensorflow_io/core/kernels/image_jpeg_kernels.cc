@@ -14,22 +14,25 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/framework/op_kernel.h"
+
 #include "exif.h"
 
 namespace tensorflow {
-namespace data {
+namespace io {
 namespace {
 
 class DecodeJpegExifOp : public OpKernel {
  public:
-  explicit DecodeJpegExifOp(OpKernelConstruction* context) : OpKernel(context) {}
+  explicit DecodeJpegExifOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
 
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
     Tensor* orientation_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}), &orientation_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}),
+                                                     &orientation_tensor));
     orientation_tensor->scalar<int64>()() = 0;
 
     const string& input = input_tensor->scalar<string>()();
@@ -43,5 +46,5 @@ REGISTER_KERNEL_BUILDER(Name("IO>DecodeJpegExif").Device(DEVICE_CPU),
                         DecodeJpegExifOp);
 
 }  // namespace
-}  // namespace data
+}  // namespace io
 }  // namespace tensorflow
