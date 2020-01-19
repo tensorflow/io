@@ -13,15 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "imageio/metadata.h"
+#include "imageio/webpdec.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 #include "tensorflow/core/platform/file_system.h"
 #include "webp/encode.h"
-#include "imageio/webpdec.h"
-#include "imageio/metadata.h"
 
 namespace tensorflow {
-namespace data {
+namespace io {
 namespace {
 
 class DecodeWebPOp : public OpKernel {
@@ -37,15 +37,20 @@ class DecodeWebPOp : public OpKernel {
 
     WebPDecoderConfig config;
     WebPInitDecoderConfig(&config);
-    int returned = WebPGetFeatures(reinterpret_cast<const uint8_t *>(contents.data()), contents.size(), &config.input);
+    int returned =
+        WebPGetFeatures(reinterpret_cast<const uint8_t*>(contents.data()),
+                        contents.size(), &config.input);
     OP_REQUIRES(context, returned == VP8_STATUS_OK,
-                errors::InvalidArgument("contents could not be decoded as WebP: ", returned));
+                errors::InvalidArgument(
+                    "contents could not be decoded as WebP: ", returned));
 
     int height = config.input.height;
     int width = config.input.width;
 
     Tensor* output_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({height, width, channels_}), &output_tensor));
+    OP_REQUIRES_OK(context, context->allocate_output(
+                                0, TensorShape({height, width, channels_}),
+                                &output_tensor));
 
     config.output.colorspace = MODE_RGBA;
     config.output.u.RGBA.rgba = output_tensor->flat<uint8_t>().data();
@@ -53,18 +58,19 @@ class DecodeWebPOp : public OpKernel {
     config.output.u.RGBA.size = height * width * channels_;
     config.output.is_external_memory = 1;
 
-    returned = DecodeWebP(reinterpret_cast<const uint8_t *>(contents.data()), contents.size(), &config);
+    returned = DecodeWebP(reinterpret_cast<const uint8_t*>(contents.data()),
+                          contents.size(), &config);
     OP_REQUIRES(context, returned == 0,
-                errors::InvalidArgument("contents could not be decoded as WebP: ", returned));
+                errors::InvalidArgument(
+                    "contents could not be decoded as WebP: ", returned));
   }
 
  private:
   // TODO (yongtang): Set channels_ = 4 for now.
   static const int channels_ = 4;
 };
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeWebP").Device(DEVICE_CPU),
-                        DecodeWebPOp);
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeWebP").Device(DEVICE_CPU), DecodeWebPOp);
 
 }  // namespace
-}  // namespace data
+}  // namespace io
 }  // namespace tensorflow

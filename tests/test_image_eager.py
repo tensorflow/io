@@ -167,7 +167,7 @@ def test_decode_ppm():
   png = tf.image.decode_png(tf.io.read_file(png_file), dtype=tf.uint16)
   assert np.all(pgm.numpy() == png.numpy())
 
-def test_encode_webp():
+def test_encode_bmp():
   """Test case for encode_bmp."""
   width = 51
   height = 26

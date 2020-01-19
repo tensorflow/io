@@ -10,6 +10,16 @@ load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
 cuda_configure(name = "local_config_cuda")
 
 http_archive(
+    name = "libwebp",
+    build_file = "//third_party:libwebp.BUILD",
+    sha256 = "424faab60a14cb92c2a062733b6977b4cc1e875a6398887c5911b3a1a6c56c51",
+    strip_prefix = "libwebp-1.1.0",
+    urls = [
+        "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -134,17 +144,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
         "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "libwebp",
-    build_file = "//third_party:libwebp.BUILD",
-    sha256 = "c2838544d4898a4bbb6c1d113e0aa50c4bdfc886df0dcfbfa5c42e788cb6f382",
-    strip_prefix = "libwebp-1.0.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
-        "https://github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
     ],
 )
 
