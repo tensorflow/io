@@ -435,6 +435,25 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "kafka_ops",
+    srcs = [
+        "kernels/kafka_kernels.cc",
+        "kernels/kafka_kernels_deprecated.cc",
+        "ops/kafka_ops.cc",
+        "ops/kafka_ops_deprecated.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@avro",
+        "@kafka",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -461,6 +480,7 @@ cc_binary(
             "//tensorflow_io/core:grpc_ops",
             "//tensorflow_io/core:hdf5_ops",
             "//tensorflow_io/core:json_ops",
+            "//tensorflow_io/core:kafka_ops",
             "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:parquet_ops",
             "//tensorflow_io/core:pcap_ops",
@@ -470,7 +490,6 @@ cc_binary(
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/ignite:ignite_ops",
-            "//tensorflow_io/kafka:kafka_ops",
             "@libarchive",
             "@xz//:lzma",
         ],
