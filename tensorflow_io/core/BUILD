@@ -159,30 +159,38 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
-        "kernels/image_bmp_kernels.cc",
-        "kernels/image_dicom_kernels.cc",
-        "kernels/image_hdr_kernels.cc",
-        "kernels/image_jpeg_kernels.cc",
-        "kernels/image_kernels.cc",
-        "kernels/image_openexr_kernels.cc",
-        "kernels/image_pnm_kernels.cc",
-        "kernels/image_tiff_kernels.cc",
-        "kernels/image_webp_kernels.cc",
         "ops/image_ops.cc",
-    ],
+        "kernels/image_bmp_kernels.cc",
+        "kernels/image_pnm_kernels.cc",
+        "kernels/image_webp_kernels.cc",
+        "kernels/image_font_kernels.cc",
+        "kernels/image_jpeg_kernels.cc",
+        "kernels/image_hdr_kernels.cc",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "kernels/image_dicom_kernels.cc",
+            "kernels/image_openexr_kernels.cc",
+            "kernels/image_tiff_kernels.cc",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
-        "@dcmtk",
         "@easyexif",
         "@freetype",
-        "@libtiff",
         "@libwebp",
-        "@openexr",
         "@stb",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "@dcmtk",
+            "@libtiff",
+            "@openexr",
+        ],
+    }),
     alwayslink = 1,
 )
 
@@ -432,6 +440,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
@@ -449,7 +458,6 @@ cc_binary(
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:grpc_ops",
             "//tensorflow_io/core:hdf5_ops",
-            "//tensorflow_io/core:image_ops",
             "//tensorflow_io/core:json_ops",
             "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:numpy_ops",

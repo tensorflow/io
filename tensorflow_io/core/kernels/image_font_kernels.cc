@@ -34,10 +34,7 @@ limitations under the License.
 // Needed in macOS
 extern "C" {
 int z_verbose = 0;
-void z_error(char* message)
-{
-  (message);
-}
+void z_error(char* message) { (message); }
 }
 
 namespace tensorflow {
@@ -65,12 +62,12 @@ std::vector<std::vector<float>> DefaultColorTable(int depth) {
 }
 
 bool GlyphBit(const FT_Face& face, int64 x, int64 y) {
-    int pitch = abs(face->glyph->bitmap.pitch);
+  int pitch = abs(face->glyph->bitmap.pitch);
 
-    unsigned char *row = &face->glyph->bitmap.buffer[pitch * y];
-    unsigned char byte = row[x >> 3];
+  unsigned char* row = &face->glyph->bitmap.buffer[pitch * y];
+  unsigned char byte = row[x >> 3];
 
-    return (byte & (128 >> (x & 7))) != 0;
+  return (byte & (128 >> (x & 7))) != 0;
 }
 
 static FT_Library library;
@@ -100,7 +97,6 @@ class DrawBoundingBoxesV3Op : public OpKernel {
   }
 
   void Compute(OpKernelContext* context) override {
-
     const Tensor& images = context->input(0);
     const Tensor& boxes = context->input(1);
     const int64 depth = images.dim_size(3);
@@ -128,10 +124,11 @@ class DrawBoundingBoxesV3Op : public OpKernel {
                   errors::InvalidArgument("colors must be a 2-D matrix",
                                           colors_tensor.shape().DebugString()));
       if (colors_tensor.NumElements() != 0) {
-        OP_REQUIRES(context, colors_tensor.shape().dim_size(1) >= depth,
-                    errors::InvalidArgument("colors must have equal or more ",
-                                            "channels than the image provided: ",
-                                            colors_tensor.shape().DebugString()));
+        OP_REQUIRES(
+            context, colors_tensor.shape().dim_size(1) >= depth,
+            errors::InvalidArgument("colors must have equal or more ",
+                                    "channels than the image provided: ",
+                                    colors_tensor.shape().DebugString()));
         color_table.clear();
 
         auto colors = colors_tensor.matrix<float>();
@@ -148,16 +145,18 @@ class DrawBoundingBoxesV3Op : public OpKernel {
       color_table = DefaultColorTable(depth);
     }
 
-    FT_Face face; 
+    FT_Face face;
     std::vector<string> texts;
     int64 font_size = font_size_ > 0 ? font_size_ : 32;
     if (context->num_inputs() >= 4) {
       const Tensor& texts_tensor = context->input(3);
       if (texts_tensor.NumElements() > 0) {
         OP_REQUIRES(context, texts_tensor.dims() == 1,
-          errors::InvalidArgument("The rank of the texts tensor should be 1"));
-        OP_REQUIRES(context, images.dim_size(0) == texts_tensor.dim_size(0),
-                    errors::InvalidArgument("The batch sizes should be the same"));
+                    errors::InvalidArgument(
+                        "The rank of the texts tensor should be 1"));
+        OP_REQUIRES(
+            context, images.dim_size(0) == texts_tensor.dim_size(0),
+            errors::InvalidArgument("The batch sizes should be the same"));
 
         texts.reserve(texts_tensor.NumElements());
         for (int64 i = 0; i < texts_tensor.NumElements(); ++i) {
@@ -165,13 +164,16 @@ class DrawBoundingBoxesV3Op : public OpKernel {
         }
         OP_REQUIRES_OK(context, InitializeFreeTypeLibrary());
         OP_REQUIRES(context,
-          FT_New_Memory_Face(library, OpenSans_Regular_ttf, OpenSans_Regular_ttf_len, 0, &face) == 0,
-          errors::Internal("could not init FreeType Face"));
-        OP_REQUIRES(context, FT_Set_Pixel_Sizes(face, 0, font_size) == 0, errors::Internal("could not set pixel size"));
+                    FT_New_Memory_Face(library, OpenSans_Regular_ttf,
+                                       OpenSans_Regular_ttf_len, 0, &face) == 0,
+                    errors::Internal("could not init FreeType Face"));
+        OP_REQUIRES(context, FT_Set_Pixel_Sizes(face, 0, font_size) == 0,
+                    errors::Internal("could not set pixel size"));
 
         std::unordered_set<FT_ULong> bytes;
         for (int64 box_index = 0; box_index < texts.size(); box_index++) {
-          for (int64 byte_index = 0; byte_index < texts[box_index].size(); byte_index++) {
+          for (int64 byte_index = 0; byte_index < texts[box_index].size();
+               byte_index++) {
             FT_ULong byte = texts[box_index][byte_index];
             bytes.insert(byte);
           }
@@ -179,14 +181,20 @@ class DrawBoundingBoxesV3Op : public OpKernel {
         int64 face_max_rows = 0;
         for (FT_ULong byte : bytes) {
           FT_UInt glyph_index = FT_Get_Char_Index(face, byte);
+          OP_REQUIRES(
+              context,
+              FT_Load_Glyph(face, glyph_index,
+                            FT_LOAD_RENDER | FT_LOAD_MONOCHROME |
+                                FT_LOAD_TARGET_MONO) == 0,
+              errors::InvalidArgument("could not load glyph for byte: ", byte));
           OP_REQUIRES(context,
-            FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO) == 0,
-            errors::InvalidArgument("could not load glyph for byte: ", byte));
-          OP_REQUIRES(context,
-            FT_Render_Glyph(face->glyph, FT_RENDER_MODE_MONO) == 0,
-            errors::InvalidArgument("could not render glyph for byte: ", byte));
+                      FT_Render_Glyph(face->glyph, FT_RENDER_MODE_MONO) == 0,
+                      errors::InvalidArgument(
+                          "could not render glyph for byte: ", byte));
 
-          face_max_rows = face_max_rows > face->glyph->bitmap.rows ? face_max_rows : face->glyph->bitmap.rows;
+          face_max_rows = face_max_rows > face->glyph->bitmap.rows
+                              ? face_max_rows
+                              : face->glyph->bitmap.rows;
         }
       }
     }
@@ -289,18 +297,23 @@ class DrawBoundingBoxesV3Op : public OpKernel {
         // Draw text
         for (int64 box_index = 0; box_index < texts.size(); box_index++) {
           int64 box_col_offset = 0;
-          for (int64 byte_index = 0; byte_index < texts[box_index].size(); byte_index++) {
+          for (int64 byte_index = 0; byte_index < texts[box_index].size();
+               byte_index++) {
             FT_ULong byte = texts[box_index][byte_index];
             FT_UInt glyph_index = FT_Get_Char_Index(face, byte);
-            FT_Load_Glyph(face, glyph_index, FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO);
+            FT_Load_Glyph(
+                face, glyph_index,
+                FT_LOAD_RENDER | FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO);
             FT_Render_Glyph(face->glyph, FT_RENDER_MODE_MONO);
             for (int64 i = 0; i < face->glyph->bitmap.rows; i++) {
               for (int64 j = 0; j < face->glyph->bitmap.width; j++) {
                 int64 x = j;
                 int64 y = i;
                 if (GlyphBit(face, x, y)) {
-                  int64 col = face->glyph->bitmap_left + box_col_offset + j + min_box_col;
-                  int64 row = i + min_box_row + font_size - face->glyph->bitmap.rows;
+                  int64 col = face->glyph->bitmap_left + box_col_offset + j +
+                              min_box_col;
+                  int64 row =
+                      i + min_box_row + font_size - face->glyph->bitmap.rows;
                   for (int64 c = 0; c < depth; c++) {
                     canvas(b, row, col, c) =
                         static_cast<T>(color_table[color_index][c]);
@@ -314,14 +327,16 @@ class DrawBoundingBoxesV3Op : public OpKernel {
       }
     }
   }
-private:
+
+ private:
   int64 font_size_;
 };
 
-#define REGISTER_CPU_KERNEL(T)                                               \
-  REGISTER_KERNEL_BUILDER(                                                   \
-      Name("IO>DrawBoundingBoxesV3").Device(DEVICE_CPU).TypeConstraint<T>("T"),   \
-      DrawBoundingBoxesV3Op<T>);
+#define REGISTER_CPU_KERNEL(T)                           \
+  REGISTER_KERNEL_BUILDER(Name("IO>DrawBoundingBoxesV3") \
+                              .Device(DEVICE_CPU)        \
+                              .TypeConstraint<T>("T"),   \
+                          DrawBoundingBoxesV3Op<T>);
 
 TF_CALL_half(REGISTER_CPU_KERNEL);
 TF_CALL_float(REGISTER_CPU_KERNEL);

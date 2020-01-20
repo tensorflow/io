@@ -10,6 +10,46 @@ load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
 cuda_configure(name = "local_config_cuda")
 
 http_archive(
+    name = "libwebp",
+    build_file = "//third_party:libwebp.BUILD",
+    sha256 = "424faab60a14cb92c2a062733b6977b4cc1e875a6398887c5911b3a1a6c56c51",
+    strip_prefix = "libwebp-1.1.0",
+    urls = [
+        "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "freetype",
+    build_file = "//third_party:freetype.BUILD",
+    sha256 = "3a60d391fd579440561bf0e7f31af2222bc610ad6ce4d9d7bd2165bca8669110",
+    strip_prefix = "freetype-2.10.1",
+    urls = [
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "easyexif",
+    build_file = "//third_party:easyexif.BUILD",
+    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
+    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
+    urls = [
+        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "stb",
+    build_file = "//third_party:stb.BUILD",
+    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
+    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
+    urls = [
+        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -134,17 +174,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
         "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "libwebp",
-    build_file = "//third_party:libwebp.BUILD",
-    sha256 = "c2838544d4898a4bbb6c1d113e0aa50c4bdfc886df0dcfbfa5c42e788cb6f382",
-    strip_prefix = "libwebp-1.0.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
-        "https://github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
     ],
 )
 
@@ -459,17 +488,6 @@ http_archive(
 )
 
 http_archive(
-    name = "freetype",
-    build_file = "//third_party:freetype.BUILD",
-    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
-    strip_prefix = "freetype-2.10.0",
-    urls = [
-        "https://mirror.bazel.build/download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "jsoncpp_git",
     build_file = "//third_party:jsoncpp.BUILD",
     sha256 = "c49deac9e0933bcb7044f08516861a2d560988540b23de2ac1ad443b219afdb6",
@@ -637,16 +655,6 @@ http_archive(
 )
 
 http_archive(
-    name = "easyexif",
-    build_file = "//third_party:easyexif.BUILD",
-    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
-    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
-    urls = [
-        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
-    ],
-)
-
-http_archive(
     name = "openexr",
     build_file = "//third_party:openexr.BUILD",
     sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
@@ -700,15 +708,5 @@ http_archive(
     strip_prefix = "flac-1.3.3",
     urls = [
         "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "stb",
-    build_file = "//third_party:stb.BUILD",
-    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
-    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
-    urls = [
-        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
     ],
 )
