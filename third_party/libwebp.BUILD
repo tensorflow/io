@@ -18,24 +18,18 @@ cc_library(
         "src/demux/*.h",
         "src/enc/*.c",
         "src/enc/*.h",
+        "src/webp/*.h",
     ]) + [
         "imageio/imageio_util.c",
         "imageio/webpdec.c",
         "imageio/metadata.c",
-    ],
-    hdrs = glob([
-        "src/webp/*.h",
-    ]) + [
         "imageio/webpdec.h",
         "imageio/metadata.h",
         "imageio/imageio_util.h",
+        "examples/unicode.h",
     ],
-    copts = [],
-    defines = [],
     includes = [
         "src",
     ],
-    linkopts = [],
     visibility = ["//visibility:public"],
-    deps = [],
 )

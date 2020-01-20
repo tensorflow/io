@@ -47,7 +47,6 @@ def test_tiff_io_tensor():
 
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
-  filename = "file://" + filename
 
   tiff = tfio.IOTensor.from_tiff(filename)
   assert tiff.keys == list(range(5))
@@ -101,7 +100,6 @@ def test_tiff_file_dataset():
 
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)), "test_image", "small.tiff")
-  filename = "file://" + filename
 
   num_repeats = 2
 
@@ -167,7 +165,7 @@ def test_decode_ppm():
   png = tf.image.decode_png(tf.io.read_file(png_file), dtype=tf.uint16)
   assert np.all(pgm.numpy() == png.numpy())
 
-def test_encode_webp():
+def test_encode_bmp():
   """Test case for encode_bmp."""
   width = 51
   height = 26
@@ -196,7 +194,6 @@ def test_openexr_io_tensor():
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_image", "glacier.exr")
-  filename = "file://" + filename
 
   exr_shape, exr_dtype, exr_channel = tfio.experimental.image.decode_exr_info(
       tf.io.read_file(filename))
@@ -251,7 +248,6 @@ def test_decode_hdr():
   filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_image", "glacier.hdr")
-  filename = "file://" + filename
 
   contents = tf.io.read_file(filename)
   hdr = tfio.experimental.image.decode_hdr(contents)

@@ -20,7 +20,7 @@ limitations under the License.
 #include "stb_image.h"
 
 namespace tensorflow {
-namespace data {
+namespace io {
 namespace {
 
 class DecodeHDROp : public OpKernel {
@@ -79,5 +79,5 @@ class DecodeHDROp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeHdr").Device(DEVICE_CPU), DecodeHDROp);
 
 }  // namespace
-}  // namespace data
+}  // namespace io
 }  // namespace tensorflow
