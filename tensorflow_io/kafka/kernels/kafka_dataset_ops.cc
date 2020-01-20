@@ -427,6 +427,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
                                   ":", errstr);
         }
 
+	// Always enable.partition.eof=true
+	result = conf->set("enable.partition.eof", "true", errstr);
+        if (result != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("Failed to set enable.partition.eof=true",
+                                  ":", errstr);
+        }
+
         consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
         if (!consumer_.get()) {
           return errors::Internal("Failed to create consumer:", errstr);

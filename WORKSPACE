@@ -50,33 +50,51 @@ http_archive(
 )
 
 http_archive(
+    name = "zlib",
+    build_file = "//third_party:zlib.BUILD",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "boringssl",
+    sha256 = "271e7bc26b726dcb5327d37ccc64de3879c1c8faecae8bd42f4954cc8a0a3fa3",
+    strip_prefix = "boringssl-b32fbe0e8a2799f9ac8a69dfb97db013f02a869f",
+    urls = [
+        "https://github.com/google/boringssl/archive/b32fbe0e8a2799f9ac8a69dfb97db013f02a869f.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "zstd",
+    build_file = "//third_party:zstd.BUILD",
+    sha256 = "a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8",
+    strip_prefix = "zstd-1.4.4",
+    urls = [
+        "https://github.com/facebook/zstd/archive/v1.4.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "kafka",
+    build_file = "//third_party:kafka.BUILD",
+    sha256 = "465cab533ebc5b9ca8d97c90ab69e0093460665ebaf38623209cf343653c76d2",
+    strip_prefix = "librdkafka-1.3.0",
+    urls = [
+        "https://github.com/edenhill/librdkafka/archive/v1.3.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
     urls = [
         "http://mirror.tensorflow.org/github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
         "https://github.com/abseil/abseil-cpp/archive/43ef2148c0936ebf7cb4be6b19927a9d9d145b8f.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "boringssl",
-    sha256 = "1188e29000013ed6517168600fc35a010d58c5d321846d6a6dfee74e4c788b45",
-    strip_prefix = "boringssl-7f634429a04abc48e2eb041c81c5235816c96514",
-    urls = [
-        "https://mirror.bazel.build/github.com/google/boringssl/archive/7f634429a04abc48e2eb041c81c5235816c96514.tar.gz",
-        "https://github.com/google/boringssl/archive/7f634429a04abc48e2eb041c81c5235816c96514.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "zlib",
-    build_file = "//third_party:zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "https://zlib.net/zlib-1.2.11.tar.gz",
     ],
 )
 
@@ -88,20 +106,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
         "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "kafka",
-    build_file = "//third_party:kafka.BUILD",
-    patches = [
-        "//third_party:kafka.patch",
-    ],
-    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
-    strip_prefix = "librdkafka-0.11.6",
-    urls = [
-        "https://mirror.bazel.build/github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
-        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
     ],
 )
 
