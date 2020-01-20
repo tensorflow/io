@@ -13,14 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-#include "tensorflow_io/core/kernels/sequence_ops.h"
-#include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/core/kernels/sequence_ops.h"
 
-#include "rdkafkacpp.h"
 #include <deque>
+#include "rdkafkacpp.h"
 
 namespace tensorflow {
 
@@ -42,14 +42,16 @@ class KafkaDatasetOp : public DatasetOpKernel {
     }
 
     std::string servers = "";
-    OP_REQUIRES_OK(ctx,
-                   data::ParseScalarArgument<std::string>(ctx, "servers", &servers));
+    OP_REQUIRES_OK(
+        ctx, data::ParseScalarArgument<std::string>(ctx, "servers", &servers));
     std::string group = "";
-    OP_REQUIRES_OK(ctx, data::ParseScalarArgument<std::string>(ctx, "group", &group));
+    OP_REQUIRES_OK(
+        ctx, data::ParseScalarArgument<std::string>(ctx, "group", &group));
     bool eof = false;
     OP_REQUIRES_OK(ctx, data::ParseScalarArgument<bool>(ctx, "eof", &eof));
     int64 timeout = -1;
-    OP_REQUIRES_OK(ctx, data::ParseScalarArgument<int64>(ctx, "timeout", &timeout));
+    OP_REQUIRES_OK(ctx,
+                   data::ParseScalarArgument<int64>(ctx, "timeout", &timeout));
     OP_REQUIRES(ctx, (timeout > 0),
                 errors::InvalidArgument(
                     "Timeout value should be large than 0, got ", timeout));
@@ -70,10 +72,12 @@ class KafkaDatasetOp : public DatasetOpKernel {
       config_topic.push_back(config_topic_tensor->flat<string>()(i));
     }
     bool message_key = false;
-    OP_REQUIRES_OK(ctx, data::ParseScalarArgument<bool>(ctx, "message_key", &message_key));
+    OP_REQUIRES_OK(
+        ctx, data::ParseScalarArgument<bool>(ctx, "message_key", &message_key));
 
     *output = new Dataset(ctx, std::move(topics), servers, group, eof, timeout,
-                          std::move(config_global), std::move(config_topic), message_key);
+                          std::move(config_global), std::move(config_topic),
+                          message_key);
   }
 
  private:
@@ -101,7 +105,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
 
     const DataTypeVector& output_dtypes() const override {
       if (message_key_) {
-        static DataTypeVector* dtypes = new DataTypeVector({DT_STRING, DT_STRING});
+        static DataTypeVector* dtypes =
+            new DataTypeVector({DT_STRING, DT_STRING});
         return *dtypes;
       }
       static DataTypeVector* dtypes = new DataTypeVector({DT_STRING});
@@ -142,50 +147,52 @@ class KafkaDatasetOp : public DatasetOpKernel {
       Node* message_key = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(message_key_, &message_key));
       TF_RETURN_IF_ERROR(
-          b->AddDataset(this, {topics, servers, group, eof, timeout,
-                        config_global, config_topic, message_key}, output));
+          b->AddDataset(this,
+                        {topics, servers, group, eof, timeout, config_global,
+                         config_topic, message_key},
+                        output));
       return Status::OK();
     }
 
    private:
-      class KafkaEventCb : public RdKafka::EventCb {
-        public:
-          KafkaEventCb(bool &run):run_(run) {}
+    class KafkaEventCb : public RdKafka::EventCb {
+     public:
+      KafkaEventCb(bool& run) : run_(run) {}
 
-          void event_cb (RdKafka::Event &event) {
-            switch (event.type())
-            {
-              case RdKafka::Event::EVENT_ERROR:
-                LOG(ERROR) << "EVENT_ERROR: " << "(" <<
-                  RdKafka::err2str(event.err()) << "): " << event.str();
-                if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN)
-                  run_ = false;
-                break;
+      void event_cb(RdKafka::Event& event) {
+        switch (event.type()) {
+          case RdKafka::Event::EVENT_ERROR:
+            LOG(ERROR) << "EVENT_ERROR: "
+                       << "(" << RdKafka::err2str(event.err())
+                       << "): " << event.str();
+            if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN) run_ = false;
+            break;
 
-              case RdKafka::Event::EVENT_STATS:
-                LOG(ERROR) << "EVENT_STATS: " << event.str();
-                break;
+          case RdKafka::Event::EVENT_STATS:
+            LOG(ERROR) << "EVENT_STATS: " << event.str();
+            break;
 
-              case RdKafka::Event::EVENT_LOG:
-                LOG(ERROR) << "EVENT_LOG: " << event.severity() <<
-                  "-" << event.fac().c_str() << "-" << event.str().c_str();
-                break;
+          case RdKafka::Event::EVENT_LOG:
+            LOG(ERROR) << "EVENT_LOG: " << event.severity() << "-"
+                       << event.fac().c_str() << "-" << event.str().c_str();
+            break;
 
-              case RdKafka::Event::EVENT_THROTTLE:
-                LOG(ERROR) << "EVENT_THROTTLE: " << event.throttle_time() << "ms by "
-                  << event.broker_name() << " id " << (int)event.broker_id();
-                break;
+          case RdKafka::Event::EVENT_THROTTLE:
+            LOG(ERROR) << "EVENT_THROTTLE: " << event.throttle_time()
+                       << "ms by " << event.broker_name() << " id "
+                       << (int)event.broker_id();
+            break;
 
-              default:
-                LOG(ERROR) << "EVENT: " << event.type() <<
-                  " (" << RdKafka::err2str(event.err()) << "): " << event.str();
-                break;
-            }
-          }
+          default:
+            LOG(ERROR) << "EVENT: " << event.type() << " ("
+                       << RdKafka::err2str(event.err()) << "): " << event.str();
+            break;
+        }
+      }
 
-       private:
-        bool &run_;
-      };
+     private:
+      bool& run_;
+    };
 
     class Iterator : public DatasetIterator<Dataset> {
      public:
@@ -230,27 +237,26 @@ class KafkaDatasetOp : public DatasetOpKernel {
               }
 
               if (message->err() == RdKafka::ERR__PARTITION_EOF) {
-                  LOG(INFO) << "Partition reach EOF: "
-                    << dataset()->topics_[current_topic_index_]
-                    << ", current offset: " << offset_;
+                LOG(INFO) << "Partition reach EOF: "
+                          << dataset()->topics_[current_topic_index_]
+                          << ", current offset: " << offset_;
 
-                  if (dataset()->eof_) break;
-              }
-              else if (message->err() == RdKafka::ERR__TRANSPORT) {
-                  // Not return error here because consumer will try re-connect.
-                  LOG(ERROR) << "Broker transport failure: " << message->errstr();
-              }
-              else if (message->err() != RdKafka::ERR__TIMED_OUT) {
-                  LOG(ERROR) << "Failed to consume: " << message->errstr();
-                  return errors::Internal("Failed to consume: ",
-                                          message->errstr());
+                if (dataset()->eof_) break;
+              } else if (message->err() == RdKafka::ERR__TRANSPORT) {
+                // Not return error here because consumer will try re-connect.
+                LOG(ERROR) << "Broker transport failure: " << message->errstr();
+              } else if (message->err() != RdKafka::ERR__TIMED_OUT) {
+                LOG(ERROR) << "Failed to consume: " << message->errstr();
+                return errors::Internal("Failed to consume: ",
+                                        message->errstr());
               }
 
               message.reset(nullptr);
             }
 
             if (!run_) {
-              return errors::Internal("Failed to consume due to all brokers down");
+              return errors::Internal(
+                  "Failed to consume due to all brokers down");
             }
 
             // We have reached the end of the current topic, so maybe
@@ -282,8 +288,9 @@ class KafkaDatasetOp : public DatasetOpKernel {
           TF_RETURN_IF_ERROR(
               writer->WriteScalar(full_name("current_pos"), offset_));
 
-          LOG(INFO) << "Save current topic: " << dataset()->topics_[current_topic_index_]
-            << ", current offset: " << offset_;
+          LOG(INFO) << "Save current topic: "
+                    << dataset()->topics_[current_topic_index_]
+                    << ", current offset: " << offset_;
         }
         return Status::OK();
       }
@@ -321,10 +328,10 @@ class KafkaDatasetOp : public DatasetOpKernel {
           }
           offset_ = current_pos;
 
-          LOG(INFO) << "Restore to topic: " << "["
-            << topic_partition_->topic() << ":" << topic_partition_->partition()
-            << ":" << topic_partition_->offset() << "]";
-
+          LOG(INFO) << "Restore to topic: "
+                    << "[" << topic_partition_->topic() << ":"
+                    << topic_partition_->partition() << ":"
+                    << topic_partition_->offset() << "]";
         }
         return Status::OK();
       }
@@ -380,11 +387,11 @@ class KafkaDatasetOp : public DatasetOpKernel {
         std::string errstr;
 
         for (auto it = dataset()->config_topic_.begin();
-          it != dataset()->config_topic_.end(); it++)
-        {
+             it != dataset()->config_topic_.end(); it++) {
           std::vector<string> parts = str_util::Split(*it, "=");
           if (parts.size() != 2) {
-            return errors::InvalidArgument("Invalid topic configuration: ", *it);
+            return errors::InvalidArgument("Invalid topic configuration: ",
+                                           *it);
           }
           result = topic_conf->set(parts[0], parts[1], errstr);
           if (result != RdKafka::Conf::CONF_OK) {
@@ -399,12 +406,12 @@ class KafkaDatasetOp : public DatasetOpKernel {
           return errors::Internal("Failed to set default_topic_conf:", errstr);
         }
 
-        for (auto it = dataset()->config_global_.begin(); 
-          it != dataset()->config_global_.end(); it++)
-        {
+        for (auto it = dataset()->config_global_.begin();
+             it != dataset()->config_global_.end(); it++) {
           std::vector<string> parts = str_util::Split(*it, "=");
           if (parts.size() != 2) {
-            return errors::InvalidArgument("Invalid global configuration: ", *it);
+            return errors::InvalidArgument("Invalid global configuration: ",
+                                           *it);
           }
           result = conf->set(parts[0], parts[1], errstr);
           if (result != RdKafka::Conf::CONF_OK) {
@@ -430,6 +437,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
                                   ":", errstr);
         }
 
+        // Always enable.partition.eof=true
+        result = conf->set("enable.partition.eof", "true", errstr);
+        if (result != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("Failed to set enable.partition.eof=true",
+                                  ":", errstr);
+        }
+
         consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
         if (!consumer_.get()) {
           return errors::Internal("Failed to create consumer:", errstr);
@@ -444,7 +458,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
               topic_partition_->partition(), ", ", topic_partition_->offset(),
               "]:", RdKafka::err2str(err));
         }
-        LOG(INFO) << "Kafka stream starts with current offset: " << topic_partition_->offset();
+        LOG(INFO) << "Kafka stream starts with current offset: "
+                  << topic_partition_->offset();
 
         return Status::OK();
       }
@@ -492,10 +507,10 @@ class WriteKafkaOp : public OpKernel {
                     "Message tensor must be scalar, but had shape: ",
                     message_tensor->shape().DebugString()));
     OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
-    OP_REQUIRES(context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
-                errors::InvalidArgument(
-                    "Topic tensor must be scalar, but had shape: ",
-                    topic_tensor->shape().DebugString()));
+    OP_REQUIRES(
+        context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
+        errors::InvalidArgument("Topic tensor must be scalar, but had shape: ",
+                                topic_tensor->shape().DebugString()));
     OP_REQUIRES_OK(context, context->input("servers", &servers_tensor));
     OP_REQUIRES(context, TensorShapeUtils::IsScalar(servers_tensor->shape()),
                 errors::InvalidArgument(
@@ -506,12 +521,13 @@ class WriteKafkaOp : public OpKernel {
     const string& topic_string = topic_tensor->scalar<string>()();
     std::vector<string> parts = str_util::Split(topic_string, ":");
     OP_REQUIRES(context, (parts.size() >= 1),
-        errors::InvalidArgument("Invalid parameters: ", topic_string));
+                errors::InvalidArgument("Invalid parameters: ", topic_string));
 
     const string& topic_str = parts[0];
     int32 partition = 0;
     if (parts.size() > 1) {
-      OP_REQUIRES(context, !strings::safe_strto32(parts[1], &partition),
+      OP_REQUIRES(
+          context, !strings::safe_strto32(parts[1], &partition),
           errors::InvalidArgument("Invalid parameters: ", topic_string));
     }
 
@@ -526,51 +542,54 @@ class WriteKafkaOp : public OpKernel {
 
     RdKafka::Conf::ConfResult result =
         conf->set("default_topic_conf", topic_conf.get(), errstr);
-    OP_REQUIRES(context,  (result == RdKafka::Conf::CONF_OK),
-        errors::Internal("Failed to set default_topic_conf:", errstr));
+    OP_REQUIRES(context, (result == RdKafka::Conf::CONF_OK),
+                errors::Internal("Failed to set default_topic_conf:", errstr));
 
     result = conf->set("bootstrap.servers", servers, errstr);
     OP_REQUIRES(context, (result == RdKafka::Conf::CONF_OK),
-        errors::Internal("Failed to set bootstrap.servers ", servers, ":", errstr));
+                errors::Internal("Failed to set bootstrap.servers ", servers,
+                                 ":", errstr));
 
-    std::unique_ptr<RdKafka::Producer> producer(RdKafka::Producer::create(conf.get(), errstr));
+    std::unique_ptr<RdKafka::Producer> producer(
+        RdKafka::Producer::create(conf.get(), errstr));
     OP_REQUIRES(context, producer.get() != nullptr,
-        errors::Internal("Failed to create producer:", errstr));
+                errors::Internal("Failed to create producer:", errstr));
 
-    std::unique_ptr<RdKafka::Topic> topic(RdKafka::Topic::create(producer.get(), topic_str, topic_conf.get(), errstr));
-    OP_REQUIRES(context, topic.get() != nullptr,
+    std::unique_ptr<RdKafka::Topic> topic(RdKafka::Topic::create(
+        producer.get(), topic_str, topic_conf.get(), errstr));
+    OP_REQUIRES(
+        context, topic.get() != nullptr,
         errors::Internal("Failed to create topic ", topic_str, ":", errstr));
 
-    RdKafka::ErrorCode err = producer->produce(topic.get(), partition,
-                          RdKafka::Producer::RK_MSG_COPY,
-                          const_cast<char *>(message.c_str()), message.size(),
-                          NULL, NULL);
-    OP_REQUIRES(context, (err == RdKafka::ERR_NO_ERROR),
+    RdKafka::ErrorCode err = producer->produce(
+        topic.get(), partition, RdKafka::Producer::RK_MSG_COPY,
+        const_cast<char*>(message.c_str()), message.size(), NULL, NULL);
+    OP_REQUIRES(
+        context, (err == RdKafka::ERR_NO_ERROR),
         errors::Internal("Failed to produce message:", RdKafka::err2str(err)));
 
     err = producer->flush(timeout_);
-    OP_REQUIRES(context, (err == RdKafka::ERR_NO_ERROR),
+    OP_REQUIRES(
+        context, (err == RdKafka::ERR_NO_ERROR),
         errors::Internal("Failed to flush message:", RdKafka::err2str(err)));
     context->set_output(0, context->input(0));
   }
-private:
+
+ private:
   static const int timeout_ = 5000;
 };
 
-
 class KafkaOutputSequence : public OutputSequence {
  public:
-  KafkaOutputSequence(Env* env)
-   : OutputSequence(env) {}
+  KafkaOutputSequence(Env* env) : OutputSequence(env) {}
 
-  virtual ~KafkaOutputSequence() override {
-    Flush();
-  }
+  virtual ~KafkaOutputSequence() override { Flush(); }
   virtual Status Flush() override {
     if (producer_.get() != nullptr) {
       RdKafka::ErrorCode err = producer_->flush(timeout_);
       if (!(err == RdKafka::ERR_NO_ERROR)) {
-        return errors::Internal("Failed to flush message:", RdKafka::err2str(err));
+        return errors::Internal("Failed to flush message:",
+                                RdKafka::err2str(err));
       }
     }
     return Status::OK();
@@ -580,11 +599,12 @@ class KafkaOutputSequence : public OutputSequence {
       while (fifo_.size() != 0 && fifo_.front().get() != nullptr) {
         RdKafka::ErrorCode err = producer_->produce(
             topic_.get(), partition_, RdKafka::Producer::RK_MSG_COPY,
-            const_cast<char *>(fifo_.front().get()->c_str()), fifo_.front().get()->size(),
-            NULL, NULL);
+            const_cast<char*>(fifo_.front().get()->c_str()),
+            fifo_.front().get()->size(), NULL, NULL);
         if (!(err == RdKafka::ERR_NO_ERROR)) {
-          return errors::Internal("Failed to produce message:", RdKafka::err2str(err));
-	}
+          return errors::Internal("Failed to produce message:",
+                                  RdKafka::err2str(err));
+        }
 
         fifo_.pop_front();
         base_++;
@@ -595,7 +615,8 @@ class KafkaOutputSequence : public OutputSequence {
   virtual string DebugString() const {
     return strings::StrCat("KafkaOutputSequence[]");
   }
-  Status Initialize(const string& topic_str, int32 partition, const std::vector<string>& metadata) {
+  Status Initialize(const string& topic_str, int32 partition,
+                    const std::vector<string>& metadata) {
     partition_ = partition;
 
     std::unique_ptr<RdKafka::Conf> conf(
@@ -610,34 +631,44 @@ class KafkaOutputSequence : public OutputSequence {
       if (metadata[i].find("conf.topic.") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
-            return errors::InvalidArgument("invalid topic configuration: ", metadata[i]);
+          return errors::InvalidArgument("invalid topic configuration: ",
+                                         metadata[i]);
         }
         result = conf_topic->set(parts[0].substr(11), parts[1], errstr);
         if (result != RdKafka::Conf::CONF_OK) {
-          return errors::Internal("failed to do topic configuration:", metadata[i], "error:", errstr);
+          return errors::Internal("failed to do topic configuration:",
+                                  metadata[i], "error:", errstr);
         }
-      } else if (metadata[i] != "" && metadata[i].find("conf.") == string::npos) {
+      } else if (metadata[i] != "" &&
+                 metadata[i].find("conf.") == string::npos) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
-            return errors::InvalidArgument("invalid global configuration: ", metadata[i]);
+          return errors::InvalidArgument("invalid global configuration: ",
+                                         metadata[i]);
         }
-        if ((result = conf->set(parts[0], parts[1], errstr)) != RdKafka::Conf::CONF_OK) {
-          return errors::Internal("failed to do global configuration: ", metadata[i], "error:", errstr);
+        if ((result = conf->set(parts[0], parts[1], errstr)) !=
+            RdKafka::Conf::CONF_OK) {
+          return errors::Internal("failed to do global configuration: ",
+                                  metadata[i], "error:", errstr);
         }
       }
       LOG(INFO) << "Kafka configuration: " << metadata[i];
     }
-    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) != RdKafka::Conf::CONF_OK) {
+    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) !=
+        RdKafka::Conf::CONF_OK) {
       return errors::Internal("failed to set default_topic_conf:", errstr);
     }
 
     // producer.properties:
     //   bootstrap.servers=localhost:9092
     string bootstrap_servers;
-    if ((result = conf->get("bootstrap.servers", bootstrap_servers)) != RdKafka::Conf::CONF_OK) {
+    if ((result = conf->get("bootstrap.servers", bootstrap_servers)) !=
+        RdKafka::Conf::CONF_OK) {
       bootstrap_servers = "localhost:9092";
-      if ((result = conf->set("bootstrap.servers", bootstrap_servers, errstr)) != RdKafka::Conf::CONF_OK) {
-        return errors::Internal("failed to set bootstrap.servers [", bootstrap_servers, "]:", errstr);
+      if ((result = conf->set("bootstrap.servers", bootstrap_servers,
+                              errstr)) != RdKafka::Conf::CONF_OK) {
+        return errors::Internal("failed to set bootstrap.servers [",
+                                bootstrap_servers, "]:", errstr);
       }
       LOG(INFO) << "Kafka default bootstrap server: " << bootstrap_servers;
     }
@@ -647,13 +678,16 @@ class KafkaOutputSequence : public OutputSequence {
       return errors::Internal("Failed to create producer:", errstr);
     }
 
-    topic_.reset(RdKafka::Topic::create(producer_.get(), topic_str, conf_topic.get(), errstr));
+    topic_.reset(RdKafka::Topic::create(producer_.get(), topic_str,
+                                        conf_topic.get(), errstr));
     if (!(topic_.get() != nullptr)) {
-      return errors::Internal("Failed to create topic ", topic_str, ":", errstr);
+      return errors::Internal("Failed to create topic ", topic_str, ":",
+                              errstr);
     }
 
     return Status::OK();
   }
+
  private:
   int32 partition_ GUARDED_BY(mu_);
   std::unique_ptr<RdKafka::Producer> producer_ GUARDED_BY(mu_);
@@ -664,8 +698,8 @@ class KafkaOutputSequence : public OutputSequence {
 class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
  public:
   explicit KafkaOutputSequenceOp(OpKernelConstruction* context)
-    : OutputSequenceOp<KafkaOutputSequence>(context) {
-  }
+      : OutputSequenceOp<KafkaOutputSequence>(context) {}
+
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<KafkaOutputSequence>::Compute(context);
@@ -673,10 +707,10 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
 
     const Tensor* topic_tensor;
     OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
-    OP_REQUIRES(context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
-                errors::InvalidArgument(
-                    "Topic tensor must be scalar, but had shape: ",
-                    topic_tensor->shape().DebugString()));
+    OP_REQUIRES(
+        context, TensorShapeUtils::IsScalar(topic_tensor->shape()),
+        errors::InvalidArgument("Topic tensor must be scalar, but had shape: ",
+                                topic_tensor->shape().DebugString()));
 
     const Tensor* metadata_tensor;
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
@@ -688,16 +722,18 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
     const string& topic_string = topic_tensor->scalar<string>()();
     std::vector<string> parts = str_util::Split(topic_string, ":");
     OP_REQUIRES(context, (parts.size() >= 1),
-        errors::InvalidArgument("Invalid parameters: ", topic_string));
+                errors::InvalidArgument("Invalid parameters: ", topic_string));
 
     const string& topic_str = parts[0];
     int32 partition = 0;
     if (parts.size() > 1) {
-      OP_REQUIRES(context, !strings::safe_strto32(parts[1], &partition),
+      OP_REQUIRES(
+          context, !strings::safe_strto32(parts[1], &partition),
           errors::InvalidArgument("Invalid parameters: ", topic_string));
     }
 
-    OP_REQUIRES_OK(context, resource_->Initialize(topic_str, partition, metadata));
+    OP_REQUIRES_OK(context,
+                   resource_->Initialize(topic_str, partition, metadata));
   }
 };
 
@@ -709,9 +745,9 @@ REGISTER_KERNEL_BUILDER(Name("IO>WriteKafka").Device(DEVICE_CPU), WriteKafkaOp);
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequence").Device(DEVICE_CPU),
                         KafkaOutputSequenceOp);
 
-
-REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceSetItem").Device(DEVICE_CPU),
-                        OutputSequenceSetItemOp<KafkaOutputSequence>);
+REGISTER_KERNEL_BUILDER(
+    Name("IO>KafkaOutputSequenceSetItem").Device(DEVICE_CPU),
+    OutputSequenceSetItemOp<KafkaOutputSequence>);
 
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaOutputSequenceFlush").Device(DEVICE_CPU),
                         OutputSequenceFlushOp<KafkaOutputSequence>);
