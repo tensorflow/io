@@ -439,18 +439,28 @@ cc_library(
     name = "kafka_ops",
     srcs = [
         "kernels/kafka_kernels.cc",
-        "kernels/kafka_kernels_deprecated.cc",
         "ops/kafka_ops.cc",
-        "ops/kafka_ops_deprecated.cc",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "kernels/kafka_kernels_deprecated.cc",
+            "ops/kafka_ops_deprecated.cc",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "//tensorflow_io/core:sequence_ops",
-        "@avro",
         "@kafka",
-    ],
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "//tensorflow_io/core:dataset_ops",
+            "//tensorflow_io/core:sequence_ops",
+            "@avro",
+        ],
+    }),
     alwayslink = 1,
 )
 
