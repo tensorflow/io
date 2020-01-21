@@ -31,29 +31,48 @@ class _KafkaIODatasetFunction():
         self._resource, start=start, stop=stop,
         shape=tf.TensorShape([None]), dtype=tf.string)
 
-class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
+class KafkaIODataset(tf.data.Dataset):
   """KafkaIODataset"""
 
   def __init__(self,
                topic,
                partition,
-               offset,
-               tail,
-               servers,
-               configuration,
+               start, stop,
+               servers, configuration,
                internal=True):
     """KafkaIODataset."""
-    with tf.name_scope("KafkaIODataset") as scope:
-      subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
+    with tf.name_scope("KafkaIODataset"):
+      assert internal
+
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init(
-          subscription, metadata=metadata,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      super(KafkaIODataset, self).__init__(
-          _KafkaIODatasetFunction(resource), internal=internal)
+      resource = core_ops.io_kafka_readable_init_v(
+          topic, partition, start, stop, metadata=metadata)
+      start, stop = core_ops.io_kafka_readable_spec_v(resource)
+
+      self._resource = resource
+
+      step = 1024
+      indices_start = tf.data.Dataset.range(0, stop, step)
+      indices_stop = indices_start.skip(1).concatenate(
+          tf.data.Dataset.from_tensor_slices([stop]))
+      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
+      def f(start, stop):
+        return core_ops.io_kafka_readable_read_v(
+            self._resource, start=start, stop=stop)
+      dataset = dataset.map(f)
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      super(KafkaIODataset, self).__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
 
 class KafkaStreamIODataset(io_dataset_ops._StreamIODataset): # pylint: disable=protected-access
   """KafkaStreamIODataset"""

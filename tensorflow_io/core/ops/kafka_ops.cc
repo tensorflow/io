@@ -21,6 +21,42 @@ namespace tensorflow {
 namespace io {
 namespace {
 
+REGISTER_OP("IO>KafkaReadableInitV")
+    .Input("topic: string")
+    .Input("partition: int32")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>KafkaReadableSpecV")
+    .Input("input: resource")
+    .Output("start: int64")
+    .Output("stop: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>KafkaReadableReadV")
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("message: string")
+    .Output("key: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 REGISTER_OP("IO>LayerKafkaCall")
     .Input("input: T")
     .Input("content: string")
