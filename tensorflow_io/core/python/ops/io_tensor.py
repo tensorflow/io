@@ -282,17 +282,15 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0,
-                 offset=0,
-                 tail=-1,
-                 **kwargs):
+                 partition=0, start=0, stop=-1,
+                 servers=None, configuration=None, **kwargs):
     """Creates an `IOTensor` from a Kafka stream.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
       partition: A `tf.int64` tensor containing the partition, by default 0.
-      offset: A `tf.int64` tensor containing the start offset, by default 0.
-      tail: A `tf.int64` tensor containing the end offset, by default -1.
+      start: A `tf.int64` tensor containing the start offset, by default 0.
+      stop: A `tf.int64` tensor containing the end offset, by default -1.
       servers: An optional list of bootstrap servers, by default
          `localhost:9092`.
       configuration: An optional `tf.string` tensor containing
@@ -305,9 +303,6 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
           in librdkafka doc. Note all topic configurations should be
           prefixed with `configuration.topic.`. Examples include
           ["conf.topic.auto.offset.reset=earliest"]
-        Dataset configuration: there are two configurations available,
-          `conf.eof=0|1`: if True, the KafkaDaset will stop on EOF (default).
-          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -316,11 +311,8 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_io_tensor_ops.KafkaIOTensor(
-          topic=topic, partition=partition,
-          offset=offset, tail=tail,
-          servers=kwargs.get("servers", None),
-          configuration=kwargs.get("configuration", None),
-          internal=True)
+          topic=topic, partition=partition, start=start, stop=stop,
+          servers=servers, configuration=configuration, internal=True)
 
   @classmethod
   def from_feather(cls,

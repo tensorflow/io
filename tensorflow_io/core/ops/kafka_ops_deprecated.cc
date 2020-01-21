@@ -98,33 +98,6 @@ REGISTER_OP("IO>KafkaDecodeAvro")
       return Status::OK();
     });
 
-REGISTER_OP("IO>KafkaReadableInit")
-    .Input("input: string")
-    .Input("metadata: string")
-    .Output("resource: resource")
-    .Attr("container: string = ''")
-    .Attr("shared_name: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      c->set_output(0, c->Scalar());
-      return Status::OK();
-    });
-
-REGISTER_OP("IO>KafkaReadableRead")
-    .Input("input: resource")
-    .Input("start: int64")
-    .Input("stop: int64")
-    .Output("value: dtype")
-    .Attr("shape: shape")
-    .Attr("dtype: type")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      PartialTensorShape shape;
-      TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-      shape_inference::ShapeHandle entry;
-      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-      c->set_output(0, entry);
-      return Status::OK();
-    });
-
 REGISTER_OP("IO>KafkaOutputSequence")
     .Input("topic: string")
     .Input("metadata: string")

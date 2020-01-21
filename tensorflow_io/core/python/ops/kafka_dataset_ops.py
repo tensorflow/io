@@ -17,11 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 
 class KafkaIODataset(tf.data.Dataset):
   """KafkaIODataset"""
@@ -39,9 +36,9 @@ class KafkaIODataset(tf.data.Dataset):
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init_v(
+      resource = core_ops.io_kafka_readable_init(
           topic, partition, start, stop, metadata=metadata)
-      start, stop = core_ops.io_kafka_readable_spec_v(resource)
+      start, stop = core_ops.io_kafka_readable_spec(resource)
 
       self._resource = resource
 
@@ -51,7 +48,7 @@ class KafkaIODataset(tf.data.Dataset):
           tf.data.Dataset.from_tensor_slices([stop]))
       dataset = tf.data.Dataset.zip((indices_start, indices_stop))
       def f(start, stop):
-        return core_ops.io_kafka_readable_read_v(
+        return core_ops.io_kafka_readable_read(
             self._resource, start=start, stop=stop)
       dataset = dataset.map(f)
       dataset = dataset.unbatch()

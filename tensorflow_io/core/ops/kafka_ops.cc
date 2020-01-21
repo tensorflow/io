@@ -21,7 +21,7 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-REGISTER_OP("IO>KafkaReadableInitV")
+REGISTER_OP("IO>KafkaReadableInit")
     .Input("topic: string")
     .Input("partition: int32")
     .Input("start: int64")
@@ -35,7 +35,7 @@ REGISTER_OP("IO>KafkaReadableInitV")
       return Status::OK();
     });
 
-REGISTER_OP("IO>KafkaReadableSpecV")
+REGISTER_OP("IO>KafkaReadableSpec")
     .Input("input: resource")
     .Output("start: int64")
     .Output("stop: int64")
@@ -45,7 +45,7 @@ REGISTER_OP("IO>KafkaReadableSpecV")
       return Status::OK();
     });
 
-REGISTER_OP("IO>KafkaReadableReadV")
+REGISTER_OP("IO>KafkaReadableRead")
     .Input("input: resource")
     .Input("start: int64")
     .Input("stop: int64")

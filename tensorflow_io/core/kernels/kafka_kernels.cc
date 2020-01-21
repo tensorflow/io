@@ -232,11 +232,20 @@ class KafkaReadableResource : public KafkaResourceBase {
                   allocate_func) {
     mutex_lock l(mu_);
 
-    std::vector<string> message_value, key_value;
-    message_value.reserve(stop - start);
-    key_value.reserve(stop - start);
+    int64 element_start = start;
+    if (element_start > stop_) {
+      element_start = stop_;
+    }
+    int64 element_stop = stop;
+    if (element_stop > stop_) {
+      element_stop = stop_;
+    }
 
-    subscription_->set_offset(start);
+    std::vector<string> message_value, key_value;
+    message_value.reserve(element_stop - element_start);
+    key_value.reserve(element_stop - element_start);
+
+    subscription_->set_offset(element_start);
     RdKafka::ErrorCode err = consumer_->seek((*subscription_), timeout_);
     if (err != RdKafka::ERR_NO_ERROR) {
       return errors::Internal("failed to seek partition: ",
@@ -246,7 +255,7 @@ class KafkaReadableResource : public KafkaResourceBase {
               << subscription_->offset();
     int64 index = start;
     std::unique_ptr<RdKafka::Message> message;
-    while (consumer_.get() != nullptr && index + 1 < stop) {
+    while (consumer_.get() != nullptr && index + 1 < element_stop) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal("failed to consume due to all brokers down");
       }
@@ -744,11 +753,11 @@ class LayerKafkaSyncOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInitV").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInit").Device(DEVICE_CPU),
                         KafkaReadableInitOp);
-REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableSpecV").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableSpec").Device(DEVICE_CPU),
                         KafkaReadableSpecOp);
-REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableReadV").Device(DEVICE_CPU),
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableRead").Device(DEVICE_CPU),
                         KafkaReadableReadOp);
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaIterableInit").Device(DEVICE_CPU),
                         KafkaIterableInitOp);
