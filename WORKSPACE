@@ -81,6 +81,16 @@ http_archive(
 )
 
 http_archive(
+    name = "lmdb",
+    build_file = "//third_party:lmdb.BUILD",
+    sha256 = "44602436c52c29d4f301f55f6fd8115f945469b868348e3cddaf91ab2473ea26",
+    strip_prefix = "lmdb-LMDB_0.9.24/libraries/liblmdb",
+    urls = [
+        "https://github.com/LMDB/lmdb/archive/LMDB_0.9.24.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -225,16 +235,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
         "https://github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "lmdb",
-    build_file = "//third_party:lmdb.BUILD",
-    sha256 = "f3927859882eb608868c8c31586bb7eb84562a40a6bf5cc3e13b6b564641ea28",
-    strip_prefix = "lmdb-LMDB_0.9.22/libraries/liblmdb",
-    urls = [
-        "https://github.com/LMDB/lmdb/archive/LMDB_0.9.22.tar.gz",
     ],
 )
 
