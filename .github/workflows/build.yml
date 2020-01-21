@@ -207,7 +207,6 @@ jobs:
           python3 setup.py --package-version | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures @kafka//:kafka
           bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
       - uses: actions/upload-artifact@v1
         with:

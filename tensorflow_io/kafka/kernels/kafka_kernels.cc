@@ -136,11 +136,6 @@ class KafkaReadable : public IOReadableInterface {
       return errors::Internal("failed to set event_cb:", errstr);
     }
 
-    // Always enable.partition.eof=true
-    if ((result = conf->set("enable.partition.eof", "true", errstr)) != RdKafka::Conf::CONF_OK) {
-      return errors::Internal("Failed to set enable.partition.eof=true :", errstr);
-    }
-
     consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
     if (!consumer_.get()) {
       return errors::Internal("failed to create consumer:", errstr);
