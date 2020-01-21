@@ -50,6 +50,17 @@ http_archive(
 )
 
 http_archive(
+    name = "boost",
+    build_file = "//third_party:boost.BUILD",
+    sha256 = "c66e88d5786f2ca4dbebb14e06b566fb642a1a6947ad8cc9091f9f445134143f",
+    strip_prefix = "boost_1_72_0",
+    urls = [
+        "https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz",
+        "https://downloads.sourceforge.net/project/boost/boost/1.72.0/boost_1_72_0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -151,18 +162,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
         "https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "boost",
-    build_file = "//third_party:boost.BUILD",
-    sha256 = "8aa4e330c870ef50a896634c931adf468b21f8a69b77007e45c444151229f665",
-    strip_prefix = "boost_1_67_0",
-    urls = [
-        "https://mirror.bazel.build/dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
-        "https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
-        "https://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz",
     ],
 )
 
