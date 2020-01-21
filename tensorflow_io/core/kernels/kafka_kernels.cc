@@ -61,7 +61,13 @@ class KafkaEventCb : public RdKafka::EventCb {
 class KafkaResourceBase : public ResourceBase {
  public:
   KafkaResourceBase(Env* env) : env_(env) {}
-  ~KafkaResourceBase() {}
+  virtual ~KafkaResourceBase() {
+    if (consumer_.get()) {
+      consumer_->unassign();
+      consumer_->close();
+      consumer_.reset(nullptr);
+    }
+  }
 
   virtual Status InitBase(const string& topic, const int32 partition,
                           const int64 offset,
