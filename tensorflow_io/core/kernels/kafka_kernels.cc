@@ -58,15 +58,14 @@ class KafkaEventCb : public RdKafka::EventCb {
   bool run_ GUARDED_BY(mu_) = true;
 };
 
-class KafkaReadableResource : public ResourceBase {
+class KafkaResourceBase : public ResourceBase {
  public:
-  KafkaReadableResource(Env* env) : env_(env) {}
-  ~KafkaReadableResource() {}
+  KafkaResourceBase(Env* env) : env_(env) {}
+  ~KafkaResourceBase() {}
 
-  Status Init(const string& topic, const int32 partition, const int64 start,
-              const int64 stop, const std::vector<string>& metadata) {
-    mutex_lock l(mu_);
-
+  virtual Status InitBase(const string& topic, const int32 partition,
+                          const int64 offset,
+                          const std::vector<string>& metadata) {
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
     std::unique_ptr<RdKafka::Conf> conf_topic(
@@ -129,7 +128,7 @@ class KafkaReadableResource : public ResourceBase {
       }
     }
 
-    // Always enable.partition.eof=true
+    // Always set enable.partition.eof=true
     if ((result = conf->set("enable.partition.eof", "true", errstr)) !=
         RdKafka::Conf::CONF_OK) {
       return errors::Internal("Failed to set enable.partition.eof=true :",
@@ -150,12 +149,36 @@ class KafkaReadableResource : public ResourceBase {
     std::vector<RdKafka::TopicPartition*> partitions;
     partitions.emplace_back(subscription_.get());
 
-    subscription_->set_offset(start);
+    subscription_->set_offset(offset);
     RdKafka::ErrorCode err = consumer_->assign(partitions);
     if (err != RdKafka::ERR_NO_ERROR) {
       return errors::Internal("failed to assign partition: ",
                               RdKafka::err2str(err));
     }
+
+    return Status::OK();
+  }
+  string DebugString() const override { return "KafkaBaseResource"; }
+
+ protected:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::TopicPartition> subscription_ GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
+  KafkaEventCb kafka_event_cb_ = KafkaEventCb();
+  static const int timeout_ = 5000;
+};
+
+class KafkaReadableResource : public KafkaResourceBase {
+ public:
+  KafkaReadableResource(Env* env) : KafkaResourceBase(env) {}
+  ~KafkaReadableResource() {}
+
+  Status Init(const string& topic, const int32 partition, const int64 start,
+              const int64 stop, const std::vector<string>& metadata) {
+    mutex_lock l(mu_);
+    InitBase(topic, partition, start, metadata);
+
     // Resolve head message:
     std::unique_ptr<RdKafka::Message> message;
     do {
@@ -174,7 +197,7 @@ class KafkaReadableResource : public ResourceBase {
     } else {
       subscription_->set_offset(stop - 1);
     }
-    err = consumer_->seek(*subscription_, timeout_);
+    RdKafka::ErrorCode err = consumer_->seek(*subscription_, timeout_);
     if (err != RdKafka::ERR_NO_ERROR) {
       return errors::Internal("failed to seek tail -1: ",
                               RdKafka::err2str(err));
@@ -257,14 +280,77 @@ class KafkaReadableResource : public ResourceBase {
   string DebugString() const override { return "KafkaReadableResource"; }
 
  private:
-  mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::TopicPartition> subscription_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
   int64 start_ GUARDED_BY(mu_);
   int64 stop_ GUARDED_BY(mu_);
-  KafkaEventCb kafka_event_cb_ = KafkaEventCb();
-  static const int timeout_ = 5000;
+};
+
+class KafkaIterableResource : public KafkaResourceBase {
+ public:
+  KafkaIterableResource(Env* env) : KafkaResourceBase(env) {}
+  ~KafkaIterableResource() {}
+
+  Status Init(const string& topic, const int32 partition, const int64 offset,
+              const std::vector<string>& metadata) {
+    mutex_lock l(mu_);
+    InitBase(topic, partition, offset, metadata);
+
+    offset_ = offset;
+
+    return Status::OK();
+  }
+  Status Read(const int64 index,
+              std::function<Status(const TensorShape& shape, Tensor** message,
+                                   Tensor** key)>
+                  allocate_func) {
+    mutex_lock l(mu_);
+    int64 total = 1024;
+    std::vector<string> message_value, key_value;
+    message_value.reserve(total);
+    key_value.reserve(total);
+
+    LOG(INFO) << "Kafka stream starts with current offset: "
+              << subscription_->offset();
+    std::unique_ptr<RdKafka::Message> message;
+    int64 count = 0;
+    while (consumer_.get() != nullptr && count < total) {
+      if (!kafka_event_cb_.run()) {
+        return errors::Internal("failed to consume due to all brokers down");
+      }
+      message.reset(consumer_->consume(timeout_));
+      if (message->err() == RdKafka::ERR_NO_ERROR) {
+        // Produce the line as output.
+        message_value.emplace_back(string(
+            static_cast<const char*>(message->payload()), message->len()));
+        key_value.emplace_back(
+            (message->key() != nullptr) ? string(*message->key()) : "");
+        count++;
+        continue;
+      } else if (message->err() == RdKafka::ERR__TRANSPORT) {
+        // Not return error here because consumer will try re-connect.
+        LOG(ERROR) << "Broker transport failure: " << message->errstr();
+      } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
+        LOG(ERROR) << "EOF Message: " << message->errstr();
+        consumer_.reset(nullptr);
+        break;
+      } else if (message->err() != RdKafka::ERR__TIMED_OUT) {
+        LOG(ERROR) << "Failed to consume: " << message->errstr();
+        return errors::Internal("Failed to consume: ", message->errstr());
+      }
+    }
+    TensorShape shape({static_cast<int64>(message_value.size())});
+    Tensor* message_tensor;
+    Tensor* key_tensor;
+    TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor));
+    for (size_t i = 0; i < message_value.size(); i++) {
+      message_tensor->flat<string>()(i) = message_value[i];
+      key_tensor->flat<string>()(i) = key_value[i];
+    }
+    return Status::OK();
+  }
+  string DebugString() const override { return "KafkaIterableResource"; }
+
+ private:
+  int64 offset_ GUARDED_BY(mu_);
 };
 
 class KafkaReadableInitOp : public ResourceOpKernel<KafkaReadableResource> {
@@ -372,6 +458,84 @@ class KafkaReadableReadOp : public OpKernel {
         context,
         resource->Read(
             start, stop,
+            [&](const TensorShape& shape, Tensor** message,
+                Tensor** key) -> Status {
+              TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
+              TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
+              return Status::OK();
+            }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
+ public:
+  explicit KafkaIterableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<KafkaIterableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<KafkaIterableResource>::Compute(context);
+
+    const Tensor* topic_tensor;
+    OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
+    const string& topic = topic_tensor->scalar<string>()();
+
+    const Tensor* partition_tensor;
+    OP_REQUIRES_OK(context, context->input("partition", &partition_tensor));
+    const int32 partition = partition_tensor->scalar<int32>()();
+
+    const Tensor* offset_tensor;
+    OP_REQUIRES_OK(context, context->input("offset", &offset_tensor));
+    const int64 offset = offset_tensor->scalar<int64>()();
+
+    const Tensor* metadata_tensor;
+    OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
+    std::vector<string> metadata;
+    for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
+      metadata.push_back(metadata_tensor->flat<string>()(i));
+    }
+
+    OP_REQUIRES_OK(context,
+                   resource_->Init(topic, partition, offset, metadata));
+  }
+  Status CreateResource(KafkaIterableResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new KafkaIterableResource(env_);
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class KafkaIterableReadOp : public OpKernel {
+ public:
+  explicit KafkaIterableReadOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    KafkaIterableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* index_tensor;
+    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
+    const int64 index = index_tensor->scalar<int64>()();
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(
+            index,
             [&](const TensorShape& shape, Tensor** message,
                 Tensor** key) -> Status {
               TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
@@ -586,6 +750,10 @@ REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableSpecV").Device(DEVICE_CPU),
                         KafkaReadableSpecOp);
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableReadV").Device(DEVICE_CPU),
                         KafkaReadableReadOp);
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaIterableInit").Device(DEVICE_CPU),
+                        KafkaIterableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaIterableRead").Device(DEVICE_CPU),
+                        KafkaIterableReadOp);
 REGISTER_KERNEL_BUILDER(Name("IO>LayerKafkaInit").Device(DEVICE_CPU),
                         LayerKafkaInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>LayerKafkaCall").Device(DEVICE_CPU),

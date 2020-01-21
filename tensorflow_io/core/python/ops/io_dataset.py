@@ -122,8 +122,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0,
-                 start=0, stop=-1,
+                 partition=0, start=0, stop=-1,
                  servers=None, configuration=None, **kwargs):
     """Creates an `IODataset` from kafka server with an offset range.
 
@@ -356,9 +355,8 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0,
-                 offset=0,
-                 **kwargs):
+                 partition=0, offset=0,
+                 servers=None, configuration=None, **kwargs):
     """Creates an `IODataset` from kafka server with only a start offset.
 
     Args:
@@ -377,8 +375,6 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
           in librdkafka doc. Note all topic configurations should be
           prefixed with `configuration.topic.`. Examples include
           ["conf.topic.auto.offset.reset=earliest"]
-        Dataset configuration: there is one configuration available,
-          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
       name: A name prefix for the IODataset (optional).
 
     Returns:
@@ -388,8 +384,7 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_dataset_ops.KafkaStreamIODataset(
           topic, partition=partition, offset=offset,
-          servers=kwargs.get("servers", None),
-          configuration=kwargs.get("configuration", None),
+          servers=servers, configuration=configuration,
           internal=True)
 
 class GraphIODataset(tf.data.Dataset):

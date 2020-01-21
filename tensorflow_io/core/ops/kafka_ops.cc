@@ -57,6 +57,30 @@ REGISTER_OP("IO>KafkaReadableReadV")
       return Status::OK();
     });
 
+REGISTER_OP("IO>KafkaIterableInit")
+    .Input("topic: string")
+    .Input("partition: int32")
+    .Input("offset: int64")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>KafkaIterableRead")
+    .Input("input: resource")
+    .Input("index: int64")
+    .Output("message: string")
+    .Output("key: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 REGISTER_OP("IO>LayerKafkaCall")
     .Input("input: T")
     .Input("content: string")
