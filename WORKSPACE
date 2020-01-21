@@ -71,6 +71,16 @@ http_archive(
 )
 
 http_archive(
+    name = "rapidjson",
+    build_file = "//third_party:rapidjson.BUILD",
+    sha256 = "30bd2c428216e50400d493b38ca33a25efb1dd65f79dfc614ab0c957a3ac2c28",
+    strip_prefix = "rapidjson-418331e99f859f00bdc8306f69eba67e8693c55e",
+    urls = [
+        "https://github.com/miloyip/rapidjson/archive/418331e99f859f00bdc8306f69eba67e8693c55e.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -630,16 +640,6 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
         "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
-    ],
-)
-
-http_archive(
-    name = "rapidjson",
-    build_file = "//third_party:rapidjson.BUILD",
-    sha256 = "bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e",
-    strip_prefix = "rapidjson-1.1.0",
-    urls = [
-        "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
     ],
 )
 
