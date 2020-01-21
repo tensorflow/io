@@ -61,6 +61,16 @@ http_archive(
 )
 
 http_archive(
+    name = "avro",
+    build_file = "//third_party:avro.BUILD",
+    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
+    strip_prefix = "avro-release-1.9.1/lang/c++",
+    urls = [
+        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -473,16 +483,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
         "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "avro",
-    build_file = "//third_party:avro.BUILD",
-    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
-    strip_prefix = "avro-release-1.9.1/lang/c++",
-    urls = [
-        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
     ],
 )
 
