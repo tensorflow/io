@@ -15,7 +15,7 @@
 """Genomics related ops for Tensorflow.
 
 This package provides ops for reading common genomics file formats and
-performing common genomics IO-related operations. 
+performing common genomics IO-related operations.
 """
 
 from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
