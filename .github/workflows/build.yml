@@ -261,10 +261,12 @@ jobs:
         run: |
           @echo on
           python --version
-          python -m pip install -U pytest
+          python -m pip install -U pytest-benchmark
           rm -rf tensorflow_io
           (cd tests && python -m pytest -s -v test_lmdb_eager.py)
           (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr")
+          (python -m pytest -s -v test_serialization_eager.py)
+          (python -m pytest -s -v test_io_dataset_eager.py -k "numpy")
 
   release:
     name: Release

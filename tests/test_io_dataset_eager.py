@@ -566,7 +566,10 @@ def fixture_numpy_file_tuple(request):
   tmp_path = tempfile.mkdtemp()
   filename = os.path.join(tmp_path, "numpy_file.npz")
 
-  np.savez(filename, np.asarray(d1), np.asarray(d2))
+  np.savez(
+      filename,
+      np.asarray(d1).astype(np.int64),
+      np.asarray(d2).astype(np.int64))
 
   def fin():
     shutil.rmtree(tmp_path)
@@ -588,7 +591,10 @@ def fixture_numpy_file_dict(request):
   tmp_path = tempfile.mkdtemp()
   filename = os.path.join(tmp_path, "numpy_file.npz")
 
-  np.savez(filename, d2=np.asarray(d2), d1=np.asarray(d1))
+  np.savez(
+      filename,
+      d2=np.asarray(d2).astype(np.int64),
+      d1=np.asarray(d1).astype(np.int64))
 
   def fin():
     shutil.rmtree(tmp_path)
@@ -613,7 +619,10 @@ def fixture_numpy_file_tuple_graph(request):
   tmp_path = tempfile.mkdtemp()
   filename = os.path.join(tmp_path, "numpy_file.npz")
 
-  np.savez(filename, np.asarray(d1), np.asarray(d2))
+  np.savez(
+      filename,
+      np.asarray(d1).astype(np.int64),
+      np.asarray(d2).astype(np.int64))
 
   def fin():
     shutil.rmtree(tmp_path)
@@ -637,7 +646,10 @@ def fixture_numpy_file_dict_graph(request):
   tmp_path = tempfile.mkdtemp()
   filename = os.path.join(tmp_path, "numpy_file.npz")
 
-  np.savez(filename, d2=np.asarray(d2), d1=np.asarray(d1))
+  np.savez(
+      filename,
+      d2=np.asarray(d2).astype(np.int64),
+      d1=np.asarray(d1).astype(np.int64))
 
   def fin():
     shutil.rmtree(tmp_path)

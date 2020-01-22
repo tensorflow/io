@@ -15,9 +15,7 @@ cc_library(
         "lmdb.h",
         "midl.h",
     ],
-    copts = [
-        "-w",
-    ],
+    copts = [],
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
             "-DEFAULTLIB:advapi32.lib",
