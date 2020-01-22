@@ -144,13 +144,9 @@ http_archive(
 http_archive(
     name = "kafka",
     build_file = "//third_party:kafka.BUILD",
-    patches = [
-        "//third_party:kafka.patch",
-    ],
     sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
     strip_prefix = "librdkafka-0.11.6",
     urls = [
-        "https://mirror.bazel.build/github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
         "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
     ],
 )
