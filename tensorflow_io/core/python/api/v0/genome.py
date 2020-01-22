@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.genome"""
+"""Genomics related ops for Tensorflow.
+
+This package provides ops for reading common genomics file formats and
+performing common genomics IO-related operations.
+"""
 
 from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
 from tensorflow_io.core.python.ops.genome_ops import sequences_to_onehot # pylint: disable=unused-import
