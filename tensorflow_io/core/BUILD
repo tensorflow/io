@@ -439,28 +439,20 @@ cc_library(
     name = "kafka_ops",
     srcs = [
         "kernels/kafka_kernels.cc",
+        "kernels/kafka_kernels_deprecated.cc",
         "ops/kafka_ops.cc",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "kernels/kafka_kernels_deprecated.cc",
-            "ops/kafka_ops_deprecated.cc",
-        ],
-    }),
+        "ops/kafka_ops_deprecated.cc",
+    ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@avro",
         "@kafka",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "//tensorflow_io/core:dataset_ops",
-            "//tensorflow_io/core:sequence_ops",
-            "@avro",
-        ],
-    }),
+    ],
     alwayslink = 1,
 )
 
@@ -473,6 +465,7 @@ cc_binary(
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:serialization_ops",
+        "//tensorflow_io/core:kafka_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
@@ -490,7 +483,6 @@ cc_binary(
             "//tensorflow_io/core:grpc_ops",
             "//tensorflow_io/core:hdf5_ops",
             "//tensorflow_io/core:json_ops",
-            "//tensorflow_io/core:kafka_ops",
             "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:parquet_ops",
             "//tensorflow_io/core:pcap_ops",
