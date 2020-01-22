@@ -101,6 +101,16 @@ http_archive(
 )
 
 http_archive(
+    name = "openexr",
+    build_file = "//third_party:openexr.BUILD",
+    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
+    strip_prefix = "openexr-2.4.0",
+    urls = [
+        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -649,16 +659,6 @@ http_archive(
     strip_prefix = "xz-5.2.4",
     urls = [
         "https://tukaani.org/xz/xz-5.2.4.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "openexr",
-    build_file = "//third_party:openexr.BUILD",
-    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
-    strip_prefix = "openexr-2.4.0",
-    urls = [
-        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
     ],
 )
 

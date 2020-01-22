@@ -28,13 +28,11 @@ cc_library(
         "config/OpenEXRConfig.h",
         "config/OpenEXRConfigInternal.h",
     ],
-    hdrs = [
-    ],
-    copts = [
-    ],
+    hdrs = [],
+    copts = [],
     defines = select({
-        "@bazel_tools//src/conditions:darwin": [
-        ],
+        "@bazel_tools//src/conditions:darwin": [],
+        "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "HAVE_POSIX_SEMAPHORES=1",
         ],
@@ -125,7 +123,6 @@ genrule(
         "#define OPENEXR_IMF_HAVE_LINUX_PROCFS 1",
         "#define OPENEXR_IMF_HAVE_COMPLETE_IOMANIP 1",
         "#define OPENEXR_IMF_HAVE_SYSCONF_NPROCESSORS_ONLN 1",
-        "#define OPENEXR_IMF_HAVE_GCC_INLINE_ASM_AVX 1",
         "#endif // INCLUDED_OPENEXR_INTERNAL_CONFIG_H",
         "",
         "EOF",

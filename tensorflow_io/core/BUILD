@@ -161,16 +161,16 @@ cc_library(
     srcs = [
         "ops/image_ops.cc",
         "kernels/image_bmp_kernels.cc",
-        "kernels/image_pnm_kernels.cc",
-        "kernels/image_webp_kernels.cc",
         "kernels/image_font_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_hdr_kernels.cc",
+        "kernels/image_openexr_kernels.cc",
+        "kernels/image_pnm_kernels.cc",
+        "kernels/image_webp_kernels.cc",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "kernels/image_dicom_kernels.cc",
-            "kernels/image_openexr_kernels.cc",
             "kernels/image_tiff_kernels.cc",
         ],
     }),
@@ -182,13 +182,13 @@ cc_library(
         "@easyexif",
         "@freetype",
         "@libwebp",
+        "@openexr",
         "@stb",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "@dcmtk",
             "@libtiff",
-            "@openexr",
         ],
     }),
     alwayslink = 1,
