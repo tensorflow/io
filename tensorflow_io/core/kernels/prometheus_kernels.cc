@@ -21,24 +21,15 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 namespace {
-class SeriesReadableResourceBase : public ResourceBase {
- public:
-  virtual Status Init(const string& input,
-                      const std::vector<string>& metadata) = 0;
-  virtual Status Spec(int64* start, int64* stop) = 0;
-  virtual Status Read(const int64 start, const int64 stop,
-                      std::function<Status(const TensorShape& shape,
-                                           Tensor** timestamp, Tensor** value)>
-                          allocate_func) = 0;
-};
 
-class PrometheusReadableResource : public SeriesReadableResourceBase {
+class PrometheusReadableResource : public ResourceBase {
  public:
   PrometheusReadableResource(Env* env) : env_(env) {}
   ~PrometheusReadableResource() {}
 
-  Status Init(const string& input,
-              const std::vector<string>& metadata) override {
+  Status Init(const string& input, const std::vector<string>& metadata,
+              std::function<Status(const TensorShape& shape, Tensor** metrics)>
+                  allocate_func) {
     mutex_lock l(mu_);
 
     query_ = input;
@@ -76,39 +67,123 @@ class PrometheusReadableResource : public SeriesReadableResourceBase {
       stop_ = offset;
     }
     start_ = stop_ - length * 1000;
-    return Status::OK();
-  }
-  Status Spec(int64* start, int64* stop) override {
-    mutex_lock l(mu_);
-    *start = start_;
-    *stop = stop_;
-    return Status::OK();
-  }
-  Status Read(const int64 start, const int64 stop,
-              std::function<Status(const TensorShape& shape, Tensor** timestamp,
-                                   Tensor** value)>
-                  allocate_func) override {
-    mutex_lock l(mu_);
-    int64 interval = (stop - start) / 1000;
-
-    Tensor* value;
-    Tensor* timestamp;
-    TF_RETURN_IF_ERROR(
-        allocate_func(TensorShape({interval}), &timestamp, &value));
 
     GoString endpoint_go = {endpoint_.c_str(),
                             static_cast<int64>(endpoint_.size())};
     GoString query_go = {query_.c_str(), static_cast<int64>(query_.size())};
 
-    GoSlice timestamp_go = {timestamp->flat<int64>().data(),
-                            timestamp->NumElements(), timestamp->NumElements()};
-    GoSlice value_go = {value->flat<double>().data(), value->NumElements(),
-                        value->NumElements()};
-
-    GoInt returned =
-        QueryRange(endpoint_go, query_go, start, stop, timestamp_go, value_go);
+    GoSlice jobs_go = {nullptr, 0, 0};
+    GoSlice instances_go = {nullptr, 0, 0};
+    GoSlice names_go = {nullptr, 0, 0};
+    GoInt returned = QuerySpecs(endpoint_go, query_go, start_, jobs_go,
+                                instances_go, names_go);
     if (returned < 0) {
       return errors::InvalidArgument("unable to query prometheus");
+    }
+    Tensor* metrics;
+    TF_RETURN_IF_ERROR(allocate_func(TensorShape({returned, 3}), &metrics));
+
+    // The buffer is used to hold memory in C++ and pass to Golang
+    // Mamory management are done in C++
+    // TODO: Much of the logic could be pushed to Golang by passing
+    // Tensor directly.
+    std::vector<string> buffer;
+    std::vector<GoSlice> jobs_v;
+    for (GoInt i = 0; i < returned; i++) {
+      buffer.push_back(string());
+      buffer.back().resize(1024);
+      jobs_v.push_back(GoSlice{&buffer.back()[0], 1024 - 1, 1024 - 1});
+    }
+    std::vector<GoSlice> instances_v;
+    for (GoInt i = 0; i < returned; i++) {
+      buffer.push_back(string());
+      buffer.back().resize(1024);
+      instances_v.push_back(GoSlice{&buffer.back()[0], 1024 - 1, 1024 - 1});
+    }
+    std::vector<GoSlice> names_v;
+    for (GoInt i = 0; i < returned; i++) {
+      buffer.push_back(string());
+      buffer.back().resize(1024);
+      names_v.push_back(GoSlice{&buffer.back()[0], 1024 - 1, 1024 - 1});
+    }
+    jobs_go.data = &jobs_v[0];
+    jobs_go.len = returned;
+    jobs_go.cap = returned;
+    instances_go.data = &instances_v[0];
+    instances_go.len = returned;
+    instances_go.cap = returned;
+    names_go.data = &names_v[0];
+    names_go.len = returned;
+    names_go.cap = returned;
+    returned = QuerySpecs(endpoint_go, query_go, start_, jobs_go, instances_go,
+                          names_go);
+    if (returned < 0) {
+      return errors::InvalidArgument("unable to query prometheus");
+    }
+    for (size_t index = 0; index < returned; index++) {
+      string job((char*)(jobs_v[index].data));
+      string instance((char*)(instances_v[index].data));
+      string name((char*)(names_v[index].data));
+      jobs_.push_back(job);
+      instances_.push_back(instance);
+      names_.push_back(name);
+      metrics->tensor<string, 2>()(index, 0) = job;
+      metrics->tensor<string, 2>()(index, 1) = instance;
+      metrics->tensor<string, 2>()(index, 2) = name;
+    }
+    return Status::OK();
+  }
+  Status Spec(int64* start, int64* stop) {
+    mutex_lock l(mu_);
+    *start = start_;
+    *stop = stop_;
+    return Status::OK();
+  }
+  Status Read(const int64 start, const int64 stop, std::vector<string>& jobs,
+              std::vector<string>& instances, std::vector<string>& names,
+              std::function<Status(const TensorShape& timestamp_shape,
+                                   const TensorShape& value_shape,
+                                   Tensor** timestamp, Tensor** value)>
+                  allocate_func) {
+    mutex_lock l(mu_);
+    int64 interval = (stop - start) / 1000;
+
+    if (jobs.size() != instances.size() || jobs.size() != names.size()) {
+      return errors::InvalidArgument(
+          "jobs, instances, names must be equal: ", jobs.size(), " vs. ",
+          instances.size(), " vs. ", names.size());
+    }
+
+    Tensor* value;
+    Tensor* timestamp;
+    TF_RETURN_IF_ERROR(
+        allocate_func(TensorShape({interval}),
+                      TensorShape({static_cast<int64>(names.size()), interval}),
+                      &timestamp, &value));
+
+    GoString endpoint_go = {endpoint_.c_str(),
+                            static_cast<int64>(endpoint_.size())};
+    GoString query_go = {query_.c_str(), static_cast<int64>(query_.size())};
+
+    for (size_t index = 0; index < jobs.size(); index++) {
+      GoString job_go = {jobs[index].data(),
+                         static_cast<ptrdiff_t>(jobs[index].size())};
+      GoString instance_go = {instances[index].data(),
+                              static_cast<ptrdiff_t>(instances[index].size())};
+      GoString name_go = {names[index].data(),
+                          static_cast<ptrdiff_t>(names[index].size())};
+      GoSlice timestamp_go = {timestamp->flat<int64>().data(),
+                              timestamp->NumElements(),
+                              timestamp->NumElements()};
+      double* value_p = (double*)(value->flat<double>().data()) +
+                        index * timestamp->NumElements();
+      GoSlice value_go = {value_p, timestamp->NumElements(),
+                          timestamp->NumElements()};
+      GoInt returned = QueryRange(endpoint_go, query_go, start, stop, job_go,
+                                  instance_go, name_go, timestamp_go, value_go);
+      if (returned < 0) {
+        return errors::InvalidArgument("unable to query prometheus");
+      }
     }
 
     return Status::OK();
@@ -125,6 +200,9 @@ class PrometheusReadableResource : public SeriesReadableResourceBase {
   string endpoint_ GUARDED_BY(mu_);
   int64 start_ GUARDED_BY(mu_);
   int64 stop_ GUARDED_BY(mu_);
+  std::vector<string> jobs_ GUARDED_BY(mu_);
+  std::vector<string> instances_ GUARDED_BY(mu_);
+  std::vector<string> names_ GUARDED_BY(mu_);
 };
 
 class PrometheusReadableInitOp
@@ -150,7 +228,14 @@ class PrometheusReadableInitOp
       metadata.push_back(metadata_tensor->flat<string>()(i));
     }
 
-    OP_REQUIRES_OK(context, resource_->Init(input, metadata));
+    OP_REQUIRES_OK(
+        context,
+        resource_->Init(
+            input, metadata,
+            [&](const TensorShape& shape, Tensor** metrics) -> Status {
+              TF_RETURN_IF_ERROR(context->allocate_output(1, shape, metrics));
+              return Status::OK();
+            }));
   }
   Status CreateResource(PrometheusReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -216,16 +301,27 @@ class PrometheusReadableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     const int64 stop = stop_tensor->scalar<int64>()();
 
+    const Tensor* metrics_tensor;
+    OP_REQUIRES_OK(context, context->input("metrics", &metrics_tensor));
+    std::vector<string> jobs, instances, names;
+    for (int64 i = 0; i < metrics_tensor->NumElements() / 3; i++) {
+      jobs.push_back(metrics_tensor->tensor<string, 2>()(i, 0));
+      instances.push_back(metrics_tensor->tensor<string, 2>()(i, 1));
+      names.push_back(metrics_tensor->tensor<string, 2>()(i, 2));
+    }
+
     OP_REQUIRES_OK(
         context,
-        resource->Read(
-            start, stop,
-            [&](const TensorShape& shape, Tensor** timestamp,
-                Tensor** value) -> Status {
-              TF_RETURN_IF_ERROR(context->allocate_output(0, shape, timestamp));
-              TF_RETURN_IF_ERROR(context->allocate_output(1, shape, value));
-              return Status::OK();
-            }));
+        resource->Read(start, stop, jobs, instances, names,
+                       [&](const TensorShape& timestamp_shape,
+                           const TensorShape& value_shape, Tensor** timestamp,
+                           Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(context->allocate_output(
+                             0, timestamp_shape, timestamp));
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(1, value_shape, value));
+                         return Status::OK();
+                       }));
   }
 
  private:

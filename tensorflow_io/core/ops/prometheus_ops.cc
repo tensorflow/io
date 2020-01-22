@@ -25,10 +25,12 @@ REGISTER_OP("IO>PrometheusReadableInit")
     .Input("input: string")
     .Input("metadata: string")
     .Output("resource: resource")
+    .Output("metrics: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({c->UnknownDim(), 3}));
       return Status::OK();
     });
 
@@ -46,11 +48,12 @@ REGISTER_OP("IO>PrometheusReadableRead")
     .Input("input: resource")
     .Input("start: int64")
     .Input("stop: int64")
+    .Input("metrics: string")
     .Output("timestamp: int64")
     .Output("value: float64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       return Status::OK();
     });
 
