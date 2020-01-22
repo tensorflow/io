@@ -4,19 +4,10 @@ licenses(["notice"])  # MIT/JSON license
 
 cc_library(
     name = "rapidjson",
-    srcs = glob(
-        [
-        ],
-    ) + [
-    ],
-    hdrs = glob(
-        [
-            "include/**/*.h",
-        ],
-    ) + [
-    ],
-    copts = [
-    ],
+    srcs = glob([
+        "include/**/*.h",
+    ]),
+    copts = [],
     includes = [
         "include",
     ],

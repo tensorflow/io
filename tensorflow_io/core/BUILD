@@ -442,6 +442,8 @@ cc_binary(
     deps = [
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:lmdb_ops",
+        "//tensorflow_io/core:numpy_ops",
+        "//tensorflow_io/core:serialization_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
@@ -460,11 +462,9 @@ cc_binary(
             "//tensorflow_io/core:hdf5_ops",
             "//tensorflow_io/core:json_ops",
             "//tensorflow_io/core:kinesis_ops",
-            "//tensorflow_io/core:numpy_ops",
             "//tensorflow_io/core:parquet_ops",
             "//tensorflow_io/core:pcap_ops",
             "//tensorflow_io/core:pubsub_ops",
-            "//tensorflow_io/core:serialization_ops",
             "//tensorflow_io/core:text_ops",
             "//tensorflow_io/core/azure:azfs_ops",
             "//tensorflow_io/core/oss:oss_ops",
