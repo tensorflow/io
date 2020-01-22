@@ -199,10 +199,43 @@ def fixture_prometheus():
   offset = int(round(time.time() * 1000))
   args = "coredns_dns_request_count_total"
   def func(q):
-    v = tfio.IODataset.from_prometheus(q, 5, offset=offset)
-    v = v.map(lambda v: tf.stack([tf.cast(v.timestamp - offset, tf.float64), v.value]))
+    v = tfio.experimental.IODataset.from_prometheus(q, 5, offset=offset)
+    v = v.map(lambda timestamp, value: (
+        timestamp,
+        value['coredns']['localhost:9153']['coredns_dns_request_count_total']))
+    v = v.map(lambda timestamp, value: (
+        tf.stack([tf.cast(timestamp - offset, tf.float64), value])))
     return v
   expected = [[np.float64(i), 6.0] for i in range(-5000, 0, 1000)]
+
+  return args, func, expected
+
+@pytest.fixture(name="prometheus_graph")
+def fixture_prometheus_graph():
+  """fixture_prometheus_graph"""
+
+  offset = int(round(time.time() * 1000))
+  args = "up"
+  def func(q):
+    v = tfio.experimental.IODataset.from_prometheus(
+        q, 5, offset=offset,
+        spec={
+            'coredns': {
+                'localhost:9153': {
+                    'up': tf.TensorSpec([], tf.float64),
+                },
+            },
+            'prometheus': {
+                'localhost:9090': {
+                    'up': tf.TensorSpec([], tf.float64),
+                },
+            },
+        })
+    v = v.map(lambda _, value: (
+        value['coredns']['localhost:9153']['up'],
+        value['prometheus']['localhost:9090']['up']))
+    return v
+  expected = [[1.0, 1.0] for _ in range(0, 5000, 1000)]
 
   return args, func, expected
 
@@ -872,7 +905,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus", None,
+            "prometheus_graph", None,
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
@@ -880,7 +913,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "prometheus", 2,
+            "prometheus_graph", 2,
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "darwin",
