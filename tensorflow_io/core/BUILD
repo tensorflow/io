@@ -465,7 +465,6 @@ cc_binary(
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:serialization_ops",
-        "//tensorflow_io/core:kafka_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
@@ -483,6 +482,7 @@ cc_binary(
             "//tensorflow_io/core:grpc_ops",
             "//tensorflow_io/core:hdf5_ops",
             "//tensorflow_io/core:json_ops",
+            "//tensorflow_io/core:kafka_ops",
             "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:parquet_ops",
             "//tensorflow_io/core:pcap_ops",
