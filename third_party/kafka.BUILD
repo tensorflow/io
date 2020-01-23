@@ -44,6 +44,7 @@ cc_library(
     ],
     defines = [
         "LIBRDKAFKA_STATICLIB",
+        "WIN32_LEAN_AND_MEAN",
         "XXH_PRIVATE_API",
     ],
     includes = [
