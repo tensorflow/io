@@ -208,6 +208,7 @@ jobs:
           python3 tools/build/configure.py
           cat .bazelrc
           bazel build -s --verbose_failures @avro//:avro
+          bazel build -s --verbose_failures @openexr//:openexr
           bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
       - uses: actions/upload-artifact@v1
         with:
@@ -264,7 +265,7 @@ jobs:
           python -m pip install -U pytest-benchmark
           rm -rf tensorflow_io
           (cd tests && python -m pytest -s -v test_lmdb_eager.py)
-          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr")
+          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr")
           (python -m pytest -s -v test_serialization_eager.py)
           (python -m pytest -s -v test_io_dataset_eager.py -k "numpy")
 
