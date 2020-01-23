@@ -19,34 +19,35 @@ cc_library(
             "src/rddl.h",
             "src/rdkafka_plugin.c",
             "src/rdkafka_plugin.h",
-            "src/rdkafka_sasl_scram.c",
-            "src/rdkafka_sasl_scram.h",
             "src/rdkafka_sasl_cyrus.c",
             "src/rdkafka_sasl_win32.c",
+            "src/win32_config.h",
+            "src/xxhash.c",
         ],
     ) + [
         "config/config.h",
-        "config/placeholder/placeholder.c",
+        "config/src/set1_host.c",
+        "config/src/win32_config.h",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "src/rdkafka_sasl_win32.c",
         ],
-        "//conditions:default": [],
+        "//conditions:default": [
+        ],
     }),
     hdrs = [
         "config/config.h",
-        "config/placeholder/placeholder.c",
+        "config/src/set1_host.c",
+        "config/src/win32_config.h",
         "src/lz4.c",
         "src/xxhash.c",
     ],
     defines = [
         "LIBRDKAFKA_STATICLIB",
-        "WIN32_LEAN_AND_MEAN",
-        "WITHOUT_WIN32_CONFIG",
         "XXH_PRIVATE_API",
     ],
     includes = [
-        "config/set1_host",
+        "config/src",
         "src",
         "src-cpp",
     ],
@@ -55,7 +56,42 @@ cc_library(
     deps = [
         "@boringssl//:ssl",
         "@zlib",
+        "@zstd",
     ],
+)
+
+genrule(
+    name = "set1_host_c",
+    outs = ["config/src/set1_host.c"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        "#include <openssl/ssl.h>",
+        "int SSL_set1_host(SSL *s, const char *hostname) {",
+        "  return X509_VERIFY_PARAM_set1_host(SSL_get0_param(s), hostname, 0);",
+        "}",
+        "EOF",
+    ]),
+)
+
+genrule(
+    name = "win32_config_h",
+    outs = ["config/src/win32_config.h"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        "#define WITH_SSL 1",
+        "#define WITH_ZLIB 1",
+        "#define WITH_SNAPPY 1",
+        "#define WITH_ZSTD 1",
+        "#define WITH_ZSTD_STATIC 1",
+        "#define WITH_LZ4_EXT 1",
+        "#define WITH_SASL 1",
+        "#define WITH_SASL_SCRAM 1",
+        "#define WITH_SASL_OAUTHBEARER 1",
+        "#define WITH_HDRHISTOGRAM 1",
+        "#define ENABLE_DEVEL 0",
+        "#define BUILT_WITH \"SSL ZLIB SNAPPY ZSTD LZ4 SASL SASL_SCRAM SASL_OAUTHBEARER HDRHISTOGRAM\"",
+        "EOF",
+    ]),
 )
 
 genrule(
@@ -64,21 +100,17 @@ genrule(
     cmd = "\n".join([
         "cat <<'EOF' >$@",
         "#define WITH_SSL 1",
-        "#define ENABLE_ZSTD 1",
-        "#define ENABLE_SSL 1",
-        "#define ENABLE_GSSAPI 1",
-        "#define ENABLE_LZ4_EXT 1",
+        "#define WITH_ZLIB 1",
+        "#define WITH_SNAPPY 1",
+        "#define WITH_ZSTD 1",
+        "#define WITH_ZSTD_STATIC 1",
+        "#define WITH_LZ4_EXT 1",
+        "#define WITH_SASL 1",
+        "#define WITH_SASL_SCRAM 1",
         "#define WITH_SASL_OAUTHBEARER 1",
-        "#define BUILT_WITH \"BAZEL\"",
-        "EOF",
-    ]),
-)
-
-genrule(
-    name = "placeholder_c",
-    outs = ["config/placeholder/placeholder.c"],
-    cmd = "\n".join([
-        "cat <<'EOF' >$@",
+        "#define WITH_HDRHISTOGRAM 1",
+        "#define ENABLE_DEVEL 0",
+        "#define BUILT_WITH \"SSL ZLIB SNAPPY ZSTD LZ4 SASL SASL_SCRAM SASL_OAUTHBEARER HDRHISTOGRAM\"",
         "EOF",
     ]),
 )
