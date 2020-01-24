@@ -32,7 +32,6 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
@@ -435,12 +434,39 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "kafka_ops",
+    srcs = [
+        "kernels/kafka_kernels.cc",
+        "kernels/kafka_kernels_deprecated.cc",
+        "ops/kafka_ops.cc",
+        "ops/kafka_ops_deprecated.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@avro",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:inlined_vector",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+        "@kafka",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
         "//tensorflow_io/core:image_ops",
+        "//tensorflow_io/core:kafka_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:serialization_ops",
@@ -470,7 +496,6 @@ cc_binary(
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/ignite:ignite_ops",
-            "//tensorflow_io/kafka:kafka_ops",
             "@libarchive",
             "@xz//:lzma",
         ],

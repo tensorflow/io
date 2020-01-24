@@ -665,6 +665,57 @@ def fixture_numpy_file_dict_graph(request):
 
   return args, func, expected
 
+@pytest.fixture(name="kafka")
+def fixture_kafka():
+  """fixture_kafka"""
+
+  args = "test"
+  def func(q):
+    v = tfio.IODataset.from_kafka(q)
+    return v
+  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+
+  return args, func, expected
+
+@pytest.fixture(name="kafka_avro")
+def fixture_kafka_avro():
+  """fixture_kafka_avro"""
+
+  schema = ('{"type":"record","name":"myrecord","fields":['
+            '{"name":"f1","type":"string"},'
+            '{"name":"f2","type":"long"},'
+            '{"name":"f3","type":["null","string"],"default":null}'
+            ']}')
+
+  args = "avro-test"
+  def func(q):
+    v = tfio.IODataset.from_kafka(q)
+    # remove key
+    v = v.map(lambda e: e.message)
+    # remove kafka framing
+    v = v.map(lambda e: tf.strings.substr(e, 5, -1))
+    # deserialize avro
+    v = v.map(
+        lambda e: tfio.experimental.serialization.decode_avro(e, schema=schema))
+    # map to value
+    v = v.map(lambda e: e['f1'])
+    return v
+  expected = [b'value1', b'value2', b'value3']
+
+  return args, func, expected
+
+@pytest.fixture(name="kafka_stream")
+def fixture_kafka_stream():
+  """fixture_kafka_stream"""
+
+  args = "test"
+  def func(q):
+    v = tfio.IODataset.stream().from_kafka(q)
+    return v
+  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+
+  return args, func, expected
+
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
 #   entries = [e for e in dataset]
@@ -709,6 +760,9 @@ def fixture_numpy_file_dict_graph(request):
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
+        pytest.param("kafka"),
+        pytest.param("kafka_avro"),
+        pytest.param("kafka_stream"),
     ],
     ids=[
         "mnist",
@@ -728,6 +782,9 @@ def fixture_numpy_file_dict_graph(request):
         "numpy[structure]",
         "numpy[file/tuple]",
         "numpy[file/dict]",
+        "kafka",
+        "kafka[avro]",
+        "kafka[stream]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -778,6 +835,14 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
+        pytest.param("kafka"),
+        pytest.param("kafka_avro"),
+        pytest.param(
+            "kafka_stream",
+            marks=[
+                pytest.mark.xfail(reason="TODO"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -795,6 +860,9 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "numpy[structure]",
         "numpy[file/tuple]",
         "numpy[file/dict]",
+        "kafka",
+        "kafka[avro]",
+        "kafka[stream]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -858,6 +926,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
+        pytest.param("kafka"),
+        pytest.param("kafka_avro"),
     ],
     ids=[
         "mnist",
@@ -874,6 +944,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "numpy[structure]",
         "numpy[file/tuple]",
         "numpy[file/dict]",
+        "kafka",
+        "kafka[avro]",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
@@ -951,6 +1023,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_file_tuple_graph", 2),
         pytest.param("numpy_file_dict_graph", None),
         pytest.param("numpy_file_dict_graph", 2),
+        pytest.param("kafka", None),
+        pytest.param("kafka", 2),
+        pytest.param("kafka_avro", None),
+        pytest.param("kafka_avro", 2),
     ],
     ids=[
         "mnist",
@@ -975,6 +1051,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "numpy[file/tuple]|2",
         "numpy[file/dict]",
         "numpy[file/dict]|2",
+        "kafka",
+        "kafka|2",
+        "kafka[avro]",
+        "kafka[avro]|2",
     ],
 )
 def test_io_dataset_in_dataset_parallel(

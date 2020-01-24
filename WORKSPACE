@@ -111,6 +111,29 @@ http_archive(
 )
 
 http_archive(
+    name = "zstd",
+    build_file = "//third_party:zstd.BUILD",
+    sha256 = "a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8",
+    strip_prefix = "zstd-1.4.4",
+    urls = [
+        "https://github.com/facebook/zstd/archive/v1.4.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "kafka",
+    build_file = "//third_party:kafka.BUILD",
+    patch_cmds = [
+        "rm -f src/win32_config.h",
+    ],
+    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
+    strip_prefix = "librdkafka-0.11.6",
+    urls = [
+        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -138,20 +161,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
         "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "kafka",
-    build_file = "//third_party:kafka.BUILD",
-    patches = [
-        "//third_party:kafka.patch",
-    ],
-    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
-    strip_prefix = "librdkafka-0.11.6",
-    urls = [
-        "https://mirror.bazel.build/github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
-        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
     ],
 )
 

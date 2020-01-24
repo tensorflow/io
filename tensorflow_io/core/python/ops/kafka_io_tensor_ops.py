@@ -17,27 +17,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
-from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class _KafkaIOTensorFunction():
-  """_KafkaIOTensorFunction"""
-  def __init__(self, resource, capacity):
-    self._resource = resource
-    self._capacity = capacity
-    self._index = 0
-  def __call__(self):
-    items = core_ops.io_kafka_readable_read(
-        self._resource,
-        start=self._index, stop=self._index+self._capacity,
-        shape=tf.TensorShape([None]), dtype=tf.string)
-    self._index += items.shape[0]
-    return items
-
-class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-access
+class KafkaIOTensor():
   """KafkaIOTensor"""
 
   #=============================================================================
@@ -45,25 +28,71 @@ class KafkaIOTensor(io_tensor_ops.BaseIOTensor): # pylint: disable=protected-acc
   #=============================================================================
   def __init__(self,
                topic,
-               partition,
-               offset,
-               tail,
-               servers,
-               configuration,
-               internal=True):
-    """KafkaIOTensor."""
-    with tf.name_scope("KafkaIOTensor") as scope:
-      subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
+               partition, start, stop,
+               servers, configuration, internal=True):
+    with tf.name_scope("KafkaIOTensor"):
+      assert internal
+
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(
-          subscription, metadata=metadata,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      function = _KafkaIOTensorFunction(resource, capacity=4096)
-      function = io_tensor_ops._IOTensorIterablePartitionedFunction( # pylint: disable=protected-access
-          function, tf.TensorShape([None]))
-      spec = tf.TensorSpec(tf.TensorShape([None]), tf.string)
-      super(KafkaIOTensor, self).__init__(
-          spec, function, internal=internal)
+          topic, partition, start, stop, metadata=metadata)
+      start, stop = core_ops.io_kafka_readable_spec(resource)
+
+      self._resource = resource
+      self._start, self._stop = start, stop
+      super(KafkaIOTensor, self).__init__()
+
+  #=============================================================================
+  # Accessors
+  #=============================================================================
+
+  @property
+  def shape(self):
+    """Returns the `TensorShape` that represents the shape of the tensor."""
+    return tf.TensorShape([None])
+
+  @property
+  def dtype(self):
+    """Returns the `dtype` of elements in the tensor."""
+    return tf.string
+
+  #=============================================================================
+  # String Encoding
+  #=============================================================================
+  def __repr__(self):
+    return "<%s: shape=%s, dtype=%s>" % (
+        self.__class__.__name__, self.shape, self.dtype)
+
+  #=============================================================================
+  # Tensor Type Conversions
+  #=============================================================================
+
+  def to_tensor(self):
+    """Converts this `IOTensor` into a `tf.Tensor`.
+
+    Args:
+      name: A name prefix for the returned tensors (optional).
+
+    Returns:
+      A `Tensor` with value obtained from this `IOTensor`.
+    """
+    item, _ = core_ops.io_kafka_readable_read(
+        self._resource, self._start, self._stop)
+    return item
+
+  #=============================================================================
+  # Indexing and slicing
+  #=============================================================================
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    if isinstance(key, slice):
+      item, _ = core_ops.io_kafka_readable_read(
+          self._resource, key.start, key.stop)
+      return item
+    item, _ = core_ops.io_kafka_readable_read(
+        self._resource, key, key + 1)
+    if tf.shape(item)[0] == 0:
+      raise IndexError("index %s is out of range" % key)
+    return item[0]

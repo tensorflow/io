@@ -169,6 +169,18 @@ def fixture_audio_rate_flac():
 
   return args, func, expected
 
+@pytest.fixture(name="kafka")
+def fixture_kafka():
+  """fixture_kafka"""
+
+  args = "test"
+  def func(q):
+    v = tfio.IOTensor.from_kafka(q)
+    return v
+  expected = [("D" + str(i)).encode() for i in range(10)]
+
+  return args, func, expected
+
 @pytest.fixture(name="hdf5", scope="module")
 def fixture_hdf5(request):
   """fixture_hdf5"""
@@ -296,6 +308,7 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
+        pytest.param("kafka"),
     ],
     ids=[
         "audio[wav]",
@@ -303,6 +316,7 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
         "audio[ogg]",
         "audio[flac]",
         "hdf5",
+        "kafka",
     ],
 )
 def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
@@ -335,6 +349,8 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_flac", 2),
         pytest.param("hdf5_graph", None),
         pytest.param("hdf5_graph", 2),
+        pytest.param("kafka", None),
+        pytest.param("kafka", 2),
     ],
     ids=[
         "audio[wav]",
@@ -347,6 +363,8 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
         "audio[flac]|2",
         "hdf5",
         "hdf5|2",
+        "kafka",
+        "kafka|2",
     ],
 )
 def test_io_tensor_slice_in_dataset(

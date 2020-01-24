@@ -21,8 +21,6 @@ from __future__ import print_function
 import time
 import numpy as np
 
-import pytest
-
 import tensorflow as tf
 import tensorflow_io as tfio
 from tensorflow_io.kafka.python.ops import kafka_ops # pylint: disable=wrong-import-position
@@ -35,7 +33,7 @@ def test_kafka_io_tensor():
   assert kafka.shape.as_list() == [None]
   assert np.all(kafka.to_tensor().numpy() == [
       ("D" + str(i)).encode() for i in range(10)])
-  assert len(kafka) == 10
+  assert len(kafka.to_tensor()) == 10
 
 def test_kafka_output_sequence():
   """Test case based on fashion mnist tutorial"""
@@ -130,11 +128,8 @@ def test_avro_kafka_dataset_with_resource():
 def test_kafka_stream_dataset():
   dataset = tfio.IODataset.stream().from_kafka("test").batch(2)
   assert np.all([
-      e.numpy().tolist() for e in dataset] == np.asarray([
+      k.numpy().tolist() for (k, _) in dataset] == np.asarray([
           ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
-  # repeat multiple times does not work for kafka_stream_dataset
-  with pytest.raises(tf.errors.InvalidArgumentError):
-    _ = [e.numpy().tolist() for e in dataset]
 
 def test_kafka_io_dataset():
   dataset = tfio.IODataset.from_kafka(
@@ -142,7 +137,7 @@ def test_kafka_io_dataset():
   # repeat multiple times will result in the same result
   for _ in range(5):
     assert np.all([
-        e.numpy().tolist() for e in dataset] == np.asarray([
+        k.numpy().tolist() for (k, _) in dataset] == np.asarray([
             ("D" + str(i)).encode() for i in range(10)]).reshape((5, 2)))
 
 def test_avro_encode_decode():

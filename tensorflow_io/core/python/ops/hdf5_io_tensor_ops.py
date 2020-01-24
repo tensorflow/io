@@ -89,7 +89,7 @@ class BaseHDF5GraphIOTensor():
       return core_ops.io_hdf5_readable_read(
           self._resource, self._component, self._shape,
           key.start, key.stop, dtype=self._dtype)
-    item = core_ops.io_audio_readable_read(
+    item = core_ops.io_hdf5_readable_read(
         self._resource, key, key + 1, dtype=self._dtype)
     if tf.shape(item)[0] == 0:
       raise IndexError("index %s is out of range" % key)
