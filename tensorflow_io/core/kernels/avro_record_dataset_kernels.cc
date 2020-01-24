@@ -104,6 +104,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
           Status s =
               reader_->ReadRecord(&out_tensors->back().scalar<string>()());
           VLOG(7) << "Added string '" << out_tensors->back().scalar<string>()() << "'";
+          VLOG(7) << "Status is " << s;
 
           if (s.ok()) {
             *end_of_sequence = false;
@@ -208,7 +209,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
 
 
 AvroRecordDatasetOp::AvroRecordDatasetOp(OpKernelConstruction* ctx)
-    : AvroRecordDatasetOp(ctx) {}
+    : DatasetOpKernel(ctx) {}
 
 void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
                                       DatasetBase** output) {

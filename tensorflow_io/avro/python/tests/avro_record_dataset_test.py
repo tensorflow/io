@@ -17,13 +17,11 @@
 import os
 import tempfile
 
-from tensorflow.python.framework import test_util
 from tensorflow.python.data.kernel_tests import test_base
 from tensorflow_io.core.python.experimental.avro_record_dataset_ops import AvroRecordDataset
 from tensorflow_io.avro.python.utils.avro_serialization import AvroRecordsToFile
 
 
-@test_util.run_all_in_graph_and_eager_modes
 class AvroRecordDatasetTest(test_base.DatasetTestBase):
 
     @staticmethod
@@ -57,9 +55,8 @@ class AvroRecordDatasetTest(test_base.DatasetTestBase):
                 "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789"
             }
         ]
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-        os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '50'
 
         filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema, records=record_data)
         dataset = AvroRecordDataset(filenames)
-        print(dataset.take(10))
+        for data in iter(dataset):
+            print(data)

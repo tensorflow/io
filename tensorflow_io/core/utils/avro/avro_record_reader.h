@@ -60,7 +60,7 @@ private:
   // Avro
   std::unique_ptr<avro::OutputStream> writer_stream_;
   avro::EncoderPtr encoder_; // note shared ptr
-  std::unique_ptr<avro::InputStream> reader_stream_;
+  //std::unique_ptr<avro::InputStream> reader_stream_;
 
   // Avro schema
   avro::ValidSchema reader_schema_;
