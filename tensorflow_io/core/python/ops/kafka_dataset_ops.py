@@ -17,64 +17,86 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.ops import io_dataset_ops
 
-class _KafkaIODatasetFunction():
-  def __init__(self, resource):
-    self._resource = resource
-  def __call__(self, start, stop):
-    return core_ops.io_kafka_readable_read(
-        self._resource, start=start, stop=stop,
-        shape=tf.TensorShape([None]), dtype=tf.string)
-
-class KafkaIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-access
+class KafkaIODataset(tf.data.Dataset):
   """KafkaIODataset"""
 
   def __init__(self,
                topic,
                partition,
-               offset,
-               tail,
-               servers,
-               configuration,
+               start, stop,
+               servers, configuration,
                internal=True):
     """KafkaIODataset."""
-    with tf.name_scope("KafkaIODataset") as scope:
-      subscription = "%s:%d:%d:%d" % (topic, partition, offset, tail)
+    with tf.name_scope("KafkaIODataset"):
+      assert internal
+
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(
-          subscription, metadata=metadata,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
-      super(KafkaIODataset, self).__init__(
-          _KafkaIODatasetFunction(resource), internal=internal)
+          topic, partition, start, stop, metadata=metadata)
+      start, stop = core_ops.io_kafka_readable_spec(resource)
 
-class KafkaStreamIODataset(io_dataset_ops._StreamIODataset): # pylint: disable=protected-access
+      self._resource = resource
+
+      step = 1024
+      indices_start = tf.data.Dataset.range(0, stop, step)
+      indices_stop = indices_start.skip(1).concatenate(
+          tf.data.Dataset.from_tensor_slices([stop]))
+      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
+      def f(start, stop):
+        return core_ops.io_kafka_readable_read(
+            self._resource, start=start, stop=stop)
+      dataset = dataset.map(f)
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      super(KafkaIODataset, self).__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
+
+class KafkaStreamIODataset(tf.data.Dataset):
   """KafkaStreamIODataset"""
 
   def __init__(self,
                topic,
-               partition,
-               offset,
-               servers,
-               configuration,
+               partition, offset,
+               servers, configuration,
                internal=True):
     """KafkaStreamIODataset."""
-    with tf.name_scope("KafkaStreamIODataset") as scope:
-      subscription = "%s:%d:%d" % (topic, partition, offset)
+    with tf.name_scope("KafkaStreamIODataset"):
+      assert internal
+
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init(
-          subscription, metadata=metadata,
-          container=scope,
-          shared_name="%s/%s" % (subscription, uuid.uuid4().hex))
+      resource = core_ops.io_kafka_iterable_init(
+          topic, partition, offset, metadata=metadata)
 
-      super(KafkaStreamIODataset, self).__init__(
-          _KafkaIODatasetFunction(resource), internal=internal)
+      self._resource = resource
+
+      dataset = tf.data.experimental.Counter()
+      dataset = dataset.map(
+          lambda i: core_ops.io_kafka_iterable_read(self._resource, i))
+      dataset = dataset.apply(
+          tf.data.experimental.take_while(
+              lambda v: tf.greater(tf.shape(v.message)[0], 0)))
+      dataset = dataset.unbatch()
+
+      self._dataset = dataset
+      super(KafkaStreamIODataset, self).__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+
+  def _inputs(self):
+    return []
+
+  @property
+  def element_spec(self):
+    return self._dataset.element_spec
