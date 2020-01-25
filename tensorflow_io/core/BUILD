@@ -460,6 +460,37 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "azfs_ops",
+    srcs = [
+        "kernels/azfs_kernels.cc",
+        "kernels/azfs_kernels.h",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@com_github_azure_azure_storage_cpplite//:azure",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+# bazel test \
+#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
+#   //tensorflow_io/azure:azfs_ops_test
+cc_test(
+    name = "azfs_ops_test",
+    srcs = [
+        "kernels/azfs_kernels_test.cc",
+    ],
+    deps = [
+        ":azfs_ops",
+        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -480,6 +511,7 @@ cc_binary(
             "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:audio_ops",
             "//tensorflow_io/core:avro_ops",
+            "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:cpuinfo",
             "//tensorflow_io/core:file_ops",
@@ -492,7 +524,6 @@ cc_binary(
             "//tensorflow_io/core:pcap_ops",
             "//tensorflow_io/core:pubsub_ops",
             "//tensorflow_io/core:text_ops",
-            "//tensorflow_io/core/azure:azfs_ops",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/ignite:ignite_ops",
