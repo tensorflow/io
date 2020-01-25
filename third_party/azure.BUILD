@@ -18,9 +18,16 @@ cc_library(
     defines = [
         "azure_storage_lite_EXPORTS",
         "USE_OPENSSL",
-        "WIN32_LEAN_AND_MEAN",
-        "_DEFAULT_SOURCE",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "WIN32_LEAN_AND_MEAN",
+            'struct_stat="struct _stat64"',
+        ],
+        "//conditions:default": [
+            "_DEFAULT_SOURCE",
+            'struct_stat="struct stat"',
+        ],
+    }),
     includes = ["include"],
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [

@@ -188,8 +188,9 @@ azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
 
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
   const auto use_https = use_http_env == nullptr;
+  const auto blob_endpoint_env = std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT");
   const auto blob_endpoint =
-      std::string(std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT") ?: "");
+      std::string(blob_endpoint_env ? blob_endpoint_env : "");
 
   auto credentials = get_credential(account);
   auto storage_account = std::make_shared<azure::storage_lite::storage_account>(
@@ -420,7 +421,7 @@ Status AzBlobFileSystem::FileExists(const std::string &fname) {
   auto blob_client = CreateAzBlobClientWrapper(account);
   auto blob_exists = blob_client.blob_exists(container, object);
   if (errno != 0) {
-    return errors::Internal("Failed to check if ", fname, " exists (",
+    return errors::NotFound("Failed to check if ", fname, " exists (",
                             errno_to_string(), ")");
   }
   if (!blob_exists) {
@@ -448,7 +449,7 @@ Status AzBlobFileSystem::Stat(const std::string &fname, FileStatistics *stat) {
 
   auto blob_property = blob_client.get_blob_property(container, object);
   if (errno != 0) {
-    return errors::Internal("Failed to get file stats for ", fname, " (",
+    return errors::NotFound("Failed to get file stats for ", fname, " (",
                             errno_to_string(), ")");
   }
 
