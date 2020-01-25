@@ -496,6 +496,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
+        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:kafka_ops",
         "//tensorflow_io/core:lmdb_ops",
@@ -511,7 +512,6 @@ cc_binary(
             "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:audio_ops",
             "//tensorflow_io/core:avro_ops",
-            "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:cpuinfo",
             "//tensorflow_io/core:file_ops",
