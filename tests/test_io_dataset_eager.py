@@ -1013,12 +1013,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
         pytest.param("hdf5_graph", None),
-        pytest.param(
-            "hdf5_graph", 2,
-            marks=[
-                pytest.mark.skip(reason="TODO"),
-            ],
-        ),
+        pytest.param("hdf5_graph", 2),
         pytest.param("numpy_file_tuple_graph", None),
         pytest.param("numpy_file_tuple_graph", 2),
         pytest.param("numpy_file_dict_graph", None),

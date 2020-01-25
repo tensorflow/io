@@ -115,6 +115,9 @@ class HDF5Iterate {
   std::unordered_map<haddr_t, string> groups_;
   haddr_t parent_;
 };
+
+static mutex mu(LINKER_INITIALIZED);
+
 class HDF5ReadableResource : public ResourceBase {
  public:
   HDF5ReadableResource(Env* env)
@@ -122,7 +125,7 @@ class HDF5ReadableResource : public ResourceBase {
   ~HDF5ReadableResource() {}
 
   Status Init(const string& input, std::vector<string>* components) {
-    mutex_lock l(mu_);
+    mutex_lock l(mu);
 
     filename_ = input;
 
@@ -265,7 +268,7 @@ class HDF5ReadableResource : public ResourceBase {
     return Status::OK();
   }
   Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
-    mutex_lock l(mu_);
+    mutex_lock l(mu);
 
     std::unordered_map<std::string, int64>::const_iterator lookup =
         columns_index_.find(component);
@@ -281,7 +284,7 @@ class HDF5ReadableResource : public ResourceBase {
               const TensorShape& shape,
               std::function<Status(const TensorShape& shape, Tensor** value)>
                   allocate_func) {
-    mutex_lock l(mu_);
+    mutex_lock l(mu);
 
     std::unordered_map<std::string, int64>::const_iterator lookup =
         columns_index_.find(component);
@@ -465,22 +468,18 @@ class HDF5ReadableResource : public ResourceBase {
 
     return Status::OK();
   }
-  string DebugString() const override {
-    mutex_lock l(mu_);
-    return "HDF5ReadableResource";
-  }
+  string DebugString() const override { return "HDF5ReadableResource"; }
 
  protected:
-  mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string filename_ GUARDED_BY(mu_);
-  std::unique_ptr<HDF5FileImage> file_image_ GUARDED_BY(mu_);
+  Env* env_ GUARDED_BY(mu);
+  string filename_ GUARDED_BY(mu);
+  std::unique_ptr<HDF5FileImage> file_image_ GUARDED_BY(mu);
 
-  std::vector<DataType> dtypes_ GUARDED_BY(mu_);
-  std::vector<TensorShape> shapes_ GUARDED_BY(mu_);
-  std::unordered_map<string, int64> columns_index_ GUARDED_BY(mu_);
+  std::vector<DataType> dtypes_ GUARDED_BY(mu);
+  std::vector<TensorShape> shapes_ GUARDED_BY(mu);
+  std::unordered_map<string, int64> columns_index_ GUARDED_BY(mu);
 
-  std::pair<string, string> complex_names_ GUARDED_BY(mu_);
+  std::pair<string, string> complex_names_ GUARDED_BY(mu);
 };
 
 class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
