@@ -111,6 +111,16 @@ http_archive(
 )
 
 http_archive(
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    sha256 = "597d9894061f4871a909f1c2c3f56725a69c188ea17784cc71e1e170687faf00",
+    strip_prefix = "azure-storage-cpplite-0.2.0",
+    urls = [
+        "https://github.com/Azure/azure-storage-cpplite/archive/v0.2.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "zstd",
     build_file = "//third_party:zstd.BUILD",
     sha256 = "a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8",
@@ -263,17 +273,6 @@ http_archive(
     strip_prefix = "tiff-4.1.0",
     urls = [
         "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "com_github_azure_azure_storage_cpplite",
-    build_file = "//third_party:azure.BUILD",
-    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
-    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
-    urls = [
-        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
-        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
     ],
 )
 
