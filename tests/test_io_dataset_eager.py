@@ -439,7 +439,8 @@ def fixture_hdf5(request):
       np.asarray(complex_data, np.complex128).tolist(),
       np.asarray(string_data, '<S5').tolist()))
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   return args, func, expected
@@ -507,7 +508,8 @@ def fixture_hdf5_graph(request):
       np.asarray(complex_data, np.complex128).tolist(),
       np.asarray(string_data, '<S5').tolist()))
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   return args, func, expected
@@ -572,7 +574,8 @@ def fixture_numpy_file_tuple(request):
       np.asarray(d2).astype(np.int64))
 
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   args = filename
@@ -597,7 +600,8 @@ def fixture_numpy_file_dict(request):
       d1=np.asarray(d1).astype(np.int64))
 
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   args = filename
@@ -625,7 +629,8 @@ def fixture_numpy_file_tuple_graph(request):
       np.asarray(d2).astype(np.int64))
 
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   args = filename
@@ -652,7 +657,8 @@ def fixture_numpy_file_dict_graph(request):
       d1=np.asarray(d1).astype(np.int64))
 
   def fin():
-    shutil.rmtree(tmp_path)
+    if sys.platform != 'win32':
+      shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
   args = filename
