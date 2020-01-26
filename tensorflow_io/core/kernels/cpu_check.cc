@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/cpu_info.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/core/kernels/cpu_info.h"
 
+#include <iostream>
 #include <mutex>
 #include <string>
-#include <iostream>
 
 namespace tensorflow {
 namespace io {
@@ -113,7 +113,8 @@ class CPUFeatureCheck {
 
 // NOTE: In TensorFlow IO currently on Linux only AVX and earlier are supported
 // This is inline with TensorFlow Core support.
-// We may decide to enable further e.g., AVX2 in TensorFlow IO only in the future.
+// We may decide to enable further e.g., AVX2 in TensorFlow IO only in the
+// future.
 #ifndef __AVX2__
     CheckIfFeatureUnused(CPUFeature::AVX2, "AVX2", missing_instructions);
 #endif  // __AVX2__
