@@ -13,13 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_AZURE_AZFS_H_
-#define TENSORFLOW_IO_AZURE_AZFS_H_
+#ifndef TENSORFLOW_IO_AZURE_AZFS_OPS_H_
+#define TENSORFLOW_IO_AZURE_AZFS_OPS_H_
 
-#include <memory>
-#include <string>
-
-#include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/file_system.h"
 
 #include "blob/blob_client.h"
@@ -84,4 +80,4 @@ class AzBlobFileSystem : public FileSystem {
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_AZURE_AZFS_H_
+#endif  // TENSORFLOW_IO_AZURE_AZFS_OPS_H_
