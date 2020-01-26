@@ -20,6 +20,9 @@ cc_library(
             "src/H5detect.c",
         ],
     ) + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@org_tensorflow_io//third_party:hdf5/windows/H5Tinit.c",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "@org_tensorflow_io//third_party:hdf5/darwin/H5Tinit.c",
         ],

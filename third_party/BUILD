@@ -30,6 +30,10 @@ cc_library(
 cc_library(
     name = "hdf5",
     srcs = select({
+        "@bazel_tools//src/conditions:windows": [
+            "hdf5/windows/H5lib_settings.c",
+            "hdf5/windows/H5pubconf.h",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "hdf5/darwin/H5lib_settings.c",
             "hdf5/darwin/H5pubconf.h",
@@ -42,6 +46,9 @@ cc_library(
     hdrs = [],
     copts = [],
     includes = select({
+        "@bazel_tools//src/conditions:windows": [
+            "hdf5/windows",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "hdf5/darwin",
         ],
@@ -54,6 +61,7 @@ cc_library(
 )
 
 exports_files([
+    "hdf5/windows/H5Tinit.c",
     "hdf5/darwin/H5Tinit.c",
     "hdf5/linux/H5Tinit.c",
 ])
