@@ -669,10 +669,6 @@ http_archive(
 http_archive(
     name = "ogg",
     build_file = "//third_party:ogg.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:ogg.patch",
-    ],
     sha256 = "3da31a4eb31534b6f878914b7379b873c280e610649fe5c07935b3d137a828bc",
     strip_prefix = "ogg-1.3.4",
     urls = [
