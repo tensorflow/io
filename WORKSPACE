@@ -124,6 +124,16 @@ http_archive(
 )
 
 http_archive(
+    name = "hdf5",
+    build_file = "//third_party:hdf5.BUILD",
+    sha256 = "5f9a3ee85db4ea1d3b1fa9159352aebc2af72732fc2f58c96a3f0768dba0e9aa",
+    strip_prefix = "hdf5-1.10.6",
+    urls = [
+        "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/hdf5-1.10.6.tar.gz",
+    ],
+)
+
+http_archive(
     name = "zstd",
     build_file = "//third_party:zstd.BUILD",
     sha256 = "a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8",
@@ -473,46 +483,6 @@ http_archive(
     strip_prefix = "aliyun-oss-c-sdk-3.7.0",
     urls = [
         "https://github.com/aliyun/aliyun-oss-c-sdk/archive/3.7.0.tar.gz",
-    ],
-)
-
-# hdf5 header files are generated from:
-#
-# tar xzf hdf5-1.10.5.tar.gz
-# cp -r hdf5-1.10.5 a
-# cp -r hdf5-1.10.5 b
-# docker run -i -t --rm -v $PWD/hdf5-1.10.5:/v -w /v --net=host ubuntu:14.04
-# $ apt-get -y -qq update
-# $ apt-get -y -qq install make gcc g++ libz-dev
-# $ ./configure --enable-cxx --with-zlib
-# $ make
-# $ exit
-# mkdir -p b/linux/src
-# cp hdf5-1.10.5/src/H5pubconf.h b/linux/src/H5pubconf.h
-# cp hdf5-1.10.5/src/H5lib_settings.c b/linux/src/H5lib_settings.c
-# cp hdf5-1.10.5/src/H5Tinit.c b/linux/src/H5Tinit.c
-# diff -Naur a b > hdf5.linux.patch
-#
-# On darwin, change to:
-#
-# mkdir -p b/darwin/src
-# cp hdf5-1.10.5/src/H5pubconf.h b/darwin/src/H5pubconf.h
-# cp hdf5-1.10.5/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
-# cp hdf5-1.10.5/src/H5Tinit.c b/darwin/src/H5Tinit.c
-# diff -Naur a b > hdf5.darwin.patch
-http_archive(
-    name = "hdf5",
-    build_file = "//third_party:hdf5.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:hdf5.linux.patch",
-        "//third_party:hdf5.darwin.patch",
-    ],
-    sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
-    strip_prefix = "hdf5-1.10.5",
-    urls = [
-        "https://mirror.bazel.build/support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
-        "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
     ],
 )
 
