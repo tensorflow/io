@@ -13,8 +13,7 @@ cc_library(
     ]) + [
         "include/ogg/config_types.h",
     ],
-    copts = [
-    ],
+    copts = [],
     includes = [
         "include",
     ],

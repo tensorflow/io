@@ -32,8 +32,7 @@ cc_library(
         "@bazel_tools//src/conditions:windows": [
             "src/rdkafka_sasl_win32.c",
         ],
-        "//conditions:default": [
-        ],
+        "//conditions:default": [],
     }),
     hdrs = [
         "config/config.h",
