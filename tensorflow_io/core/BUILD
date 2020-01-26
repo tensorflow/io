@@ -496,7 +496,6 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:kafka_ops",
         "//tensorflow_io/core:lmdb_ops",
@@ -507,6 +506,7 @@ cc_binary(
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
+            "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/arrow:arrow_ops",
             "//tensorflow_io/bigquery:bigquery_ops",
             "//tensorflow_io/bigtable:bigtable_ops",
