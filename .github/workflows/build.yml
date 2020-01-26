@@ -266,7 +266,7 @@ jobs:
           (cd tests && python -m pytest -s -v test_lmdb_eager.py)
           (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr")
           (python -m pytest -s -v test_serialization_eager.py)
-          (python -m pytest -s -v test_io_dataset_eager.py -k "numpy")
+          (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5")
 
   release:
     name: Release

@@ -17,8 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -35,10 +33,7 @@ class HDF5IODataset(tf.data.Dataset):
       assert internal
 
       # TODO: unique shared_name might be removed if HDF5 is thead-safe?
-      resource, _ = core_ops.io_hdf5_readable_init(
-          filename,
-          container="",
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+      resource, _ = core_ops.io_hdf5_readable_init(filename)
       if tf.executing_eagerly():
         shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
         dtype = tf.as_dtype(dtype.numpy())
