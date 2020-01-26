@@ -668,6 +668,9 @@ http_archive(
 
 http_archive(
     name = "ogg",
+    patch_cmds = [
+        "sed -i.bak 's/define _OS_TYPES_H/define _OS_TYPES_H\\'$'\\n''#include <stdint.h>/g' include/ogg/os_types.h",
+    ],
     build_file = "//third_party:ogg.BUILD",
     sha256 = "3da31a4eb31534b6f878914b7379b873c280e610649fe5c07935b3d137a828bc",
     strip_prefix = "ogg-1.3.4",
