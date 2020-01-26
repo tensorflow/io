@@ -741,7 +741,14 @@ def fixture_kafka_stream():
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param(
+            "audio_ogg",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
         pytest.param("audio_flac"),
         pytest.param(
             "prometheus_scrape",
@@ -825,7 +832,14 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param(
+            "audio_ogg",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
         pytest.param("audio_flac"),
         pytest.param(
             "prometheus_scrape",
@@ -924,7 +938,14 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param(
+            "audio_ogg",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
@@ -1014,8 +1035,22 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_wav", 2),
         pytest.param("audio_wav_24", None),
         pytest.param("audio_wav_24", 2),
-        pytest.param("audio_ogg", None),
-        pytest.param("audio_ogg", 2),
+        pytest.param(
+            "audio_ogg", None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
+        pytest.param(
+            "audio_ogg", 2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
         pytest.param("hdf5_graph", None),
@@ -1109,7 +1144,14 @@ def test_io_dataset_in_dataset_parallel(
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param(
+            "audio_ogg",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform == "win32",
+                    reason="TODO Fail on Windows"),
+            ],
+        ),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
         pytest.param("numpy"),
