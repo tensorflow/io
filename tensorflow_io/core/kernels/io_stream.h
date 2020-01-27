@@ -26,11 +26,13 @@ namespace data {
 // of the kernel as buffer could be released by outside.
 class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
  public:
-  SizedRandomAccessFile(Env* env, const string& filename, const void* optional_memory_buff, const size_t optional_memory_size)
-  : file_(nullptr)
-  , size_(optional_memory_size)
-  , buff_((const char *)(optional_memory_buff))
-  , size_status_(Status::OK()) {
+  SizedRandomAccessFile(Env* env, const string& filename,
+                        const void* optional_memory_buff,
+                        const size_t optional_memory_size)
+      : file_(nullptr),
+        size_(optional_memory_size),
+        buff_((const char*)(optional_memory_buff)),
+        size_status_(Status::OK()) {
     if (size_ == 0) {
       size_status_ = env->GetFileSize(filename, &size_);
       if (size_status_.ok()) {
@@ -40,7 +42,8 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
   }
 
   virtual ~SizedRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece* result, char* scratch) const override {
+  Status Read(uint64 offset, size_t n, StringPiece* result,
+              char* scratch) const override {
     if (file_.get() != nullptr) {
       return file_.get()->Read(offset, n, result, scratch);
     }
@@ -63,10 +66,11 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
     }
     return size_status_;
   }
+
  private:
   std::unique_ptr<tensorflow::RandomAccessFile> file_;
   uint64 size_;
-  const char *buff_;
+  const char* buff_;
   Status size_status_;
 };
 
