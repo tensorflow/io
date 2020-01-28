@@ -69,7 +69,6 @@ AvroRecordReader::AvroRecordReader(RandomAccessFile* file,
     datum_(nullptr),
     options_(options),
     reader_(nullptr),
-    writer_stream_(avro::memoryOutputStream()),
     encoder_(avro::binaryEncoder()) {
   // TODO: Handle buffer_size = 0 in 2.0 since InputStreamInterface has seek method
   // if (options.buffer_size > 0) {...}
@@ -91,9 +90,8 @@ AvroRecordReader::AvroRecordReader(RandomAccessFile* file,
   } else {
     reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
       std::move(avro_input), reader_schema_));
-    datum_.reset(new avro::GenericDatum());
+    datum_.reset(new avro::GenericDatum(reader_schema_));
   }
-  encoder_->init(*writer_stream_);
 }
 
 Status AvroRecordReader::ReadRecord(uint64* offset, string* record) {
@@ -102,17 +100,17 @@ Status AvroRecordReader::ReadRecord(uint64* offset, string* record) {
       VLOG(7) << "Could not read datum from file!";
       return errors::OutOfRange("eof");
   }
-  VLOG(7) << "Before encode: Output stream has " << writer_stream_->byteCount() << " written.";
+  std::unique_ptr<avro::OutputStream> writer_stream = avro::memoryOutputStream();
+  encoder_->init(*writer_stream);
   avro::encode(*encoder_, *datum_);
-  //writer_stream_->flush();
-  std::unique_ptr<avro::InputStream> reader_stream = avro::memoryInputStream(*writer_stream_);
-  VLOG(7) << "After encode: Output stream has " << writer_stream_->byteCount() << " written.";
+  encoder_->flush();
+  VLOG(7) << "Output stream has " << writer_stream->byteCount() << " written.";
+  std::unique_ptr<avro::InputStream> reader_stream = avro::memoryInputStream(*writer_stream);
   uint64_t n_data = 0;
   const uint8_t* data = nullptr;
   while (reader_stream->next(&data, &n_data)) {
     record->append((const char*) data, n_data);
   }
-  VLOG(7) << "The data is: '" << *record << "'";
   return record->empty() ? errors::OutOfRange("eof") : Status::OK();
 }
 

@@ -22,6 +22,7 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
   static constexpr const char* const kDatasetType = "AvroRecord";
   static constexpr const char* const kFileNames = "filenames";
   static constexpr const char* const kBufferSize = "buffer_size";
+  static constexpr const char* const kReaderSchema = "reader_schema";
 
   explicit AvroRecordDatasetOp(OpKernelConstruction* ctx);
 

@@ -27,6 +27,7 @@ using ::tensorflow::shape_inference::ShapeHandle;
 REGISTER_OP("IO>AvroRecordDataset")
     .Input("filenames: string")
     .Input("buffer_size: int64")
+    .Input("reader_schema: string")
     .Output("handle: variant")
     .SetIsStateful()  // TODO(b/123753214): Source dataset ops must be marked
                       // stateful to inhibit constant folding.
@@ -36,6 +37,8 @@ REGISTER_OP("IO>AvroRecordDataset")
       // `filenames` must be a scalar or a vector
       TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(0), 1, &unused));
       // `buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      // `reader_schema` must be a scalar
       TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
       return shape_inference::ScalarShape(c);
     });
