@@ -376,7 +376,7 @@ cc_binary(
         "//tensorflow_io/grpc:grpc_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/json:json_ops",
-        # "//tensorflow_io/kafka:kafka_ops",  disabled due to compile error with istringstream on rhel7 gcc
+        # "//tensorflow_io/kafka:kafka_ops",  TODO(fraudies): Enable once we are on a gcc 7.x
         "//tensorflow_io/kinesis:kinesis_ops",
         "//tensorflow_io/oss:oss_ops",
         "//tensorflow_io/pubsub:pubsub_ops",

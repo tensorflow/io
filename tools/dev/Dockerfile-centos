@@ -8,6 +8,8 @@ RUN yum install -y \
     which \
     unzip
 
+RUN yum clean all
+
 # Version 0.10.0 build uses bazel 0.29.0
 ARG BAZEL_VERSION=0.29.0
 ARG BAZEL_OS=linux
