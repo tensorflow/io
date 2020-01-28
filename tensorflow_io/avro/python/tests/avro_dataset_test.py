@@ -17,14 +17,47 @@ import numpy as np
 from tensorflow.python.platform import test
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
+from tensorflow.python.framework.errors import OpError
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.util import compat
 from tensorflow.python.framework import sparse_tensor
+from tensorflow_io.core.python.experimental.avro_dataset_ops import make_avro_dataset
 
 from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
 
 
 class AvroDatasetTest(AvroDatasetTestBase):
+
+    def _test_pass_dataset(self, writer_schema, record_data, expected_data,
+                           features, reader_schema, batch_size, **kwargs):
+        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
+                                                     records=record_data)
+
+        actual_dataset = make_avro_dataset(
+            filenames=filenames, reader_schema=reader_schema,
+            features=features, batch_size=batch_size,
+            shuffle=kwargs.get("shuffle", None),
+            num_epochs=kwargs.get("num_epochs", None),
+            label_keys=kwargs.get("label_keys", []))
+
+        self._verify_output(expected_data=expected_data,
+                            actual_dataset=actual_dataset)
+
+    def _test_fail_dataset(self, writer_schema, record_data, features,
+                           reader_schema, batch_size, **kwargs):
+        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
+                                                     records=record_data)
+
+        actual_dataset = make_avro_dataset(
+            filenames=filenames, reader_schema=reader_schema,
+            features=features, batch_size=batch_size,
+            shuffle=kwargs.get("shuffle", None),
+            num_epochs=kwargs.get("num_epochs", None))
+
+        next_data = iter(actual_dataset)
+
+        with self.assertRaises(OpError):
+            next(next_data)
 
     def test_primitive_types(self):
         writer_schema = """{

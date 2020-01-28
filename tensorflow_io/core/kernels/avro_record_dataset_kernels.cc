@@ -35,6 +35,7 @@ namespace data {
 /* static */ constexpr const char* const AvroRecordDatasetOp::kDatasetType;
 /* static */ constexpr const char* const AvroRecordDatasetOp::kFileNames;
 /* static */ constexpr const char* const AvroRecordDatasetOp::kBufferSize;
+/* static */ constexpr const char* const AvroRecordDatasetOp::kReaderSchema;
 
 constexpr char kCurrentFileIndex[] = "current_file_index";
 constexpr char kOffset[] = "offset";
@@ -43,12 +44,15 @@ constexpr char kOffset[] = "offset";
 class AvroRecordDatasetOp::Dataset : public DatasetBase {
  public:
   explicit Dataset(OpKernelContext* ctx, std::vector<string> filenames,
-                   int64 buffer_size)
+                   int64 buffer_size, const string& reader_schema)
       : DatasetBase(DatasetContext(ctx)),
         filenames_(std::move(filenames)),
         options_(AvroReaderOptions::CreateReaderOptions()) {
     if (buffer_size > 0) {
       options_.buffer_size = buffer_size;
+    }
+    if (!reader_schema.empty()) {
+      options_.reader_schema = reader_schema;
     }
     VLOG(7) << "Created dataset with " << filenames_[0] << "... and buffer size " << buffer_size;
   }
@@ -100,12 +104,8 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
         if (reader_) {
           out_tensors->emplace_back(ctx->allocator({}), DT_STRING,
                                     TensorShape({}));
-          VLOG(7) << "Add string ";
           Status s =
               reader_->ReadRecord(&out_tensors->back().scalar<string>()());
-          VLOG(7) << "Added string '" << out_tensors->back().scalar<string>()() << "'";
-          VLOG(7) << "Status is " << s;
-
           if (s.ok()) {
             *end_of_sequence = false;
             return Status::OK();
@@ -232,8 +232,12 @@ void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
     OP_REQUIRES(ctx, buffer_size >= 0,
                 errors::InvalidArgument(
                     "`buffer_size` must be >= 0 (0 == no buffering)"));
+    string reader_schema = "";
+    OP_REQUIRES_OK(ctx,
+                   ParseScalarArgument<string>(ctx, kReaderSchema, &reader_schema));
+
     *output =
-        new Dataset(ctx, std::move(filenames), buffer_size);
+        new Dataset(ctx, std::move(filenames), buffer_size, reader_schema);
 }
 
 namespace {

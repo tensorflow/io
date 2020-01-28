@@ -17,14 +17,10 @@
 import os
 import tempfile
 
-from tensorflow.python.framework import test_util, sparse_tensor
-from tensorflow.python.framework.errors import OpError, OutOfRangeError
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow_io.core.python.experimental.avro_dataset_ops import make_avro_dataset
 from tensorflow_io.avro.python.utils.avro_serialization import AvroRecordsToFile
 
 
-@test_util.run_all_in_graph_and_eager_modes
 class AvroDatasetTestBase(test_base.DatasetTestBase):
 
     @staticmethod
@@ -64,41 +60,9 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
         else:
             _assertEqual(expected, actual)
 
-
     def _verify_output(self, expected_data, actual_dataset):
 
         next_data = iter(actual_dataset)
 
         for expected in expected_data:
             self.assertDataEqual(expected=expected, actual=next(next_data))
-
-    def _test_pass_dataset(self, writer_schema, record_data, expected_data,
-                           features, reader_schema, batch_size, **kwargs):
-        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
-                                                     records=record_data)
-
-        actual_dataset = make_avro_dataset(
-            filenames=filenames, reader_schema=reader_schema,
-            features=features, batch_size=batch_size,
-            shuffle=kwargs.get("shuffle", None),
-            num_epochs=kwargs.get("num_epochs", None),
-            label_keys=kwargs.get("label_keys", []))
-
-        self._verify_output(expected_data=expected_data,
-                            actual_dataset=actual_dataset)
-
-    def _test_fail_dataset(self, writer_schema, record_data, features,
-                           reader_schema, batch_size, **kwargs):
-        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
-                                                     records=record_data)
-
-        actual_dataset = make_avro_dataset(
-            filenames=filenames, reader_schema=reader_schema,
-            features=features, batch_size=batch_size,
-            shuffle=kwargs.get("shuffle", None),
-            num_epochs=kwargs.get("num_epochs", None))
-
-        next_data = iter(actual_dataset)
-
-        with self.assertRaises(OpError):
-            next(next_data)
