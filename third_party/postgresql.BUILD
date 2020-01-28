@@ -77,6 +77,18 @@ cc_library(
         "src/port/thread.c",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [],
+        "@bazel_tools//src/conditions:windows": [
+            "src/interfaces/libpq/pthread-win32.c",
+            "src/interfaces/libpq/win32.c",
+            "src/port/dirmod.c",
+            "src/port/getaddrinfo.c",
+            "src/port/inet_aton.c",
+            "src/port/open.c",
+            "src/port/strlcpy.c",
+            "src/port/win32error.c",
+            "src/port/win32setlocale.c",
+            "src/port/pthread-win32.h",
+        ],
         "//conditions:default": [
             "src/port/getpeereid.c",
             "src/port/strlcpy.c",
@@ -92,6 +104,13 @@ cc_library(
     defines = [
         "FRONTEND",
     ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "BLCKSZ=8192",
+            "XLOG_BLCKSZ=8192",
+            'PG_MAJORVERSION=\\"12\\"',
+            "HAVE_LIBZ=1",
+            "WIN32",
+        ],
         "@bazel_tools//src/conditions:darwin": [
             "HAVE_DECL_STRLCPY=1",
             "HAVE_STRLCPY=1",
@@ -107,7 +126,21 @@ cc_library(
         "config",
         "src/include",
         "src/interfaces/libpq",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "src/include/port/win32",
+            "src/include/port/win32_msvc",
+            "src/port",
+        ],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:ws2_32.lib",
+            "-DEFAULTLIB:shell32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     deps = [],
 )
 
