@@ -24,25 +24,32 @@ namespace {
 REGISTER_OP("IO>SqlIterableInit")
     .SetIsStateful()
     .Input("input: string")
+    .Input("endpoint: string")
     .Output("resource: resource")
+    .Output("count: int64")
+    .Output("field: string")
+    .Output("dtype: int64")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
+      c->set_output(1, c->Scalar());
+      c->set_output(2, c->MakeShape({}));
+      c->set_output(3, c->MakeShape({}));
       return Status::OK();
     });
 
-REGISTER_OP("IO>SqlIterableNext")
+REGISTER_OP("IO>SqlIterableRead")
     .SetIsStateful()
     .Input("input: resource")
-    .Input("start: int64")
-    .Input("shape: int64")
-    .Output("value: dtype")
-    .Attr("dtype: type")
+    .Input("index: int64")
+    .Input("field: string")
+    .Output("value: dtypes")
+    .Attr("dtypes: list(type)")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-      shape_inference::ShapeHandle shape;
-      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &shape));
-      c->set_output(0, shape);
+      for (int64 i = 0; i < c->num_outputs(); ++i) {
+        c->set_output(i, c->MakeShape({c->UnknownDim()}));
+      }
       return Status::OK();
     });
 
