@@ -76,6 +76,14 @@ Status AvroParserTree::ParseValues(
   return Status::OK();
 }
 
+Status AvroParserTree::ParseValue(std::map<string, ValueStoreUniquePtr>* key_to_value,
+  const avro::GenericDatum& datum) const {
+
+  TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+  return Status::OK();
+}
+
+
 Status AvroParserTree::Build(AvroParserTree* parser_tree, const string& avro_namespace,
     const std::vector<KeyWithType>& keys_and_types) {
 
@@ -224,7 +232,6 @@ std::vector<KeyWithType> AvroParserTree::OrderAndResolveKeyTypes(
   for (const KeyWithType& key_type : key_types) {
 
     const string& user_name = key_type.first;
-    DataType data_type = key_type.second;
 
     if (ContainsFilter(&lhs_name, &rhs_name, user_name)) {
 

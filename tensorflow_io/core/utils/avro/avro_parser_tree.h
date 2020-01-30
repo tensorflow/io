@@ -73,6 +73,9 @@ public:
     uint64 values_to_parse,
     uint64* values_parsed);
 
+  Status ParseValue(std::map<string,ValueStoreUniquePtr>* key_to_value,
+    const avro::GenericDatum& datum) const;
+
   // Returns the namespace for this parser
   inline string GetAvroNamespace() const { return avro_namespace_; }
 

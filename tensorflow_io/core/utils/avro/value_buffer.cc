@@ -15,21 +15,21 @@ namespace tensorflow {
 namespace data {
 
 // Implementation of the shape builder
-ShapeBuilder::ShapeBuilder() : element_counter_(0), has_begin(false) {}
+ShapeBuilder::ShapeBuilder() : element_counter_(0), has_begin_(false) {}
 
 void ShapeBuilder::BeginMark() {
   element_info_.push_back(kBeginMark);
-  has_begin = true;
+  has_begin_ = true;
 }
 
 void ShapeBuilder::FinishMark() {
   // Only put the element count if there was a beginning, necessary for nested dimensions
-  if (has_begin) {
+  if (has_begin_) {
     element_info_.push_back(element_counter_);
     element_counter_ = 0;
   }
   element_info_.push_back(kFinishMark);
-  has_begin = false;
+  has_begin_ = false;
 }
 
 void ShapeBuilder::Increment() {
@@ -279,6 +279,43 @@ std::vector<size_t> ShapeBuilder::CumulativeProductOfDimensionsWithOneAtEnd(
   }
 
   return dims;
+}
+
+void ShapeBuilder::Merge(const ShapeBuilder& other) {
+  std::vector<size_t> element_info_;
+  element_info_.pop_back(); // remove end mark
+  // skip begin mark when copying
+  element_info_.insert(element_info_.end(),
+                       other.element_info_.begin()+1, other.element_info_.end());
+}
+
+Status MergeAs(ValueStoreUniquePtr& merged,
+  const std::vector<ValueStoreUniquePtr>& buffers, DataType dtype) {
+
+  switch (dtype) {
+    case DT_FLOAT:
+      merged.reset(new FloatValueBuffer(buffers));
+      break;
+    case DT_DOUBLE:
+      merged.reset(new DoubleValueBuffer(buffers));
+      break;
+    case DT_INT64:
+      merged.reset(new LongValueBuffer(buffers));
+      break;
+    case DT_INT32:
+      merged.reset(new IntValueBuffer(buffers));
+      break;
+    case DT_BOOL:
+      merged.reset(new BoolValueBuffer(buffers));
+      break;
+    case DT_STRING:
+      merged.reset(new StringValueBuffer(buffers));
+      break;
+    default:
+      return errors::InvalidArgument("Received invalid type: ", DataTypeString(dtype));
+  }
+
+  return Status::OK();
 }
 
 }  // namespace data

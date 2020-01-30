@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,7 +16,7 @@ limitations under the License.
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_shape.h"
-
+#include "tensorflow/core/platform/types.h"
 
 namespace tensorflow {
 namespace data {
@@ -35,7 +35,7 @@ class ValueStore {
 public:
   // Virtual destructor ensures the derived class's destructor is called and
   // clean up its memory.
-  virtual ~ValueStore() {}
+  virtual ~ValueStore() = default;
 
   // Make a dense tensor from this value store given the default values and the resolved shape
   // Assumes the tensor has been initialized and allocated!
@@ -82,9 +82,9 @@ public:
 // Assumes that values are added in sequence
 class ShapeBuilder {
 public:
-
-  // Default constructor
   ShapeBuilder();
+
+  virtual ~ShapeBuilder() = default;
 
   // Places a begin mark
   void BeginMark();
@@ -115,6 +115,8 @@ public:
 
   // Get a human readable string for this shape builder
   string ToString() const;
+
+  void Merge(const ShapeBuilder& others);
 private:
 
   // Reconcile the output shape of a tensor with the shape within this shape builder
@@ -136,7 +138,7 @@ private:
   size_t element_counter_;
 
   // True if we had a begin mark otherwise false
-  bool has_begin;
+  bool has_begin_;
 };
 
 
@@ -144,6 +146,11 @@ private:
 template <typename T>
 class ValueBuffer : public ValueStore {
 public:
+  ValueBuffer() = default;
+  ValueBuffer(const std::vector<ValueStoreUniquePtr>& others);
+
+  virtual ~ValueBuffer() = default;
+
   inline void BeginMark() override { shape_builder_.BeginMark(); }
 
   inline void FinishMark() override { shape_builder_.FinishMark(); }
@@ -156,20 +163,8 @@ public:
 
   // Add a non-primitive value (e.g. string) by reference to the buffer
   inline void AddByRef(const T& value) {
-/*    LOG(INFO) << "Add by ref the value: " << value;
-
-    LOG(INFO) << "Before push the values are:";
-    for (const auto& v : values_) {
-      LOG(INFO) << v;
-    }*/
-
     values_.push_back(value);
     shape_builder_.Increment();
-
-/*    LOG(INFO) << "After push the values are:";
-    for (const auto& v : values_) {
-      LOG(INFO) << v;
-    }*/
   }
 
   // Return the last item in the buffer
@@ -199,7 +194,6 @@ public:
   inline bool IsEmpty() const override { return GetNumberOfElements() == 0; }
 
   virtual string ToString(size_t limit) const override;
-
 private:
   // Returns the number of elements
   inline size_t GetNumberOfElements() const { return values_.size(); }
@@ -248,6 +242,12 @@ typedef ValueBuffer<float> FloatValueBuffer;
 typedef ValueBuffer<double> DoubleValueBuffer;
 typedef ValueBuffer<string> StringValueBuffer;
 
+
+// Unfortunately, need to provide type information for casting
+// Note, this code has not been designed with merge in scope
+Status MergeAs(ValueStoreUniquePtr& merged,
+  const std::vector<ValueStoreUniquePtr>& buffers, DataType dtype);
+
 // -------------------------------------------------------------------------------------------------
 // copy or move data depending on the data type
 // -------------------------------------------------------------------------------------------------
@@ -263,6 +263,21 @@ inline void CopyOrMoveBlock(const string* b, const string* e, string* t) {
 // -------------------------------------------------------------------------------------------------
 // Implementation of the value buffer
 // -------------------------------------------------------------------------------------------------
+template<typename T>
+ValueBuffer<T>::ValueBuffer(const std::vector<ValueStoreUniquePtr>& others) {
+  auto begin = values_.begin();
+  // Push dummy marks to this shape builder
+  shape_builder_.BeginMark();
+  shape_builder_.FinishMark();
+  for (size_t i = 0; i < values_.size(); ++i) {
+    ValueBuffer<T>* buffer = reinterpret_cast<ValueBuffer<T>*>(others[i].get());
+    auto target = buffer->values_.begin();
+    size_t n_elements = buffer->values_.size();
+    CopyOrMoveBlock(begin, begin + n_elements, target);
+    target += n_elements;
+    shape_builder_.Merge(buffer->shape_builder_);
+  }
+}
 
 // TODO(fraudies): Move validation of user defined shape and defaults into the avro dataset
 // To resolve the proper shape for a dense tensor we honor:
