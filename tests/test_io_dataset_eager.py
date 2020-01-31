@@ -722,6 +722,66 @@ def fixture_kafka_stream():
 
   return args, func, expected
 
+@pytest.fixture(name="sql")
+def fixture_sql():
+  """fixture_sql"""
+
+  args = "select id, i32, i64, f32, f64 from test_table;"
+  def func(q):
+    dataset = tfio.experimental.IODataset.from_sql(
+        q, endpoint="postgresql://postgres@localhost?port=5432&dbname=test_db")
+    dataset = dataset.map(
+        lambda v: (
+            v['id'],
+            v['i32'],
+            v['i64'],
+            v['f32'],
+            v['f64']))
+    return dataset
+  expected = [(
+      np.int64(i),
+      np.int32(i + 1000),
+      np.int64(i + 2000),
+      np.float32(i + 3000),
+      np.float64(i + 4000),
+  ) for i in range(10)]
+
+  return args, func, expected
+
+@pytest.fixture(name="sql_graph")
+def fixture_sql_graph():
+  """fixture_sql_graph"""
+
+  args = "select id, i32, i64, f32, f64 from test_table;"
+  def func(q):
+    dataset = tfio.experimental.IODataset.from_sql(
+        q,
+        endpoint="postgresql://postgres@localhost?port=5432&dbname=test_db",
+        spec={
+            'id': tf.TensorSpec([None], tf.int64),
+            'i32': tf.TensorSpec([None], tf.int32),
+            'i64': tf.TensorSpec([None], tf.int64),
+            'f32': tf.TensorSpec([None], tf.float32),
+            'f64': tf.TensorSpec([None], tf.float64),
+        })
+    dataset = dataset.map(
+        lambda v: (
+            v['id'],
+            v['i32'],
+            v['i64'],
+            v['f32'],
+            v['f64']))
+    return dataset
+  expected = [(
+      np.int64(i),
+      np.int32(i + 1000),
+      np.int64(i + 2000),
+      np.float32(i + 3000),
+      np.float64(i + 4000),
+  ) for i in range(10)]
+
+  return args, func, expected
+
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
 #   entries = [e for e in dataset]
@@ -776,6 +836,14 @@ def fixture_kafka_stream():
         pytest.param("kafka"),
         pytest.param("kafka_avro"),
         pytest.param("kafka_stream"),
+        pytest.param(
+            "sql",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -798,6 +866,7 @@ def fixture_kafka_stream():
         "kafka",
         "kafka[avro]",
         "kafka[stream]",
+        "sql",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -863,6 +932,14 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
                 pytest.mark.xfail(reason="TODO"),
             ],
         ),
+        pytest.param(
+            "sql",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -883,6 +960,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "kafka",
         "kafka[avro]",
         "kafka[stream]",
+        "sql",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -955,6 +1033,14 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_file_dict"),
         pytest.param("kafka"),
         pytest.param("kafka_avro"),
+        pytest.param(
+            "sql",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -973,6 +1059,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "numpy[file/dict]",
         "kafka",
         "kafka[avro]",
+        "sql",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
@@ -1063,6 +1150,22 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("kafka", 2),
         pytest.param("kafka_avro", None),
         pytest.param("kafka_avro", 2),
+        pytest.param(
+            "sql_graph", None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "sql_graph", 2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1091,6 +1194,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "kafka|2",
         "kafka[avro]",
         "kafka[avro]|2",
+        "sql",
+        "sql|2",
     ],
 )
 def test_io_dataset_in_dataset_parallel(
@@ -1158,6 +1263,14 @@ def test_io_dataset_in_dataset_parallel(
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
+        pytest.param(
+            "sql",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO PostgreSQL not tested on macOS/Windows"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1172,6 +1285,7 @@ def test_io_dataset_in_dataset_parallel(
         "numpy[structure]",
         "numpy[file/tuple]",
         "numpy[file/dict]",
+        "sql",
     ],
 )
 def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):

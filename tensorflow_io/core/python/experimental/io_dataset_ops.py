@@ -27,6 +27,7 @@ from tensorflow_io.core.python.experimental import pubsub_dataset_ops
 from tensorflow_io.core.python.experimental import grpc_dataset_ops
 from tensorflow_io.core.python.experimental import file_dataset_ops
 from tensorflow_io.core.python.experimental import numpy_dataset_ops
+from tensorflow_io.core.python.experimental import sql_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -225,6 +226,27 @@ class IODataset(io_dataset.IODataset):
     from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
     return prometheus_dataset_ops.PrometheusIODataset(
         query, length, offset=offset, endpoint=endpoint, spec=spec)
+
+  @classmethod
+  def from_sql(cls,
+               query,
+               endpoint=None,
+               spec=None):
+    """Creates an `GraphIODataset` from a postgresql server endpoint.
+
+    Args:
+      query: A string, the sql query string.
+      endpoint: A string, the server address of postgresql server.
+      spec: A structured (tuple) tf.TensorSpec of the dataset.
+        In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    return sql_dataset_ops.SQLIODataset(
+        query, endpoint=endpoint, spec=spec)
 
   @classmethod
   def to_file(cls,

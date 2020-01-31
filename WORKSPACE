@@ -688,3 +688,13 @@ http_archive(
         "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
     ],
 )
+
+http_archive(
+    name = "postgresql",
+    build_file = "//third_party:postgresql.BUILD",
+    sha256 = "9868c1149a04bae1131533c5cbd1c46f9c077f834f6147abaef8791a7c91b1a1",
+    strip_prefix = "postgresql-12.1",
+    urls = [
+        "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
+    ],
+)
