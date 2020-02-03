@@ -15,6 +15,14 @@ cc_library(
             "src/*.h",
         ],
         exclude = [
+            "src/lz4.c",
+            "src/lz4.h",
+            "src/lz4frame.c",
+            "src/lz4frame.h",
+            "src/lz4frame_static.h",
+            "src/lz4hc.c",
+            "src/lz4hc.h",
+            "src/lz4opt.h",
             "src/rddl.c",
             "src/rddl.h",
             "src/rdkafka_plugin.c",
@@ -23,6 +31,7 @@ cc_library(
             "src/rdkafka_sasl_win32.c",
             "src/win32_config.h",
             "src/xxhash.c",
+            "src/xxhash.h",
         ],
     ) + [
         "config/config.h",
@@ -38,8 +47,6 @@ cc_library(
         "config/config.h",
         "config/src/set1_host.c",
         "config/src/win32_config.h",
-        "src/lz4.c",
-        "src/xxhash.c",
     ],
     defines = [
         "LIBRDKAFKA_STATICLIB",
@@ -55,6 +62,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@boringssl//:ssl",
+        "@lz4",
         "@zlib",
         "@zstd",
     ],

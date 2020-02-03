@@ -414,7 +414,7 @@ cc_library(
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
-        "@jsoncpp_git//:jsoncpp",
+        "@rapidjson",
     ],
     alwayslink = 1,
 )
