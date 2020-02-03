@@ -144,6 +144,26 @@ http_archive(
 )
 
 http_archive(
+    name = "lz4",
+    build_file = "//third_party:lz4.BUILD",
+    sha256 = "658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc",
+    strip_prefix = "lz4-1.9.2",
+    urls = [
+        "https://github.com/lz4/lz4/archive/v1.9.2.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "brotli",
+    build_file = "//third_party:brotli.BUILD",
+    sha256 = "4c61bfb0faca87219ea587326c467b95acb25555b53d1a421ffa3c8a9296ee2c",
+    strip_prefix = "brotli-1.0.7",
+    urls = [
+        "https://github.com/google/brotli/archive/v1.0.7.tar.gz",
+    ],
+)
+
+http_archive(
     name = "kafka",
     build_file = "//third_party:kafka.BUILD",
     patch_cmds = [
