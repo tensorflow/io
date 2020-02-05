@@ -14,11 +14,17 @@ cc_library(
         "kernels/arrow_kernels.cc",
         "kernels/arrow_kernels.h",
         "kernels/arrow_stream_client.h",
-        "kernels/arrow_stream_client_unix.cc",
         "kernels/arrow_util.cc",
         "kernels/arrow_util.h",
         "ops/dataset_ops.cc",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "kernels/arrow_stream_client_windows.cc",
+        ],
+        "//conditions:default": [
+            "kernels/arrow_stream_client_unix.cc",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [

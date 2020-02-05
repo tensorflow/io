@@ -27,6 +27,20 @@ cc_library(
     deps = [],
 )
 
+# parquet_types.[h|cpp] are generated from apache arrow 0.16.0
+# on Ubuntu 16.04 with default gcc/g++/cmake/flex/bison.
+cc_library(
+    name = "parquet",
+    srcs = [
+        "parquet/parquet_types.h",
+    ],
+    hdrs = [],
+    copts = [],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+    deps = [],
+)
+
 cc_library(
     name = "hdf5",
     srcs = select({
@@ -64,4 +78,5 @@ exports_files([
     "hdf5/windows/H5Tinit.c",
     "hdf5/darwin/H5Tinit.c",
     "hdf5/linux/H5Tinit.c",
+    "parquet/parquet_types.cpp",
 ])

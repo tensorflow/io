@@ -14,8 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "arrow/api.h"
+#include "arrow/util/io_util.h"
 #include "arrow/ipc/api.h"
-#include "arrow/util/io-util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
@@ -978,14 +978,8 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
 
         // Read file columns and build a table
         int64_t num_columns = reader->num_columns();
-        std::vector<std::shared_ptr<arrow::Field>> fields(num_columns);
-        std::vector<std::shared_ptr<arrow::Column>> columns(num_columns);
-        for (int64_t i = 0; i < num_columns; ++i) {
-          CHECK_ARROW(reader->GetColumn(i, &columns[i]));
-          fields[i] = columns[i]->field();
-        }
-        auto schema = std::make_shared<arrow::Schema>(fields);
-        auto table = arrow::Table::Make(schema, columns);
+        std::shared_ptr<::arrow::Table> table;
+        CHECK_ARROW(reader->Read(&table));
 
         // Convert the table to a sequence of batches
         arrow::TableBatchReader tr(*table.get());

@@ -20,17 +20,33 @@ flatbuffer_cc_library(
         "format/Tensor.fbs",
     ],
     flatc_args = [
-        "--no-union-value-namespacing",
+        "--scoped-enums",
         "--gen-object-api",
     ],
-    out_prefix = "cpp/src/arrow/ipc/",
+    out_prefix = "cpp/src/generated/",
 )
 
 genrule(
     name = "arrow_util_config",
     srcs = ["cpp/src/arrow/util/config.h.cmake"],
     outs = ["cpp/src/arrow/util/config.h"],
-    cmd = "sed 's/@ARROW_VERSION_MAJOR@/0/g ; s/@ARROW_VERSION_MINOR@/14/g ; s/@ARROW_VERSION_PATCH@/1/g ; s/#cmakedefine/#undef/g' $< > $@",
+    cmd = ("sed " +
+           "-e 's/@ARROW_VERSION_MAJOR@/0/g' " +
+           "-e 's/@ARROW_VERSION_MINOR@/16/g' " +
+           "-e 's/@ARROW_VERSION_PATCH@/0/g' " +
+           "-e 's/cmakedefine/define/g' " +
+           "$< >$@"),
+)
+
+genrule(
+    name = "parquet_version_h",
+    srcs = ["cpp/src/parquet/parquet_version.h.in"],
+    outs = ["cpp/src/parquet/parquet_version.h"],
+    cmd = ("sed " +
+           "-e 's/@PARQUET_VERSION_MAJOR@/1/g' " +
+           "-e 's/@PARQUET_VERSION_MINOR@/5/g' " +
+           "-e 's/@PARQUET_VERSION_PATCH@/1/g' " +
+           "$< >$@"),
 )
 
 cc_library(
@@ -38,78 +54,37 @@ cc_library(
     srcs = glob(
         [
             "cpp/src/arrow/*.cc",
-            "cpp/src/arrow/*.h",
-            "cpp/src/arrow/adapters/tensorflow/convert.h",
             "cpp/src/arrow/array/*.cc",
-            "cpp/src/arrow/array/*.h",
-            "cpp/src/arrow/dataset/*.h",
-            "cpp/src/arrow/io/*.cc",
-            "cpp/src/arrow/io/*.h",
-            "cpp/src/arrow/ipc/*.cc",
-            "cpp/src/arrow/ipc/*.h",
             "cpp/src/arrow/csv/*.cc",
-            "cpp/src/arrow/csv/*.h",
+            "cpp/src/arrow/io/*.cc",
+            "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/json/*.cc",
-            "cpp/src/arrow/json/*.h",
             "cpp/src/arrow/util/*.cc",
-            "cpp/src/arrow/util/*.h",
-            "cpp/src/arrow/vendored/datetime.h",
-            "cpp/src/arrow/vendored/datetime/*.h",
+            "cpp/src/arrow/vendored/optional.hpp",
             "cpp/src/arrow/vendored/string_view.hpp",
-            "cpp/src/arrow/vendored/utf8cpp/*.h",
             "cpp/src/arrow/vendored/variant.hpp",
+            "cpp/src/arrow/**/*.h",
+            "cpp/src/parquet/**/*.h",
+            "cpp/src/parquet/**/*.cc",
         ],
         exclude = [
-            "cpp/src/arrow/**/*-test.cc",
-            "cpp/src/arrow/**/*benchmark*.cc",
-            "cpp/src/arrow/**/*hdfs*.cc",
-            "cpp/src/arrow/util/uri.*",
-            "cpp/src/arrow/util/ubsan.cc",
-            "cpp/src/arrow/io/test-common.*",
-            "cpp/src/arrow/ipc/json*.cc",
-            "cpp/src/arrow/ipc/stream-to-file.cc",
-            "cpp/src/arrow/ipc/file-to-stream.cc",
-            "cpp/src/arrow/ipc/test-common.*",
+            "cpp/src/**/*_benchmark.cc",
+            "cpp/src/**/*_main.cc",
+            "cpp/src/**/*_nossl.cc",
+            "cpp/src/**/*_test.cc",
+            "cpp/src/**/test_*.cc",
+            "cpp/src/**/*hdfs*.cc",
+            "cpp/src/**/*fuzz*.cc",
+            "cpp/src/**/file_to_stream.cc",
+            "cpp/src/**/stream_to_file.cc",
         ],
     ) + [
-        "cpp/src/parquet/api/io.h",
-        "cpp/src/parquet/windows_compatibility.h",
-        "cpp/src/parquet/api/reader.h",
-        "cpp/src/parquet/api/schema.h",
-        "cpp/src/parquet/deprecated_io.cc",
-        "cpp/src/parquet/deprecated_io.h",
-        "cpp/src/parquet/encoding.cc",
-        "cpp/src/parquet/encoding.h",
-        "cpp/src/parquet/exception.h",
-        "cpp/src/parquet/schema-internal.h",
-        "cpp/src/parquet/thrift.h",
-        "cpp/src/parquet/platform.cc",
-        "cpp/src/parquet/platform.h",
-        "cpp/src/parquet/properties.cc",
-        "cpp/src/parquet/properties.h",
-        "cpp/src/parquet/column_page.h",
-        "cpp/src/parquet/column_reader.cc",
-        "cpp/src/parquet/column_reader.h",
-        "cpp/src/parquet/column_scanner.cc",
-        "cpp/src/parquet/column_scanner.h",
-        "cpp/src/parquet/file_reader.cc",
-        "cpp/src/parquet/file_reader.h",
-        "cpp/src/parquet/metadata.cc",
-        "cpp/src/parquet/metadata.h",
-        "cpp/src/parquet/printer.cc",
-        "cpp/src/parquet/printer.h",
-        "cpp/src/parquet/schema.cc",
-        "cpp/src/parquet/schema.h",
-        "cpp/src/parquet/statistics.cc",
-        "cpp/src/parquet/statistics.h",
-        "cpp/src/parquet/types.cc",
-        "cpp/src/parquet/types.h",
-        "cpp/src/parquet/parquet_version.h",
-        "cpp/src/parquet/parquet_types.cpp",
-        "cpp/src/parquet/parquet_types.h",
+        "@org_tensorflow_io//third_party:parquet/parquet_types.cpp",
     ],
     hdrs = [
-        "cpp/src/arrow/util/config.h",  # declare header from above genrule
+        # declare header from above genrule
+        "cpp/src/arrow/util/config.h",
+        "cpp/src/parquet/parquet_version.h",
     ],
     defines = [
         "ARROW_WITH_BROTLI",
@@ -118,18 +93,25 @@ cc_library(
         "ARROW_WITH_ZLIB",
         "ARROW_WITH_ZSTD",
         "ARROW_WITH_BZ2",
+        "ARROW_STATIC",
+        "PARQUET_STATIC",
+        "WIN32_LEAN_AND_MEAN",
     ],
     includes = [
         "cpp/src",
-        #"cpp/src/arrow/vendored/xxhash",
+        "cpp/src/arrow/vendored/xxhash",
+    ],
+    textual_hdrs = [
+        "cpp/src/arrow/vendored/xxhash/xxhash.c",
     ],
     deps = [
         ":arrow_format",
-        "@boost",
+        "@boringssl//:crypto",
         "@brotli",
         "@bzip2",
-        "@double_conversion//:double-conversion",
+        "@double-conversion",
         "@lz4",
+        "@org_tensorflow_io//third_party:parquet",
         "@rapidjson",
         "@snappy",
         "@thrift",

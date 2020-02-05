@@ -18,7 +18,7 @@ limitations under the License.
 #include "arrow/json/reader.h"
 #include "arrow/memory_pool.h"
 #include "arrow/table.h"
-#include "include/json/json.h"
+#include "arrow/array.h"
 #include "rapidjson/document.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
@@ -125,8 +125,8 @@ class JSONReadable : public IOReadableInterface {
       ::tensorflow::DataType dtype;
       TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(i)->type(), &dtype));
       dtypes_.push_back(dtype);
-      columns_.push_back(table_->column(i)->name());
-      columns_index_[table_->column(i)->name()] = i;
+      columns_.push_back(table_->ColumnNames()[i]);
+      columns_index_[table_->ColumnNames()[i]] = i;
     }
 
     return Status::OK();
@@ -194,13 +194,13 @@ class JSONReadable : public IOReadableInterface {
       return Status::OK();
     }
 
-    std::shared_ptr<::arrow::Column> slice =
+    std::shared_ptr<::arrow::ChunkedArray> slice =
         table_->column(column_index)->Slice(element_start, element_stop);
 
 #define PROCESS_TYPE(TTYPE, ATYPE)                             \
   {                                                            \
     int64 curr_index = 0;                                      \
-    for (auto chunk : slice->data()->chunks()) {               \
+    for (auto chunk : slice->chunks()) {               \
       for (int64_t item = 0; item < chunk->length(); item++) { \
         value->flat<TTYPE>()(curr_index) =                     \
             (dynamic_cast<ATYPE*>(chunk.get()))->Value(item);  \
