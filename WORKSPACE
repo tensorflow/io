@@ -164,6 +164,35 @@ http_archive(
 )
 
 http_archive(
+    name = "snappy",
+    build_file = "//third_party:snappy.BUILD",
+    sha256 = "16b677f07832a612b0836178db7f374e414f94657c138e6993cbfc5dcc58651f",
+    strip_prefix = "snappy-1.1.8",
+    urls = [
+        "https://github.com/google/snappy/archive/1.1.8.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "double-conversion",
+    sha256 = "a63ecb93182134ba4293fd5f22d6e08ca417caafa244afaa751cbfddf6415b13",
+    strip_prefix = "double-conversion-3.1.5",
+    urls = [
+        "https://github.com/google/double-conversion/archive/v3.1.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "arrow",
+    build_file = "//third_party:arrow.BUILD",
+    sha256 = "d7b3838758a365c8c47d55ab0df1006a70db951c6964440ba354f81f518b8d8d",
+    strip_prefix = "arrow-apache-arrow-0.16.0",
+    urls = [
+        "https://github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "kafka",
     build_file = "//third_party:kafka.BUILD",
     patch_cmds = [
@@ -215,44 +244,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
         "https://github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "snappy",
-    build_file = "//third_party:snappy.BUILD",
-    sha256 = "3dfa02e873ff51a11ee02b9ca391807f0c8ea0529a4924afa645fbf97163f9d4",
-    strip_prefix = "snappy-1.1.7",
-    urls = [
-        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.7.tar.gz",
-        "https://github.com/google/snappy/archive/1.1.7.tar.gz",
-    ],
-)
-
-# Parquet needs generated parquet_types.h and parquet_types.cpp which are generated
-# from src/parquet/parquet.thrift in apache-parquet-cpp-1.4.0.tar.gz.
-#
-# Generating parquet_types.h and parquet_types.cpp, however, needs both bison and flex
-# installed, which is really an unnecessary step.
-#
-# We use the following step to generate the parquet_types.h and parquet_types.cpp files:
-#  - In third_party directory, run `docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header`
-#  - Once complete, a parquet.patch file will be generated which could be used as a patch in bazel
-#
-# $ cd third_party
-# $ docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header
-http_archive(
-    name = "arrow",
-    build_file = "//third_party:arrow.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:parquet.patch",
-    ],
-    sha256 = "69d9de9ec60a3080543b28a5334dbaf892ca34235b8bd8f8c1c01a33253926c1",
-    strip_prefix = "arrow-apache-arrow-0.14.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
     ],
 )
 
@@ -640,17 +631,6 @@ http_archive(
     sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
     strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
     urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
-)
-
-http_archive(
-    name = "double_conversion",
-    build_file = "//third_party:double_conversion.BUILD",
-    sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
-    strip_prefix = "double-conversion-3992066a95b823efc8ccc1baf82a1cfc73f6e9b8",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
-        "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
-    ],
 )
 
 http_archive(
