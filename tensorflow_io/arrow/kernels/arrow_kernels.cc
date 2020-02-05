@@ -18,7 +18,8 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "arrow/io/api.h"
 #include "arrow/ipc/feather.h"
-#include "arrow/ipc/feather_generated.h"
+#include "generated/feather_generated.h"
+#include "arrow/array.h"
 #include "arrow/buffer.h"
 #include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/table.h"
@@ -97,47 +98,47 @@ class ListFeatherColumnsOp : public OpKernel {
     for (int64 i = 0; i < table->columns()->size(); i++) {
       DataType dtype = ::tensorflow::DataType::DT_INVALID;
       switch (table->columns()->Get(i)->values()->type()) {
-      case ::arrow::ipc::feather::fbs::Type_BOOL:
+      case ::arrow::ipc::feather::fbs::Type::BOOL:
         dtype = ::tensorflow::DataType::DT_BOOL;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT8:
+      case ::arrow::ipc::feather::fbs::Type::INT8:
         dtype = ::tensorflow::DataType::DT_INT8;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT16:
+      case ::arrow::ipc::feather::fbs::Type::INT16:
         dtype = ::tensorflow::DataType::DT_INT16;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT32:
+      case ::arrow::ipc::feather::fbs::Type::INT32:
         dtype = ::tensorflow::DataType::DT_INT32;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT64:
+      case ::arrow::ipc::feather::fbs::Type::INT64:
         dtype = ::tensorflow::DataType::DT_INT64;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT8:
+      case ::arrow::ipc::feather::fbs::Type::UINT8:
         dtype = ::tensorflow::DataType::DT_UINT8;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT16:
+      case ::arrow::ipc::feather::fbs::Type::UINT16:
         dtype = ::tensorflow::DataType::DT_UINT16;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT32:
+      case ::arrow::ipc::feather::fbs::Type::UINT32:
         dtype = ::tensorflow::DataType::DT_UINT32;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT64:
+      case ::arrow::ipc::feather::fbs::Type::UINT64:
         dtype = ::tensorflow::DataType::DT_UINT64;
         break;
-      case ::arrow::ipc::feather::fbs::Type_FLOAT:
+      case ::arrow::ipc::feather::fbs::Type::FLOAT:
         dtype = ::tensorflow::DataType::DT_FLOAT;
         break;
-      case ::arrow::ipc::feather::fbs::Type_DOUBLE:
+      case ::arrow::ipc::feather::fbs::Type::DOUBLE:
         dtype = ::tensorflow::DataType::DT_DOUBLE;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UTF8:
-      case ::arrow::ipc::feather::fbs::Type_BINARY:
-      case ::arrow::ipc::feather::fbs::Type_CATEGORY:
-      case ::arrow::ipc::feather::fbs::Type_TIMESTAMP:
-      case ::arrow::ipc::feather::fbs::Type_DATE:
-      case ::arrow::ipc::feather::fbs::Type_TIME:
-      // case ::arrow::ipc::feather::fbs::Type_LARGE_UTF8:
-      // case ::arrow::ipc::feather::fbs::Type_LARGE_BINARY:
+      case ::arrow::ipc::feather::fbs::Type::UTF8:
+      case ::arrow::ipc::feather::fbs::Type::BINARY:
+      case ::arrow::ipc::feather::fbs::Type::CATEGORY:
+      case ::arrow::ipc::feather::fbs::Type::TIMESTAMP:
+      case ::arrow::ipc::feather::fbs::Type::DATE:
+      case ::arrow::ipc::feather::fbs::Type::TIME:
+      // case ::arrow::ipc::feather::fbs::Type::LARGE_UTF8:
+      // case ::arrow::ipc::feather::fbs::Type::LARGE_BINARY:
       default:
         break;
       }
@@ -228,47 +229,47 @@ class FeatherReadable : public IOReadableInterface {
     for (int i = 0; i < table->columns()->size(); i++) {
       ::tensorflow::DataType dtype = ::tensorflow::DataType::DT_INVALID;
       switch (table->columns()->Get(i)->values()->type()) {
-      case ::arrow::ipc::feather::fbs::Type_BOOL:
+      case ::arrow::ipc::feather::fbs::Type::BOOL:
         dtype = ::tensorflow::DataType::DT_BOOL;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT8:
+      case ::arrow::ipc::feather::fbs::Type::INT8:
         dtype = ::tensorflow::DataType::DT_INT8;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT16:
+      case ::arrow::ipc::feather::fbs::Type::INT16:
         dtype = ::tensorflow::DataType::DT_INT16;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT32:
+      case ::arrow::ipc::feather::fbs::Type::INT32:
         dtype = ::tensorflow::DataType::DT_INT32;
         break;
-      case ::arrow::ipc::feather::fbs::Type_INT64:
+      case ::arrow::ipc::feather::fbs::Type::INT64:
         dtype = ::tensorflow::DataType::DT_INT64;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT8:
+      case ::arrow::ipc::feather::fbs::Type::UINT8:
         dtype = ::tensorflow::DataType::DT_UINT8;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT16:
+      case ::arrow::ipc::feather::fbs::Type::UINT16:
         dtype = ::tensorflow::DataType::DT_UINT16;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT32:
+      case ::arrow::ipc::feather::fbs::Type::UINT32:
         dtype = ::tensorflow::DataType::DT_UINT32;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UINT64:
+      case ::arrow::ipc::feather::fbs::Type::UINT64:
         dtype = ::tensorflow::DataType::DT_UINT64;
         break;
-      case ::arrow::ipc::feather::fbs::Type_FLOAT:
+      case ::arrow::ipc::feather::fbs::Type::FLOAT:
         dtype = ::tensorflow::DataType::DT_FLOAT;
         break;
-      case ::arrow::ipc::feather::fbs::Type_DOUBLE:
+      case ::arrow::ipc::feather::fbs::Type::DOUBLE:
         dtype = ::tensorflow::DataType::DT_DOUBLE;
         break;
-      case ::arrow::ipc::feather::fbs::Type_UTF8:
-      case ::arrow::ipc::feather::fbs::Type_BINARY:
-      case ::arrow::ipc::feather::fbs::Type_CATEGORY:
-      case ::arrow::ipc::feather::fbs::Type_TIMESTAMP:
-      case ::arrow::ipc::feather::fbs::Type_DATE:
-      case ::arrow::ipc::feather::fbs::Type_TIME:
-      // case ::arrow::ipc::feather::fbs::Type_LARGE_UTF8:
-      // case ::arrow::ipc::feather::fbs::Type_LARGE_BINARY:
+      case ::arrow::ipc::feather::fbs::Type::UTF8:
+      case ::arrow::ipc::feather::fbs::Type::BINARY:
+      case ::arrow::ipc::feather::fbs::Type::CATEGORY:
+      case ::arrow::ipc::feather::fbs::Type::TIMESTAMP:
+      case ::arrow::ipc::feather::fbs::Type::DATE:
+      case ::arrow::ipc::feather::fbs::Type::TIME:
+      // case ::arrow::ipc::feather::fbs::Type::LARGE_UTF8:
+      // case ::arrow::ipc::feather::fbs::Type::LARGE_BINARY:
       default:
         break;
       }
@@ -325,17 +326,17 @@ class FeatherReadable : public IOReadableInterface {
       }
     }
 
-    std::shared_ptr<arrow::Column> column;
+    std::shared_ptr<arrow::ChunkedArray> column;
     arrow::Status s = reader_->GetColumn(column_index, &column);
     if (!s.ok()) {
       return errors::Internal(s.ToString());
     }
 
-    std::shared_ptr<::arrow::Column> slice = column->Slice(element_start, element_stop);
+    std::shared_ptr<::arrow::ChunkedArray> slice = column->Slice(element_start, element_stop);
 
     #define FEATHER_PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
-        for (auto chunk : slice->data()->chunks()) { \
+        for (auto chunk : slice->chunks()) { \
          for (int64_t item = 0; item < chunk->length(); item++) { \
             value->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
             curr_index++; \

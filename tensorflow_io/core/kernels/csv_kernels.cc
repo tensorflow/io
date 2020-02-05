@@ -20,6 +20,7 @@ limitations under the License.
 #include "arrow/memory_pool.h"
 #include "arrow/csv/reader.h"
 #include "arrow/table.h"
+#include "arrow/array.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 
 namespace tensorflow {
@@ -113,8 +114,8 @@ class CSVReadable : public IOReadableInterface {
       }
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       dtypes_.push_back(dtype);
-      columns_.push_back(table_->column(i)->name());
-      columns_index_[table_->column(i)->name()] = i;
+      columns_.push_back(table_->ColumnNames()[i]);
+      columns_index_[table_->ColumnNames()[i]] = i;
     }
 
     return Status::OK();
@@ -161,11 +162,11 @@ class CSVReadable : public IOReadableInterface {
       return Status::OK();
     }
 
-    std::shared_ptr<::arrow::Column> slice = table_->column(column_index)->Slice(element_start, element_stop);
+    std::shared_ptr<::arrow::ChunkedArray> slice = table_->column(column_index)->Slice(element_start, element_stop);
 
     #define PROCESS_TYPE(TTYPE,ATYPE) { \
         int64 curr_index = 0; \
-        for (auto chunk : slice->data()->chunks()) { \
+        for (auto chunk : slice->chunks()) { \
           for (int64_t item = 0; item < chunk->length(); item++) { \
             value->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
             curr_index++; \
@@ -175,7 +176,7 @@ class CSVReadable : public IOReadableInterface {
 
     #define PROCESS_STRING_TYPE(ATYPE) { \
         int64 curr_index = 0; \
-        for (auto chunk : slice->data()->chunks()) { \
+        for (auto chunk : slice->chunks()) { \
           for (int64_t item = 0; item < chunk->length(); item++) { \
             value->flat<string>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
             curr_index++; \
@@ -228,7 +229,7 @@ class CSVReadable : public IOReadableInterface {
 
     if (label != nullptr) {
       int64 curr_index = 0;
-      for (auto chunk : slice->data()->chunks()) {
+      for (auto chunk : slice->chunks()) {
         for (int64_t item = 0; item < chunk->length(); item++) {
           label->flat<bool>()(curr_index) = chunk->IsNull(item);
           curr_index++;
