@@ -13,7 +13,6 @@ cc_library(
         "kernels/client/ignite_byte_swapper.h",
         "kernels/client/ignite_client.h",
         "kernels/client/ignite_plain_client.h",
-        "kernels/client/ignite_plain_client_unix.cc",
         "kernels/client/ignite_ssl_wrapper.cc",
         "kernels/client/ignite_ssl_wrapper.h",
         "kernels/dataset/ignite_binary_object_parser.cc",
@@ -46,8 +45,18 @@ cc_library(
         "ops/dataset_ops.cc",
         "ops/ggfs_ops.cc",
         "ops/igfs_ops.cc",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "kernels/client/ignite_plain_client_windows.cc",
+        ],
+        "//conditions:default": [
+            "kernels/client/ignite_plain_client_unix.cc",
+        ],
+    }),
     copts = tf_io_copts(),
+    defines = [
+        "WIN32_LEAN_AND_MEAN",
+    ],
     linkstatic = True,
     deps = [
         "@boringssl//:ssl",

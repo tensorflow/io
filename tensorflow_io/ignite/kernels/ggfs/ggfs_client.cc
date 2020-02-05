@@ -18,6 +18,8 @@ limitations under the License.
 #include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 
+#include <stdint.h>
+
 namespace tensorflow {
 
 string GGFSClient::MakeRelative(const string &a, const string &b) {
@@ -226,7 +228,7 @@ Status GGFSClient::ListFiles(const string &path,
     TF_RETURN_IF_ERROR(client_->ReadData(str, str_length));
 
     out_files->push_back(MakeRelative(
-        string(reinterpret_cast<char *>(str), str_length), path + "/"));
+        string(reinterpret_cast<const char *>(str), str_length), path + "/"));
 
     length--;
   }

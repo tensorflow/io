@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "tensorflow_io/ignite/kernels/igfs/igfs_extended_tcp_client.h"
 
+#include <stdint.h>
+
 namespace tensorflow {
 
 ExtendedTCPClient::ExtendedTCPClient(const string &host, int port,
