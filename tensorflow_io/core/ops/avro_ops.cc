@@ -64,6 +64,7 @@ void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
 REGISTER_OP("IO>ParseAvro")
     .Input("serialized: string")
+    .Input("reader_schema: string")
     .Input("names: string")
     .Input("sparse_keys: num_sparse * string")
     .Input("dense_keys: num_dense * string")
@@ -72,7 +73,6 @@ REGISTER_OP("IO>ParseAvro")
     .Output("sparse_values: sparse_types")
     .Output("sparse_shapes: num_sparse * int64")
     .Output("dense_values: dense_types")
-    .Attr("reader_schema: string")
     .Attr("num_sparse: int >= 0")  // Inferred from sparse_keys
     .Attr("num_dense: int >= 0")   // Inferred from dense_keys
     .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
@@ -108,11 +108,11 @@ REGISTER_OP("IO>ParseAvro")
       }
 
       // Log schema if the user provided one at op kernel construction
-      string schema;
+/*      string schema;
       TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &schema));
       if (schema.empty()) {
         return errors::InvalidArgument("must provide non empty reader_schema");
-      }
+      }*/
 
       ShapeHandle input;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &input));

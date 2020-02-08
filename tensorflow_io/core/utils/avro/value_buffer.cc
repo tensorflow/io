@@ -282,16 +282,26 @@ std::vector<size_t> ShapeBuilder::CumulativeProductOfDimensionsWithOneAtEnd(
 }
 
 void ShapeBuilder::Merge(const ShapeBuilder& other) {
-  std::vector<size_t> element_info_;
-  element_info_.pop_back(); // remove end mark
-  // skip begin mark when copying
-  element_info_.insert(element_info_.end(),
-                       other.element_info_.begin()+1, other.element_info_.end());
+  size_t n_dim(GetNumberOfDimensions());
+  // if this one is empty -- initial condition -- copy info
+  if (n_dim == 0) {
+    element_info_ = other.element_info_;
+    element_counter_ = 0;
+    has_begin_ = false;
+  } else if (n_dim == 1) {
+    // if both are scalar, then add counts
+    element_info_[1] += other.element_info_[1];
+  } else {
+    // remove 1 finish mark
+    element_info_.erase(element_info_.end()-1, element_info_.end());
+    // skip 1 begin mark when copying the other
+    element_info_.insert(element_info_.end(),
+                         other.element_info_.begin()+1, other.element_info_.end());
+  }
 }
 
 Status MergeAs(ValueStoreUniquePtr& merged,
   const std::vector<ValueStoreUniquePtr>& buffers, DataType dtype) {
-
   switch (dtype) {
     case DT_FLOAT:
       merged.reset(new FloatValueBuffer(buffers));

@@ -38,6 +38,9 @@ public:
   // clean up its memory.
   virtual ~AvroParser() {}
 
+  // This must be called before using parsers for arrays once the entire tree is constructed
+  void ComputeFinalDescendents();
+
   // Parse will traverse the sub-tree of this value and fill all values into `parsed_values`
   // may also read from parsed values if filtering
   virtual Status Parse(std::map<string, ValueStoreUniquePtr>* parsed_values,
@@ -81,7 +84,7 @@ private:
   std::vector<AvroParserSharedPtr> children_;
 
   // The final descendents of this parser are computed upon first call and then cached
-  mutable std::vector<AvroParserSharedPtr> final_descendents_;
+  std::vector<AvroParserSharedPtr> final_descendents_;
 };
 
 // Parser for primitive types

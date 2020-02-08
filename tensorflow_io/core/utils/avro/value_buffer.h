@@ -116,7 +116,10 @@ public:
   // Get a human readable string for this shape builder
   string ToString() const;
 
-  void Merge(const ShapeBuilder& others);
+  // Merge this shape builder with another. This assumes that both this and
+  // the other shape builder are valid and initialized
+  void Merge(const ShapeBuilder& other);
+
 private:
 
   // Reconcile the output shape of a tensor with the shape within this shape builder
@@ -130,6 +133,9 @@ private:
 
   // Get the cumulative product of dimensions without the last one
   std::vector<size_t> CumulativeProductOfDimensionsWithOneAtEnd(const TensorShape& shape) const;
+
+  // A shape buffer is scalar if its length is <= 3, these are B ? F and B F (others are invalid)
+  inline bool IsScalar() const { return element_info_.size() == 3; }
 
   // Contains begin marks, finish marks, and the element counter for each dimension
   std::vector<size_t> element_info_;
@@ -265,13 +271,21 @@ inline void CopyOrMoveBlock(const string* b, const string* e, string* t) {
 // -------------------------------------------------------------------------------------------------
 template<typename T>
 ValueBuffer<T>::ValueBuffer(const std::vector<ValueStoreUniquePtr>& others) {
-  auto begin = values_.begin();
-  // Push dummy marks to this shape builder
-  shape_builder_.BeginMark();
-  shape_builder_.FinishMark();
-  for (size_t i = 0; i < values_.size(); ++i) {
+
+  // Compute the total number of elements
+  size_t n_total = 0;
+  for (size_t i = 0; i < others.size(); ++i) {
     ValueBuffer<T>* buffer = reinterpret_cast<ValueBuffer<T>*>(others[i].get());
-    auto target = buffer->values_.begin();
+    n_total += buffer->values_.size();
+  }
+  values_.resize(n_total);
+  VLOG(5) << "Allocate space for " << n_total << " elements in buffer";
+
+  // Get the target start location
+  auto target = values_.begin();
+  for (size_t i = 0; i < others.size(); ++i) {
+    ValueBuffer<T>* buffer = reinterpret_cast<ValueBuffer<T>*>(others[i].get());
+    auto begin = buffer->values_.begin();
     size_t n_elements = buffer->values_.size();
     CopyOrMoveBlock(begin, begin + n_elements, target);
     target += n_elements;
@@ -287,19 +301,21 @@ ValueBuffer<T>::ValueBuffer(const std::vector<ValueStoreUniquePtr>& others) {
 // In that order!
 template<typename T>
 Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
-  const PartialTensorShape& partial_shape, const TensorShape& default_shape) const {
+  const PartialTensorShape& user_shape, const TensorShape& default_shape) const {
 
   bool defaultIsNonTrivialTensor = IsNonTrivialTensor(default_shape);
 
   // Honor user defined shape if fully defined
-  if (partial_shape.IsFullyDefined()) {
+  if (user_shape.IsFullyDefined() && user_shape.AsTensorShape(shape) && IsNonTrivialTensor(*shape)) {
 
     VLOG(3) << "Fully defined input shape";
 
-    if (!partial_shape.AsTensorShape(shape)) {
-      return errors::InvalidArgument("Expected ", partial_shape, " to be convertible"
+/*
+    if (!user_shape.AsTensorShape(shape)) {
+      return errors::InvalidArgument("Expected ", user_shape, " to be convertible"
        " into a dense shape.");
     }
+*/
 
   // If the default is not scalar
   } else if (defaultIsNonTrivialTensor) {
@@ -308,7 +324,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
 
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from default
-    if (partial_shape.MergeWith(default_shape, &tmp_shape) == Status::OK()) {
+    if (user_shape.MergeWith(default_shape, &tmp_shape) == Status::OK()) {
       // Merged convert partial shape into shape
       if (!tmp_shape.AsTensorShape(shape)) {
         return errors::InvalidArgument("Expected ", tmp_shape, " to be fully defined"
@@ -328,7 +344,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
 
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from data
-    if (partial_shape.MergeWith(dense_shape, &tmp_shape) == Status::OK()) {
+    if (user_shape.MergeWith(dense_shape, &tmp_shape) == Status::OK()) {
       if (!tmp_shape.AsTensorShape(shape)) {
         return errors::InvalidArgument("Expected ", tmp_shape, " to be fully defined"
           " and convertible into a dense shape.");

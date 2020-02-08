@@ -21,6 +21,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.ops import array_ops
+from tensorflow.python.platform import tf_logging
 
 from tensorflow_io.core.python.ops import core_ops
 
@@ -32,14 +33,16 @@ from tensorflow_io.core.python.ops import core_ops
 def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     if not features:
         raise ValueError("Missing: features was %s." % features)
-    features = parsing_ops._prepend_none_dimension(features)
+    features = _prepend_none_dimension(_build_keys_for_sparse_features(features))
     (sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
-     dense_shapes) = parsing_ops._features_to_raw_params(
+     dense_shapes) = _features_to_raw_params(
         features,
         [parsing_ops.VarLenFeature, parsing_ops.SparseFeature, parsing_ops.FixedLenFeature])
 
+    reader_schema_tensor = ops.convert_to_tensor(reader_schema, dtypes.string, name="reader_schema")
+
     outputs = _parse_avro(
-        serialized, reader_schema, avro_names, sparse_keys, sparse_types, dense_keys,
+        serialized, reader_schema_tensor, avro_names, sparse_keys, sparse_types, dense_keys,
         dense_types, dense_defaults, dense_shapes, name)
     return parsing_ops._construct_sparse_tensors_for_sparse_features(features, outputs)
 
@@ -110,6 +113,157 @@ def _parse_avro(serialized,
             in zip(sparse_indices, sparse_values, sparse_shapes)]
 
         return dict(zip(sparse_keys + dense_keys, sparse_tensors + dense_values))
+
+
+def _build_keys_for_sparse_features(features):
+    """
+    Builds the fully qualified names for keys of sparse features.
+
+    :param features:  A map of features with keys to TensorFlow features.
+
+    :return: A map of features where for the sparse feature the 'index_key' and the 'value_key' have been expanded
+             properly for the parser in the native code.
+    """
+    def resolve_key(parser_key, index_or_value_key):
+        if not index_or_value_key.startswith('@'):
+            return parser_key + '[*].' + index_or_value_key
+        else:
+            return index_or_value_key[1:]
+
+    def resolve_index_key(key_, index_key):
+        if isinstance(index_key, list):
+            return [resolve_key(key_, index_key_) for index_key_ in index_key]
+        else:
+            return resolve_key(key_, index_key)
+
+    if features:
+        modified_features = dict(features)  # Create a copy to modify
+        # NOTE: We iterate over sorted keys to keep things deterministic.
+        for key, feature in features.items():
+            if isinstance(feature, parsing_ops.SparseFeature):
+                modified_features[key] = parsing_ops.SparseFeature(
+                    index_key=resolve_index_key(key, feature.index_key),
+                    value_key=resolve_key(key, feature.value_key),
+                    dtype=feature.dtype,
+                    size=feature.size,
+                    already_sorted=feature.already_sorted)
+        return modified_features
+    else:
+        return features
+
+
+# Pulled this method from tensorflow/python/ops/parsing_ops.py
+# here to get the same behavior but for FixedLenFeature instead of FixedLenSequenceFeature
+def _prepend_none_dimension(features):
+    """Returns a copy of features with adjusted FixedLenSequenceFeature shapes."""
+    if features:
+        modified_features = dict(features)  # Create a copy to modify
+        for key, feature in features.items():
+            if isinstance(feature, parsing_ops.FixedLenFeature):
+                modified_features[key] = parsing_ops.FixedLenFeature(
+                    [None] + list(feature.shape),
+                    feature.dtype,
+                    feature.default_value)
+        return modified_features
+    else:
+        return features
+
+
+# Pulled this method from tensorflow/python/ops/parsing_ops.py
+# changed the following
+# - removed FixedLenSequenceFeature
+# - removed checks about None dimension in FixedLenFeature
+# -- since it acts as FixedLenSequenceFeature, there is no need for both concepts
+def _features_to_raw_params(features, types):
+    """Split feature tuples into raw params used by `gen_parsing_ops`.
+
+    Args:
+      features: A `dict` mapping feature keys to objects of a type in `types`.
+      types: Type of features to allow, among `FixedLenFeature`, `VarLenFeature`,
+        `SparseFeature`, and `FixedLenSequenceFeature`.
+
+    Returns:
+      Tuple of `sparse_keys`, `sparse_types`, `dense_keys`, `dense_types`,
+        `dense_defaults`, `dense_shapes`.
+
+    Raises:
+      ValueError: if `features` contains an item not in `types`, or an invalid
+          feature.
+    """
+    sparse_keys = []
+    sparse_types = []
+    dense_keys = []
+    dense_types = []
+    # When the graph is built twice, multiple dense_defaults in a normal dict
+    # could come out in different orders. This will fail the _e2e_test which
+    # expects exactly the same graph.
+    # OrderedDict which preserves the order can solve the problem.
+    dense_defaults = collections.OrderedDict()
+    dense_shapes = []
+    if features:
+        # NOTE: We iterate over sorted keys to keep things deterministic.
+        for key in sorted(features.keys()):
+            feature = features[key]
+            if isinstance(feature, parsing_ops.VarLenFeature):
+                if parsing_ops.VarLenFeature not in types:
+                    raise ValueError("Unsupported VarLenFeature %s." % (feature,))
+                if not feature.dtype:
+                    raise ValueError("Missing type for feature %s." % key)
+                sparse_keys.append(key)
+                sparse_types.append(feature.dtype)
+            elif isinstance(feature, parsing_ops.SparseFeature):
+                if parsing_ops.SparseFeature not in types:
+                    raise ValueError("Unsupported SparseFeature %s." % (feature,))
+
+                if not feature.index_key:
+                    raise ValueError(
+                        "Missing index_key for SparseFeature %s." % (feature,))
+                if not feature.value_key:
+                    raise ValueError(
+                        "Missing value_key for SparseFeature %s." % (feature,))
+                if not feature.dtype:
+                    raise ValueError("Missing type for feature %s." % key)
+                index_keys = feature.index_key
+                if isinstance(index_keys, str):
+                    index_keys = [index_keys]
+                elif len(index_keys) > 1:
+                    tf_logging.warning("SparseFeature is a complicated feature config "
+                                       "and should only be used after careful "
+                                       "consideration of VarLenFeature.")
+                for index_key in sorted(index_keys):
+                    if index_key in sparse_keys:
+                        dtype = sparse_types[sparse_keys.index(index_key)]
+                        if dtype != dtypes.int64:
+                            raise ValueError("Conflicting type %s vs int64 for feature %s." %
+                                             (dtype, index_key))
+                    else:
+                        sparse_keys.append(index_key)
+                        sparse_types.append(dtypes.int64)
+                if feature.value_key in sparse_keys:
+                    dtype = sparse_types[sparse_keys.index(feature.value_key)]
+                    if dtype != feature.dtype:
+                        raise ValueError("Conflicting type %s vs %s for feature %s." % (
+                            dtype, feature.dtype, feature.value_key))
+                else:
+                    sparse_keys.append(feature.value_key)
+                    sparse_types.append(feature.dtype)
+            elif isinstance(feature, parsing_ops.FixedLenFeature):
+                if parsing_ops.FixedLenFeature not in types:
+                    raise ValueError("Unsupported FixedLenFeature %s." % (feature,))
+                if not feature.dtype:
+                    raise ValueError("Missing type for feature %s." % key)
+                if feature.shape is None:
+                    raise ValueError("Missing shape for feature %s." % key)
+                dense_keys.append(key)
+                dense_shapes.append(feature.shape)
+                dense_types.append(feature.dtype)
+                if feature.default_value is not None:
+                    dense_defaults[key] = feature.default_value
+            else:
+                raise ValueError("Invalid feature %s:%s." % (key, feature))
+    return (
+        sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
+        dense_shapes)
 
 
 # Pulled this method from tensorflow/python/ops/parsing_ops.py

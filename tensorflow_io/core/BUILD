@@ -249,43 +249,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        ":avro_utils",
-    ],
-)
-
-cc_library(
-    name = "avro_utils_api",
-    hdrs = ["utils/avro/prefix_tree.h",
-            "utils/avro/value_buffer.h",
-            "utils/avro/avro_parser.h",
-            "utils/avro/avro_parser_tree.h",
-            "utils/avro/parse_avro_attrs.h",
-            "utils/avro/avro_file_stream_reader.h",
-            "utils/avro/name_utils.h", # TODO(fraudies): delete when tensorflow/core/kernels/data/name_utils.h visible
-            "utils/avro/avro_record_reader.h",
-            "utils/avro/parallel_map_iterator.h", # TODO(fraudies): delete when tensorflow/core/kernels/data/parallel_map_dataset_op.h visible
-            ],
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@com_googlesource_code_re2//:re2",
-    ],
-)
-
-cc_library(
-    name = "avro_utils",
-    srcs = ["utils/avro/prefix_tree.cc",
-            "utils/avro/value_buffer.cc",
-            "utils/avro/avro_parser.cc",
-            "utils/avro/avro_parser_tree.cc",
-            "utils/avro/parse_avro_attrs.cc",
-            "utils/avro/avro_file_stream_reader.cc",
-            "utils/avro/name_utils.cc", # TODO(fraudies): delete when tensorflow/core/kernels/data/name_utils.h visible
-            "utils/avro/avro_record_reader.cc",
-            "utils/avro/parallel_map_iterator.cc", # TODO(fraudies): delete when tensorflow/core/kernels/data/parallel_map_dataset_op.h visible
-            ],
-    deps = [
-        ":avro_utils_api",
-        "@avro",
+        "//tensorflow_io/core/utils/avro:avro_utils",
     ],
 )
 

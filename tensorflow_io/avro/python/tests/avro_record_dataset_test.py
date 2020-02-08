@@ -87,7 +87,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    def test_with_reader_schema(self):
+    def test_with_schema_projection(self):
         writer_schema = """{
               "type": "record",
               "name": "dataTypes",
@@ -124,6 +124,29 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
                 "index": 2,
                 "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789"
             }
+        ]
+        self._test_pass_dataset_resolved(writer_schema=writer_schema,
+                                         reader_schema=reader_schema,
+                                         record_data=record_data)
+
+    def test_schema_type_promotion(self):
+        writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "int_value", "type": "int"},
+                  {"name": "long_value", "type": "long"}
+              ]}"""
+        reader_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "int_value", "type": "long"},
+                  {"name": "long_value", "type": "double"}
+              ]}"""
+        record_data = [
+            {"int_value": 0, "long_value": 111},
+            {"int_value": 1, "long_value": 222}
         ]
         self._test_pass_dataset_resolved(writer_schema=writer_schema,
                                          reader_schema=reader_schema,
