@@ -34,7 +34,7 @@ ARG CONDA_ADD_PACKAGES=""
 
 RUN conda create -y -q -n tfio-dev python=3.6 ${CONDA_ADD_PACKAGES}
 
-ARG ARROW_VERSION=0.15.1
+ARG ARROW_VERSION=0.16.0
 
 RUN echo ". /miniconda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "source activate tfio-dev" >> ~/.bashrc
