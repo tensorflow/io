@@ -160,6 +160,7 @@ cc_library(
     srcs = [
         "ops/image_ops.cc",
         "kernels/image_bmp_kernels.cc",
+        "kernels/image_dicom_kernels.cc",
         "kernels/image_font_kernels.cc",
         "kernels/image_jpeg_kernels.cc",
         "kernels/image_hdr_kernels.cc",
@@ -169,7 +170,6 @@ cc_library(
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
-            "kernels/image_dicom_kernels.cc",
             "kernels/image_tiff_kernels.cc",
         ],
     }),
@@ -178,6 +178,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
+        "@dcmtk",
         "@easyexif",
         "@freetype",
         "@libwebp",
@@ -186,7 +187,6 @@ cc_library(
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
-            "@dcmtk",
             "@libtiff",
         ],
     }),

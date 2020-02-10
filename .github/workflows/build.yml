@@ -270,6 +270,8 @@ jobs:
           (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5 or audio or to_file")
           python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
           (python -m pytest -s -v test_bigquery_eager.py)
+          (python -m pytest -s -v test_dicom_eager.py)
+          (python -m pytest -s -v test_dicom.py)
 
   release:
     name: Release
