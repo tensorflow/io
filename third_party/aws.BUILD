@@ -40,10 +40,16 @@ cc_library(
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
     defines = [
-        "PLATFORM_LINUX",
         "ENABLE_CURL_CLIENT",
         "ENABLE_NO_ENCRYPTION",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "PLATFORM_WINDOWS",
+        ],
+        "//conditions:default": [
+            "PLATFORM_LINUX",
+        ],
+    }),
     includes = [
         "aws-cpp-sdk-core/include/",
         "aws-cpp-sdk-kinesis/include/",

@@ -216,6 +216,16 @@ http_archive(
 )
 
 http_archive(
+    name = "aws",
+    build_file = "//third_party:aws.BUILD",
+    sha256 = "8724a2c3f00478e5f9af00d1d9bc67b7a0a557cc587a10f7097b1257008c2e68",
+    strip_prefix = "aws-sdk-cpp-1.7.270",
+    urls = [
+        "https://github.com/aws/aws-sdk-cpp/archive/1.7.270.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -243,17 +253,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
         "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "aws",
-    build_file = "//third_party:aws.BUILD",
-    sha256 = "b888d8ce5fc10254c3dd6c9020c7764dd53cf39cf011249d0b4deda895de1b7c",
-    strip_prefix = "aws-sdk-cpp-1.3.15",
-    urls = [
-        "https://mirror.bazel.build/github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
     ],
 )
 
