@@ -216,8 +216,38 @@ http_archive(
 )
 
 http_archive(
-    name = "aws",
-    build_file = "//third_party:aws.BUILD",
+    name = "aws-checksums",
+    build_file = "//third_party:aws-checksums.BUILD",
+    sha256 = "6e6bed6f75cf54006b6bafb01b3b96df19605572131a2260fddaf0e87949ced0",
+    strip_prefix = "aws-checksums-0.1.5",
+    urls = [
+        "https://github.com/awslabs/aws-checksums/archive/v0.1.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-c-common",
+    build_file = "//third_party:aws-c-common.BUILD",
+    sha256 = "01c2a58553a37b3aa5914d9e0bf7bf14507ff4937bc5872a678892ca20fcae1f",
+    strip_prefix = "aws-c-common-0.4.29",
+    urls = [
+        "https://github.com/awslabs/aws-c-common/archive/v0.4.29.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-c-event-stream",
+    build_file = "//third_party:aws-c-event-stream.BUILD",
+    sha256 = "31d880d1c868d3f3df1e1f4b45e56ac73724a4dc3449d04d47fc0746f6f077b6",
+    strip_prefix = "aws-c-event-stream-0.1.4",
+    urls = [
+        "https://github.com/awslabs/aws-c-event-stream/archive/v0.1.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-sdk-cpp",
+    build_file = "//third_party:aws-sdk-cpp.BUILD",
     sha256 = "8724a2c3f00478e5f9af00d1d9bc67b7a0a557cc587a10f7097b1257008c2e68",
     strip_prefix = "aws-sdk-cpp-1.7.270",
     urls = [
