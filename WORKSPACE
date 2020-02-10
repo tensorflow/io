@@ -206,6 +206,16 @@ http_archive(
 )
 
 http_archive(
+    name = "dcmtk",
+    build_file = "//third_party:dcmtk.BUILD",
+    sha256 = "a05178665f21896dbb0974106dba1ad144975414abd760b4cf8f5cc979f9beb9",
+    strip_prefix = "dcmtk-3.6.5",
+    urls = [
+        "https://dicom.offis.de/download/dcmtk/dcmtk365/dcmtk-3.6.5.tar.gz",
+    ],
+)
+
+http_archive(
     name = "com_google_absl",
     sha256 = "acd93f6baaedc4414ebd08b33bebca7c7a46888916101d8c0b8083573526d070",
     strip_prefix = "abseil-cpp-43ef2148c0936ebf7cb4be6b19927a9d9d145b8f",
@@ -562,16 +572,6 @@ go_repository(
     build_extra_args = ["-exclude=vendor"],
     importpath = "github.com/prometheus/prom2json",
     tag = "v1.2.2",
-)
-
-http_archive(
-    name = "dcmtk",
-    build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "a93ff354fae091689a0740a1000cde7d4378fdf733aef9287a70d7091efa42c0",
-    strip_prefix = "dcmtk-3.6.4",
-    urls = [
-        "https://dicom.offis.de/download/dcmtk/dcmtk364/dcmtk-3.6.4.tar.gz",
-    ],
 )
 
 http_archive(
