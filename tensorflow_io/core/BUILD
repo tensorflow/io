@@ -158,21 +158,17 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
-        "ops/image_ops.cc",
         "kernels/image_bmp_kernels.cc",
         "kernels/image_dicom_kernels.cc",
         "kernels/image_font_kernels.cc",
-        "kernels/image_jpeg_kernels.cc",
         "kernels/image_hdr_kernels.cc",
+        "kernels/image_jpeg_kernels.cc",
         "kernels/image_openexr_kernels.cc",
         "kernels/image_pnm_kernels.cc",
+        "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "kernels/image_tiff_kernels.cc",
-        ],
-    }),
+        "ops/image_ops.cc",
+    ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
@@ -181,15 +177,11 @@ cc_library(
         "@dcmtk",
         "@easyexif",
         "@freetype",
+        "@libtiff",
         "@libwebp",
         "@openexr",
         "@stb",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "@libtiff",
-        ],
-    }),
+    ],
     alwayslink = 1,
 )
 
@@ -525,6 +517,7 @@ cc_binary(
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:parquet_ops",
+        "//tensorflow_io/core:pubsub_ops",
         "//tensorflow_io/core:serialization_ops",
         "//tensorflow_io/core:sql_ops",
         "@local_config_tf//:libtensorflow_framework",
@@ -539,7 +532,6 @@ cc_binary(
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:pcap_ops",
-            "//tensorflow_io/core:pubsub_ops",
             "//tensorflow_io/core:text_ops",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",

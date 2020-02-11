@@ -265,7 +265,7 @@ jobs:
           python -m pip install -U pytest-benchmark
           rm -rf tensorflow_io
           (cd tests && python -m pytest -s -v test_lmdb_eager.py)
-          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr")
+          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff")
           (python -m pytest -s -v test_serialization_eager.py)
           (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5 or audio or to_file")
           python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
