@@ -55,6 +55,7 @@ cc_library(
         "AWS_SDK_VERSION_MAJOR=1",
         "AWS_SDK_VERSION_MINOR=7",
         "AWS_SDK_VERSION_PATCH=270",
+        "ENABLE_CURL_CLIENT",
         "ENABLE_NO_ENCRYPTION",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
