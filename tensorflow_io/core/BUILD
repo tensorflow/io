@@ -342,8 +342,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@aws",
-        "@curl",
+        "@aws-sdk-cpp",
     ],
     alwayslink = 1,
 )
@@ -514,6 +513,7 @@ cc_binary(
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:json_ops",
         "//tensorflow_io/core:kafka_ops",
+        "//tensorflow_io/core:kinesis_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
         "//tensorflow_io/core:parquet_ops",
@@ -530,7 +530,6 @@ cc_binary(
             "//tensorflow_io/core:avro_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
-            "//tensorflow_io/core:kinesis_ops",
             "//tensorflow_io/core:pcap_ops",
             "//tensorflow_io/core:text_ops",
             "//tensorflow_io/core/oss:oss_ops",
