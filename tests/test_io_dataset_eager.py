@@ -199,7 +199,8 @@ def fixture_prometheus():
   offset = int(round(time.time() * 1000))
   args = "coredns_dns_request_count_total"
   def func(q):
-    v = tfio.experimental.IODataset.from_prometheus(q, 5, offset=offset)
+    v = tfio.experimental.IODataset.from_prometheus(
+        q, 5, offset=offset, endpoint="http://localhost:9090")
     v = v.map(lambda timestamp, value: (
         timestamp,
         value['coredns']['localhost:9153']['coredns_dns_request_count_total']))
@@ -230,7 +231,8 @@ def fixture_prometheus_graph():
                     'up': tf.TensorSpec([], tf.float64),
                 },
             },
-        })
+        },
+        endpoint="http://localhost:9090")
     v = v.map(lambda _, value: (
         value['coredns']['localhost:9153']['up'],
         value['prometheus']['localhost:9090']['up']))
