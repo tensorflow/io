@@ -27,6 +27,30 @@ jobs:
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           bazel run -s --verbose_failures //tools/lint:check
 
+  ubuntu-1804:
+    name: Ubuntu 18.04
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.develop.py README.md "##### Ubuntu 18.04" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:18.04 \
+            bash -x -e source.sh
+
+  centos-7:
+    name: CentOS 7
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.develop.py README.md "##### CentOS 7" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host centos:7 \
+            bash -x -e source.sh
+
   macos-bazel:
     name: Bazel macOS
     runs-on: macos-latest
