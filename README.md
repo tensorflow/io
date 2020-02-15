@@ -163,7 +163,35 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
-# Install tensorflow and configure bazel with rh-python36
+# Install tensorflow and configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 8
+
+CentOS 8 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04:
+```sh
+# Install gcc/g++, git, unzip/which (for bazel), and python3
+sudo yum install -y python3 gcc gcc-c++ git unzip which
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+sudo python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel
 ./configure.sh
 
 # Build shared libraries
