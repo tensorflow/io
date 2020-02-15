@@ -156,6 +156,15 @@ def _symlink_genrule_for_dir(
         else:
             dest_files = files.replace(src_dir, "").splitlines()
         src_files = files.splitlines()
+
+        # Centos may have header files in both lib and lib64:
+        if src_dir.count("/lib64/"):
+            extra_src_dir = src_dir.replace("/lib64/", "/lib/")
+            extra_files = "\n".join(sorted(_read_dir(repository_ctx, extra_src_dir).splitlines()))
+            extra_dest_files = extra_files.replace(extra_src_dir, "").splitlines()
+            extra_src_files = extra_files.splitlines()
+            src_files = src_files + extra_src_files
+            dest_files = dest_files + extra_dest_files
     command = []
     outs = []
 

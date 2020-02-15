@@ -143,6 +143,82 @@ available, it is possible to run tests with pytest, e.g.:
 
 #### Linux
 
+Development of tensorflow-io on Linux is similiar to development on macOS. The required packages
+are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
+versions might be required though.
+
+##### Ubuntu 18.04
+
+Ubuntu 18.04 requires gcc/g++, git, and python 3. However, due to a dependency of grpc, python-dev
+is also needed. As such the following will install dependencies and build the shared libraries on
+Ubuntu 18.04:
+```sh
+# Install gcc/g++, git, unzip/curl (for bazel), and python3
+sudo apt-get -y -qq update
+sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip python-dev
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel with rh-python36
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 7
+
+On CentOS 7, the default python and gcc version are too old to build tensorflow-io's shared
+libraries (.so). The gcc provided by Developer Toolset and rh-python36 should be used instead.
+Also, the libstdc++ has to be linked statically to avoid discrepancy of libstdc++ installed on
+CentOS vs. newer gcc version by devtoolset.
+
+The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
+```sh
+# Install centos-release-scl, then install gcc/g++ (devtoolset), git, and python 3
+sudo yum install -y centos-release-scl
+sudo yum install -y devtoolset-9 git rh-python36
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install -U pip'
+
+# Install tensorflow and configure bazel with rh-python36
+scl enable rh-python36 devtoolset-9 \
+    './configure.sh'
+
+# Build shared libraries
+BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstdc++.a" \
+  scl enable rh-python36 devtoolset-9 \
+    'bazel build -s --verbose_failures //tensorflow_io/...'
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install pytest'
+TFIO_DATAPATH=bazel-bin \
+  scl enable rh-python36 devtoolset-9 \
+    'python3 -m pytest -s -v tests/test_serialization_eager.py'
+```
+
+#### Docker
+
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
