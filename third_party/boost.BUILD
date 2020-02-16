@@ -11,9 +11,8 @@ cc_library(
     name = "boost",
     srcs = glob([
         "boost/**/*.hpp",
-        "boost/**/*.ipp",
-    ]) + glob([
         "boost/predef/**/*.h",
+        "boost/detail/**/*.ipp",
     ]) + [
         "boost/predef.h",
         "libs/filesystem/src/codecvt_error_category.cpp",
@@ -47,6 +46,9 @@ cc_library(
         "libs/regex/src/wide_posix_api.cpp",
         "libs/regex/src/winstances.cpp",
         "libs/system/src/error_code.cpp",
+    ],
+    defines = [
+        "BOOST_ALL_NO_LIB=1",
     ],
     includes = [
         ".",
