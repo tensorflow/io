@@ -185,7 +185,7 @@ CentOS 8 requires gcc/g++, git, and python 3. The following will install depende
 the shared libraries on Ubuntu 18.04:
 ```sh
 # Install gcc/g++, git, unzip/which (for bazel), and python3
-sudo yum install -y python3 gcc gcc-c++ git unzip which
+sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
 
 # Install Bazel 2.0.0
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
