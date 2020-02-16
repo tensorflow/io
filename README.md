@@ -116,30 +116,33 @@ version of TensorFlow I/O according to the table below:
 On macOS Catalina or higher, it is possible to build tensorflow-io with
 system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
 
-To install latest tensorflow:
+Note there is a bug in macOS's native python 3.7.3 that could be fixed
+with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+
 ```sh
-% sudo python3 -m pip install tensorflow
+# Install bazel 2.0.0:
+curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
+
+# Install latest tensorflow
+sudo python3 -m pip install tensorflow
+
+# Configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
 
-Note there is a bug in macOS's native python 3.7.3 that could be fixed with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
-
-To install bazel 2.0.0:
-```sh
-% curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
-% sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
-```
-
-Then use the following to configure the bazel and build C++:
-```sh
-% ./configure.sh
-% bazel build -s --verbose_failures //tensorflow_io/...
-```
-
-The generated shared libraries (.so) are located in bazel-bin directory. With shared libraries
-available, it is possible to run tests with pytest, e.g.:
-```sh
-% TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
-```
+Note from the above the generated shared libraries (.so) are located in bazel-bin directory.
+When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed for shared libraries to
+be located by python.
 
 #### Linux
 
