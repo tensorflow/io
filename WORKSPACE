@@ -372,6 +372,10 @@ pip_install()
 
 http_archive(
     name = "com_github_grpc_grpc",
+    patch_cmds = [
+        """sed -i.bak 's/"python",/"python3",/g' third_party/py/python_configure.bzl""",
+        """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3/g' bazel/cython_library.bzl""",
+    ],
     sha256 = "2fcb7f1ab160d6fd3aaade64520be3e5446fc4c6fa7ba6581afdc4e26094bd81",
     strip_prefix = "grpc-1.26.0",
     urls = [
