@@ -506,6 +506,7 @@ cc_binary(
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_ops",
+        "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -527,7 +528,6 @@ cc_binary(
         "//conditions:default": [
             "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/bigtable:bigtable_ops",
-            "//tensorflow_io/core:avro_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:pcap_ops",
@@ -536,7 +536,6 @@ cc_binary(
             "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/ignite:ignite_ops",
             "@libarchive",
-            "@xz//:lzma",
         ],
     }),
 )
