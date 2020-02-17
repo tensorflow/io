@@ -307,6 +307,37 @@ http_archive(
 )
 
 http_archive(
+    name = "libtiff",
+    build_file = "//third_party:libtiff.BUILD",
+    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
+    strip_prefix = "tiff-4.1.0",
+    urls = [
+        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "xz",
+    build_file = "//third_party:xz.BUILD",
+    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
+    strip_prefix = "xz-5.2.4",
+    urls = [
+        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "util_linux",
+    build_file = "//third_party:uuid.BUILD",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    strip_prefix = "util-linux-2.32.1",
+    urls = [
+        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+    ],
+)
+
+http_archive(
     name = "ffmpeg_2_8",
     build_file = "//third_party:ffmpeg_2_8.BUILD",
     sha256 = "8ba1b91a14431fe37091936c3a34469d7473965ab9edde0343c88f2d920bd918",
@@ -325,27 +356,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
         "https://github.com/FFmpeg/FFmpeg/archive/n3.4.4.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "libtiff",
-    build_file = "//third_party:libtiff.BUILD",
-    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
-    strip_prefix = "tiff-4.1.0",
-    urls = [
-        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "util_linux",
-    build_file = "//third_party:uuid.BUILD",
-    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
-    strip_prefix = "util-linux-2.32.1",
-    urls = [
-        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
-        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
     ],
 )
 
@@ -663,16 +673,6 @@ http_archive(
     sha256 = "bbccf674aa441c266df9894182d80de104cabd19be98be002f6d478aaa31574d",
     strip_prefix = "bazel-skylib-2169ae1c374aab4a09aa90e65efe1a3aad4e279b",
     urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
-)
-
-http_archive(
-    name = "xz",
-    build_file = "//third_party:xz.BUILD",
-    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
-    strip_prefix = "xz-5.2.4",
-    urls = [
-        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
-    ],
 )
 
 http_archive(

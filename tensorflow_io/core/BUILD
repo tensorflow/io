@@ -536,7 +536,6 @@ cc_binary(
             "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/ignite:ignite_ops",
             "@libarchive",
-            "@xz//:lzma",
         ],
     }),
 )
