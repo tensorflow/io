@@ -183,6 +183,16 @@ http_archive(
 )
 
 http_archive(
+    name = "thrift",
+    build_file = "//third_party:thrift.BUILD",
+    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
+    strip_prefix = "thrift-0.12.0",
+    urls = [
+        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
     sha256 = "d7b3838758a365c8c47d55ab0df1006a70db951c6964440ba354f81f518b8d8d",
@@ -283,17 +293,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/curl.haxx.se/download/curl-7.60.0.tar.gz",
         "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "thrift",
-    build_file = "//third_party:thrift.BUILD",
-    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
-    strip_prefix = "thrift-0.12.0",
-    urls = [
-        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
     ],
 )
 
