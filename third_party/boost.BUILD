@@ -13,6 +13,8 @@ cc_library(
         "boost/**/*.hpp",
         "boost/predef/**/*.h",
         "boost/detail/**/*.ipp",
+    ]) + glob([
+        "libs/iostreams/src/*.cpp",
     ]) + [
         "boost/predef.h",
         "libs/filesystem/src/codecvt_error_category.cpp",
@@ -25,8 +27,6 @@ cc_library(
         "libs/filesystem/src/portability.cpp",
         "libs/filesystem/src/unique_path.cpp",
         "libs/filesystem/src/utf8_codecvt_facet.cpp",
-        "libs/iostreams/src/gzip.cpp",
-        "libs/iostreams/src/zlib.cpp",
         "libs/regex/src/c_regex_traits.cpp",
         "libs/regex/src/cpp_regex_traits.cpp",
         "libs/regex/src/cregex.cpp",
@@ -54,6 +54,8 @@ cc_library(
         ".",
     ],
     deps = [
+        "@xz//:lzma",
         "@zlib",
+        "@zstd",
     ],
 )
