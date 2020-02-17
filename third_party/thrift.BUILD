@@ -9,38 +9,23 @@ exports_files(["LICENSE"])
 
 cc_library(
     name = "thrift",
-    srcs = [
-        "compiler/cpp/src/thrift/version.h",
-        "lib/cpp/src/thrift/TApplicationException.h",
-        "lib/cpp/src/thrift/TBase.h",
-        "lib/cpp/src/thrift/TLogging.h",
-        "lib/cpp/src/thrift/TOutput.h",
-        "lib/cpp/src/thrift/TToString.h",
-        "lib/cpp/src/thrift/Thrift.h",
-        "lib/cpp/src/thrift/config.h",
+    srcs = glob([
+        "lib/cpp/src/thrift/**/*.h",
+    ]) + [
         "lib/cpp/src/thrift/protocol/TProtocol.cpp",
-        "lib/cpp/src/thrift/protocol/TProtocol.h",
-        "lib/cpp/src/thrift/protocol/TProtocolException.h",
-        "lib/cpp/src/thrift/protocol/TVirtualProtocol.h",
-        "lib/cpp/src/thrift/stdcxx.h",
-        "lib/cpp/src/thrift/thrift-config.h",
-        "lib/cpp/src/thrift/transport/PlatformSocket.h",
         "lib/cpp/src/thrift/transport/TBufferTransports.cpp",
-        "lib/cpp/src/thrift/transport/TBufferTransports.h",
-        "lib/cpp/src/thrift/transport/TTransport.h",
         "lib/cpp/src/thrift/transport/TTransportException.cpp",
-        "lib/cpp/src/thrift/transport/TTransportException.h",
-        "lib/cpp/src/thrift/transport/TVirtualTransport.h",
     ],
     hdrs = [
-        "lib/cpp/src/thrift/protocol/TBinaryProtocol.h",
-        "lib/cpp/src/thrift/protocol/TBinaryProtocol.tcc",
-        "lib/cpp/src/thrift/protocol/TCompactProtocol.h",
-        "lib/cpp/src/thrift/protocol/TCompactProtocol.tcc",
-        "lib/cpp/src/thrift/protocol/TDebugProtocol.h",
+        "compiler/cpp/src/thrift/version.h",
+        "lib/cpp/src/thrift/config.h",
     ],
     includes = [
         "lib/cpp/src",
+    ],
+    textual_hdrs = [
+        "lib/cpp/src/thrift/protocol/TBinaryProtocol.tcc",
+        "lib/cpp/src/thrift/protocol/TCompactProtocol.tcc",
     ],
     deps = [
         "@boost",
@@ -55,7 +40,7 @@ genrule(
     outs = [
         "compiler/cpp/src/thrift/version.h",
     ],
-    cmd = "sed 's/@PACKAGE_VERSION@/0.11.0/g' $< > $@",
+    cmd = "sed 's/@PACKAGE_VERSION@/0.12.0/g' $< > $@",
 )
 
 genrule(
@@ -69,7 +54,7 @@ genrule(
            "-e 's/$${PACKAGE_NAME}/thrift/g' " +
            "-e 's/$${PACKAGE_TARNAME}/thrift/g' " +
            "-e 's/$${PACKAGE_URL}//g' " +
-           "-e 's/$${PACKAGE_VERSION}/0.11.0/g' " +
-           "-e 's/$${PACKAGE_STRING}/thrift 0.11.0/g' " +
+           "-e 's/$${PACKAGE_VERSION}/0.12.0/g' " +
+           "-e 's/$${PACKAGE_STRING}/thrift 0.12.0/g' " +
            "$< >$@"),
 )
