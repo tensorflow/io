@@ -1,7 +1,11 @@
 import sys
 
-source = sys.argv[1]
-section = sys.argv[2]
+sudo = False
+if sys.argv[1].startswith("--sudo="):
+  sudo = (sys.argv[1][7:].lower() == "true")
+
+source = sys.argv[len(sys.argv) - 2]
+section = sys.argv[len(sys.argv) - 1]
 with open (source, "r") as f:
     lines = [line.rstrip() for line in list(f)]
 
@@ -12,6 +16,7 @@ lines = lines[lines.index(section):]
 lines = lines[lines.index("```sh")+1:lines.index("```")]
 
 # Remove sudo
-lines = [(line[len("sudo "):] if line.startswith("sudo ") else line) for line in lines]
+if not sudo:
+  lines = [(line[len("sudo "):] if line.startswith("sudo ") else line) for line in lines]
 
 print("\n".join(lines))

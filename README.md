@@ -116,30 +116,33 @@ version of TensorFlow I/O according to the table below:
 On macOS Catalina or higher, it is possible to build tensorflow-io with
 system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
 
-To install latest tensorflow:
+Note there is a bug in macOS's native python 3.7.3 that could be fixed
+with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+
 ```sh
-% sudo python3 -m pip install tensorflow
+# Install bazel 2.0.0:
+curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
+
+# Install latest tensorflow
+sudo python3 -m pip install tensorflow
+
+# Configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
 
-Note there is a bug in macOS's native python 3.7.3 that could be fixed with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
-
-To install bazel 2.0.0:
-```sh
-% curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
-% sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
-```
-
-Then use the following to configure the bazel and build C++:
-```sh
-% ./configure.sh
-% bazel build -s --verbose_failures //tensorflow_io/...
-```
-
-The generated shared libraries (.so) are located in bazel-bin directory. With shared libraries
-available, it is possible to run tests with pytest, e.g.:
-```sh
-% TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
-```
+Note from the above the generated shared libraries (.so) are located in bazel-bin directory.
+When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed for shared libraries to
+be located by python.
 
 #### Linux
 
@@ -149,22 +152,21 @@ versions might be required though.
 
 ##### Ubuntu 18.04
 
-Ubuntu 18.04 requires gcc/g++, git, and python 3. However, due to a dependency of grpc, python-dev
-is also needed. As such the following will install dependencies and build the shared libraries on
-Ubuntu 18.04:
+Ubuntu 18.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04:
 ```sh
 # Install gcc/g++, git, unzip/curl (for bazel), and python3
 sudo apt-get -y -qq update
-sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip python-dev
+sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
 
 # Install Bazel 2.0.0
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
 sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 
 # Upgrade pip
-python3 -m pip install -U pip
+sudo python3 -m pip install -U pip
 
-# Install tensorflow and configure bazel with rh-python36
+# Install tensorflow and configure bazel
 ./configure.sh
 
 # Build shared libraries
@@ -173,7 +175,35 @@ bazel build -s --verbose_failures //tensorflow_io/...
 # Once build is complete, shared libraries will be available in
 # `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
 # to run tests with `pytest`, e.g.:
-python3 -m pip install pytest
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 8
+
+CentOS 8 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04:
+```sh
+# Install gcc/g++, git, unzip/which (for bazel), and python3
+sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+sudo python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
 
