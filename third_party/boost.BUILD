@@ -30,6 +30,7 @@ cc_library(
         ".",
     ],
     deps = [
+        "@bzip2",
         "@xz//:lzma",
         "@zlib",
         "@zstd",
