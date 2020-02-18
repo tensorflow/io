@@ -17,6 +17,11 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/io_stream.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 
+#if defined(_MSC_VER)
+#include <io.h>
+#define STDIN_FILENO _fileno(stdin)
+#endif
+
 namespace tensorflow {
 namespace data {
 namespace {
