@@ -37,8 +37,8 @@ class KafkaIODataset(tf.data.Dataset):
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(
-          topic, partition, start, stop, metadata=metadata)
-      start, stop = core_ops.io_kafka_readable_spec(resource)
+          topic, partition, offset=0, metadata=metadata)
+      start, stop = core_ops.io_kafka_readable_spec(resource, start, stop)
 
       self._resource = resource
 
@@ -78,14 +78,14 @@ class KafkaStreamIODataset(tf.data.Dataset):
       metadata = list(configuration or [])
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_iterable_init(
+      resource = core_ops.io_kafka_readable_init(
           topic, partition, offset, metadata=metadata)
 
       self._resource = resource
 
       dataset = tf.data.experimental.Counter()
       dataset = dataset.map(
-          lambda i: core_ops.io_kafka_iterable_read(self._resource, i))
+          lambda i: core_ops.io_kafka_readable_next(self._resource, i))
       dataset = dataset.apply(
           tf.data.experimental.take_while(
               lambda v: tf.greater(tf.shape(v.message)[0], 0)))
