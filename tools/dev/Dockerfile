@@ -43,6 +43,7 @@ ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     pytest \
+    pytest-benchmark \
     pylint \
     boto3 \
     google-cloud-pubsub==0.39.1 \
