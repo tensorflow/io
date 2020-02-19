@@ -280,12 +280,12 @@ class HDF5ReadableResource : public ResourceBase {
     *dtype = dtypes_[column_index];
     return Status::OK();
   }
-  Status Read(const string& component, const int64 start,
+  Status Read(const string& component,
+              const absl::InlinedVector<int64, 4>& start,
               const TensorShape& shape,
               std::function<Status(const TensorShape& shape, Tensor** value)>
                   allocate_func) {
     mutex_lock l(mu);
-
     std::unordered_map<std::string, int64>::const_iterator lookup =
         columns_index_.find(component);
     if (lookup == columns_index_.end()) {
@@ -295,26 +295,6 @@ class HDF5ReadableResource : public ResourceBase {
 
     Tensor* value;
     TF_RETURN_IF_ERROR(allocate_func(shape, &value));
-
-    if (shape.dims() > 0) {
-      if (shape.dim_size(0) == 0) {
-        return Status::OK();
-      }
-
-      int64 element_start = start;
-
-      if (element_start > shapes_[column_index].dim_size(0)) {
-        return errors::InvalidArgument(
-            "start ", element_start,
-            " out of boundary: ", shapes_[column_index]);
-      }
-      int64 element_stop = element_start + shape.dim_size(0);
-      if (element_stop > shapes_[column_index].dim_size(0)) {
-        return errors::InvalidArgument(
-            "start ", element_start, " and shape ", shape,
-            " out of boundary: ", shapes_[column_index]);
-      }
-    }
 
     H5::H5File* file = file_image_->GetFile();
     try {
@@ -326,19 +306,30 @@ class HDF5ReadableResource : public ResourceBase {
 
       if (shape.dims() != 0) {
         int rank = data_space.getSimpleExtentNdims();
+        if (rank != shape.dims()) {
+          return errors::InvalidArgument("rank does not match: ", rank, " vs. ",
+                                         shape.dims());
+        }
         absl::InlinedVector<hsize_t, 4> dims(rank);
-        data_space.getSimpleExtentDims(dims.data());
+        absl::InlinedVector<hsize_t, 4> dims_start(rank);
 
-        // Find the border of the dims start and dims
-        absl::InlinedVector<hsize_t, 4> dims_start(dims.size(), 0);
-        dims_start[0] = start;
-        dims[0] = shape.dim_size(0);
+        data_space.getSimpleExtentDims(dims.data());
+        for (int i = 0; i < rank; i++) {
+          if (start[i] > dims[i] || start[i] + shape.dim_size(i) > dims[i]) {
+            return errors::InvalidArgument(
+                "dimension [", i, "] out of boundary: start=", start[i],
+                ", slice=", shape.dim_size(i), ", boundary=", dims[i]);
+          }
+          dims_start[i] = start[i];
+          dims[i] = shape.dim_size(i);
+        }
 
         memory_space = H5::DataSpace(dims.size(), dims.data());
 
         data_space.selectHyperslab(H5S_SELECT_SET, dims.data(),
                                    dims_start.data());
       }
+
       switch (dtypes_[column_index]) {
         case DT_UINT8:
           data_set.read(value->flat<uint8>().data(), data_type, memory_space,
@@ -581,21 +572,36 @@ class HDF5ReadableReadOp : public OpKernel {
 
     const Tensor* start_tensor;
     OP_REQUIRES_OK(context, context->input("start", &start_tensor));
-    int64 start = start_tensor->scalar<int64>()();
+    absl::InlinedVector<int64, 4> start(shape.dims());
+    for (int64 i = 0; i < start_tensor->NumElements(); i++) {
+      start[i] = start_tensor->flat<int64>()(i);
+    }
+    for (int64 i = start_tensor->NumElements(); i < shape.dims(); i++) {
+      start[i] = 0;
+    }
 
     const Tensor* stop_tensor;
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
-    int64 stop = stop_tensor->scalar<int64>()();
-    if (shape.dims() > 0) {
-      if (stop < 0 || stop > shape.dim_size(0)) {
-        stop = shape.dim_size(0);
-      }
-      if (start > stop) {
-        start = stop;
-      }
-
-      shape.set_dim(0, stop - start);
+    absl::InlinedVector<int64, 4> stop(stop_tensor->shape().dims());
+    for (int64 i = 0; i < stop_tensor->NumElements(); i++) {
+      stop[i] = stop_tensor->flat<int64>()(i);
     }
+    for (int64 i = stop_tensor->NumElements(); i < shape.dims(); i++) {
+      stop[i] = shape.dim_size(i);
+    }
+
+    for (int64 i = 0; i < shape.dims(); i++) {
+      if (stop[i] < 0 || stop[i] > shape.dim_size(i)) {
+        stop[i] = shape.dim_size(i);
+      }
+      if (start[i] > stop[i]) {
+        start[i] = stop[i];
+      }
+    }
+    for (int64 i = 0; i < shape.dims(); i++) {
+      shape.set_dim(i, stop[i] - start[i]);
+    }
+
     OP_REQUIRES_OK(
         context,
         resource->Read(component, start, shape,
