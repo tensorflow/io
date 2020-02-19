@@ -24,8 +24,7 @@ namespace {
 REGISTER_OP("IO>KafkaReadableInit")
     .Input("topic: string")
     .Input("partition: int32")
-    .Input("start: int64")
-    .Input("stop: int64")
+    .Input("offset: int64")
     .Input("metadata: string")
     .Output("resource: resource")
     .Attr("container: string = ''")
@@ -35,13 +34,14 @@ REGISTER_OP("IO>KafkaReadableInit")
       return Status::OK();
     });
 
-REGISTER_OP("IO>KafkaReadableSpec")
+REGISTER_OP("IO>KafkaReadableNext")
     .Input("input: resource")
-    .Output("start: int64")
-    .Output("stop: int64")
+    .Input("index: int64")
+    .Output("message: string")
+    .Output("key: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-      c->set_output(0, c->Scalar());
-      c->set_output(1, c->Scalar());
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
 
@@ -57,6 +57,18 @@ REGISTER_OP("IO>KafkaReadableRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>KafkaReadableSpec")
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("start_offset: int64")
+    .Output("stop_offset: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->Scalar());
+      return Status::OK();
+    });
+
 REGISTER_OP("IO>KafkaIterableInit")
     .Input("topic: string")
     .Input("partition: int32")
@@ -67,17 +79,6 @@ REGISTER_OP("IO>KafkaIterableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
-    });
-
-REGISTER_OP("IO>KafkaIterableRead")
-    .Input("input: resource")
-    .Input("index: int64")
-    .Output("message: string")
-    .Output("key: string")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
-      c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      c->set_output(1, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
 
