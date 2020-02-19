@@ -23,14 +23,6 @@ limitations under the License.
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
-#define CHECK_ARROW(arrow_status)             \
-  do {                                        \
-    arrow::Status _s = (arrow_status);        \
-    if (!_s.ok()) {                           \
-      return errors::Internal(_s.ToString()); \
-    }                                         \
-  } while (false)
-
 namespace tensorflow {
 namespace data {
 
@@ -71,191 +63,6 @@ Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode ) {
   return Status::OK();
 }
 
-
-// Check the type of an Arrow column matches expected tensor type
-class ArrowColumnTypeChecker : public arrow::TypeVisitor {
- public:
-  Status CheckColumnType(std::shared_ptr<arrow::DataType> type,
-                         DataType expected_type) {
-    expected_type_ = expected_type;
-
-    // First see if complex type handled by visitor
-    arrow::Status visit_status = type->Accept(this);
-    if (visit_status.ok()) {
-      return Status::OK();
-    }
-
-    // Check type as a scalar type
-    CHECK_ARROW(CheckScalarType(type));
-    return Status::OK();
-  }
-
- protected:
-  virtual arrow::Status Visit(const arrow::ListType& type) {
-    return CheckScalarType(type.value_type());
-  }
-
-  // Check scalar types with arrow::adapters::tensorflow
-  arrow::Status CheckScalarType(std::shared_ptr<arrow::DataType> scalar_type) {
-    DataType converted_type;
-    ::tensorflow::Status status = GetTensorFlowType(scalar_type, &converted_type);
-    if (!status.ok()) {
-      return ::arrow::Status::Invalid(status);
-    }
-    if (converted_type != expected_type_) {
-      return arrow::Status::TypeError(
-          "Arrow type mismatch: expected dtype=" +
-          std::to_string(expected_type_) + ", but got dtype=" +
-          std::to_string(converted_type));
-    }
-    return arrow::Status::OK();
-  }
-
- private:
-  DataType expected_type_;
-};
-
-// Convert an element of an Arrow Array to a Tensor
-class ArrowConvertTensor : public arrow::ArrayVisitor {
- public:
-  ArrowConvertTensor(int64_t row_idx, int64_t batch_size, IteratorContext* ctx)
-      : curr_index_(row_idx), curr_batch_size_(batch_size), curr_ctx_(ctx),
-        curr_array_length_(-1) {}
-
-  // Convert to a Tensor and append to the output vector
-  Status AppendTensor(std::shared_ptr<arrow::Array> array, DataType output_type,
-                      std::vector<Tensor>* out_tensors) {
-    curr_type_ = output_type;
-    out_tensors_ = out_tensors;
-    if (array->null_count() != 0) {
-      return errors::Internal("Arrow arrays with null values not supported");
-    }
-    CHECK_ARROW(array->Accept(this));
-    return Status::OK();
-  }
-
- protected:
-  // Get TensorShape for current elements, accounting for arrays and batch size
-  TensorShape GetCurrTensorShape() {
-
-    // Start off as scalar and adjust for batch size and array types
-    auto shape = TensorShape({});
-
-    // curr_batch_size_ of 0 indicates 1 record at a time, no batching
-    if (curr_batch_size_ > 0) {
-      shape.AddDim(curr_batch_size_);
-    }
-
-    // curr_array_length_ < 0 indicates a scalar value
-    if (curr_array_length_ >= 0) {
-      shape.AddDim(curr_array_length_);
-    }
-
-    return shape;
-  }
-
-  virtual arrow::Status Visit(const arrow::BooleanArray& array) {
-
-    // Create a Tensor of required size
-    auto shape = GetCurrTensorShape();
-    Tensor tensor(curr_ctx_->allocator({}), curr_type_, shape);
-
-    // Must copy one value at a time because Arrow stores values as bits
-    for (int64 i = 0; i < shape.num_elements(); ++i) {
-      // NOTE: for Array ListArray, curr_row_idx_ is 0 for element array
-      tensor.flat<bool>()(i) = array.Value(i + curr_index_);
-    }
-
-    out_tensors_->emplace_back(std::move(tensor));
-    return arrow::Status::OK();
-  }
-
-  template <typename ArrayType>
-  arrow::Status VisitFixedWidth(const ArrayType& array) {
-    const auto& fw_type =
-        static_cast<const arrow::FixedWidthType&>(*array.type());
-    const int64_t type_width = fw_type.bit_width() / 8;
-
-    // Create a Tensor of required size
-    auto shape = GetCurrTensorShape();
-    Tensor tensor(curr_ctx_->allocator({}), curr_type_, shape);
-
-    // Primitive Arrow arrays have validity and value buffers, currently
-    // only arrays with null count == 0 are supported, so only need values here
-    static const int VALUE_BUFFER = 1;
-    auto values = array.data()->buffers[VALUE_BUFFER];
-    if (values == NULLPTR) {
-      return arrow::Status::Invalid(
-          "Received an Arrow array with a NULL value buffer");
-    }
-
-    const void* src = (values->data() + array.data()->offset * type_width) +
-                      curr_index_ * type_width;
-    void* dst = const_cast<char*>(tensor.tensor_data().data());
-    std::memcpy(dst, src, shape.num_elements() * type_width);
-
-    out_tensors_->emplace_back(std::move(tensor));
-    return arrow::Status::OK();
-  }
-
-#define VISIT_FIXED_WIDTH(TYPE)                             \
-  virtual arrow::Status Visit(const TYPE& array) override { \
-    return VisitFixedWidth(array);                          \
-  }
-
-  VISIT_FIXED_WIDTH(arrow::Int8Array)
-  VISIT_FIXED_WIDTH(arrow::Int16Array)
-  VISIT_FIXED_WIDTH(arrow::Int32Array)
-  VISIT_FIXED_WIDTH(arrow::Int64Array)
-  VISIT_FIXED_WIDTH(arrow::UInt8Array)
-  VISIT_FIXED_WIDTH(arrow::UInt16Array)
-  VISIT_FIXED_WIDTH(arrow::UInt32Array)
-  VISIT_FIXED_WIDTH(arrow::UInt64Array)
-  VISIT_FIXED_WIDTH(arrow::HalfFloatArray)
-  VISIT_FIXED_WIDTH(arrow::FloatArray)
-  VISIT_FIXED_WIDTH(arrow::DoubleArray)
-#undef VISIT_FIXED_WITH
-
-  virtual arrow::Status Visit(const arrow::ListArray& array) override {
-    int32 values_offset = array.value_offset(curr_index_);
-    curr_array_length_ = array.value_length(curr_index_);
-    int32 num_arrays = 1;
-
-    // If batching tensors, arrays must be same length
-    if (curr_batch_size_ > 0) {
-      num_arrays = curr_batch_size_;
-      for (int64_t i = curr_index_; i < curr_index_ + num_arrays; ++i) {
-        if (array.value_length(i) != curr_array_length_) {
-          return arrow::Status::Invalid(
-              "Batching variable-length arrays is unsupported");
-        }
-      }
-    }
-
-    // Save current index and swap after array is copied
-    int32 tmp_index = curr_index_;
-    curr_index_ = 0;
-
-    // Prepare the array data buffer and visit the array slice
-    std::shared_ptr<arrow::Array> values = array.values();
-    std::shared_ptr<arrow::Array> element_values =
-        values->Slice(values_offset, curr_array_length_ * num_arrays);
-    auto result = element_values->Accept(this);
-
-    // Reset state variables for next time
-    curr_index_ = tmp_index;
-    curr_array_length_ = -1;
-    return result;
-  }
-
- private:
-  int64_t curr_index_;
-  int64_t curr_batch_size_;
-  IteratorContext* curr_ctx_;
-  int32_t curr_array_length_;
-  DataType curr_type_;
-  std::vector<Tensor>* out_tensors_;
-};
 
 // Base class for defining a Dataset over Arrow record batches with an
 // iterator that iterates over rows of the batch to get Tensors
@@ -355,13 +162,21 @@ class ArrowDatasetBase : public DatasetBase {
         }
 
         // Assign Tensors for each column in the current row
-        ArrowConvertTensor arrow_converter(current_row_idx_, batch_size, ctx);
         for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
           int32 col = this->dataset()->columns_[i];
-          DataType dt = this->dataset()->output_types_[i];
+          DataType output_type = this->dataset()->output_types_[i];
           std::shared_ptr<arrow::Array> arr = current_batch_->column(col);
+
+          // Get the TensorShape for the column batch
+          TensorShape output_shape = TensorShape({});
           TF_RETURN_IF_ERROR(
-              arrow_converter.AppendTensor(arr, dt, result_tensors));
+              ArrowUtil::AssignShape(arr, current_row_idx_, batch_size, &output_shape));
+
+          // Allocate a new tensor and assign Arrow data to it
+          Tensor tensor(ctx->allocator({}), output_type, output_shape);
+          TF_RETURN_IF_ERROR(ArrowUtil::AssignTensor(arr, current_row_idx_, &tensor));
+
+          result_tensors->emplace_back(std::move(tensor));
         }
 
         // If not batching or have a full batch, then have a result to return
@@ -489,12 +304,11 @@ class ArrowDatasetBase : public DatasetBase {
 
     // Check columns of batch in stream are expected data type
     Status CheckBatchColumnTypes(std::shared_ptr<arrow::RecordBatch> batch) {
-      ArrowColumnTypeChecker type_checker;
       for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
         int32 col = this->dataset()->columns_[i];
         DataType dt = this->dataset()->output_types_[i];
         std::shared_ptr<arrow::Array> arr = batch->column(col);
-        TF_RETURN_IF_ERROR(type_checker.CheckColumnType(arr->type(), dt));
+        TF_RETURN_IF_ERROR(ArrowUtil::CheckArrayType(arr->type(), dt));
       }
       return Status::OK();
     }
@@ -524,7 +338,7 @@ class ArrowOpKernelBase : public DatasetOpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_shapes", &output_shapes_));
     for (const DataType& dt : output_types_) {
       std::shared_ptr<arrow::DataType> arrow_type;
-      OP_REQUIRES_OK(ctx, GetArrowType(dt, &arrow_type));
+      OP_REQUIRES_OK(ctx, ArrowUtil::GetArrowType(dt, &arrow_type));
     }
     for (const PartialTensorShape& pts : output_shapes_) {
       OP_REQUIRES(ctx, -1 <= pts.dims() && pts.dims() <= 2,
@@ -1121,7 +935,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         string endpoint_type;
         string endpoint_value;
         TF_RETURN_IF_ERROR(
-            ParseEndpoint(endpoint, &endpoint_type, &endpoint_value));
+            ArrowUtil::ParseEndpoint(endpoint, &endpoint_type, &endpoint_value));
 
         // Check if endpoint is STDIN
         if (endpoint_type == "fd" && (endpoint_value == "0" ||

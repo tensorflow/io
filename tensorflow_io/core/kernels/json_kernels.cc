@@ -24,6 +24,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 
@@ -123,7 +124,7 @@ class JSONReadable : public IOReadableInterface {
     for (int i = 0; i < table_->num_columns(); i++) {
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       ::tensorflow::DataType dtype;
-      TF_RETURN_IF_ERROR(GetTensorFlowType(table_->column(i)->type(), &dtype));
+      TF_RETURN_IF_ERROR(ArrowUtil::GetTensorFlowType(table_->column(i)->type(), &dtype));
       dtypes_.push_back(dtype);
       columns_.push_back(table_->ColumnNames()[i]);
       columns_index_[table_->ColumnNames()[i]] = i;

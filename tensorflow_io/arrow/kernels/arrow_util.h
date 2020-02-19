@@ -18,13 +18,63 @@ limitations under the License.
 
 namespace tensorflow {
 
+// Forward declaration
+class Tensor;
+class TensorShape;
+
+namespace data {
+
+#define CHECK_ARROW(arrow_status)             \
+  do {                                        \
+    arrow::Status _s = (arrow_status);        \
+    if (!_s.ok()) {                           \
+      return errors::Internal(_s.ToString()); \
+    }                                         \
+  } while (false)
+
+namespace ArrowUtil {
+
+// Convert Arrow Data Type to TensorFlow
+Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out);
+
+// Convert TensorFlow Data Type to Arrow
+Status GetArrowType(::tensorflow::DataType dtype, std::shared_ptr<::arrow::DataType>* out);
+
+// Assign equivalent TensorShape for the given Arrow Array
+Status AssignShape(std::shared_ptr<arrow::Array> array,
+                   int64 i,
+                   int64 batch_size,
+                   TensorShape* out_shape);
+
+// Assign DataType and equivalent TensorShape for the given Arrow Array
+Status AssignSpec(std::shared_ptr<arrow::Array> array,
+                  int64 i,
+                  int64 batch_size,
+                  ::tensorflow::DataType* out_dtype,
+                  TensorShape* out_shape);
+
+// Assign elements of an Arrow Array to a Tensor
+Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i, Tensor* out_tensor);
+
+// Checks the Arrow Array datatype matches the expected TF datatype
+Status CheckArrayType(std::shared_ptr<arrow::DataType> type, ::tensorflow::DataType expected_type);
+
+// Make list and primitive array data
+Status MakeArrayData(std::shared_ptr<arrow::DataType> type,
+                     std::vector<int64> array_lengths,
+                     std::vector<std::shared_ptr<arrow::Buffer>> buffers,
+                     std::shared_ptr<arrow::ArrayData>* out_data);
+
 // Parse the given endpoint to extract type and value strings
-Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
+Status ParseEndpoint(std::string endpoint,
+                     std::string* endpoint_type,
                      std::string* endpoint_value);
 
 // Parse the given IPv4 host string to get address and port
 Status ParseHost(std::string host, std::string* host_address, std::string* host_port);
 
+}  // namespace ArrowUtil
+}  // namespace data
 }  // namespace tensorflow
 
 #endif

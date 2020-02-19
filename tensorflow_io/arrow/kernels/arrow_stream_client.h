@@ -19,6 +19,7 @@ limitations under the License.
 #include "arrow/io/api.h"
 
 namespace tensorflow {
+namespace data {
 
 // Class to wrap a socket as a readable Arrow InputStream
 class ArrowStreamClient : public arrow::io::InputStream {
@@ -39,6 +40,7 @@ class ArrowStreamClient : public arrow::io::InputStream {
   int64_t pos_;
 };
 
+}  // namespace data
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_ARROW_STREAM_CLIENT_H_
