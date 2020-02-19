@@ -13,37 +13,330 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
-#include "tensorflow_io/core/kernels/io_interface.h"
 #include "arrow/io/api.h"
+#include "arrow/ipc/api.h"
 #include "arrow/ipc/feather.h"
 #include "generated/feather_generated.h"
 #include "arrow/array.h"
 #include "arrow/buffer.h"
-#include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/table.h"
+#include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
 
 namespace tensorflow {
 namespace data {
 
-Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out) {
-  ::arrow::Status status = ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
-  if (!status.ok()) {
-    return errors::InvalidArgument("arrow data type ", dtype, " is not supported: ", status);
-  }
-  return Status::OK();
-}
-
-Status GetArrowType(::tensorflow::DataType dtype, std::shared_ptr<::arrow::DataType>* out) {
-  ::arrow::Status status = ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
-  if (!status.ok()) {
-    return errors::InvalidArgument("tensorflow data type ", dtype, " is not supported: ", status);
-  }
-  return Status::OK();
-}
-
 namespace {
+
+class ArrowReadableResourceBase : public ResourceBase {
+ public:
+  virtual Status Init(const std::shared_ptr<arrow::Table>& table) = 0;
+  virtual Status Spec(int32 column_index,
+                      PartialTensorShape* shape,
+                      DataType* dtype) = 0;
+  virtual Status Read(int64 start,
+                      int64 stop,
+                      int32 column_index,
+                      Tensor* value) = 0;
+};
+
+class ArrowReadableResource : public ArrowReadableResourceBase {
+ public:
+  ArrowReadableResource(Env* env) : env_(env) {}
+  ~ArrowReadableResource() {}
+
+  Status Init(const std::shared_ptr<arrow::Table>& table) override {
+    mutex_lock l(mu_);
+    table_ = table;
+    return Status::OK();
+  }
+
+  Status Spec(int32 column_index, PartialTensorShape* shape, DataType* dtype) override {
+    mutex_lock l(mu_);
+    if (column_index < 0 || column_index >= table_->num_columns()) {
+      return errors::InvalidArgument("Invalid column index: ", column_index);
+    }
+
+    // Get shape from first array chunk and replace outer dim with row count
+    auto chunked_arr = table_->column(column_index);
+    auto arr = chunked_arr->chunk(0);
+    TensorShape tmp_shape = TensorShape({});
+
+    TF_RETURN_IF_ERROR(
+        ArrowUtil::AssignSpec(arr, 0, arr->length(), dtype, &tmp_shape));
+
+    gtl::InlinedVector<int64, 4> dims = tmp_shape.dim_sizes();
+    dims[0] = table_->num_rows();
+    *shape = TensorShape(dims);
+
+    return Status::OK();
+  }
+
+  Status Read(int64 start, int64 stop, int32 column_index, Tensor* value) override {
+    mutex_lock l(mu_);
+    if (column_index < 0 || column_index >= table_->num_columns()) {
+      return errors::InvalidArgument("Invalid column index: ", column_index);
+    }
+
+    auto chunked_arr = table_->column(column_index);
+
+    // Slice with requested start/stop index
+    if (start > 0 || stop - start < table_->num_rows()) {
+      chunked_arr = chunked_arr->Slice(start, stop - start);
+      start = 0;  // Slice will offset chunked_arr from start position
+    }
+
+    // Column is empty
+    if (chunked_arr->num_chunks() == 0) {
+      return Status::OK();
+    }
+    // Convert the array
+    else if (chunked_arr->num_chunks() == 1) {
+      auto arr = chunked_arr->chunk(0);
+      TF_RETURN_IF_ERROR(ArrowUtil::AssignTensor(arr, start, value));
+    }
+    // Convert each chunk at a time
+    else {
+      int64 length_converted = 0;
+      for (int i = 0; i < chunked_arr->num_chunks(); ++i) {
+        auto arr = chunked_arr->chunk(i);
+
+        // Take a slice that will share the underlying TensorBuffer
+        auto slice = value->Slice(length_converted, length_converted + arr->length());
+
+        TF_RETURN_IF_ERROR(ArrowUtil::AssignTensor(arr, start, &slice));
+        length_converted += arr->length();
+      }
+    }
+
+    return Status::OK();
+  }
+
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return "ArrowReadableResource";
+  }
+
+ protected:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::shared_ptr<arrow::Table> table_ GUARDED_BY(mu_);
+};
+
+class ArrowReadableFromMemoryInitOp : public ResourceOpKernel<ArrowReadableResource> {
+ public:
+  explicit ArrowReadableFromMemoryInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<ArrowReadableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<ArrowReadableResource>::Compute(context);
+
+    const Tensor* schema_buffer_addr_tensor;
+    OP_REQUIRES_OK(context, context->input("schema_buffer_address", &schema_buffer_addr_tensor));
+    uint64 schema_buffer_addr = schema_buffer_addr_tensor->scalar<uint64>()();
+    const uint8_t* schema_buffer = reinterpret_cast<const uint8_t*>(schema_buffer_addr);
+
+    const Tensor* schema_buffer_size_tensor;
+    OP_REQUIRES_OK(context, context->input("schema_buffer_size", &schema_buffer_size_tensor));
+    int64 schema_buffer_size = schema_buffer_size_tensor->scalar<int64>()();
+
+    auto buffer_ = std::make_shared<arrow::Buffer>(
+        schema_buffer,
+        schema_buffer_size);
+    auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer_);
+
+    std::shared_ptr<arrow::Schema> schema;
+    arrow::Status status = arrow::ipc::ReadSchema(buffer_reader.get(), nullptr, &schema);
+    OP_REQUIRES(context, status.ok(), errors::Internal("Error reading Arrow Schema"));
+
+    const Tensor* array_buffer_addrs_tensor;
+    OP_REQUIRES_OK(context, context->input("array_buffer_addresses", &array_buffer_addrs_tensor));
+    const TensorShape& array_addrs_shape = array_buffer_addrs_tensor->shape();
+    OP_REQUIRES(context, array_addrs_shape.dims() == 3,
+        errors::InvalidArgument("array_buffer_addresses should be 3 dimensional"));
+
+    const Tensor* array_buffer_sizes_tensor;
+    OP_REQUIRES_OK(context, context->input("array_buffer_sizes", &array_buffer_sizes_tensor));
+    const TensorShape& array_sizes_shape = array_buffer_sizes_tensor->shape();
+    OP_REQUIRES(context, array_addrs_shape == array_sizes_shape,
+        errors::InvalidArgument("array_buffer_sizes should be 3 dimensional"));
+
+    const Tensor* array_lengths_tensor;
+    OP_REQUIRES_OK(context, context->input("array_lengths", &array_lengths_tensor));
+    OP_REQUIRES(context, array_lengths_tensor->shape().dims() == 3,
+        errors::InvalidArgument("array_lengths should be 3 dimensional"));
+
+    auto array_addrs = array_buffer_addrs_tensor->tensor<uint64, 3>();
+    auto array_sizes = array_buffer_sizes_tensor->tensor<int64, 3>();
+    auto array_lengths = array_lengths_tensor->tensor<int64, 3>();
+
+    int64 num_columns = array_addrs_shape.dim_size(0);
+    int64 num_chunks = array_addrs_shape.dim_size(1);
+    int64 num_buffers = array_addrs_shape.dim_size(2);
+
+    std::vector<std::shared_ptr<arrow::ChunkedArray>> columns;
+    columns.reserve(num_columns);
+
+    for (int64 i = 0; i < num_columns; ++i) {
+      auto field = schema->field(i);
+      arrow::ArrayVector chunks;
+      chunks.reserve(num_chunks);
+
+      for (int64 j = 0; j < num_chunks; ++j) {
+        std::vector<std::shared_ptr<arrow::Buffer>> buffers;
+        buffers.reserve(num_buffers);
+
+        for (int64 k = 0; k < num_buffers; ++k) {
+          uint64 array_ij_addr = array_addrs(i, j, k);
+          int64 array_ij_size = array_sizes(i, j, k);
+
+          // If size is < 0, then don't add a buffer, if size == 0 then add empty buffer
+          if (array_ij_size > 0) {
+            const uint8_t* array_ij_buffer = reinterpret_cast<const uint8_t*>(array_ij_addr);
+            buffers.push_back(std::make_shared<arrow::Buffer>(array_ij_buffer, array_ij_size));
+          } else if (array_ij_size == 0) {
+            buffers.push_back(std::shared_ptr<arrow::Buffer>());
+          }
+        }
+
+        // Make the Array chunk, TODO null values not currently supported
+        std::vector<int64> lengths;
+        for (int64 k = 0; k < array_lengths_tensor->shape().dim_size(2); ++k) {
+          int64 length = array_lengths(i, j, k);
+          if (length > 0) {
+            lengths.push_back(length);
+          }
+        }
+        std::shared_ptr<arrow::ArrayData> array_data;
+        OP_REQUIRES_OK(context,
+            ArrowUtil::MakeArrayData(field->type(), lengths, buffers, &array_data));
+        auto array = arrow::MakeArray(array_data);
+        chunks.push_back(array);
+      }
+
+      auto chunked_array = std::make_shared<arrow::ChunkedArray>(chunks);
+      columns.push_back(chunked_array);
+    }
+
+    auto table = arrow::Table::Make(schema, columns);
+    OP_REQUIRES_OK(context, resource_->Init(table));
+  }
+
+  Status CreateResource(ArrowReadableResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new ArrowReadableResource(env_);
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class ArrowReadableSpecOp : public OpKernel {
+ public:
+  explicit ArrowReadableSpecOp(OpKernelConstruction* context)
+      : OpKernel(context), column_index_(-1) {
+    int32 column_index;
+    Status status = context->GetAttr("column_index", &column_index);
+    if (status.ok()) {
+      column_index_ = column_index;
+    }
+  }
+
+  void Compute(OpKernelContext* context) override {
+    ArrowReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(column_index_, &shape, &dtype));
+
+    Tensor shape_tensor(DT_INT64, TensorShape({shape.dims()}));
+    for (int64 i = 0; i < shape.dims(); i++) {
+      shape_tensor.flat<int64>()(i) = shape.dim_size(i);
+    }
+    Tensor dtype_tensor(DT_INT64, TensorShape({}));
+    dtype_tensor.scalar<int64>()() = dtype;
+    context->set_output(0, shape_tensor);
+    context->set_output(1, dtype_tensor);
+  }
+
+ private:
+  int32 column_index_;
+};
+
+class ArrowReadableReadOp : public OpKernel {
+ public:
+  explicit ArrowReadableReadOp(OpKernelConstruction* context)
+      : OpKernel(context), column_index_(-1) {
+    int32 column_index;
+    Status status = context->GetAttr("column_index", &column_index);
+    if (status.ok()) {
+      column_index_ = column_index;
+    }
+  }
+
+  void Compute(OpKernelContext* context) override {
+    ArrowReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* start_tensor;
+    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    int64 start = start_tensor->scalar<int64>()();
+
+    const Tensor* stop_tensor;
+    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    int64 stop = stop_tensor->scalar<int64>()();
+
+    // Get the spec from the table
+    PartialTensorShape shape;
+    DataType dtype;
+    OP_REQUIRES_OK(context, resource->Spec(column_index_, &shape, &dtype));
+
+    // Verify requested records
+    int64 length = shape.dim_size(0);
+    OP_REQUIRES(context, start >= 0 && start < length && stop > start,
+                errors::InvalidArgument("Invalid start, stop inputs: ", start, ", ", stop));
+
+    // Cap the stop record at the length
+    if (stop > length) {
+      stop = length;
+    }
+
+    // Create shape of the output tensor
+    gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
+    dims[0] = stop - start;
+    TensorShape value_shape(dims);
+
+    // Allocate the output tensor
+    Tensor* value_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(0, value_shape, &value_tensor));
+
+    // Read the output tensor value
+    OP_REQUIRES_OK(context, resource->Read(start, stop, column_index_, value_tensor));
+  }
+
+ private:
+  int32 column_index_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowReadableFromMemoryInit").Device(DEVICE_CPU),
+                        ArrowReadableFromMemoryInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowReadableSpec").Device(DEVICE_CPU),
+                        ArrowReadableSpecOp);
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowReadableRead").Device(DEVICE_CPU),
+                        ArrowReadableReadOp);
+
 
 class ListFeatherColumnsOp : public OpKernel {
  public:

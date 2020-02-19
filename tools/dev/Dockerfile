@@ -14,7 +14,7 @@ RUN apt-get update && \
     ffmpeg \
     dnsutils
 
-ARG BAZEL_VERSION=0.29.0
+ARG BAZEL_VERSION=2.0.0
 ARG BAZEL_OS=linux
 
 RUN curl -sL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh -o bazel-install.sh && \
@@ -34,7 +34,7 @@ ARG CONDA_ADD_PACKAGES=""
 
 RUN conda create -y -q -n tfio-dev python=3.6 ${CONDA_ADD_PACKAGES}
 
-ARG ARROW_VERSION=0.14.1
+ARG ARROW_VERSION=0.16.0
 
 RUN echo ". /miniconda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "source activate tfio-dev" >> ~/.bashrc
@@ -43,6 +43,7 @@ ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     pytest \
+    pytest-benchmark \
     pylint \
     boto3 \
     google-cloud-pubsub==0.39.1 \

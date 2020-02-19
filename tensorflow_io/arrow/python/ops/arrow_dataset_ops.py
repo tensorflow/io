@@ -125,7 +125,6 @@ class ArrowBaseDataset(dataset_ops.DatasetV2):
       self._structure = nest.map_structure(
           lambda component_spec: component_spec._batch(spec_batch_size),
           self._structure)
-      print(self._flat_structure)
     variant_tensor = make_variant_fn(
         columns=self._columns,
         batch_size=self._batch_size,
