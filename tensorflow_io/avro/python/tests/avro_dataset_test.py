@@ -45,6 +45,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
 
     def _test_fail_dataset(self, writer_schema, record_data, features,
                            reader_schema, batch_size, **kwargs):
+        """
+        Note, this test method expects an op error will occur when calling next
+        """
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 

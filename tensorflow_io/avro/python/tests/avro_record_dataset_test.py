@@ -39,7 +39,6 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
             reader_schema=kwargs.get("reader_schema"))
-
         data = iter(actual_dataset)
         for expected in expected_data:
             self.assertValuesEqual(expected=expected, actual=next(data))

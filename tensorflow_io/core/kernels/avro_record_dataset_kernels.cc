@@ -54,7 +54,8 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     if (!reader_schema.empty()) {
       options_.reader_schema = reader_schema;
     }
-    VLOG(7) << "Created dataset with " << filenames_[0] << "... and buffer size " << buffer_size;
+    VLOG(7) << "Created dataset with first filename: " << filenames_[0];
+    VLOG(7) << "Buffer size " << buffer_size/1024 << "kBy";
   }
 
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
