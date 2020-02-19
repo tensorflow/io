@@ -28,7 +28,7 @@ class KafkaIOTensor():
   #=============================================================================
   def __init__(self,
                topic,
-               partition, start, stop,
+               partition,
                servers, configuration, internal=True):
     with tf.name_scope("KafkaIOTensor"):
       assert internal
@@ -37,11 +37,9 @@ class KafkaIOTensor():
       if servers is not None:
         metadata.append("bootstrap.servers=%s" % servers)
       resource = core_ops.io_kafka_readable_init(
-          topic, partition, start, stop, metadata=metadata)
-      start, stop = core_ops.io_kafka_readable_spec(resource)
+          topic, partition, offset=0, metadata=metadata)
 
       self._resource = resource
-      self._start, self._stop = start, stop
       super(KafkaIOTensor, self).__init__()
 
   #=============================================================================
@@ -79,7 +77,7 @@ class KafkaIOTensor():
       A `Tensor` with value obtained from this `IOTensor`.
     """
     item, _ = core_ops.io_kafka_readable_read(
-        self._resource, self._start, self._stop)
+        self._resource, start=0, stop=-1)
     return item
 
   #=============================================================================

@@ -283,15 +283,13 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0, start=0, stop=-1,
+                 partition=0,
                  servers=None, configuration=None, **kwargs):
     """Creates an `IOTensor` from a Kafka stream.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
       partition: A `tf.int64` tensor containing the partition, by default 0.
-      start: A `tf.int64` tensor containing the start offset, by default 0.
-      stop: A `tf.int64` tensor containing the end offset, by default -1.
       servers: An optional list of bootstrap servers, by default
          `localhost:9092`.
       configuration: An optional `tf.string` tensor containing
@@ -312,7 +310,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_io_tensor_ops.KafkaIOTensor(
-          topic=topic, partition=partition, start=start, stop=stop,
+          topic=topic, partition=partition,
           servers=servers, configuration=configuration, internal=True)
 
   @classmethod

@@ -71,6 +71,8 @@ class KafkaReadableResource : public ResourceBase {
 
   virtual Status Init(const string& topic, const int32 partition,
                       const int64 offset, const std::vector<string>& metadata) {
+    mutex_lock l(mu_);
+
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
     std::unique_ptr<RdKafka::Conf> conf_topic(
@@ -218,6 +220,24 @@ class KafkaReadableResource : public ResourceBase {
                   allocate_func) {
     mutex_lock l(mu_);
 
+    int64 stop_offset;
+    if (stop >= 0) {
+      stop_offset = stop;
+    } else if (stop == RdKafka::Topic::OFFSET_END) {
+      stop_offset = RdKafka::Consumer::OffsetTail(0);
+    } else if (stop <= RdKafka::Consumer::OffsetTail(0)) {
+      stop_offset = stop;
+    } else {
+      return errors::InvalidArgument("stop offset ", stop, " not supported");
+    }
+    if (stop_offset <= RdKafka::Consumer::OffsetTail(0)) {
+      int64 tail_offset = 0;
+      TF_RETURN_IF_ERROR(Tail(&tail_offset));
+
+      stop_offset =
+          tail_offset + stop_offset - RdKafka::Consumer::OffsetTail(0);
+    }
+
     std::vector<string> message_value, key_value;
 
     subscription_->set_offset(start);
@@ -230,7 +250,7 @@ class KafkaReadableResource : public ResourceBase {
               << subscription_->offset();
     int64 index = start;
     std::unique_ptr<RdKafka::Message> message;
-    while (consumer_.get() != nullptr && index + 1 < stop) {
+    while (consumer_.get() != nullptr && index + 1 < stop_offset) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal("failed to consume due to all brokers down");
       }
@@ -243,6 +263,9 @@ class KafkaReadableResource : public ResourceBase {
             (message->key() != nullptr) ? string(*message->key()) : "");
         index = message->offset();
         continue;
+      } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
+        LOG(ERROR) << "EOF Message: " << message->errstr();
+        break;
       } else if (message->err() == RdKafka::ERR__TRANSPORT) {
         // Not return error here because consumer will try re-connect.
         LOG(ERROR) << "Broker transport failure: " << message->errstr();
@@ -287,32 +310,8 @@ class KafkaReadableResource : public ResourceBase {
 
     if (*start_offset <= RdKafka::Consumer::OffsetTail(0) ||
         *stop_offset <= RdKafka::Consumer::OffsetTail(0)) {
-      // Resolve tail message
-      int64 saved = subscription_->offset();
-
-      subscription_->set_offset(RdKafka::Consumer::OffsetTail(1));
-      RdKafka::ErrorCode err = consumer_->seek(*subscription_, timeout_);
-      if (err != RdKafka::ERR_NO_ERROR) {
-        return errors::Internal("failed to seek tail -1: ",
-                                RdKafka::err2str(err));
-      }
-      std::unique_ptr<RdKafka::Message> message;
-      do {
-        message.reset(consumer_->consume(timeout_));
-      } while (message->err() == RdKafka::ERR__TRANSPORT);
-      if (message->err() != RdKafka::ERR_NO_ERROR) {
-        return errors::Internal("failed to consume tail message: ",
-                                RdKafka::err2str(message->err()));
-      }
-      int64 tail_offset = message->offset() + 1;
-      LOG(INFO) << "Kafka tail: " << tail_offset;
-
-      subscription_->set_offset(saved);
-      err = consumer_->seek(*subscription_, timeout_);
-      if (err != RdKafka::ERR_NO_ERROR) {
-        return errors::Internal("failed to seek back saved: ",
-                                RdKafka::err2str(err));
-      }
+      int64 tail_offset = 0;
+      TF_RETURN_IF_ERROR(Tail(&tail_offset));
 
       if (*start_offset <= RdKafka::Consumer::OffsetTail(0)) {
         *start_offset =
@@ -329,6 +328,36 @@ class KafkaReadableResource : public ResourceBase {
   string DebugString() const override { return "KafkaBaseResource"; }
 
  protected:
+  Status Tail(int64* tail_offset) {
+    // Resolve tail message
+    int64 saved = subscription_->offset();
+
+    subscription_->set_offset(RdKafka::Consumer::OffsetTail(1));
+    RdKafka::ErrorCode err = consumer_->seek(*subscription_, timeout_);
+    if (err != RdKafka::ERR_NO_ERROR) {
+      return errors::Internal("failed to seek tail -1: ",
+                              RdKafka::err2str(err));
+    }
+    std::unique_ptr<RdKafka::Message> message;
+    do {
+      message.reset(consumer_->consume(timeout_));
+    } while (message->err() == RdKafka::ERR__TRANSPORT);
+    if (message->err() != RdKafka::ERR_NO_ERROR) {
+      return errors::Internal("failed to consume tail message: ",
+                              RdKafka::err2str(message->err()));
+    }
+    *tail_offset = message->offset() + 1;
+    LOG(INFO) << "Kafka tail: " << *tail_offset;
+
+    subscription_->set_offset(saved);
+    err = consumer_->seek(*subscription_, timeout_);
+    if (err != RdKafka::ERR_NO_ERROR) {
+      return errors::Internal("failed to seek back saved: ",
+                              RdKafka::err2str(err));
+    }
+
+    return Status::OK();
+  }
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
   std::unique_ptr<RdKafka::TopicPartition> subscription_ GUARDED_BY(mu_);

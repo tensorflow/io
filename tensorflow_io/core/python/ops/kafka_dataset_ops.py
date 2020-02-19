@@ -41,6 +41,7 @@ class KafkaIODataset(tf.data.Dataset):
       start, stop = core_ops.io_kafka_readable_spec(resource, start, stop)
 
       self._resource = resource
+      self._start, self._stop = start, stop
 
       step = 1024
       indices_start = tf.data.Dataset.range(0, stop, step)
