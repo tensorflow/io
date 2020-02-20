@@ -85,15 +85,26 @@ class BaseHDF5GraphIOTensor():
   #=============================================================================
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
-    if isinstance(key, slice):
-      return core_ops.io_hdf5_readable_read(
-          self._resource, self._component, self._shape,
-          key.start, key.stop, dtype=self._dtype)
+    # always convert to tuple to process
+    if not isinstance(key, tuple):
+      key = tuple([key])
+    # get the start and stop of each element
+    indices = [
+        (k.start, k.stop) if isinstance(k, slice) else (k, k + 1) for k in key]
+    # get the start and stop, and use 0 (start) and -1 (stop) if needed
+    indices = list(zip(*indices))
+    start = [0 if e is None else e for e in indices[0]]
+    stop = [-1 if e is None else e for e in indices[1]]
+
     item = core_ops.io_hdf5_readable_read(
-        self._resource, key, key + 1, dtype=self._dtype)
-    if tf.shape(item)[0] == 0:
-      raise IndexError("index %s is out of range" % key)
-    return item[0]
+        self._resource, self._component, self._shape,
+        start=start, stop=stop, dtype=self._dtype)
+
+    # in case certain dimension is not slice, then this dimension will need to
+    # collapse as `0`, otherwise `:` or `slice(None, None, None)`
+    indices = [slice(None) if isinstance(k, slice) else 0 for k in key]
+
+    return item.__getitem__(indices)
 
   def __len__(self):
     """Returns the total number of items of this IOTensor."""

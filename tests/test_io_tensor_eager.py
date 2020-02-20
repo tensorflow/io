@@ -278,6 +278,28 @@ def fixture_hdf5_scalar(request):
 
   return args, func, expected
 
+@pytest.fixture(name="hdf5_multiple_dimension", scope="module")
+def fixture_hdf5_multiple_dimension(request):
+  """fixture_hdf5_multiple_dimension"""
+  import h5py # pylint: disable=import-outside-toplevel
+
+  tmp_path = tempfile.mkdtemp()
+  filename = os.path.join(tmp_path, "test.h5")
+
+  data = [np.arange(i, i+20) for i in range(20)]
+
+  with h5py.File(filename, 'w') as f:
+    f.create_dataset('float64', data=np.asarray(data, np.float64), dtype='f8')
+  args = filename
+  def func(args):
+    return tfio.IOTensor.from_hdf5(args)('/float64')
+  expected = np.asarray(data, np.float64)
+
+  def fin():
+    shutil.rmtree(tmp_path)
+  request.addfinalizer(fin)
+
+  return args, func, expected
 
 @pytest.fixture(name="arrow", scope="module")
 def fixture_arrow():
@@ -295,7 +317,6 @@ def fixture_arrow():
   expected = table[column].to_pylist()
 
   return args, func, expected
-
 
 # scalar is a special IOTensor that is alias to Tensor
 @pytest.mark.parametrize(
@@ -355,6 +376,32 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
   indices = list(range(0, len(expected), 7))
   for start, stop in list(zip(indices, indices[1:] + [len(expected)])):
     assert np.array_equal(io_tensor[start:stop], expected[start:stop])
+
+# full slicing/index across multiple dimensions
+@pytest.mark.parametrize(
+    ("io_tensor_fixture"),
+    [
+        pytest.param("hdf5_multiple_dimension"),
+    ],
+    ids=[
+        "hdf5",
+    ],
+)
+def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
+  """test_io_tensor_slice_multiple_dimension"""
+  args, func, expected = fixture_lookup(io_tensor_fixture)
+
+  io_tensor = func(args)
+
+  # Test __getitem__, use 7 to partition dimension 0, 11 for dimension 1
+  indices_0 = list(range(0, len(expected), 7))
+  for start_0, stop_0 in list(zip(indices_0, indices_0[1:] + [len(expected)])):
+    indices_1 = list(range(0, len(expected[0]), 11))
+    for start_1, stop_1 in list(
+        zip(indices_1, indices_1[1:] + [len(expected[0])])):
+      assert np.array_equal(
+          io_tensor[start_0:stop_0, start_1:stop_1],
+          expected[start_0:stop_0, start_1:stop_1])
 
 # slice (__getitem__) could also be inside dataset for GraphIOTensor
 @pytest.mark.parametrize(
