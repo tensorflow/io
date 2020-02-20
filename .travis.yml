@@ -32,7 +32,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
-    - bash -x -e .github/workflows/build.wheel.sh python
+    - bash -x -e .github/workflows/build.wheel.sh python no
 
   - stage: build
     name: "Nightly Wheel Release on macOS 3.6.2"
@@ -40,7 +40,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
-    - bash -x -e .github/workflows/build.wheel.sh python
+    - bash -x -e .github/workflows/build.wheel.sh python no
 
   - stage: build
     name: "Nightly Wheel Release on macOS 3.7.0"
@@ -48,7 +48,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
-    - bash -x -e .github/workflows/build.wheel.sh python
+    - bash -x -e .github/workflows/build.wheel.sh python no
 
 notifications:
 - email: false
