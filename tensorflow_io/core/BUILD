@@ -196,6 +196,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@flac",
+        "@minimp3",
         "@vorbis",
     ],
     alwayslink = 1,
