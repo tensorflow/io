@@ -387,7 +387,7 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
         "hdf5",
     ],
 )
-def test_io_tensor_slicd_multiple_dimension(fixture_lookup, io_tensor_fixture):
+def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_slice_multiple_dimension"""
   args, func, expected = fixture_lookup(io_tensor_fixture)
 
