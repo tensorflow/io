@@ -32,6 +32,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
+    - python -m pip install -U setuptools
     - bash -x -e .github/workflows/build.wheel.sh python no
 
   - stage: build
@@ -40,6 +41,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
+    - python -m pip install -U setuptools
     - bash -x -e .github/workflows/build.wheel.sh python no
 
   - stage: build
@@ -48,6 +50,7 @@ jobs:
     osx_image: xcode10
     script:
     - python -m pip install tensorflow-io-nightly
+    - python -m pip install -U setuptools
     - bash -x -e .github/workflows/build.wheel.sh python no
 
 notifications:
