@@ -835,9 +835,30 @@ def fixture_sql_graph():
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
-        pytest.param("kafka"),
-        pytest.param("kafka_avro"),
-        pytest.param("kafka_stream"),
+        pytest.param(
+            "kafka",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_avro",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_stream",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param(
             "sql",
             marks=[
@@ -926,8 +947,22 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
-        pytest.param("kafka"),
-        pytest.param("kafka_avro"),
+        pytest.param(
+            "kafka",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_avro",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param(
             "kafka_stream",
             marks=[
@@ -1033,8 +1068,22 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_structure"),
         pytest.param("numpy_file_tuple"),
         pytest.param("numpy_file_dict"),
-        pytest.param("kafka"),
-        pytest.param("kafka_avro"),
+        pytest.param(
+            "kafka",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_avro",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param(
             "sql",
             marks=[
@@ -1148,10 +1197,38 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_file_tuple_graph", 2),
         pytest.param("numpy_file_dict_graph", None),
         pytest.param("numpy_file_dict_graph", 2),
-        pytest.param("kafka", None),
-        pytest.param("kafka", 2),
-        pytest.param("kafka_avro", None),
-        pytest.param("kafka_avro", 2),
+        pytest.param(
+            "kafka", None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka", 2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_avro", None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka_avro", 2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param(
             "sql_graph", None,
             marks=[

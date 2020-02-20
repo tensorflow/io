@@ -348,7 +348,14 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
         pytest.param("hdf5"),
-        pytest.param("kafka"),
+        pytest.param(
+            "kafka",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param("arrow"),
     ],
     ids=[
@@ -417,8 +424,22 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_flac", 2),
         pytest.param("hdf5_graph", None),
         pytest.param("hdf5_graph", 2),
-        pytest.param("kafka", None),
-        pytest.param("kafka", 2),
+        pytest.param(
+            "kafka", None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
+        pytest.param(
+            "kafka", 2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
+            ],
+        ),
         pytest.param(
             "arrow", None,
             marks=[
