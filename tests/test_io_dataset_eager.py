@@ -966,6 +966,9 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param(
             "kafka_stream",
             marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Kafka not tested on macOS/Windows"),
                 pytest.mark.xfail(reason="TODO"),
             ],
         ),
