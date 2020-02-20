@@ -27,6 +27,10 @@ import tensorflow as tf
 import tensorflow_io as tfio
 import tensorflow_io.kafka as kafka_io
 
+if sys.platform == "darwin":
+  pytest.skip("Kafka is failing on macOS", allow_module_level=True)
+
+
 @pytest.fixture(name="fashion_mnist", scope="module")
 def fixture_fashion_mnist():
   """fixture_fashion_mnist"""
