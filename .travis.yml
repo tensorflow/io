@@ -1,0 +1,54 @@
+language: generic
+
+git:
+  quiet: true
+
+before_install:
+- |
+  set -x -e ;
+  export PYVER=$(echo $TRAVIS_JOB_NAME | awk '{print $NF}') ;
+  echo pyenv install --list ;
+  pyenv install $PYVER ;
+  pyenv global $PYVER ;
+  export PATH=$(dirname $(pyenv which python)):$PATH ;
+  echo $PATH ;
+  python --version ;
+  python -c "import site; print(site.getsitepackages())" ;
+
+install:
+- |
+  bash -x -e tests/test_kafka/kafka_test.sh start kafka ;
+  bash -x -e tests/test_azure/start_azure.sh ;
+  bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub ;
+
+
+stages:
+- build
+
+jobs:
+  - stage: build
+    name: "Nightly Wheel Release on macOS 3.5.3"
+    os: osx
+    osx_image: xcode10
+    script:
+    - python -m pip install tensorflow-io-nightly
+    - bash -x -e .github/workflows/build.wheel.sh python
+
+  - stage: build
+    name: "Nightly Wheel Release on macOS 3.6.2"
+    os: osx
+    osx_image: xcode10
+    script:
+    - python -m pip install tensorflow-io-nightly
+    - bash -x -e .github/workflows/build.wheel.sh python
+
+  - stage: build
+    name: "Nightly Wheel Release on macOS 3.7.0"
+    os: osx
+    osx_image: xcode10
+    script:
+    - python -m pip install tensorflow-io-nightly
+    - bash -x -e .github/workflows/build.wheel.sh python
+
+notifications:
+- email: false
