@@ -380,6 +380,27 @@ def fixture_audio_flac():
 
   return args, func, expected
 
+@pytest.fixture(name="audio_mp3", scope="module")
+def fixture_audio_mp3():
+  """fixture_audio_mp3"""
+  # l1-fl6.bit was taken from minimp3
+  # l1-fl6.raw is the converted, through minimp3
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "l1-fl6.bit")
+  raw_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "l1-fl6.raw")
+  raw = np.fromfile(raw_path, np.int16)
+  raw = raw.reshape([-1, 2])
+  value = tf.cast(raw, tf.int16)
+
+  args = path
+  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args)
+  expected = [v for _, v in enumerate(value)]
+
+  return args, func, expected
+
 @pytest.fixture(name="hdf5", scope="module")
 def fixture_hdf5(request):
   """fixture_hdf5"""
@@ -812,6 +833,7 @@ def fixture_sql_graph():
             ],
         ),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param(
             "prometheus_scrape",
             marks=[
@@ -856,6 +878,7 @@ def fixture_sql_graph():
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "prometheus[scrape]",
         "kinesis",
         "pubsub",
@@ -912,6 +935,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param(
             "prometheus_scrape",
             marks=[
@@ -952,6 +976,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "prometheus[scrape]",
         "hdf5",
         "grpc",
@@ -1027,6 +1052,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
         pytest.param("numpy"),
@@ -1053,6 +1079,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "hdf5",
         "grpc",
         "numpy",
@@ -1142,6 +1169,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
+        pytest.param("audio_mp3", None),
+        pytest.param("audio_mp3", 2),
         pytest.param("hdf5_graph", None),
         pytest.param("hdf5_graph", 2),
         pytest.param("numpy_file_tuple_graph", None),
@@ -1186,6 +1215,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "audio[ogg]|2",
         "audio[flac]",
         "audio[flac]|2",
+        "audio[mp3]",
+        "audio[mp3]|2",
         "hdf5",
         "hdf5|2",
         "numpy[file/tuple]",
@@ -1260,6 +1291,7 @@ def test_io_dataset_in_dataset_parallel(
             ],
         ),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("numpy"),
         pytest.param("numpy_structure"),
@@ -1282,6 +1314,7 @@ def test_io_dataset_in_dataset_parallel(
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "hdf5",
         "numpy",
         "numpy[structure]",

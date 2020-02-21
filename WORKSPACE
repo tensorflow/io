@@ -722,6 +722,16 @@ http_archive(
 )
 
 http_archive(
+    name = "minimp3",
+    build_file = "//third_party:minimp3.BUILD",
+    sha256 = "5e216d54cb0423d99b92c5e81682cc22a9a1b028e961f56d52878cc967930bee",
+    strip_prefix = "minimp3-9229f280ad475a434d7592255dc01534db65504f",
+    urls = [
+        "https://github.com/lieff/minimp3/archive/9229f280ad475a434d7592255dc01534db65504f.tar.gz",
+    ],
+)
+
+http_archive(
     name = "postgresql",
     build_file = "//third_party:postgresql.BUILD",
     sha256 = "9868c1149a04bae1131533c5cbd1c46f9c077f834f6147abaef8791a7c91b1a1",
