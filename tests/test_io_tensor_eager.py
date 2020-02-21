@@ -169,6 +169,40 @@ def fixture_audio_rate_flac():
 
   return args, func, expected
 
+@pytest.fixture(name="audio_mp3", scope="module")
+def fixture_audio_mp3():
+  """fixture_audio_mp3"""
+  # l1-fl6.bit was taken from minimp3
+  # l1-fl6.raw is the converted, through minimp3
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "l1-fl6.bit")
+  raw_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "l1-fl6.raw")
+  raw = np.fromfile(raw_path, np.int16)
+  raw = raw.reshape([-1, 2])
+  value = tf.cast(raw, tf.int16)
+
+  args = path
+  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
+  expected = value
+
+  return args, func, expected
+
+@pytest.fixture(name="audio_rate_mp3", scope="module")
+def fixture_audio_rate_mp3():
+  """fixture_audio_rate_mp3"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "l1-fl6.bit")
+
+  args = path
+  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
+  expected = tf.constant(44100)
+
+  return args, func, expected
+
 @pytest.fixture(name="kafka")
 def fixture_kafka():
   """fixture_kafka"""
@@ -347,6 +381,7 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_wav_24"),
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("kafka"),
         pytest.param("arrow"),
@@ -356,6 +391,7 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "hdf5",
         "kafka",
         "arrow",
@@ -415,6 +451,8 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_ogg", 2),
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
+        pytest.param("audio_mp3", None),
+        pytest.param("audio_mp3", 2),
         pytest.param("hdf5_graph", None),
         pytest.param("hdf5_graph", 2),
         pytest.param("kafka", None),
@@ -441,6 +479,8 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
         "audio[ogg]|2",
         "audio[flac]",
         "audio[flac]|2",
+        "audio[mp3]",
+        "audio[mp3]|2",
         "hdf5",
         "hdf5|2",
         "kafka",
@@ -498,12 +538,14 @@ def test_io_tensor_slice_in_dataset(
         pytest.param("audio_rate_wav_24"),
         pytest.param("audio_rate_ogg"),
         pytest.param("audio_rate_flac"),
+        pytest.param("audio_rate_mp3"),
     ],
     ids=[
         "audio[rate][wav]",
         "audio[rate][wav/24bit]",
         "audio[rate][ogg]",
         "audio[rate][flac]",
+        "audio[rate][mp3]",
     ],
 )
 def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
@@ -522,12 +564,14 @@ def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_rate_wav_24"),
         pytest.param("audio_rate_ogg"),
         pytest.param("audio_rate_flac"),
+        pytest.param("audio_rate_mp3"),
     ],
     ids=[
         "audio[rate][wav]",
         "audio[rate][wav/24bit]",
         "audio[rate][ogg]",
         "audio[rate][flac]",
+        "audio[rate][mp3]",
     ],
 )
 def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
@@ -561,6 +605,7 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
         pytest.param("audio_wav_24"),
         pytest.param("audio_ogg"),
         pytest.param("audio_flac"),
+        pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("arrow"),
     ],
@@ -569,6 +614,7 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
         "audio[wav/24bit]",
         "audio[ogg]",
         "audio[flac]",
+        "audio[mp3]",
         "hdf5",
         "arrow",
     ],
