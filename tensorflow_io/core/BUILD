@@ -188,18 +188,31 @@ cc_library(
 cc_library(
     name = "audio_ops",
     srcs = [
+        "kernels/audio_flac_kernels.cc",
         "kernels/audio_kernels.cc",
+        "kernels/audio_kernels.h",
+        "kernels/audio_mp3_kernels.cc",
+        "kernels/audio_mp4_kernels.cc",
+        "kernels/audio_ogg_kernels.cc",
+        "kernels/audio_wav_kernels.cc",
         "ops/audio_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
+        #":audio_functions",
         "//tensorflow_io/core:dataset_ops",
         "@flac",
         "@minimp3",
         "@speexdsp",
+        "@minimp4",
         "@vorbis",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [
+            "//tensorflow_io/core/swift:audio_swift",
+        ],
+        "//conditions:default": [],
+    }),
     alwayslink = 1,
 )
 

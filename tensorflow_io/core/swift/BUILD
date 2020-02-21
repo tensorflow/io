@@ -1,0 +1,13 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+package(default_visibility = ["//visibility:public"])
+
+swift_library(
+    name = "audio_swift",
+    srcs = ["audio.swift"],
+    linkopts = [
+        "-L/usr/lib/swift",
+    ],
+    module_name = "audio",
+    alwayslink = True,
+)
