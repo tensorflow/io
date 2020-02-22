@@ -120,6 +120,9 @@ Note there is a bug in macOS's native python 3.7.3 that could be fixed
 with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
 
 ```sh
+# macOS's default python3 is 3.7.3
+python3 --version
+
 # Install bazel 2.0.0:
 curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
 sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
