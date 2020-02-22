@@ -27,6 +27,24 @@ jobs:
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           bazel run -s --verbose_failures //tools/lint:check
 
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
+          export PATH=/usr/bin:$PATH
+          echo $PATH
+          echo "Note the following is to fix a bug in Apple's python 3.7.3"
+          sudo sed -i.bak 's/sys.modules.values()/list(sys.modules.values())/g' /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.7/lib/python3.7/linecache.py
+          python3 --version
+          python3 -c 'import site; print(site.getsitepackages())'
+          python3 .github/workflows/build.instruction.py --sudo=true README.md "#### macOS" > source.sh
+          bash -x -e source.sh
+          python3 -c 'import tensorflow as tf; print(tf.version.VERSION)'
+
   ubuntu-1804:
     name: Ubuntu 18.04
     runs-on: ubuntu-latest
