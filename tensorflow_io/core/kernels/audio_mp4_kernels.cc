@@ -23,6 +23,15 @@ int64_t DecodeAACFunction(void* state, const int64_t codec, const int64_t rate,
                           const int64_t channels, const int64_t frames,
                           const void* data_in, int64_t size_in, void* data_out,
                           int64_t size_out);
+
+#if !defined(__APPLE__)
+int64_t DecodeAACFunction(void* state, const int64_t codec, const int64_t rate,
+                          const int64_t channels, const int64_t frames,
+                          const void* data_in, int64_t size_in, void* data_out,
+                          int64_t size_out) {
+  return -1;
+}
+#endif
 }
 
 namespace tensorflow {
@@ -151,7 +160,8 @@ class MP4ReadableResource : public AudioReadableResourceBase {
         data_out.resize(size_out);
 
         StringPiece result;
-        file_->Read(frame_offset, frame_bytes, &result, (char*)&data_in[0]);
+        TF_RETURN_IF_ERROR(file_->Read(frame_offset, frame_bytes, &result,
+                                       (char*)&data_in[0]));
         if (result.size() != frame_bytes) {
           return errors::InvalidArgument(
               "unable to read ", frame_bytes, " from offset ", frame_offset,

@@ -761,15 +761,11 @@ http_archive(
     ],
 )
 
-http_archive(
-    name = "build_bazel_rules_swift",
-    sha256 = "da799f591aed933f63575ef0fbf7b7a20a84363633f031fcd48c936cee771502",
-    strip_prefix = "rules_swift-1b0fd91696928ce940bcc220f36c898694f10115",
-    urls = [
-        "https://github.com/bazelbuild/rules_swift/archive/1b0fd91696928ce940bcc220f36c898694f10115.tar.gz",
-    ],
-)
+load("//:tools/build/tensorflow_io.bzl", "tf_io_swift")
 
+tf_io_swift()
+
+"""
 http_archive(
     name = "build_bazel_apple_support",
     sha256 = "ad8ae80e93612b8151019367a3d1604d7a51c14480dae1254e10252007e8260c",
@@ -786,3 +782,4 @@ swift_rules_dependencies()
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 
 apple_support_dependencies()
+"""

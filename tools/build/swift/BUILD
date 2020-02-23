@@ -4,7 +4,9 @@ package(default_visibility = ["//visibility:public"])
 
 swift_library(
     name = "audio_swift",
-    srcs = ["audio.swift"],
+    srcs = [
+        "//tensorflow_io/core:swift/audio.swift",
+    ],
     linkopts = [
         "-L/usr/lib/swift",
     ],

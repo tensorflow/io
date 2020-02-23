@@ -39,11 +39,16 @@ class AudioReadableResource : public AudioReadableResourceBase {
       return OggReadableResourceInit(env_, input, resource_);
     } else if (memcmp(header, "fLaC", 4) == 0) {
       return FlacReadableResourceInit(env_, input, resource_);
-    } else if (memcmp(&header[4], "ftyp", 4) == 0) {
+    }
+    Status status = MP3ReadableResourceInit(env_, input, resource_);
+    if (status.ok()) {
+      return status;
+    }
+    if (memcmp(&header[4], "ftyp", 4) == 0) {
       LOG(ERROR) << "MP4A file is not fully supported!";
       return MP4ReadableResourceInit(env_, input, resource_);
     }
-    return MP4ReadableResourceInit(env_, input, resource_);
+    return errors::InvalidArgument("unknown file type: ", input);
   }
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
     mutex_lock l(mu_);

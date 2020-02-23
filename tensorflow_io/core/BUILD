@@ -185,6 +185,10 @@ cc_library(
     alwayslink = 1,
 )
 
+exports_files([
+    "swift/audio.swift",
+])
+
 cc_library(
     name = "audio_ops",
     srcs = [
@@ -200,16 +204,15 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        #":audio_functions",
-        "//tensorflow_io/core:dataset_ops",
         "@flac",
         "@minimp3",
         "@speexdsp",
         "@minimp4",
         "@vorbis",
+        "//tensorflow_io/core:dataset_ops",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
-            "//tensorflow_io/core/swift:audio_swift",
+            "//tools/build/swift:audio_swift",
         ],
         "//conditions:default": [],
     }),
