@@ -724,10 +724,10 @@ http_archive(
 http_archive(
     name = "minimp3",
     build_file = "//third_party:minimp3.BUILD",
-    sha256 = "5e216d54cb0423d99b92c5e81682cc22a9a1b028e961f56d52878cc967930bee",
-    strip_prefix = "minimp3-9229f280ad475a434d7592255dc01534db65504f",
+    sha256 = "53dd89dbf235c3a282b61fec07eb29730deb1a828b0c9ec95b17b9bd4b22cc3d",
+    strip_prefix = "minimp3-2b9a0237547ca5f6f98e28a850237cc68f560f7a",
     urls = [
-        "https://github.com/lieff/minimp3/archive/9229f280ad475a434d7592255dc01534db65504f.tar.gz",
+        "https://github.com/lieff/minimp3/archive/2b9a0237547ca5f6f98e28a850237cc68f560f7a.tar.gz",
     ],
 )
 
