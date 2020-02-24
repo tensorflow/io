@@ -2,6 +2,33 @@
 
 MODE=@@MODE@@
 
+RUN_CLANG=no
+RUN_BAZEL=no
+RUN_PYLINT=no
+if [[ $# -eq 0 ]]; then
+  RUN_CLANG=true
+  RUN_BAZEL=true
+  RUN_PYLINT=true
+else
+  for i in "$@"; do
+    if [[ "$i" == "clang" ]]; then
+      echo clang $i
+      RUN_CLANG=true
+    elif [[ "$i" == "bazel" ]]; then
+      echo bazel $i
+      RUN_BAZEL=true
+    elif [[ "$i" == "pylint" ]]; then
+      echo pylint $i
+      RUN_PYLINT=true
+    else
+      echo "unknown command: $i"
+      exit 1
+    fi
+  done
+fi
+
+echo "Selected: Pylint=$RUN_PYLINT Bazel=$RUN_BAZEL Clang=$RUN_CLANG"
+
 PYLINT_PATH=@@PYLINT_PATH@@
 BUILDIFIER_PATH=@@BUILDIFIER_PATH@@
 CLANG_FORMAT_PATH=@@CLANG_FORMAT_PATH@@
@@ -50,6 +77,8 @@ clang_format_func() {
 
 set -e
 
+if [[ "$RUN_PYLINT" == "true" ]]; then
+echo "Run Pylint"
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -60,7 +89,11 @@ set -e
         pylint_func $mode "$i" ; \
     done \
 )
+fi
 
+
+if [[ "$RUN_BAZEL" == "true" ]]; then
+echo "Run Bazel Buildifier"
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -84,7 +117,10 @@ set -e
         buildifier_func $mode "$i" ; \
     done \
 )
+fi
 
+if [[ "$RUN_CLANG" == "true" ]]; then
+echo "Run Clang Format"
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -98,5 +134,6 @@ set -e
         clang_format_func $mode "$i" ; \
     done \
 )
+fi
 
 exit 0
