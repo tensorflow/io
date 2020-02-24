@@ -54,6 +54,18 @@ REGISTER_OP("IO>AudioReadableRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioResample")
+    .Input("input: T")
+    .Input("rate_in: int64")
+    .Input("rate_out: int64")
+    .Output("output: T")
+    .Attr("quality: int")
+    .Attr("T: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
