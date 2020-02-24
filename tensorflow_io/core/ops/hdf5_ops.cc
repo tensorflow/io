@@ -60,6 +60,7 @@ REGISTER_OP("IO>HDF5ReadableRead")
         c->set_output(0, full);
         return Status::OK();
       }
+      // TODO: replace dims up until rank(start|stop)
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->ReplaceDim(full, 0, c->UnknownDim(), &shape));
       c->set_output(0, shape);

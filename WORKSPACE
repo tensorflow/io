@@ -732,6 +732,16 @@ http_archive(
 )
 
 http_archive(
+    name = "speexdsp",
+    build_file = "//third_party:speexdsp.BUILD",
+    sha256 = "682042fc6f9bee6294ec453f470dadc26c6ff29b9c9e9ad2ffc1f4312fd64771",
+    strip_prefix = "speexdsp-1.2.0",
+    urls = [
+        "https://downloads.xiph.org/releases/speex/speexdsp-1.2.0.tar.gz",
+    ],
+)
+
+http_archive(
     name = "postgresql",
     build_file = "//third_party:postgresql.BUILD",
     sha256 = "9868c1149a04bae1131533c5cbd1c46f9c077f834f6147abaef8791a7c91b1a1",

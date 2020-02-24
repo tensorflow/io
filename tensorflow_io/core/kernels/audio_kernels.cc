@@ -13,9 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "FLAC/stream_decoder.h"
-#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
+
+#include "FLAC/stream_decoder.h"
+#include "speex/speex_resampler.h"
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 #define MINIMP3_IMPLEMENTATION
@@ -959,6 +962,97 @@ class AudioReadableReadOp : public OpKernel {
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
 };
+
+class AudioResampleOp : public OpKernel {
+ public:
+  explicit AudioResampleOp(OpKernelConstruction* context) : OpKernel(context) {
+    OP_REQUIRES_OK(context, context->GetAttr("quality", &quality_));
+    OP_REQUIRES(
+        context,
+        (SPEEX_RESAMPLER_QUALITY_MIN <= quality_ &&
+         quality_ <= SPEEX_RESAMPLER_QUALITY_MAX),
+        errors::InvalidArgument("quality ", quality_, " not supported, need [",
+                                SPEEX_RESAMPLER_QUALITY_MIN, ", ",
+                                SPEEX_RESAMPLER_QUALITY_MAX, "]"));
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* rate_in_tensor;
+    OP_REQUIRES_OK(context, context->input("rate_in", &rate_in_tensor));
+    const int64 rate_in = rate_in_tensor->scalar<int64>()();
+
+    const Tensor* rate_out_tensor;
+    OP_REQUIRES_OK(context, context->input("rate_out", &rate_out_tensor));
+    const int64 rate_out = rate_out_tensor->scalar<int64>()();
+
+    int64 samples_in = input_tensor->shape().dim_size(0);
+    int64 channels = input_tensor->shape().dim_size(1);
+
+    std::unique_ptr<SpeexResamplerState, void (*)(SpeexResamplerState*)> state(
+        nullptr, [](SpeexResamplerState* p) {
+          if (p != nullptr) {
+            speex_resampler_destroy(p);
+          }
+        });
+
+    int err = 0;
+    state.reset(
+        speex_resampler_init(channels, rate_in, rate_out, quality_, &err));
+    OP_REQUIRES(
+        context, (state.get() != nullptr),
+        errors::InvalidArgument("unable to initialize resampler: ", err));
+
+    int64 samples_out = samples_in * rate_out / rate_in;
+    Tensor* output_tensor;
+    switch (input_tensor->dtype()) {
+      case DT_INT16: {
+        OP_REQUIRES_OK(context, context->allocate_output(
+                                    0, TensorShape({samples_out, channels}),
+                                    &output_tensor));
+
+        uint32_t processed_in = samples_in;
+        uint32_t processed_out = samples_out;
+        int returned = speex_resampler_process_interleaved_int(
+            state.get(), input_tensor->flat<int16>().data(), &processed_in,
+            output_tensor->flat<int16>().data(), &processed_out);
+        OP_REQUIRES(context, (returned == 0),
+                    errors::InvalidArgument("process error: ", returned));
+        OP_REQUIRES(
+            context, (processed_out == samples_out),
+            errors::InvalidArgument("output buffer mismatch: ", processed_out,
+                                    " vs. ", samples_out));
+      } break;
+      case DT_FLOAT: {
+        OP_REQUIRES_OK(context, context->allocate_output(
+                                    0, TensorShape({samples_out, channels}),
+                                    &output_tensor));
+        uint32_t processed_in = samples_in;
+        uint32_t processed_out = samples_out;
+        int returned = speex_resampler_process_interleaved_float(
+            state.get(), input_tensor->flat<float>().data(), &processed_in,
+            output_tensor->flat<float>().data(), &processed_out);
+        OP_REQUIRES(context, (returned == 0),
+                    errors::InvalidArgument("process error: ", returned));
+        OP_REQUIRES(
+            context, (processed_out == samples_out),
+            errors::InvalidArgument("output buffer mismatch: ", processed_out,
+                                    " vs. ", samples_out));
+      } break;
+      default:
+        OP_REQUIRES_OK(context,
+                       errors::InvalidArgument(
+                           "Data type ", DataTypeString(input_tensor->dtype()),
+                           " not supported"));
+    }
+  }
+
+ private:
+  int64 quality_;
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
                         AudioReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
@@ -966,6 +1060,8 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
                         AudioReadableReadOp);
 
+REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
+                        AudioResampleOp);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow
