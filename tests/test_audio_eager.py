@@ -52,6 +52,20 @@ def fixture_audio_data_24():
   rate = tf.constant(44100)
   return path, value, rate
 
+# TODO: Consolidate with other tests in
+# test_io_dataset_eager.py/test_io_tensor_eager.py
+# Audio from:
+# https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/audio-samples.html
+def test_mp4():
+  """test_mp4"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "gs-16b-2c-44100hz.mp4")
+  audio = tfio.IOTensor.from_audio(path)
+  _ = audio.to_tensor().numpy()
+  #raw_path = "gs-16b-2c-44100hz.pcm"
+  #audio.to_tensor().numpy().tofile(raw_path)
+
 @pytest.mark.parametrize(
     ("io_tensor_func"),
     [

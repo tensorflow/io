@@ -62,7 +62,6 @@ class MP3ReadableResource : public AudioReadableResourceBase {
 
   Status Init(const string& input) override {
     mutex_lock l(mu_);
-
     const string& filename = input;
     file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
@@ -79,6 +78,9 @@ class MP3ReadableResource : public AudioReadableResourceBase {
                                      " as mp3: ", mp3dec_ex_.last_error);
     }
     mp3dec_ex_scope_.reset(&mp3dec_ex_);
+    if (mp3dec_ex_.info.channels == 0) {
+      return errors::InvalidArgument("invalid mp3 with channel == 0");
+    }
     int64 samples = mp3dec_ex_.samples / mp3dec_ex_.info.channels;
     int64 channels = mp3dec_ex_.info.channels;
     int64 rate = mp3dec_ex_.info.hz;

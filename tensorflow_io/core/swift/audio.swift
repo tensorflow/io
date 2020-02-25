@@ -3,6 +3,7 @@ import AVFoundation
 @_silgen_name("DecodeAACFunction")
 func DecodeAACFunction(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64, channels: Int64, frames: Int64, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int {
     
+    let header_bytes = Int64(7)
     var stream_description_in = AudioStreamBasicDescription(
         mSampleRate: Double(rate),
         mFormatID: kAudioFormatMPEG4AAC,
@@ -20,12 +21,12 @@ func DecodeAACFunction(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64
     let buffer_in = AVAudioCompressedBuffer(
         format: format_in,
         packetCapacity: 1,
-        maximumPacketSize: Int(size_in))
+        maximumPacketSize: Int(size_in - header_bytes))
     
-    buffer_in.data.copyMemory(from:data_in, byteCount:Int(size_in))
-    buffer_in.byteLength = UInt32(size_in)
+    buffer_in.data.copyMemory(from:data_in.advanced(by: Int(header_bytes)), byteCount:Int(size_in - header_bytes))
+    buffer_in.byteLength = UInt32(size_in - header_bytes)
     buffer_in.packetCount = 1
-    buffer_in.packetDescriptions!.pointee.mDataByteSize = UInt32(size_in)
+    buffer_in.packetDescriptions!.pointee.mDataByteSize = UInt32(size_in - header_bytes)
     buffer_in.packetDescriptions!.pointee.mStartOffset = 0
     buffer_in.packetDescriptions!.pointee.mVariableFramesInPacket = 0
     
