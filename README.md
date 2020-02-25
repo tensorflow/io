@@ -109,6 +109,30 @@ version of TensorFlow I/O according to the table below:
 
 ## Development
 
+### Lint
+
+TensorFlow I/O's code conforms through Pylint, Bazel Buildifier, and Clang Format. The following will check the source code and report any lint issues:
+```sh
+bazel run //tools/lint:check
+```
+
+For Bazel Buildifier and Clang Format, the following will automatically fix and lint errors:
+```sh
+bazel run //tools/lint:lint
+```
+
+Alternatively, if you only want to perform lint check on one aespect, then you can selectively pass `pylint`, `bazel`, or `clang` from the above commands.
+
+For example, check with Pylint only could be done with:
+```
+bazel run //tools/lint:check -- pylint
+```
+
+Fix with Bazel Buildifier or Clang Format could be done with:
+```
+bazel run //tools/lint:lint -- bazel clang
+```
+
 ### Python
 
 #### macOS
