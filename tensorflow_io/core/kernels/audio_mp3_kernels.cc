@@ -52,7 +52,12 @@ class MP3Stream {
 
 class MP3ReadableResource : public AudioReadableResourceBase {
  public:
-  MP3ReadableResource(Env* env) : env_(env) {}
+  MP3ReadableResource(Env* env)
+      : env_(env), mp3dec_ex_scope_(nullptr, [](mp3dec_ex_t* p) {
+          if (p != nullptr) {
+            mp3dec_ex_close(p);
+          }
+        }) {}
   ~MP3ReadableResource() {}
 
   Status Init(const string& input) override {
@@ -73,6 +78,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
       return errors::InvalidArgument("unable to open file ", filename,
                                      " as mp3: ", mp3dec_ex_.last_error);
     }
+    mp3dec_ex_scope_.reset(&mp3dec_ex_);
     int64 samples = mp3dec_ex_.samples / mp3dec_ex_.info.channels;
     int64 channels = mp3dec_ex_.info.channels;
     int64 rate = mp3dec_ex_.info.hz;
@@ -133,6 +139,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
   std::unique_ptr<MP3Stream> stream_;
   mp3dec_io_t mp3dec_io_;
   mp3dec_ex_t mp3dec_ex_;
+  std::unique_ptr<mp3dec_ex_t, void (*)(mp3dec_ex_t*)> mp3dec_ex_scope_;
 };
 
 }  // namespace

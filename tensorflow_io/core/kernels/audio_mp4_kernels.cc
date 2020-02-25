@@ -60,7 +60,12 @@ class MP4Stream {
 
 class MP4ReadableResource : public AudioReadableResourceBase {
  public:
-  MP4ReadableResource(Env* env) : env_(env) {}
+  MP4ReadableResource(Env* env)
+      : env_(env), mp4d_demux_scope_(nullptr, [](MP4D_demux_t* p) {
+          if (p != nullptr) {
+            MP4D_close(p);
+          }
+        }) {}
   ~MP4ReadableResource() {}
 
   Status Init(const string& input) override {
@@ -78,6 +83,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
       return errors::InvalidArgument("unable to open file ", filename,
                                      " as mp4");
     }
+    mp4d_demux_scope_.reset(&mp4d_demux_);
 
     for (int64 track_index = 0; track_index < mp4d_demux_.track_count;
          track_index++) {
@@ -203,6 +209,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
 
   std::unique_ptr<MP4Stream> stream_;
   MP4D_demux_t mp4d_demux_;
+  std::unique_ptr<MP4D_demux_t, void (*)(MP4D_demux_t*)> mp4d_demux_scope_;
   int64 track_index_;
 };
 
