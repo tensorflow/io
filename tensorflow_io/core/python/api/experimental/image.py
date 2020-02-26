@@ -14,11 +14,27 @@
 # ==============================================================================
 """tensorflow_io.experimental.image"""
 
-from tensorflow_io.core.python.experimental.image_ops import draw_bounding_boxes # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_jpeg_exif # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_tiff_info # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_tiff # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_exr_info # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_exr # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_pnm # pylint: disable=unused-import
-from tensorflow_io.core.python.experimental.image_ops import decode_hdr # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    draw_bounding_boxes,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_jpeg_exif,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_tiff_info,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_tiff,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_exr_info,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_exr,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_pnm,
+)  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.image_ops import (
+    decode_hdr,
+)  # pylint: disable=unused-import

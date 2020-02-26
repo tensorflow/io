@@ -20,25 +20,27 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class TextIOLayer(tf.keras.layers.Layer):
-  """TextIOLayer
+    """TextIOLayer
 
   """
-  #=============================================================================
-  # TextIOLayer
-  #=============================================================================
-  def __init__(self, filename):
-    """Obtain a text file IO layer to be used with tf.keras."""
-    self._resource = core_ops.io_file_init(filename)
-    super(TextIOLayer, self).__init__(trainable=False)
 
-  def sync(self):
-    core_ops.io_file_sync(self._resource)
+    # =============================================================================
+    # TextIOLayer
+    # =============================================================================
+    def __init__(self, filename):
+        """Obtain a text file IO layer to be used with tf.keras."""
+        self._resource = core_ops.io_file_init(filename)
+        super(TextIOLayer, self).__init__(trainable=False)
 
-  def call(self, inputs):
-    content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
-    if inputs.dtype != tf.string:
-      content = tf.strings.as_string(content)
-    content = tf.strings.reduce_join(content, axis=1, separator=',')
-    content = content + tf.constant(["\n"])
-    return core_ops.io_file_call(content, False, self._resource)
+    def sync(self):
+        core_ops.io_file_sync(self._resource)
+
+    def call(self, inputs):
+        content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
+        if inputs.dtype != tf.string:
+            content = tf.strings.as_string(content)
+        content = tf.strings.reduce_join(content, axis=1, separator=",")
+        content = content + tf.constant(["\n"])
+        return core_ops.io_file_call(content, False, self._resource)

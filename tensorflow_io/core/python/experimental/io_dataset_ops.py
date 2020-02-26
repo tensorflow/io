@@ -29,35 +29,38 @@ from tensorflow_io.core.python.experimental import file_dataset_ops
 from tensorflow_io.core.python.experimental import numpy_dataset_ops
 from tensorflow_io.core.python.experimental import sql_dataset_ops
 
+
 class IODataset(io_dataset.IODataset):
-  """IODataset"""
+    """IODataset"""
 
-  #=============================================================================
-  # Stream mode
-  #=============================================================================
+    # =============================================================================
+    # Stream mode
+    # =============================================================================
 
-  @classmethod
-  def stream(cls):
-    """Obtain a non-repeatable StreamIODataset to be used.
+    @classmethod
+    def stream(cls):
+        """Obtain a non-repeatable StreamIODataset to be used.
 
     Returns:
       A class of `StreamIODataset`.
     """
-    return StreamIODataset
+        return StreamIODataset
 
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
 
-  @classmethod
-  def from_libsvm(cls,
-                  filename,
-                  num_features,
-                  dtype=None,
-                  label_dtype=None,
-                  compression_type='',
-                  **kwargs):
-    """Creates an `IODataset` from a libsvm file.
+    @classmethod
+    def from_libsvm(
+        cls,
+        filename,
+        num_features,
+        dtype=None,
+        label_dtype=None,
+        compression_type="",
+        **kwargs
+    ):
+        """Creates an `IODataset` from a libsvm file.
 
     Args:
       filename: A `tf.string` tensor containing one or more filenames.
@@ -74,18 +77,20 @@ class IODataset(io_dataset.IODataset):
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromLibSVM")):
-      return libsvm_dataset_ops.LibSVMIODataset(
-          filename, num_features,
-          dtype=dtype, label_dtype=label_dtype,
-          compression_type=compression_type,
-          internal=True, **kwargs)
-
-  @classmethod
-  def from_tiff(cls,
+        with tf.name_scope(kwargs.get("name", "IOFromLibSVM")):
+            return libsvm_dataset_ops.LibSVMIODataset(
                 filename,
-                **kwargs):
-    """Creates an `IODataset` from a TIFF file.
+                num_features,
+                dtype=dtype,
+                label_dtype=label_dtype,
+                compression_type=compression_type,
+                internal=True,
+                **kwargs
+            )
+
+    @classmethod
+    def from_tiff(cls, filename, **kwargs):
+        """Creates an `IODataset` from a TIFF file.
 
     Args:
       filename: A string, the filename of a TIFF file.
@@ -95,16 +100,12 @@ class IODataset(io_dataset.IODataset):
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
-      return image_dataset_ops.TIFFIODataset(
-          filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
+            return image_dataset_ops.TIFFIODataset(filename, internal=True)
 
-  @classmethod
-  def from_kinesis(cls,
-                   stream,
-                   shard="",
-                   **kwargs):
-    """Creates an `IODataset` from a Kinesis stream.
+    @classmethod
+    def from_kinesis(cls, stream, shard="", **kwargs):
+        """Creates an `IODataset` from a Kinesis stream.
 
     Args:
       stream: A string, the stream name.
@@ -114,13 +115,12 @@ class IODataset(io_dataset.IODataset):
     Returns:
       A `IODataset`.
     """
-    with tf.name_scope(kwargs.get("name", "IOFromKinesis")):
-      return kinesis_dataset_ops.KinesisIODataset(
-          stream, shard, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromKinesis")):
+            return kinesis_dataset_ops.KinesisIODataset(stream, shard, internal=True)
 
-  @classmethod
-  def from_numpy(cls, a, **kwargs):
-    """Creates an `IODataset` from Numpy arrays.
+    @classmethod
+    def from_numpy(cls, a, **kwargs):
+        """Creates an `IODataset` from Numpy arrays.
 
     The `from_numpy` allows user to create a Dataset from a dict,
     tuple, or individual element of numpy array_like.
@@ -158,14 +158,12 @@ class IODataset(io_dataset.IODataset):
         in `a`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromNumpy")):
-      return numpy_dataset_ops.NumpyIODataset(
-          a, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromNumpy")):
+            return numpy_dataset_ops.NumpyIODataset(a, internal=True)
 
-
-  @classmethod
-  def from_numpy_file(cls, filename, spec=None, **kwargs):
-    """Creates an `IODataset` from a Numpy file.
+    @classmethod
+    def from_numpy_file(cls, filename, spec=None, **kwargs):
+        """Creates an `IODataset` from a Numpy file.
 
     The `from_numpy_file` allows user to create a Dataset from
     a numpy file (npy or npz). The `Dataset` created through
@@ -194,18 +192,14 @@ class IODataset(io_dataset.IODataset):
         file (npy or npz).
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromNumpyFile")):
-      return numpy_dataset_ops.NumpyFileIODataset(
-          filename, spec=spec, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromNumpyFile")):
+            return numpy_dataset_ops.NumpyFileIODataset(
+                filename, spec=spec, internal=True
+            )
 
-  @classmethod
-  def from_prometheus(cls,
-                      query,
-                      length,
-                      offset=None,
-                      endpoint=None,
-                      spec=None):
-    """Creates an `GraphIODataset` from a prometheus endpoint.
+    @classmethod
+    def from_prometheus(cls, query, length, offset=None, endpoint=None, spec=None):
+        """Creates an `GraphIODataset` from a prometheus endpoint.
 
     Args:
       query: A string, the query string for prometheus.
@@ -223,16 +217,17 @@ class IODataset(io_dataset.IODataset):
     Returns:
       A `IODataset`.
     """
-    from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
-    return prometheus_dataset_ops.PrometheusIODataset(
-        query, length, offset=offset, endpoint=endpoint, spec=spec)
+        from tensorflow_io.core.python.ops import (
+            prometheus_dataset_ops,
+        )  # pylint: disable=import-outside-toplevel
 
-  @classmethod
-  def from_sql(cls,
-               query,
-               endpoint=None,
-               spec=None):
-    """Creates an `GraphIODataset` from a postgresql server endpoint.
+        return prometheus_dataset_ops.PrometheusIODataset(
+            query, length, offset=offset, endpoint=endpoint, spec=spec
+        )
+
+    @classmethod
+    def from_sql(cls, query, endpoint=None, spec=None):
+        """Creates an `GraphIODataset` from a postgresql server endpoint.
 
     Args:
       query: A string, the sql query string.
@@ -245,15 +240,11 @@ class IODataset(io_dataset.IODataset):
     Returns:
       A `IODataset`.
     """
-    return sql_dataset_ops.SQLIODataset(
-        query, endpoint=endpoint, spec=spec)
+        return sql_dataset_ops.SQLIODataset(query, endpoint=endpoint, spec=spec)
 
-  @classmethod
-  def to_file(cls,
-              dataset,
-              filename,
-              **kwargs):
-    """Write dataset to a file.
+    @classmethod
+    def to_file(cls, dataset, filename, **kwargs):
+        """Write dataset to a file.
 
     Args:
       dataset: A dataset whose content will be written to.
@@ -263,19 +254,16 @@ class IODataset(io_dataset.IODataset):
     Returns:
       The number of records written.
     """
-    with tf.name_scope(kwargs.get("name", "IOToText")):
-      return file_dataset_ops.to_file(dataset, filename)
+        with tf.name_scope(kwargs.get("name", "IOToText")):
+            return file_dataset_ops.to_file(dataset, filename)
+
 
 class StreamIODataset(tf.data.Dataset):
-  """StreamIODataset"""
+    """StreamIODataset"""
 
-  @classmethod
-  def from_prometheus_scrape(cls,
-                             metric,
-                             endpoint,
-                             interval=None,
-                             **kwargs):
-    """Creates an `StreamIODataset` from a prometheus scrape endpoint.
+    @classmethod
+    def from_prometheus_scrape(cls, metric, endpoint, interval=None, **kwargs):
+        """Creates an `StreamIODataset` from a prometheus scrape endpoint.
 
     Args:
       metric: A string, the name of the metric to scrape.
@@ -286,18 +274,18 @@ class StreamIODataset(tf.data.Dataset):
     Returns:
       A `IODataset`.
     """
-    with tf.name_scope(kwargs.get("name", "IOFromPrometheusScrape")):
-      from tensorflow_io.core.python.ops import prometheus_dataset_ops # pylint: disable=import-outside-toplevel
-      return prometheus_dataset_ops.PrometheusScrapeStreamIODataset(
-          metric, endpoint, interval=interval, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromPrometheusScrape")):
+            from tensorflow_io.core.python.ops import (
+                prometheus_dataset_ops,
+            )  # pylint: disable=import-outside-toplevel
 
-  @classmethod
-  def from_pubsub(cls,
-                  subscription,
-                  endpoint=None,
-                  timeout=10000,
-                  **kwargs):
-    """Creates an `StreamIODataset` from a pubsub endpoint.
+            return prometheus_dataset_ops.PrometheusScrapeStreamIODataset(
+                metric, endpoint, interval=interval, internal=True
+            )
+
+    @classmethod
+    def from_pubsub(cls, subscription, endpoint=None, timeout=10000, **kwargs):
+        """Creates an `StreamIODataset` from a pubsub endpoint.
 
     Args:
       subscription: A string, the subscription of the pubsub messages.
@@ -308,13 +296,14 @@ class StreamIODataset(tf.data.Dataset):
     Returns:
       A `IODataset`.
     """
-    with tf.name_scope(kwargs.get("name", "IOFromPubSub")):
-      return pubsub_dataset_ops.PubSubStreamIODataset(
-          subscription, endpoint=endpoint, timeout=timeout, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromPubSub")):
+            return pubsub_dataset_ops.PubSubStreamIODataset(
+                subscription, endpoint=endpoint, timeout=timeout, internal=True
+            )
 
-  @classmethod
-  def from_grpc_numpy(cls, a, **kwargs):
-    """Creates an `StreamIODataset` from numpy array through grpc.
+    @classmethod
+    def from_grpc_numpy(cls, a, **kwargs):
+        """Creates an `StreamIODataset` from numpy array through grpc.
 
     Args:
       a: A numpy array.
@@ -323,5 +312,5 @@ class StreamIODataset(tf.data.Dataset):
     Returns:
       A `IODataset`.
     """
-    with tf.name_scope(kwargs.get("name", "IOFromGRPC")):
-      return grpc_dataset_ops.GRPCStreamIODataset.from_numpy(a, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromGRPC")):
+            return grpc_dataset_ops.GRPCStreamIODataset.from_numpy(a, internal=True)

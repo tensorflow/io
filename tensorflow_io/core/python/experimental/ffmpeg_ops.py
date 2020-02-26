@@ -19,7 +19,7 @@ from __future__ import print_function
 
 
 def decode_video(content, index=0, name=None):
-  """Decode video stream from a video file.
+    """Decode video stream from a video file.
 
   Args:
     content: A `Tensor` of type `string`.
@@ -28,6 +28,8 @@ def decode_video(content, index=0, name=None):
   Returns:
     value: A `uint8` Tensor.
   """
-  from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
-  return ffmpeg_ops.io_ffmpeg_decode_video(
-      content, index, name=name)
+    from tensorflow_io.core.python.ops import (
+        ffmpeg_ops,
+    )  # pylint: disable=import-outside-toplevel
+
+    return ffmpeg_ops.io_ffmpeg_decode_video(content, index, name=name)

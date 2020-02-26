@@ -51,59 +51,58 @@ from tensorflow_docs.api_generator import utils
 # tfio doesn't eagerly import submodules.
 utils.recursive_import(tfio)
 
-PROJECT_SHORT_NAME = 'tfio'
-PROJECT_FULL_NAME = 'TensorFlow I/O'
+PROJECT_SHORT_NAME = "tfio"
+PROJECT_FULL_NAME = "TensorFlow I/O"
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    'git_branch',
-    default=None,
-    help='The name of the corresponding branch on github.')
+    "git_branch", default=None, help="The name of the corresponding branch on github."
+)
 
-flags.DEFINE_string("output_dir", "/tmp/io_api",
-                    "Where to output the docs")
+flags.DEFINE_string("output_dir", "/tmp/io_api", "Where to output the docs")
 
-CODE_PREFIX_TEMPLATE = "https://github.com/tensorflow/io/tree/{git_branch}/tensorflow_io"
-flags.DEFINE_string(
-    "code_url_prefix", None,
-    "The url prefix for links to the code.")
+CODE_PREFIX_TEMPLATE = (
+    "https://github.com/tensorflow/io/tree/{git_branch}/tensorflow_io"
+)
+flags.DEFINE_string("code_url_prefix", None, "The url prefix for links to the code.")
 
-flags.DEFINE_bool("search_hints", True,
-                  "Include metadata search hints in the generated files")
+flags.DEFINE_bool(
+    "search_hints", True, "Include metadata search hints in the generated files"
+)
 
-flags.DEFINE_string("site_path", "io/api_docs/python",
-                    "Path prefix in the _toc.yaml")
+flags.DEFINE_string("site_path", "io/api_docs/python", "Path prefix in the _toc.yaml")
 
-flags.mark_flags_as_mutual_exclusive(['code_url_prefix', 'git_branch'])
+flags.mark_flags_as_mutual_exclusive(["code_url_prefix", "git_branch"])
 
 
 def main(argv):
     if argv[1:]:
-        raise ValueError('Unrecognized arguments: {}'.format(argv[1:]))
+        raise ValueError("Unrecognized arguments: {}".format(argv[1:]))
 
     if FLAGS.git_branch:
-      code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch=FLAGS.git_branch)
+        code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch=FLAGS.git_branch)
     elif FLAGS.code_url_prefix:
-      code_url_prefix = FLAGS.code_url_prefix
+        code_url_prefix = FLAGS.code_url_prefix
     else:
-      code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch='master')
+        code_url_prefix = CODE_PREFIX_TEMPLATE.format(git_branch="master")
 
     doc_generator = generate_lib.DocGenerator(
         root_title=PROJECT_FULL_NAME,
         # Replace `tensorflow_docs` with your module, here.
         py_modules=[(PROJECT_SHORT_NAME, tfio)],
         code_url_prefix=code_url_prefix,
-        private_map={'tfio': ['__version__', 'utils', 'version', 'core']},
+        private_map={"tfio": ["__version__", "utils", "version", "core"]},
         # This callback cleans up a lot of aliases caused by internal imports.
         callbacks=[],
         search_hints=FLAGS.search_hints,
-        site_path=FLAGS.site_path)
+        site_path=FLAGS.site_path,
+    )
 
     doc_generator.build(FLAGS.output_dir)
 
-    print('Output docs to: ', FLAGS.output_dir)
+    print("Output docs to: ", FLAGS.output_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(main)

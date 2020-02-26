@@ -32,10 +32,6 @@ from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryClient
 from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryReadSession
 from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryTestClient
 
-_allowed_symbols = [
-    'BigQueryClient',
-    'BigQueryReadSession',
-    'BigQueryTestClient'
-]
+_allowed_symbols = ["BigQueryClient", "BigQueryReadSession", "BigQueryTestClient"]
 
 remove_undocumented(__name__, _allowed_symbols)

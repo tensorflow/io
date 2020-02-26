@@ -21,8 +21,9 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import core_ops
 
+
 def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
-  """
+    """
   Draw bounding boxes on a batch of images.
 
   Args:
@@ -35,15 +36,15 @@ def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  if texts is None:
-    texts = []
-  if colors is None:
-    colors = [[]]
-  return core_ops.io_draw_bounding_boxes_v3(
-      images, boxes, colors, texts, name=name)
+    if texts is None:
+        texts = []
+    if colors is None:
+        colors = [[]]
+    return core_ops.io_draw_bounding_boxes_v3(images, boxes, colors, texts, name=name)
+
 
 def decode_jpeg_exif(contents, name=None):
-  """
+    """
   Decode Exif information from an JPEG image.
 
   TODO: Add additional fields besides orientation.
@@ -55,10 +56,11 @@ def decode_jpeg_exif(contents, name=None):
   Returns:
     A `Tensor` of type `int64` for orientation.
   """
-  return core_ops.io_decode_jpeg_exif(contents, name=name)
+    return core_ops.io_decode_jpeg_exif(contents, name=name)
+
 
 def decode_tiff_info(contents, name=None):
-  """
+    """
   Decode a TIFF-encoded image meta data.
 
   Args:
@@ -68,11 +70,12 @@ def decode_tiff_info(contents, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  shape, dtype = core_ops.io_decode_tiff_info(contents, name=name)
-  return shape, dtype
+    shape, dtype = core_ops.io_decode_tiff_info(contents, name=name)
+    return shape, dtype
+
 
 def decode_tiff(contents, index=0, name=None):
-  """
+    """
   Decode a TIFF-encoded image to a uint8 tensor.
 
   Args:
@@ -84,10 +87,11 @@ def decode_tiff(contents, index=0, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return core_ops.io_decode_tiff(contents, index, name=name)
+    return core_ops.io_decode_tiff(contents, index, name=name)
+
 
 def decode_exr_info(contents, name=None):
-  """
+    """
   Decode a EXR-encoded image meta data.
 
   Args:
@@ -97,11 +101,12 @@ def decode_exr_info(contents, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  shape, dtype, channel = core_ops.io_decode_exr_info(contents, name=name)
-  return shape, dtype, channel
+    shape, dtype, channel = core_ops.io_decode_exr_info(contents, name=name)
+    return shape, dtype, channel
+
 
 def decode_exr(contents, index, channel, dtype, name=None):
-  """
+    """
   Decode a EXR-encoded image to a uint8 tensor.
 
   Args:
@@ -114,11 +119,13 @@ def decode_exr(contents, index, channel, dtype, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return core_ops.io_decode_exr(
-      contents, index=index, channel=channel, dtype=dtype, name=name)
+    return core_ops.io_decode_exr(
+        contents, index=index, channel=channel, dtype=dtype, name=name
+    )
+
 
 def decode_pnm(contents, dtype=tf.uint8, name=None):
-  """
+    """
   Decode a PNM-encoded image to a uint8 tensor.
 
   Args:
@@ -128,10 +135,11 @@ def decode_pnm(contents, dtype=tf.uint8, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)
+    return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)
+
 
 def decode_hdr(contents, name=None):
-  """
+    """
   Decode a HDR-encoded image to a uint8 tensor.
 
   Args:
@@ -141,4 +149,4 @@ def decode_hdr(contents, name=None):
   Returns:
     A `Tensor` of type `float` and shape of `[height, width, 3]` (RGB).
   """
-  return core_ops.io_decode_hdr(contents, name=name)
+    return core_ops.io_decode_hdr(contents, name=name)

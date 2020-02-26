@@ -183,31 +183,33 @@ setup(
 # read package and version from:
 # tensorflow_io/core/python/ops/version_ops.py
 with open("tensorflow_io/core/python/ops/version_ops.py") as f:
-  entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
-  assert sum(e.startswith("package = ") for e in entries) == 1
-  assert sum(e.startswith("version = ") for e in entries) == 1
-  package = list([
-      e[10:] for e in entries if e.startswith("package = ")])[0].strip("'")
-  version = list([
-      e[10:] for e in entries if e.startswith("version = ")])[0].strip("'")
-  assert package != ""
-  assert version != ""
+    entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
+    assert sum(e.startswith("package = ") for e in entries) == 1
+    assert sum(e.startswith("version = ") for e in entries) == 1
+    package = list([e[10:] for e in entries if e.startswith("package = ")])[0].strip(
+        "'"
+    )
+    version = list([e[10:] for e in entries if e.startswith("version = ")])[0].strip(
+        "'"
+    )
+    assert package != ""
+    assert version != ""
 
-if '--package-version' in sys.argv:
-  print(package)
-  sys.exit(0)
+if "--package-version" in sys.argv:
+    print(package)
+    sys.exit(0)
 
-project = 'tensorflow-io'
+project = "tensorflow-io"
 
 # Note: import setuptools later to avoid unnecessary dependency
-from setuptools import sandbox # pylint: disable=wrong-import-position
+from setuptools import sandbox  # pylint: disable=wrong-import-position
 
-if '--nightly' in sys.argv:
-  nightly_idx = sys.argv.index('--nightly')
-  version = version + ".dev" + sys.argv[nightly_idx + 1]
-  project = 'tensorflow-io-nightly'
-  sys.argv.remove('--nightly')
-  sys.argv.pop(nightly_idx)
+if "--nightly" in sys.argv:
+    nightly_idx = sys.argv.index("--nightly")
+    version = version + ".dev" + sys.argv[nightly_idx + 1]
+    project = "tensorflow-io-nightly"
+    sys.argv.remove("--nightly")
+    sys.argv.pop(nightly_idx)
 
 print("setup.py - project = '{}'".format(project))
 print("setup.py - package = '{}'".format(package))
@@ -219,60 +221,72 @@ shutil.copytree("tensorflow_io", os.path.join(rootpath, "tensorflow_io"))
 
 print("setup.py - create {}/MANIFEST.in".format(rootpath))
 with open(os.path.join(rootpath, "MANIFEST.in"), "w") as f:
-  f.write("recursive-include tensorflow_io *.so")
+    f.write("recursive-include tensorflow_io *.so")
 
-print("setup.py - create {}/setup.py with required = '{}', "
-      "project_name = '{}' and __version__ = {}".format(
-          rootpath, package, project, version))
+print(
+    "setup.py - create {}/setup.py with required = '{}', "
+    "project_name = '{}' and __version__ = {}".format(
+        rootpath, package, project, version
+    )
+)
 cmdclass = "{'install_headers':InstallHeaders,'install':InstallCommand,}"
 with open(os.path.join(rootpath, "setup.py"), "w") as f:
-  f.write(content.format(package, version, project, cmdclass))
+    f.write(content.format(package, version, project, cmdclass))
 
 datapath = None
-if '--data' in sys.argv:
-  data_idx = sys.argv.index('--data')
-  datapath = sys.argv[data_idx + 1]
-  sys.argv.remove('--data')
-  sys.argv.pop(data_idx)
+if "--data" in sys.argv:
+    data_idx = sys.argv.index("--data")
+    datapath = sys.argv[data_idx + 1]
+    sys.argv.remove("--data")
+    sys.argv.pop(data_idx)
 else:
-  datapath = os.environ.get('TFIO_DATAPATH')
+    datapath = os.environ.get("TFIO_DATAPATH")
 
 if datapath is not None:
-  for rootname, _, filenames in os.walk(
-      os.path.join(datapath, "tensorflow_io")):
-    if (not fnmatch.fnmatch(rootname, "*test*") and
-        not fnmatch.fnmatch(rootname, "*runfiles*")):
-      for filename in [
-          f for f in filenames if fnmatch.fnmatch(
-              f, "*.so") or fnmatch.fnmatch(f, "*.py")]:
-        # NOTE:
-        # cc_grpc_library will generate a lib<name>_cc_grpc.so
-        # proto_library will generate a lib<name>_proto.so
-        # both .so files are not needed in final wheel.
-        # The cc_grpc_library only need to pass `linkstatic = True`
-        # to the underlying native.cc_library. However it is not
-        # exposed. proto_library is a native library in bazel which
-        # we could not patch easily as well.
-        # For that reason we skip lib<name>_cc_grpc.so and lib<name>_proto.so:
-        if filename.endswith("_cc_grpc.so") or filename.endswith("_proto.so"):
-          continue
-        src = os.path.join(rootname, filename)
-        dst = os.path.join(
-            rootpath,
-            os.path.relpath(os.path.join(rootname, filename), datapath))
-        print("setup.py - copy {} to {}".format(src, dst))
-        shutil.copyfile(src, dst)
+    for rootname, _, filenames in os.walk(os.path.join(datapath, "tensorflow_io")):
+        if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(
+            rootname, "*runfiles*"
+        ):
+            for filename in [
+                f
+                for f in filenames
+                if fnmatch.fnmatch(f, "*.so") or fnmatch.fnmatch(f, "*.py")
+            ]:
+                # NOTE:
+                # cc_grpc_library will generate a lib<name>_cc_grpc.so
+                # proto_library will generate a lib<name>_proto.so
+                # both .so files are not needed in final wheel.
+                # The cc_grpc_library only need to pass `linkstatic = True`
+                # to the underlying native.cc_library. However it is not
+                # exposed. proto_library is a native library in bazel which
+                # we could not patch easily as well.
+                # For that reason we skip lib<name>_cc_grpc.so and lib<name>_proto.so:
+                if filename.endswith("_cc_grpc.so") or filename.endswith("_proto.so"):
+                    continue
+                src = os.path.join(rootname, filename)
+                dst = os.path.join(
+                    rootpath,
+                    os.path.relpath(os.path.join(rootname, filename), datapath),
+                )
+                print("setup.py - copy {} to {}".format(src, dst))
+                shutil.copyfile(src, dst)
 
-print("setup.py - run sandbox.run_setup {} {}".format(
-    os.path.join(rootpath, "setup.py"), sys.argv[1:]))
+print(
+    "setup.py - run sandbox.run_setup {} {}".format(
+        os.path.join(rootpath, "setup.py"), sys.argv[1:]
+    )
+)
 sandbox.run_setup(os.path.join(rootpath, "setup.py"), sys.argv[1:])
 
 if not os.path.exists("dist"):
-  os.makedirs("dist")
+    os.makedirs("dist")
 for f in os.listdir(os.path.join(rootpath, "dist")):
-  print("setup.py - copy {} to {}".format(
-      os.path.join(rootpath, "dist", f), os.path.join("dist", f)))
-  shutil.copyfile(os.path.join(rootpath, "dist", f), os.path.join("dist", f))
+    print(
+        "setup.py - copy {} to {}".format(
+            os.path.join(rootpath, "dist", f), os.path.join("dist", f)
+        )
+    )
+    shutil.copyfile(os.path.join(rootpath, "dist", f), os.path.join("dist", f))
 print("setup.py - remove {}".format(rootpath))
 shutil.rmtree(rootpath)
 print("setup.py - complete")

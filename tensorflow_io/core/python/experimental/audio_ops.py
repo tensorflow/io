@@ -19,8 +19,11 @@ from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops
 
-def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=redefined-builtin
-  """Resample audio.
+
+def resample(
+    input, rate_in, rate_out, quality, name=None
+):  # pylint: disable=redefined-builtin
+    """Resample audio.
 
   Args:
     input: A 2-D `Tensor` of type `int16` or `float`. Audio input.
@@ -32,5 +35,6 @@ def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=re
   Returns:
     output: Resampled audio.
   """
-  return core_ops.io_audio_resample(
-      input, rate_in=rate_in, rate_out=rate_out, quality=quality, name=name)
+    return core_ops.io_audio_resample(
+        input, rate_in=rate_in, rate_out=rate_out, quality=quality, name=name
+    )

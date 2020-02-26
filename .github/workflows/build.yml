@@ -13,6 +13,14 @@ env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
+  black-formatter:
+    name: Black Python code format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Ensure contributor used ("black ./") before commit
+        run: bash tools/run_build.sh black-test
+
   lint:
     name: Lint
     runs-on: ubuntu-18.04
