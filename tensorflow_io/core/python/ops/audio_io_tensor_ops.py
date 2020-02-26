@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
@@ -122,6 +124,11 @@ class AudioIOTensor(AudioGraphIOTensor):
                filename,
                internal=False):
     with tf.name_scope("FromAudio"):
+      if sys.platform == "linux":
+        try:
+          from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel,unused-import
+        except NotImplementedError:
+          pass
       resource = core_ops.io_audio_readable_init(filename)
       shape, dtype, rate = core_ops.io_audio_readable_spec(resource)
       shape = tf.TensorShape(shape)

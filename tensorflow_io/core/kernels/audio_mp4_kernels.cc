@@ -19,16 +19,75 @@ limitations under the License.
 #include "minimp4.h"
 
 extern "C" {
-int64_t DecodeAACFunction(void* state, const int64_t codec, const int64_t rate,
-                          const int64_t channels, const int64_t frames,
-                          const void* data_in, int64_t size_in, void* data_out,
-                          int64_t size_out);
+#if defined(__APPLE__)
+void DecodeAACFunctionFini(void* state) { return; }
+void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels) {
+  return (void*)1;  // return 1 to pretend success
+}
+int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
+                              const int64_t rate, const int64_t channels,
+                              const int64_t frames, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out);
+#elif defined(_MSC_VER)
+void DecodeAACFunctionFini(void* state) { return; }
+void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels) {
+  return nullptr;
+}
+int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
+                              const int64_t rate, const int64_t channels,
+                              const int64_t frames, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out) {
+  return -1;
+}
+#else
+#include <dlfcn.h>
+static void (*DecodeAACFunctionFiniPointer)(void* state);
+static void* (*DecodeAACFunctionInitPointer)(const int64_t codec,
+                                             const int64_t rate,
+                                             const int64_t channels);
+static int64_t (*DecodeAACFunctionCallPointer)(
+    void* state, const int64_t codec, const int64_t rate,
+    const int64_t channels, const int64_t frames, const void* data_in,
+    int64_t size_in, void* data_out, int64_t size_out);
 
-#if !defined(__APPLE__)
-int64_t DecodeAACFunction(void* state, const int64_t codec, const int64_t rate,
-                          const int64_t channels, const int64_t frames,
-                          const void* data_in, int64_t size_in, void* data_out,
-                          int64_t size_out) {
+void DecodeAACFunctionFini(void* state) {
+  if (DecodeAACFunctionFiniPointer != nullptr) {
+    return DecodeAACFunctionFiniPointer(state);
+  }
+  return;
+}
+void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels) {
+  *(void**)(&DecodeAACFunctionFiniPointer) =
+      dlsym(RTLD_DEFAULT, "DecodeAACFunctionFiniFFmpeg");
+  *(void**)(&DecodeAACFunctionInitPointer) =
+      dlsym(RTLD_DEFAULT, "DecodeAACFunctionInitFFmpeg");
+  *(void**)(&DecodeAACFunctionCallPointer) =
+      dlsym(RTLD_DEFAULT, "DecodeAACFunctionCallFFmpeg");
+  if (DecodeAACFunctionFiniPointer == nullptr ||
+      DecodeAACFunctionInitPointer == nullptr ||
+      DecodeAACFunctionCallPointer == nullptr) {
+    DecodeAACFunctionFiniPointer = nullptr;
+    DecodeAACFunctionInitPointer = nullptr;
+    DecodeAACFunctionCallPointer = nullptr;
+
+    return nullptr;
+  }
+  return DecodeAACFunctionInitPointer(codec, rate, channels);
+}
+int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
+                              const int64_t rate, const int64_t channels,
+                              const int64_t frames, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out) {
+  if (DecodeAACFunctionCallPointer != nullptr) {
+    return DecodeAACFunctionCallPointer(state, codec, rate, channels, frames,
+                                        data_in, size_in, data_out, size_out);
+  }
   return -1;
 }
 #endif
@@ -61,16 +120,22 @@ class MP4Stream {
 class MP4ReadableResource : public AudioReadableResourceBase {
  public:
   MP4ReadableResource(Env* env)
-      : env_(env), mp4d_demux_scope_(nullptr, [](MP4D_demux_t* p) {
+      : env_(env),
+        mp4d_demux_scope_(nullptr,
+                          [](MP4D_demux_t* p) {
+                            if (p != nullptr) {
+                              MP4D_close(p);
+                            }
+                          }),
+        state_(nullptr, [](void* p) {
           if (p != nullptr) {
-            MP4D_close(p);
+            DecodeAACFunctionFini(p);
           }
         }) {}
   ~MP4ReadableResource() {}
 
   Status Init(const string& input) override {
     mutex_lock l(mu_);
-
     const string& filename = input;
     file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
@@ -101,6 +166,12 @@ class MP4ReadableResource : public AudioReadableResourceBase {
         int64 rate = mp4d_demux_.track[track_index]
                          .SampleDescription.audio.samplerate_hz;
 
+        int64 codec = 0;  // TODO
+        state_.reset(DecodeAACFunctionInit(codec, rate, channels));
+        if (state_.get() == nullptr) {
+          return errors::InvalidArgument("unable to initialize mp4 state");
+        }
+
         int64 profile = 2;  // AAC LC (Low Complexity)
         int64 channel_configuration =
             mp4d_demux_.track[track_index].SampleDescription.audio.channelcount;
@@ -127,12 +198,13 @@ class MP4ReadableResource : public AudioReadableResourceBase {
         }
 
         track_index_ = track_index;
+        codec_ = codec;
         profile_ = profile;
         channel_configuration_ = channel_configuration;
         frequency_index_ = frequency_index;
 
         shape_ = TensorShape({samples, channels});
-        dtype_ = DT_INT16;
+        dtype_ = DT_FLOAT;
         rate_ = rate;
         return Status::OK();
       }
@@ -172,7 +244,6 @@ class MP4ReadableResource : public AudioReadableResourceBase {
       unsigned frame_bytes, timestamp, duration;
       MP4D_file_offset_t frame_offset = MP4D_frame_offset(
           &mp4d_demux_, track_index_, i, &frame_bytes, &timestamp, &duration);
-
       // [sample_start, sample_stop) in [sample_index, sample_index + duration)
       int64 sample_copy_start =
           sample_start > sample_index ? sample_start : sample_index;
@@ -180,15 +251,16 @@ class MP4ReadableResource : public AudioReadableResourceBase {
                                    ? sample_stop
                                    : (sample_index + duration);
       if (sample_copy_start < sample_copy_stop) {
-        void* state = nullptr;
-        int64 codec = 0;
+        void* state = state_.get();
+        int64 codec = codec_;
         int64 rate = rate_;
         int64 channels = shape_.dim_size(1);
         int64 frames = duration;
 
         int64 header_bytes = 7;
         int64 size_in = frame_bytes + header_bytes;
-        int64 size_out = duration * channels * sizeof(int16);
+        int64 size_out =
+            duration * channels * sizeof(float);  // TODO: expand to other types
 
         string data_in, data_out;
         data_in.resize(size_in);
@@ -216,21 +288,21 @@ class MP4ReadableResource : public AudioReadableResourceBase {
         *((unsigned char*)&data_in[5]) = (((size_in & 0x0007) << 5) + 0x1F);
         *((unsigned char*)&data_in[6]) = 0xFC;
 
-        int64 status = DecodeAACFunction(state, codec, rate, channels, frames,
-                                         (void*)&data_in[0], size_in,
-                                         (void*)&data_out[0], size_out);
+        int64 status = DecodeAACFunctionCall(
+            state, codec, rate, channels, frames, (void*)&data_in[0], size_in,
+            (void*)&data_out[0], size_out);
         if (status != 0) {
           return errors::InvalidArgument("unable to convert AAC data: ",
                                          status);
         }
         char* base =
-            (char*)(value->flat<int16>().data()) +
-            (sample_copy_start - sample_start) * channels * sizeof(int16);
+            (char*)(value->flat<float>().data()) +
+            (sample_copy_start - sample_start) * channels * sizeof(float);
         char* source =
             (char*)(&data_out[0]) +
-            (sample_copy_start - sample_index) * channels * sizeof(int16);
+            (sample_copy_start - sample_index) * channels * sizeof(float);
         size_t size =
-            (sample_copy_stop - sample_copy_start) * channels * sizeof(int16);
+            (sample_copy_stop - sample_copy_start) * channels * sizeof(float);
         memcpy(base, source, size);
       }
       sample_index += duration;
@@ -253,7 +325,11 @@ class MP4ReadableResource : public AudioReadableResourceBase {
   MP4D_demux_t mp4d_demux_;
   std::unique_ptr<MP4D_demux_t, void (*)(MP4D_demux_t*)> mp4d_demux_scope_;
 
+  std::unique_ptr<void, void (*)(void*)> state_;
+
   int64 track_index_;
+
+  int64 codec_;
 
   int64 profile_;
   int64 channel_configuration_;

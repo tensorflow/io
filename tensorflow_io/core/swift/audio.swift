@@ -1,7 +1,7 @@
 import AVFoundation
 
-@_silgen_name("DecodeAACFunction")
-func DecodeAACFunction(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64, channels: Int64, frames: Int64, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int {
+@_silgen_name("DecodeAACFunctionCall")
+func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64, channels: Int64, frames: Int64, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int {
     
     let header_bytes = Int64(7)
     var stream_description_in = AudioStreamBasicDescription(
@@ -31,7 +31,7 @@ func DecodeAACFunction(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64
     buffer_in.packetDescriptions!.pointee.mVariableFramesInPacket = 0
     
     guard let format_out = AVAudioFormat(
-        commonFormat: .pcmFormatInt16,
+        commonFormat: .pcmFormatFloat32,
         sampleRate: Double(rate),
         channels: UInt32(channels),
         interleaved: true) else {
@@ -64,8 +64,8 @@ func DecodeAACFunction(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64
         return -7
     }
     
-    let data_out_source = buffer_out.int16ChannelData!.pointee
-    let size_out_source = Int(buffer_out.frameLength) * Int(channels) * 2
+    let data_out_source = buffer_out.floatChannelData!.pointee
+    let size_out_source = Int(buffer_out.frameLength) * Int(channels) * 4 // sizeof(float) = 4
     
     if (size_out_source != size_out) {
         return -8

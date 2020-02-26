@@ -222,6 +222,7 @@ cc_library(
 cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
+        "kernels/audio_ffmpeg_kernels.cc",
         "kernels/ffmpeg_kernels.cc",
         "kernels/ffmpeg_kernels_deprecated.cc",
         "ops/ffmpeg_ops.cc",
