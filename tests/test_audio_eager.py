@@ -56,6 +56,9 @@ def fixture_audio_data_24():
 # test_io_dataset_eager.py/test_io_tensor_eager.py
 # Audio from:
 # https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/audio-samples.html
+@pytest.mark.skipif(
+    sys.platform == "linux" and sys.version_info < (3, 6),
+    reason="need ubuntu 18.04 which is python 3.6")
 def test_mp4():
   """test_mp4"""
   path = os.path.join(
