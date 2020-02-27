@@ -12,12 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
+"""tensorflow_io.audio"""
 
-# tensorflow_io.core.python.ops is implicitly imported (along with file system)
-from tensorflow_io.core.python.ops.io_dataset import IODataset
-from tensorflow_io.core.python.ops.io_tensor import IOTensor
-
-from tensorflow_io.core.python.api.v0 import genome
-from tensorflow_io.core.python.api.v0 import image
-from tensorflow_io.core.python.api.v0 import audio
+from tensorflow_io.core.python.ops.audio_ops import decode_mp3 # pylint: disable=unused-import
