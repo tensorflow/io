@@ -25,17 +25,19 @@ def decode_mp3(contents, desired_channels=-1, desired_samples=-1, name=None):
 
   Args:
     contents: A `Tensor` of type `string`. 0-D. The encoded MP3.
-    desired_channels: An integer determining how many channels are in the output.
-        If this number is greater than the number of channels available in the source,
-        they are duplicated. If it is smaller, only the first is used.
-    desired_samples: An integer determining how many samples are in the ouput (per channel).
-        If this number is greater than the number of samples available in the source,
-        the output is 0-padded on the right. If it is smaller, the output is truncated.
+    desired_channels: An integer determining the number of channels in the
+        output. If this number is greater than the number of channels in the
+        source, they are duplicated. If it is smaller, only the first is used.
+    desired_samples: An integer determining the number of samples in the ouput
+        (per channel). If this number is greater than the number of samples
+        in the source, the output is 0-padded on the right. If it is smaller,
+        the output is truncated.
     name: A name for the operation (optional).
 
   Returns:
-    A `Tensor` of type `int16` and shape of `[channels, samples]` and a scalar `Tensor`
-    of type `int32` containing the sample rate of the MP3.
+    A `Tensor` of type `int16` and shape of `[channels, samples]` and a scalar
+    `Tensor` of type `int32` containing the sample rate of the MP3.
   """
   # TODO do I really just have to pass in the name here?
-  return core_ops.io_decode_mp3(contents, desired_channels, desired_samples, name=name)
+  return core_ops.io_decode_mp3(contents, desired_channels, desired_samples,
+                                name=name)
