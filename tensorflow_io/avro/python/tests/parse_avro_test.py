@@ -45,7 +45,8 @@ class AvroDatasetTest(AvroDatasetTestBase):
         serializer = AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(expected_data, AvroDatasetTest._batcher(record_data, batch_size)):
             # Get any key out of expected datum
-            actual_datum = parse_avro(serialized=[serializer.serialize(r) for r in actual_records],
+            actual_datum = parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+                                                  for r in actual_records],
                                       reader_schema=reader_schema,
                                       features=features)
             self.assertDataEqual(expected=expected_datum,

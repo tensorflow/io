@@ -153,6 +153,8 @@ class StringDatumRangeReader {
 
 // Borrowed most code/concepts from
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/util/example_proto_fast_parsing.cc
+
+// Preserves the order of parsed items
 Status ParseAvro(const AvroParserConfig& config,
                  const AvroParserTree& parser_tree,
                  const avro::ValidSchema& reader_schema,
@@ -217,8 +219,13 @@ Status ParseAvro(const AvroParserConfig& config,
   // TODO(fraudies): Convert dense tensor
   // TODO(fraudies): Might be faster to reformat inside the process minibatch
   // into vector
+
+  // Note, using vector here is thread safe since all operations inside the
+  // multi-threaded region for a vector are thread safe
   std::vector<std::map<string, ValueStoreUniquePtr>> buffers(num_minibatches);
+
   std::vector<Status> status_of_minibatch(num_minibatches);
+
   auto ProcessMiniBatch = [&](size_t minibatch) {
 
     size_t start = first_of_minibatch(minibatch);
@@ -365,10 +372,17 @@ class ParseAvroOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_types", &sparse_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_types", &dense_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_shapes", &dense_shapes_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("num_sparse", &num_sparse_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("num_dense", &num_dense_));
+
+    int64 num_sparse;
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("num_sparse", &num_sparse));
+    num_sparse_ = static_cast<size_t>(num_sparse);
+
+    int64 num_dense;
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("num_dense", &num_dense));
+    num_dense_ = static_cast<size_t>(num_dense);
+
     variable_length_.reserve(dense_shapes_.size());
-    for (int d = 0; d < dense_shapes_.size(); ++d) {
+    for (size_t d = 0; d < dense_shapes_.size(); ++d) {
         variable_length_[d] = dense_shapes_[d].dims() > 1 && dense_shapes_[d].dim_size(0) == -1;
     }
   }
@@ -399,10 +413,10 @@ class ParseAvroOp : public OpKernel {
     CHECK_EQ(sparse_keys.size(), num_sparse_);
 
     // Copy from OpInputList to std::vector<string>.
-    for (int di = 0; di < num_dense_; ++di) {
+    for (size_t di = 0; di < num_dense_; ++di) {
       dense_keys_t[di] = dense_keys[di].scalar<string>()();
     }
-    for (int di = 0; di < num_sparse_; ++di) {
+    for (size_t di = 0; di < num_sparse_; ++di) {
       sparse_keys_t[di] = sparse_keys[di].scalar<string>()();
     }
 
@@ -415,7 +429,7 @@ class ParseAvroOp : public OpKernel {
                     "Expected len(dense_defaults) == len(dense_keys) but got: ",
                     dense_defaults.size(), " vs. ", num_dense_));
 
-    for (int d = 0; d < num_dense_; ++d) {
+    for (size_t d = 0; d < num_dense_; ++d) {
       const Tensor& def_value = dense_defaults[d];
       OP_REQUIRES(ctx, def_value.dtype() == dense_types_[d],
                   errors::InvalidArgument(
@@ -425,14 +439,14 @@ class ParseAvroOp : public OpKernel {
     }
 
     AvroParserConfig config;
-    for (int d = 0; d < num_dense_; ++d) {
+    for (size_t d = 0; d < num_dense_; ++d) {
       VLOG(7) << "Dense: Creating parser key " << dense_keys_t[d] << " with type " << DataTypeString(dense_types_[d]);
 
       config.dense.push_back({dense_keys_t[d], dense_types_[d],
                               dense_shapes_[d], std::move(dense_defaults[d]),
                               variable_length_[d]});
     }
-    for (int d = 0; d < num_sparse_; ++d) {
+    for (size_t d = 0; d < num_sparse_; ++d) {
       VLOG(7) << "Sparse: Creating parser key " << sparse_keys_t[d] << " with type " << DataTypeString(sparse_types_[d]);
       config.sparse.push_back({sparse_keys_t[d], sparse_types_[d]});
     }
@@ -473,10 +487,10 @@ class ParseAvroOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->output_list("sparse_indices", &sparse_indices));
     OP_REQUIRES_OK(ctx, ctx->output_list("sparse_values", &sparse_values));
     OP_REQUIRES_OK(ctx, ctx->output_list("sparse_shapes", &sparse_shapes));
-    for (int d = 0; d < num_dense_; ++d) {
+    for (size_t d = 0; d < num_dense_; ++d) {
       dense_values.set(d, result.dense_values[d]);
     }
-    for (int d = 0; d < num_sparse_; ++d) {
+    for (size_t d = 0; d < num_sparse_; ++d) {
       sparse_indices.set(d, result.sparse_indices[d]);
       sparse_values.set(d, result.sparse_values[d]);
       sparse_shapes.set(d, result.sparse_shapes[d]);
@@ -488,8 +502,8 @@ class ParseAvroOp : public OpKernel {
   std::vector<DataType> dense_types_;
   std::vector<PartialTensorShape> dense_shapes_;
   std::vector<bool> variable_length_;
-  int64 num_dense_;
-  int64 num_sparse_;
+  size_t num_dense_;
+  size_t num_sparse_;
 
  private:
   static std::vector<std::pair<string, DataType>> CreateKeysAndTypes(

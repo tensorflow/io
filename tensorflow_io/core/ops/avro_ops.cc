@@ -117,7 +117,7 @@ REGISTER_OP("IO>ParseAvro")
       ShapeHandle input;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &input));
       ShapeHandle names;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &names));
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 1, &names));
 
       int output_idx = 0;
       AddSparseOutputShapes(num_sparse, input, 1, c, &output_idx);

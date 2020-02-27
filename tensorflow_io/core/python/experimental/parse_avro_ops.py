@@ -30,10 +30,63 @@ from tensorflow_io.core.python.ops import core_ops
 # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/ops/parsing_ops.py
 # Note, there are several changes to 2.1.0
 # Only copied parts from `parse_example_v2` and `_parse_example_raw`
+
 def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
+    """
+    Parses `avro` records into a `dict` of tensors.
+
+    :param serialized: The batched, serialized string tensors.
+    :param reader_schema: The reader schema. Note, this MUST match the reader
+                          schema from the avro_record_dataset. Otherwise,
+                          this op will segfault!
+    :param features: A map of feature names mapped to feature
+                     information.
+    :param avro_names: (Optional.) may contain descriptive names
+                       for the corresponding serialized avro parts. These may
+                       be useful for debugging purposes, but they have no
+                       effect on the output. If not `None`, `avro_names`
+                       must be the same length as `serialized`.
+
+    :param name: The name of the op.
+
+    :return: A map of feature names to tensors.
+
+    This op parses serialized avro records into a dictionary mapping keys to
+    `Tensor`, and `SparseTensor` objects. `features` is a dict from keys to
+    `VarLenFeature`, `SparseFeature`, `RaggedFeature`, and `FixedLenFeature`
+    objects. Each `VarLenFeature` and `SparseFeature` is mapped to a
+    `SparseTensor`; each `FixedLenFeature` is mapped to a `Tensor`.
+
+    Each `VarLenFeature` maps to a `SparseTensor` of the specified type
+    representing a ragged matrix. Its indices are `[batch, index]` where `batch`
+    identifies the example in `serialized`, and `index` is the value's index in
+    the list of values associated with that feature and example.
+
+    Each `SparseFeature` maps to a `SparseTensor` of the specified type
+    representing a Tensor of `dense_shape` `[batch_size] + SparseFeature.size`.
+    Its `values` come from the feature in the examples with key `value_key`.
+    A `values[i]` comes from a position `k` in the feature of an example at batch
+    entry `batch`. This positional information is recorded in `indices[i]` as
+    `[batch, index_0, index_1, ...]` where `index_j` is the `k-th` value of
+    the feature in the example at with key `SparseFeature.index_key[j]`.
+    In other words, we split the indices (except the first index indicating the
+    batch entry) of a `SparseTensor` by dimension into different features of the
+    avro record. Due to its complexity a `VarLenFeature` should be preferred
+    over a `SparseFeature` whenever possible.
+
+    Each `FixedLenFeature` `df` maps to a `Tensor` of the specified type (or
+    `tf.float32` if not specified) and shape `(serialized.size(),) + df.shape`.
+    `FixedLenFeature` entries with a `default_value` are optional. With no default
+    value, we will fail if that `Feature` is missing from any example in
+    `serialized`.
+
+    Use this within the dataset.map(parser_fn=parse_avro).
+
+    Only works for batched serialized input!
+    """
     if not features:
         raise ValueError("Missing: features was %s." % features)
-    features = _prepend_none_dimension(_build_keys_for_sparse_features(features))
+    features = _build_keys_for_sparse_features(features)
     (sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
      dense_shapes) = _features_to_raw_params(
         features,
@@ -147,23 +200,6 @@ def _build_keys_for_sparse_features(features):
                     dtype=feature.dtype,
                     size=feature.size,
                     already_sorted=feature.already_sorted)
-        return modified_features
-    else:
-        return features
-
-
-# Pulled this method from tensorflow/python/ops/parsing_ops.py
-# here to get the same behavior but for FixedLenFeature instead of FixedLenSequenceFeature
-def _prepend_none_dimension(features):
-    """Returns a copy of features with adjusted FixedLenSequenceFeature shapes."""
-    if features:
-        modified_features = dict(features)  # Create a copy to modify
-        for key, feature in features.items():
-            if isinstance(feature, parsing_ops.FixedLenFeature):
-                modified_features[key] = parsing_ops.FixedLenFeature(
-                    [None] + list(feature.shape),
-                    feature.dtype,
-                    feature.default_value)
         return modified_features
     else:
         return features

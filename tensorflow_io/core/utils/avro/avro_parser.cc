@@ -50,7 +50,7 @@ const std::vector<AvroParserSharedPtr> AvroParser::GetFinalDescendents() const {
   return final_descendents_;
 }
 
-string AvroParser::ChildrenToString(int level) const {
+string AvroParser::ChildrenToString(size_t level) const {
   std::stringstream ss;
   for (const auto child : children_) {
     ss << (*child).ToString(level + 1);
@@ -58,9 +58,9 @@ string AvroParser::ChildrenToString(int level) const {
   return ss.str();
 }
 
-string AvroParser::LevelToString(int level) const {
+string AvroParser::LevelToString(size_t level) const {
   std::stringstream ss;
-  for (int l = 0; l < level; ++l) {
+  for (size_t l = 0; l < level; ++l) {
     ss << "|   ";
   }
   return ss.str();
@@ -87,7 +87,7 @@ Status NullValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // tensors no entry is created
   return Status::OK();
 }
-string NullValueParser::ToString(int level) const {
+string NullValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---NullValue(" + key_ + ")\n";
 }
 */
@@ -106,7 +106,7 @@ Status BoolValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string BoolValueParser::ToString(int level) const {
+string BoolValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---BoolValue(" + key_ + ")\n";
 }
 
@@ -124,7 +124,7 @@ Status LongValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string LongValueParser::ToString(int level) const {
+string LongValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---LongValue(" + key_ + ")\n";
 }
 
@@ -142,7 +142,7 @@ Status IntValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string IntValueParser::ToString(int level) const {
+string IntValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---IntValue(" + key_ + ")\n";
 }
 
@@ -160,7 +160,7 @@ Status DoubleValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string DoubleValueParser::ToString(int level) const {
+string DoubleValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---DoubleValue(" + key_ + ")\n";
 }
 
@@ -178,7 +178,7 @@ Status FloatValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string FloatValueParser::ToString(int level) const {
+string FloatValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---FloatValue(" + key_ + ")\n";
 }
 
@@ -222,7 +222,7 @@ Status StringBytesEnumFixedValueParser::Parse(std::map<string, ValueStoreUniqueP
 
   return Status::OK();
 }
-string StringBytesEnumFixedValueParser::ToString(int level) const {
+string StringBytesEnumFixedValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---StringBytesEnumFixedValue(" + key_ + ")\n";
 }
 
@@ -265,7 +265,7 @@ Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string ArrayAllParser::ToString(int level) const {
+string ArrayAllParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---ArrayAllParser" << std::endl;
   ss << ChildrenToString(level);
@@ -314,7 +314,7 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string ArrayIndexParser::ToString(int level) const {
+string ArrayIndexParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---ArrayIndexParser(" << index_ << ")" << std::endl;
   ss << ChildrenToString(level);
@@ -391,7 +391,7 @@ Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string ArrayFilterParser::ToString(int level) const {
+string ArrayFilterParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---ArrayFilterParser(" << lhs_ << "=" << rhs_ << ")" << std::endl;
   ss << ChildrenToString(level);
@@ -431,7 +431,7 @@ Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string MapKeyParser::ToString(int level) const {
+string MapKeyParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---MapKeyParser(" << key_ << ")" << std::endl;
   ss << ChildrenToString(level);
@@ -467,7 +467,7 @@ Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
 
   return Status::OK();
 }
-string RecordParser::ToString(int level) const {
+string RecordParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---RecordParser(" << name_ << ")" << std::endl;
   ss << ChildrenToString(level);
@@ -496,7 +496,7 @@ Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // LOG(WARN) << "Branch value in data is not consumed";
   return Status::OK();
 }
-string UnionParser::ToString(int level) const {
+string UnionParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---UnionParser(" << type_name_ << ")" << std::endl;
   ss << ChildrenToString(level);
@@ -514,7 +514,7 @@ Status NamespaceParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   }
   return Status::OK();
 }
-string NamespaceParser::ToString(int level) const {
+string NamespaceParser::ToString(size_t level) const {
   std::stringstream ss;
   ss << LevelToString(level) << "|---NamespaceParser(" << name_ << ")" << std::endl;
   ss << ChildrenToString(level);
