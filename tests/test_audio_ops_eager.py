@@ -68,3 +68,50 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
 
   entries = func(args)
   assert np.array_equal(entries, expected)
+
+def test_decode_mp3():
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "sine440_cbr128.mp3")
+  contents = tf.io.read_file(expected_path)
+  
+  samples, sample_rate = tfio.audio.decode_mp3(contents)
+
+  assert sample_rate == 44100
+  np.array_equal(samples.shape, [1, 44100])
+
+def test_decode_mp3_mono2stereo():
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "sine440_cbr128.mp3")
+  contents = tf.io.read_file(expected_path)
+  
+  samples, sample_rate = tfio.audio.decode_mp3(contents, desired_channels=2)
+
+  assert np.array_equal(samples.shape, [2, 44100])
+  assert np.array_equal(samples[0], samples[1])
+
+def test_decode_mp3_padded():
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "sine440_cbr128.mp3")
+  contents = tf.io.read_file(expected_path)
+  
+  samples, _ = tfio.audio.decode_mp3(contents)
+  samples_padded, _ = tfio.audio.decode_mp3(contents, desired_samples=44200)
+
+  assert np.array_equal(samples_padded.shape, [1, 44200])
+  assert np.array_equal(samples_padded[:, :44100], samples)
+  assert np.array_equal(samples_padded[:, 44100:], np.zeros((1, 100)))
+
+def test_decode_mp3_truncated():
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "sine440_cbr128.mp3")
+  contents = tf.io.read_file(expected_path)
+  
+  samples, _ = tfio.audio.decode_mp3(contents)
+  samples_truncated, _ = tfio.audio.decode_mp3(contents, desired_samples=10)
+
+  assert np.array_equal(samples_truncated.shape, [1, 10])
+  assert np.array_equal(samples_truncated, samples[:, :10])
