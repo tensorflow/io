@@ -66,6 +66,48 @@ REGISTER_OP("IO>AudioResample")
       return Status::OK();
     });
 
+// this is copied from the TF DecodeWav op
+Status DecodeMp3ShapeFn(shape_inference::InferenceContext *c) {
+  shape_inference::ShapeHandle unused;
+  TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+
+  shape_inference::DimensionHandle channels_dim;
+  int32 desired_channels;
+  TF_RETURN_IF_ERROR(c->GetAttr("desired_channels", &desired_channels));
+  if (desired_channels == -1) {
+    channels_dim = c->UnknownDim();
+  } else {
+    if (desired_channels < 0) {
+      return errors::InvalidArgument("channels must be non-negative, got ",
+                                     desired_channels);
+    }
+    channels_dim = c->MakeDim(desired_channels);
+  }
+  shape_inference::DimensionHandle samples_dim;
+  int32 desired_samples;
+  TF_RETURN_IF_ERROR(c->GetAttr("desired_samples", &desired_samples));
+  if (desired_samples == -1) {
+    samples_dim = c->UnknownDim();
+  } else {
+    if (desired_samples < 0) {
+      return errors::InvalidArgument("samples must be non-negative, got ",
+                                     desired_samples);
+    }
+    samples_dim = c->MakeDim(desired_samples);
+  }
+  c->set_output(0, c->MakeShape({samples_dim, channels_dim}));
+  c->set_output(1, c->Scalar());
+  return Status::OK();
+}
+
+REGISTER_OP("IO>DecodeMp3")
+    .Input("contents: string")
+    .Attr("desired_channels: int = -1")
+    .Attr("desired_samples: int = -1")
+    .Output("samples: int16")
+    .Output("sample_rate: int32")
+    .SetShapeFn(DecodeMp3ShapeFn);
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
