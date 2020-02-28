@@ -91,6 +91,7 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.12.0 | 2.1.x | Feb 28, 2020 |
 | 0.11.0 | 2.1.x | Jan 10, 2020 |
 | 0.10.0 | 2.0.x | Dec 5, 2019 |
 | 0.9.1 | 2.0.x | Nov 15, 2019 |
@@ -140,7 +141,10 @@ bazel run //tools/lint:lint -- bazel clang
 On macOS Catalina or higher, it is possible to build tensorflow-io with
 system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
 
-Note there is a bug in macOS's native python 3.7.3 that could be fixed
+Note Xcode installation is needed as tensorflow-io requires Swift for accessing
+Apple's native AVFoundation APIs.
+
+Note also there is a bug in macOS's native python 3.7.3 that could be fixed
 with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
 
 ```sh
