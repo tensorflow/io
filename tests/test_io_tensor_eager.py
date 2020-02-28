@@ -352,6 +352,25 @@ def fixture_arrow():
 
   return args, func, expected
 
+@pytest.fixture(name="arrow_graph", scope="module")
+def fixture_arrow_graph():
+  """fixture_arrow"""
+  import pyarrow as pa # pylint: disable=import-outside-toplevel
+
+  arr1 = pa.array(list(range(100)), pa.int32())
+  arr2 = pa.array(list(range(100)), pa.int64())
+  arr3 = pa.array([x * 1.1 for x in range(100)], pa.float32())
+  table = pa.Table.from_arrays([arr1, arr2, arr3], ['a', 'b', 'c'])
+
+  args = ""
+  spec = {'a': tf.int32, 'b': tf.int64, 'c': tf.float32}
+  column = 'b'
+
+  func = lambda _: tfio.IOTensor.from_arrow(table, spec=spec)(column)
+  expected = table.column(column).to_pylist()
+
+  return args, func, expected
+
 # scalar is a special IOTensor that is alias to Tensor
 @pytest.mark.parametrize(
     ("io_tensor_fixture"),
@@ -457,18 +476,8 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
         pytest.param("hdf5_graph", 2),
         pytest.param("kafka", None),
         pytest.param("kafka", 2),
-        pytest.param(
-            "arrow", None,
-            marks=[
-                pytest.mark.skip(reason="TODO"),
-            ],
-        ),
-        pytest.param(
-            "arrow", 2,
-            marks=[
-                pytest.mark.skip(reason="TODO"),
-            ],
-        ),
+        pytest.param("arrow_graph", None),
+        pytest.param("arrow_graph", 2),
     ],
     ids=[
         "audio[wav]",
@@ -485,8 +494,8 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
         "hdf5|2",
         "kafka",
         "kafka|2",
-        "arrow",
-        "arrow|2",
+        "arrow_graph",
+        "arrow_graph|2",
     ],
 )
 def test_io_tensor_slice_in_dataset(
