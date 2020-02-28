@@ -189,7 +189,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Yong Tang, Yuan (Terry) Tang, Bryan Cutler, Jiacheng Xu, Junqin Zhang,
+Yong Tang, Yuan Tang, Bryan Cutler, Jiacheng Xu, Junqin Zhang,
 August Xiong, caszkgui, zou000
 
 We are also grateful to all who filed issues or helped resolve them, asked and
@@ -207,7 +207,7 @@ answered questions, and were part of inspiring discussions.
 This release contains contributions from many people:
 
 Bryan Cutler, Damien Pontifex, Florian Raudies, Henry Tan,
-Junqin Zhang, Stephan Uphoff, Yong Tang, Yuan (Terry) Tang
+Junqin Zhang, Stephan Uphoff, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -225,7 +225,7 @@ answered questions, and were part of inspiring discussions.
 This release contains contributions from many people:
 
 Bryan Cutler, Jongwook Choi, Sergii Khomenko, Stephan Uphoff,
-Yong Tang, Yuan (Terry) Tang
+Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -240,7 +240,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Bryan Cutler, Yong Tang, Yuan (Terry) Tang
+Bryan Cutler, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -258,7 +258,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Anton Dmitriev, Bryan Cutler, Peng Yu, Yong Tang, Yuan (Terry) Tang
+Anton Dmitriev, Bryan Cutler, Peng Yu, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -280,7 +280,7 @@ This release contains contributions from many people:
 Anjali Sridhar, Anton Dmitriev, Artem Malykh, Brennan Saeta, Derek Murray,
 Gunhan Gulsoy, Jacques Pienaar, Jianwei Xie, Jiri Simsa, knight, Loo Rong Jie,
 Martin Wicke, Michael Case, Sergei Lebedev, Sourabh Bajaj, Yifei Feng,
-Yong Tang, Yuan (Terry) Tang, Yun Peng
+Yong Tang, Yuan Tang, Yun Peng
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
