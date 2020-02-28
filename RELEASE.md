@@ -1,3 +1,24 @@
+# Release 0.12.0
+
+## Major Features
+* Add Windows support for tensorflow-io.
+* Add PostgreSQL server dataset support.
+* Add MP3 format for audio dataset support.
+* Add ArrowIOTensor with input from a pyarrow.Table.
+* Add Numpy dataset support for numpy file and memory input.
+* Add decode_avro/encode_avro for Avro serialization support.
+* Prometheus dataset now outputs structured shapes.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, DylanTallchiefGit, Kota Yamaguchi, Mark Daoust,
+Suyash Kumar, Yong Tang, Yuan Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.11.0
 
 ## Major Features
