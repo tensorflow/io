@@ -38,14 +38,16 @@ def _load_dependency_and_library(p):
       for dependency in p[library]:
         ctypes.CDLL(dependency, mode=ctypes.RTLD_GLOBAL)
       # Load video_op
-      return _load_library(library)
+      v = _load_library(library)
+      l = _load_library(library, "dependency")
+      return v, l
     # Otherwise we dlclose and retry
     entries.reverse()
     for entry in entries:
       _ctypes.dlclose(entry._handle) # pylint: disable=protected-access
   raise NotImplementedError("could not find ffmpeg after search through ", p)
 
-_ffmpeg_ops = _load_dependency_and_library({
+_ffmpeg_ops, _decode_ops = _load_dependency_and_library({
     'libtensorflow_io_ffmpeg_3.4.so': [
         "libavformat.so.57",
         "libavformat.so.57",
