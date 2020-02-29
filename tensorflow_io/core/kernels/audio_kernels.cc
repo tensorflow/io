@@ -1056,12 +1056,7 @@ class AudioResampleOp : public OpKernel {
 
 class DecodeMp3Op : public OpKernel {
 public:
-  explicit DecodeMp3Op(OpKernelConstruction *context) : OpKernel(context) {
-    OP_REQUIRES_OK(context,
-                   context->GetAttr("desired_channels", &desired_channels));
-    OP_REQUIRES_OK(context,
-                   context->GetAttr("desired_samples", &desired_samples));
-  }
+  explicit DecodeMp3Op(OpKernelConstruction *context) : OpKernel(context) {}
 
   void Compute(OpKernelContext *context) override {
     // get the input data, i.e. encoded mp3 data
@@ -1079,20 +1074,24 @@ public:
                     input_data.size(), &mp3, NULL /* progress callback */,
                     NULL /* user data */);
 
-    // TODO: add better error handling
-    // if MP3 can not be parsed, mp3.channels will be 0 and cause a floating point exception in downstream divisions
+    // if MP3 can not be parsed, mp3.channels will be 0
+    OP_REQUIRES(
+        context, (mp3.samples > 0),
+        errors::InvalidArgument("MP3 data can not be decoded"));
 
     // some bookkeeping for generating the output
-    int target_channels = desired_channels < 0 ? mp3.channels : desired_channels;
+    // TODO: could channels have different numbers of samples?
     int perchannel_samples = mp3.samples / mp3.channels;
-    int target_samples = desired_samples < 0 ? perchannel_samples : desired_samples;
 
     // output 1: samples
     Tensor *output_tensor = nullptr;
-    TensorShape output_shape {target_channels, target_samples};
+    TensorShape output_shape {mp3.channels, perchannel_samples};
     OP_REQUIRES_OK(context,
                    context->allocate_output(0, output_shape, &output_tensor));
+
+    // copy data from decoder buffer into output tensor
     auto output_flat = output_tensor->flat<int16>();
+    std::memcpy(output_flat.data(), mp3.buffer, mp3.samples * sizeof(int16));
 
     // output 2: sample rate
     Tensor *sample_rate_output = nullptr;
@@ -1100,30 +1099,9 @@ public:
                                                      &sample_rate_output));
     sample_rate_output->flat<int32>()(0) = mp3.hz;
 
-    // copy data from decoder buffer into output tensor
-    for (int output_channel = 0; output_channel < target_channels; output_channel++) {
-      // offset copy source to the right channel
-      int16 *source = mp3.buffer + (output_channel % mp3.channels) * perchannel_samples;
-      // offset copy target to current output channel
-      int16 *target = output_flat.data() + target_samples * output_channel;
-
-      int tocopy_samples = std::min(perchannel_samples, target_samples);
-      std::memcpy(target, source, tocopy_samples * sizeof(int16));
-
-      // pad right with 0s if necessary
-      int padding = target_samples - tocopy_samples;
-      if (padding > 0) {
-        std::memset(target + tocopy_samples, 0x00, padding * sizeof(int16));
-      }
-    }
-
     // clean up, free the decoder buffer
     free((void *) mp3.buffer);
   }
-
-private:
-  int32 desired_channels;
-  int32 desired_samples;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),

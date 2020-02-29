@@ -17,6 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow as tf
+
 from tensorflow_io.core.python.ops import core_ops
 
 def decode_mp3(contents, desired_channels=-1, desired_samples=-1, name=None):
@@ -38,6 +40,34 @@ def decode_mp3(contents, desired_channels=-1, desired_samples=-1, name=None):
     A `Tensor` of type `int16` and shape of `[channels, samples]` and a scalar
     `Tensor` of type `int32` containing the sample rate of the MP3.
   """
-  # TODO do I really just have to pass in the name here?
-  return core_ops.io_decode_mp3(contents, desired_channels, desired_samples,
-                                name=name)
+  samples, sample_rate = core_ops.io_decode_mp3(contents, name=name)
+  samples = _fix_shape(samples, desired_channels, desired_samples)
+  return samples, sample_rate
+
+
+def _fix_shape(data, desired_channels, desired_samples):
+  """Fix shape of decoded audio to desired channels and samples."""
+  org_shape = tf.shape(data)
+  org_samples = org_shape[1]
+
+  if desired_samples >= 0:
+    # truncate if necessary
+    # ignored if org_samples <= desired_samples
+    data = data[:, :desired_samples]
+
+    # pad if necessary
+    right_pad = desired_samples - org_samples
+    if right_pad > 0:
+      data = tf.pad(data, [[0, 0], [0, right_pad]], "CONSTANT")
+
+  if desired_channels >= 0:
+    out_samples = desired_samples if desired_samples >= 0 else org_samples
+
+    # truncate if necessary
+    # ignored if org_channels <= desired_channels
+    data = data[:desired_channels, :]
+
+    # convert to mono to stereo if necessary
+    data = tf.broadcast_to(data, [desired_channels, out_samples])
+
+  return data
