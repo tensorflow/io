@@ -28,6 +28,7 @@ from tensorflow_io.core.python.experimental import grpc_dataset_ops
 from tensorflow_io.core.python.experimental import file_dataset_ops
 from tensorflow_io.core.python.experimental import numpy_dataset_ops
 from tensorflow_io.core.python.experimental import sql_dataset_ops
+from tensorflow_io.core.python.experimental import video_dataset_ops
 
 class IODataset(io_dataset.IODataset):
   """IODataset"""
@@ -268,6 +269,21 @@ class IODataset(io_dataset.IODataset):
 
 class StreamIODataset(tf.data.Dataset):
   """StreamIODataset"""
+
+  @classmethod
+  def from_video_capture(cls, device, **kwargs):
+    """Creates an `StreamIODataset` from video capture device.
+
+    Args:
+      device: A string, the name of the device.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromVideoCapture")):
+      return video_dataset_ops.VideoCaptureIODataset(
+          device, internal=True)
 
   @classmethod
   def from_prometheus_scrape(cls,

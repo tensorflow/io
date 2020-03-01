@@ -13,3 +13,15 @@ swift_library(
     module_name = "audio",
     alwayslink = True,
 )
+
+swift_library(
+    name = "video_swift",
+    srcs = [
+        "//tensorflow_io/core:swift/video.swift",
+    ],
+    linkopts = [
+        "-L/usr/lib/swift",
+    ],
+    module_name = "video",
+    alwayslink = True,
+)

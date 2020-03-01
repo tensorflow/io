@@ -187,6 +187,7 @@ cc_library(
 
 exports_files([
     "swift/audio.swift",
+    "swift/video.swift",
 ])
 
 cc_library(
@@ -213,6 +214,25 @@ cc_library(
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
             "//tools/build/swift:audio_swift",
+        ],
+        "//conditions:default": [],
+    }),
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "video_ops",
+    srcs = [
+        "kernels/video_kernels.cc",
+        "ops/video_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [
+            "//tools/build/swift:video_swift",
         ],
         "//conditions:default": [],
     }),
@@ -542,6 +562,7 @@ cc_binary(
         "//tensorflow_io/core:serialization_ops",
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
+        "//tensorflow_io/core:video_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
