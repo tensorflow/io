@@ -742,6 +742,16 @@ http_archive(
 )
 
 http_archive(
+    name = "minimp4",
+    build_file = "//third_party:minimp4.BUILD",
+    sha256 = "2c9e176b2df3f72d9cb3bcd0959ebfc9da3efcedbea70fb945270c7bfa9e7758",
+    strip_prefix = "minimp4-14d452e4fac71da38f5c02e211486144075f4ecb",
+    urls = [
+        "https://github.com/lieff/minimp4/archive/14d452e4fac71da38f5c02e211486144075f4ecb.tar.gz",
+    ],
+)
+
+http_archive(
     name = "postgresql",
     build_file = "//third_party:postgresql.BUILD",
     sha256 = "9868c1149a04bae1131533c5cbd1c46f9c077f834f6147abaef8791a7c91b1a1",
@@ -750,3 +760,26 @@ http_archive(
         "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
     ],
 )
+
+load("//:tools/build/tensorflow_io.bzl", "tf_io_swift")
+
+tf_io_swift()
+
+"""
+http_archive(
+    name = "build_bazel_apple_support",
+    sha256 = "ad8ae80e93612b8151019367a3d1604d7a51c14480dae1254e10252007e8260c",
+    strip_prefix = "apple_support-501b4afb27745c4813a88ffa28acd901408014e4",
+    urls = [
+        "https://github.com/bazelbuild/apple_support/archive/501b4afb27745c4813a88ffa28acd901408014e4.tar.gz",
+    ],
+)
+
+load("@build_bazel_rules_swift//swift:repositories.bzl", "swift_rules_dependencies")
+
+swift_rules_dependencies()
+
+load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+
+apple_support_dependencies()
+"""
