@@ -21,6 +21,33 @@ namespace tensorflow {
 namespace data {
 namespace {
 
+enum AudioFileFormat {
+  UnknownFormat = 0,
+  WavFormat = 1,
+  FlacFormat = 2,
+  OggFormat = 3,
+  Mp4Format = 4,
+  Mp3Format = 5
+}
+
+AudioFileFormat ClassifyAudioFileFormat(void *data) {
+  // currently requires 8 bytes of data
+  if (std::memcmp(data, "RIFF", 4) == 0) {
+    return WavFormat;
+  } else if (std::memcmp(data, "OggS", 4) == 0) {
+    return OggFormat;
+  } else if (std::memcmp(data, "fLaC", 4) == 0) {
+    return FlacFormat;
+  } else if (std::memcmp(data + 4, "ftyp", 4) == 0) {
+    return Mp4Format;
+  } else if (std::memcmp(data, "ID3", 3) == 0) {
+    // TODO MP3 files do not necessarily have to have an ID3 header
+    return Mp3Format;
+  } else {
+    return UnknownFormat;
+  }
+}
+
 class AudioReadableResource : public AudioReadableResourceBase {
  public:
   AudioReadableResource(Env* env) : env_(env), resource_(nullptr) {}
@@ -33,20 +60,22 @@ class AudioReadableResource : public AudioReadableResourceBase {
     char header[8];
     StringPiece result;
     TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
-    if (memcmp(header, "RIFF", 4) == 0) {
-      return WAVReadableResourceInit(env_, input, resource_);
-    } else if (memcmp(header, "OggS", 4) == 0) {
-      return OggReadableResourceInit(env_, input, resource_);
-    } else if (memcmp(header, "fLaC", 4) == 0) {
-      return FlacReadableResourceInit(env_, input, resource_);
-    }
-    Status status = MP3ReadableResourceInit(env_, input, resource_);
-    if (status.ok()) {
-      return status;
-    }
-    if (memcmp(&header[4], "ftyp", 4) == 0) {
-      LOG(ERROR) << "MP4A file is not fully supported!";
-      return MP4ReadableResourceInit(env_, input, resource_);
+    switch (ClassifyAudioFileFormat(header)) {
+      case WavFormat:
+        return WAVReadableResourceInit(env_, input, resource_);
+      case OggFormat:
+        return OggReadableResourceInit(env_, input, resource_);
+      case FlacFormat:
+        return FlacReadableResourceInit(env_, input, resource_);
+      case Mp4Format:
+        LOG(ERROR) << "MP4A file is not fully supported!";
+        return MP4ReadableResourceInit(env_, input, resource_);
+      default:
+        // currently we are trying MP3 as a default option
+        Status status = MP3ReadableResourceInit(env_, input, resource_);
+        if (status.ok()) {
+          return status;
+        }
     }
     return errors::InvalidArgument("unknown file type: ", input);
   }
