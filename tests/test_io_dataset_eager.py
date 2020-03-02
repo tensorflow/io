@@ -812,7 +812,8 @@ def fixture_video_capture():
   """fixture_video_capture
   # Note: the following is a validation
   # YUV image could be converted to JPEG with:
-  # ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
+  # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
+  # Linux: ffmpeg -s 320x240 -pix_fmt yuyv422 -i frame_{i}.yuv frame_{i}.jpg
   dataset = tfio.experimental.IODataset.stream().from_video_capture(
       "device").take(5)
   i = 0
@@ -830,8 +831,10 @@ def fixture_video_capture():
     dataset = dataset.map(tf.strings.length)
     dataset = dataset.take(10)
     return dataset
-  # 1382400 = (1280 + 1280 / 2) * 720
-  expected = [1382400 for _ in range(10)]
+  # macOS (NV12): 1382400 = (1280 + 1280 / 2) * 720
+  # Linux (YUYV): 153600 = 320 * 240 * 2
+  value = 1382400 if sys.platform == "darwin" else 153600
+  expected = [value for _ in range(10)]
 
   return args, func, expected
 

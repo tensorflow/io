@@ -13,21 +13,52 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow_io/core/kernels/video_kernels.h"
 
 extern "C" {
 #if defined(__APPLE__)
 void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width, int64_t* height);
 void VideoCaptureNextFunction(void* context, void* data, int64_t size);
 void VideoCaptureFiniFunction(void* context);
-#else
+#elif defined(_MSV_VER)
 void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width,
                                int64_t* height) {
   return NULL;
 }
 void VideoCaptureNextFunction(void* context, void* data, int64_t size) {}
 void VideoCaptureFiniFunction(void* context) {}
+#else
+void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width,
+                               int64_t* height) {
+  tensorflow::data::VideoCaptureContext* p =
+      new tensorflow::data::VideoCaptureContext();
+  if (p != nullptr) {
+    tensorflow::Status status = p->Init("/dev/video0", bytes, width, height);
+    if (status.ok()) {
+      return p;
+    }
+    LOG(ERROR) << "unable to initialize video capture: " << status;
+    delete p;
+  }
+  return NULL;
+}
+void VideoCaptureNextFunction(void* context, void* data, int64_t size) {
+  tensorflow::data::VideoCaptureContext* p =
+      static_cast<tensorflow::data::VideoCaptureContext*>(context);
+  if (p != nullptr) {
+    tensorflow::Status status = p->Read(data, size);
+    if (!status.ok()) {
+      LOG(ERROR) << "unable to read video capture: " << status;
+    }
+  }
+}
+void VideoCaptureFiniFunction(void* context) {
+  tensorflow::data::VideoCaptureContext* p =
+      static_cast<tensorflow::data::VideoCaptureContext*>(context);
+  if (p != nullptr) {
+    delete p;
+  }
+}
 #endif
 }
 namespace tensorflow {
