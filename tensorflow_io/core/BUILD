@@ -224,6 +224,7 @@ cc_library(
     name = "video_ops",
     srcs = [
         "kernels/video_kernels.cc",
+        "kernels/video_kernels.h",
         "ops/video_ops.cc",
     ],
     copts = tf_io_copts(),

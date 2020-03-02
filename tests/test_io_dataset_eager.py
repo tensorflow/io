@@ -815,7 +815,7 @@ def fixture_video_capture():
   # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
   # Linux: ffmpeg -s 320x240 -pix_fmt yuyv422 -i frame_{i}.yuv frame_{i}.jpg
   dataset = tfio.experimental.IODataset.stream().from_video_capture(
-      "device").take(5)
+      "/dev/video0").take(5)
   i = 0
   for frame in dataset:
     print("Frame {}: shape({}) dtype({}) length({})".format(

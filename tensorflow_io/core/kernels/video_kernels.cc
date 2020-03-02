@@ -17,23 +17,24 @@ limitations under the License.
 
 extern "C" {
 #if defined(__APPLE__)
-void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width, int64_t* height);
+void* VideoCaptureInitFunction(const char* device, int64_t* bytes,
+                               int64_t* width, int64_t* height);
 void VideoCaptureNextFunction(void* context, void* data, int64_t size);
 void VideoCaptureFiniFunction(void* context);
 #elif defined(_MSV_VER)
-void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width,
-                               int64_t* height) {
+void* VideoCaptureInitFunction(const char* device, int64_t* bytes,
+                               int64_t* width, int64_t* height) {
   return NULL;
 }
 void VideoCaptureNextFunction(void* context, void* data, int64_t size) {}
 void VideoCaptureFiniFunction(void* context) {}
 #else
-void* VideoCaptureInitFunction(int64_t* bytes, int64_t* width,
-                               int64_t* height) {
+void* VideoCaptureInitFunction(const char* device, int64_t* bytes,
+                               int64_t* width, int64_t* height) {
   tensorflow::data::VideoCaptureContext* p =
       new tensorflow::data::VideoCaptureContext();
   if (p != nullptr) {
-    tensorflow::Status status = p->Init("/dev/video0", bytes, width, height);
+    tensorflow::Status status = p->Init(device, bytes, width, height);
     if (status.ok()) {
       return p;
     }
@@ -79,7 +80,8 @@ class VideoCaptureReadableResource : public ResourceBase {
     mutex_lock l(mu_);
 
     int64_t bytes, width, height;
-    context_.reset(VideoCaptureInitFunction(&bytes, &width, &height));
+    context_.reset(
+        VideoCaptureInitFunction(input.c_str(), &bytes, &width, &height));
     if (context_.get() == nullptr) {
       return errors::InvalidArgument("unable to open device ", input);
     }

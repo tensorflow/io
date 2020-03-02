@@ -88,7 +88,9 @@ class VideoDataOutputSampleBufferDelegate : NSObject, AVCaptureVideoDataOutputSa
 typealias VideoContext = (session: AVCaptureSession, semaphore_in: DispatchSemaphore, semaphore_out: DispatchSemaphore, delegate: VideoDataOutputSampleBufferDelegate)
 
 @_silgen_name("VideoCaptureInitFunction")
-func VideoCaptureInitFunction(bytes: UnsafeMutablePointer<Int64>, width: UnsafeMutablePointer<Int64>, height: UnsafeMutablePointer<Int64>) -> UnsafeMutablePointer<VideoContext>?  {
+func VideoCaptureInitFunction(devname: UnsafePointer<CChar>, bytes: UnsafeMutablePointer<Int64>, width: UnsafeMutablePointer<Int64>, height: UnsafeMutablePointer<Int64>) -> UnsafeMutablePointer<VideoContext>?  {
+    
+    let deviceName = String(cString: devname)
     
     let session = AVCaptureSession()
     let semaphore_in = DispatchSemaphore(value: 0)
