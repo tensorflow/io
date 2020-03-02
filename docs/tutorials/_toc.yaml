@@ -24,3 +24,5 @@ toc:
   path: /io/tutorials/prometheus
 - title: "Genomics IO"
   path: /io/tutorials/genome
+- title: "PostgreSQL database"
+  path: /io/tutorials/postgresql
