@@ -810,6 +810,11 @@ def fixture_sql_graph():
 @pytest.fixture(name="video_capture")
 def fixture_video_capture():
   """fixture_video_capture
+  # Note: on Linux v4l2loopback is used, and the following is needed:
+  #   gst-launch-1.0 videotestsrc ! v4l2sink device=/dev/video0
+  # otherwise fmt will not work with
+  #   $ v4l2-ctl -d /dev/video0 -V
+  #   VIDIOC_G_FMT: failed: Invalid argument
   # Note: the following is a validation
   # YUV image could be converted to JPEG with:
   # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
@@ -824,7 +829,7 @@ def fixture_video_capture():
     i += 1
   """
 
-  args = "device"
+  args = "/dev/video0"
   def func(q):
     dataset = tfio.experimental.IODataset.stream().from_video_capture(
         q)
