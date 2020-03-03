@@ -21,7 +21,7 @@ void* VideoCaptureInitFunction(const char* device, int64_t* bytes,
                                int64_t* width, int64_t* height);
 void VideoCaptureNextFunction(void* context, void* data, int64_t size);
 void VideoCaptureFiniFunction(void* context);
-#elif defined(_MSV_VER)
+#elif defined(_MSC_VER)
 void* VideoCaptureInitFunction(const char* device, int64_t* bytes,
                                int64_t* width, int64_t* height) {
   return NULL;
