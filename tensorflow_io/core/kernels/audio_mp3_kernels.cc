@@ -157,5 +157,68 @@ Status MP3ReadableResourceInit(
   return status;
 }
 
+std::unique_ptr<DecodedAudio> DecodeMp3(StringPiece &data) {
+  // initialize mp3 decoder
+  mp3dec_t mp3dec;
+  mp3dec_init(&mp3dec);
+
+  // decode mp3
+  mp3dec_file_info_t mp3;
+  memset(&mp3, 0x00, sizeof(mp3dec_file_info_t));
+  mp3dec_load_buf(&mp3dec, (const uint8_t *)data.data(),
+                  data.size(), &mp3, NULL /* progress callback */,
+                  NULL /* user data */);
+
+  // if channels == 0, decoding was not successful
+  if (!mp3.channels) {
+    return std::unique_ptr<DecodedAudio>(new DecodedAudio(false, 0, 0, 0, nullptr));
+  }
+
+  // TODO: could channels have different numbers of samples?
+  int samples_perchannel = mp3.samples / mp3.channels;
+
+  return std::unique_ptr<DecodedAudio>(new DecodedAudio(true, mp3.channels, samples_perchannel, mp3.hz, mp3.buffer));
+}
+
+
+class DecodeMp3Op : public OpKernel {
+public:
+  explicit DecodeMp3Op(OpKernelConstruction *context) : OpKernel(context) {}
+
+  void Compute(OpKernelContext *context) override {
+    // get the input data, i.e. encoded mp3 data
+    const Tensor &input_tensor = context->input(0);
+    const string &input_data = input_tensor.scalar<tstring>()();
+    StringPiece data (input_data.data(), input_data.size());
+
+    // decode audio
+    std::unique_ptr<DecodedAudio> decoded = DecodeMp3(data);
+
+    // if MP3 can not be parsed, mp3.channels will be 0
+    OP_REQUIRES(
+        context, decoded->success,
+        errors::InvalidArgument("MP3 data could not be decoded"));
+
+    // output 1: samples
+    Tensor *output_tensor = nullptr;
+    TensorShape output_shape {decoded->channels, decoded->samples_perchannel};
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(0, output_shape, &output_tensor));
+
+    // copy data from decoder buffer into output tensor
+    auto output_flat = output_tensor->flat<int16>();
+    std::memcpy(output_flat.data(), decoded->data, decoded->data_size());
+
+    // output 2: sample rate
+    Tensor *sample_rate_output = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({}),
+                                                     &sample_rate_output));
+    sample_rate_output->flat<int32>()(0) = decoded->sampling_rate;
+  }
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>DecodeMp3").Device(DEVICE_CPU),
+                        DecodeMp3Op);
+
 }  // namespace data
 }  // namespace tensorflow

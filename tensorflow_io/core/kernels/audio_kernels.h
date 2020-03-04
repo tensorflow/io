@@ -19,6 +19,15 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
+enum AudioFileFormat {
+  UnknownFormat = 0,
+  WavFormat = 1,
+  FlacFormat = 2,
+  OggFormat = 3,
+  Mp4Format = 4,
+  Mp3Format = 5
+};
+
 class AudioReadableResourceBase : public ResourceBase {
  public:
   virtual Status Init(const string& input) = 0;
@@ -44,6 +53,25 @@ Status MP3ReadableResourceInit(
 Status MP4ReadableResourceInit(
     Env* env, const string& input,
     std::unique_ptr<AudioReadableResourceBase>& resource);
+
+class DecodedAudio {
+public:
+  const bool success;
+  const int channels;
+  const int samples_perchannel;
+  const int sampling_rate;
+  // should first contain all samples of the left channel
+  // followed by the right channel
+  const int16 *data;
+
+  size_t data_size();
+
+  DecodedAudio(bool success, size_t channels, size_t samples_perchannel,
+               size_t sampling_rate, int16 *data);
+  ~DecodedAudio();
+};
+
+std::unique_ptr<DecodedAudio> DecodeMP3(StringPiece &data);
 
 }  // namespace data
 }  // namespace tensorflow

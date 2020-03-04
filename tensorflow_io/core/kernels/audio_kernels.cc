@@ -21,16 +21,7 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-enum AudioFileFormat {
-  UnknownFormat = 0,
-  WavFormat = 1,
-  FlacFormat = 2,
-  OggFormat = 3,
-  Mp4Format = 4,
-  Mp3Format = 5
-}
-
-AudioFileFormat ClassifyAudioFileFormat(void *data) {
+AudioFileFormat ClassifyAudioFileFormat(char *data) {
   // currently requires 8 bytes of data
   if (std::memcmp(data, "RIFF", 4) == 0) {
     return WavFormat;
@@ -61,21 +52,21 @@ class AudioReadableResource : public AudioReadableResourceBase {
     StringPiece result;
     TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
     switch (ClassifyAudioFileFormat(header)) {
-      case WavFormat:
-        return WAVReadableResourceInit(env_, input, resource_);
-      case OggFormat:
-        return OggReadableResourceInit(env_, input, resource_);
-      case FlacFormat:
-        return FlacReadableResourceInit(env_, input, resource_);
-      case Mp4Format:
-        LOG(ERROR) << "MP4A file is not fully supported!";
-        return MP4ReadableResourceInit(env_, input, resource_);
-      default:
-        // currently we are trying MP3 as a default option
-        Status status = MP3ReadableResourceInit(env_, input, resource_);
-        if (status.ok()) {
-          return status;
-        }
+    case WavFormat:
+      return WAVReadableResourceInit(env_, input, resource_);
+    case OggFormat:
+      return OggReadableResourceInit(env_, input, resource_);
+    case FlacFormat:
+      return FlacReadableResourceInit(env_, input, resource_);
+    case Mp4Format:
+      LOG(ERROR) << "MP4A file is not fully supported!";
+      return MP4ReadableResourceInit(env_, input, resource_);
+    default:
+      // currently we are trying MP3 as a default option
+      Status status = MP3ReadableResourceInit(env_, input, resource_);
+      if (status.ok()) {
+        return status;
+      }
     }
     return errors::InvalidArgument("unknown file type: ", input);
   }
@@ -293,57 +284,6 @@ class AudioResampleOp : public OpKernel {
   int64 quality_;
 };
 
-
-class DecodeMp3Op : public OpKernel {
-public:
-  explicit DecodeMp3Op(OpKernelConstruction *context) : OpKernel(context) {}
-
-  void Compute(OpKernelContext *context) override {
-    // get the input data, i.e. encoded mp3 data
-    const Tensor &input_tensor = context->input(0);
-    const string &input_data = input_tensor.scalar<tstring>()();
-
-    // initialize mp3 decoder
-    mp3dec_t mp3dec;
-    mp3dec_init(&mp3dec);
-
-    // decode mp3
-    mp3dec_file_info_t mp3;
-    memset(&mp3, 0x00, sizeof(mp3dec_file_info_t));
-    mp3dec_load_buf(&mp3dec, (const uint8_t *)input_data.data(),
-                    input_data.size(), &mp3, NULL /* progress callback */,
-                    NULL /* user data */);
-
-    // if MP3 can not be parsed, mp3.channels will be 0
-    OP_REQUIRES(
-        context, (mp3.samples > 0),
-        errors::InvalidArgument("MP3 data can not be decoded"));
-
-    // some bookkeeping for generating the output
-    // TODO: could channels have different numbers of samples?
-    int perchannel_samples = mp3.samples / mp3.channels;
-
-    // output 1: samples
-    Tensor *output_tensor = nullptr;
-    TensorShape output_shape {mp3.channels, perchannel_samples};
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(0, output_shape, &output_tensor));
-
-    // copy data from decoder buffer into output tensor
-    auto output_flat = output_tensor->flat<int16>();
-    std::memcpy(output_flat.data(), mp3.buffer, mp3.samples * sizeof(int16));
-
-    // output 2: sample rate
-    Tensor *sample_rate_output = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({}),
-                                                     &sample_rate_output));
-    sample_rate_output->flat<int32>()(0) = mp3.hz;
-
-    // clean up, free the decoder buffer
-    free((void *) mp3.buffer);
-  }
-};
-
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
                         AudioReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
@@ -354,9 +294,24 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
                         AudioResampleOp);
 
-REGISTER_KERNEL_BUILDER(Name("IO>DecodeMp3").Device(DEVICE_CPU),
-                        DecodeMp3Op);
-
 }  // namespace
+
+size_t DecodedAudio::data_size() {
+  return channels * samples_perchannel * sizeof(int16);
+}
+
+DecodedAudio::DecodedAudio(bool success, size_t channels,
+                           size_t samples_perchannel, size_t sampling_rate,
+                           int16 *data)
+    : success(success), channels(channels),
+      samples_perchannel(samples_perchannel), sampling_rate(sampling_rate),
+      data(data) {}
+
+DecodedAudio::~DecodedAudio() {
+  if (data) {
+    std::free((void *)data);
+  }
+}
+
 }  // namespace data
 }  // namespace tensorflow
