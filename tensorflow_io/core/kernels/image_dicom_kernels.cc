@@ -24,14 +24,20 @@ limitations under the License.
 #include "dcmtk/ofstd/ofstring.h"
 #include "dcmtk/ofstd/oftypes.h"
 
-#include "dcmtk/dcmdata/dcrledrg.h"  /* for DcmRLEDecoderRegistration */
+#include "dcmtk/dcmimgle/diutils.h"
+
 #include "dcmtk/dcmimage/dipipng.h"  /* for dcmimage PNG plugin */
 #include "dcmtk/dcmimage/dipitiff.h" /* for dcmimage TIFF plugin */
+#include "dcmtk/dcmjpeg/dipijpeg.h"  /* for dcmimage JPEG plugin */
+
 #include "dcmtk/dcmimage/diregist.h"
 #include "dcmtk/dcmimgle/dcmimage.h"
-#include "dcmtk/dcmjpeg/dipijpeg.h" /* for dcmimage JPEG plugin */
+
+#include "dcmtk/dcmdata/dcrledrg.h" /* for DcmRLEDecoderRegistration */
 #include "dcmtk/dcmjpeg/djdecode.h" /* for dcmjpeg decoders */
 #include "dcmtk/dcmjpls/djdecode.h" /* for dcmjpls decoders */
+
+#include "fmjpeg2k/djdecode.h" / for fmjpeg2koj decoders * /
 
 #include <cstdint>
 #include <exception>
@@ -61,15 +67,17 @@ class DecodeDICOMImageOp : public OpKernel {
     // Get the color_dim
     OP_REQUIRES_OK(context, context->GetAttr("color_dim", &color_dim_));
 
-    DcmRLEDecoderRegistration::registerCodecs();  // register RLE codecs
-    DJDecoderRegistration::registerCodecs();      // register JPEG codecs
-    DJLSDecoderRegistration::registerCodecs();    // register JPEG-LS codecs
+    DcmRLEDecoderRegistration::registerCodecs();    // register RLE codecs
+    DJDecoderRegistration::registerCodecs();        // register JPEG codecs
+    DJLSDecoderRegistration::registerCodecs();      // register JPEG-LS codecs
+    FMJPEG2KDecoderRegistration::registerCodecs();  // register fmjpeg2koj
   }
 
   ~DecodeDICOMImageOp() {
-    DcmRLEDecoderRegistration::cleanup();  // deregister RLE codecs
-    DJDecoderRegistration::cleanup();      // deregister JPEG codecs
-    DJLSDecoderRegistration::cleanup();    // deregister JPEG-LS codecs
+    DcmRLEDecoderRegistration::cleanup();    // deregister RLE codecs
+    DJDecoderRegistration::cleanup();        // deregister JPEG codecs
+    DJLSDecoderRegistration::cleanup();      // deregister JPEG-LS codecs
+    FMJPEG2KDecoderRegistration::cleanup();  // deregister fmjpeg2koj
   }
 
   void Compute(OpKernelContext *context) override {

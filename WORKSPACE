@@ -226,6 +226,46 @@ http_archive(
 )
 
 http_archive(
+    name = "openjpeg",
+    build_file = "//third_party:openjpeg.BUILD",
+    sha256 = "63f5a4713ecafc86de51bfad89cc07bb788e9bba24ebbf0c4ca637621aadb6a9",
+    strip_prefix = "openjpeg-2.3.1",
+    urls = [
+        "https://github.com/uclouvain/openjpeg/archive/v2.3.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libtiff",
+    build_file = "//third_party:libtiff.BUILD",
+    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
+    strip_prefix = "tiff-4.1.0",
+    urls = [
+        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libpng",
+    build_file = "//third_party:libpng.BUILD",
+    sha256 = "daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4",
+    strip_prefix = "libpng-1.6.37",
+    urls = [
+        "https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "fmjpeg2koj",
+    build_file = "//third_party:fmjpeg2koj.BUILD",
+    sha256 = "a8563307cb09161633479aff0880368ed57396f6d532facba973cf303d699717",
+    strip_prefix = "fmjpeg2koj-6de80e15a43a4d1c411109aea388007afee24263",
+    urls = [
+        "https://github.com/DraconPern/fmjpeg2koj/archive/6de80e15a43a4d1c411109aea388007afee24263.tar.gz",
+    ],
+)
+
+http_archive(
     name = "aws-checksums",
     build_file = "//third_party:aws-checksums.BUILD",
     sha256 = "6e6bed6f75cf54006b6bafb01b3b96df19605572131a2260fddaf0e87949ced0",
@@ -303,16 +343,6 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
         "https://github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "libtiff",
-    build_file = "//third_party:libtiff.BUILD",
-    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
-    strip_prefix = "tiff-4.1.0",
-    urls = [
-        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
     ],
 )
 
