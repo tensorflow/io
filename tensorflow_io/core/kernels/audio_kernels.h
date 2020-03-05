@@ -54,6 +54,7 @@ Status MP4ReadableResourceInit(
     Env* env, const string& input,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 
+// Container for decoded audio.
 class DecodedAudio {
 public:
   const bool success;
@@ -71,6 +72,18 @@ public:
   ~DecodedAudio();
 };
 
+// Base class for simple, in-memory audio data decoding.
+// Handles creating output tensors of the right shape.
+// Subclasses must implement the decode method.
+class DecodeAudioBaseOp : public OpKernel {
+ public:
+  explicit DecodeAudioBaseOp(OpKernelConstruction* context);
+  void Compute(OpKernelContext* context) override;
+  virtual std::unique_ptr<DecodedAudio> decode(StringPiece &data, void *config) = 0;
+};
+
+// Decode MP3 data.
+// TODO it seems a bit weird to have this here, maybe we should create a audio_mp3_kernels header
 std::unique_ptr<DecodedAudio> DecodeMP3(StringPiece &data);
 
 }  // namespace data

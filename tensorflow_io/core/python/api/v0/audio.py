@@ -14,4 +14,5 @@
 # ==============================================================================
 """tensorflow_io.audio"""
 
+from tensorflow_io.core.python.ops.audio_ops import decode # pylint: disable=unused-import
 from tensorflow_io.core.python.ops.audio_ops import decode_mp3 # pylint: disable=unused-import

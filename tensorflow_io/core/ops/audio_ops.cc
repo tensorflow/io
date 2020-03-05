@@ -66,7 +66,17 @@ REGISTER_OP("IO>AudioResample")
       return Status::OK();
     });
 
-REGISTER_OP("IO>DecodeMp3")
+REGISTER_OP("IO>AudioDecode")
+    .Input("contents: string")
+    .Output("samples: int16")
+    .Output("sample_rate: int32")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      c->set_output(1, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>AudioDecodeMp3")
     .Input("contents: string")
     .Output("samples: int16")
     .Output("sample_rate: int32")

@@ -69,6 +69,47 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
   entries = func(args)
   assert np.array_equal(entries, expected)
 
+def test_general_decode_mp3():
+  """test generic audio decode for mp3"""
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "sine440_cbr128.mp3")
+  contents = tf.io.read_file(expected_path)
+
+  samples, _ = tfio.audio.decode(contents)
+
+  assert tf.rank(samples) == 2
+
+def test_general_decode_wav():
+  """test generic audio decode for wav"""
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "mono_10khz.wav")
+  contents = tf.io.read_file(expected_path)
+
+  with pytest.raises(tf.errors.InvalidArgumentError):
+    samples, _ = tfio.audio.decode(contents)
+
+def test_general_decode_flac():
+  """test generic audio decode for flac"""
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.flac")
+  contents = tf.io.read_file(expected_path)
+
+  with pytest.raises(tf.errors.InvalidArgumentError):
+    samples, _ = tfio.audio.decode(contents)
+
+def test_general_decode_ogg():
+  """test generic audio decode for ogg"""
+  expected_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
+  contents = tf.io.read_file(expected_path)
+
+  with pytest.raises(tf.errors.InvalidArgumentError):
+    samples, _ = tfio.audio.decode(contents)
+
 def test_decode_mp3():
   """test standard decoding of a mono MP3 file"""
   expected_path = os.path.join(

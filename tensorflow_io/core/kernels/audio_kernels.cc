@@ -19,9 +19,62 @@ limitations under the License.
 
 namespace tensorflow {
 namespace data {
+
+// DecodedAudio
+size_t DecodedAudio::data_size() {
+  return channels * samples_perchannel * sizeof(int16);
+}
+
+DecodedAudio::DecodedAudio(bool success, size_t channels,
+                           size_t samples_perchannel, size_t sampling_rate,
+                           int16 *data)
+    : success(success), channels(channels),
+      samples_perchannel(samples_perchannel), sampling_rate(sampling_rate),
+      data(data) {}
+
+DecodedAudio::~DecodedAudio() {
+  if (data) {
+    std::free((void *)data);
+  }
+}
+
+// DecodeAudioBaseOp
+DecodeAudioBaseOp::DecodeAudioBaseOp(OpKernelConstruction *context) : OpKernel(context) {}
+
+void DecodeAudioBaseOp::Compute(OpKernelContext *context) {
+  // get the input data, i.e. encoded audio data
+  const Tensor &input_tensor = context->input(0);
+  const string &input_data = input_tensor.scalar<tstring>()();
+  StringPiece data (input_data.data(), input_data.size());
+
+  // decode audio
+  std::unique_ptr<DecodedAudio> decoded = decode(data, nullptr);
+
+  // make sure decoding was successful
+  OP_REQUIRES(
+      context, decoded->success,
+      errors::InvalidArgument("Audio data could not be decoded"));
+
+  // output 1: samples
+  Tensor *output_tensor = nullptr;
+  TensorShape output_shape {decoded->channels, decoded->samples_perchannel};
+  OP_REQUIRES_OK(context,
+                 context->allocate_output(0, output_shape, &output_tensor));
+
+  // copy data from decoder buffer into output tensor
+  auto output_flat = output_tensor->flat<int16>();
+  std::memcpy(output_flat.data(), decoded->data, decoded->data_size());
+
+  // output 2: sample rate
+  Tensor *sample_rate_output = nullptr;
+  OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({}),
+                                                   &sample_rate_output));
+  sample_rate_output->flat<int32>()(0) = decoded->sampling_rate;
+}
+
 namespace {
 
-AudioFileFormat ClassifyAudioFileFormat(char *data) {
+AudioFileFormat ClassifyAudioFileFormat(const char *data) {
   // currently requires 8 bytes of data
   if (std::memcmp(data, "RIFF", 4) == 0) {
     return WavFormat;
@@ -284,6 +337,32 @@ class AudioResampleOp : public OpKernel {
   int64 quality_;
 };
 
+class DecodeAudioOp : public DecodeAudioBaseOp {
+ public:
+  DecodeAudioOp(OpKernelConstruction *context) : DecodeAudioBaseOp(context) {}
+
+  std::unique_ptr<DecodedAudio> decode(StringPiece &data, void *config) {
+    auto error = std::unique_ptr<DecodedAudio>(new DecodedAudio(false, 0, 0, 0, nullptr));
+    switch (ClassifyAudioFileFormat(data.data())) {
+      case WavFormat:
+        LOG(ERROR) << "Direct decoding of WAV not yet supported.";
+        return error;
+      case OggFormat:
+        LOG(ERROR) << "Direct decoding of Ogg not yet supported.";
+        return error;
+      case FlacFormat:
+        LOG(ERROR) << "Direct decoding of Flac not yet supported.";
+        return error;
+      case Mp4Format:
+        LOG(ERROR) << "Direct decoding of Mp4 not yet supported.";
+        return error;
+      default:
+        // currently we are trying MP3 as a default option
+        return DecodeMP3(data);
+   }
+  }
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
                         AudioReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
@@ -294,24 +373,9 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
                         AudioResampleOp);
 
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecode").Device(DEVICE_CPU),
+                        DecodeAudioOp);
+
 }  // namespace
-
-size_t DecodedAudio::data_size() {
-  return channels * samples_perchannel * sizeof(int16);
-}
-
-DecodedAudio::DecodedAudio(bool success, size_t channels,
-                           size_t samples_perchannel, size_t sampling_rate,
-                           int16 *data)
-    : success(success), channels(channels),
-      samples_perchannel(samples_perchannel), sampling_rate(sampling_rate),
-      data(data) {}
-
-DecodedAudio::~DecodedAudio() {
-  if (data) {
-    std::free((void *)data);
-  }
-}
-
 }  // namespace data
 }  // namespace tensorflow
