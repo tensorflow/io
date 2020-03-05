@@ -67,7 +67,6 @@ buildifier_func() {
 
 clang_format_func() {
   echo $1 $2
-  return # TODO: enable after TF 2.1
   if [[ "$1" == "lint" ]]; then
     $clang_format_path --style=google -i $2
   else
