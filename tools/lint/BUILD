@@ -16,6 +16,26 @@ lint(
 exports_files(["lint.tpl"])
 
 py_binary(
+    name = "black_py",
+    srcs = ["black_python.py"],
+    main = "black_python.py",
+    deps = [
+        requirement("black"),
+    ],
+)
+
+genrule(
+    name = "black",
+    srcs = [],
+    outs = ["black"],
+    cmd = "echo '$(location :black_py) \"$$@\"' > $@",
+    executable = True,
+    tools = [
+        ":black_py",
+    ],
+)
+
+py_binary(
     name = "pylint_py",
     srcs = ["pylint_python.py"],
     main = "pylint_python.py",
