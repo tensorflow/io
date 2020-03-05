@@ -241,13 +241,7 @@ class ArrowReadableFromMemoryInitOp : public ResourceOpKernel<ArrowReadableResou
 class ArrowReadableSpecOp : public OpKernel {
  public:
   explicit ArrowReadableSpecOp(OpKernelConstruction* context)
-      : OpKernel(context), column_index_(-1) {
-    int32 column_index;
-    Status status = context->GetAttr("column_index", &column_index);
-    if (status.ok()) {
-      column_index_ = column_index;
-    }
-  }
+      : OpKernel(context) {}
 
   void Compute(OpKernelContext* context) override {
     ArrowReadableResource* resource;
@@ -255,9 +249,13 @@ class ArrowReadableSpecOp : public OpKernel {
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
+    const Tensor* column_index_tensor;
+    OP_REQUIRES_OK(context, context->input("column_index", &column_index_tensor));
+    int32 column_index = column_index_tensor->scalar<int32>()();
+
     PartialTensorShape shape;
     DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(column_index_, &shape, &dtype));
+    OP_REQUIRES_OK(context, resource->Spec(column_index, &shape, &dtype));
 
     Tensor shape_tensor(DT_INT64, TensorShape({shape.dims()}));
     for (int64 i = 0; i < shape.dims(); i++) {
@@ -268,27 +266,26 @@ class ArrowReadableSpecOp : public OpKernel {
     context->set_output(0, shape_tensor);
     context->set_output(1, dtype_tensor);
   }
-
- private:
-  int32 column_index_;
 };
 
 class ArrowReadableReadOp : public OpKernel {
  public:
   explicit ArrowReadableReadOp(OpKernelConstruction* context)
-      : OpKernel(context), column_index_(-1) {
-    int32 column_index;
-    Status status = context->GetAttr("column_index", &column_index);
-    if (status.ok()) {
-      column_index_ = column_index;
-    }
-  }
+      : OpKernel(context) {}
 
   void Compute(OpKernelContext* context) override {
     ArrowReadableResource* resource;
     OP_REQUIRES_OK(context,
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
+
+    const Tensor* column_index_tensor;
+    OP_REQUIRES_OK(context, context->input("column_index", &column_index_tensor));
+    int32 column_index = column_index_tensor->scalar<int32>()();
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+    TensorShape shape(shape_tensor->flat<int64>());
 
     const Tensor* start_tensor;
     OP_REQUIRES_OK(context, context->input("start", &start_tensor));
@@ -298,20 +295,16 @@ class ArrowReadableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
     int64 stop = stop_tensor->scalar<int64>()();
 
-    // Get the spec from the table
-    PartialTensorShape shape;
-    DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(column_index_, &shape, &dtype));
-
     // Verify requested records
     int64 length = shape.dim_size(0);
-    OP_REQUIRES(context, start >= 0 && start < length && stop > start,
-                errors::InvalidArgument("Invalid start, stop inputs: ", start, ", ", stop));
 
-    // Cap the stop record at the length
-    if (stop > length) {
+    // Value of stop < 0 means end record of the table or cap at max length
+    if (stop < 0 || stop > length) {
       stop = length;
     }
+
+    OP_REQUIRES(context, start >= 0 && start < length && stop > start,
+                errors::InvalidArgument("Invalid start, stop inputs: ", start, ", ", stop));
 
     // Create shape of the output tensor
     gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
@@ -323,11 +316,8 @@ class ArrowReadableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->allocate_output(0, value_shape, &value_tensor));
 
     // Read the output tensor value
-    OP_REQUIRES_OK(context, resource->Read(start, stop, column_index_, value_tensor));
+    OP_REQUIRES_OK(context, resource->Read(start, stop, column_index, value_tensor));
   }
-
- private:
-  int32 column_index_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>ArrowReadableFromMemoryInit").Device(DEVICE_CPU),
