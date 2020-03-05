@@ -74,18 +74,25 @@ void DecodeAudioBaseOp::Compute(OpKernelContext *context) {
 
 namespace {
 
-AudioFileFormat ClassifyAudioFileFormat(const char *data) {
-  // currently requires 8 bytes of data
-  if (std::memcmp(data, "RIFF", 4) == 0) {
+AudioFileFormat ClassifyAudioFileFormat(StringPiece &data) {
+  static StringPiece wav_header("RIFF");
+  static StringPiece ogg_header("OggS");
+  static StringPiece flac_header("fLaC");
+  static StringPiece mp4_subtype_header("ftyp");
+
+  if (data.size() < 8) {
+    // this is a bit hacky, but substr throws out of range exceptions
+    return UnknownFormat;
+  } else if (data.substr(0, wav_header.size()) == wav_header) {
     return WavFormat;
-  } else if (std::memcmp(data, "OggS", 4) == 0) {
+  } else if (data.substr(0, ogg_header.size()) == ogg_header) {
     return OggFormat;
-  } else if (std::memcmp(data, "fLaC", 4) == 0) {
+  } else if (data.substr(0, flac_header.size()) == flac_header) {
     return FlacFormat;
-  } else if (std::memcmp(data + 4, "ftyp", 4) == 0) {
+  } else if (data.substr(4, mp4_subtype_header.size()) == mp4_subtype_header) {
     return Mp4Format;
-  } else if (std::memcmp(data, "ID3", 3) == 0) {
-    // TODO MP3 files do not necessarily have to have an ID3 header
+  } else if (IsMP3(data)) {
+    // MP3 can not reliably be detected by the header alone
     return Mp3Format;
   } else {
     return UnknownFormat;
@@ -101,9 +108,10 @@ class AudioReadableResource : public AudioReadableResourceBase {
     mutex_lock l(mu_);
     std::unique_ptr<tensorflow::RandomAccessFile> file;
     TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(input, &file));
-    char header[8];
+    char header_buf[8];
     StringPiece result;
-    TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
+    TF_RETURN_IF_ERROR(file->Read(0, sizeof(header_buf), &result, header_buf));
+    StringPiece header(header_buf, sizeof(header_buf));
     switch (ClassifyAudioFileFormat(header)) {
     case WavFormat:
       return WAVReadableResourceInit(env_, input, resource_);
@@ -115,6 +123,7 @@ class AudioReadableResource : public AudioReadableResourceBase {
       LOG(ERROR) << "MP4A file is not fully supported!";
       return MP4ReadableResourceInit(env_, input, resource_);
     default:
+      // mp3 is not always easily identifiable by the header alone
       // currently we are trying MP3 as a default option
       Status status = MP3ReadableResourceInit(env_, input, resource_);
       if (status.ok()) {
@@ -343,7 +352,7 @@ class DecodeAudioOp : public DecodeAudioBaseOp {
 
   std::unique_ptr<DecodedAudio> decode(StringPiece &data, void *config) {
     auto error = std::unique_ptr<DecodedAudio>(new DecodedAudio(false, 0, 0, 0, nullptr));
-    switch (ClassifyAudioFileFormat(data.data())) {
+    switch (ClassifyAudioFileFormat(data)) {
       case WavFormat:
         LOG(ERROR) << "Direct decoding of WAV not yet supported.";
         return error;
@@ -356,9 +365,11 @@ class DecodeAudioOp : public DecodeAudioBaseOp {
       case Mp4Format:
         LOG(ERROR) << "Direct decoding of Mp4 not yet supported.";
         return error;
-      default:
-        // currently we are trying MP3 as a default option
+      case Mp3Format:
         return DecodeMP3(data);
+      default:
+        LOG(ERROR) << "Unsupported audio format.";
+        return error;
    }
   }
 };

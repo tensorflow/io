@@ -82,8 +82,11 @@ class DecodeAudioBaseOp : public OpKernel {
   virtual std::unique_ptr<DecodedAudio> decode(StringPiece &data, void *config) = 0;
 };
 
-// Decode MP3 data.
 // TODO it seems a bit weird to have this here, maybe we should create a audio_mp3_kernels header
+// Detect MP3 data.
+bool IsMP3(StringPiece &data);
+
+// Decode MP3 data.
 std::unique_ptr<DecodedAudio> DecodeMP3(StringPiece &data);
 
 }  // namespace data

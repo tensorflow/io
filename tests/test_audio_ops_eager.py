@@ -110,6 +110,13 @@ def test_general_decode_ogg():
   with pytest.raises(tf.errors.InvalidArgumentError):
     samples, _ = tfio.audio.decode(contents)
 
+def test_general_decode_unsupported():
+  """test generic audio decode for unsupported format"""
+  contents = b""
+
+  with pytest.raises(tf.errors.InvalidArgumentError):
+    samples, _ = tfio.audio.decode(contents)
+
 def test_decode_mp3():
   """test standard decoding of a mono MP3 file"""
   expected_path = os.path.join(

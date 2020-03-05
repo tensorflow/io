@@ -157,6 +157,10 @@ Status MP3ReadableResourceInit(
   return status;
 }
 
+bool IsMP3(StringPiece &data) {
+  return 0 == mp3dec_detect_buf((uint8_t *) data.data(), data.size());
+}
+
 std::unique_ptr<DecodedAudio> DecodeMP3(StringPiece &data) {
   // initialize mp3 decoder
   mp3dec_t mp3dec;
