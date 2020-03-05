@@ -21,11 +21,13 @@ limitations under the License.
 #include "arrow/api.h"
 #include "arrow/io/api.h"
 
+#include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
+namespace data {
 
 ArrowStreamClient::ArrowStreamClient(const std::string& endpoint)
   : endpoint_(endpoint), sock_(-1), pos_(0) {}
@@ -41,7 +43,7 @@ arrow::Status ArrowStreamClient::Connect() {
   string host;
   Status status;
 
-  status = ParseEndpoint(endpoint_, &socket_family, &host);
+  status = ArrowUtil::ParseEndpoint(endpoint_, &socket_family, &host);
   if (!status.ok()) {
     return arrow::Status::Invalid(
         "Error parsing endpoint string: " + endpoint_);
@@ -50,7 +52,7 @@ arrow::Status ArrowStreamClient::Connect() {
   if (socket_family.empty() || socket_family == "tcp") {
     std::string addr_str;
     std::string port_str;
-    status = ParseHost(host, &addr_str, &port_str);
+    status = ArrowUtil::ParseHost(host, &addr_str, &port_str);
     if (!status.ok()) {
       return arrow::Status::Invalid("Error parsing host string: " + host);
     }
@@ -113,18 +115,14 @@ bool ArrowStreamClient::closed() const {
   return sock_ == -1;
 }
 
-arrow::Status ArrowStreamClient::Tell(int64_t* position) const {
-  *position = pos_;
-  return arrow::Status::OK();
+arrow::Result<int64_t> ArrowStreamClient::Tell() const {
+  return pos_;
 }
 
-arrow::Status ArrowStreamClient::Read(int64_t nbytes,
-                                      int64_t* bytes_read,
-                                      void* out) {
+arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes, void* out) {
   // TODO: 0 bytes requested when message body length == 0
   if (nbytes == 0) {
-    *bytes_read = 0;
-    return arrow::Status::OK();
+    return 0;
   }
 
   int status = recv(sock_, out, nbytes, MSG_WAITALL);
@@ -134,22 +132,19 @@ arrow::Status ArrowStreamClient::Read(int64_t nbytes,
     return arrow::Status::IOError("error reading from socket");
   }
 
-  *bytes_read = nbytes;
-  pos_ += *bytes_read;
-
-  return arrow::Status::OK();
+  pos_ += nbytes;
+  return nbytes;
 }
 
-arrow::Status ArrowStreamClient::Read(int64_t nbytes,
-                                      std::shared_ptr<arrow::Buffer>* out) {
+arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(int64_t nbytes) {
   std::shared_ptr<arrow::ResizableBuffer> buffer;
   ARROW_RETURN_NOT_OK(arrow::AllocateResizableBuffer(nbytes, &buffer));
   int64_t bytes_read;
-  ARROW_RETURN_NOT_OK(Read(nbytes, &bytes_read, buffer->mutable_data()));
+  ARROW_ASSIGN_OR_RAISE(bytes_read, Read(nbytes, buffer->mutable_data()));
   ARROW_RETURN_NOT_OK(buffer->Resize(bytes_read, false));
   buffer->ZeroPadding();
-  *out = buffer;
-  return arrow::Status::OK();
+  return buffer;
 }
 
+}  // namespace data
 }  // namespace tensorflow

@@ -6,9 +6,10 @@
 
 # TensorFlow I/O
 
-[![Travis-CI Build Status](https://travis-ci.org/tensorflow/io.svg?branch=master)](https://travis-ci.org/tensorflow/io)
+[![GitHub CI Status Badge](https://github.com/tensorflow/io/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tensorflow/io/actions?query=branch%3Amaster)
 [![PyPI Status Badge](https://badge.fury.io/py/tensorflow-io.svg)](https://pypi.org/project/tensorflow-io/)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/tfio)](https://cran.r-project.org/package=tfio)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.tensorflow.org/io)
 
 TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support. A full list of supported file systems
@@ -24,7 +25,7 @@ import tensorflow_io as tfio
 
 # Read MNIST into Dataset
 d_train = tfio.IODataset.from_mnist(
-    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz",
+    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
     'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
 
 # By default image data is uint8 so conver to float32.
@@ -90,6 +91,8 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.12.0 | 2.1.x | Feb 28, 2020 |
+| 0.11.0 | 2.1.x | Jan 10, 2020 |
 | 0.10.0 | 2.0.x | Dec 5, 2019 |
 | 0.9.1 | 2.0.x | Nov 15, 2019 |
 | 0.9.0 | 2.0.x | Oct 18, 2019 |
@@ -105,83 +108,177 @@ version of TensorFlow I/O according to the table below:
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
 
-### Build Status and CI
-
-| Build | Status |
-| --- | --- |
-| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
-| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
-| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
-| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
-
-Because of manylinux2010 requirement, TensorFlow I/O is built with
-Ubuntu:16.04 + Developer Toolset 7 (GCC 7.3) on Linux. Configuration
-with Ubuntu 16.04 with Developer Toolset 7 is not exactly straightforward.
-If the system have docker installed, then the following command
-will automatically build manylinux2010 compatible whl package:
-
-```sh
-bash -x -e .travis/python.release.sh
-```
-
-It takes some time to build, but once complete, there will be python
-`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
-directory.
-
-On macOS, the same command could be used though the script expect `python` in shell
-and will only generate a whl package that matches the version of `python` in shell. If
-you want to build a whl package for a specific python then you have to alias this version
-of python to `python` in shell.
-
-Note the above command is also the command we use when releasing packages for Linux and macOS.
-
-TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
-Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
-Again, because of the manylinux2010 requirement, on Linux whl packages are always
-built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
-with different python version to ensure a good coverage:
-
-| Python | Ubuntu 16.04| Ubuntu 18.04 | macOS + osx9 |
-| ------- | ----- | ------- | ------- |
-| 2.7 |  :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| 3.5 |  :heavy_check_mark: | N/A | :heavy_check_mark: |
-| 3.6 |  N/A | :heavy_check_mark: | :heavy_check_mark: |
-| 3.7 |  N/A | :heavy_check_mark: | N/A |
-
-
-TensorFlow I/O has integrations with may systems and cloud vendors such as
-Prometheus, Apache Kafka, Apache Ignite, Google Cloud PubSub, AWS Kinesis,
-Microsoft Azure Storage, Alibaba Cloud OSS etc.
-
-We tried our best to test against those systems in our continuous integration
-whenever possible. Some tests such as Prometheus, Kafka, and Ignite
-are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
-the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
-through official or non-official emulators. Offline tests are also performed whenever
-possible, though systems covered through offine tests may not have the same
-level of coverage as live systems or emulators.
-
-
-|  | Live System | Emulator| CI Integration |  Offline |
-| ------- | ----- | ----- | ----- | ----- |
-| Apache Kafka | :heavy_check_mark:  | | :heavy_check_mark:| |
-| Apache Ignite |  :heavy_check_mark: | |:heavy_check_mark:| |
-| Prometheus |  :heavy_check_mark: | |:heavy_check_mark:| |
-| Google PubSub |   | :heavy_check_mark: |:heavy_check_mark:| |
-| Azure Storage |   | :heavy_check_mark: |:heavy_check_mark:| |
-| AWS Kinesis |   | :heavy_check_mark: |:heavy_check_mark:| |
-| Alibaba Cloud OSS |   | | |  :heavy_check_mark: |
-| Google BigTable/BigQuery |   | to be added | | |
-
-Note:
-- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
-- Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
-- None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
-
-
 ## Development
 
+### Lint
+
+TensorFlow I/O's code conforms through Pylint, Bazel Buildifier, and Clang Format. The following will check the source code and report any lint issues:
+```sh
+bazel run //tools/lint:check
+```
+
+For Bazel Buildifier and Clang Format, the following will automatically fix and lint errors:
+```sh
+bazel run //tools/lint:lint
+```
+
+Alternatively, if you only want to perform lint check on one aespect, then you can selectively pass `pylint`, `bazel`, or `clang` from the above commands.
+
+For example, check with Pylint only could be done with:
+```
+bazel run //tools/lint:check -- pylint
+```
+
+Fix with Bazel Buildifier or Clang Format could be done with:
+```
+bazel run //tools/lint:lint -- bazel clang
+```
+
 ### Python
+
+#### macOS
+
+On macOS Catalina or higher, it is possible to build tensorflow-io with
+system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
+
+Note Xcode installation is needed as tensorflow-io requires Swift for accessing
+Apple's native AVFoundation APIs.
+
+Note also there is a bug in macOS's native python 3.7.3 that could be fixed
+with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+
+```sh
+# macOS's default python3 is 3.7.3
+python3 --version
+
+# Install bazel 2.0.0:
+curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
+
+# Install latest tensorflow
+sudo python3 -m pip install tensorflow
+
+# Configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+Note from the above the generated shared libraries (.so) are located in bazel-bin directory.
+When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed for shared libraries to
+be located by python.
+
+#### Linux
+
+Development of tensorflow-io on Linux is similiar to development on macOS. The required packages
+are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
+versions might be required though.
+
+##### Ubuntu 18.04
+
+Ubuntu 18.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04:
+```sh
+# Install gcc/g++, git, unzip/curl (for bazel), and python3
+sudo apt-get -y -qq update
+sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+sudo python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 8
+
+CentOS 8 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04:
+```sh
+# Install gcc/g++, git, unzip/which (for bazel), and python3
+sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+sudo python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel
+./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 7
+
+On CentOS 7, the default python and gcc version are too old to build tensorflow-io's shared
+libraries (.so). The gcc provided by Developer Toolset and rh-python36 should be used instead.
+Also, the libstdc++ has to be linked statically to avoid discrepancy of libstdc++ installed on
+CentOS vs. newer gcc version by devtoolset.
+
+The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
+```sh
+# Install centos-release-scl, then install gcc/g++ (devtoolset), git, and python 3
+sudo yum install -y centos-release-scl
+sudo yum install -y devtoolset-9 git rh-python36
+
+# Install Bazel 2.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+
+# Upgrade pip
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install -U pip'
+
+# Install tensorflow and configure bazel with rh-python36
+scl enable rh-python36 devtoolset-9 \
+    './configure.sh'
+
+# Build shared libraries
+BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstdc++.a" \
+  scl enable rh-python36 devtoolset-9 \
+    'bazel build -s --verbose_failures //tensorflow_io/...'
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install pytest'
+TFIO_DATAPATH=bazel-bin \
+  scl enable rh-python36 devtoolset-9 \
+    'python3 -m pytest -s -v tests/test_serialization_eager.py'
+```
+
+#### Docker
 
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
@@ -275,6 +372,80 @@ depends on public contributions, bug-fixes, and documentation. Please
 see [contribution guidelines](CONTRIBUTING.md) for a guide on how to
 contribute.
 
+### Build Status and CI
+
+| Build | Status |
+| --- | --- |
+| Linux CPU Python 2 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py2.html) |
+| Linux CPU Python 3 | [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-py3.html) |
+| Linux GPU Python 2| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py2.html) |
+| Linux GPU Python 3| [![Status](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.svg)](https://storage.googleapis.com/tensorflow-kokoro-build-badges/io/ubuntu-gpu-py3.html) |
+
+Because of manylinux2010 requirement, TensorFlow I/O is built with
+Ubuntu:16.04 + Developer Toolset 7 (GCC 7.3) on Linux. Configuration
+with Ubuntu 16.04 with Developer Toolset 7 is not exactly straightforward.
+If the system have docker installed, then the following command
+will automatically build manylinux2010 compatible whl package:
+
+```sh
+bash -x -e .travis/python.release.sh
+```
+
+It takes some time to build, but once complete, there will be python
+`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
+directory.
+
+On macOS, the same command could be used though the script expect `python` in shell
+and will only generate a whl package that matches the version of `python` in shell. If
+you want to build a whl package for a specific python then you have to alias this version
+of python to `python` in shell.
+
+Note the above command is also the command we use when releasing packages for Linux and macOS.
+
+TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
+Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
+Again, because of the manylinux2010 requirement, on Linux whl packages are always
+built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
+with different python version to ensure a good coverage:
+
+| Python | Ubuntu 16.04| Ubuntu 18.04 | macOS + osx9 |
+| ------- | ----- | ------- | ------- |
+| 2.7 |  :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| 3.5 |  :heavy_check_mark: | N/A | :heavy_check_mark: |
+| 3.6 |  N/A | :heavy_check_mark: | :heavy_check_mark: |
+| 3.7 |  N/A | :heavy_check_mark: | N/A |
+
+
+TensorFlow I/O has integrations with may systems and cloud vendors such as
+Prometheus, Apache Kafka, Apache Ignite, Google Cloud PubSub, AWS Kinesis,
+Microsoft Azure Storage, Alibaba Cloud OSS etc.
+
+We tried our best to test against those systems in our continuous integration
+whenever possible. Some tests such as Prometheus, Kafka, and Ignite
+are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
+the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
+through official or non-official emulators. Offline tests are also performed whenever
+possible, though systems covered through offine tests may not have the same
+level of coverage as live systems or emulators.
+
+
+|  | Live System | Emulator| CI Integration |  Offline |
+| ------- | ----- | ----- | ----- | ----- |
+| Apache Kafka | :heavy_check_mark:  | | :heavy_check_mark:| |
+| Apache Ignite |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Prometheus |  :heavy_check_mark: | |:heavy_check_mark:| |
+| Google PubSub |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Azure Storage |   | :heavy_check_mark: |:heavy_check_mark:| |
+| AWS Kinesis |   | :heavy_check_mark: |:heavy_check_mark:| |
+| Alibaba Cloud OSS |   | | |  :heavy_check_mark: |
+| Google BigTable/BigQuery |   | to be added | | |
+
+Note:
+- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
+- Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
+- None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
+
+
 ## Community
 
 * SIG IO [Google Group](https://groups.google.com/a/tensorflow.org/forum/#!forum/io) and mailing list: [io@tensorflow.org](io@tensorflow.org)
@@ -283,6 +454,7 @@ contribute.
 
 ## More Information
 
+* [Streaming Machine Learning with Tiered Storage and Without a Data Lake](https://www.confluent.io/blog/streaming-machine-learning-with-tiered-storage/) - [Kai Waehner](https://github.com/kaiwaehner)
 * [TensorFlow with Apache Arrow Datasets](https://medium.com/tensorflow/tensorflow-with-apache-arrow-datasets-cdbcfe80a59f) - [Bryan Cutler](https://github.com/BryanCutler)
 * [How to build a custom Dataset for Tensorflow](https://towardsdatascience.com/how-to-build-a-custom-dataset-for-tensorflow-1fe3967544d8) - [Ivelin Ivanov](https://github.com/ivelin)
 * [TensorFlow on Apache Ignite](https://medium.com/tensorflow/tensorflow-on-apache-ignite-99f1fc60efeb) - [Anton Dmitriev](https://github.com/dmitrievanthony)

@@ -3,7 +3,6 @@
 \docType{package}
 \name{tfio}
 \alias{tfio}
-\alias{tfio-package}
 \title{TensorFlow IO API for R}
 \description{
 This library provides an R interface to the

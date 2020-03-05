@@ -15,17 +15,14 @@ cc_library(
         "lmdb.h",
         "midl.h",
     ],
-    copts = [
-        "-w",
-    ],
+    copts = [],
     linkopts = select({
-        ":windows": ["-DEFAULTLIB:advapi32.lib"],  # InitializeSecurityDescriptor, SetSecurityDescriptorDacl
-        "//conditions:default": ["-lpthread"],
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:advapi32.lib",
+        ],
+        "//conditions:default": [
+            "-lpthread",
+        ],
     }),
     visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "windows",
-    values = {"cpu": "x64_windows"},
 )

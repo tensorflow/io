@@ -76,7 +76,7 @@ class FFmpegReadStream {
   , format_context_(nullptr, [](AVFormatContext* p) { if (p != nullptr) { avformat_close_input(&p); av_free(p); } })
   , io_context_(nullptr, [](AVIOContext* p) { if (p != nullptr) { av_free(p); } })
   , stream_index_(-1) { }
-  ~FFmpegReadStream() {}
+  virtual ~FFmpegReadStream() {}
 
   int64 Streams() {
     return format_context_.get()->nb_streams;
@@ -246,10 +246,14 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       return errors::OutOfRange("EOF reached");
     }
     int ret;
+    av_init_packet(&packet_);
     do {
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
         break;
+      }
+      if (packet_.stream_index != stream_index_) {
+        av_packet_unref(&packet_);
       }
     } while (packet_.stream_index != stream_index_);
     int got_frame;
@@ -258,6 +262,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       while (packet_.size > 0) {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
+      av_packet_unref(&packet_);
       return Status::OK();
     }
     // final cache clean up
@@ -586,7 +591,7 @@ class FFmpegReadable : public IOReadableInterface {
   FFmpegReadable(Env* env)
   : env_(env) {}
 
-  ~FFmpegReadable() {}
+  virtual ~FFmpegReadable() {}
   Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");

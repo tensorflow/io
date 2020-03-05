@@ -1,3 +1,41 @@
+# Release 0.12.0
+
+## Major Features
+* Add Windows support for tensorflow-io.
+* Add PostgreSQL server dataset support.
+* Add MP3 format for audio dataset support.
+* Add ArrowIOTensor with input from a pyarrow.Table.
+* Add Numpy dataset support for numpy file and memory input.
+* Add decode_avro/encode_avro for Avro serialization support.
+* Prometheus dataset now outputs structured shapes.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Bryan Cutler, DylanTallchiefGit, Kota Yamaguchi, Mark Daoust,
+Suyash Kumar, Yong Tang, Yuan Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.11.0
+
+## Major Features
+* Add Ogg audio format support.
+* Add FLAC audio format support.
+* Add HDR image format support.
+* Extend HDF5 format support to all common types.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Mark Daoust, Yong Tang, Yuan Tang, pshiko
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.10.0
 
 ## Major Features
@@ -172,7 +210,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Yong Tang, Yuan (Terry) Tang, Bryan Cutler, Jiacheng Xu, Junqin Zhang,
+Yong Tang, Yuan Tang, Bryan Cutler, Jiacheng Xu, Junqin Zhang,
 August Xiong, caszkgui, zou000
 
 We are also grateful to all who filed issues or helped resolve them, asked and
@@ -190,7 +228,7 @@ answered questions, and were part of inspiring discussions.
 This release contains contributions from many people:
 
 Bryan Cutler, Damien Pontifex, Florian Raudies, Henry Tan,
-Junqin Zhang, Stephan Uphoff, Yong Tang, Yuan (Terry) Tang
+Junqin Zhang, Stephan Uphoff, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -208,7 +246,7 @@ answered questions, and were part of inspiring discussions.
 This release contains contributions from many people:
 
 Bryan Cutler, Jongwook Choi, Sergii Khomenko, Stephan Uphoff,
-Yong Tang, Yuan (Terry) Tang
+Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -223,7 +261,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Bryan Cutler, Yong Tang, Yuan (Terry) Tang
+Bryan Cutler, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -241,7 +279,7 @@ answered questions, and were part of inspiring discussions.
 
 This release contains contributions from many people:
 
-Anton Dmitriev, Bryan Cutler, Peng Yu, Yong Tang, Yuan (Terry) Tang
+Anton Dmitriev, Bryan Cutler, Peng Yu, Yong Tang, Yuan Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
@@ -263,7 +301,7 @@ This release contains contributions from many people:
 Anjali Sridhar, Anton Dmitriev, Artem Malykh, Brennan Saeta, Derek Murray,
 Gunhan Gulsoy, Jacques Pienaar, Jianwei Xie, Jiri Simsa, knight, Loo Rong Jie,
 Martin Wicke, Michael Case, Sergei Lebedev, Sourabh Bajaj, Yifei Feng,
-Yong Tang, Yuan (Terry) Tang, Yun Peng
+Yong Tang, Yuan Tang, Yun Peng
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.

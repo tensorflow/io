@@ -18,3 +18,9 @@ toc:
   path: /io/tutorials/bigquery
 - title: "Decode DICOM files for medical imaging"
   path: /io/tutorials/dicom
+- title: "Azure blob storage with TensorFlow"
+  path: /io/tutorials/azure
+- title: "Prometheus metrics"
+  path: /io/tutorials/prometheus
+- title: "Genomics IO"
+  path: /io/tutorials/genome

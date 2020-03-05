@@ -17,9 +17,11 @@ cc_library(
             "impl/avrogencpp.cc",
         ],
     ),
-    hdrs = glob([
-    ]),
+    hdrs = [],
     copts = [],
+    defines = [
+        "SNAPPY_CODEC_AVAILABLE",
+    ],
     includes = [
         "api",
     ],
@@ -27,5 +29,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@boost",
+        "@snappy",
     ],
 )

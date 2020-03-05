@@ -4,10 +4,19 @@
 \alias{ignite_dataset}
 \title{Create a \code{IgniteDataset}.}
 \usage{
-ignite_dataset(cache_name, host = "localhost", port = 10800,
-  local = FALSE, part = -1, page_size = 100, username = NULL,
-  password = NULL, certfile = NULL, keyfile = NULL,
-  cert_password = NULL)
+ignite_dataset(
+  cache_name,
+  host = "localhost",
+  port = 10800,
+  local = FALSE,
+  part = -1,
+  page_size = 100,
+  username = NULL,
+  password = NULL,
+  certfile = NULL,
+  keyfile = NULL,
+  cert_password = NULL
+)
 }
 \arguments{
 \item{cache_name}{Cache name to be used as datasource.}

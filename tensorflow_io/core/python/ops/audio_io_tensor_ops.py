@@ -17,11 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class AudioGraphIOTensor(object):
+class AudioGraphIOTensor():
   """AudioGraphIOTensor"""
 
   #=============================================================================
@@ -59,8 +61,8 @@ class AudioGraphIOTensor(object):
   def __repr__(self):
     meta = "".join([", %s=%s" % (
         k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
-            ) if isinstance(v, _IOTensorMeta)])
-    return "<%s: shape=%s, dtype=%s%s>" % (
+            ) if isinstance(v, io_tensor_ops._IOTensorMeta)]) # pylint: disable=protected-access
+    return "<%s: shape=%s, dtype=%s | %s>" % (
         self.__class__.__name__, self.shape, self.dtype, meta)
 
   #=============================================================================
@@ -76,7 +78,7 @@ class AudioGraphIOTensor(object):
     Returns:
       A `Tensor` with value obtained from this `IOTensor`.
     """
-    return core_ops.io_wav_readable_read(
+    return core_ops.io_audio_readable_read(
         self._resource, 0, -1, dtype=self._dtype)
 
   #=============================================================================
@@ -85,9 +87,9 @@ class AudioGraphIOTensor(object):
   def __getitem__(self, key):
     """Returns the specified piece of this IOTensor."""
     if isinstance(key, slice):
-      return core_ops.io_wav_readable_read(
+      return core_ops.io_audio_readable_read(
           self._resource, key.start, key.stop, dtype=self._dtype)
-    item = core_ops.io_wav_readable_read(
+    item = core_ops.io_audio_readable_read(
         self._resource, key, key + 1, dtype=self._dtype)
     if tf.shape(item)[0] == 0:
       raise IndexError("index %s is out of range" % key)
@@ -122,8 +124,13 @@ class AudioIOTensor(AudioGraphIOTensor):
                filename,
                internal=False):
     with tf.name_scope("FromAudio"):
-      resource = core_ops.io_wav_readable_init(filename)
-      shape, dtype, rate = core_ops.io_wav_readable_spec(resource)
+      if sys.platform == "linux":
+        try:
+          from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel,unused-import
+        except NotImplementedError:
+          pass
+      resource = core_ops.io_audio_readable_init(filename)
+      shape, dtype, rate = core_ops.io_audio_readable_spec(resource)
       shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
       super(AudioIOTensor, self).__init__(

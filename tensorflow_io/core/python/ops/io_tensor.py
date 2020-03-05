@@ -25,13 +25,13 @@ from tensorflow_io.core.python.ops import json_io_tensor_ops
 from tensorflow_io.core.python.ops import hdf5_io_tensor_ops
 from tensorflow_io.core.python.ops import kafka_io_tensor_ops
 from tensorflow_io.core.python.ops import lmdb_io_tensor_ops
-from tensorflow_io.core.python.ops import prometheus_io_tensor_ops
 from tensorflow_io.core.python.ops import feather_io_tensor_ops
 from tensorflow_io.core.python.ops import csv_io_tensor_ops
 from tensorflow_io.core.python.ops import avro_io_tensor_ops
 from tensorflow_io.core.python.ops import ffmpeg_io_tensor_ops
 from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 from tensorflow_io.core.python.ops import tiff_io_tensor_ops
+from tensorflow_io.core.python.ops import arrow_io_tensor_ops
 
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   """IOTensor
@@ -210,9 +210,9 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIOTensor`.
     """
-    cls = GraphIOTensor
-    cls._dtype = dtype
-    return cls
+    v = GraphIOTensor
+    v._dtype = dtype # pylint: disable=protected-access
+    return v
 
   #=============================================================================
   # Factory Methods
@@ -249,6 +249,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     The following audio file formats are supported:
     - WAV
+    - OGG
 
     Args:
       filename: A string, the filename of an audio file.
@@ -283,16 +284,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   def from_kafka(cls,
                  topic,
                  partition=0,
-                 offset=0,
-                 tail=-1,
-                 **kwargs):
+                 servers=None, configuration=None, **kwargs):
     """Creates an `IOTensor` from a Kafka stream.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
       partition: A `tf.int64` tensor containing the partition, by default 0.
-      offset: A `tf.int64` tensor containing the start offset, by default 0.
-      tail: A `tf.int64` tensor containing the end offset, by default -1.
       servers: An optional list of bootstrap servers, by default
          `localhost:9092`.
       configuration: An optional `tf.string` tensor containing
@@ -305,9 +302,6 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
           in librdkafka doc. Note all topic configurations should be
           prefixed with `configuration.topic.`. Examples include
           ["conf.topic.auto.offset.reset=earliest"]
-        Dataset configuration: there are two configurations available,
-          `conf.eof=0|1`: if True, the KafkaDaset will stop on EOF (default).
-          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -317,31 +311,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_io_tensor_ops.KafkaIOTensor(
           topic=topic, partition=partition,
-          offset=offset, tail=tail,
-          servers=kwargs.get("servers", None),
-          configuration=kwargs.get("configuration", None),
-          internal=True)
-
-  @classmethod
-  def from_prometheus(cls,
-                      query,
-                      **kwargs):
-    """Creates an `IOTensor` from a prometheus query.
-
-    Args:
-      query: A string, the query string for prometheus.
-      endpoint: A string, the server address of prometheus, by default
-       `http://localhost:9090`.
-      name: A name prefix for the IOTensor (optional).
-
-    Returns:
-      A (`IOTensor`, `IOTensor`) tuple that represents `timestamp`
-        and `value`.
-
-    """
-    with tf.name_scope(kwargs.get("name", "IOFromPrometheus")):
-      return prometheus_io_tensor_ops.PrometheusIOTensor(
-          query, endpoint=kwargs.get("endpoint", None), internal=True)
+          servers=servers, configuration=configuration, internal=True)
 
   @classmethod
   def from_feather(cls,
@@ -359,6 +329,23 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromFeather")):
       return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
+
+  @classmethod
+  def from_arrow(cls,
+                 table,
+                 **kwargs):
+    """Creates an `IOTensor` from a pyarrow.Table.
+
+    Args:
+      table: An instance of a `pyarrow.Table`.
+      name: A name prefix for the IOTensor (optional).
+
+    Returns:
+      A `IOTensor`.
+
+    """
+    with tf.name_scope(kwargs.get("name", "IOFromArrow")):
+      return arrow_io_tensor_ops.ArrowIOTensor(table, internal=True)
 
   @classmethod
   def from_lmdb(cls,
@@ -380,11 +367,16 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   @classmethod
   def from_hdf5(cls,
                 filename,
+                spec=None,
                 **kwargs):
     """Creates an `IOTensor` from an hdf5 file.
 
     Args:
       filename: A string, the filename of an hdf5 file.
+      spec: A dict of `dataset:tf.TensorSpec` or `dataset:dtype`
+        pairs that specify the dataset selected and the tf.TensorSpec
+        or dtype of the dataset. In eager mode the spec is probed
+        automatically. In graph mode spec has to be specified.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -392,7 +384,8 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
-      return hdf5_io_tensor_ops.HDF5IOTensor(filename, internal=True)
+      return hdf5_io_tensor_ops.HDF5IOTensor(
+          filename, spec=spec, internal=True)
 
   @classmethod
   def from_csv(cls,
@@ -500,6 +493,7 @@ class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-acces
 
     The following audio file formats are supported:
     - WAV
+    - OGG
 
     Args:
       filename: A string, the filename of an audio file.
@@ -511,9 +505,9 @@ class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-acces
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_wav_readable_init(filename)
+      resource = core_ops.io_audio_readable_init(filename)
       dtype = cls._dtype
-      shape, _, rate = core_ops.io_wav_readable_spec(resource)
+      shape, _, rate = core_ops.io_audio_readable_spec(resource)
       shape = tf.unstack(shape)
       return audio_io_tensor_ops.AudioGraphIOTensor(
           resource, shape, dtype, rate, internal=True)

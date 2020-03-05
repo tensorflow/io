@@ -45,4 +45,6 @@ python --version
 python -m pip --version
 docker  --version
 
+bash -x -e .github/workflows/build.gpu.sh
+
 exit $?

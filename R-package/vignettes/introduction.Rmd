@@ -39,7 +39,7 @@ docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
 ```
 
 Inside the container, you can start your R session, instantiate a `SequenceFileDataset`
-from an example [Hadoop SequenceFile](https://wiki.apache.org/hadoop/SequenceFile)
+from an example [Hadoop SequenceFile](https://cwiki.apache.org/confluence/display/HADOOP2/SequenceFile)
 [string.seq](https://github.com/tensorflow/io/blob/master/R-package/tests/testthat/testdata/string.seq), and then use any [transformation functions](https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations) provided by [tfdatasets package](https://tensorflow.rstudio.com/tools/tfdatasets/) on the dataset like the following:
 
 ```{r, eval=FALSE}

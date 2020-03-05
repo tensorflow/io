@@ -137,6 +137,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@bzip2",
+        "@xz//:lzma",
         "@zlib",
     ],
 )

@@ -22,6 +22,7 @@ namespace data {
 
 class IOInterface : public ResourceBase {
  public:
+  virtual ~IOInterface() {}
   virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
   virtual Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
 
@@ -62,6 +63,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       : ResourceOpKernel<Type>(context) {
     env_ = context->env();
   }
+  virtual ~IOInterfaceInitOp<Type>() {}
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
@@ -128,6 +130,7 @@ class IOInterfaceSpecOp : public OpKernel {
       component_ = component;
     }
   }
+  virtual ~IOInterfaceSpecOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
@@ -187,6 +190,7 @@ class IOReadableReadOp : public OpKernel {
       component_ = component;
     }
   }
+  virtual ~IOReadableReadOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
@@ -261,6 +265,7 @@ class IOMappingReadOp : public OpKernel {
   explicit IOMappingReadOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
+  virtual ~IOMappingReadOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
@@ -281,6 +286,7 @@ class IOReadablePartitionsOp : public OpKernel {
   explicit IOReadablePartitionsOp<Type>(OpKernelConstruction* ctx)
       : OpKernel(ctx) {
   }
+  virtual ~IOReadablePartitionsOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;

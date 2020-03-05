@@ -21,7 +21,7 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-REGISTER_OP("IO>WAVReadableInit")
+REGISTER_OP("IO>AudioReadableInit")
     .Input("input: string")
     .Output("resource: resource")
     .Attr("container: string = ''")
@@ -31,7 +31,7 @@ REGISTER_OP("IO>WAVReadableInit")
       return Status::OK();
     });
 
-REGISTER_OP("IO>WAVReadableSpec")
+REGISTER_OP("IO>AudioReadableSpec")
     .Input("input: resource")
     .Output("shape: int64")
     .Output("dtype: int64")
@@ -43,12 +43,24 @@ REGISTER_OP("IO>WAVReadableSpec")
       return Status::OK();
     });
 
-REGISTER_OP("IO>WAVReadableRead")
+REGISTER_OP("IO>AudioReadableRead")
     .Input("input: resource")
     .Input("start: int64")
     .Input("stop: int64")
     .Output("value: dtype")
     .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>AudioResample")
+    .Input("input: T")
+    .Input("rate_in: int64")
+    .Input("rate_out: int64")
+    .Output("output: T")
+    .Attr("quality: int")
+    .Attr("T: type")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       return Status::OK();

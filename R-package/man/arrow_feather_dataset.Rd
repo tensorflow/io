@@ -4,8 +4,7 @@
 \alias{arrow_feather_dataset}
 \title{Creates a \code{ArrowFeatherDataset}.}
 \usage{
-arrow_feather_dataset(filenames, columns, output_types,
-  output_shapes = NULL)
+arrow_feather_dataset(filenames, columns, output_types, output_shapes = NULL)
 }
 \arguments{
 \item{filenames}{A \code{tf.string} tensor, list or scalar containing files in

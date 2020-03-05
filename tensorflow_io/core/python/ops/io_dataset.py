@@ -77,9 +77,9 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIODataset`.
     """
-    cls = GraphIODataset
-    cls._dtype = dtype
-    return cls
+    v = GraphIODataset
+    v._dtype = dtype # pylint: disable=protected-access
+    return v
 
   #=============================================================================
   # Stream mode
@@ -122,19 +122,15 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0,
-                 offset=0,
-                 tail=-1,
-                 servers=None,
-                 configuration=None,
-                 **kwargs):
+                 partition=0, start=0, stop=-1,
+                 servers=None, configuration=None, **kwargs):
     """Creates an `IODataset` from kafka server with an offset range.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
       partition: A `tf.int64` tensor containing the partition, by default 0.
-      offset: A `tf.int64` tensor containing the start offset, by default 0.
-      tail: A `tf.int64` tensor containing the end offset, by default -1.
+      start: A `tf.int64` tensor containing the start offset, by default 0.
+      stop: A `tf.int64` tensor containing the end offset, by default -1.
       servers: An optional list of bootstrap servers, by default
          `localhost:9092`.
       configuration: An optional `tf.string` tensor containing
@@ -147,9 +143,6 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
           in librdkafka doc. Note all topic configurations should be
           prefixed with `configuration.topic.`. Examples include
           ["conf.topic.auto.offset.reset=earliest"]
-        Dataset configuration: there are two configurations available,
-          `conf.eof=0|1`: if True, the KafkaDaset will stop on EOF (default).
-          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
       name: A name prefix for the IODataset (optional).
 
     Returns:
@@ -158,9 +151,8 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_dataset_ops.KafkaIODataset(
-          topic, partition=partition, offset=offset, tail=tail,
-          servers=servers, configuration=configuration,
-          internal=True)
+          topic, partition=partition, start=start, stop=stop,
+          servers=servers, configuration=configuration, internal=True)
 
   @classmethod
   def from_ffmpeg(cls,
@@ -187,12 +179,16 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
   def from_hdf5(cls,
                 filename,
                 dataset,
+                spec=None,
                 **kwargs):
     """Creates an `IODataset` from a hdf5 file's dataset object.
 
     Args:
       filename: A string, the filename of a hdf5 file.
       dataset: A string, the dataset name within hdf5 file.
+      spec: A tf.TensorSpec or a dtype (e.g., tf.int64) of the
+        dataset. In graph mode, spec is needed. In eager mode,
+        spec is probed automatically.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -201,7 +197,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     """
     with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
       return hdf5_dataset_ops.HDF5IODataset(
-          filename, dataset, internal=True)
+          filename, dataset, spec=spec, internal=True)
 
   @classmethod
   def from_avro(cls,
@@ -359,9 +355,8 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
   @classmethod
   def from_kafka(cls,
                  topic,
-                 partition=0,
-                 offset=0,
-                 **kwargs):
+                 partition=0, offset=0,
+                 servers=None, configuration=None, **kwargs):
     """Creates an `IODataset` from kafka server with only a start offset.
 
     Args:
@@ -380,8 +375,6 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
           in librdkafka doc. Note all topic configurations should be
           prefixed with `configuration.topic.`. Examples include
           ["conf.topic.auto.offset.reset=earliest"]
-        Dataset configuration: there is one configuration available,
-          `conf.timeout=milliseconds`: timeout value for Kafka Consumer to wait.
       name: A name prefix for the IODataset (optional).
 
     Returns:
@@ -391,8 +384,7 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
     with tf.name_scope(kwargs.get("name", "IOFromKafka")):
       return kafka_dataset_ops.KafkaStreamIODataset(
           topic, partition=partition, offset=offset,
-          servers=kwargs.get("servers", None),
-          configuration=kwargs.get("configuration", None),
+          servers=servers, configuration=configuration,
           internal=True)
 
 class GraphIODataset(tf.data.Dataset):
@@ -419,9 +411,9 @@ class GraphIODataset(tf.data.Dataset):
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_wav_readable_init(filename)
+      resource = core_ops.io_audio_readable_init(filename)
       dtype = cls._dtype
-      shape, _, _ = core_ops.io_wav_readable_spec(resource)
+      shape, _, _ = core_ops.io_audio_readable_spec(resource)
       return audio_dataset_ops.AudioGraphIODataset(
           resource, shape, dtype, internal=True)
 
@@ -441,17 +433,19 @@ class GraphIODataset(tf.data.Dataset):
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
-      from tensorflow_io.core.python.ops import ffmpeg_ops
+      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
       if stream.startswith("a:"):
         resource = ffmpeg_ops.io_ffmpeg_audio_readable_init(
             filename, int(stream[2:]))
         dtype = cls._dtype
         return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
             resource, dtype, internal=True)
-      elif stream.startswith("v:"):
+
+      if stream.startswith("v:"):
         resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
             filename, int(stream[2:]))
         dtype = cls._dtype
         return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
             resource, dtype, internal=True)
+
       return None

@@ -5,8 +5,7 @@
 \title{Create an Arrow Dataset from an input stream, inferring output types and
 shapes from the given Arrow schema.}
 \usage{
-\method{from_schema}{arrow_stream_dataset}(object, schema,
-  columns = NULL, host = NULL, filenames = NULL, ...)
+\method{from_schema}{arrow_stream_dataset}(object, schema, columns = NULL, host = NULL, filenames = NULL, ...)
 }
 \arguments{
 \item{object}{An \R object.}

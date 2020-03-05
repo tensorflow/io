@@ -4,8 +4,7 @@
 \alias{pubsub_dataset}
 \title{Creates a \code{PubSubDataset}.}
 \usage{
-pubsub_dataset(subscriptions, server = NULL, eof = FALSE,
-  timeout = 1000)
+pubsub_dataset(subscriptions, server = NULL, eof = FALSE, timeout = 1000)
 }
 \arguments{
 \item{subscriptions}{A \code{tf.string} tensor containing one or more

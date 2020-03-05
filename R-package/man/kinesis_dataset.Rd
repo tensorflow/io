@@ -4,8 +4,7 @@
 \alias{kinesis_dataset}
 \title{Creates a \code{KinesisDataset}.}
 \usage{
-kinesis_dataset(stream, shard = "", read_indefinitely = TRUE,
-  interval = 1e+05)
+kinesis_dataset(stream, shard = "", read_indefinitely = TRUE, interval = 1e+05)
 }
 \arguments{
 \item{stream}{A \code{tf.string} tensor containing the name of the stream.}

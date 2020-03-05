@@ -1,6 +1,9 @@
 library(tensorflow)
 
 skip_if_no_tensorflow_io <- function() {
+  if (!identical(Sys.getenv("NOT_CRAN"), "true")) {
+    skip("Skip tests on CRAN due to lack of proper Python setup")
+  }
   if (!reticulate::py_module_available("tensorflow_io"))
     skip("tensorflow_io Python module is not available for testing")
 }

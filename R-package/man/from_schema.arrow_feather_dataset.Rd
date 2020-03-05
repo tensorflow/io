@@ -5,8 +5,7 @@
 \title{Create an Arrow Dataset for reading record batches from Arrow feather files,
 inferring output types and shapes from the given Arrow schema.}
 \usage{
-\method{from_schema}{arrow_feather_dataset}(object, schema,
-  columns = NULL, host = NULL, filenames = NULL, ...)
+\method{from_schema}{arrow_feather_dataset}(object, schema, columns = NULL, host = NULL, filenames = NULL, ...)
 }
 \arguments{
 \item{object}{An \R object.}

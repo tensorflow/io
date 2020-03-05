@@ -1,11 +1,268 @@
 workspace(name = "org_tensorflow_io")
 
-load("//third_party/tf:tf_configure.bzl", "tf_configure")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+load("//third_party/toolchains/tf:tf_configure.bzl", "tf_configure")
 
-tf_configure(
-    name = "local_config_tf",
+tf_configure(name = "local_config_tf")
+
+load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
+
+cuda_configure(name = "local_config_cuda")
+
+http_archive(
+    name = "libwebp",
+    build_file = "//third_party:libwebp.BUILD",
+    sha256 = "424faab60a14cb92c2a062733b6977b4cc1e875a6398887c5911b3a1a6c56c51",
+    strip_prefix = "libwebp-1.1.0",
+    urls = [
+        "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "freetype",
+    build_file = "//third_party:freetype.BUILD",
+    sha256 = "3a60d391fd579440561bf0e7f31af2222bc610ad6ce4d9d7bd2165bca8669110",
+    strip_prefix = "freetype-2.10.1",
+    urls = [
+        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "easyexif",
+    build_file = "//third_party:easyexif.BUILD",
+    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
+    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
+    urls = [
+        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "stb",
+    build_file = "//third_party:stb.BUILD",
+    sha256 = "978de595fcc62448dbdc8ca8def7879fbe63245dd7f57c1898270e53a0abf95b",
+    strip_prefix = "stb-052dce117ed989848a950308bd99eef55525dfb1",
+    urls = [
+        "https://github.com/nothings/stb/archive/052dce117ed989848a950308bd99eef55525dfb1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "boost",
+    build_file = "//third_party:boost.BUILD",
+    sha256 = "c66e88d5786f2ca4dbebb14e06b566fb642a1a6947ad8cc9091f9f445134143f",
+    strip_prefix = "boost_1_72_0",
+    urls = [
+        "https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz",
+        "https://downloads.sourceforge.net/project/boost/boost/1.72.0/boost_1_72_0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "avro",
+    build_file = "//third_party:avro.BUILD",
+    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
+    strip_prefix = "avro-release-1.9.1/lang/c++",
+    urls = [
+        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "rapidjson",
+    build_file = "//third_party:rapidjson.BUILD",
+    sha256 = "30bd2c428216e50400d493b38ca33a25efb1dd65f79dfc614ab0c957a3ac2c28",
+    strip_prefix = "rapidjson-418331e99f859f00bdc8306f69eba67e8693c55e",
+    urls = [
+        "https://github.com/miloyip/rapidjson/archive/418331e99f859f00bdc8306f69eba67e8693c55e.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "lmdb",
+    build_file = "//third_party:lmdb.BUILD",
+    sha256 = "44602436c52c29d4f301f55f6fd8115f945469b868348e3cddaf91ab2473ea26",
+    strip_prefix = "lmdb-LMDB_0.9.24/libraries/liblmdb",
+    urls = [
+        "https://github.com/LMDB/lmdb/archive/LMDB_0.9.24.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "zlib",
+    build_file = "//third_party:zlib.BUILD",
+    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    strip_prefix = "zlib-1.2.11",
+    urls = [
+        "https://zlib.net/zlib-1.2.11.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "openexr",
+    build_file = "//third_party:openexr.BUILD",
+    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
+    strip_prefix = "openexr-2.4.0",
+    urls = [
+        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    patch_cmds = [
+        "sed -i.bak 's/struct stat/struct_stat/' src/blob/blob_client_wrapper.cpp",
+    ],
+    sha256 = "597d9894061f4871a909f1c2c3f56725a69c188ea17784cc71e1e170687faf00",
+    strip_prefix = "azure-storage-cpplite-0.2.0",
+    urls = [
+        "https://github.com/Azure/azure-storage-cpplite/archive/v0.2.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "hdf5",
+    build_file = "//third_party:hdf5.BUILD",
+    sha256 = "5f9a3ee85db4ea1d3b1fa9159352aebc2af72732fc2f58c96a3f0768dba0e9aa",
+    strip_prefix = "hdf5-1.10.6",
+    urls = [
+        "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/hdf5-1.10.6.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "zstd",
+    build_file = "//third_party:zstd.BUILD",
+    sha256 = "a364f5162c7d1a455cc915e8e3cf5f4bd8b75d09bc0f53965b0c9ca1383c52c8",
+    strip_prefix = "zstd-1.4.4",
+    urls = [
+        "https://github.com/facebook/zstd/archive/v1.4.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "lz4",
+    build_file = "//third_party:lz4.BUILD",
+    sha256 = "658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc",
+    strip_prefix = "lz4-1.9.2",
+    urls = [
+        "https://github.com/lz4/lz4/archive/v1.9.2.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "brotli",
+    build_file = "//third_party:brotli.BUILD",
+    sha256 = "4c61bfb0faca87219ea587326c467b95acb25555b53d1a421ffa3c8a9296ee2c",
+    strip_prefix = "brotli-1.0.7",
+    urls = [
+        "https://github.com/google/brotli/archive/v1.0.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "snappy",
+    build_file = "//third_party:snappy.BUILD",
+    sha256 = "16b677f07832a612b0836178db7f374e414f94657c138e6993cbfc5dcc58651f",
+    strip_prefix = "snappy-1.1.8",
+    urls = [
+        "https://github.com/google/snappy/archive/1.1.8.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "double-conversion",
+    sha256 = "a63ecb93182134ba4293fd5f22d6e08ca417caafa244afaa751cbfddf6415b13",
+    strip_prefix = "double-conversion-3.1.5",
+    urls = [
+        "https://github.com/google/double-conversion/archive/v3.1.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "thrift",
+    build_file = "//third_party:thrift.BUILD",
+    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
+    strip_prefix = "thrift-0.12.0",
+    urls = [
+        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "arrow",
+    build_file = "//third_party:arrow.BUILD",
+    sha256 = "d7b3838758a365c8c47d55ab0df1006a70db951c6964440ba354f81f518b8d8d",
+    strip_prefix = "arrow-apache-arrow-0.16.0",
+    urls = [
+        "https://github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "kafka",
+    build_file = "//third_party:kafka.BUILD",
+    patch_cmds = [
+        "rm -f src/win32_config.h",
+    ],
+    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
+    strip_prefix = "librdkafka-0.11.6",
+    urls = [
+        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "dcmtk",
+    build_file = "//third_party:dcmtk.BUILD",
+    sha256 = "a05178665f21896dbb0974106dba1ad144975414abd760b4cf8f5cc979f9beb9",
+    strip_prefix = "dcmtk-3.6.5",
+    urls = [
+        "https://dicom.offis.de/download/dcmtk/dcmtk365/dcmtk-3.6.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-checksums",
+    build_file = "//third_party:aws-checksums.BUILD",
+    sha256 = "6e6bed6f75cf54006b6bafb01b3b96df19605572131a2260fddaf0e87949ced0",
+    strip_prefix = "aws-checksums-0.1.5",
+    urls = [
+        "https://github.com/awslabs/aws-checksums/archive/v0.1.5.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-c-common",
+    build_file = "//third_party:aws-c-common.BUILD",
+    sha256 = "01c2a58553a37b3aa5914d9e0bf7bf14507ff4937bc5872a678892ca20fcae1f",
+    strip_prefix = "aws-c-common-0.4.29",
+    urls = [
+        "https://github.com/awslabs/aws-c-common/archive/v0.4.29.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-c-event-stream",
+    build_file = "//third_party:aws-c-event-stream.BUILD",
+    sha256 = "31d880d1c868d3f3df1e1f4b45e56ac73724a4dc3449d04d47fc0746f6f077b6",
+    strip_prefix = "aws-c-event-stream-0.1.4",
+    urls = [
+        "https://github.com/awslabs/aws-c-event-stream/archive/v0.1.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "aws-sdk-cpp",
+    build_file = "//third_party:aws-sdk-cpp.BUILD",
+    sha256 = "8724a2c3f00478e5f9af00d1d9bc67b7a0a557cc587a10f7097b1257008c2e68",
+    strip_prefix = "aws-sdk-cpp-1.7.270",
+    urls = [
+        "https://github.com/aws/aws-sdk-cpp/archive/1.7.270.tar.gz",
+    ],
 )
 
 http_archive(
@@ -29,17 +286,6 @@ http_archive(
 )
 
 http_archive(
-    name = "zlib",
-    build_file = "//third_party:zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "https://zlib.net/zlib-1.2.11.tar.gz",
-    ],
-)
-
-http_archive(
     name = "curl",
     build_file = "//third_party:curl.BUILD",
     sha256 = "e9c37986337743f37fd14fe8737f246e97aec94b39d1b71e8a5973f72a9fc4f5",
@@ -51,109 +297,43 @@ http_archive(
 )
 
 http_archive(
-    name = "kafka",
-    build_file = "//third_party:kafka.BUILD",
-    patches = [
-        "//third_party:kafka.patch",
-    ],
-    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
-    strip_prefix = "librdkafka-0.11.6",
-    urls = [
-        "https://mirror.bazel.build/github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
-        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "aws",
-    build_file = "//third_party:aws.BUILD",
-    sha256 = "b888d8ce5fc10254c3dd6c9020c7764dd53cf39cf011249d0b4deda895de1b7c",
-    strip_prefix = "aws-sdk-cpp-1.3.15",
-    urls = [
-        "https://mirror.bazel.build/github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.3.15.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "snappy",
-    build_file = "//third_party:snappy.BUILD",
-    sha256 = "3dfa02e873ff51a11ee02b9ca391807f0c8ea0529a4924afa645fbf97163f9d4",
-    strip_prefix = "snappy-1.1.7",
-    urls = [
-        "https://mirror.bazel.build/github.com/google/snappy/archive/1.1.7.tar.gz",
-        "https://github.com/google/snappy/archive/1.1.7.tar.gz",
-    ],
-)
-
-# Parquet needs generated parquet_types.h and parquet_types.cpp which are generated
-# from src/parquet/parquet.thrift in apache-parquet-cpp-1.4.0.tar.gz.
-#
-# Generating parquet_types.h and parquet_types.cpp, however, needs both bison and flex
-# installed, which is really an unnecessary step.
-#
-# We use the following step to generate the parquet_types.h and parquet_types.cpp files:
-#  - In third_party directory, run `docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header`
-#  - Once complete, a parquet.patch file will be generated which could be used as a patch in bazel
-#
-# $ cd third_party
-# $ docker run -i -t --rm -v $PWD:/v -w /v ubuntu:16.04 bash -x /v/parquet.header
-http_archive(
-    name = "arrow",
-    build_file = "//third_party:arrow.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:parquet.patch",
-    ],
-    sha256 = "69d9de9ec60a3080543b28a5334dbaf892ca34235b8bd8f8c1c01a33253926c1",
-    strip_prefix = "arrow-apache-arrow-0.14.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.14.1.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "boost",
-    build_file = "//third_party:boost.BUILD",
-    sha256 = "8aa4e330c870ef50a896634c931adf468b21f8a69b77007e45c444151229f665",
-    strip_prefix = "boost_1_67_0",
-    urls = [
-        "https://mirror.bazel.build/dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
-        "https://dl.bintray.com/boostorg/release/1.67.0/source/boost_1_67_0.tar.gz",
-        "https://downloads.sourceforge.net/project/boost/boost/1.67.0/boost_1_67_0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "thrift",
-    build_file = "//third_party:thrift.BUILD",
-    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
-    strip_prefix = "thrift-0.12.0",
-    urls = [
-        "https://mirror.bazel.build/github.com/apache/thrift/archive/0.12.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "libwebp",
-    build_file = "//third_party:libwebp.BUILD",
-    sha256 = "c2838544d4898a4bbb6c1d113e0aa50c4bdfc886df0dcfbfa5c42e788cb6f382",
-    strip_prefix = "libwebp-1.0.1",
-    urls = [
-        "https://mirror.bazel.build/github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
-        "https://github.com/webmproject/libwebp/archive/v1.0.1.tar.gz",
-    ],
-)
-
-http_archive(
     name = "com_github_google_flatbuffers",
     sha256 = "12a13686cab7ffaf8ea01711b8f55e1dbd3bf059b7c46a25fefa1250bdd9dd23",
     strip_prefix = "flatbuffers-b99332efd732e6faf60bb7ce1ce5902ed65d5ba3",
     urls = [
         "https://mirror.bazel.build/github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
         "https://github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libtiff",
+    build_file = "//third_party:libtiff.BUILD",
+    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
+    strip_prefix = "tiff-4.1.0",
+    urls = [
+        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "xz",
+    build_file = "//third_party:xz.BUILD",
+    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
+    strip_prefix = "xz-5.2.4",
+    urls = [
+        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "util_linux",
+    build_file = "//third_party:uuid.BUILD",
+    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
+    strip_prefix = "util-linux-2.32.1",
+    urls = [
+        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
+        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
     ],
 )
 
@@ -180,56 +360,35 @@ http_archive(
 )
 
 http_archive(
-    name = "lmdb",
-    build_file = "//third_party:lmdb.BUILD",
-    sha256 = "f3927859882eb608868c8c31586bb7eb84562a40a6bf5cc3e13b6b564641ea28",
-    strip_prefix = "lmdb-LMDB_0.9.22/libraries/liblmdb",
+    name = "rules_python",
+    sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
+    strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
     urls = [
-        "https://mirror.bazel.build/github.com/LMDB/lmdb/archive/LMDB_0.9.22.tar.gz",
-        "https://github.com/LMDB/lmdb/archive/LMDB_0.9.22.tar.gz",
+        "https://github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
     ],
 )
 
-# TODO: replace with release version
-new_git_repository(
-    name = "libtiff",
-    build_file = "//third_party:libtiff.BUILD",
-    commit = "43b0c984f0a2c81565b05b6590bf9de7df612477",
-    remote = "https://gitlab.com/libtiff/libtiff.git",
+load("@rules_python//python:pip.bzl", "pip3_import")
+
+pip3_import(
+    name = "lint_dependencies",
+    requirements = "//tools/lint:requirements.txt",
 )
 
-http_archive(
-    name = "com_github_azure_azure_storage_cpplite",
-    build_file = "//third_party:azure.BUILD",
-    sha256 = "a0c315120ba15c4fae64aacecc7473f6a6b2be765d493ec5d183d774eefc10eb",
-    strip_prefix = "azure-storage-cpplite-d57610340eae795d57959db106fd7216426d63b7",
-    urls = [
-        "https://github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
-        "https://mirror.bazel.build/github.com/Azure/azure-storage-cpplite/archive/d57610340eae795d57959db106fd7216426d63b7.zip",
-    ],
-)
+load("@lint_dependencies//:requirements.bzl", "pip_install")
 
-http_archive(
-    name = "util_linux",
-    build_file = "//third_party:uuid.BUILD",
-    sha256 = "2483d5a42bc39575fc215c6994554f5169db777262d606ebe9cd8d5f37557f72",
-    strip_prefix = "util-linux-2.32.1",
-    urls = [
-        "https://github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
-        "https://mirror.bazel.build/github.com/karelzak/util-linux/archive/v2.32.1.tar.gz",
-    ],
-)
+pip_install()
 
 http_archive(
     name = "com_github_grpc_grpc",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:grpc.patch",
+    patch_cmds = [
+        """sed -i.bak 's/"python",/"python3",/g' third_party/py/python_configure.bzl""",
+        """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3/g' bazel/cython_library.bzl""",
     ],
-    sha256 = "6dc4f122527670099124a71d8a180b0b074a18efa939173d6c3a0673229f57d3",
-    strip_prefix = "grpc-e68ce1164b49529de12fbba63d53f081aef5c90e",
+    sha256 = "2fcb7f1ab160d6fd3aaade64520be3e5446fc4c6fa7ba6581afdc4e26094bd81",
+    strip_prefix = "grpc-1.26.0",
     urls = [
-        "https://github.com/grpc/grpc/archive/e68ce1164b49529de12fbba63d53f081aef5c90e.tar.gz",
+        "https://github.com/grpc/grpc/archive/v1.26.0.tar.gz",
     ],
 )
 
@@ -237,16 +396,16 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+load("@rules_python//python:pip.bzl", "pip_repositories")
 
-pip_import(
+pip3_import(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-pip_repositories()
-
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
+pip_repositories()
 
 pip_install()
 
@@ -262,17 +421,6 @@ apple_rules_dependencies()
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 
 apple_support_dependencies()
-
-http_archive(
-    name = "giflib",
-    build_file = "//third_party:giflib.BUILD",
-    sha256 = "34a7377ba834397db019e8eb122e551a49c98f49df75ec3fcc92b9a794a4f6d1",
-    strip_prefix = "giflib-5.1.4",
-    urls = [
-        "https://mirror.bazel.build/ufpr.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
-        "http://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.1.4.tar.gz",
-    ],
-)
 
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
@@ -401,67 +549,6 @@ http_archive(
     ],
 )
 
-# hdf5 header files are generated from:
-#
-# tar xzf hdf5-1.10.5.tar.gz
-# cp -r hdf5-1.10.5 a
-# cp -r hdf5-1.10.5 b
-# docker run -i -t --rm -v $PWD/hdf5-1.10.5:/v -w /v --net=host ubuntu:14.04
-# $ apt-get -y -qq update
-# $ apt-get -y -qq install make gcc g++ libz-dev
-# $ ./configure --enable-cxx --with-zlib
-# $ make
-# $ exit
-# mkdir -p b/linux/src
-# cp hdf5-1.10.5/src/H5pubconf.h b/linux/src/H5pubconf.h
-# cp hdf5-1.10.5/src/H5lib_settings.c b/linux/src/H5lib_settings.c
-# cp hdf5-1.10.5/src/H5Tinit.c b/linux/src/H5Tinit.c
-# diff -Naur a b > hdf5.linux.patch
-#
-# On darwin, change to:
-#
-# mkdir -p b/darwin/src
-# cp hdf5-1.10.5/src/H5pubconf.h b/darwin/src/H5pubconf.h
-# cp hdf5-1.10.5/src/H5lib_settings.c b/darwin/src/H5lib_settings.c
-# cp hdf5-1.10.5/src/H5Tinit.c b/darwin/src/H5Tinit.c
-# diff -Naur a b > hdf5.darwin.patch
-http_archive(
-    name = "hdf5",
-    build_file = "//third_party:hdf5.BUILD",
-    patch_args = ["-p1"],
-    patches = [
-        "//third_party:hdf5.linux.patch",
-        "//third_party:hdf5.darwin.patch",
-    ],
-    sha256 = "6d4ce8bf902a97b050f6f491f4268634e252a63dadd6656a1a9be5b7b7726fa8",
-    strip_prefix = "hdf5-1.10.5",
-    urls = [
-        "https://mirror.bazel.build/support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
-        "https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.5.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "avro",
-    build_file = "//third_party:avro.BUILD",
-    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
-    strip_prefix = "avro-release-1.9.1/lang/c++",
-    urls = [
-        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "freetype",
-    build_file = "//third_party:freetype.BUILD",
-    sha256 = "955e17244e9b38adb0c98df66abb50467312e6bb70eac07e49ce6bd1a20e809a",
-    strip_prefix = "freetype-2.10.0",
-    urls = [
-        "https://mirror.bazel.build/download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-        "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz",
-    ],
-)
-
 http_archive(
     name = "jsoncpp_git",
     build_file = "//third_party:jsoncpp.BUILD",
@@ -510,14 +597,23 @@ go_repository(
     tag = "v0.9.3",
 )
 
-http_archive(
-    name = "dcmtk",
-    build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "a93ff354fae091689a0740a1000cde7d4378fdf733aef9287a70d7091efa42c0",
-    strip_prefix = "dcmtk-3.6.4",
-    urls = [
-        "https://dicom.offis.de/download/dcmtk/dcmtk364/dcmtk-3.6.4.tar.gz",
-    ],
+go_repository(
+    name = "com_github_matttproud_golang_protobuf_extensionsn",
+    commit = "c182affec369e30f25d3eb8cd8a478dee585ae7d",
+    importpath = "github.com/matttproud/golang_protobuf_extensions",
+)
+
+go_repository(
+    name = "com_github_prometheus_client_model",
+    commit = "14fe0d1b01d4d5fc031dd4bec1823bd3ebbe8016",
+    importpath = "github.com/prometheus/client_model",
+)
+
+go_repository(
+    name = "com_github_prometheus_prom2json",
+    build_extra_args = ["-exclude=vendor"],
+    importpath = "github.com/prometheus/prom2json",
+    tag = "v1.2.2",
 )
 
 http_archive(
@@ -580,57 +676,6 @@ http_archive(
 )
 
 http_archive(
-    name = "double_conversion",
-    build_file = "//third_party:double_conversion.BUILD",
-    sha256 = "2f7fbffac0d98d201ad0586f686034371a6d152ca67508ab611adc2386ad30de",
-    strip_prefix = "double-conversion-3992066a95b823efc8ccc1baf82a1cfc73f6e9b8",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
-        "https://github.com/google/double-conversion/archive/3992066a95b823efc8ccc1baf82a1cfc73f6e9b8.zip",
-    ],
-)
-
-http_archive(
-    name = "rapidjson",
-    build_file = "//third_party:rapidjson.BUILD",
-    sha256 = "bf7ced29704a1e696fbccf2a2b4ea068e7774fa37f6d7dd4039d0787f8bed98e",
-    strip_prefix = "rapidjson-1.1.0",
-    urls = [
-        "https://github.com/miloyip/rapidjson/archive/v1.1.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "xz",
-    build_file = "//third_party:xz.BUILD",
-    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
-    strip_prefix = "xz-5.2.4",
-    urls = [
-        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "easyexif",
-    build_file = "//third_party:easyexif.BUILD",
-    sha256 = "7a49a2617da70b318d1464625e1c5fd6d369d04aa1b23a270d3d0926d8669432",
-    strip_prefix = "easyexif-19d15151c3f663813dc70cf9ff568d25ab6ff93b",
-    urls = [
-        "https://github.com/mayanklahiri/easyexif/archive/19d15151c3f663813dc70cf9ff568d25ab6ff93b.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "openexr",
-    build_file = "//third_party:openexr.BUILD",
-    sha256 = "4904c5ea7914a58f60a5e2fbc397be67e7a25c380d7d07c1c31a3eefff1c92f1",
-    strip_prefix = "openexr-2.4.0",
-    urls = [
-        "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "com_grail_bazel_toolchain",
     strip_prefix = "bazel-toolchain-0.4.4",
     urls = ["https://github.com/grailbio/bazel-toolchain/archive/0.4.4.tar.gz"],
@@ -643,6 +688,98 @@ llvm_toolchain(
     llvm_version = "8.0.0",
 )
 
-load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
+http_archive(
+    name = "vorbis",
+    build_file = "//third_party:vorbis.BUILD",
+    sha256 = "43fc4bc34f13da15b8acfa72fd594678e214d1cab35fc51d3a54969a725464eb",
+    strip_prefix = "vorbis-1.3.6",
+    urls = [
+        "https://github.com/xiph/vorbis/archive/v1.3.6.tar.gz",
+    ],
+)
 
-llvm_register_toolchains()
+http_archive(
+    name = "ogg",
+    build_file = "//third_party:ogg.BUILD",
+    patch_cmds = [
+        "sed -i.bak 's/define _OS_TYPES_H/define _OS_TYPES_H\\'$'\\n''#include <stdint.h>/g' include/ogg/os_types.h",
+    ],
+    sha256 = "3da31a4eb31534b6f878914b7379b873c280e610649fe5c07935b3d137a828bc",
+    strip_prefix = "ogg-1.3.4",
+    urls = [
+        "https://github.com/xiph/ogg/archive/v1.3.4.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "flac",
+    build_file = "//third_party:flac.BUILD",
+    sha256 = "668cdeab898a7dd43cf84739f7e1f3ed6b35ece2ef9968a5c7079fe9adfe1689",
+    strip_prefix = "flac-1.3.3",
+    urls = [
+        "https://github.com/xiph/flac/archive/1.3.3.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "minimp3",
+    build_file = "//third_party:minimp3.BUILD",
+    sha256 = "53dd89dbf235c3a282b61fec07eb29730deb1a828b0c9ec95b17b9bd4b22cc3d",
+    strip_prefix = "minimp3-2b9a0237547ca5f6f98e28a850237cc68f560f7a",
+    urls = [
+        "https://github.com/lieff/minimp3/archive/2b9a0237547ca5f6f98e28a850237cc68f560f7a.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "speexdsp",
+    build_file = "//third_party:speexdsp.BUILD",
+    sha256 = "682042fc6f9bee6294ec453f470dadc26c6ff29b9c9e9ad2ffc1f4312fd64771",
+    strip_prefix = "speexdsp-1.2.0",
+    urls = [
+        "https://downloads.xiph.org/releases/speex/speexdsp-1.2.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "minimp4",
+    build_file = "//third_party:minimp4.BUILD",
+    sha256 = "2c9e176b2df3f72d9cb3bcd0959ebfc9da3efcedbea70fb945270c7bfa9e7758",
+    strip_prefix = "minimp4-14d452e4fac71da38f5c02e211486144075f4ecb",
+    urls = [
+        "https://github.com/lieff/minimp4/archive/14d452e4fac71da38f5c02e211486144075f4ecb.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "postgresql",
+    build_file = "//third_party:postgresql.BUILD",
+    sha256 = "9868c1149a04bae1131533c5cbd1c46f9c077f834f6147abaef8791a7c91b1a1",
+    strip_prefix = "postgresql-12.1",
+    urls = [
+        "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
+    ],
+)
+
+load("//:tools/build/tensorflow_io.bzl", "tf_io_swift")
+
+tf_io_swift()
+
+"""
+http_archive(
+    name = "build_bazel_apple_support",
+    sha256 = "ad8ae80e93612b8151019367a3d1604d7a51c14480dae1254e10252007e8260c",
+    strip_prefix = "apple_support-501b4afb27745c4813a88ffa28acd901408014e4",
+    urls = [
+        "https://github.com/bazelbuild/apple_support/archive/501b4afb27745c4813a88ffa28acd901408014e4.tar.gz",
+    ],
+)
+
+load("@build_bazel_rules_swift//swift:repositories.bzl", "swift_rules_dependencies")
+
+swift_rules_dependencies()
+
+load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+
+apple_support_dependencies()
+"""

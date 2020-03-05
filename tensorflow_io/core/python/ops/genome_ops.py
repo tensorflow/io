@@ -20,8 +20,18 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-read_fastq = core_ops.io_read_fastq
+def read_fastq(filename, name=None):
+  """Read FastQ file into Tensor
 
+  Args:
+    filename: Filename of the FastQ file.
+    name: A name for the operation (optional).
+
+  Returns:
+    sequences: A string `Tensor`.
+    raw_quality: A string `Tensor`.
+  """
+  return core_ops.io_read_fastq(filename, name=name)
 
 
 @tf.function
