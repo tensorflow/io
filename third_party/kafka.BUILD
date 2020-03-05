@@ -99,6 +99,9 @@ genrule(
         "#define WITH_PLUGINS 0",
         "#define ENABLE_DEVEL 0",
         "#define BUILT_WITH \"SSL ZLIB SNAPPY ZSTD LZ4 SASL SASL_SCRAM SASL_OAUTHBEARER HDRHISTOGRAM\"",
+        "// maintain the order below",
+        "#include <openssl/x509.h>",
+        "#include <wincrypt.h>",
         "EOF",
     ]),
 )
