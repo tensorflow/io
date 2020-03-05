@@ -207,6 +207,7 @@ http_archive(
     build_file = "//third_party:kafka.BUILD",
     patch_cmds = [
         "rm -f src/win32_config.h",
+        """sed -i.bak '\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\/\//' src/rdkafka_cgrp.c""",
     ],
     sha256 = "2d14551fd87262ec4917db3ae688ca2574d716faecccb1ac5136a478579cee19",
     strip_prefix = "librdkafka-1.4.0-RC2",
