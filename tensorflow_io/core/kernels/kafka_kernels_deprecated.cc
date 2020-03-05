@@ -174,7 +174,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
             LOG(ERROR) << "EVENT_ERROR: "
                        << "(" << RdKafka::err2str(event.err())
                        << "): " << event.str();
-            if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN) run_ = false;
+            { run_ = !event.fatal(); }
             break;
 
           case RdKafka::Event::EVENT_STATS:

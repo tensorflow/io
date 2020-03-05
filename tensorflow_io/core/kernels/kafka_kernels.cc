@@ -33,7 +33,7 @@ class KafkaEventCb : public RdKafka::EventCb {
         LOG(ERROR) << "EVENT_ERROR: "
                    << "(" << RdKafka::err2str(event.err())
                    << "): " << event.str();
-        { run_ = (event.err() != RdKafka::ERR__ALL_BROKERS_DOWN); }
+        { run_ = !event.fatal(); }
         break;
       case RdKafka::Event::EVENT_STATS:
         LOG(ERROR) << "EVENT_STATS: " << event.str();
