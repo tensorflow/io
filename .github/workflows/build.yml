@@ -25,7 +25,7 @@ jobs:
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          bazel run -s --verbose_failures //tools/lint:check
+          bazel run -s --verbose_failures //tools/lint:check -- bazel pylint
 
   macos:
     name: macOS
