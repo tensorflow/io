@@ -187,9 +187,9 @@ with open("tensorflow_io/core/python/ops/version_ops.py") as f:
   assert sum(e.startswith("package = ") for e in entries) == 1
   assert sum(e.startswith("version = ") for e in entries) == 1
   package = list([
-      e[10:] for e in entries if e.startswith("package = ")])[0].strip("'")
+      e[10:] for e in entries if e.startswith("package = ")])[0].strip('"')
   version = list([
-      e[10:] for e in entries if e.startswith("version = ")])[0].strip("'")
+      e[10:] for e in entries if e.startswith("version = ")])[0].strip('"')
   assert package != ""
   assert version != ""
 
