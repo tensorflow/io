@@ -207,11 +207,13 @@ http_archive(
     build_file = "//third_party:kafka.BUILD",
     patch_cmds = [
         "rm -f src/win32_config.h",
+        # TODO: Remove the fowllowing once librdkafka issue is resolved.
+        """sed -i.bak '\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\/\//' src/rdkafka_cgrp.c""",
     ],
-    sha256 = "9c0afb8b53779d968225edf1e79da48a162895ad557900f75e7978f65e642032",
-    strip_prefix = "librdkafka-0.11.6",
+    sha256 = "2d14551fd87262ec4917db3ae688ca2574d716faecccb1ac5136a478579cee19",
+    strip_prefix = "librdkafka-1.4.0-RC2",
     urls = [
-        "https://github.com/edenhill/librdkafka/archive/v0.11.6.tar.gz",
+        "https://github.com/edenhill/librdkafka/archive/v1.4.0-RC2.tar.gz",
     ],
 )
 
