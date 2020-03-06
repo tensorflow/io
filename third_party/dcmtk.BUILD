@@ -91,6 +91,8 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "@libpng",
+        "@libtiff",
         "@zlib",
     ],
 )
@@ -413,6 +415,8 @@ genrule(
         "#define STDC_HEADERS 1",
         "#define USE_STD_CXX_INCLUDES",
         "#define WITH_ZLIB",
+        "#define WITH_LIBPNG",
+        "#define WITH_LIBTIFF",
         "#define WITH_THREADS",
         "#ifdef HAVE_NO_TYPEDEF_PID_T",
         "#define pid_t int",

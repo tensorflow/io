@@ -69,6 +69,7 @@ def test_dicom_input():
         ('MR-MONO2-12-shoulder.dcm', (1, 1024, 1024, 1)),
         ('OT-MONO2-8-a7.dcm', (1, 512, 512, 1)),
         ('US-PAL-8-10x-echo.dcm', (10, 430, 600, 3)),
+        ('TOSHIBA_J2K_OpenJPEGv2Regression.dcm', (1, 512, 512, 1)),
     ]
 )
 def test_decode_dicom_image(fname, exp_shape):

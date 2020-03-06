@@ -174,8 +174,8 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
-        "@dcmtk",
         "@easyexif",
+        "@fmjpeg2koj",
         "@freetype",
         "@libtiff",
         "@libwebp",
