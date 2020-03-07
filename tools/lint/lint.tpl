@@ -9,12 +9,14 @@ RUN_BAZEL=no
 RUN_BLACK=no
 RUN_CLANG=no
 RUN_PYLINT=no
+RUN_PYUPGRADE=no
 RUN_ENTRIES=all
 if [[ $# -eq 0 ]]; then
   RUN_BAZEL=true
   RUN_BLACK=true
   RUN_CLANG=true
   RUN_PYLINT=true
+  RUN_PYUPGRADE=true
 else
   while [[ $# -gt 0 ]]; do
     if [[ "$1" == "bazel" ]]; then
@@ -33,6 +35,10 @@ else
       shift
       echo "$MODE: " pylint
       RUN_PYLINT=true
+    elif [[ "$1" == "pyupgrade" ]]; then
+      shift
+      echo "$MODE: " pyupgrade
+      RUN_PYUPGRADE=true
     elif [[ "$1" == "--" ]]; then
       shift
       echo "$MODE: " "--"
@@ -45,12 +51,13 @@ else
   done
 fi
 
-echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT --Entries:-- $RUN_ENTRIES"
+echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT Pyupgrade=$RUN_PYUPGRADE --Entries:-- $RUN_ENTRIES"
 
 BLACK_PATH=@@BLACK_PATH@@
 PYLINT_PATH=@@PYLINT_PATH@@
 BUILDIFIER_PATH=@@BUILDIFIER_PATH@@
 CLANG_FORMAT_PATH=@@CLANG_FORMAT_PATH@@
+PYUPGRADE_PATH=@@PYUPGRADE_PATH@@
 
 mode="$MODE"
 
@@ -58,12 +65,14 @@ black_path=$(readlink "$BLACK_PATH")
 pylint_path=$(readlink "$PYLINT_PATH")
 buildifier_path=$(readlink "$BUILDIFIER_PATH")
 clang_format_path=$(readlink "$CLANG_FORMAT_PATH")
+pyupgrade_path=$(readlink "$PYUPGRADE_PATH")
 
 echo "mode:" $mode
 echo "black:" $black_path
 echo "pylint:" $pylint_path
 echo "buildifier:" $buildifier_path
 echo "clang-format:" $clang_format_path
+echo "pyupgrade:" $pyupgrade_path
 
 if [[ "$mode" == "lint" ]]; then
   if [[ "$RUN_PYLINT" == "true" ]]; then
@@ -106,6 +115,15 @@ clang_format_func() {
   fi
 }
 
+pyupgrade_func() {
+  echo $1 $2
+  if [[ "$1" == "lint" ]]; then
+    $pyupgrade_path --exit-zero-even-if-changed --py3-only $2
+  else
+    $pyupgrade_path --py3-only $2
+  fi
+}
+
 set -e
 
 if [[ "$RUN_BLACK" == "true" ]]; then
@@ -123,23 +141,10 @@ else
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find . -type f \
-                \( \
-                    -name '*.bzl' \
-                    -o -name '*.sky' \
-                    -o -name '*.BUILD' \
-                    -o -name 'BUILD.*.bazel' \
-                    -o -name 'BUILD.*.oss' \
-                    -o -name 'WORKSPACE.*.bazel' \
-                    -o -name 'WORKSPACE.*.oss' \
-                    -o -name BUILD.bazel \
-                    -o -name BUILD \
-                    -o -name WORKSPACE \
-                    -o -name WORKSPACE.bazel \
-                    -o -name WORKSPACE.oss \
-                \) \
+            find tensorflow_io tests -type f \
+                \( -name '*.py' \) \
         ) ; do \
-        buildifier_func $mode "$i" ; \
+        black_func $mode "$i" ; \
     done \
 )
 fi
@@ -238,4 +243,28 @@ fi
 
 fi
 
+if [[ "$RUN_PYUPGRADE" == "true" ]]; then
+echo "Run Pyupgrade"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        pyupgrade_func $mode "$i" ; \
+    done \
+)
+else
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in \
+        $( \
+            find tensorflow_io tests -type f \
+                \( -name '*.py' \) \
+        ) ; do \
+        pyupgrade_func $mode "$i" ; \
+    done \
+)
+fi
+
+fi
 exit 0
