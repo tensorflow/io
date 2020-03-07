@@ -8,6 +8,7 @@ def _lint_impl(ctx):
         "@@PYLINT_PATH@@": shell.quote(ctx.executable._pylint.short_path),
         "@@BUILDIFIER_PATH@@": shell.quote(ctx.executable._buildifier.short_path),
         "@@CLANG_FORMAT_PATH@@": shell.quote(ctx.executable._clang_format.short_path),
+        "@@PYUPGRADE_PATH@@": shell.quote(ctx.executable._pyupgrade.short_path),
     }
     ctx.actions.expand_template(
         template = ctx.file._runner,
@@ -15,7 +16,7 @@ def _lint_impl(ctx):
         substitutions = substitutions,
         is_executable = True,
     )
-    runfiles = ctx.runfiles(files = [ctx.executable._buildifier, ctx.executable._clang_format, ctx.executable._pylint, ctx.executable._black])
+    runfiles = ctx.runfiles(files = [ctx.executable._buildifier, ctx.executable._clang_format, ctx.executable._pylint, ctx.executable._black, ctx.executable._pyupgrade])
     return [DefaultInfo(
         files = depset([bash_file]),
         runfiles = runfiles,
@@ -47,6 +48,11 @@ _lint = rule(
         ),
         "_clang_format": attr.label(
             default = "//tools/lint:clang_format",
+            cfg = "host",
+            executable = True,
+        ),
+        "_pyupgrade": attr.label(
+            default = "//tools/lint:pyupgrade",
             cfg = "host",
             executable = True,
         ),
