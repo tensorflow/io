@@ -14,6 +14,8 @@
 # ==============================================================================
 """audio"""
 
+import tensorflow as tf
+
 from tensorflow_io.core.python.ops import core_ops
 
 def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=redefined-builtin
@@ -31,3 +33,21 @@ def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=re
   """
   return core_ops.io_audio_resample(
       input, rate_in=rate_in, rate_out=rate_out, quality=quality, name=name)
+
+def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
+  """Decode WAV audio from input string.
+
+  Args:
+    input: A string `Tensor` of the audio input.
+    shape: The shape of the audio.
+    dtype: The data type of the audio, only tf.int16 and tf.int32 are supported.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Decoded audio.
+  """
+  if shape is None:
+    shape = tf.constant([-1, -1], tf.int64)
+  assert (dtype is not None), "dtype (tf.int16/tf.int32) must be provided"
+  return core_ops.io_audio_decode_wav(
+      input, shape=shape, dtype=dtype, name=name)
