@@ -106,7 +106,7 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
 
   dataset = tf.data.Dataset.from_tensor_slices([args])
   dataset = dataset.map(func)
-  entries = [e for e in dataset]
+  entries = list(dataset)
   assert len(entries) == 1
   entries = entries[0]
   assert np.array_equal(entries, expected)
