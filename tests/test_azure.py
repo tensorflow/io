@@ -13,9 +13,6 @@
 # the License.
 # ==============================================================================
 """Tests for Azure File System."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 
@@ -34,13 +31,13 @@ class AZFSTest(test.TestCase):
     self.account = 'devstoreaccount1'
     self.container = 'aztest'
     self.path_root = 'az://' + os.path.join(self.account, self.container)
-    super(AZFSTest, self).__init__(methodName)
+    super().__init__(methodName)
 
   def _path_to(self, path):
     return os.path.join(self.path_root, path)
 
   def setUp(self): # pylint: disable=invalid-name
-    super(AZFSTest, self).setUp()
+    super().setUp()
     if not gfile.IsDirectory(self.path_root):
       gfile.MakeDirs(self.path_root)
 

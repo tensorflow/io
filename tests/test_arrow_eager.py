@@ -14,9 +14,6 @@
 # ==============================================================================
 """Tests for ArrowDataset."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from collections import namedtuple
 import io
@@ -155,7 +152,7 @@ class ArrowTestBase(test.TestCase):
                            truth_data.output_types[col],
                            isinstance(truth_data.data[col][0], list)))
               for col in range(len(truth_data.output_types))]
-    names = ["%s_[%s]" % (i, a.type) for i, a in enumerate(arrays)]
+    names = ["{}_[{}]".format(i, a.type) for i, a in enumerate(arrays)]
     return pa.RecordBatch.from_arrays(arrays, names)
 
 
@@ -165,7 +162,7 @@ class ArrowIOTensorTest(ArrowTestBase):
   @classmethod
   def setUpClass(cls): # pylint: disable=invalid-name
     """setUpClass"""
-    super(ArrowIOTensorTest, cls).setUpClass()
+    super().setUpClass()
     cls.scalar_shapes = tuple(
         [tf.TensorShape([len(c)]) for c in cls.scalar_data])
     cls.list_fixed_shapes = tuple(
@@ -430,7 +427,7 @@ class ArrowDatasetTest(ArrowTestBase):
     sock.bind(('127.0.0.1', 0))
     sock.listen(1)
     host_addr, port = sock.getsockname()
-    host = "%s:%s" % (host_addr, port)
+    host = "{}:{}".format(host_addr, port)
 
     def run_server(num_batches):
       conn, _ = sock.accept()

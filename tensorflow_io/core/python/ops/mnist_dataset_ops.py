@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """MNISTIODataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -35,7 +32,7 @@ class MNISTLabelIODataset(tf.data.Dataset):
     dataset = dataset.unbatch()
 
     self._dataset = dataset
-    super(MNISTLabelIODataset, self).__init__(
+    super().__init__(
         self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -72,7 +69,7 @@ class MNISTImageIODataset(tf.data.Dataset):
         lambda e: tf.reshape(e, tf.concat([rows, cols], axis=0)))
 
     self._dataset = dataset
-    super(MNISTImageIODataset, self).__init__(
+    super().__init__(
         self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

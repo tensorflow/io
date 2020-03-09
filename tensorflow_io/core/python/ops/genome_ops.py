@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Genome"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops

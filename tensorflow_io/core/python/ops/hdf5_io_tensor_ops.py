@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """HDF5IOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -40,7 +37,7 @@ class BaseHDF5GraphIOTensor():
       self._component = component
       self._shape = shape
       self._dtype = dtype
-      super(BaseHDF5GraphIOTensor, self).__init__()
+      super().__init__()
 
   #=============================================================================
   # Accessors
@@ -60,7 +57,7 @@ class BaseHDF5GraphIOTensor():
   # String Encoding
   #=============================================================================
   def __repr__(self):
-    return "<%s: shape=%s, dtype=%s>" % (
+    return "<{}: shape={}, dtype={}>".format(
         self.__class__.__name__, self.shape, self.dtype)
 
   #=============================================================================
@@ -125,7 +122,7 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
       resource, columns = core_ops.io_hdf5_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
 
       def f(column):
         shape, dtype = core_ops.io_hdf5_readable_spec(resource, column)
@@ -165,6 +162,6 @@ class HDF5IOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
             internal=True)
       elements = [g(entry, shape) for (entry, shape) in zip(entries, shapes)]
       spec = tuple(entries)
-      super(HDF5IOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements,
           internal=internal)

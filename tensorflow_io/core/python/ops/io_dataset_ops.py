@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """_IODataset and _StreamIODataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 
@@ -40,7 +37,7 @@ class _StreamIODataset(tf.compat.v2.data.Dataset):
 
       self._function = function
       self._dataset = dataset
-      super(_StreamIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -55,4 +52,4 @@ class _IODataset(_StreamIODataset):
 
   def __init__(self, function, internal=False, **kwargs):
     with tf.name_scope("IODataset"):
-      super(_IODataset, self).__init__(function, internal=internal, **kwargs)
+      super().__init__(function, internal=internal, **kwargs)

@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """PcapDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 import uuid
@@ -36,7 +33,7 @@ class PcapIODataset(tf.data.Dataset):
       resource = core_ops.io_pcap_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
 
       dataset = tf.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
@@ -51,7 +48,7 @@ class PcapIODataset(tf.data.Dataset):
       self._capacity = capacity
       self._resource = resource
       self._dataset = dataset
-      super(PcapIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

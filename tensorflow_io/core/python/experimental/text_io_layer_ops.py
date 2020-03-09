@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """TextIOLayer"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -30,7 +27,7 @@ class TextIOLayer(tf.keras.layers.Layer):
   def __init__(self, filename):
     """Obtain a text file IO layer to be used with tf.keras."""
     self._resource = core_ops.io_file_init(filename)
-    super(TextIOLayer, self).__init__(trainable=False)
+    super().__init__(trainable=False)
 
   def sync(self):
     core_ops.io_file_sync(self._resource)

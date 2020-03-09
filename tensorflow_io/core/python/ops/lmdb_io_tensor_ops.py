@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """LMDBIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -43,7 +40,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
       resource = core_ops.io_lmdb_mapping_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       spec = (tf.TensorSpec(tf.TensorShape([None]), tf.string),
               tf.TensorSpec(tf.TensorShape([None]), tf.string))
 
@@ -56,7 +53,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
             return self._func(
                 self._filename,
                 container=scope,
-                shared_name="%s/%s" % (self._filename, uuid.uuid4().hex))
+                shared_name="{}/{}".format(self._filename, uuid.uuid4().hex))
 
       class _IterableNext():
         def __init__(self, func, shape, dtype):
@@ -70,7 +67,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor): # pylint: disable=protected
               start=self._index, stop=self._index+1,
               shape=self._shape, dtype=self._dtype)
 
-      super(LMDBIOTensor, self).__init__(
+      super().__init__(
           spec,
           _IOTensorMappingFunction(core_ops.io_lmdb_mapping_read, resource),
           _IterableInit(

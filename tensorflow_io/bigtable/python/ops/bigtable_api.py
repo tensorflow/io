@@ -23,12 +23,6 @@ write a `tf.data.Dataset` object to the underlying Cloud Bigtable table.
 For background on Cloud Bigtable, see: https://cloud.google.com/bigtable .
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from six import iteritems
-from six import string_types
 
 from tensorflow.python.data.experimental.ops import interleave_ops
 from tensorflow.python.data.ops import dataset_ops
@@ -39,7 +33,7 @@ from tensorflow.python.framework import tensor_shape
 from tensorflow_io.core.python.ops import core_ops
 
 
-class BigtableClient(object):  # pylint: disable=useless-object-inheritance
+class BigtableClient:  # pylint: disable=useless-object-inheritance
   """BigtableClient is the entrypoint for interacting with Cloud Bigtable in TF.
 
   BigtableClient encapsulates a connection to Cloud Bigtable, and exposes the
@@ -105,7 +99,7 @@ class BigtableClient(object):  # pylint: disable=useless-object-inheritance
     return BigtableTable(name, snapshot, table)
 
 
-class BigtableTable(object): # pylint: disable=useless-object-inheritance
+class BigtableTable: # pylint: disable=useless-object-inheritance
   """Entry point for reading and writing data in Cloud Bigtable.
 
   This BigtableTable class is the Python representation of the Cloud Bigtable
@@ -170,7 +164,7 @@ class BigtableTable(object): # pylint: disable=useless-object-inheritance
       normalized = []
     if isinstance(normalized, tuple):
       normalized = list(normalized)
-    for key, value in iteritems(kwargs):
+    for key, value in kwargs.items():
       if key == "name":
         continue
       if isinstance(value, str):
@@ -556,10 +550,10 @@ def _normalize_columns(columns, provided_kwargs):
       normalized = [normalized]
     else:
       raise ValueError("columns was a tuple of inappropriate length")
-  for key, value in iteritems(provided_kwargs):
+  for key, value in provided_kwargs.items():
     if key == "name":
       continue
-    if isinstance(value, string_types):
+    if isinstance(value, str):
       normalized.append((key, value))
       continue
     for col in value:
@@ -580,7 +574,7 @@ class _BigtableKeyDataset(dataset_ops.DatasetSource):  # pylint: disable=abstrac
       table: a Bigtable class.
       variant_tensor: DT_VARIANT representation of the dataset.
     """
-    super(_BigtableKeyDataset, self).__init__(variant_tensor)
+    super().__init__(variant_tensor)
     self._table = table
     self._variant_tensor_attr = variant_tensor
     print('BASE: {}'.format(dataset_ops.DatasetSource.__bases__))
@@ -604,7 +598,7 @@ class _BigtablePrefixKeyDataset(_BigtableKeyDataset):  # pylint: disable=abstrac
     variant_tensor = core_ops.bigtable_prefix_key_dataset(
         table=table._resource,  # pylint: disable=protected-access
         prefix=self._prefix)
-    super(_BigtablePrefixKeyDataset, self).__init__(table, variant_tensor)
+    super().__init__(table, variant_tensor)
 
 
 class _BigtableRangeKeyDataset(_BigtableKeyDataset):  # pylint: disable=abstract-method
@@ -618,7 +612,7 @@ class _BigtableRangeKeyDataset(_BigtableKeyDataset):  # pylint: disable=abstract
         table=table._resource,  # pylint: disable=protected-access
         start_key=self._start,
         end_key=self._end)
-    super(_BigtableRangeKeyDataset, self).__init__(table, variant_tensor)
+    super().__init__(table, variant_tensor)
 
 
 class _BigtableSampleKeysDataset(_BigtableKeyDataset):  # pylint: disable=abstract-method
@@ -630,7 +624,7 @@ class _BigtableSampleKeysDataset(_BigtableKeyDataset):  # pylint: disable=abstra
   def __init__(self, table):
     variant_tensor = core_ops.bigtable_sample_keys_dataset(
         table=table._resource)  # pylint: disable=protected-access
-    super(_BigtableSampleKeysDataset, self).__init__(table, variant_tensor)
+    super().__init__(table, variant_tensor)
 
 
 class _BigtableLookupDataset(dataset_ops.DatasetSource):  # pylint: disable=abstract-method
@@ -650,7 +644,7 @@ class _BigtableLookupDataset(dataset_ops.DatasetSource):  # pylint: disable=abst
         column_families=self._column_families,
         columns=self._columns)
     self._variant_tensor_attr = variant_tensor
-    super(_BigtableLookupDataset, self).__init__()
+    super().__init__()
 
   @property
   def _element_structure(self):
@@ -684,7 +678,7 @@ class _BigtableScanDataset(dataset_ops.DatasetSource):  # pylint: disable=abstra
         column_families=self._column_families,
         columns=self._columns,
         probability=self._probability)
-    super(_BigtableScanDataset, self).__init__()
+    super().__init__()
     self._variant_tensor_attr = variant_tensor
 
   @property
@@ -712,7 +706,7 @@ class _BigtableSampleKeyPairsDataset(dataset_ops.DatasetSource):  # pylint: disa
         prefix=self._prefix,
         start_key=self._start,
         end_key=self._end)
-    super(_BigtableSampleKeyPairsDataset, self).__init__()
+    super().__init__()
     self._variant_tensor_attr = variant_tensor
 
   @property

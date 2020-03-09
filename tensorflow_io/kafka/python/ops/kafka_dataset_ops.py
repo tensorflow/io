@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Kafka Dataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import warnings
 
@@ -89,7 +86,7 @@ class KafkaDataset(data.Dataset):
     self._config_topic = tf.convert_to_tensor(
         config_topic, dtype=dtypes.string, name="config_topic")
     self._message_key = message_key
-    super(KafkaDataset, self).__init__()
+    super().__init__()
 
   def _inputs(self):
     return []

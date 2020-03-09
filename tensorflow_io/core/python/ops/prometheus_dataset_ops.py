@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """PrometheusDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow.python.data.experimental.ops.sleep import sleep
@@ -95,7 +92,7 @@ class PrometheusIODataset(tf.data.Dataset):
       dataset = dataset.map(f)
       dataset = dataset.unbatch()
       self._dataset = dataset
-      super(PrometheusIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -124,7 +121,7 @@ class PrometheusScrapeStreamIODataset(tf.data.Dataset):
       dataset = dataset.apply(sleep(interval))
 
       self._dataset = dataset
-      super(PrometheusScrapeStreamIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
