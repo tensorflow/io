@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """AudioIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 
@@ -39,7 +36,7 @@ class AudioGraphIOTensor():
       self._shape = shape
       self._dtype = dtype
       self._rate = rate
-      super(AudioGraphIOTensor, self).__init__()
+      super().__init__()
 
   #=============================================================================
   # Accessors
@@ -59,10 +56,10 @@ class AudioGraphIOTensor():
   # String Encoding
   #=============================================================================
   def __repr__(self):
-    meta = "".join([", %s=%s" % (
+    meta = "".join([", {}={}".format(
         k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
             ) if isinstance(v, io_tensor_ops._IOTensorMeta)]) # pylint: disable=protected-access
-    return "<%s: shape=%s, dtype=%s | %s>" % (
+    return "<{}: shape={}, dtype={} | {}>".format(
         self.__class__.__name__, self.shape, self.dtype, meta)
 
   #=============================================================================
@@ -133,5 +130,5 @@ class AudioIOTensor(AudioGraphIOTensor):
       shape, dtype, rate = core_ops.io_audio_readable_spec(resource)
       shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
-      super(AudioIOTensor, self).__init__(
+      super().__init__(
           resource, shape, dtype, rate, internal=internal)

@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """_IOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 
@@ -146,7 +143,7 @@ class _IOTensor():
                        "of the factory methods instead (e.g., "
                        "IOTensor.from_tensor())")
     self._spec = spec
-    super(_IOTensor, self).__init__()
+    super().__init__()
 
   #=============================================================================
   # Accessors
@@ -161,10 +158,10 @@ class _IOTensor():
   # String Encoding
   #=============================================================================
   def __repr__(self):
-    meta = "".join([", %s=%s" % (
+    meta = "".join([", {}={}".format(
         k, repr(v.__get__(self))) for k, v in self.__class__.__dict__.items(
             ) if isinstance(v, _IOTensorMeta)])
-    return "<%s: spec=%s%s>" % (
+    return "<{}: spec={}{}>".format(
         self.__class__.__name__, self.spec, meta)
 
 class BaseIOTensor(_IOTensor):
@@ -189,7 +186,7 @@ class BaseIOTensor(_IOTensor):
                internal=False):
     # function used for dataset should not be partitioned.
     self._function = function
-    super(BaseIOTensor, self).__init__(
+    super().__init__(
         spec, internal=internal)
 
   #=============================================================================
@@ -290,7 +287,7 @@ class ScalarIOTensor(BaseIOTensor):
     tensor = tf.convert_to_tensor(tensor)
 
     self._tensor = tensor
-    super(ScalarIOTensor, self).__init__(
+    super().__init__(
         spec, None, internal=internal)
 
   #=============================================================================
@@ -347,7 +344,7 @@ class TensorIOTensor(BaseIOTensor):
 
     self._tensor = tensor
 
-    super(TensorIOTensor, self).__init__(
+    super().__init__(
         tf.TensorSpec(tensor.shape, tensor.dtype),
         _Function(tensor), internal=internal)
 
@@ -382,7 +379,7 @@ class _TableIOTensor(_IOTensor):
                internal=False):
     self._columns = columns
     self._values = values
-    super(_TableIOTensor, self).__init__(
+    super().__init__(
         spec, internal=internal)
 
   #=============================================================================
@@ -419,7 +416,7 @@ class _CollectionIOTensor(_IOTensor):
                internal=False):
     self._keys = keys
     self._values = values
-    super(_CollectionIOTensor, self).__init__(
+    super().__init__(
         spec, internal=internal)
 
   #=============================================================================
@@ -447,7 +444,7 @@ class _SeriesIOTensor(_IOTensor):
                internal=False):
     self._index = index
     self._value = value
-    super(_SeriesIOTensor, self).__init__(
+    super().__init__(
         spec, internal=internal)
 
   #=============================================================================
@@ -476,7 +473,7 @@ class _KeyValueIOTensor(_IOTensor):
     self._function = function
     self._iterable_init = iterable_init
     self._iterable_next = iterable_next
-    super(_KeyValueIOTensor, self).__init__(
+    super().__init__(
         spec, internal=internal)
 
   #=============================================================================

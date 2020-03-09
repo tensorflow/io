@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """KafkaIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -40,7 +37,7 @@ class KafkaIOTensor():
           topic, partition, offset=0, metadata=metadata)
 
       self._resource = resource
-      super(KafkaIOTensor, self).__init__()
+      super().__init__()
 
   #=============================================================================
   # Accessors
@@ -60,7 +57,7 @@ class KafkaIOTensor():
   # String Encoding
   #=============================================================================
   def __repr__(self):
-    return "<%s: shape=%s, dtype=%s>" % (
+    return "<{}: shape={}, dtype={}>".format(
         self.__class__.__name__, self.shape, self.dtype)
 
   #=============================================================================

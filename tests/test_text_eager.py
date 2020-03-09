@@ -14,9 +14,6 @@
 # ==============================================================================
 """Tests for Text Input."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import re
@@ -121,7 +118,7 @@ def test_re2_extract():
   i = 0
   for v in dataset:
     r, g = v
-    if re.match(".+(ipsum).+(dolor).+".encode(), lines[i]):
+    if re.match(b".+(ipsum).+(dolor).+", lines[i]):
       assert r.numpy()
       assert g[0].numpy().decode() == "ipsum"
       assert g[1].numpy().decode() == "dolor"

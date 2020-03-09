@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """KafkaIOLayer"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -33,7 +30,7 @@ class KafkaIOLayer(tf.keras.layers.Layer):
     if servers is not None:
       metadata.append("bootstrap.servers=%s" % servers)
     self._resource = core_ops.io_layer_kafka_init(topic, partition, metadata)
-    super(KafkaIOLayer, self).__init__(trainable=False)
+    super().__init__(trainable=False)
 
   def sync(self):
     core_ops.io_layer_kafka_sync(self._resource)

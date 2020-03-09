@@ -14,9 +14,6 @@
 # ==============================================================================
 """GCS file system configuration for TensorFlow."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import json
 import os
@@ -38,7 +35,7 @@ if not tf_v1:
   gcs_configure_credentials = core_ops.io_gcs_configure_credentials
   gcs_configure_block_cache = core_ops.io_gcs_configure_block_cache
 
-class BlockCacheParams(object):  # pylint: disable=useless-object-inheritance
+class BlockCacheParams:  # pylint: disable=useless-object-inheritance
   """BlockCacheParams is a struct used for configuring the GCS Block Cache."""
 
   def __init__(self, block_size=None, max_bytes=None, max_staleness=None):

@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """FFmpeg"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 
 def decode_video(content, index=0, name=None):

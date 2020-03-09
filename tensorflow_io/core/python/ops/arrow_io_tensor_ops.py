@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """FeatherIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -115,7 +112,7 @@ class _ArrowIOTensorComponentFunction():
                column_index,
                shape,
                dtype):
-    super(_ArrowIOTensorComponentFunction, self).__init__()
+    super().__init__()
     self._function = function
     self._resource = resource
     self._column_index = column_index
@@ -139,7 +136,7 @@ class _ArrowIOTensorComponentFunction():
 class ArrowBaseIOTensor(io_tensor_ops.BaseIOTensor):
   """ArrowBaseIOTensor"""
   def __init__(self, shape, dtype, spec, function, internal=False):
-    super(ArrowBaseIOTensor, self).__init__(spec, function, internal=internal)
+    super().__init__(spec, function, internal=internal)
     self._shape = shape
     self._dtype = dtype
     self._spec = spec
@@ -190,7 +187,7 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
           array_buffer_sizes,
           array_lengths,
           container=scope,
-          shared_name="pyarrow.Table%s/%s" % (
+          shared_name="pyarrow.Table{}/{}".format(
               table.schema.names, uuid.uuid4().hex))
 
       if tf.executing_eagerly():
@@ -237,5 +234,5 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
                   shape, entry.dtype, entry, function, internal=internal))
         spec = tuple(entries)
 
-      super(ArrowIOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements, internal=internal)

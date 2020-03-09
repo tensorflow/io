@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """TIFFIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
@@ -46,6 +43,6 @@ class TIFFIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protect
           io_tensor_ops.TensorIOTensor(
               core_ops.io_decode_tiff(data, i),
               internal=internal) for i in columns]
-      super(TIFFIOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements,
           internal=internal)

@@ -14,9 +14,6 @@
 # ==============================================================================
 """Tests for read_archive."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import tensorflow as tf
@@ -97,7 +94,7 @@ def test_dataset():
   filename = "file://" + filename
 
   # This is a demo implementation of ArchiveDataset
-  dataset = tf.compat.v2.data.Dataset.from_tensor_slices(([filename])).map(
+  dataset = tf.compat.v2.data.Dataset.from_tensor_slices([filename]).map(
       lambda f: () + (f,) + archive_io.list_archive_entries(f, "tar.gz")
   ).map(
       lambda f, format, e: (tf.broadcast_to(f, tf.shape(e)), tf.broadcast_to(format, tf.shape(e)), e)

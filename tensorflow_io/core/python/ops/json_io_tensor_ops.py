@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """JSONIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -39,7 +36,7 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
           filename,
           metadata=metadata,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
@@ -54,5 +51,5 @@ class JSONIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-ac
             io_tensor_ops.BaseIOTensor(
                 spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
-      super(JSONIOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements, internal=internal)

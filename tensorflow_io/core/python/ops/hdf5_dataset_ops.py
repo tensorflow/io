@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """HDF5Dataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -59,7 +56,7 @@ class HDF5IODataset(tf.data.Dataset):
       dataset = dataset.unbatch()
 
       self._dataset = dataset
-      super(HDF5IODataset, self).__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+      super().__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
     return []

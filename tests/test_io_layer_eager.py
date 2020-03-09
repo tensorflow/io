@@ -13,9 +13,6 @@
 # the License.
 # ==============================================================================
 """Test tfio.IOLayer"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import time
@@ -38,7 +35,7 @@ def fixture_fashion_mnist():
     """MNISTClassNamesLayer"""
     def __init__(self):
       self._classes = tf.constant(classes)
-      super(MNISTClassNamesLayer, self).__init__(trainable=False)
+      super().__init__(trainable=False)
 
     def call(self, inputs):
       content = tf.argmax(inputs, axis=1)

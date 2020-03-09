@@ -13,16 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 """Ignite Dataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import abc
 import socket
 import ssl
 import struct
-
-import six
 
 import tensorflow as tf
 
@@ -30,8 +25,7 @@ from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops as ignite_ops
 
-@six.add_metaclass(abc.ABCMeta) # pylint: disable=useless-object-inheritance
-class Readable(object):
+class Readable(metaclass=abc.ABCMeta):
   """Readable abstract class that exposes methods to do reading-related
 
      operations.
@@ -178,7 +172,7 @@ class TcpClient(Readable):
     self.sock.sendall(data_buffer)
 
 
-class BinaryType(object): # pylint: disable=useless-object-inheritance
+class BinaryType: # pylint: disable=useless-object-inheritance
   """BinaryType class that encapsulated type id, type name and fields."""
 
   def __init__(self, type_id, type_name, fields):
@@ -188,7 +182,7 @@ class BinaryType(object): # pylint: disable=useless-object-inheritance
     self.fields = fields
 
 
-class BinaryField(object): # pylint: disable=useless-object-inheritance
+class BinaryField: # pylint: disable=useless-object-inheritance
   """BinaryField class that encapsulated field name, type id and field id."""
 
   def __init__(self, field_name, type_id, field_id):
@@ -224,7 +218,7 @@ types = {
 }
 
 
-class TypeTreeNode(object): # pylint: disable=useless-object-inheritance
+class TypeTreeNode: # pylint: disable=useless-object-inheritance
   """TypeTreeNode class exposes methods to format object tree structure
 
      data.
@@ -429,7 +423,7 @@ class IgniteClient(TcpClient):
       if err_msg is None:
         raise RuntimeError("Scan Query Error [status=%s]" % status)
       raise RuntimeError(
-          "Scan Query Error [status=%s, message='%s']" % (status, err_msg))
+          "Scan Query Error [status={}, message='{}']".format(status, err_msg))
 
     self.read_long()  # Cursor id
     row_count = self.read_int()
@@ -761,7 +755,7 @@ class IgniteDataset(data.Dataset):
         self.cache_type.to_permutation(),
         dtype=dtypes.int32,
         name="permutation")
-    super(IgniteDataset, self).__init__()
+    super().__init__()
 
   def _inputs(self):
     return []

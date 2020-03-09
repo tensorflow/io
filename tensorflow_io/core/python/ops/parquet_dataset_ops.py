@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """ParquetDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 import uuid
@@ -55,7 +52,7 @@ class ParquetIODataset(tf.compat.v2.data.Dataset):
       resource, columns_v = core_ops.io_parquet_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       columns = columns if columns is not None else columns_v.numpy()
 
       columns_dataset = []
@@ -88,7 +85,7 @@ class ParquetIODataset(tf.compat.v2.data.Dataset):
 
       self._function = columns_function
       self._dataset = dataset
-      super(ParquetIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

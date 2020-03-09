@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """LMDBDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 import uuid
@@ -39,11 +36,11 @@ class LMDBIODataset(tf.compat.v2.data.Dataset):
       mapping = core_ops.io_lmdb_mapping_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       resource = core_ops.io_lmdb_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       capacity = kwargs.get("capacity", 4096)
       dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
       dataset = dataset.map(
@@ -62,7 +59,7 @@ class LMDBIODataset(tf.compat.v2.data.Dataset):
       self._resource = resource
       self._capacity = capacity
       self._dataset = dataset
-      super(LMDBIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
