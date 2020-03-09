@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """FFmpegDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 import sys
@@ -45,7 +42,7 @@ class FFmpegAudioGraphIODataset(tf.data.Dataset):
               lambda v: tf.greater(tf.shape(v)[0], 0)))
       dataset = dataset.unbatch()
       self._dataset = dataset
-      super(FFmpegAudioGraphIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -77,7 +74,7 @@ class FFmpegVideoGraphIODataset(tf.data.Dataset):
               lambda v: tf.greater(tf.shape(v)[0], 0)))
       dataset = dataset.unbatch()
       self._dataset = dataset
-      super(FFmpegVideoGraphIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -114,12 +111,12 @@ class FFmpegIODataset(io_dataset_ops._IODataset): # pylint: disable=protected-ac
       resource, _ = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       shape, dtype, _ = ffmpeg_ops.io_ffmpeg_readable_spec(resource, stream)
       shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])
       dtype = tf.as_dtype(dtype.numpy())
       capacity = 1 if stream.startswith("v:") else 4096
-      super(FFmpegIODataset, self).__init__(
+      super().__init__(
           _FFmpegIODatasetFunction(
               ffmpeg_ops.io_ffmpeg_readable_read,
               resource, stream, shape, dtype),

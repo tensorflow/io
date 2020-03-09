@@ -13,9 +13,6 @@
 # the License.
 # ==============================================================================
 """Test IODataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import sys
@@ -153,7 +150,7 @@ def fixture_pubsub(request):
       subscription_path, topic_path, retain_acked_messages=True)
   print('Subscription created: {}'.format(subscription))
   for n in range(0, 10):
-    data_v = u'Message number {}'.format(n)
+    data_v = 'Message number {}'.format(n)
     # Data must be a bytestring
     data_v = data_v.encode('utf-8')
     # When you publish a message, the client returns a future.
@@ -550,7 +547,7 @@ def fixture_to_file(request):
   args = filename
   func = tfio.experimental.IODataset.to_file
   def data_func(filename):
-    with open(filename, "r") as f:
+    with open(filename) as f:
       lines = list(f)
     return lines
 
@@ -702,7 +699,7 @@ def fixture_kafka():
   def func(q):
     v = tfio.IODataset.from_kafka(q)
     return v
-  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+  expected = [(("D" + str(i)).encode(), b"") for i in range(10)]
 
   return args, func, expected
 
@@ -741,7 +738,7 @@ def fixture_kafka_stream():
   def func(q):
     v = tfio.IODataset.stream().from_kafka(q)
     return v
-  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+  expected = [(("D" + str(i)).encode(), b"") for i in range(10)]
 
   return args, func, expected
 

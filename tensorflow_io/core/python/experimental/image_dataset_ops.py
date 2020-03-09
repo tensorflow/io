@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """TIFFIODataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -41,7 +38,7 @@ class TIFFIODataset(tf.data.Dataset):
 
       self._dataset = dataset
       self._content = content
-      super(TIFFIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

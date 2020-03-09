@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """EXRIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
@@ -31,7 +28,7 @@ class EXRPartIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
                spec, columns, values,
                internal=False):
     with tf.name_scope("EXRPartIOTensor"):
-      super(EXRPartIOTensor, self).__init__(
+      super().__init__(
           spec, columns, values, internal=internal)
 
 class EXRIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
@@ -67,5 +64,5 @@ class EXRIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protecte
         index += 1
       spec = tuple([part.spec for part in parts])
       columns = [i for i, _ in enumerate(parts)]
-      super(EXRIOTensor, self).__init__(
+      super().__init__(
           spec, columns, parts, internal=internal)

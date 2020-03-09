@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """AudioDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -42,7 +39,7 @@ class AudioGraphIODataset(tf.data.Dataset):
               lambda v: tf.greater(tf.shape(v)[0], 0)))
       dataset = dataset.unbatch()
       self._dataset = dataset
-      super(AudioGraphIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -64,5 +61,5 @@ class AudioIODataset(AudioGraphIODataset):
       shape, dtype, _ = core_ops.io_audio_readable_spec(resource)
       shape = tf.TensorShape(shape)
       dtype = tf.as_dtype(dtype.numpy())
-      super(AudioIODataset, self).__init__(
+      super().__init__(
           resource, shape, dtype, internal=internal)

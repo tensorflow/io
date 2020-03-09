@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """IOLayer"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.experimental import text_io_layer_ops
@@ -30,7 +27,7 @@ class IOLayer(tf.keras.layers.Layer):
   #=============================================================================
   def __init__(self):
     """Obtain an identity layer to be used with tf.keras."""
-    super(IOLayer, self).__init__(trainable=False)
+    super().__init__(trainable=False)
 
   def call(self, inputs):
     return tf.identity(inputs)

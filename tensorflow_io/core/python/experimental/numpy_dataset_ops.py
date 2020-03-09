@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """NumpyIODataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import numpy as np
 
@@ -63,7 +60,7 @@ class NumpyIODataset(tf.data.Dataset):
 
       self._dataset = dataset
       self._holder = [np.array(entry, copy=False) for entry in flatten]
-      super(NumpyIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):
@@ -156,7 +153,7 @@ class NumpyFileIODataset(tf.data.Dataset):
       dataset = dataset.unbatch()
 
       self._dataset = dataset
-      super(NumpyFileIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

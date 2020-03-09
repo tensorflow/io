@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Kinesis Dataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 
@@ -77,7 +74,7 @@ class KinesisIODataset(tf.data.Dataset):
       dataset = dataset.unbatch()
 
       self._dataset = dataset
-      super(KinesisIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

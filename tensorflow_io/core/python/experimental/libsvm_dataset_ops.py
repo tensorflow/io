@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """LibSVMDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.experimental.text_ops import decode_libsvm
@@ -41,7 +38,7 @@ class LibSVMIODataset(tf.data.Dataset):
           lambda e: decode_libsvm(e, num_features, dtype, label_dtype))
 
       self._dataset = dataset
-      super(LibSVMIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

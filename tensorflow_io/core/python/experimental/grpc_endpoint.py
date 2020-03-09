@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """GRPCEndpoint."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import sys
@@ -43,7 +40,7 @@ class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
     port = self._grpc_server.add_insecure_port("localhost:0")
     self._endpoint = "localhost:"+str(port)
     self._data = data
-    super(GRPCEndpoint, self).__init__()
+    super().__init__()
     endpoint_pb2_grpc.add_GRPCEndpointServicer_to_server(
         self, self._grpc_server)
 

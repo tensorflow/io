@@ -23,9 +23,6 @@ to read data the underlying Cloud BigQuery dataset.
 For background on Cloud BigQuery, see: https://cloud.google.com/bigquery .
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import collections
 from operator import itemgetter
@@ -262,7 +259,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         output_types=output_types,
         avro_schema=avro_schema,
         stream=stream)
-    super(_BigQueryDataset, self).__init__(variant_tensor)
+    super().__init__(variant_tensor)
 
   @property
   def element_spec(self):

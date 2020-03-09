@@ -14,9 +14,6 @@
 # ==============================================================================
 """Tests for tfio.IOTensor.from_avro."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import numpy as np
@@ -37,7 +34,7 @@ def test_avro():
   schema_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_avro", "cpx.json")
-  with open(schema_filename, 'r') as f:
+  with open(schema_filename) as f:
     schema = f.read()
 
   avro = tfio.IOTensor.from_avro(filename, schema)
@@ -88,7 +85,7 @@ def test_avro_partition():
   schema_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_avro", "cpx.json")
-  with open(schema_filename, 'r') as f:
+  with open(schema_filename) as f:
     schema = f.read()
   for _ in [ # capacity
       1, 2, 3,
@@ -125,7 +122,7 @@ def test_avro_dataset_partition():
   schema_filename = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_avro", "cpx.json")
-  with open(schema_filename, 'r') as f:
+  with open(schema_filename) as f:
     schema = f.read()
   for _ in [1, 2, 3, 11, 12, 13, 50, 51, 100]: # capacity
     re_dataset = tfio.IODataset.from_avro(filename, schema, ['re'])
