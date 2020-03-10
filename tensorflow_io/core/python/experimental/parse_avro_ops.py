@@ -39,12 +39,26 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
         features,
         [parsing_ops.VarLenFeature, parsing_ops.SparseFeature, parsing_ops.FixedLenFeature])
 
-    reader_schema_tensor = ops.convert_to_tensor(reader_schema, dtypes.string, name="reader_schema")
+    #reader_schema_tensor = ops.convert_to_tensor(reader_schema, dtypes.string, name="reader_schema")
 
     outputs = _parse_avro(
-        serialized, reader_schema_tensor, avro_names, sparse_keys, sparse_types, dense_keys,
+        serialized, reader_schema, avro_names, sparse_keys, sparse_types, dense_keys,
         dense_types, dense_defaults, dense_shapes, name)
     return parsing_ops._construct_sparse_tensors_for_sparse_features(features, outputs)
+
+
+def _prepend_none_dimension(features):
+    if features:
+        modified_features = dict(features)  # Create a copy to modify
+        for key, feature in features.items():
+            if isinstance(feature, parsing_ops.FixedLenFeature):
+                modified_features[key] = parsing_ops.FixedLenFeature(
+                    [None] + list(feature.shape),
+                    feature.dtype,
+                    feature.default_value)
+        return modified_features
+    else:
+        return features
 
 
 def _parse_avro(serialized,
@@ -102,6 +116,7 @@ def _parse_avro(serialized,
             dense_defaults=dense_defaults_vec,
             sparse_keys=sparse_keys,
             sparse_types=sparse_types,
+            num_sparse=len(sparse_keys),
             dense_keys=dense_keys,
             dense_shapes=dense_shapes,
             name=name)
