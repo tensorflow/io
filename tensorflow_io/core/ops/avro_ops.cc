@@ -64,38 +64,55 @@ void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
 REGISTER_OP("IO>ParseAvro")
     .Input("serialized: string")
-    .Input("reader_schema: string")
     .Input("names: string")
-    .Input("sparse_keys: num_sparse * string")
-    .Input("dense_keys: num_dense * string")
     .Input("dense_defaults: dense_types")
     .Output("sparse_indices: num_sparse * int64")
     .Output("sparse_values: sparse_types")
     .Output("sparse_shapes: num_sparse * int64")
     .Output("dense_values: dense_types")
-    .Attr("num_sparse: int >= 0")  // Inferred from sparse_keys
-    .Attr("num_dense: int >= 0")   // Inferred from dense_keys
+    .Attr("num_sparse: int >= 0")
+    .Attr("reader_schema: string")
+    .Attr("sparse_keys: list(string) >= 0")
+    .Attr("dense_keys: list(string) >= 0")
     .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("dense_shapes: list(shape) >= 0")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
 
-      int64 num_dense;
-      int64 num_sparse;
+      size_t num_dense;
+      size_t num_sparse;
+      int64 num_sparse_from_user;
       std::vector<DataType> sparse_types;
       std::vector<DataType> dense_types;
+      std::vector<string> sparse_keys;
+      std::vector<string> dense_keys;
+
       std::vector<PartialTensorShape> dense_shapes;
 
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_types", &sparse_types));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_types", &dense_types));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
 
-      num_dense = dense_types.size();
-      num_sparse = sparse_types.size();
+      TF_RETURN_IF_ERROR(c->GetAttr("sparse_keys", &sparse_keys));
+      TF_RETURN_IF_ERROR(c->GetAttr("dense_keys", &dense_keys));
 
-      // Add input checking
-      if (static_cast<size_t>(num_dense) != dense_shapes.size()) {
-        return errors::InvalidArgument("len(dense_keys) != len(dense_shapes)");
+      TF_RETURN_IF_ERROR(c->GetAttr("num_sparse", &num_sparse_from_user));
+
+      num_sparse = sparse_types.size();
+      num_dense = dense_types.size();
+
+      // Check input parameters
+      if (num_sparse != static_cast<size_t>(num_sparse_from_user)) {
+        return errors::InvalidArgument("len(sparse_types) != num_sparse");
+      }
+      if (num_sparse != sparse_keys.size()) {
+        return errors::InvalidArgument("len(sparse_types) != len(sparse_keys)");
+      }
+      if (num_dense != dense_keys.size()) {
+        return errors::InvalidArgument("len(dense_types) != len(dense_keys)");
+      }
+      if (num_dense != dense_shapes.size()) {
+        return errors::InvalidArgument("len(dense_types) != len(dense_shapes)");
       }
       if (num_dense > std::numeric_limits<int32>::max()) {
         return errors::InvalidArgument("num_dense too large");
@@ -108,11 +125,12 @@ REGISTER_OP("IO>ParseAvro")
       }
 
       // Log schema if the user provided one at op kernel construction
-/*      string schema;
-      TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &schema));
-      if (schema.empty()) {
-        return errors::InvalidArgument("must provide non empty reader_schema");
-      }*/
+      string reader_schema_str;
+      TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &reader_schema_str));
+      if (reader_schema_str.empty()) {
+        return errors::InvalidArgument("User must provide a valid reader_schema_str, got ",
+            reader_schema_str);
+      }
 
       ShapeHandle input;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &input));

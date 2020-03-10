@@ -303,11 +303,9 @@ Status ParseAvro(const AvroParserConfig& config,
     ValueStoreUniquePtr value_store;
     TF_RETURN_IF_ERROR(MergeAs(value_store, values, dense.dtype));
 
-    VLOG(5) << "Merged value store" << value_store->ToString(10);
-
+    VLOG(5) << "Merged value store: " << value_store->ToString(10);
 
     size_t batch_size = serialized.size();
-
     TensorShape default_shape;
     Tensor default_value;
     // If we can resolve the dense shape add batch, otherwise keep things as they are
@@ -362,29 +360,47 @@ Status ParseAvro(const AvroParserConfig& config,
 class ParseAvroOp : public OpKernel {
  public:
   explicit ParseAvroOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+    // Note, most sanity checks about lengths are done in the op definition
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_types", &sparse_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_types", &dense_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_shapes", &dense_shapes_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("num_sparse", &num_sparse_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("num_dense", &num_dense_));
+
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_keys", &sparse_keys_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_keys", &dense_keys_));
+
+    num_sparse_ = sparse_keys_.size();
+    num_dense_ = dense_keys_.size();
+
     variable_length_.reserve(dense_shapes_.size());
     for (int d = 0; d < dense_shapes_.size(); ++d) {
         variable_length_[d] = dense_shapes_[d].dims() > 1 && dense_shapes_[d].dim_size(0) == -1;
     }
+
+    string reader_schema_str;
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("reader_schema", &reader_schema_str));
+
+    string error;
+    std::istringstream ss(reader_schema_str);
+    if (!avro::compileJsonSchema(ss, reader_schema_, error)) {
+        OP_REQUIRES_OK(ctx, errors::InvalidArgument("Avro schema error: ", error));
+    }
+
+    // Handle namespace
+    string avro_namespace(reader_schema_.root()->hasName() ? reader_schema_.root()->name().ns() : "");
+    VLOG(3) << "Retrieved namespace" << avro_namespace;
+
+    OP_REQUIRES_OK(ctx, AvroParserTree::Build(&parser_tree_, avro_namespace,
+        CreateKeysAndTypes()));
   }
 
   void Compute(OpKernelContext* ctx) override {
     const Tensor* serialized;
-    const Tensor* reader_schema_t;
-    OpInputList dense_keys;
-    OpInputList sparse_keys;
     OpInputList dense_defaults;
 
     // Grab the input list arguments.
     OP_REQUIRES_OK(ctx, ctx->input("serialized", &serialized));
-    OP_REQUIRES_OK(ctx, ctx->input("reader_schema", &reader_schema_t));
-    OP_REQUIRES_OK(ctx, ctx->input_list("dense_keys", &dense_keys));
-    OP_REQUIRES_OK(ctx, ctx->input_list("sparse_keys", &sparse_keys));
     OP_REQUIRES_OK(ctx, ctx->input_list("dense_defaults", &dense_defaults));
 
     std::vector<string> dense_keys_t(num_dense_);
@@ -428,7 +444,7 @@ class ParseAvroOp : public OpKernel {
     for (int d = 0; d < num_dense_; ++d) {
       VLOG(7) << "Dense: Creating parser key " << dense_keys_t[d] << " with type " << DataTypeString(dense_types_[d]);
 
-      config.dense.push_back({dense_keys_t[d], dense_types_[d],
+      config.dense.push_back({dense_keys_[d], dense_types_[d],
                               dense_shapes_[d], std::move(dense_defaults[d]),
                               variable_length_[d]});
     }
@@ -444,25 +460,14 @@ class ParseAvroOp : public OpKernel {
         OP_REQUIRES_OK(ctx, errors::InvalidArgument("Avro schema error: ", error));
     }
 
-    // Handle namespace
-    string avro_namespace(reader_schema.root()->hasName() ? reader_schema.root()->name().ns() : "");
-    VLOG(3) << "Retrieved namespace" << avro_namespace;
-
-    AvroParserTree parser_tree;
-    OP_REQUIRES_OK(ctx, AvroParserTree::Build(&parser_tree, avro_namespace,
-        CreateKeysAndTypes(config)));
-
-
     auto serialized_t = serialized->flat<string>();
     gtl::ArraySlice<string> slice(serialized_t.data(), serialized_t.size());
-
-    // OP_REQUIRES_OK(ctx, errors::InvalidArgument("Stopped here"));
 
     AvroResult result;
     OP_REQUIRES_OK(
         ctx,
         ParseAvro(
-            config, parser_tree, reader_schema, slice,
+            config, parser_tree_, reader_schema_, slice,
             ctx->device()->tensorflow_cpu_worker_threads()->workers, &result));
 
     OpOutputList dense_values;
@@ -484,25 +489,26 @@ class ParseAvroOp : public OpKernel {
   }
 
  protected:
+  AvroParserTree parser_tree_;
   std::vector<DataType> sparse_types_;
   std::vector<DataType> dense_types_;
+  std::vector<string> sparse_keys_;
+  std::vector<string> dense_keys_;
   std::vector<PartialTensorShape> dense_shapes_;
   std::vector<bool> variable_length_;
   int64 num_dense_;
   int64 num_sparse_;
 
  private:
-  static std::vector<std::pair<string, DataType>> CreateKeysAndTypes(
-    const AvroParserConfig& config) {
+  std::vector<std::pair<string, DataType>> CreateKeysAndTypes() {
 
     std::vector<std::pair<string, DataType>> keys_and_types;
-    for (const AvroParserConfig::Sparse& sparse : config.sparse) {
-      keys_and_types.push_back({sparse.feature_name, sparse.dtype});
+    for (size_t d = 0; d < num_sparse_; ++d) {
+        keys_and_types.push_back({sparse_keys_[d], sparse_types_[d]});
     }
-    for (const AvroParserConfig::Dense& dense : config.dense) {
-      keys_and_types.push_back({dense.feature_name, dense.dtype});
+    for (size_t d = 0; d < num_dense_; ++d) {
+        keys_and_types.push_back({dense_keys_[d], dense_types_[d]});
     }
-
     return keys_and_types;
   }
 };
