@@ -134,10 +134,11 @@ class MP4ReadableResource : public AudioReadableResourceBase {
         }) {}
   ~MP4ReadableResource() {}
 
-  Status Init(const string& input) override {
+  Status Init(const string& filename, const void* optional_memory,
+              const size_t optional_length) override {
     mutex_lock l(mu_);
-    const string& filename = input;
-    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
+    file_.reset(new SizedRandomAccessFile(env_, filename, optional_memory,
+                                          optional_length));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     stream_.reset(new MP4Stream(file_.get(), file_size_));
@@ -210,7 +211,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
       }
     }
 
-    return errors::InvalidArgument("unable to find audio track for ", input);
+    return errors::InvalidArgument("unable to find audio track for ", filename);
   }
 
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
@@ -339,10 +340,11 @@ class MP4ReadableResource : public AudioReadableResourceBase {
 }  // namespace
 
 Status MP4ReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
   resource.reset(new MP4ReadableResource(env));
-  Status status = resource->Init(input);
+  Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);
   }

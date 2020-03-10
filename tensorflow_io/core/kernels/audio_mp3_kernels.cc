@@ -60,10 +60,11 @@ class MP3ReadableResource : public AudioReadableResourceBase {
         }) {}
   ~MP3ReadableResource() {}
 
-  Status Init(const string& input) override {
+  Status Init(const string& filename, const void* optional_memory,
+              const size_t optional_length) override {
     mutex_lock l(mu_);
-    const string& filename = input;
-    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
+    file_.reset(new SizedRandomAccessFile(env_, filename, optional_memory,
+                                          optional_length));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     stream_.reset(new MP3Stream(file_.get(), file_size_));
@@ -147,10 +148,11 @@ class MP3ReadableResource : public AudioReadableResourceBase {
 }  // namespace
 
 Status MP3ReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
   resource.reset(new MP3ReadableResource(env));
-  Status status = resource->Init(input);
+  Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);
   }

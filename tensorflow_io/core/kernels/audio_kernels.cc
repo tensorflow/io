@@ -26,29 +26,40 @@ class AudioReadableResource : public AudioReadableResourceBase {
   AudioReadableResource(Env* env) : env_(env), resource_(nullptr) {}
   ~AudioReadableResource() {}
 
-  Status Init(const string& input) override {
+  Status Init(const string& filename, const void* optional_memory,
+              const size_t optional_length) override {
     mutex_lock l(mu_);
-    std::unique_ptr<tensorflow::RandomAccessFile> file;
-    TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(input, &file));
+    std::unique_ptr<SizedRandomAccessFile> file;
+    file.reset(new SizedRandomAccessFile(env_, filename, optional_memory,
+                                         optional_length));
+    // Note: check file size is the indicator that the file is valid, as file
+    // could be filename only or filename + buffer(memory/length)
+    uint64 file_size;
+    TF_RETURN_IF_ERROR(file->GetFileSize(&file_size));
     char header[8];
     StringPiece result;
     TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
     if (memcmp(header, "RIFF", 4) == 0) {
-      return WAVReadableResourceInit(env_, input, resource_);
+      return WAVReadableResourceInit(env_, filename, optional_memory,
+                                     optional_length, resource_);
     } else if (memcmp(header, "OggS", 4) == 0) {
-      return OggReadableResourceInit(env_, input, resource_);
+      return OggReadableResourceInit(env_, filename, optional_memory,
+                                     optional_length, resource_);
     } else if (memcmp(header, "fLaC", 4) == 0) {
-      return FlacReadableResourceInit(env_, input, resource_);
+      return FlacReadableResourceInit(env_, filename, optional_memory,
+                                      optional_length, resource_);
     }
-    Status status = MP3ReadableResourceInit(env_, input, resource_);
+    Status status = MP3ReadableResourceInit(env_, filename, optional_memory,
+                                            optional_length, resource_);
     if (status.ok()) {
       return status;
     }
     if (memcmp(&header[4], "ftyp", 4) == 0) {
       LOG(ERROR) << "MP4A file is not fully supported!";
-      return MP4ReadableResourceInit(env_, input, resource_);
+      return MP4ReadableResourceInit(env_, filename, optional_memory,
+                                     optional_length, resource_);
     }
-    return errors::InvalidArgument("unknown file type: ", input);
+    return errors::InvalidArgument("unknown file type: ", filename);
   }
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
     mutex_lock l(mu_);
@@ -85,7 +96,8 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+    OP_REQUIRES_OK(
+        context, resource_->Init(input_tensor->scalar<string>()(), nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -264,6 +276,60 @@ class AudioResampleOp : public OpKernel {
   int64 quality_;
 };
 
+class AudioDecodeWAVOp : public OpKernel {
+ public:
+  explicit AudioDecodeWAVOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+
+    const string& input = input_tensor->scalar<string>()();
+
+    std::unique_ptr<AudioReadableResourceBase> resource;
+    OP_REQUIRES_OK(context,
+                   WAVReadableResourceInit(env_, "memory", input.data(),
+                                           input.size(), resource));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
+                errors::InvalidArgument(
+                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
+                    DataTypeString(context->expected_output_dtype(0))));
+
+    PartialTensorShape provided_shape;
+    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
+                                shape_tensor->flat<int64>().data(),
+                                shape_tensor->NumElements(), &provided_shape));
+    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
+                errors::InvalidArgument(
+                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
+                    shape.DebugString()));
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(0, shape.dim_size(0),
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
                         AudioReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
@@ -273,6 +339,8 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
                         AudioResampleOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeWAV").Device(DEVICE_CPU),
+                        AudioDecodeWAVOp);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow
