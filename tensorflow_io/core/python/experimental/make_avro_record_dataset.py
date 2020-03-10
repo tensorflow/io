@@ -25,6 +25,7 @@ def make_avro_record_dataset(file_pattern,
                              features,
                              batch_size,
                              reader_schema,
+                             reader_buffer_size=None,
                              num_epochs=None,
                              shuffle=True,
                              shuffle_buffer_size=None,
@@ -43,6 +44,9 @@ def make_avro_record_dataset(file_pattern,
       batch_size: An int representing the number of records to combine
         in a single batch.
       reader_schema: The reader schema.
+      reader_buffer_size: (Optional.) An int specifying the readers buffer
+        size in By. If None (the default) will use the default value from
+        AvroRecordDataset.
       num_epochs: (Optional.) An int specifying the number of times this
         dataset is repeated.  If None (the default), cycles through the
         dataset forever. If set to None drops final batch.
@@ -82,8 +86,12 @@ def make_avro_record_dataset(file_pattern,
         # a constant for now.
         num_parallel_reads = 24
 
+    if reader_buffer_size is None:
+        reader_buffer_size = 1024*1024
+
     dataset = AvroRecordDataset(
-        files, num_parallel_reads=num_parallel_reads,
+        files, buffer_size=reader_buffer_size,
+        num_parallel_reads=num_parallel_reads,
         reader_schema=reader_schema)
 
     if shuffle_buffer_size is None:
