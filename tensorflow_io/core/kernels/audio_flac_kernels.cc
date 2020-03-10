@@ -171,10 +171,11 @@ class FlacReadableResource : public AudioReadableResourceBase {
         }) {}
   ~FlacReadableResource() {}
 
-  Status Init(const string& input) override {
+  Status Init(const string& filename, const void* optional_memory,
+              const size_t optional_length) override {
     mutex_lock l(mu_);
-    const string& filename = input;
-    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
+    file_.reset(new SizedRandomAccessFile(env_, filename, optional_memory,
+                                          optional_length));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     decoder_.reset(FLAC__stream_decoder_new());
@@ -264,10 +265,11 @@ class FlacReadableResource : public AudioReadableResourceBase {
 }  // namespace
 
 Status FlacReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
   resource.reset(new FlacReadableResource(env));
-  Status status = resource->Init(input);
+  Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);
   }
