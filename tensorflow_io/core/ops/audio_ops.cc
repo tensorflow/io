@@ -54,6 +54,20 @@ REGISTER_OP("IO>AudioReadableRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioInfo")
+    .Input("input: string")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .Output("rate: int64")
+    .Output("encoding: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({2}));
+      c->set_output(1, c->Scalar());
+      c->set_output(2, c->Scalar());
+      c->set_output(3, c->Scalar());
+      return Status::OK();
+    });
+
 REGISTER_OP("IO>AudioResample")
     .Input("input: T")
     .Input("rate_in: int64")

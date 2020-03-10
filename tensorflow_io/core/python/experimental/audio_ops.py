@@ -18,6 +18,22 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import core_ops
 
+def info(input, name=None): # pylint: disable=redefined-builtin
+  """Gets metadata from content of an audio file.
+
+  Args:
+    input: A string `Tensor` of the audio input.
+    name: A name for the operation (optional).
+
+  Returns:
+    shape: The shape `[samples, channels]` of the audio.
+    dtype: The dtype of the audio.
+    rate: The sample rate.
+    encoding: The format of the audio (e.g., "wav").
+  """
+  shape, dtype, rate, encoding = core_ops.io_audio_info(input, name=name)
+  return shape, dtype, rate, encoding
+
 def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=redefined-builtin
   """Resample audio.
 

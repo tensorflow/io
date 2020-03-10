@@ -27,6 +27,25 @@ def fixture_lookup_func(request):
     return request.getfixturevalue(name)
   return _fixture_lookup
 
+@pytest.fixture(name="info", scope="module")
+def fixture_info():
+  """fixture_info"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  content = tf.io.read_file(path)
+
+  shape = tf.constant([14336, 2], tf.int64)
+  dtype = tf.constant(tf.int16.as_datatype_enum, tf.int64)
+  rate = tf.constant(44100, tf.int64)
+  encoding = tf.constant(b"wav", tf.string)
+
+  args = content
+  func = lambda e: tfio.experimental.audio.info(content)
+  expected = (shape, dtype, rate, encoding)
+
+  return args, func, expected
+
 @pytest.fixture(name="resample", scope="module")
 def fixture_resample():
   """fixture_resample"""
@@ -73,10 +92,12 @@ def fixture_decode_wav():
 @pytest.mark.parametrize(
     ("io_data_fixture"),
     [
+        pytest.param("info"),
         pytest.param("resample"),
         pytest.param("decode_wav"),
     ],
     ids=[
+        "info",
         "resample",
         "decode_wav",
     ],
@@ -86,16 +107,23 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
   args, func, expected = fixture_lookup(io_data_fixture)
 
   entries = func(args)
-  assert np.array_equal(entries, expected)
+  if isinstance(entries, tuple):
+    assert len(entries) == len(expected)
+    for (entry, expect) in zip(list(entries), list(expected)):
+      assert np.array_equal(entry, expect)
+  else:
+    assert np.array_equal(entries, expected)
 
 # A tf.data pipeline runs in graph mode and shape inference is invoked.
 @pytest.mark.parametrize(
     ("io_data_fixture"),
     [
+        pytest.param("info"),
         pytest.param("resample"),
         pytest.param("decode_wav"),
     ],
     ids=[
+        "info",
         "resample",
         "decode_wav",
     ],
@@ -109,4 +137,9 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
   entries = list(dataset)
   assert len(entries) == 1
   entries = entries[0]
-  assert np.array_equal(entries, expected)
+  if isinstance(entries, tuple):
+    assert len(entries) == len(expected)
+    for (entry, expect) in zip(list(entries), list(expected)):
+      assert np.array_equal(entry, expect)
+  else:
+    assert np.array_equal(entries, expected)

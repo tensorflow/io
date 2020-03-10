@@ -186,6 +186,56 @@ class AudioReadableReadOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
+class AudioInfoOp : public OpKernel {
+ public:
+  explicit AudioInfoOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const string& input = input_tensor->scalar<string>()();
+
+    // TODO: expand to all supported types
+    std::unique_ptr<AudioReadableResourceBase> resource;
+    OP_REQUIRES_OK(context,
+                   WAVReadableResourceInit(env_, "memory", input.data(),
+                                           input.size(), resource));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    Tensor* shape_tensor = nullptr;
+    OP_REQUIRES_OK(
+        context, context->allocate_output(0, TensorShape({2}), &shape_tensor));
+    shape_tensor->flat<int64>()(0) = shape.dim_size(0);
+    shape_tensor->flat<int64>()(1) = shape.dim_size(1);
+
+    Tensor* dtype_tensor = nullptr;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(1, TensorShape({}), &dtype_tensor));
+    dtype_tensor->scalar<int64>()() = dtype;
+
+    Tensor* rate_tensor = nullptr;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(2, TensorShape({}), &rate_tensor));
+    rate_tensor->scalar<int64>()() = rate;
+
+    Tensor* encoding_tensor = nullptr;
+    OP_REQUIRES_OK(context, context->allocate_output(3, TensorShape({}),
+                                                     &encoding_tensor));
+    encoding_tensor->scalar<string>()() = "wav";
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
 class AudioResampleOp : public OpKernel {
  public:
   explicit AudioResampleOp(OpKernelConstruction* context) : OpKernel(context) {
@@ -337,6 +387,7 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
                         AudioReadableReadOp);
 
+REGISTER_KERNEL_BUILDER(Name("IO>AudioInfo").Device(DEVICE_CPU), AudioInfoOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
                         AudioResampleOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeWAV").Device(DEVICE_CPU),
