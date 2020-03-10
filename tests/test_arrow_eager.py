@@ -244,6 +244,38 @@ class ArrowIOTensorTest(ArrowTestBase):
     iot = IOTensor.from_arrow(table)
     self.run_test_case(iot, truth_data, table.column_names)
 
+  def test_arrow_io_dataset_map_from_file(self):
+    """test_arrow_io_dataset_map_from_file"""
+    column = 'a'
+    dtype = dtypes.int64
+    column_dtype = self.get_arrow_type(dtype, False)
+    arr = pa.array(list(range(100)), column_dtype)
+    table = pa.Table.from_arrays([arr], [column])
+    spec = {column: dtype}
+
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      with pa.RecordBatchFileWriter(f.name, table.schema) as writer:
+        for batch in table.to_batches():
+          writer.write_batch(batch)
+
+    def from_file(_):
+      reader = pa.RecordBatchFileReader(f.name)
+      t = reader.read_all()
+      tio = IOTensor.from_arrow(t, spec=spec)
+      return tio(column).to_tensor()
+
+    num_iters = 2
+    ds = tf.data.Dataset.range(num_iters).map(from_file)
+    expected = table[column].to_pylist()
+
+    iter_count = 0
+    for result in ds:
+      npt.assert_array_equal(result, expected)
+      iter_count += 1
+
+    self.assertEqual(iter_count, num_iters)
+    os.unlink(f.name)
+
 
 class ArrowDatasetTest(ArrowTestBase):
   """ArrowDatasetTest"""
