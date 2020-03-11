@@ -33,6 +33,7 @@ namespace {
 class ArrowReadableResourceBase : public ResourceBase {
  public:
   virtual Status Init(const std::shared_ptr<arrow::Table>& table) = 0;
+  virtual int32 GetColumnIndex(const string& column_name) = 0;
   virtual Status Spec(int32 column_index,
                       PartialTensorShape* shape,
                       DataType* dtype) = 0;
@@ -51,6 +52,11 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
     mutex_lock l(mu_);
     table_ = table;
     return Status::OK();
+  }
+
+  int32 GetColumnIndex(const string& column_name) override {
+    mutex_lock l(mu_);
+    return table_->schema()->GetFieldIndex(column_name);
   }
 
   Status Spec(int32 column_index, PartialTensorShape* shape, DataType* dtype) override {
@@ -249,9 +255,20 @@ class ArrowReadableSpecOp : public OpKernel {
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
+    int32 column_index = -1;
     const Tensor* column_index_tensor;
-    OP_REQUIRES_OK(context, context->input("column_index", &column_index_tensor));
-    int32 column_index = column_index_tensor->scalar<int32>()();
+    Status status = context->input("column_index", &column_index_tensor);
+    if (status.ok()) {
+      column_index = column_index_tensor->scalar<int32>()();
+    }
+    const Tensor* column_name_tensor;
+    status = context->input("column_name", &column_name_tensor);
+    if (status.ok() && column_index < 0) {
+      const string column_name = column_name_tensor->scalar<tstring>()();
+      column_index = resource->GetColumnIndex(column_name);
+    }
+    OP_REQUIRES(context, column_index >= 0,
+                errors::InvalidArgument("Invalid column specified: ", column_index));
 
     PartialTensorShape shape;
     DataType dtype;
@@ -279,9 +296,20 @@ class ArrowReadableReadOp : public OpKernel {
                    GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
+    int32 column_index = -1;
     const Tensor* column_index_tensor;
-    OP_REQUIRES_OK(context, context->input("column_index", &column_index_tensor));
-    int32 column_index = column_index_tensor->scalar<int32>()();
+    Status status = context->input("column_index", &column_index_tensor);
+    if (status.ok()) {
+      column_index = column_index_tensor->scalar<int32>()();
+    }
+    const Tensor* column_name_tensor;
+    status = context->input("column_name", &column_name_tensor);
+    if (status.ok() && column_index < 0) {
+      const string column_name = column_name_tensor->scalar<tstring>()();
+      column_index = resource->GetColumnIndex(column_name);
+    }
+    OP_REQUIRES(context, column_index >= 0,
+                errors::InvalidArgument("Invalid column specified: ", column_index));
 
     const Tensor* shape_tensor;
     OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
@@ -509,7 +537,7 @@ class FeatherReadable : public IOReadableInterface {
       return errors::InvalidArgument("feather file is old: ", table->version(), " vs. ", ::arrow::ipc::feather::kFeatherVersion);
     }
 
-    for (int i = 0; i < table->columns()->size(); i++) {
+    for (size_t i = 0; i < table->columns()->size(); i++) {
       ::tensorflow::DataType dtype = ::tensorflow::DataType::DT_INVALID;
       switch (table->columns()->Get(i)->values()->type()) {
       case ::arrow::ipc::feather::fbs::Type::BOOL:
