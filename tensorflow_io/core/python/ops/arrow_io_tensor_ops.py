@@ -135,11 +135,18 @@ class _ArrowIOTensorComponentFunction():
 
 class ArrowBaseIOTensor(io_tensor_ops.BaseIOTensor):
   """ArrowBaseIOTensor"""
-  def __init__(self, shape, dtype, spec, function, internal=False):
+  def __init__(self,
+               shape,
+               dtype,
+               spec,
+               function,
+               arrow_data_refs,
+               internal=False):
     super().__init__(spec, function, internal=internal)
     self._shape = shape
     self._dtype = dtype
     self._spec = spec
+    self._arrow_data_refs = arrow_data_refs
 
   @property
   def spec(self):
@@ -156,6 +163,14 @@ class ArrowBaseIOTensor(io_tensor_ops.BaseIOTensor):
     """Returns the `dtype` of elements in the tensor."""
     return self._dtype
 
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    result = super().__getitem__(key)
+    if not tf.executing_eagerly():
+      # Insert refs into tf.Tensor result so data is valid until evaluated
+      result._arrow_data_refs = self._arrow_data_refs
+    return result
+
 
 class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
   """ArrowIOTensor"""
@@ -169,13 +184,15 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
                internal=False):
     with tf.name_scope("ArrowIOTensor") as scope:
 
-      # Hold reference to table and schema buffer for life of this op
-      self._table = table
-      self._schema_buffer = table.schema.serialize()
+      # Serialize the schema to send to the kernel
+      schema_buffer = table.schema.serialize()
+
+      # References to prevent data from being freed until op is evaluated
+      arrow_data_refs = [table, schema_buffer]
 
       # Get buffer addresses as long ints
-      schema_buffer_addr = self._schema_buffer.address
-      schema_buffer_size = self._schema_buffer.size
+      schema_buffer_addr = schema_buffer.address
+      schema_buffer_size = schema_buffer.size
       array_buffer_addrs, array_buffer_sizes, array_lengths = \
           _extract_table_arrays(table)
 
@@ -204,7 +221,8 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
               resource, column_index, shape, dtype)
           elements.append(
               ArrowBaseIOTensor(
-                  shape, dtype, spec, function, internal=internal))
+                  shape, dtype, spec, function, arrow_data_refs,
+                  internal=internal))
         spec = tuple([e.spec for e in elements])
       else:
         assert spec is not None
@@ -231,7 +249,8 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
               resource, col_to_idx[entry.name], shape, entry.dtype)
           elements.append(
               ArrowBaseIOTensor(
-                  shape, entry.dtype, entry, function, internal=internal))
+                  shape, entry.dtype, entry, function, arrow_data_refs,
+                  internal=internal))
         spec = tuple(entries)
 
       super().__init__(
