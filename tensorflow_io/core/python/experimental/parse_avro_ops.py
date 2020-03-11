@@ -130,6 +130,25 @@ def _parse_avro(serialized,
         return dict(zip(sparse_keys + dense_keys, sparse_tensors + dense_values))
 
 
+# Adjusted from
+# https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/ops/parsing_ops.py
+# _prepend_none_dimension with the following changes
+# - Removed the warning
+# - Switched this to FixedLenFeature -- instead of FixedLenSequenceFeature
+def _prepend_none_dimension(features):
+    if features:
+        modified_features = dict(features)  # Create a copy to modify
+        for key, feature in features.items():
+            if isinstance(feature, parsing_ops.FixedLenFeature):
+                modified_features[key] = parsing_ops.FixedLenFeature(
+                    [None] + list(feature.shape),
+                    feature.dtype,
+                    feature.default_value)
+        return modified_features
+    else:
+        return features
+
+
 def _build_keys_for_sparse_features(features):
     """
     Builds the fully qualified names for keys of sparse features.
