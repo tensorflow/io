@@ -77,7 +77,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
     for (int64 i = 0; i < input_tensor->NumElements(); i++) {
-        input.push_back(input_tensor->flat<string>()(i));
+        input.push_back(input_tensor->flat<tstring>()(i));
     }
 
     std::vector<string> metadata;

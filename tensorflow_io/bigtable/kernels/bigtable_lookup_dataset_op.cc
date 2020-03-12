@@ -31,8 +31,8 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
     OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 1), &table));
     core::ScopedUnref scoped_unref(table);
 
-    std::vector<string> column_families;
-    std::vector<string> columns;
+    std::vector<tstring> column_families;
+    std::vector<tstring> columns;
     OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "column_families",
                                                     &column_families));
     OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "columns", &columns));
