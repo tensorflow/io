@@ -91,7 +91,7 @@ class EncodeBmpOp : public OpKernel {
     Tensor* output_tensor = nullptr;
     OP_REQUIRES_OK(
         context, context->allocate_output(0, TensorShape({}), &output_tensor));
-    output_tensor->scalar<string>()() = buffer;
+    output_tensor->scalar<tstring>()() = buffer;
   }
 
  private:

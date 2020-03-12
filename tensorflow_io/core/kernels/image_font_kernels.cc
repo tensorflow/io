@@ -160,7 +160,7 @@ class DrawBoundingBoxesV3Op : public OpKernel {
 
         texts.reserve(texts_tensor.NumElements());
         for (int64 i = 0; i < texts_tensor.NumElements(); ++i) {
-          texts.emplace_back(texts_tensor.flat<string>()(i));
+          texts.emplace_back(texts_tensor.flat<tstring>()(i));
         }
         OP_REQUIRES_OK(context, InitializeFreeTypeLibrary());
         OP_REQUIRES(context,

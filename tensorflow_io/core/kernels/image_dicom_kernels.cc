@@ -89,7 +89,7 @@ class DecodeDICOMImageOp : public OpKernel {
                                 "to be scalar, but had shape: ",
                                 in_contents.shape().DebugString()));
 
-    const auto in_contents_scalar = in_contents.scalar<string>()();
+    const auto in_contents_scalar = in_contents.scalar<tstring>()();
 
     // Load Dicom Image
     DcmInputBufferStream data_buf;
@@ -279,7 +279,7 @@ class DecodeDICOMDataOp : public OpKernel {
                                         "tensor to be scalar, but had shape: ",
                                         in_contents.shape().DebugString()));
 
-    const auto in_contents_scalar = in_contents.scalar<string>()();
+    const auto in_contents_scalar = in_contents.scalar<tstring>()();
 
     const Tensor *in_tags;
     OP_REQUIRES_OK(context, context->input("tags", &in_tags));
@@ -290,7 +290,7 @@ class DecodeDICOMDataOp : public OpKernel {
     OP_REQUIRES_OK(context, context->allocate_output(0, in_tags->shape(),
                                                      &out_tag_values));
 
-    auto out_tag_values_flat = out_tag_values->flat<string>();
+    auto out_tag_values_flat = out_tag_values->flat<tstring>();
 
     DcmInputBufferStream dataBuf;
     dataBuf.setBuffer(in_contents_scalar.data(), in_contents_scalar.length());
