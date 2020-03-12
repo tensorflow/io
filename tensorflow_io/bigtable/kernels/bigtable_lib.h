@@ -29,7 +29,7 @@ namespace tensorflow {
 Status GrpcStatusToTfStatus(const ::grpc::Status& status);
 Status GcpStatusToTfStatus(const ::google::cloud::Status& status);
 
-string RegexFromStringSet(const std::vector<string>& strs);
+string RegexFromStringSet(const std::vector<tstring>& strs);
 
 class BigtableClientResource : public ResourceBase {
  public:
