@@ -450,31 +450,31 @@ cc_library(
     alwayslink = 1,
 )
 
-#cc_library(
-#    name = "kafka_ops",
-#    srcs = [
-#        "kernels/kafka_kernels.cc",
-#        "kernels/kafka_kernels_deprecated.cc",
-#        "ops/kafka_ops.cc",
-#        "ops/kafka_ops_deprecated.cc",
-#    ],
-#    copts = tf_io_copts(),
-#    linkstatic = True,
-#    deps = [
-#        "//tensorflow_io/core:dataset_ops",
-#        "//tensorflow_io/core:sequence_ops",
-#        "@avro",
-#        "@com_google_absl//absl/algorithm",
-#        "@com_google_absl//absl/container:inlined_vector",
-#        "@com_google_absl//absl/strings",
-#        "@com_google_absl//absl/types:optional",
-#        "@com_google_absl//absl/types:span",
-#        "@kafka",
-#        "@local_config_tf//:libtensorflow_framework",
-#        "@local_config_tf//:tf_header_lib",
-#    ],
-#    alwayslink = 1,
-#)
+cc_library(
+    name = "kafka_ops",
+    srcs = [
+        "kernels/kafka_kernels.cc",
+        "kernels/kafka_kernels_deprecated.cc",
+        "ops/kafka_ops.cc",
+        "ops/kafka_ops_deprecated.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@avro",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:inlined_vector",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+        "@kafka",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
 
 cc_library(
     name = "azfs_ops",
@@ -538,7 +538,7 @@ cc_binary(
         "//tensorflow_io/core:hdf5_ops",
         "//tensorflow_io/core:image_ops",
         "//tensorflow_io/core:json_ops",
-        #"//tensorflow_io/core:kafka_ops",
+        "//tensorflow_io/core:kafka_ops",
         "//tensorflow_io/core:kinesis_ops",
         "//tensorflow_io/core:lmdb_ops",
         "//tensorflow_io/core:numpy_ops",
@@ -549,8 +549,6 @@ cc_binary(
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/ignite:ignite_ops",
-        # "//tensorflow_io/kafka:kafka_ops",  TODO(fraudies): Enable once we are on a gcc 7.x
-        #"//tensorflow_io/kinesis:kinesis_ops",
         "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",

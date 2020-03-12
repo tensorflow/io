@@ -67,7 +67,6 @@ def write_config():
   try:
 
     with open(".bazelrc", "w") as bazel_rc:
-      bazel_rc.write('build --conlyopt="--std=gnu11"\n')
       for opt in opt_list:
         bazel_rc.write('build --copt="{}"\n'.format(opt))
       header_dir = include_list[0][2:]
