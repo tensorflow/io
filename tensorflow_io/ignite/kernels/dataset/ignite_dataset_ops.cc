@@ -71,8 +71,8 @@ class IgniteDatasetOp : public DatasetOpKernel {
   using DatasetOpKernel::DatasetOpKernel;
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
-    string cache_name = "";
-    string host = "";
+    tstring cache_name = "";
+    tstring host = "";
     int32 port = -1;
     bool local = false;
     int32 part = -1;
@@ -99,13 +99,13 @@ class IgniteDatasetOp : public DatasetOpKernel {
       cache_name = string(env_cache_name);
     } else {
       OP_REQUIRES_OK(
-          ctx, ParseScalarArgument<string>(ctx, "cache_name", &cache_name));
+          ctx, ParseScalarArgument<tstring>(ctx, "cache_name", &cache_name));
     }
 
     if (env_host) {
       host = string(env_host);
     } else {
-      OP_REQUIRES_OK(ctx, ParseScalarArgument<string>(ctx, "host", &host));
+      OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "host", &host));
     }
 
     if (env_port) {
