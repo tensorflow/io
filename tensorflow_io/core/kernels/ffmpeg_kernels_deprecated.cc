@@ -536,7 +536,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
       if (subtitles_.empty()) {
         return Status::OK();
       }
-      value->flat<string>()((*record_read)) = subtitles_.front();
+      value->flat<tstring>()((*record_read)) = subtitles_.front();
       subtitles_.pop_front();
       (*record_read)++;
     }
@@ -728,7 +728,7 @@ class FFmpegDecodeVideoOp : public OpKernel {
     const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
     SizedRandomAccessFile file(env_, "memory", input.data(), input.size());
 
     FFmpegInit();
