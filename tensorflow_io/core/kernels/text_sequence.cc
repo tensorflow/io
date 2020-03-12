@@ -77,7 +77,7 @@ class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {
     std::vector<string> destination;
     destination.reserve(destination_tensor->NumElements());
     for (int i = 0; i < destination_tensor->NumElements(); ++i) {
-      destination.push_back(destination_tensor->flat<string>()(i));
+      destination.push_back(destination_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(context, resource_->Initialize(destination));
