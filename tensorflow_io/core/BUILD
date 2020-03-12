@@ -569,6 +569,7 @@ cc_binary(
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/ignite:ignite_ops",
+        "@libarchive",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
