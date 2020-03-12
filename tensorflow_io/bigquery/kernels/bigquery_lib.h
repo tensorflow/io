@@ -245,7 +245,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
               ((*out_tensors)[i]).scalar<double>()() = 0.0;
               break;
             case DT_STRING:
-              ((*out_tensors)[i]).scalar<string>()() = "";
+              ((*out_tensors)[i]).scalar<tstring>()() = "";
               break;
             default:
               return errors::InvalidArgument(
