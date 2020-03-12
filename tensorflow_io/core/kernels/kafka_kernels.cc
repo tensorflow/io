@@ -209,8 +209,8 @@ class KafkaReadableResource : public ResourceBase {
     Tensor* key_tensor;
     TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor));
     for (size_t i = 0; i < message_value.size(); i++) {
-      message_tensor->flat<string>()(i) = message_value[i];
-      key_tensor->flat<string>()(i) = key_value[i];
+      message_tensor->flat<tstring>()(i) = message_value[i];
+      key_tensor->flat<tstring>()(i) = key_value[i];
     }
     return Status::OK();
   }
@@ -279,8 +279,8 @@ class KafkaReadableResource : public ResourceBase {
     Tensor* key_tensor;
     TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor));
     for (size_t i = 0; i < message_value.size(); i++) {
-      message_tensor->flat<string>()(i) = message_value[i];
-      key_tensor->flat<string>()(i) = key_value[i];
+      message_tensor->flat<tstring>()(i) = message_value[i];
+      key_tensor->flat<tstring>()(i) = key_value[i];
     }
     return Status::OK();
   }
@@ -379,7 +379,7 @@ class KafkaReadableInitOp : public ResourceOpKernel<KafkaReadableResource> {
 
     const Tensor* topic_tensor;
     OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
-    const string& topic = topic_tensor->scalar<string>()();
+    const string& topic = topic_tensor->scalar<tstring>()();
 
     const Tensor* partition_tensor;
     OP_REQUIRES_OK(context, context->input("partition", &partition_tensor));
@@ -393,7 +393,7 @@ class KafkaReadableInitOp : public ResourceOpKernel<KafkaReadableResource> {
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     std::vector<string> metadata;
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(context,
@@ -536,7 +536,7 @@ class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
 
     const Tensor* topic_tensor;
     OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
-    const string& topic = topic_tensor->scalar<string>()();
+    const string& topic = topic_tensor->scalar<tstring>()();
 
     const Tensor* partition_tensor;
     OP_REQUIRES_OK(context, context->input("partition", &partition_tensor));
@@ -550,7 +550,7 @@ class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     std::vector<string> metadata;
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(context,
@@ -645,8 +645,8 @@ class LayerKafkaResource : public ResourceBase {
     for (int64 i = 0; i < content.NumElements(); i++) {
       RdKafka::ErrorCode err = producer_->produce(
           topic_.get(), partition_, RdKafka::Producer::RK_MSG_COPY,
-          (void*)content.flat<string>()(i).data(),
-          content.flat<string>()(i).size(), NULL, NULL);
+          (void*)content.flat<tstring>()(i).data(),
+          content.flat<tstring>()(i).size(), NULL, NULL);
       if (!(err == RdKafka::ERR_NO_ERROR)) {
         return errors::Internal("Failed to produce message:",
                                 RdKafka::err2str(err));
@@ -696,10 +696,10 @@ class LayerKafkaInitOp : public ResourceOpKernel<LayerKafkaResource> {
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     std::vector<string> metadata;
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
-    OP_REQUIRES_OK(context, resource_->Init(topic_tensor->scalar<string>()(),
+    OP_REQUIRES_OK(context, resource_->Init(topic_tensor->scalar<tstring>()(),
                                             partition_tensor->scalar<int32>()(),
                                             metadata));
   }

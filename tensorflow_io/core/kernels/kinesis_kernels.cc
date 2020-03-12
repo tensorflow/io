@@ -378,12 +378,12 @@ class KinesisReadableResource : public ResourceBase {
       const auto& sequence =
           outcome.GetResult().GetRecords()[0].GetSequenceNumber();
       timestamp_tensor->flat<int64>()(0) = timestamp.Millis();
-      data_tensor->flat<string>()(0) =
+      data_tensor->flat<tstring>()(0) =
           string(reinterpret_cast<const char*>(data.GetUnderlyingData()),
                  data.GetLength());
-      partition_tensor->flat<string>()(0) =
+      partition_tensor->flat<tstring>()(0) =
           string(partition.c_str(), partition.size());
-      sequence_tensor->flat<string>()(0) =
+      sequence_tensor->flat<tstring>()(0) =
           string(sequence.c_str(), sequence.size());
       return Status::OK();
     } while (true);
@@ -418,13 +418,13 @@ class KinesisReadableInitOp : public ResourceOpKernel<KinesisReadableResource> {
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     std::vector<string> metadata;
     const Tensor* metadata_tensor;
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(context, resource_->Init(input, metadata));
