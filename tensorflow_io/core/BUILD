@@ -548,7 +548,6 @@ cc_binary(
         "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:azfs_ops",
-        "//tensorflow_io/core:core_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -573,6 +572,7 @@ cc_binary(
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "//tensorflow_io/bigtable:bigtable_ops",
+            "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
