@@ -26,8 +26,6 @@ import pytest
 
 import numpy.testing as npt
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 
 from tensorflow import dtypes # pylint: disable=wrong-import-position
 from tensorflow import errors # pylint: disable=wrong-import-position
@@ -35,10 +33,6 @@ from tensorflow import test   # pylint: disable=wrong-import-position
 
 import tensorflow_io.arrow as arrow_io # pylint: disable=wrong-import-position
 from tensorflow_io import IOTensor # pylint: disable=wrong-import-position
-
-if sys.version_info == (3, 4):
-  pytest.skip(
-      "pyarrow is not supported with python 3.4", allow_module_level=True)
 
 import pyarrow as pa  # pylint: disable=wrong-import-order,wrong-import-position
 from pyarrow.feather import write_feather # pylint: disable=wrong-import-order,wrong-import-position
@@ -775,6 +769,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.assertEqual(x, expected[0])
         expected.pop(0)
 
+  @pytest.mark.skipif(sys.version_info == (3, 5), reason="TODO")
   def test_tf_function(self):
     """ Test that an ArrowDataset can be used in tf.function call
     """
