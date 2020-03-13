@@ -39,7 +39,7 @@ class FastqOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const std::string& filename = filename_tensor.scalar<string>()();
+    const std::string& filename = filename_tensor.scalar<tstring>()();
 
     std::unique_ptr<FastqReader> reader =
         std::move(FastqReader::FromFile(
@@ -69,8 +69,8 @@ class FastqOp : public OpKernel {
                    context->allocate_output(1, output_shape, &quality_tensor));
 
     for (size_t i = 0; i < sequences.size(); i++) {
-      output_tensor->flat<string>()(i) = std::move(sequences[i]);
-      quality_tensor->flat<string>()(i) = std::move(quality[i]);
+      output_tensor->flat<tstring>()(i) = std::move(sequences[i]);
+      quality_tensor->flat<tstring>()(i) = std::move(quality[i]);
     }
   }
 };

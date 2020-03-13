@@ -91,7 +91,7 @@ class GRPCReadableInitOp : public ResourceOpKernel<GRPCReadableResource> {
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
 
     OP_REQUIRES_OK(context, resource_->Init(input));
   }

@@ -35,7 +35,7 @@ class DecodeJpegExifOp : public OpKernel {
                                                      &orientation_tensor));
     orientation_tensor->scalar<int64>()() = 0;
 
-    const string& input = input_tensor->scalar<string>()();
+    const tstring& input = input_tensor->scalar<tstring>()();
     easyexif::EXIFInfo result;
     if (result.parseFrom(input) == PARSE_EXIF_SUCCESS) {
       orientation_tensor->scalar<int64>()() = result.Orientation;

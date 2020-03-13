@@ -33,7 +33,7 @@ class DecodeWebPOp : public OpKernel {
     OP_REQUIRES(context, TensorShapeUtils::IsScalar(contents_tensor.shape()),
                 errors::InvalidArgument("contents must be scalar, got shape ",
                                         contents_tensor.shape().DebugString()));
-    const auto contents = contents_tensor.scalar<string>()();
+    auto contents = contents_tensor.scalar<tstring>()();
 
     WebPDecoderConfig config;
     WebPInitDecoderConfig(&config);

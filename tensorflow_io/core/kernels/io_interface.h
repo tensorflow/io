@@ -77,7 +77,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
     for (int64 i = 0; i < input_tensor->NumElements(); i++) {
-        input.push_back(input_tensor->flat<string>()(i));
+        input.push_back(input_tensor->flat<tstring>()(i));
     }
 
     std::vector<string> metadata;
@@ -85,7 +85,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     status = context->input("metadata", &metadata_tensor);
     if (status.ok()) {
       for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-        metadata.push_back(metadata_tensor->flat<string>()(i));
+        metadata.push_back(metadata_tensor->flat<tstring>()(i));
       }
     }
 
@@ -94,8 +94,8 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     const Tensor* memory_tensor;
     status = context->input("memory", &memory_tensor);
     if (status.ok()) {
-      memory_data = memory_tensor->scalar<string>()().data();
-      memory_size = memory_tensor->scalar<string>()().size();
+      memory_data = memory_tensor->scalar<tstring>()().data();
+      memory_size = memory_tensor->scalar<tstring>()().size();
     }
 
     OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
@@ -105,7 +105,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       OP_REQUIRES_OK(context, status);
       Tensor components_tensor(DT_STRING, TensorShape({static_cast<int64>(components.size())}));
       for (size_t i = 0; i < components.size(); i++) {
-        components_tensor.flat<string>()(i) = components[i];
+        components_tensor.flat<tstring>()(i) = components[i];
       }
       context->set_output(1, components_tensor);
     }

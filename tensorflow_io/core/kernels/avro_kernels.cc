@@ -73,13 +73,13 @@ class ListAvroColumnsOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& schema_tensor = context->input(1);
-    const string& schema = schema_tensor.scalar<string>()();
+    string schema = schema_tensor.scalar<tstring>()();
 
     const Tensor& memory_tensor = context->input(2);
-    const string& memory = memory_tensor.scalar<string>()();
+    string memory = memory_tensor.scalar<tstring>()();
 
     avro::ValidSchema reader_schema;
 
@@ -147,8 +147,8 @@ class ListAvroColumnsOp : public OpKernel {
     output_shape.AddDim(1);
 
     for (size_t i = 0; i < columns.size(); i++) {
-      columns_tensor->flat<string>()(i) = columns[i];
-      dtypes_tensor->flat<string>()(i) = dtypes[i];
+      columns_tensor->flat<tstring>()(i) = columns[i];
+      dtypes_tensor->flat<tstring>()(i) = dtypes[i];
     }
   }
  private:
@@ -164,16 +164,16 @@ class ReadAvroOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string& filename = filename_tensor.scalar<string>()();
+    string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& schema_tensor = context->input(1);
-    const string& schema = schema_tensor.scalar<string>()();
+    string schema = schema_tensor.scalar<tstring>()();
 
     const Tensor& column_tensor = context->input(2);
-    const string& column = column_tensor.scalar<string>()();
+    string column = column_tensor.scalar<tstring>()();
 
     const Tensor& memory_tensor = context->input(3);
-    const string& memory = memory_tensor.scalar<string>()();
+    string memory = memory_tensor.scalar<tstring>()();
 
     const Tensor& offset_tensor = context->input(4);
     const int64 offset = offset_tensor.scalar<int64>()();
@@ -261,16 +261,16 @@ class ReadAvroOp : public OpKernel {
       PROCESS_RECORD(double, double, DOUBLE_VALUE);
       break;
     case avro::AVRO_STRING:
-      PROCESS_RECORD(string, string, STRING_VALUE);
+      PROCESS_RECORD(tstring, string, STRING_VALUE);
       break;
     case avro::AVRO_BYTES:
-      PROCESS_RECORD(string, string, BYTES_VALUE);
+      PROCESS_RECORD(tstring, string, BYTES_VALUE);
       break;
     case avro::AVRO_FIXED:
-      PROCESS_RECORD(string, string, FIXED_VALUE);
+      PROCESS_RECORD(tstring, string, FIXED_VALUE);
       break;
     case avro::AVRO_ENUM:
-      PROCESS_RECORD(string, string, ENUM_VALUE);
+      PROCESS_RECORD(tstring, string, ENUM_VALUE);
       break;
     default:
       OP_REQUIRES(context, false, errors::InvalidArgument("unsupported data type: ", datum.value<avro::GenericRecord>().field(column).type()));
@@ -483,20 +483,20 @@ class AvroReadable : public IOReadableInterface {
             value->flat<double>()(item_index - element_start) = field.value<double>();
             break;
           case avro::AVRO_STRING:
-            value->flat<string>()(item_index - element_start) = field.value<string>();
+            value->flat<tstring>()(item_index - element_start) = field.value<string>();
             break;
           case avro::AVRO_BYTES: {
               const std::vector<uint8_t>& field_value = field.value<std::vector<uint8_t>>();
-              value->flat<string>()(item_index - element_start) = string((char *)&field_value[0], field_value.size());
+              value->flat<tstring>()(item_index - element_start) = string((char *)&field_value[0], field_value.size());
             }
             break;
           case avro::AVRO_FIXED: {
               const std::vector<uint8_t>& field_value = field.value<avro::GenericFixed>().value();
-              value->flat<string>()(item_index - element_start) = string((char *)&field_value[0], field_value.size());
+              value->flat<tstring>()(item_index - element_start) = string((char *)&field_value[0], field_value.size());
             }
             break;
           case avro::AVRO_ENUM:
-            value->flat<string>()(item_index - element_start) = field.value<avro::GenericEnum>().symbol();
+            value->flat<tstring>()(item_index - element_start) = field.value<avro::GenericEnum>().symbol();
             break;
           default:
             return errors::InvalidArgument("unsupported data type: ", field.type());

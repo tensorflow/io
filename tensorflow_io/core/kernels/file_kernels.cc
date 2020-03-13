@@ -33,7 +33,7 @@ class FileInfoOp : public OpKernel {
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
 
     uint64 size;
     OP_REQUIRES_OK(context, env_->GetFileSize(input, &size));
@@ -64,7 +64,7 @@ class FileInfoOp : public OpKernel {
     if ((buffer[3] & 0xE0) != 0) {
       return;
     }
-    compression_tensor->scalar<string>()() = "GZIP";
+    compression_tensor->scalar<tstring>()() = "GZIP";
   }
 
  private:
@@ -81,7 +81,7 @@ class FileReadOp : public OpKernel {
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     const Tensor* offset_tensor;
     OP_REQUIRES_OK(context, context->input("offset", &offset_tensor));
@@ -93,7 +93,7 @@ class FileReadOp : public OpKernel {
 
     const Tensor* compression_tensor;
     OP_REQUIRES_OK(context, context->input("compression", &compression_tensor));
-    const string& compression = compression_tensor->scalar<string>()();
+    const string& compression = compression_tensor->scalar<tstring>()();
 
     std::unique_ptr<tensorflow::RandomAccessFile> file;
     OP_REQUIRES_OK(context, env_->NewRandomAccessFile(input, &file));
@@ -113,13 +113,13 @@ class FileReadOp : public OpKernel {
 
     OP_REQUIRES_OK(context, stream->SkipNBytes(offset));
 
-    string value;
+    tstring value;
     OP_REQUIRES_OK(context, stream->ReadNBytes(length, &value));
 
     Tensor* value_tensor = nullptr;
     OP_REQUIRES_OK(context,
                    context->allocate_output(0, TensorShape({}), &value_tensor));
-    value_tensor->scalar<string>()() = value;
+    value_tensor->scalar<tstring>()() = value;
   }
 
  private:
@@ -143,7 +143,7 @@ class FileResource : public ResourceBase {
   Status Write(const Tensor& content) {
     mutex_lock l(mu_);
     for (int64 i = 0; i < content.NumElements(); i++) {
-      TF_RETURN_IF_ERROR(file_->Append(content.flat<string>()(i)));
+      TF_RETURN_IF_ERROR(file_->Append(content.flat<tstring>()(i)));
     }
     return Status::OK();
   }
@@ -177,7 +177,7 @@ class FileInitOp : public ResourceOpKernel<FileResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()()));
   }
   Status CreateResource(FileResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {

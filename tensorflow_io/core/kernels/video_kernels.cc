@@ -102,7 +102,7 @@ class VideoCaptureReadableResource : public ResourceBase {
     buffer.resize(bytes_);
     VideoCaptureNextFunction(context_.get(), (void*)&buffer[0],
                              static_cast<int64_t>(bytes_));
-    value_tensor->flat<string>()(0) = buffer;
+    value_tensor->flat<tstring>()(0) = buffer;
 
     return Status::OK();
   }
@@ -135,7 +135,7 @@ class VideoCaptureReadableInitOp
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     OP_REQUIRES_OK(context, resource_->Init(input));
   }

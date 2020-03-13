@@ -179,7 +179,7 @@ class ParquetReadable : public IOReadableInterface {
             return errors::InvalidArgument("null value in column: ", column); \
           } \
           for (int64_t index = 0; index < values_read; index++) { \
-            value->flat<string>()(row_to_read_start - element_start + index) = ByteArrayToString(value_p[index]); \
+            value->flat<tstring>()(row_to_read_start - element_start + index) = ByteArrayToString(value_p[index]); \
           } \
         }
 
@@ -197,7 +197,7 @@ class ParquetReadable : public IOReadableInterface {
             return errors::InvalidArgument("null value in column: ", column); \
           } \
           for (int64_t index = 0; index < values_read; index++) { \
-            value->flat<string>()(row_to_read_start - element_start + index) = string((const char*)value_p[index].ptr, len); \
+            value->flat<tstring>()(row_to_read_start - element_start + index) = string((const char*)value_p[index].ptr, len); \
           } \
         }
 

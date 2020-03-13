@@ -178,7 +178,7 @@ class CSVReadable : public IOReadableInterface {
         int64 curr_index = 0; \
         for (auto chunk : slice->chunks()) { \
           for (int64_t item = 0; item < chunk->length(); item++) { \
-            value->flat<string>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
+            value->flat<tstring>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
             curr_index++; \
           } \
         } \

@@ -127,9 +127,9 @@ class PrometheusReadableResource : public ResourceBase {
       jobs_.push_back(job);
       instances_.push_back(instance);
       names_.push_back(name);
-      metrics->tensor<string, 2>()(index, 0) = job;
-      metrics->tensor<string, 2>()(index, 1) = instance;
-      metrics->tensor<string, 2>()(index, 2) = name;
+      metrics->tensor<tstring, 2>()(index, 0) = job;
+      metrics->tensor<tstring, 2>()(index, 1) = instance;
+      metrics->tensor<tstring, 2>()(index, 2) = name;
     }
     return Status::OK();
   }
@@ -219,13 +219,13 @@ class PrometheusReadableInitOp
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
 
     std::vector<string> metadata;
     const Tensor* metadata_tensor;
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(
@@ -305,9 +305,9 @@ class PrometheusReadableReadOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("metrics", &metrics_tensor));
     std::vector<string> jobs, instances, names;
     for (int64 i = 0; i < metrics_tensor->NumElements() / 3; i++) {
-      jobs.push_back(metrics_tensor->tensor<string, 2>()(i, 0));
-      instances.push_back(metrics_tensor->tensor<string, 2>()(i, 1));
-      names.push_back(metrics_tensor->tensor<string, 2>()(i, 2));
+      jobs.push_back(metrics_tensor->tensor<tstring, 2>()(i, 0));
+      instances.push_back(metrics_tensor->tensor<tstring, 2>()(i, 1));
+      names.push_back(metrics_tensor->tensor<tstring, 2>()(i, 2));
     }
 
     OP_REQUIRES_OK(
@@ -345,11 +345,11 @@ class PrometheusScrapeOp : public OpKernel {
   void Compute(OpKernelContext* context) override {
     const Tensor* metric_tensor;
     OP_REQUIRES_OK(context, context->input("metric", &metric_tensor));
-    const string& metric = metric_tensor->scalar<string>()();
+    string metric = metric_tensor->scalar<tstring>()();
 
     const Tensor* endpoint_tensor;
     OP_REQUIRES_OK(context, context->input("endpoint", &endpoint_tensor));
-    const string& endpoint = endpoint_tensor->scalar<string>()();
+    string endpoint = endpoint_tensor->scalar<tstring>()();
 
     Tensor* timestamp_tensor = nullptr;
     OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}),

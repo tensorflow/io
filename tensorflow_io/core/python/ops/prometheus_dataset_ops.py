@@ -15,7 +15,7 @@
 """PrometheusDataset"""
 
 import tensorflow as tf
-from tensorflow.python.data.experimental.ops.sleep import sleep
+from tensorflow.python.data.experimental.ops.testing import sleep
 from tensorflow_io.core.python.ops import golang_ops
 
 class PrometheusIODataset(tf.data.Dataset):
