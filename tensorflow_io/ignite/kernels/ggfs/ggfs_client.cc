@@ -222,11 +222,12 @@ Status GGFSClient::ListFiles(const string &path,
     int32_t str_length;
     TF_RETURN_IF_ERROR(client_->ReadInt(&str_length));
 
-    uint8_t str[str_length];
-    TF_RETURN_IF_ERROR(client_->ReadData(str, str_length));
+    string str;
+    str.resize(str_length);
+    TF_RETURN_IF_ERROR(client_->ReadData((uint8_t *)(&str[0]), str_length));
 
     out_files->push_back(MakeRelative(
-        string(reinterpret_cast<char *>(str), str_length), path + "/"));
+        string(reinterpret_cast<const char *>(&str[0]), str_length), path + "/"));
 
     length--;
   }

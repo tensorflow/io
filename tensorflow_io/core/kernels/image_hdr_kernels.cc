@@ -33,7 +33,7 @@ class DecodeHDROp : public OpKernel {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
     OP_REQUIRES(context,
                 stbi_is_hdr_from_memory((const unsigned char*)input.data(),
                                         input.size()),

@@ -97,7 +97,7 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
     OP_REQUIRES_OK(
-        context, resource_->Init(input_tensor->scalar<string>()(), nullptr, 0));
+        context, resource_->Init(input_tensor->scalar<tstring>()(), nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -289,7 +289,7 @@ class AudioDecodeWAVOp : public OpKernel {
     const Tensor* shape_tensor;
     OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
 
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     std::unique_ptr<AudioReadableResourceBase> resource;
     OP_REQUIRES_OK(context,

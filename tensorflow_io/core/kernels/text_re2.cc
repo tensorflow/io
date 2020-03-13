@@ -48,10 +48,11 @@ class RE2FullMatchOp : public OpKernel {
           args[j] = &results[j];
           argv[j] = &args[j];
         }
-        output_tensor->flat<bool>()(i) = RE2::FullMatchN(input_tensor.flat<string>()(i), re, argv.data(), re.NumberOfCapturingGroups());
+        string input_string = input_tensor.flat<tstring>()(i);
+        output_tensor->flat<bool>()(i) = RE2::FullMatchN(input_string, re, argv.data(), re.NumberOfCapturingGroups());
         if (output_tensor->flat<bool>()(i)) {
           for (int j = 0; j < re.NumberOfCapturingGroups(); j++) {
-            groups_tensor->flat<string>()(i * re.NumberOfCapturingGroups() + j) = std::move(results[j]);
+            groups_tensor->flat<tstring>()(i * re.NumberOfCapturingGroups() + j) = std::move(results[j]);
           }
         }
     }

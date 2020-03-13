@@ -336,10 +336,10 @@ class ListFeatherColumnsOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    const string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& memory_tensor = context->input(1);
-    const string& memory = memory_tensor.scalar<string>()();
+    const string& memory = memory_tensor.scalar<tstring>()();
     std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
@@ -444,8 +444,8 @@ class ListFeatherColumnsOp : public OpKernel {
     OP_REQUIRES_OK(context, context->allocate_output(2, output_shape, &shapes_tensor));
 
     for (size_t i = 0; i < columns.size(); i++) {
-      columns_tensor->flat<string>()(i) = columns[i];
-      dtypes_tensor->flat<string>()(i) = dtypes[i];
+      columns_tensor->flat<tstring>()(i) = columns[i];
+      dtypes_tensor->flat<tstring>()(i) = dtypes[i];
       shapes_tensor->flat<int64>()(i) = counts[i];
     }
   }

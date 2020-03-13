@@ -411,7 +411,7 @@ class FFmpegAudioReadableInitOp : public ResourceOpKernel<FFmpegAudioReadableRes
     const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()(), index_tensor->scalar<int64>()()));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(), index_tensor->scalar<int64>()()));
   }
   Status CreateResource(FFmpegAudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -661,7 +661,7 @@ class FFmpegVideoReadableInitOp : public ResourceOpKernel<FFmpegVideoReadableRes
     const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()(), index_tensor->scalar<int64>()()));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(), index_tensor->scalar<int64>()()));
   }
   Status CreateResource(FFmpegVideoReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {

@@ -389,7 +389,7 @@ class HDF5ReadableResource : public ResourceBase {
                               data_space);
                 for (int64 i = 0; i < value->NumElements(); i++) {
                   char* p = (char*)(buffer.get()[i]);
-                  value->flat<string>()(i) = string(p);
+                  value->flat<tstring>()(i) = string(p);
                 }
                 H5::DataSet::vlenReclaim(buffer.get(), data_type, data_space);
               } else {
@@ -408,7 +408,7 @@ class HDF5ReadableResource : public ResourceBase {
                       while (len < data_type.getSize() && p[len] != 0x00) {
                         len++;
                       }
-                      value->flat<string>()(i) = string(p, len);
+                      value->flat<tstring>()(i) = string(p, len);
                     }
                     break;
                   case H5T_STR_NULLPAD:
@@ -419,7 +419,7 @@ class HDF5ReadableResource : public ResourceBase {
                       while (len > 0 && p[len - 1] == 0x00) {
                         len--;
                       }
-                      value->flat<string>()(i) = string(p, len);
+                      value->flat<tstring>()(i) = string(p, len);
                     }
                     break;
                   case H5T_STR_SPACEPAD:
@@ -435,7 +435,7 @@ class HDF5ReadableResource : public ResourceBase {
               data_set.read(buffer.get(), data_type, memory_space, data_space);
               for (int64 i = 0; i < value->NumElements(); i++) {
                 hvl_t* h = (hvl_t*)(buffer.get()) + i;
-                value->flat<string>()(i) = string((const char*)(h->p), h->len);
+                value->flat<tstring>()(i) = string((const char*)(h->p), h->len);
               }
               H5::DataSet::vlenReclaim(buffer.get(), data_type, data_space);
             } break;
@@ -486,7 +486,7 @@ class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
 
     std::vector<string> components;
     OP_REQUIRES_OK(context, resource_->Init(input, &components));
@@ -497,7 +497,7 @@ class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
                        1, TensorShape({static_cast<int64>(components.size())}),
                        &components_tensor));
     for (size_t i = 0; i < components.size(); i++) {
-      components_tensor->flat<string>()(i) = components[i];
+      components_tensor->flat<tstring>()(i) = components[i];
     }
   }
   Status CreateResource(HDF5ReadableResource** resource)
@@ -525,7 +525,7 @@ class HDF5ReadableSpecOp : public OpKernel {
 
     const Tensor* component_tensor;
     OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    const string& component = component_tensor->scalar<string>()();
+    string component = component_tensor->scalar<tstring>()();
 
     TensorShape shape;
     DataType dtype;
@@ -564,7 +564,7 @@ class HDF5ReadableReadOp : public OpKernel {
 
     const Tensor* component_tensor;
     OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    const string& component = component_tensor->scalar<string>()();
+    string component = component_tensor->scalar<tstring>()();
 
     const Tensor* shape_tensor;
     OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));

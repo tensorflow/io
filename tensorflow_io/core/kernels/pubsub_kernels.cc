@@ -106,9 +106,9 @@ class PubSubReadableResource : public ResourceBase {
       if (response.received_messages().size() != 0) {
         TF_RETURN_IF_ERROR(allocate_func(TensorShape({1}), &id_tensor,
                                          &data_tensor, &time_tensor));
-        id_tensor->scalar<string>()() =
+        id_tensor->scalar<tstring>()() =
             std::string((response.received_messages(0).message().message_id()));
-        data_tensor->scalar<string>()() =
+        data_tensor->scalar<tstring>()() =
             std::string((response.received_messages(0).message().data()));
         time_tensor->scalar<int64>()() =
             response.received_messages(0).message().publish_time().seconds() *
@@ -159,13 +159,13 @@ class PubSubReadableInitOp : public ResourceOpKernel<PubSubReadableResource> {
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     std::vector<string> metadata;
     const Tensor* metadata_tensor;
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
     OP_REQUIRES_OK(context, resource_->Init(input, metadata));

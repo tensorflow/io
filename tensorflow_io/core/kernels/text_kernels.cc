@@ -31,7 +31,7 @@ class FilenoInputStream : public io::InputStreamInterface {
   FilenoInputStream(int fileno) : fileno_(fileno) {}
   virtual ~FilenoInputStream() {}
 
-  virtual Status ReadNBytes(int64 bytes_to_read, string* result) override {
+  virtual Status ReadNBytes(int64 bytes_to_read, tstring* result) override {
     if (bytes_to_read < 0) {
       return errors::InvalidArgument("Can't read a negative number of bytes: ", bytes_to_read);
     }
@@ -86,10 +86,10 @@ class ReadTextOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string& filename = filename_tensor.scalar<string>()();
+    const string& filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& memory_tensor = context->input(1);
-    const string& memory = memory_tensor.scalar<string>()();
+    const string& memory = memory_tensor.scalar<tstring>()();
 
     const Tensor& offset_tensor = context->input(2);
     const int64 offset = offset_tensor.scalar<int64>()();
@@ -158,7 +158,7 @@ class ReadTextOp : public OpKernel {
     OP_REQUIRES_OK(context, context->allocate_output(0, output_shape, &output_tensor));
 
     for (size_t i = 0; i < lines.size(); i++) {
-      output_tensor->flat<string>()(i) = std::move(lines[i]);
+      output_tensor->flat<tstring>()(i) = std::move(lines[i]);
     }
   }
  private:

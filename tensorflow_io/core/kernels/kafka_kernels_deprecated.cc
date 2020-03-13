@@ -47,15 +47,15 @@ class KafkaDatasetOp : public DatasetOpKernel {
     std::vector<string> topics;
     topics.reserve(topics_tensor->NumElements());
     for (int i = 0; i < topics_tensor->NumElements(); ++i) {
-      topics.push_back(topics_tensor->flat<string>()(i));
+      topics.push_back(topics_tensor->flat<tstring>()(i));
     }
 
-    std::string servers = "";
+    tstring servers = "";
     OP_REQUIRES_OK(
-        ctx, data::ParseScalarArgument<std::string>(ctx, "servers", &servers));
-    std::string group = "";
+        ctx, data::ParseScalarArgument<tstring>(ctx, "servers", &servers));
+    tstring group = "";
     OP_REQUIRES_OK(
-        ctx, data::ParseScalarArgument<std::string>(ctx, "group", &group));
+        ctx, data::ParseScalarArgument<tstring>(ctx, "group", &group));
     bool eof = false;
     OP_REQUIRES_OK(ctx, data::ParseScalarArgument<bool>(ctx, "eof", &eof));
     int64 timeout = -1;
@@ -70,7 +70,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
     std::vector<string> config_global;
     config_global.reserve(config_global_tensor->NumElements());
     for (int i = 0; i < config_global_tensor->NumElements(); ++i) {
-      config_global.push_back(config_global_tensor->flat<string>()(i));
+      config_global.push_back(config_global_tensor->flat<tstring>()(i));
     }
 
     const Tensor* config_topic_tensor;
@@ -78,7 +78,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
     std::vector<string> config_topic;
     config_topic.reserve(config_topic_tensor->NumElements());
     for (int i = 0; i < config_topic_tensor->NumElements(); ++i) {
-      config_topic.push_back(config_topic_tensor->flat<string>()(i));
+      config_topic.push_back(config_topic_tensor->flat<tstring>()(i));
     }
     bool message_key = false;
     OP_REQUIRES_OK(
@@ -226,16 +226,16 @@ class KafkaDatasetOp : public DatasetOpKernel {
               if (message->err() == RdKafka::ERR_NO_ERROR) {
                 // Produce the line as output.
                 Tensor line_tensor(cpu_allocator(), DT_STRING, {});
-                line_tensor.scalar<string>()() =
+                line_tensor.scalar<tstring>()() =
                     std::string(static_cast<const char*>(message->payload()),
                                 message->len());
                 out_tensors->emplace_back(std::move(line_tensor));
                 if (dataset()->message_key_) {
                   Tensor key_tensor(cpu_allocator(), DT_STRING, {});
                   if (message->key() != nullptr) {
-                    key_tensor.scalar<string>()() = string(*message->key());
+                    key_tensor.scalar<tstring>()() = string(*message->key());
                   } else {
-                    key_tensor.scalar<string>()() = "";
+                    key_tensor.scalar<tstring>()() = "";
                   }
                   out_tensors->emplace_back(std::move(key_tensor));
                 }
@@ -493,8 +493,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
     };
 
     const std::vector<string> topics_;
-    const std::string servers_;
-    const std::string group_;
+    const tstring servers_;
+    const tstring group_;
     const bool eof_;
     const int64 timeout_;
     const std::vector<string> config_global_;
@@ -526,8 +526,8 @@ class WriteKafkaOp : public OpKernel {
                     "Servers tensor must be scalar, but had shape: ",
                     servers_tensor->shape().DebugString()));
 
-    const string& message = message_tensor->scalar<string>()();
-    const string& topic_string = topic_tensor->scalar<string>()();
+    const string& message = message_tensor->scalar<tstring>()();
+    const string& topic_string = topic_tensor->scalar<tstring>()();
     std::vector<string> parts = str_util::Split(topic_string, ":");
     OP_REQUIRES(context, (parts.size() >= 1),
                 errors::InvalidArgument("Invalid parameters: ", topic_string));
@@ -540,7 +540,7 @@ class WriteKafkaOp : public OpKernel {
           errors::InvalidArgument("Invalid parameters: ", topic_string));
     }
 
-    const string& servers = servers_tensor->scalar<string>()();
+    const string& servers = servers_tensor->scalar<tstring>()();
 
     std::unique_ptr<RdKafka::Conf> conf(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
@@ -725,10 +725,10 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
     OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
     std::vector<string> metadata;
     for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
-      metadata.push_back(metadata_tensor->flat<string>()(i));
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
     }
 
-    const string& topic_string = topic_tensor->scalar<string>()();
+    const string& topic_string = topic_tensor->scalar<tstring>()();
     std::vector<string> parts = str_util::Split(topic_string, ":");
     OP_REQUIRES(context, (parts.size() >= 1),
                 errors::InvalidArgument("Invalid parameters: ", topic_string));
@@ -831,7 +831,7 @@ class DecodeAvroOp : public OpKernel {
     } else {
       const Tensor* schema_tensor;
       OP_REQUIRES_OK(context, context->input("schema", &schema_tensor));
-      const string& schema = schema_tensor->scalar<string>()();
+      const string& schema = schema_tensor->scalar<tstring>()();
 
       resource_scope.reset(new DecodeAvroResource(env_));
       OP_REQUIRES_OK(context, resource_scope->Init(schema));
@@ -853,7 +853,7 @@ class DecodeAvroOp : public OpKernel {
     avro::GenericDatum datum(resource->avro_schema());
     for (int64 entry_index = 0; entry_index < input_tensor->NumElements();
          entry_index++) {
-      const string& entry = input_tensor->flat<string>()(entry_index);
+      const string& entry = input_tensor->flat<tstring>()(entry_index);
       std::unique_ptr<avro::InputStream> in =
           avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
 
@@ -882,7 +882,7 @@ class DecodeAvroOp : public OpKernel {
                 value[i]->flat<double>()(entry_index) = 0.0;
                 break;
               case DT_STRING:
-                value[i]->flat<string>()(entry_index) = "";
+                value[i]->flat<tstring>()(entry_index) = "";
                 break;
               default:
                 OP_REQUIRES(context, false,
@@ -915,7 +915,7 @@ class DecodeAvroOp : public OpKernel {
               v.resize(field_value.size());
               memcpy(&v[0], &field_value[0], field_value.size());
             }
-            value[i]->flat<string>()(entry_index) = v;
+            value[i]->flat<tstring>()(entry_index) = v;
           } break;
           case avro::AVRO_BYTES: {
             const std::vector<uint8_t>& field_value =
@@ -925,7 +925,7 @@ class DecodeAvroOp : public OpKernel {
               v.resize(field_value.size());
               memcpy(&v[0], &field_value[0], field_value.size());
             }
-            value[i]->flat<string>()(entry_index) = std::move(v);
+            value[i]->flat<tstring>()(entry_index) = std::move(v);
           } break;
           case avro::AVRO_FIXED: {
             const std::vector<uint8_t>& field_value =
@@ -935,10 +935,10 @@ class DecodeAvroOp : public OpKernel {
               v.resize(field_value.size());
               memcpy(&v[0], &field_value[0], field_value.size());
             }
-            value[i]->flat<string>()(entry_index) = std::move(v);
+            value[i]->flat<tstring>()(entry_index) = std::move(v);
           } break;
           case avro::AVRO_ENUM:
-            value[i]->flat<string>()(entry_index) =
+            value[i]->flat<tstring>()(entry_index) =
                 field.value<avro::GenericEnum>().symbol();
             break;
           default:
@@ -1021,7 +1021,7 @@ class EncodeAvroOp : public OpKernel {
             // make a concrete explicit copy as otherwise avro may override the
             // underlying buffer?? happens in decode (not verified in encode
             // yet).
-            const string& v = context->input(i).flat<string>()(entry_index);
+            const string& v = context->input(i).flat<tstring>()(entry_index);
             string field_value;
             field_value.resize(v.size());
             if (field_value.size() > 0) {
@@ -1030,7 +1030,7 @@ class EncodeAvroOp : public OpKernel {
             record.setFieldAt(i, avro::GenericDatum(field_value));
           } break;
           case avro::AVRO_BYTES: {
-            const string& v = context->input(i).flat<string>()(entry_index);
+            const string& v = context->input(i).flat<tstring>()(entry_index);
             std::vector<uint8_t> field_value;
             field_value.resize(v.size());
             if (field_value.size() > 0) {
@@ -1050,7 +1050,7 @@ class EncodeAvroOp : public OpKernel {
       e->init(*out);
       avro::encode(*e, datum);
       out->flush();
-      output_tensor->flat<string>()(entry_index) = ss.str();
+      output_tensor->flat<tstring>()(entry_index) = ss.str();
     }
   }
 
@@ -1071,7 +1071,7 @@ class DecodeAvroInitOp : public ResourceOpKernel<DecodeAvroResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()()));
   }
   Status CreateResource(DecodeAvroResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
