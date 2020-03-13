@@ -353,8 +353,109 @@ class AudioDecodeWAVOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
+class AudioEncodeWAVOp : public OpKernel {
+ public:
+  explicit AudioEncodeWAVOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* rate_tensor;
+    OP_REQUIRES_OK(context, context->input("rate", &rate_tensor));
+
+    const int64 channels = input_tensor->shape().dim_size(1);
+    OP_REQUIRES(
+        context, (channels == static_cast<int16>(channels)),
+        errors::InvalidArgument("channels ", channels, " > max(int16)"));
+
+    const int64 rate = rate_tensor->scalar<int64>()();
+    OP_REQUIRES(context, (rate == static_cast<int32>(rate)),
+                errors::InvalidArgument("rate ", rate, " > max(int32)"));
+
+    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
+    void* input_base = nullptr;
+    // TODO: support more data types
+    switch (input_tensor->dtype()) {
+      case DT_INT16:
+        input_base = (void*)input_tensor->flat<int16>().data();
+        break;
+      default:
+        OP_REQUIRES(context, false,
+                    errors::InvalidArgument(
+                        "data type ", DataTypeString(input_tensor->dtype()),
+                        " not supported"));
+    }
+    Tensor* output_tensor = nullptr;
+    OP_REQUIRES_OK(
+        context, context->allocate_output(0, TensorShape({}), &output_tensor));
+
+    tstring& output = output_tensor->scalar<tstring>()();
+    output.resize(sizeof(struct WAVHeader) + sizeof(struct DataHeader) +
+                  input_tensor->NumElements() * bytes_per_sample);
+
+    struct WAVHeader* header = (struct WAVHeader*)&output[0];
+    struct DataHeader* data_header =
+        (struct DataHeader*)&output[sizeof(struct WAVHeader)];
+    void* output_base =
+        (void*)&output[sizeof(struct WAVHeader) + sizeof(struct DataHeader)];
+
+    // RIFF Chunk ID: "RIFF"
+    memcpy(header->riff, "RIFF", 4);
+
+    // placeholder RIFF chunk size: 4 + n (file size - 8)
+    header->riff_size = output.size() - 8;
+
+    // WAVE ID: "WAVE"
+    memcpy(header->wave, "WAVE", 4);
+
+    // fmt Chunk ID: "fmt "
+    memcpy(header->fmt, "fmt ", 4);
+
+    // fmt Chunk size: 16, 18, or 40
+    header->fmt_size = 16;
+
+    // Format code: WAVE_FORMAT_PCM (1) for PCM.
+    // WAVE_FORMAT_EXTENSIBLE (0xFFFE) for SubFormat
+    header->wFormatTag = 1;
+
+    // Number of channels
+    header->nChannels = channels;
+
+    // Sampling rate
+    header->nSamplesPerSec = rate;
+
+    // Data rate
+    // SampleRate * NumChannels * BitsPerSample/8 (BytesPerSample)
+    header->nAvgBytesPerSec = rate * channels * bytes_per_sample;
+
+    // Data block size (bytes)
+    // NumChannels * BitsPerSample/8 (BytesPerSample)
+    header->nBlockAlign = channels * bytes_per_sample;
+
+    // Bits per sample (BytesPerSample * 8)
+    header->wBitsPerSample = bytes_per_sample * 8;
+
+    // Data Header
+    memcpy(data_header->mark, "data", 4);
+    data_header->size = input_tensor->NumElements() * bytes_per_sample;
+
+    // Data Chunk
+    memcpy(output_base, input_base,
+           input_tensor->NumElements() * bytes_per_sample);
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeWAV").Device(DEVICE_CPU),
                         AudioDecodeWAVOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeWAV").Device(DEVICE_CPU),
+                        AudioEncodeWAVOp);
 
 }  // namespace
 
