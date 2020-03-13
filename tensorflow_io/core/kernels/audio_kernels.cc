@@ -96,8 +96,8 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(
-        context, resource_->Init(input_tensor->scalar<tstring>()(), nullptr, 0));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(),
+                                            nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -196,7 +196,7 @@ class AudioInfoOp : public OpKernel {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    const string& input = input_tensor->scalar<string>()();
+    const tstring& input = input_tensor->scalar<tstring>()();
 
     // TODO: expand to all supported types
     std::unique_ptr<AudioReadableResourceBase> resource;
@@ -228,7 +228,7 @@ class AudioInfoOp : public OpKernel {
     Tensor* encoding_tensor = nullptr;
     OP_REQUIRES_OK(context, context->allocate_output(3, TensorShape({}),
                                                      &encoding_tensor));
-    encoding_tensor->scalar<string>()() = "wav";
+    encoding_tensor->scalar<tstring>()() = "wav";
   }
 
  private:
