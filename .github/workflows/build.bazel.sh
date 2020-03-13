@@ -29,7 +29,6 @@ python3 -m pip install --upgrade setuptools
 python3 -m pip --version
 
 python3 -m pip install -q ${TENSORFLOW_INSTALL}
-python3 -m pip install gast==0.2.2
 
 python3 tools/build/configure.py
 
