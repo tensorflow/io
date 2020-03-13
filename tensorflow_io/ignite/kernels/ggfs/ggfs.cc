@@ -137,8 +137,11 @@ Status GGFS::GetChildren(const string &file_name, std::vector<string> *result) {
 Status GGFS::GetMatchingPaths(const string &pattern,
                               std::vector<string> *results) {
   LOG(INFO) << "Call GGFS::GetMatchingPaths [pattern = " << pattern << "]";
-
+#if defined(_MSC_VER)
+  return errors::Unimplemented("GGFS::GetMatchingPaths");
+#else
   return internal::GetMatchingPaths(this, Env::Default(), pattern, results);
+#endif
 }
 
 Status GGFS::DeleteFile(const string &file_name) {
