@@ -42,6 +42,12 @@ py_binary(
     main = "black_python.py",
     deps = [
         requirement("black"),
+        requirement("regex"),
+        requirement("appdirs"),
+        requirement("click"),
+        requirement("toml"),
+        requirement("typed_ast"),
+        requirement("pathspec"),
     ],
 )
 
