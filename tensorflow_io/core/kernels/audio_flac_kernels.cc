@@ -278,10 +278,10 @@ class AudioDecodeFlacOp : public OpKernel {
 
     const tstring& input = input_tensor->scalar<tstring>()();
 
-    std::unique_ptr<AudioReadableResourceBase> resource;
+    std::unique_ptr<FlacReadableResource> resource(
+        new FlacReadableResource(env_));
     OP_REQUIRES_OK(context,
-                   FlacReadableResourceInit(env_, "memory", input.data(),
-                                            input.size(), resource));
+                   resource->Init("memory", input.data(), input.size()));
 
     int32 rate;
     DataType dtype;
