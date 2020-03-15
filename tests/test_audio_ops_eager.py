@@ -45,7 +45,7 @@ def fixture_resample():
   expected_value = tf.cast(expected_value, tf.int16)
 
   args = value
-  func = lambda e: tfio.experimental.audio.resample(value, 44100, 4410, 1)
+  func = lambda e: tfio.experimental.audio.resample(e, 44100, 4410, 1)
   expected = expected_value
 
   return args, func, expected
@@ -63,7 +63,7 @@ def fixture_decode_wav():
   value = tf.cast(value, tf.int16)
 
   args = content
-  func = lambda e: tfio.experimental.audio.decode_wav(content, dtype=tf.int16)
+  func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.int16)
   expected = value
 
   return args, func, expected
@@ -83,8 +83,8 @@ def fixture_decode_flac():
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
 
-  args = path
-  func = lambda e: tfio.experimental.audio.decode_flac(content)
+  args = content
+  func = tfio.experimental.audio.decode_flac
   expected = value
 
   return args, func, expected
@@ -92,11 +92,6 @@ def fixture_decode_flac():
 @pytest.fixture(name="encode_flac", scope="module")
 def fixture_encode_flac():
   """fixture_encode_flac"""
-  path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_audio", "ZASFX_ADSR_no_sustain.flac")
-  content = tf.io.read_file(path)
-
   wav_path = os.path.join(
       os.path.dirname(os.path.abspath(__file__)),
       "test_audio", "ZASFX_ADSR_no_sustain.wav")
@@ -104,9 +99,11 @@ def fixture_encode_flac():
   value = audio.audio * (1 << 15)
   value = tf.cast(value, tf.int16)
 
-  args = path
-  func = lambda e: tfio.experimental.audio.encode_flac(value, rate=44100)
-  expected = content
+  args = value
+  def func(e):
+    v = tfio.experimental.audio.encode_flac(e, rate=44100)
+    return tfio.experimental.audio.decode_flac(v)
+  expected = value
 
   return args, func, expected
 
@@ -155,6 +152,7 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
   args, func, expected = fixture_lookup(io_data_fixture)
 
   dataset = tf.data.Dataset.from_tensor_slices([args])
+
   dataset = dataset.map(func)
   entries = list(dataset)
   assert len(entries) == 1
