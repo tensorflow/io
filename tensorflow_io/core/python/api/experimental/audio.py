@@ -18,4 +18,5 @@ from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disabl
     resample,
     decode_wav,
     decode_flac,
+    encode_flac,
 )

@@ -106,6 +106,16 @@ REGISTER_OP("IO>AudioDecodeFlac")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioEncodeFlac")
+    .Input("input: dtype")
+    .Input("rate: int64")
+    .Output("value: string")
+    .Attr("dtype: {int16}")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
