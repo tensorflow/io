@@ -18,7 +18,6 @@
 from collections import namedtuple
 import io
 import os
-import sys
 import socket
 import tempfile
 import threading
@@ -769,7 +768,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.assertEqual(x, expected[0])
         expected.pop(0)
 
-  @pytest.mark.skipif(sys.version_info == (3, 5), reason="TODO")
+  @pytest.mark.skip(reason="TODO")
   def test_tf_function(self):
     """ Test that an ArrowDataset can be used in tf.function call
     """
