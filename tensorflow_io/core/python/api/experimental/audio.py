@@ -19,4 +19,5 @@ from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disabl
     decode_wav,
     decode_flac,
     encode_flac,
+    decode_ogg,
 )

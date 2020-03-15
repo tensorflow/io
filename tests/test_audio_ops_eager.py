@@ -107,6 +107,27 @@ def fixture_encode_flac():
 
   return args, func, expected
 
+@pytest.fixture(name="decode_ogg", scope="module")
+def fixture_decode_ogg():
+  """fixture_decode_ogg"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
+  content = tf.io.read_file(path)
+
+  wav_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+
+  args = content
+  func = lambda e: tfio.experimental.audio.decode_ogg(e, dtype=tf.int16)
+  expected = value
+
+  return args, func, expected
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -116,12 +137,16 @@ def fixture_encode_flac():
         pytest.param("decode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_ogg"),
+        pytest.param("decode_ogg"),
     ],
     ids=[
         "resample",
         "decode_wav",
         "decode_flac",
         "encode_flac",
+        "decode_ogg",
+        "encode_ogg",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -139,12 +164,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("decode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_ogg"),
+        pytest.param("decode_ogg"),
     ],
     ids=[
         "resample",
         "decode_wav",
         "decode_flac",
         "encode_flac",
+        "decode_ogg",
+        "encode_ogg",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):

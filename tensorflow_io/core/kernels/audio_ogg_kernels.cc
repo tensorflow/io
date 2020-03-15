@@ -170,6 +170,63 @@ class OggReadableResource : public AudioReadableResourceBase {
   std::unique_ptr<OggVorbisStream> stream_;
 };
 
+class AudioDecodeOggOp : public OpKernel {
+ public:
+  explicit AudioDecodeOggOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+
+    const tstring& input = input_tensor->scalar<tstring>()();
+
+    std::unique_ptr<OggReadableResource> resource(
+        new OggReadableResource(env_));
+    OP_REQUIRES_OK(context,
+                   resource->Init("memory", input.data(), input.size()));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
+                errors::InvalidArgument(
+                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
+                    DataTypeString(context->expected_output_dtype(0))));
+
+    PartialTensorShape provided_shape;
+    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
+                                shape_tensor->flat<int64>().data(),
+                                shape_tensor->NumElements(), &provided_shape));
+    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
+                errors::InvalidArgument(
+                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
+                    shape.DebugString()));
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(0, shape.dim_size(0),
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeOgg").Device(DEVICE_CPU),
+                        AudioDecodeOggOp);
+
 }  // namespace
 
 Status OggReadableResourceInit(

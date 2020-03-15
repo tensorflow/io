@@ -54,18 +54,6 @@ def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=rede
 
 def decode_flac(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
   """Decode Flac audio from input string.
-
-  Args:
-    input: A string `Tensor` of the audio input.
-    shape: The shape of the audio.
-    dtype: The data type of the audio, only tf.int16 is supported.
-    name: A name for the operation (optional).
-
-  Returns:
-    output: Decoded audio.
-  """
-  if shape is None:
-    shape = tf.constant([-1, -1], tf.int64)
   if dtype is None:
     dtype = tf.int16
   return core_ops.io_audio_decode_flac(
@@ -83,3 +71,21 @@ def encode_flac(input, rate, name=None): # pylint: disable=redefined-builtin
     output: Encoded audio.
   """
   return core_ops.io_audio_encode_flac(input, rate, name=name)
+
+def decode_ogg(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
+  """Decode OGG audio from input string.
+
+  Args:
+    input: A string `Tensor` of the audio input.
+    shape: The shape of the audio.
+    dtype: The data type of the audio, only tf.int16 is supported.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Decoded audio.
+  """
+  if shape is None:
+    shape = tf.constant([-1, -1], tf.int64)
+  assert (dtype is not None), "dtype (tf.int16) must be provided"
+  return core_ops.io_audio_decode_ogg(
+      input, shape=shape, dtype=dtype, name=name)
