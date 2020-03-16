@@ -96,8 +96,8 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(
-        context, resource_->Init(input_tensor->scalar<tstring>()(), nullptr, 0));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(),
+                                            nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -276,60 +276,6 @@ class AudioResampleOp : public OpKernel {
   int64 quality_;
 };
 
-class AudioDecodeWAVOp : public OpKernel {
- public:
-  explicit AudioDecodeWAVOp(OpKernelConstruction* context) : OpKernel(context) {
-    env_ = context->env();
-  }
-
-  void Compute(OpKernelContext* context) override {
-    const Tensor* input_tensor;
-    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-
-    const Tensor* shape_tensor;
-    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
-
-    const string& input = input_tensor->scalar<tstring>()();
-
-    std::unique_ptr<AudioReadableResourceBase> resource;
-    OP_REQUIRES_OK(context,
-                   WAVReadableResourceInit(env_, "memory", input.data(),
-                                           input.size(), resource));
-
-    int32 rate;
-    DataType dtype;
-    TensorShape shape;
-    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
-
-    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
-                errors::InvalidArgument(
-                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
-                    DataTypeString(context->expected_output_dtype(0))));
-
-    PartialTensorShape provided_shape;
-    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
-                                shape_tensor->flat<int64>().data(),
-                                shape_tensor->NumElements(), &provided_shape));
-    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
-                errors::InvalidArgument(
-                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
-                    shape.DebugString()));
-
-    OP_REQUIRES_OK(
-        context,
-        resource->Read(0, shape.dim_size(0),
-                       [&](const TensorShape& shape, Tensor** value) -> Status {
-                         TF_RETURN_IF_ERROR(
-                             context->allocate_output(0, shape, value));
-                         return Status::OK();
-                       }));
-  }
-
- private:
-  mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-};
-
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
                         AudioReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableSpec").Device(DEVICE_CPU),
@@ -339,8 +285,6 @@ REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableRead").Device(DEVICE_CPU),
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioResample").Device(DEVICE_CPU),
                         AudioResampleOp);
-REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeWAV").Device(DEVICE_CPU),
-                        AudioDecodeWAVOp);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow

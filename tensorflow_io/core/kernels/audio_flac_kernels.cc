@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/audio_kernels.h"
 
 #include "FLAC/stream_decoder.h"
+#include "FLAC/stream_encoder.h"
 
 namespace tensorflow {
 namespace data {
@@ -161,6 +162,53 @@ class FlacStreamDecoder {
   Tensor* sample_value;
 };
 
+class FlacStreamEncoder {
+ public:
+  FlacStreamEncoder(tstring* buffer) : buffer(buffer), offset(0) {}
+  ~FlacStreamEncoder() {}
+
+  static const int64 kSampleBufferCount = 1024;
+
+  static FLAC__StreamEncoderWriteStatus WriteCallback(
+      const FLAC__StreamEncoder* encoder, const FLAC__byte buffer[],
+      size_t bytes, uint32_t samples, uint32_t current_frame,
+      void* client_data) {
+    FlacStreamEncoder* p = static_cast<FlacStreamEncoder*>(client_data);
+    if (p->offset + bytes > p->buffer->size()) {
+      p->buffer->resize(p->offset + bytes);
+    }
+    memcpy(&(*p->buffer)[p->offset], buffer, bytes);
+    p->offset += bytes;
+    return FLAC__STREAM_ENCODER_WRITE_STATUS_OK;
+  }
+
+  static FLAC__StreamEncoderSeekStatus SeekCallback(
+      const FLAC__StreamEncoder* encoder, FLAC__uint64 absolute_byte_offset,
+      void* client_data) {
+    FlacStreamEncoder* p = static_cast<FlacStreamEncoder*>(client_data);
+    if (absolute_byte_offset > p->buffer->size()) {
+      return FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR;
+    }
+    p->offset = absolute_byte_offset;
+    return FLAC__STREAM_ENCODER_SEEK_STATUS_OK;
+  }
+
+  static FLAC__StreamEncoderTellStatus TellCallback(
+      const FLAC__StreamEncoder* encoder, FLAC__uint64* absolute_byte_offset,
+      void* client_data) {
+    FlacStreamEncoder* p = static_cast<FlacStreamEncoder*>(client_data);
+    *absolute_byte_offset = p->offset;
+    return FLAC__STREAM_ENCODER_TELL_STATUS_OK;
+  }
+
+  static void MetadataCallback(const FLAC__StreamEncoder* encoder,
+                               const FLAC__StreamMetadata* metadata,
+                               void* client_data) {}
+
+  tstring* buffer;
+  int64 offset;
+};
+
 class FlacReadableResource : public AudioReadableResourceBase {
  public:
   FlacReadableResource(Env* env)
@@ -262,6 +310,181 @@ class FlacReadableResource : public AudioReadableResourceBase {
   std::unique_ptr<FlacStreamDecoder> stream_decoder_;
 };
 
+class AudioDecodeFlacOp : public OpKernel {
+ public:
+  explicit AudioDecodeFlacOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+
+    const tstring& input = input_tensor->scalar<tstring>()();
+
+    std::unique_ptr<FlacReadableResource> resource(
+        new FlacReadableResource(env_));
+    OP_REQUIRES_OK(context,
+                   resource->Init("memory", input.data(), input.size()));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
+                errors::InvalidArgument(
+                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
+                    DataTypeString(context->expected_output_dtype(0))));
+
+    PartialTensorShape provided_shape;
+    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
+                                shape_tensor->flat<int64>().data(),
+                                shape_tensor->NumElements(), &provided_shape));
+    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
+                errors::InvalidArgument(
+                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
+                    shape.DebugString()));
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(0, shape.dim_size(0),
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+class AudioEncodeFlacOp : public OpKernel {
+ public:
+  explicit AudioEncodeFlacOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* rate_tensor;
+    OP_REQUIRES_OK(context, context->input("rate", &rate_tensor));
+
+    const int64 rate = rate_tensor->scalar<int64>()();
+    const int64 samples = input_tensor->shape().dim_size(0);
+    const int64 channels = input_tensor->shape().dim_size(1);
+
+    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
+    // TODO: support more data types
+    switch (input_tensor->dtype()) {
+      case DT_INT16:
+        break;
+      default:
+        OP_REQUIRES(context, false,
+                    errors::InvalidArgument(
+                        "data type ", DataTypeString(input_tensor->dtype()),
+                        " not supported"));
+    }
+
+    std::unique_ptr<FLAC__StreamEncoder, void (*)(FLAC__StreamEncoder*)>
+        encoder(nullptr, [](FLAC__StreamEncoder* p) {
+          if (p != nullptr) {
+            FLAC__stream_encoder_delete(p);
+          }
+        });
+    encoder.reset(FLAC__stream_encoder_new());
+
+    FLAC__bool ok;
+
+    ok = FLAC__stream_encoder_set_verify(encoder.get(), true);
+    OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set verify"));
+
+    // TODO: compression level could be a input tensor node passed in.
+    // ok = FLAC__stream_encoder_set_compression_level(encoder.get(), 5);
+    // OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set
+    // compression level"));
+
+    ok = FLAC__stream_encoder_set_channels(encoder.get(), channels);
+    OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set channels"));
+
+    ok = FLAC__stream_encoder_set_bits_per_sample(encoder.get(),
+                                                  bytes_per_sample * 8);
+    OP_REQUIRES(context, ok,
+                errors::InvalidArgument("unable to set bits per sample"));
+
+    ok = FLAC__stream_encoder_set_sample_rate(encoder.get(), rate);
+    OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set rate"));
+
+    ok =
+        FLAC__stream_encoder_set_total_samples_estimate(encoder.get(), samples);
+    OP_REQUIRES(
+        context, ok,
+        errors::InvalidArgument("unable to set total samples estimate"));
+
+    Tensor* output_tensor = nullptr;
+    OP_REQUIRES_OK(
+        context, context->allocate_output(0, TensorShape({}), &output_tensor));
+
+    tstring& output = output_tensor->scalar<tstring>()();
+
+    std::unique_ptr<FlacStreamEncoder> stream_encoder;
+    stream_encoder.reset(new FlacStreamEncoder(&output));
+
+    FLAC__StreamEncoderInitStatus s = FLAC__stream_encoder_init_stream(
+        encoder.get(), FlacStreamEncoder::WriteCallback,
+        FlacStreamEncoder::SeekCallback, FlacStreamEncoder::TellCallback,
+        FlacStreamEncoder::MetadataCallback, stream_encoder.get());
+    OP_REQUIRES(context, (s == FLAC__STREAM_ENCODER_INIT_STATUS_OK),
+                errors::InvalidArgument("unable to initialize stream: ", s));
+
+    std::unique_ptr<FLAC__int32[]> pcm(
+        new FLAC__int32[FlacStreamEncoder::kSampleBufferCount * channels]);
+
+    int64 count = 0;
+    while (count < samples) {
+      int64 chunk = (count + FlacStreamEncoder::kSampleBufferCount < samples)
+                        ? (FlacStreamEncoder::kSampleBufferCount)
+                        : (samples - count);
+      switch (input_tensor->dtype()) {
+        case DT_INT16: {
+          for (int64 i = 0; i < chunk; i++) {
+            for (int64 c = 0; c < channels; c++) {
+              pcm.get()[i * channels + c] =
+                  input_tensor->flat<int16>()((count + i) * channels + c);
+            }
+          }
+        } break;
+      }
+      ok = FLAC__stream_encoder_process_interleaved(encoder.get(), pcm.get(),
+                                                    chunk);
+      OP_REQUIRES(
+          context, ok,
+          errors::InvalidArgument("unable to process interleaved stream"));
+      count += chunk;
+    }
+
+    ok = FLAC__stream_encoder_finish(encoder.get());
+    OP_REQUIRES(context, ok,
+                errors::InvalidArgument("unable to finish stream"));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeFlac").Device(DEVICE_CPU),
+                        AudioDecodeFlacOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeFlac").Device(DEVICE_CPU),
+                        AudioEncodeFlacOp);
 }  // namespace
 
 Status FlacReadableResourceInit(

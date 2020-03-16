@@ -51,3 +51,35 @@ def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=rede
   assert (dtype is not None), "dtype (tf.int16/tf.int32) must be provided"
   return core_ops.io_audio_decode_wav(
       input, shape=shape, dtype=dtype, name=name)
+
+def decode_flac(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
+  """Decode Flac audio from input string.
+
+  Args:
+    input: A string `Tensor` of the audio input.
+    shape: The shape of the audio.
+    dtype: The data type of the audio, only tf.int16 is supported.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Decoded audio.
+  """
+  if shape is None:
+    shape = tf.constant([-1, -1], tf.int64)
+  if dtype is None:
+    dtype = tf.int16
+  return core_ops.io_audio_decode_flac(
+      input, shape=shape, dtype=dtype, name=name)
+
+def encode_flac(input, rate, name=None): # pylint: disable=redefined-builtin
+  """Encode Flac audio into string.
+
+  Args:
+    input: A `Tensor` of the audio input.
+    rate: The sample rate of the audio.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Encoded audio.
+  """
+  return core_ops.io_audio_encode_flac(input, rate, name=name)
