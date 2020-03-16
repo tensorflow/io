@@ -29,7 +29,7 @@ class IOLayer(tf.keras.layers.Layer):
     """Obtain an identity layer to be used with tf.keras."""
     super().__init__(trainable=False)
 
-  def call(self, inputs):
+  def call(self, inputs): # pylint: disable=arguments-differ
     return tf.identity(inputs)
 
   #=============================================================================

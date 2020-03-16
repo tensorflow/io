@@ -94,7 +94,8 @@ black_func() {
 
 pylint_func() {
   echo $1 $2
-  $pylint_path $2
+  # TODO: --disable=abstract-method should be removed eventually
+  $pylint_path --disable=abstract-method $2
 }
 
 buildifier_func() {
@@ -138,10 +139,11 @@ if [[ "$RUN_ENTRIES" == "--" ]]; then
 )
 else
 ( \
+    echo "TODO: check 'tensorflow_io and test' instead of 'tensorflow_io/core/python/api' only" && \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find tensorflow_io tests -type f \
+            find tensorflow_io/core/python/api -type f \
                 \( -name '*.py' \) \
         ) ; do \
         black_func $mode "$i" ; \
