@@ -32,7 +32,7 @@ class TextIOLayer(tf.keras.layers.Layer):
   def sync(self):
     core_ops.io_file_sync(self._resource)
 
-  def call(self, inputs):
+  def call(self, inputs): # pylint: disable=arguments-differ
     content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
     if inputs.dtype != tf.string:
       content = tf.strings.as_string(content)

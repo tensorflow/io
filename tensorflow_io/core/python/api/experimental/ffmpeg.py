@@ -14,4 +14,6 @@
 # ==============================================================================
 """tensorflow_io.experimental.ffmpeg"""
 
-from tensorflow_io.core.python.experimental.ffmpeg_ops import decode_video # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.ffmpeg_ops import (  # pylint: disable=unused-import
+    decode_video,
+)

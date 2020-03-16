@@ -14,8 +14,12 @@
 # ==============================================================================
 """tensorflow_io.image"""
 
-from tensorflow_io.core.python.ops.image_ops import decode_webp # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.image_ops import encode_bmp # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.dicom_ops import decode_dicom_data # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.dicom_ops import decode_dicom_image # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.dicom_ops import dicom_tags # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.image_ops import (  # pylint: disable=unused-import
+    decode_webp,
+    encode_bmp,
+)
+from tensorflow_io.core.python.ops.dicom_ops import (  # pylint: disable=unused-import
+    decode_dicom_data,
+    decode_dicom_image,
+    dicom_tags,
+)
