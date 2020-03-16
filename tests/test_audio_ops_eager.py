@@ -128,6 +128,31 @@ def fixture_decode_ogg():
 
   return args, func, expected
 
+@pytest.fixture(name="encode_ogg", scope="module")
+def fixture_encode_ogg():
+  """fixture_encode_ogg"""
+  wav_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+
+  # calculate the delta and expect a small diff
+  # TODO: a better way to test lossy audio?
+  args = value
+  def func(e):
+    delta = tf.constant(0.03, tf.float32)
+    v = tfio.experimental.audio.encode_ogg(e, rate=44100)
+    v = tfio.experimental.audio.decode_ogg(v, dtype=tf.int16)
+    v = v - e
+    v = tf.cast(v, tf.float32) / 65536.0
+    v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+    return v
+  expected = tf.ones([14336, 2], tf.bool)
+
+  return args, func, expected
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -138,7 +163,7 @@ def fixture_decode_ogg():
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
-        pytest.param("decode_ogg"),
+        pytest.param("encode_ogg"),
     ],
     ids=[
         "resample",
@@ -165,7 +190,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
-        pytest.param("decode_ogg"),
+        pytest.param("encode_ogg"),
     ],
     ids=[
         "resample",

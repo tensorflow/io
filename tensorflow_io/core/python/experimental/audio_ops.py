@@ -89,3 +89,16 @@ def decode_ogg(input, shape=None, dtype=None, name=None): # pylint: disable=rede
   assert (dtype is not None), "dtype (tf.int16) must be provided"
   return core_ops.io_audio_decode_ogg(
       input, shape=shape, dtype=dtype, name=name)
+
+def encode_ogg(input, rate, name=None): # pylint: disable=redefined-builtin
+  """Encode Ogg audio into string.
+
+  Args:
+    input: A `Tensor` of the audio input.
+    rate: The sample rate of the audio.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Encoded audio.
+  """
+  return core_ops.io_audio_encode_ogg(input, rate, name=name)
