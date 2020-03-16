@@ -84,7 +84,7 @@ def fixture_decode_flac():
   value = tf.cast(value, tf.int16)
 
   args = content
-  func = tfio.experimental.audio.decode_flac
+  func = lambda e: tfio.experimental.audio.decode_flac(e, dtype=tf.int16)
   expected = value
 
   return args, func, expected
@@ -102,7 +102,7 @@ def fixture_encode_flac():
   args = value
   def func(e):
     v = tfio.experimental.audio.encode_flac(e, rate=44100)
-    return tfio.experimental.audio.decode_flac(v)
+    return tfio.experimental.audio.decode_flac(v, dtype=tf.int16)
   expected = value
 
   return args, func, expected
