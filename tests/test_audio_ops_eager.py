@@ -68,6 +68,26 @@ def fixture_decode_wav():
 
   return args, func, expected
 
+@pytest.fixture(name="encode_wav", scope="module")
+def fixture_encode_wav():
+  """fixture_encode_wav"""
+  wav_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  value = tf.io.read_file(wav_path)
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.s16le.pcm")
+  audio = np.fromfile(path, np.int16)
+  audio = np.reshape(audio, [14336, 2])
+  audio = tf.convert_to_tensor(audio)
+
+  args = audio
+  func = lambda e: tfio.experimental.audio.encode_wav(e, rate=44100)
+  expected = value
+
+  return args, func, expected
+
 @pytest.fixture(name="decode_flac", scope="module")
 def fixture_decode_flac():
   """fixture_decode_flac"""
@@ -153,6 +173,7 @@ def fixture_encode_ogg():
 
   return args, func, expected
 
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -160,6 +181,7 @@ def fixture_encode_ogg():
     [
         pytest.param("resample"),
         pytest.param("decode_wav"),
+        pytest.param("encode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
@@ -168,6 +190,7 @@ def fixture_encode_ogg():
     ids=[
         "resample",
         "decode_wav",
+        "encode_wav",
         "decode_flac",
         "encode_flac",
         "decode_ogg",
@@ -187,6 +210,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
     [
         pytest.param("resample"),
         pytest.param("decode_wav"),
+        pytest.param("encode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
@@ -195,6 +219,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
     ids=[
         "resample",
         "decode_wav",
+        "encode_wav",
         "decode_flac",
         "encode_flac",
         "decode_ogg",
