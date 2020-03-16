@@ -84,7 +84,7 @@ def fixture_decode_flac():
   value = tf.cast(value, tf.int16)
 
   args = content
-  func = tfio.experimental.audio.decode_flac
+  func = lambda e: tfio.experimental.audio.decode_flac(e, dtype=tf.int16)
   expected = value
 
   return args, func, expected
@@ -102,8 +102,54 @@ def fixture_encode_flac():
   args = value
   def func(e):
     v = tfio.experimental.audio.encode_flac(e, rate=44100)
-    return tfio.experimental.audio.decode_flac(v)
+    return tfio.experimental.audio.decode_flac(v, dtype=tf.int16)
   expected = value
+
+  return args, func, expected
+
+@pytest.fixture(name="decode_ogg", scope="module")
+def fixture_decode_ogg():
+  """fixture_decode_ogg"""
+  path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.ogg")
+  content = tf.io.read_file(path)
+
+  wav_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+
+  args = content
+  func = lambda e: tfio.experimental.audio.decode_ogg(e, dtype=tf.int16)
+  expected = value
+
+  return args, func, expected
+
+@pytest.fixture(name="encode_ogg", scope="module")
+def fixture_encode_ogg():
+  """fixture_encode_ogg"""
+  wav_path = os.path.join(
+      os.path.dirname(os.path.abspath(__file__)),
+      "test_audio", "ZASFX_ADSR_no_sustain.wav")
+  audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+  value = audio.audio * (1 << 15)
+  value = tf.cast(value, tf.int16)
+
+  # calculate the delta and expect a small diff
+  # TODO: a better way to test lossy audio?
+  args = value
+  def func(e):
+    delta = tf.constant(0.03, tf.float32)
+    v = tfio.experimental.audio.encode_ogg(e, rate=44100)
+    v = tfio.experimental.audio.decode_ogg(v, dtype=tf.int16)
+    v = v - e
+    v = tf.cast(v, tf.float32) / 65536.0
+    v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+    return v
+  expected = tf.ones([14336, 2], tf.bool)
 
   return args, func, expected
 
@@ -116,12 +162,16 @@ def fixture_encode_flac():
         pytest.param("decode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_ogg"),
+        pytest.param("encode_ogg"),
     ],
     ids=[
         "resample",
         "decode_wav",
         "decode_flac",
         "encode_flac",
+        "decode_ogg",
+        "encode_ogg",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -139,12 +189,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("decode_wav"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_ogg"),
+        pytest.param("encode_ogg"),
     ],
     ids=[
         "resample",
         "decode_wav",
         "decode_flac",
         "encode_flac",
+        "decode_ogg",
+        "encode_ogg",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
