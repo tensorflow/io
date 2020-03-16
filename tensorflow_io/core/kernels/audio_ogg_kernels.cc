@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/audio_kernels.h"
 
 #include "vorbis/codec.h"
+#include "vorbis/vorbisenc.h"
 #include "vorbis/vorbisfile.h"
 
 namespace tensorflow {
@@ -169,6 +170,235 @@ class OggReadableResource : public AudioReadableResourceBase {
   OggVorbis_File ogg_vorbis_file_;
   std::unique_ptr<OggVorbisStream> stream_;
 };
+
+class AudioDecodeOggOp : public OpKernel {
+ public:
+  explicit AudioDecodeOggOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+
+    const tstring& input = input_tensor->scalar<tstring>()();
+
+    std::unique_ptr<OggReadableResource> resource(
+        new OggReadableResource(env_));
+    OP_REQUIRES_OK(context,
+                   resource->Init("memory", input.data(), input.size()));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
+                errors::InvalidArgument(
+                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
+                    DataTypeString(context->expected_output_dtype(0))));
+
+    PartialTensorShape provided_shape;
+    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
+                                shape_tensor->flat<int64>().data(),
+                                shape_tensor->NumElements(), &provided_shape));
+    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
+                errors::InvalidArgument(
+                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
+                    shape.DebugString()));
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(0, shape.dim_size(0),
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+Status OggEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
+                              ogg_stream_state& os, ogg_page& og,
+                              ogg_packet& op, tstring* output) {
+  int s;
+  while (vorbis_analysis_blockout(&vd, &vb) == 1) {
+    vorbis_analysis(&vb, NULL);
+    vorbis_bitrate_addblock(&vb);
+
+    while (vorbis_bitrate_flushpacket(&vd, &op) == 1) {
+      // weld the packet into the bitstream
+      ogg_stream_packetin(&os, &op);
+
+      // write out pages (if any)
+      while ((s = ogg_stream_flush(&os, &og)) != 0) {
+        output->append((const char*)og.header, og.header_len);
+        output->append((const char*)og.body, og.body_len);
+        if (ogg_page_eos(&og) != 0) {
+          break;
+        }
+      }
+    }
+  }
+  return Status::OK();
+}
+
+class AudioEncodeOggOp : public OpKernel {
+ public:
+  explicit AudioEncodeOggOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* rate_tensor;
+    OP_REQUIRES_OK(context, context->input("rate", &rate_tensor));
+
+    const int64 rate = rate_tensor->scalar<int64>()();
+    const int64 samples = input_tensor->shape().dim_size(0);
+    const int64 channels = input_tensor->shape().dim_size(1);
+
+    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
+    // TODO: support more data types
+    switch (input_tensor->dtype()) {
+      case DT_INT16:
+        break;
+      default:
+        OP_REQUIRES(context, false,
+                    errors::InvalidArgument(
+                        "data type ", DataTypeString(input_tensor->dtype()),
+                        " not supported"));
+    }
+
+    vorbis_info vi;
+    vorbis_info_init(&vi);
+    std::unique_ptr<vorbis_info, void (*)(vorbis_info*)> vi_scope(
+        &vi, [](vorbis_info* p) {
+          if (p != nullptr) {
+            vorbis_info_clear(p);
+          }
+        });
+
+    int s;
+
+    s = vorbis_encode_init(&vi, channels, rate, -1, 128000, -1);
+    OP_REQUIRES(context, (s == 0),
+                errors::InvalidArgument("unable to init encode: ", s));
+
+    // add a comment
+    vorbis_comment vc;
+    vorbis_comment_init(&vc);
+    std::unique_ptr<vorbis_comment, void (*)(vorbis_comment*)> vc_scope(
+        &vc, [](vorbis_comment* p) {
+          if (p != nullptr) {
+            vorbis_comment_clear(p);
+          }
+        });
+    vorbis_comment_add_tag(&vc, "ENCODER", "tensorflow-io");
+
+    // set up the analysis state
+    vorbis_dsp_state vd;
+    vorbis_analysis_init(&vd, &vi);
+    std::unique_ptr<vorbis_dsp_state, void (*)(vorbis_dsp_state*)> vd_scope(
+        &vd, [](vorbis_dsp_state* p) {
+          if (p != nullptr) {
+            vorbis_dsp_clear(p);
+          }
+        });
+
+    // auxiliary encoding storage
+    vorbis_block vb;
+    vorbis_block_init(&vd, &vb);
+    std::unique_ptr<vorbis_block, void (*)(vorbis_block*)> vb_scope(
+        &vb, [](vorbis_block* p) {
+          if (p != nullptr) {
+            vorbis_block_clear(p);
+          }
+        });
+
+    // srand(time(NULL));
+    ogg_stream_state os;
+    s = ogg_stream_init(&os, rand());
+    OP_REQUIRES(context, (s == 0),
+                errors::InvalidArgument("unable to init ogg stream: ", s));
+    std::unique_ptr<ogg_stream_state, void (*)(ogg_stream_state*)> os_scope(
+        &os, [](ogg_stream_state* p) {
+          if (p != nullptr) {
+            ogg_stream_clear(p);
+          }
+        });
+
+    Tensor* output_tensor = nullptr;
+    OP_REQUIRES_OK(
+        context, context->allocate_output(0, TensorShape({}), &output_tensor));
+
+    tstring& output = output_tensor->scalar<tstring>()();
+
+    ogg_page og;
+
+    {
+      ogg_packet header;
+      ogg_packet header_comm;
+      ogg_packet header_code;
+
+      vorbis_analysis_headerout(&vd, &vc, &header, &header_comm, &header_code);
+      ogg_stream_packetin(&os, &header);
+      ogg_stream_packetin(&os, &header_comm);
+      ogg_stream_packetin(&os, &header_code);
+
+      // ensures the actual audio data will start on a new page, as per spec
+      while ((s = ogg_stream_flush(&os, &og)) != 0) {
+        output.append((const char*)og.header, og.header_len);
+        output.append((const char*)og.body, og.body_len);
+      }
+    }
+
+    // expose the buffer to submit data
+    float** buffer = vorbis_analysis_buffer(&vd, samples);
+
+    // uninterleave samples
+    switch (input_tensor->dtype()) {
+      case DT_INT16:
+        for (int64 i = 0; i < samples; i++) {
+          for (int64 c = 0; c < channels; c++) {
+            buffer[c][i] =
+                float(input_tensor->flat<int16>()(i * channels + c)) / 32768.f;
+          }
+        }
+        break;
+    }
+
+    ogg_packet op;
+
+    // tell the library how much we actually submitted
+    vorbis_analysis_wrote(&vd, samples);
+    OP_REQUIRES_OK(context,
+                   OggEncodeStreamProcess(vd, vb, os, og, op, &output));
+
+    // end of file
+    vorbis_analysis_wrote(&vd, 0);
+    OP_REQUIRES_OK(context,
+                   OggEncodeStreamProcess(vd, vb, os, og, op, &output));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeOgg").Device(DEVICE_CPU),
+                        AudioDecodeOggOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeOgg").Device(DEVICE_CPU),
+                        AudioEncodeOggOp);
 
 }  // namespace
 

@@ -10,7 +10,6 @@ cc_library(
             "lib/**/*.c",
         ],
         exclude = [
-            "lib/analysis.c",
             "lib/barkmel.c",
             "lib/psytune.c",
             "lib/tone.c",
