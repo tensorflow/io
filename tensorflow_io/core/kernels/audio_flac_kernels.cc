@@ -407,6 +407,7 @@ class AudioEncodeFlacOp : public OpKernel {
     ok = FLAC__stream_encoder_set_verify(encoder.get(), true);
     OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set verify"));
 
+    // TODO: compression level could be a input tensor node passed in.
     // ok = FLAC__stream_encoder_set_compression_level(encoder.get(), 5);
     // OP_REQUIRES(context, ok, errors::InvalidArgument("unable to set
     // compression level"));
