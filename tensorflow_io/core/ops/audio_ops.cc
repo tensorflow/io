@@ -86,6 +86,17 @@ REGISTER_OP("IO>AudioDecodeWAV")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioEncodeWAV")
+    .Input("input: dtype")
+    .Input("rate: int64")
+    .Output("value: string")
+    .Attr("dtype: {int16}")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+
 REGISTER_OP("IO>AudioDecodeFlac")
     .Input("input: string")
     .Input("shape: int64")

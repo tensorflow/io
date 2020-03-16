@@ -52,6 +52,19 @@ def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=rede
   return core_ops.io_audio_decode_wav(
       input, shape=shape, dtype=dtype, name=name)
 
+def encode_wav(input, rate, name=None): # pylint: disable=redefined-builtin
+  """Encode WAV audio into string.
+
+  Args:
+    input: A `Tensor` of the audio input.
+    rate: The sample rate of the audio.
+    name: A name for the operation (optional).
+
+  Returns:
+    output: Encoded audio.
+  """
+  return core_ops.io_audio_encode_wav(input, rate, name=name)
+
 def decode_flac(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
   """Decode Flac audio from input string.
 
