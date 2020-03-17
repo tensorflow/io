@@ -17,27 +17,29 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class KafkaIOLayer(tf.keras.layers.Layer):
-  """KafkaIOLayer
+    """KafkaIOLayer
 
   """
-  #=============================================================================
-  # KafkaIOLayer
-  #=============================================================================
-  def __init__(self, topic, partition, servers, configurations):
-    """Obtain a Kafka IO layer to be used with tf.keras."""
-    metadata = list(configurations or [])
-    if servers is not None:
-      metadata.append("bootstrap.servers=%s" % servers)
-    self._resource = core_ops.io_layer_kafka_init(topic, partition, metadata)
-    super().__init__(trainable=False)
 
-  def sync(self):
-    core_ops.io_layer_kafka_sync(self._resource)
+    # =============================================================================
+    # KafkaIOLayer
+    # =============================================================================
+    def __init__(self, topic, partition, servers, configurations):
+        """Obtain a Kafka IO layer to be used with tf.keras."""
+        metadata = list(configurations or [])
+        if servers is not None:
+            metadata.append("bootstrap.servers=%s" % servers)
+        self._resource = core_ops.io_layer_kafka_init(topic, partition, metadata)
+        super().__init__(trainable=False)
 
-  def call(self, inputs): # pylint: disable=arguments-differ
-    content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
-    if inputs.dtype != tf.string:
-      content = tf.strings.as_string(content)
-    content = tf.strings.reduce_join(content, axis=1, separator=',')
-    return core_ops.io_layer_kafka_call(inputs, content, self._resource)
+    def sync(self):
+        core_ops.io_layer_kafka_sync(self._resource)
+
+    def call(self, inputs):  # pylint: disable=arguments-differ
+        content = tf.reshape(inputs, [tf.shape(inputs)[0], -1])
+        if inputs.dtype != tf.string:
+            content = tf.strings.as_string(content)
+        content = tf.strings.reduce_join(content, axis=1, separator=",")
+        return core_ops.io_layer_kafka_call(inputs, content, self._resource)

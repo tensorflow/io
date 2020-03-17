@@ -20,33 +20,32 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
 
-class ParquetIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
-  """ParquetIOTensor"""
 
-  #=============================================================================
-  # Constructor (private)
-  #=============================================================================
-  def __init__(self,
-               filename,
-               internal=False):
-    with tf.name_scope("ParquetIOTensor") as scope:
-      resource, columns = core_ops.io_parquet_readable_init(
-          filename,
-          container=scope,
-          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
-      columns = [column.decode() for column in columns.numpy().tolist()]
-      elements = []
-      for column in columns:
-        shape, dtype = core_ops.io_parquet_readable_spec(resource, column)
-        shape = tf.TensorShape(shape.numpy())
-        dtype = tf.as_dtype(dtype.numpy())
-        spec = tf.TensorSpec(shape, dtype, column)
-        function = io_tensor_ops._IOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.io_parquet_readable_read,
-            resource, column, shape, dtype)
-        elements.append(
-            io_tensor_ops.BaseIOTensor(
-                spec, function, internal=internal))
-      spec = tuple([e.spec for e in elements])
-      super().__init__(
-          spec, columns, elements, internal=internal)
+class ParquetIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-access
+    """ParquetIOTensor"""
+
+    # =============================================================================
+    # Constructor (private)
+    # =============================================================================
+    def __init__(self, filename, internal=False):
+        with tf.name_scope("ParquetIOTensor") as scope:
+            resource, columns = core_ops.io_parquet_readable_init(
+                filename,
+                container=scope,
+                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            )
+            columns = [column.decode() for column in columns.numpy().tolist()]
+            elements = []
+            for column in columns:
+                shape, dtype = core_ops.io_parquet_readable_spec(resource, column)
+                shape = tf.TensorShape(shape.numpy())
+                dtype = tf.as_dtype(dtype.numpy())
+                spec = tf.TensorSpec(shape, dtype, column)
+                function = io_tensor_ops._IOTensorComponentFunction(  # pylint: disable=protected-access
+                    core_ops.io_parquet_readable_read, resource, column, shape, dtype
+                )
+                elements.append(
+                    io_tensor_ops.BaseIOTensor(spec, function, internal=internal)
+                )
+            spec = tuple([e.spec for e in elements])
+            super().__init__(spec, columns, elements, internal=internal)

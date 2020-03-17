@@ -18,8 +18,9 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import core_ops
 
+
 class KinesisIODataset(tf.data.Dataset):
-  """A Kinesis Dataset that consumes the message.
+    """A Kinesis Dataset that consumes the message.
 
   Kinesis is a managed service provided by AWS for data streaming.
   This dataset reads messages from Kinesis with each message presented
@@ -46,40 +47,41 @@ class KinesisIODataset(tf.data.Dataset):
   is returned immediately instead.
   """
 
-  def __init__(self,
-               stream,
-               shard="",
-               internal=False):
-    """Create a KinesisIODataset.
+    def __init__(self, stream, shard="", internal=False):
+        """Create a KinesisIODataset.
 
     Args:
       stream: A `tf.string` tensor containing the name of the stream.
       shard: A `tf.string` tensor containing the id of the shard.
     """
-    with tf.name_scope("KinesisIODataset"):
-      assert internal
+        with tf.name_scope("KinesisIODataset"):
+            assert internal
 
-      metadata = []
-      metadata.append("shard=%s" % shard)
-      resource = core_ops.io_kinesis_readable_init(stream, metadata)
+            metadata = []
+            metadata.append("shard=%s" % shard)
+            resource = core_ops.io_kinesis_readable_init(stream, metadata)
 
-      self._resource = resource
+            self._resource = resource
 
-      dataset = tf.data.experimental.Counter()
-      dataset = dataset.map(
-          lambda _: core_ops.io_kinesis_readable_read(self._resource))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v.data)[0], 0)))
-      dataset = dataset.unbatch()
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda _: core_ops.io_kinesis_readable_read(self._resource)
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(
+                    lambda v: tf.greater(tf.shape(v.data)[0], 0)
+                )
+            )
+            dataset = dataset.unbatch()
 
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

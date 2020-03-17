@@ -20,51 +20,66 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class _LMDBIODatasetFunction():
-  def __init__(self, resource):
-    self._resource = resource
-  def __call__(self, start, stop):
-    return core_ops.io_kafka_readable_read(
-        self._resource, start=start, stop=stop,
-        shape=tf.TensorShape([None]), dtype=tf.string)
+
+class _LMDBIODatasetFunction:
+    def __init__(self, resource):
+        self._resource = resource
+
+    def __call__(self, start, stop):
+        return core_ops.io_kafka_readable_read(
+            self._resource,
+            start=start,
+            stop=stop,
+            shape=tf.TensorShape([None]),
+            dtype=tf.string,
+        )
+
 
 class LMDBIODataset(tf.compat.v2.data.Dataset):
-  """LMDBIODataset"""
+    """LMDBIODataset"""
 
-  def __init__(self, filename, **kwargs):
-    with tf.name_scope("LMDBIODataset") as scope:
-      mapping = core_ops.io_lmdb_mapping_init(
-          filename,
-          container=scope,
-          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
-      resource = core_ops.io_lmdb_readable_init(
-          filename,
-          container=scope,
-          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
-      capacity = kwargs.get("capacity", 4096)
-      dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
-      dataset = dataset.map(
-          lambda index: core_ops.io_lmdb_readable_read(
-              resource,
-              start=index, stop=index+capacity,
-              shape=tf.TensorShape([None]), dtype=tf.string))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v)[0], 0)))
-      dataset = dataset.map(
-          lambda key: (key, core_ops.io_lmdb_mapping_read(mapping, key)))
-      dataset = dataset.unbatch()
+    def __init__(self, filename, **kwargs):
+        with tf.name_scope("LMDBIODataset") as scope:
+            mapping = core_ops.io_lmdb_mapping_init(
+                filename,
+                container=scope,
+                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            )
+            resource = core_ops.io_lmdb_readable_init(
+                filename,
+                container=scope,
+                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            )
+            capacity = kwargs.get("capacity", 4096)
+            dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
+            dataset = dataset.map(
+                lambda index: core_ops.io_lmdb_readable_read(
+                    resource,
+                    start=index,
+                    stop=index + capacity,
+                    shape=tf.TensorShape([None]),
+                    dtype=tf.string,
+                )
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.map(
+                lambda key: (key, core_ops.io_lmdb_mapping_read(mapping, key))
+            )
+            dataset = dataset.unbatch()
 
-      self._mapping = mapping
-      self._resource = resource
-      self._capacity = capacity
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._mapping = mapping
+            self._resource = resource
+            self._capacity = capacity
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

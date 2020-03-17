@@ -30,8 +30,9 @@ from tensorflow_io.core.python.ops import parquet_io_tensor_ops
 from tensorflow_io.core.python.ops import tiff_io_tensor_ops
 from tensorflow_io.core.python.ops import arrow_io_tensor_ops
 
+
 class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
-  """IOTensor
+    """IOTensor
 
   An `IOTensor` is a tensor with data backed by IO operations. For example,
   an `AudioIOTensor` is a tensor with data from an audio file, a
@@ -193,13 +194,13 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
   """
 
-  #=============================================================================
-  # Graph mode
-  #=============================================================================
+    # =============================================================================
+    # Graph mode
+    # =============================================================================
 
-  @classmethod
-  def graph(cls, dtype):
-    """Obtain a GraphIOTensor to be used in graph mode.
+    @classmethod
+    def graph(cls, dtype):
+        """Obtain a GraphIOTensor to be used in graph mode.
 
     Args:
       dtype: Data type of the GraphIOTensor.
@@ -207,19 +208,17 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIOTensor`.
     """
-    v = GraphIOTensor
-    v._dtype = dtype # pylint: disable=protected-access
-    return v
+        v = GraphIOTensor
+        v._dtype = dtype  # pylint: disable=protected-access
+        return v
 
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
 
-  @classmethod
-  def from_tensor(cls,
-                  tensor,
-                  **kwargs):
-    """Converts a `tf.Tensor` into a `IOTensor`.
+    @classmethod
+    def from_tensor(cls, tensor, **kwargs):
+        """Converts a `tf.Tensor` into a `IOTensor`.
 
     Examples:
 
@@ -235,14 +234,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     Raises:
       ValueError: If tensor is not a `Tensor`.
     """
-    with tf.name_scope(kwargs.get("name", "IOFromTensor")):
-      return io_tensor_ops.TensorIOTensor(tensor, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromTensor")):
+            return io_tensor_ops.TensorIOTensor(tensor, internal=True)
 
-  @classmethod
-  def from_audio(cls,
-                 filename,
-                 **kwargs):
-    """Creates an `IOTensor` from an audio file.
+    @classmethod
+    def from_audio(cls, filename, **kwargs):
+        """Creates an `IOTensor` from an audio file.
 
     The following audio file formats are supported:
     - WAV
@@ -256,14 +253,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return audio_io_tensor_ops.AudioIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+            return audio_io_tensor_ops.AudioIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_json(cls,
-                filename,
-                **kwargs):
-    """Creates an `IOTensor` from an json file.
+    @classmethod
+    def from_json(cls, filename, **kwargs):
+        """Creates an `IOTensor` from an json file.
 
     Args:
       filename: A string, the filename of an json file.
@@ -273,16 +268,14 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromJSON")):
-      return json_io_tensor_ops.JSONIOTensor(
-          filename, mode=kwargs.get('mode', None), internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromJSON")):
+            return json_io_tensor_ops.JSONIOTensor(
+                filename, mode=kwargs.get("mode", None), internal=True
+            )
 
-  @classmethod
-  def from_kafka(cls,
-                 topic,
-                 partition=0,
-                 servers=None, configuration=None, **kwargs):
-    """Creates an `IOTensor` from a Kafka stream.
+    @classmethod
+    def from_kafka(cls, topic, partition=0, servers=None, configuration=None, **kwargs):
+        """Creates an `IOTensor` from a Kafka stream.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
@@ -305,16 +298,18 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
-      return kafka_io_tensor_ops.KafkaIOTensor(
-          topic=topic, partition=partition,
-          servers=servers, configuration=configuration, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromKafka")):
+            return kafka_io_tensor_ops.KafkaIOTensor(
+                topic=topic,
+                partition=partition,
+                servers=servers,
+                configuration=configuration,
+                internal=True,
+            )
 
-  @classmethod
-  def from_feather(cls,
-                   filename,
-                   **kwargs):
-    """Creates an `IOTensor` from an feather file.
+    @classmethod
+    def from_feather(cls, filename, **kwargs):
+        """Creates an `IOTensor` from an feather file.
 
     Args:
       filename: A string, the filename of an feather file.
@@ -324,15 +319,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromFeather")):
-      return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromFeather")):
+            return feather_io_tensor_ops.FeatherIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_arrow(cls,
-                 table,
-                 spec=None,
-                 **kwargs):
-    """Creates an `IOTensor` from a pyarrow.Table.
+    @classmethod
+    def from_arrow(cls, table, spec=None, **kwargs):
+        """Creates an `IOTensor` from a pyarrow.Table.
 
     Args:
       table: An instance of a `pyarrow.Table`.
@@ -346,14 +338,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromArrow")):
-      return arrow_io_tensor_ops.ArrowIOTensor(table, spec=spec, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromArrow")):
+            return arrow_io_tensor_ops.ArrowIOTensor(table, spec=spec, internal=True)
 
-  @classmethod
-  def from_lmdb(cls,
-                filename,
-                **kwargs):
-    """Creates an `IOTensor` from a LMDB key/value store.
+    @classmethod
+    def from_lmdb(cls, filename, **kwargs):
+        """Creates an `IOTensor` from a LMDB key/value store.
 
     Args:
       filename: A string, the filename of a LMDB file.
@@ -363,15 +353,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
-      return lmdb_io_tensor_ops.LMDBIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
+            return lmdb_io_tensor_ops.LMDBIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_hdf5(cls,
-                filename,
-                spec=None,
-                **kwargs):
-    """Creates an `IOTensor` from an hdf5 file.
+    @classmethod
+    def from_hdf5(cls, filename, spec=None, **kwargs):
+        """Creates an `IOTensor` from an hdf5 file.
 
     Args:
       filename: A string, the filename of an hdf5 file.
@@ -385,15 +372,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
-      return hdf5_io_tensor_ops.HDF5IOTensor(
-          filename, spec=spec, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
+            return hdf5_io_tensor_ops.HDF5IOTensor(filename, spec=spec, internal=True)
 
-  @classmethod
-  def from_csv(cls,
-               filename,
-               **kwargs):
-    """Creates an `IOTensor` from an csv file.
+    @classmethod
+    def from_csv(cls, filename, **kwargs):
+        """Creates an `IOTensor` from an csv file.
 
     Args:
       filename: A string, the filename of an csv file.
@@ -403,15 +387,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromCSV")):
-      return csv_io_tensor_ops.CSVIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromCSV")):
+            return csv_io_tensor_ops.CSVIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_avro(cls,
-                filename,
-                schema,
-                **kwargs):
-    """Creates an `IOTensor` from an avro file.
+    @classmethod
+    def from_avro(cls, filename, schema, **kwargs):
+        """Creates an `IOTensor` from an avro file.
 
     Args:
       filename: A string, the filename of an avro file.
@@ -422,15 +403,14 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAvro")):
-      return avro_io_tensor_ops.AvroIOTensor(
-          filename, schema, internal=True, **kwargs)
+        with tf.name_scope(kwargs.get("name", "IOFromAvro")):
+            return avro_io_tensor_ops.AvroIOTensor(
+                filename, schema, internal=True, **kwargs
+            )
 
-  @classmethod
-  def from_ffmpeg(cls,
-                  filename,
-                  **kwargs):
-    """Creates an `IOTensor` from a audio/video file.
+    @classmethod
+    def from_ffmpeg(cls, filename, **kwargs):
+        """Creates an `IOTensor` from a audio/video file.
 
     Args:
       filename: A string, the filename of a audio/video file.
@@ -440,15 +420,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
-      return ffmpeg_io_tensor_ops.FFmpegIOTensor(
-          filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+            return ffmpeg_io_tensor_ops.FFmpegIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_parquet(cls,
-                   filename,
-                   **kwargs):
-    """Creates an `IOTensor` from a parquet file.
+    @classmethod
+    def from_parquet(cls, filename, **kwargs):
+        """Creates an `IOTensor` from a parquet file.
 
     Args:
       filename: A string, the filename of a parquet file.
@@ -458,14 +435,12 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromParquet")):
-      return parquet_io_tensor_ops.ParquetIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromParquet")):
+            return parquet_io_tensor_ops.ParquetIOTensor(filename, internal=True)
 
-  @classmethod
-  def from_tiff(cls,
-                filename,
-                **kwargs):
-    """Creates an `IOTensor` from a tiff file.
+    @classmethod
+    def from_tiff(cls, filename, **kwargs):
+        """Creates an `IOTensor` from a tiff file.
 
     Note tiff file may consists of multiple images with different shapes.
 
@@ -477,21 +452,20 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
-      return tiff_io_tensor_ops.TIFFIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromTIFF")):
+            return tiff_io_tensor_ops.TIFFIOTensor(filename, internal=True)
+
 
 class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
-  """GraphIOTensor is compatible in graph mode"""
+    """GraphIOTensor is compatible in graph mode"""
 
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
 
-  @classmethod
-  def from_audio(cls,
-                 filename,
-                 **kwargs):
-    """Creates an `IOTensor` from an audio file.
+    @classmethod
+    def from_audio(cls, filename, **kwargs):
+        """Creates an `IOTensor` from an audio file.
 
     The following audio file formats are supported:
     - WAV
@@ -506,10 +480,11 @@ class GraphIOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-acces
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_audio_readable_init(filename)
-      dtype = cls._dtype
-      shape, _, rate = core_ops.io_audio_readable_spec(resource)
-      shape = tf.unstack(shape)
-      return audio_io_tensor_ops.AudioGraphIOTensor(
-          resource, shape, dtype, rate, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+            resource = core_ops.io_audio_readable_init(filename)
+            dtype = cls._dtype
+            shape, _, rate = core_ops.io_audio_readable_spec(resource)
+            shape = tf.unstack(shape)
+            return audio_io_tensor_ops.AudioGraphIOTensor(
+                resource, shape, dtype, rate, internal=True
+            )

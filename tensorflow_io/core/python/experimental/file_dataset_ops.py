@@ -17,19 +17,21 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 @tf.function
 def to_file(dataset, filename):
-  """to_file"""
-  resource = core_ops.io_file_init(filename)
+    """to_file"""
+    resource = core_ops.io_file_init(filename)
 
-  dataset = dataset.map(
-      lambda e: (e, tf.constant(False)))
-  dataset = dataset.concatenate(
-      tf.data.Dataset.from_tensor_slices(
-          [tf.constant([], tf.string)]).map(
-              lambda e: (e, tf.constant(True))))
-  dataset = dataset.map(
-      lambda entry, final: core_ops.io_file_call(entry, final, resource))
-  dataset = dataset.map(tf.shape)
+    dataset = dataset.map(lambda e: (e, tf.constant(False)))
+    dataset = dataset.concatenate(
+        tf.data.Dataset.from_tensor_slices([tf.constant([], tf.string)]).map(
+            lambda e: (e, tf.constant(True))
+        )
+    )
+    dataset = dataset.map(
+        lambda entry, final: core_ops.io_file_call(entry, final, resource)
+    )
+    dataset = dataset.map(tf.shape)
 
-  return dataset.reduce(0, lambda x, y: x + y)
+    return dataset.reduce(0, lambda x, y: x + y)

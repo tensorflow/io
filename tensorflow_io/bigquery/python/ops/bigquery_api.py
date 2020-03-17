@@ -34,30 +34,31 @@ from tensorflow.python.util import deprecation
 from tensorflow_io.core.python.ops import core_ops
 
 
-
-class BigQueryClient():
-  """BigQueryClient is the entrypoint for interacting with Cloud BigQuery in TF.
+class BigQueryClient:
+    """BigQueryClient is the entrypoint for interacting with Cloud BigQuery in TF.
 
   BigQueryClient encapsulates a connection to Cloud BigQuery, and exposes the
   `readSession` method to initiate a BigQuery read session.
   """
 
-  def __init__(self):
-    """Creates a BigQueryClient to start BigQuery read sessions.
+    def __init__(self):
+        """Creates a BigQueryClient to start BigQuery read sessions.
 
     """
-    self._client_resource = core_ops.io_big_query_client()
+        self._client_resource = core_ops.io_big_query_client()
 
-  def read_session(self,
-                   parent,
-                   project_id,
-                   table_id,
-                   dataset_id,
-                   selected_fields,
-                   output_types=None,
-                   row_restriction="",
-                   requested_streams=1):
-    """Opens a session and returns a `BigQueryReadSession` object.
+    def read_session(
+        self,
+        parent,
+        project_id,
+        table_id,
+        dataset_id,
+        selected_fields,
+        output_types=None,
+        row_restriction="",
+        requested_streams=1,
+    ):
+        """Opens a session and returns a `BigQueryReadSession` object.
 
     Args:
       parent: String of the form projects/{project_id} indicating the project
@@ -85,84 +86,107 @@ class BigQueryClient():
       A `BigQueryReadSession` Python object representing the
       operations available on the table.
     """
-    if not isinstance(parent, str):
-      raise ValueError("`parent` must be a string")
-    if not parent:
-      raise ValueError("`parent` must be a set")
+        if not isinstance(parent, str):
+            raise ValueError("`parent` must be a string")
+        if not parent:
+            raise ValueError("`parent` must be a set")
 
-    if not isinstance(project_id, str):
-      raise ValueError("`project_id` must be a string")
-    if not project_id:
-      raise ValueError("`project_id` must be a set")
+        if not isinstance(project_id, str):
+            raise ValueError("`project_id` must be a string")
+        if not project_id:
+            raise ValueError("`project_id` must be a set")
 
-    if not isinstance(table_id, str):
-      raise ValueError("`table_id` must be a string")
-    if not table_id:
-      raise ValueError("`table_id` must be a set")
+        if not isinstance(table_id, str):
+            raise ValueError("`table_id` must be a string")
+        if not table_id:
+            raise ValueError("`table_id` must be a set")
 
-    if not isinstance(dataset_id, str):
-      raise ValueError("`dataset_id` must be a string")
-    if not dataset_id:
-      raise ValueError("`dataset_id` must be a set")
+        if not isinstance(dataset_id, str):
+            raise ValueError("`dataset_id` must be a string")
+        if not dataset_id:
+            raise ValueError("`dataset_id` must be a set")
 
-    if not isinstance(selected_fields, list):
-      raise ValueError("`selected_fields` must be a list")
-    if not selected_fields:
-      raise ValueError("`selected_fields` must be a set")
+        if not isinstance(selected_fields, list):
+            raise ValueError("`selected_fields` must be a list")
+        if not selected_fields:
+            raise ValueError("`selected_fields` must be a set")
 
-    if not isinstance(output_types, list):
-      raise ValueError("`output_types` must be a list")
-    if output_types and len(output_types) != len(selected_fields):
-      raise ValueError("lengths of `output_types` must be a same as the "
-                       "length of `selected_fields`")
+        if not isinstance(output_types, list):
+            raise ValueError("`output_types` must be a list")
+        if output_types and len(output_types) != len(selected_fields):
+            raise ValueError(
+                "lengths of `output_types` must be a same as the "
+                "length of `selected_fields`"
+            )
 
-    if not output_types:
-      output_types = [dtypes.string] * len(selected_fields)
+        if not output_types:
+            output_types = [dtypes.string] * len(selected_fields)
 
-    (streams, avro_schema) = core_ops.io_big_query_read_session(
-        client=self._client_resource,
-        parent=parent,
-        project_id=project_id,
-        table_id=table_id,
-        dataset_id=dataset_id,
-        requested_streams=requested_streams,
-        selected_fields=selected_fields,
-        output_types=output_types,
-        row_restriction=row_restriction)
-    return BigQueryReadSession(parent, project_id, table_id, dataset_id,
-                               selected_fields, output_types, row_restriction,
-                               requested_streams, streams, avro_schema,
-                               self._client_resource)
+        (streams, avro_schema) = core_ops.io_big_query_read_session(
+            client=self._client_resource,
+            parent=parent,
+            project_id=project_id,
+            table_id=table_id,
+            dataset_id=dataset_id,
+            requested_streams=requested_streams,
+            selected_fields=selected_fields,
+            output_types=output_types,
+            row_restriction=row_restriction,
+        )
+        return BigQueryReadSession(
+            parent,
+            project_id,
+            table_id,
+            dataset_id,
+            selected_fields,
+            output_types,
+            row_restriction,
+            requested_streams,
+            streams,
+            avro_schema,
+            self._client_resource,
+        )
 
 
-class BigQueryReadSession():
-  """Entry point for reading data from Cloud BigQuery."""
+class BigQueryReadSession:
+    """Entry point for reading data from Cloud BigQuery."""
 
-  def __init__(self, parent, project_id, table_id, dataset_id, selected_fields,
-               output_types, row_restriction, requested_streams, streams,
-               avro_schema, client_resource):
-    self._parent = parent
-    self._project_id = project_id
-    self._table_id = table_id
-    self._dataset_id = dataset_id
-    self._selected_fields = selected_fields
-    self._output_types = output_types
-    self._row_restriction = row_restriction
-    self._requested_streams = requested_streams
-    self._streams = streams
-    self._avro_schema = avro_schema
-    self._client_resource = client_resource
+    def __init__(
+        self,
+        parent,
+        project_id,
+        table_id,
+        dataset_id,
+        selected_fields,
+        output_types,
+        row_restriction,
+        requested_streams,
+        streams,
+        avro_schema,
+        client_resource,
+    ):
+        self._parent = parent
+        self._project_id = project_id
+        self._table_id = table_id
+        self._dataset_id = dataset_id
+        self._selected_fields = selected_fields
+        self._output_types = output_types
+        self._row_restriction = row_restriction
+        self._requested_streams = requested_streams
+        self._streams = streams
+        self._avro_schema = avro_schema
+        self._client_resource = client_resource
 
-  def get_streams(self):
-    """Returns Tensor with stream names for reading data from BigQuery.
+    def get_streams(self):
+        """Returns Tensor with stream names for reading data from BigQuery.
 
     Returns:
       Tensor with stream names.
     """
-    return self._streams
+        return self._streams
 
-  def read_rows(self, stream):
-    """Retrieves rows (including values) from the BigQuery service.
+    def read_rows(self, stream):
+        """Retrieves rows (including values) from the BigQuery service.
 
     Args:
       stream: name of the stream to read from.
@@ -173,17 +197,24 @@ class BigQueryReadSession():
     Raises:
       ValueError: If the configured probability is unexpected.
     """
-    return _BigQueryDataset(self._client_resource, self._selected_fields,
-                            self._output_types, self._avro_schema, stream)
+        return _BigQueryDataset(
+            self._client_resource,
+            self._selected_fields,
+            self._output_types,
+            self._avro_schema,
+            stream,
+        )
 
-  @deprecation.deprecated_args(
-      None,
-      "If sloppy execution is desired,"
-      "use `tf.data.Options.experimental_deterministic`.",
-      'sloppy')
-  def parallel_read_rows(self, cycle_length=None, sloppy=False, block_length=1,
-                         num_parallel_calls=None):
-    """Retrieves rows from the BigQuery service in parallel streams.
+    @deprecation.deprecated_args(
+        None,
+        "If sloppy execution is desired,"
+        "use `tf.data.Options.experimental_deterministic`.",
+        "sloppy",
+    )
+    def parallel_read_rows(
+        self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None
+    ):
+        """Retrieves rows from the BigQuery service in parallel streams.
 
     ```
     bq_client = BigQueryClient()
@@ -216,66 +247,71 @@ class BigQueryReadSession():
       ValueError: If the configured probability is unexpected.
 
     """
-    if cycle_length is None:
-      cycle_length = self._requested_streams
-    streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
-    option = streams_ds.options()
-    if sloppy is True:
-      option.experimental_deterministic = False
-      streams_ds = streams_ds.with_options(option)
-    elif sloppy is False:
-      option.experimental_deterministic = True
-      streams_ds = streams_ds.with_options(option)
+        if cycle_length is None:
+            cycle_length = self._requested_streams
+        streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
+        option = streams_ds.options()
+        if sloppy is True:
+            option.experimental_deterministic = False
+            streams_ds = streams_ds.with_options(option)
+        elif sloppy is False:
+            option.experimental_deterministic = True
+            streams_ds = streams_ds.with_options(option)
 
-    return streams_ds.interleave(
-        map_func=self.read_rows,
-        cycle_length=cycle_length,
-        block_length=block_length,
-        num_parallel_calls=num_parallel_calls)
+        return streams_ds.interleave(
+            map_func=self.read_rows,
+            cycle_length=cycle_length,
+            block_length=block_length,
+            num_parallel_calls=num_parallel_calls,
+        )
 
 
 class _BigQueryDataset(dataset_ops.DatasetSource):
-  """_BigQueryDataset represents a dataset that retrieves keys and values."""
+    """_BigQueryDataset represents a dataset that retrieves keys and values."""
 
-  def __init__(self, client_resource, selected_fields, output_types,
-               avro_schema, stream):
+    def __init__(
+        self, client_resource, selected_fields, output_types, avro_schema, stream
+    ):
 
-    # selected_fields and corresponding output_types have to be sorted because
-    # of b/141251314
-    sorted_fields_with_types = sorted(
-        zip(selected_fields, output_types),
-        key=itemgetter(0))
-    selected_fields, output_types = list(zip(*sorted_fields_with_types))
-    selected_fields = list(selected_fields)
-    output_types = list(output_types)
+        # selected_fields and corresponding output_types have to be sorted because
+        # of b/141251314
+        sorted_fields_with_types = sorted(
+            zip(selected_fields, output_types), key=itemgetter(0)
+        )
+        selected_fields, output_types = list(zip(*sorted_fields_with_types))
+        selected_fields = list(selected_fields)
+        output_types = list(output_types)
 
-    self._element_spec = collections.OrderedDict(zip(
-        selected_fields,
-        (tensor_spec.TensorSpec([], dtype) for dtype in output_types)))
+        self._element_spec = collections.OrderedDict(
+            zip(
+                selected_fields,
+                (tensor_spec.TensorSpec([], dtype) for dtype in output_types),
+            )
+        )
 
-    variant_tensor = core_ops.io_big_query_dataset(
-        client=client_resource,
-        selected_fields=selected_fields,
-        output_types=output_types,
-        avro_schema=avro_schema,
-        stream=stream)
-    super().__init__(variant_tensor)
+        variant_tensor = core_ops.io_big_query_dataset(
+            client=client_resource,
+            selected_fields=selected_fields,
+            output_types=output_types,
+            avro_schema=avro_schema,
+            stream=stream,
+        )
+        super().__init__(variant_tensor)
 
-  @property
-  def element_spec(self):
-    return self._element_spec
+    @property
+    def element_spec(self):
+        return self._element_spec
 
 
 class BigQueryTestClient(BigQueryClient):
-  """BigQueryTestClient is the entrypoint for interacting with Fake Cloud BigQuery service."""
+    """BigQueryTestClient is the entrypoint for interacting with Fake Cloud BigQuery service."""
 
-  # pylint: disable=super-init-not-called
-  def __init__(self, fake_server_address):
-    """Creates a BigQueryTestClient to start BigQuery read sessions.
+    # pylint: disable=super-init-not-called
+    def __init__(self, fake_server_address):
+        """Creates a BigQueryTestClient to start BigQuery read sessions.
 
     Args:
       fake_server_address: url for service faking Cloud BigQuery Storage API.
     """
 
-    self._client_resource = core_ops.io_big_query_test_client(
-        fake_server_address)
+        self._client_resource = core_ops.io_big_query_test_client(fake_server_address)

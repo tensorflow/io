@@ -24,25 +24,26 @@ import tensorflow_io as tfio
 
 
 def test_lmdb_read_from_file():
-  """test_read_from_file"""
-  # Copy database out because we need the path to be writable to use locks.
-  path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb")
-  tmp_path = tempfile.mkdtemp()
-  filename = os.path.join(tmp_path, "data.mdb")
-  shutil.copy(path, filename)
+    """test_read_from_file"""
+    # Copy database out because we need the path to be writable to use locks.
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_lmdb", "data.mdb"
+    )
+    tmp_path = tempfile.mkdtemp()
+    filename = os.path.join(tmp_path, "data.mdb")
+    shutil.copy(path, filename)
 
-  lmdb = tfio.IOTensor.from_lmdb(filename)
+    lmdb = tfio.IOTensor.from_lmdb(filename)
 
-  assert np.all(
-      [key.numpy() for key in lmdb] == [str(i).encode() for i in range(10)])
+    assert np.all([key.numpy() for key in lmdb] == [str(i).encode() for i in range(10)])
 
-  for key in lmdb:
-    assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
+    for key in lmdb:
+        assert lmdb[key].numpy() == str(chr(ord("a") + int(key.numpy()))).encode()
 
-  # TODO: Not working for Windows yet
-  if sys.platform in ("linux", "darwin"):
-    shutil.rmtree(tmp_path)
+    # TODO: Not working for Windows yet
+    if sys.platform in ("linux", "darwin"):
+        shutil.rmtree(tmp_path)
+
 
 if __name__ == "__main__":
-  test.main()
+    test.main()

@@ -18,8 +18,11 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import core_ops
 
-def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=redefined-builtin
-  """Resample audio.
+
+def resample(
+    input, rate_in, rate_out, quality, name=None
+):  # pylint: disable=redefined-builtin
+    """Resample audio.
 
   Args:
     input: A 2-D `Tensor` of type `int16` or `float`. Audio input.
@@ -31,11 +34,15 @@ def resample(input, rate_in, rate_out, quality, name=None): # pylint: disable=re
   Returns:
     output: Resampled audio.
   """
-  return core_ops.io_audio_resample(
-      input, rate_in=rate_in, rate_out=rate_out, quality=quality, name=name)
+    return core_ops.io_audio_resample(
+        input, rate_in=rate_in, rate_out=rate_out, quality=quality, name=name
+    )
 
-def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
-  """Decode WAV audio from input string.
+
+def decode_wav(
+    input, shape=None, dtype=None, name=None
+):  # pylint: disable=redefined-builtin
+    """Decode WAV audio from input string.
 
   Args:
     input: A string `Tensor` of the audio input.
@@ -46,14 +53,14 @@ def decode_wav(input, shape=None, dtype=None, name=None): # pylint: disable=rede
   Returns:
     output: Decoded audio.
   """
-  if shape is None:
-    shape = tf.constant([-1, -1], tf.int64)
-  assert (dtype is not None), "dtype (tf.int16/tf.int32) must be provided"
-  return core_ops.io_audio_decode_wav(
-      input, shape=shape, dtype=dtype, name=name)
+    if shape is None:
+        shape = tf.constant([-1, -1], tf.int64)
+    assert dtype is not None, "dtype (tf.int16/tf.int32) must be provided"
+    return core_ops.io_audio_decode_wav(input, shape=shape, dtype=dtype, name=name)
 
-def encode_wav(input, rate, name=None): # pylint: disable=redefined-builtin
-  """Encode WAV audio into string.
+
+def encode_wav(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode WAV audio into string.
 
   Args:
     input: A `Tensor` of the audio input.
@@ -63,10 +70,13 @@ def encode_wav(input, rate, name=None): # pylint: disable=redefined-builtin
   Returns:
     output: Encoded audio.
   """
-  return core_ops.io_audio_encode_wav(input, rate, name=name)
+    return core_ops.io_audio_encode_wav(input, rate, name=name)
 
-def decode_flac(input, shape=None, dtype=None, name=None): # pylint: disable=redefined-builtin
-  """Decode Flac audio from input string.
+
+def decode_flac(
+    input, shape=None, dtype=None, name=None
+):  # pylint: disable=redefined-builtin
+    """Decode Flac audio from input string.
 
   Args:
     input: A string `Tensor` of the audio input.
@@ -77,14 +87,14 @@ def decode_flac(input, shape=None, dtype=None, name=None): # pylint: disable=red
   Returns:
     output: Decoded audio.
   """
-  if shape is None:
-    shape = tf.constant([-1, -1], tf.int64)
-  assert (dtype is not None), "dtype (tf.int16) must be provided"
-  return core_ops.io_audio_decode_flac(
-      input, shape=shape, dtype=dtype, name=name)
+    if shape is None:
+        shape = tf.constant([-1, -1], tf.int64)
+    assert dtype is not None, "dtype (tf.int16) must be provided"
+    return core_ops.io_audio_decode_flac(input, shape=shape, dtype=dtype, name=name)
 
-def encode_flac(input, rate, name=None): # pylint: disable=redefined-builtin
-  """Encode Flac audio into string.
+
+def encode_flac(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode Flac audio into string.
 
   Args:
     input: A `Tensor` of the audio input.
@@ -94,10 +104,11 @@ def encode_flac(input, rate, name=None): # pylint: disable=redefined-builtin
   Returns:
     output: Encoded audio.
   """
-  return core_ops.io_audio_encode_flac(input, rate, name=name)
+    return core_ops.io_audio_encode_flac(input, rate, name=name)
 
-def decode_ogg(input, shape=None, name=None): # pylint: disable=redefined-builtin
-  """Decode OGG audio from input string.
+
+def decode_ogg(input, shape=None, name=None):  # pylint: disable=redefined-builtin
+    """Decode OGG audio from input string.
 
   Args:
     input: A string `Tensor` of the audio input.
@@ -108,12 +119,13 @@ def decode_ogg(input, shape=None, name=None): # pylint: disable=redefined-builti
   Returns:
     output: Decoded audio as tf.float32.
   """
-  if shape is None:
-    shape = tf.constant([-1, -1], tf.int64)
-  return core_ops.io_audio_decode_ogg(input, shape=shape, name=name)
+    if shape is None:
+        shape = tf.constant([-1, -1], tf.int64)
+    return core_ops.io_audio_decode_ogg(input, shape=shape, name=name)
 
-def encode_ogg(input, rate, name=None): # pylint: disable=redefined-builtin
-  """Encode Ogg audio into string.
+
+def encode_ogg(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode Ogg audio into string.
 
   Args:
     input: A `Tensor` of the audio input.
@@ -123,4 +135,4 @@ def encode_ogg(input, rate, name=None): # pylint: disable=redefined-builtin
   Returns:
     output: Encoded audio.
   """
-  return core_ops.io_audio_encode_ogg(input, rate, name=name)
+    return core_ops.io_audio_encode_ogg(input, rate, name=name)

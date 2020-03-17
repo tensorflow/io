@@ -16,7 +16,7 @@
 
 from tensorflow_io.core.python.ops import _load_library
 
-_golang_ops = _load_library('libtensorflow_io_golang.so')
+_golang_ops = _load_library("libtensorflow_io_golang.so")
 
 io_prometheus_readable_init = _golang_ops.io_prometheus_readable_init
 io_prometheus_readable_spec = _golang_ops.io_prometheus_readable_spec

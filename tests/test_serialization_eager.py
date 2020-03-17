@@ -25,14 +25,16 @@ import tensorflow_io as tfio
 
 @pytest.fixture(name="fixture_lookup")
 def fixture_lookup_func(request):
-  def _fixture_lookup(name):
-    return request.getfixturevalue(name)
-  return _fixture_lookup
+    def _fixture_lookup(name):
+        return request.getfixturevalue(name)
+
+    return _fixture_lookup
+
 
 @pytest.fixture(name="json", scope="module")
 def fixture_json():
-  """fixture_json"""
-  data = """{
+    """fixture_json"""
+    data = """{
     "R": {
       "Foo": 208.82240295410156,
       "Bar": 93
@@ -52,62 +54,59 @@ def fixture_json():
       -6.9197754859924316]
    }
   """
-  value = {
-      "R": {
-          "Foo": tf.constant(208.82240295410156, tf.float64),
-          "Bar": tf.constant(93, tf.int64)
-      },
-      "Background": (
-          tf.constant("~/0109.jpg", tf.string),
-          tf.constant("~/0110.jpg", tf.string)
-      ),
-      "Location": tf.constant([
-          7.8685874938964844,
-          -4.7373886108398438,
-          -0.038147926330566406
-      ], tf.float64),
-      "Rotation": tf.constant([
-          -4.592592716217041,
-          -4.4698805809020996,
-          -6.9197754859924316
-      ], tf.float64)
-  }
-  specs = {
-      "R": {
-          "Foo": tf.TensorSpec(tf.TensorShape([]), tf.float64),
-          "Bar": tf.TensorSpec(tf.TensorShape([]), tf.int64)
-      },
-      "Background": (
-          tf.TensorSpec(tf.TensorShape([]), tf.string),
-          tf.TensorSpec(tf.TensorShape([]), tf.string)
-      ),
-      "Location": tf.TensorSpec(tf.TensorShape([3]), tf.float64),
-      "Rotation": tf.TensorSpec(tf.TensorShape([3]), tf.float64)
-  }
+    value = {
+        "R": {
+            "Foo": tf.constant(208.82240295410156, tf.float64),
+            "Bar": tf.constant(93, tf.int64),
+        },
+        "Background": (
+            tf.constant("~/0109.jpg", tf.string),
+            tf.constant("~/0110.jpg", tf.string),
+        ),
+        "Location": tf.constant(
+            [7.8685874938964844, -4.7373886108398438, -0.038147926330566406], tf.float64
+        ),
+        "Rotation": tf.constant(
+            [-4.592592716217041, -4.4698805809020996, -6.9197754859924316], tf.float64
+        ),
+    }
+    specs = {
+        "R": {
+            "Foo": tf.TensorSpec(tf.TensorShape([]), tf.float64),
+            "Bar": tf.TensorSpec(tf.TensorShape([]), tf.int64),
+        },
+        "Background": (
+            tf.TensorSpec(tf.TensorShape([]), tf.string),
+            tf.TensorSpec(tf.TensorShape([]), tf.string),
+        ),
+        "Location": tf.TensorSpec(tf.TensorShape([3]), tf.float64),
+        "Rotation": tf.TensorSpec(tf.TensorShape([3]), tf.float64),
+    }
 
-  return data, value, specs
+    return data, value, specs
 
 
 @pytest.fixture(name="avro", scope="module")
 def fixture_avro():
-  """fixture_avro"""
-  avro_path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_avro", "weather.avro")
-  with open(avro_path, "rb") as f:
-    data = f.read()
-  value = {
-      "station": tf.constant("011990-99999", tf.string),
-      "time": tf.constant(-619524000000, tf.int64),
-      "temp": tf.constant(0, tf.int32),
-  }
-  avsc_path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "test_avro", "weather.avsc")
-  with open(avsc_path, "rb") as f:
-    specs = f.read()
+    """fixture_avro"""
+    avro_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_avro", "weather.avro"
+    )
+    with open(avro_path, "rb") as f:
+        data = f.read()
+    value = {
+        "station": tf.constant("011990-99999", tf.string),
+        "time": tf.constant(-619524000000, tf.int64),
+        "temp": tf.constant(0, tf.int32),
+    }
+    avsc_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_avro", "weather.avsc"
+    )
+    with open(avsc_path, "rb") as f:
+        specs = f.read()
 
-  return data, value, specs
+    return data, value, specs
+
 
 @pytest.mark.parametrize(
     ("serialization_fixture", "decode_function"),
@@ -115,21 +114,21 @@ def fixture_avro():
         pytest.param("json", tfio.experimental.serialization.decode_json),
         pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
-    ids=[
-        "json",
-        "avro",
-    ],
+    ids=["json", "avro",],
 )
-def test_serialization_decode(
-    fixture_lookup, serialization_fixture, decode_function):
-  """test_serialization_decode"""
-  data, value, specs = fixture_lookup(serialization_fixture)
+def test_serialization_decode(fixture_lookup, serialization_fixture, decode_function):
+    """test_serialization_decode"""
+    data, value, specs = fixture_lookup(serialization_fixture)
 
-  returned = decode_function(data, specs)
-  tf.nest.assert_same_structure(value, returned)
-  assert all([
-      np.array_equal(v, r) for v, r in zip(
-          tf.nest.flatten(value), tf.nest.flatten(returned))])
+    returned = decode_function(data, specs)
+    tf.nest.assert_same_structure(value, returned)
+    assert all(
+        [
+            np.array_equal(v, r)
+            for v, r in zip(tf.nest.flatten(value), tf.nest.flatten(returned))
+        ]
+    )
+
 
 @pytest.mark.parametrize(
     ("serialization_fixture", "encode_function", "decode_function"),
@@ -137,23 +136,27 @@ def test_serialization_decode(
         pytest.param(
             "avro",
             tfio.experimental.serialization.encode_avro,
-            tfio.experimental.serialization.decode_avro),
+            tfio.experimental.serialization.decode_avro,
+        ),
     ],
-    ids=[
-        "avro",
-    ],
+    ids=["avro",],
 )
 def test_serialization_encode(
-    fixture_lookup, serialization_fixture, encode_function, decode_function):
-  """test_serialization_encode"""
-  _, value, specs = fixture_lookup(serialization_fixture)
+    fixture_lookup, serialization_fixture, encode_function, decode_function
+):
+    """test_serialization_encode"""
+    _, value, specs = fixture_lookup(serialization_fixture)
 
-  returned = encode_function(value, specs)
-  returned = decode_function(returned, specs)
-  tf.nest.assert_same_structure(value, returned)
-  assert all([
-      np.array_equal(v, r) for v, r in zip(
-          tf.nest.flatten(value), tf.nest.flatten(returned))])
+    returned = encode_function(value, specs)
+    returned = decode_function(returned, specs)
+    tf.nest.assert_same_structure(value, returned)
+    assert all(
+        [
+            np.array_equal(v, r)
+            for v, r in zip(tf.nest.flatten(value), tf.nest.flatten(returned))
+        ]
+    )
+
 
 @pytest.mark.parametrize(
     ("serialization_fixture", "decode_function"),
@@ -161,23 +164,24 @@ def test_serialization_encode(
         pytest.param("json", tfio.experimental.serialization.decode_json),
         pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
-    ids=[
-        "json",
-        "avro",
-    ],
+    ids=["json", "avro",],
 )
 def test_serialization_decode_in_dataset(
-    fixture_lookup, serialization_fixture, decode_function):
-  """test_serialization_decode_in_dataset"""
-  data, value, specs = fixture_lookup(serialization_fixture)
+    fixture_lookup, serialization_fixture, decode_function
+):
+    """test_serialization_decode_in_dataset"""
+    data, value, specs = fixture_lookup(serialization_fixture)
 
-  dataset = tf.data.Dataset.from_tensor_slices([data, data])
-  dataset = dataset.map(lambda e: decode_function(e, specs))
-  entries = list(dataset)
+    dataset = tf.data.Dataset.from_tensor_slices([data, data])
+    dataset = dataset.map(lambda e: decode_function(e, specs))
+    entries = list(dataset)
 
-  assert len(entries) == 2
-  for returned in entries:
-    tf.nest.assert_same_structure(value, returned)
-    assert all([
-        np.array_equal(v, r) for v, r in zip(
-            tf.nest.flatten(value), tf.nest.flatten(returned))])
+    assert len(entries) == 2
+    for returned in entries:
+        tf.nest.assert_same_structure(value, returned)
+        assert all(
+            [
+                np.array_equal(v, r)
+                for v, r in zip(tf.nest.flatten(value), tf.nest.flatten(returned))
+            ]
+        )
