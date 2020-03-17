@@ -18,11 +18,12 @@
 import tensorflow_io as tfio
 from tensorflow_io.core.python.ops import version_ops
 
+
 def test_version():
-  """test_version"""
-  assert tfio.__version__ == version_ops.version
-  assert tfio.version.VERSION == version_ops.version
+    """test_version"""
+    assert tfio.__version__ == version_ops.version
+    assert tfio.version.VERSION == version_ops.version
 
 
 if __name__ == "__main__":
-  test.main()
+    test.main()

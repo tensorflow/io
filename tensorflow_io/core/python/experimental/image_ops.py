@@ -18,124 +18,132 @@ import tensorflow as tf
 
 from tensorflow_io.core.python.ops import core_ops
 
+
 def draw_bounding_boxes(images, boxes, texts=None, colors=None, name=None):
-  """
-  Draw bounding boxes on a batch of images.
+    """
+    Draw bounding boxes on a batch of images.
 
-  Args:
-    images: A Tensor. Must be one of the following types: float32, half.
-      4-D with shape [batch, height, width, depth]. A batch of images.
-    boxes: A Tensor of type float32. 3-D with shape
-      [batch, num_bounding_boxes, 4] containing bounding boxes.
-    name: A name for the operation (optional).
+    Args:
+      images: A Tensor. Must be one of the following types: float32, half.
+        4-D with shape [batch, height, width, depth]. A batch of images.
+      boxes: A Tensor of type float32. 3-D with shape
+        [batch, num_bounding_boxes, 4] containing bounding boxes.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  if texts is None:
-    texts = []
-  if colors is None:
-    colors = [[]]
-  return core_ops.io_draw_bounding_boxes_v3(
-      images, boxes, colors, texts, name=name)
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    if texts is None:
+        texts = []
+    if colors is None:
+        colors = [[]]
+    return core_ops.io_draw_bounding_boxes_v3(images, boxes, colors, texts, name=name)
+
 
 def decode_jpeg_exif(contents, name=None):
-  """
-  Decode Exif information from an JPEG image.
+    """
+    Decode Exif information from an JPEG image.
 
-  TODO: Add additional fields besides orientation.
+    TODO: Add additional fields besides orientation.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The JPEG-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The JPEG-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `int64` for orientation.
-  """
-  return core_ops.io_decode_jpeg_exif(contents, name=name)
+    Returns:
+      A `Tensor` of type `int64` for orientation.
+    """
+    return core_ops.io_decode_jpeg_exif(contents, name=name)
+
 
 def decode_tiff_info(contents, name=None):
-  """
-  Decode a TIFF-encoded image meta data.
+    """
+    Decode a TIFF-encoded image meta data.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The TIFF-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The TIFF-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  shape, dtype = core_ops.io_decode_tiff_info(contents, name=name)
-  return shape, dtype
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    shape, dtype = core_ops.io_decode_tiff_info(contents, name=name)
+    return shape, dtype
+
 
 def decode_tiff(contents, index=0, name=None):
-  """
-  Decode a TIFF-encoded image to a uint8 tensor.
+    """
+    Decode a TIFF-encoded image to a uint8 tensor.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The TIFF-encoded image.
-    index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
-      inside TIFF-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The TIFF-encoded image.
+      index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
+        inside TIFF-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  return core_ops.io_decode_tiff(contents, index, name=name)
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    return core_ops.io_decode_tiff(contents, index, name=name)
+
 
 def decode_exr_info(contents, name=None):
-  """
-  Decode a EXR-encoded image meta data.
+    """
+    Decode a EXR-encoded image meta data.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  shape, dtype, channel = core_ops.io_decode_exr_info(contents, name=name)
-  return shape, dtype, channel
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    shape, dtype, channel = core_ops.io_decode_exr_info(contents, name=name)
+    return shape, dtype, channel
+
 
 def decode_exr(contents, index, channel, dtype, name=None):
-  """
-  Decode a EXR-encoded image to a uint8 tensor.
+    """
+    Decode a EXR-encoded image to a uint8 tensor.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
-    index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
-      inside EXR-encoded image.
-    channel: A `Tensor` of type string. 0-D. The channel inside the image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The EXR-encoded image.
+      index: A `Tensor` of type int64. 0-D. The 0-based index of the frame
+        inside EXR-encoded image.
+      channel: A `Tensor` of type string. 0-D. The channel inside the image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  return core_ops.io_decode_exr(
-      contents, index=index, channel=channel, dtype=dtype, name=name)
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    return core_ops.io_decode_exr(
+        contents, index=index, channel=channel, dtype=dtype, name=name
+    )
+
 
 def decode_pnm(contents, dtype=tf.uint8, name=None):
-  """
-  Decode a PNM-encoded image to a uint8 tensor.
+    """
+    Decode a PNM-encoded image to a uint8 tensor.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The PNM-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The PNM-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
-  return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
+    return core_ops.io_decode_pnm(contents, dtype=dtype, name=name)
+
 
 def decode_hdr(contents, name=None):
-  """
-  Decode a HDR-encoded image to a uint8 tensor.
+    """
+    Decode a HDR-encoded image to a uint8 tensor.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The HDR-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The HDR-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `float` and shape of `[height, width, 3]` (RGB).
-  """
-  return core_ops.io_decode_hdr(contents, name=name)
+    Returns:
+      A `Tensor` of type `float` and shape of `[height, width, 3]` (RGB).
+    """
+    return core_ops.io_decode_hdr(contents, name=name)

@@ -17,26 +17,28 @@
 
 import os
 
+
 def extract_block(filename, lang):
-  """extract_block"""
-  source = ""
-  with open(filename) as f:
-    hit = -1
-    for line in f:
-      if hit < 0:
-        if line.strip().startswith("```"+lang):
-          hit = line.find("```"+lang)
-      else:
-        if line.strip().startswith("```") and line.find("```") == hit:
-          break
-        source += line
-  return source
+    """extract_block"""
+    source = ""
+    with open(filename) as f:
+        hit = -1
+        for line in f:
+            if hit < 0:
+                if line.strip().startswith("```" + lang):
+                    hit = line.find("```" + lang)
+            else:
+                if line.strip().startswith("```") and line.find("```") == hit:
+                    break
+                source += line
+    return source
+
 
 def test_readme():
-  """test_readme"""
-  # Note: From README.md
-  filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)),
-      "..", "README.md")
-  source = extract_block(filename, "python")
-  exec(source, globals()) # pylint: disable=exec-used
+    """test_readme"""
+    # Note: From README.md
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "README.md"
+    )
+    source = extract_block(filename, "python")
+    exec(source, globals())  # pylint: disable=exec-used

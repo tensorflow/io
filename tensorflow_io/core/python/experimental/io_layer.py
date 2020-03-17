@@ -18,27 +18,29 @@ import tensorflow as tf
 from tensorflow_io.core.python.experimental import text_io_layer_ops
 from tensorflow_io.core.python.experimental import kafka_io_layer_ops
 
+
 class IOLayer(tf.keras.layers.Layer):
-  """IOLayer
+    """IOLayer
 
   """
-  #=============================================================================
-  # IOLayer (identity)
-  #=============================================================================
-  def __init__(self):
-    """Obtain an identity layer to be used with tf.keras."""
-    super().__init__(trainable=False)
 
-  def call(self, inputs): # pylint: disable=arguments-differ
-    return tf.identity(inputs)
+    # =============================================================================
+    # IOLayer (identity)
+    # =============================================================================
+    def __init__(self):
+        """Obtain an identity layer to be used with tf.keras."""
+        super().__init__(trainable=False)
 
-  #=============================================================================
-  # TextIOLayer
-  #=============================================================================
+    def call(self, inputs):  # pylint: disable=arguments-differ
+        return tf.identity(inputs)
 
-  @classmethod
-  def text(cls, filename):
-    """Obtain a TextIOLayer to be used with tf.keras.
+    # =============================================================================
+    # TextIOLayer
+    # =============================================================================
+
+    @classmethod
+    def text(cls, filename):
+        """Obtain a TextIOLayer to be used with tf.keras.
 
     Args:
       filename: A `string` Tensor of the filename.
@@ -46,15 +48,15 @@ class IOLayer(tf.keras.layers.Layer):
     Returns:
       A class of `TextIOLayer`.
     """
-    return text_io_layer_ops.TextIOLayer(filename)
+        return text_io_layer_ops.TextIOLayer(filename)
 
-  #=============================================================================
-  # KafkaIOLayer
-  #=============================================================================
+    # =============================================================================
+    # KafkaIOLayer
+    # =============================================================================
 
-  @classmethod
-  def kafka(cls, topic, partition=0, servers=None, configuration=None):
-    """Obtain a KafkaIOLayer to be used with tf.keras.
+    @classmethod
+    def kafka(cls, topic, partition=0, servers=None, configuration=None):
+        """Obtain a KafkaIOLayer to be used with tf.keras.
 
     Args:
       topic: A `tf.string` tensor containing topic.
@@ -69,5 +71,4 @@ class IOLayer(tf.keras.layers.Layer):
     Returns:
       A class of `KafkaIOLayer`.
     """
-    return kafka_io_layer_ops.KafkaIOLayer(
-        topic, partition, servers, configuration)
+        return kafka_io_layer_ops.KafkaIOLayer(topic, partition, servers, configuration)

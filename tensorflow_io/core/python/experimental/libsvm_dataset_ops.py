@@ -17,33 +17,41 @@
 import tensorflow as tf
 from tensorflow_io.core.python.experimental.text_ops import decode_libsvm
 
+
 class LibSVMIODataset(tf.data.Dataset):
-  """LibSVMIODataset"""
+    """LibSVMIODataset"""
 
-  def __init__(self,
-               filename,
-               num_features,
-               dtype=None,
-               label_dtype=None,
-               compression_type='',
-               internal=True):
-    if not internal:
-      raise ValueError("LibSVMIODataset constructor is private; please use one "
-                       "of the factory methods instead (e.g., "
-                       "IODataset.from_pcap())")
-    with tf.name_scope("LibSVMIODataset"):
-      dataset = tf.data.TextLineDataset(
-          filename, compression_type=compression_type)
-      dataset = dataset.batch(1).map(
-          lambda e: decode_libsvm(e, num_features, dtype, label_dtype))
+    def __init__(
+        self,
+        filename,
+        num_features,
+        dtype=None,
+        label_dtype=None,
+        compression_type="",
+        internal=True,
+    ):
+        if not internal:
+            raise ValueError(
+                "LibSVMIODataset constructor is private; please use one "
+                "of the factory methods instead (e.g., "
+                "IODataset.from_pcap())"
+            )
+        with tf.name_scope("LibSVMIODataset"):
+            dataset = tf.data.TextLineDataset(
+                filename, compression_type=compression_type
+            )
+            dataset = dataset.batch(1).map(
+                lambda e: decode_libsvm(e, num_features, dtype, label_dtype)
+            )
 
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

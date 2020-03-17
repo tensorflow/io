@@ -26,4 +26,4 @@ integration between IGFS and TensorFlow.
 """
 
 
-import tensorflow_io.core.python.ops # pylint: disable=unused-import
+import tensorflow_io.core.python.ops  # pylint: disable=unused-import

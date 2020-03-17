@@ -28,8 +28,9 @@ from tensorflow_io.core.python.ops import parquet_dataset_ops
 from tensorflow_io.core.python.ops import pcap_dataset_ops
 from tensorflow_io.core.python.ops import mnist_dataset_ops
 
+
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
-  """IODataset
+    """IODataset
 
   An `IODataset` is a subclass of `tf.data.Dataset` that is definitive with
   with data backed by IO operations. It is definitive so data should be both
@@ -60,13 +61,13 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
 
   """
 
-  #=============================================================================
-  # Graph mode
-  #=============================================================================
+    # =============================================================================
+    # Graph mode
+    # =============================================================================
 
-  @classmethod
-  def graph(cls, dtype):
-    """Obtain a GraphIODataset to be used in graph mode.
+    @classmethod
+    def graph(cls, dtype):
+        """Obtain a GraphIODataset to be used in graph mode.
 
     Args:
       dtype: Data type of the GraphIODataset.
@@ -74,32 +75,30 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
     Returns:
       A class of `GraphIODataset`.
     """
-    v = GraphIODataset
-    v._dtype = dtype # pylint: disable=protected-access
-    return v
+        v = GraphIODataset
+        v._dtype = dtype  # pylint: disable=protected-access
+        return v
 
-  #=============================================================================
-  # Stream mode
-  #=============================================================================
+    # =============================================================================
+    # Stream mode
+    # =============================================================================
 
-  @classmethod
-  def stream(cls):
-    """Obtain a non-repeatable StreamIODataset to be used.
+    @classmethod
+    def stream(cls):
+        """Obtain a non-repeatable StreamIODataset to be used.
 
     Returns:
       A class of `StreamIODataset`.
     """
-    return StreamIODataset
+        return StreamIODataset
 
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
 
-  @classmethod
-  def from_audio(cls,
-                 filename,
-                 **kwargs):
-    """Creates an `IODataset` from an audio file.
+    @classmethod
+    def from_audio(cls, filename, **kwargs):
+        """Creates an `IODataset` from an audio file.
 
     The following audio file formats are supported:
     - WAV
@@ -112,16 +111,21 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      return audio_dataset_ops.AudioIODataset(
-          filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+            return audio_dataset_ops.AudioIODataset(filename, internal=True)
 
-  @classmethod
-  def from_kafka(cls,
-                 topic,
-                 partition=0, start=0, stop=-1,
-                 servers=None, configuration=None, **kwargs):
-    """Creates an `IODataset` from kafka server with an offset range.
+    @classmethod
+    def from_kafka(
+        cls,
+        topic,
+        partition=0,
+        start=0,
+        stop=-1,
+        servers=None,
+        configuration=None,
+        **kwargs
+    ):
+        """Creates an `IODataset` from kafka server with an offset range.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
@@ -146,17 +150,20 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
-      return kafka_dataset_ops.KafkaIODataset(
-          topic, partition=partition, start=start, stop=stop,
-          servers=servers, configuration=configuration, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromKafka")):
+            return kafka_dataset_ops.KafkaIODataset(
+                topic,
+                partition=partition,
+                start=start,
+                stop=stop,
+                servers=servers,
+                configuration=configuration,
+                internal=True,
+            )
 
-  @classmethod
-  def from_ffmpeg(cls,
-                  filename,
-                  stream,
-                  **kwargs):
-    """Creates an `IODataset` from a media file by FFmpeg
+    @classmethod
+    def from_ffmpeg(cls, filename, stream, **kwargs):
+        """Creates an `IODataset` from a media file by FFmpeg
 
     Args:
       filename: A string, the filename of a media file.
@@ -168,17 +175,12 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
-      return ffmpeg_dataset_ops.FFmpegIODataset(
-          filename, stream, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+            return ffmpeg_dataset_ops.FFmpegIODataset(filename, stream, internal=True)
 
-  @classmethod
-  def from_hdf5(cls,
-                filename,
-                dataset,
-                spec=None,
-                **kwargs):
-    """Creates an `IODataset` from a hdf5 file's dataset object.
+    @classmethod
+    def from_hdf5(cls, filename, dataset, spec=None, **kwargs):
+        """Creates an `IODataset` from a hdf5 file's dataset object.
 
     Args:
       filename: A string, the filename of a hdf5 file.
@@ -192,17 +194,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
-      return hdf5_dataset_ops.HDF5IODataset(
-          filename, dataset, spec=spec, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromHDF5")):
+            return hdf5_dataset_ops.HDF5IODataset(
+                filename, dataset, spec=spec, internal=True
+            )
 
-  @classmethod
-  def from_avro(cls,
-                filename,
-                schema,
-                columns=None,
-                **kwargs):
-    """Creates an `IODataset` from a avro file's dataset object.
+    @classmethod
+    def from_avro(cls, filename, schema, columns=None, **kwargs):
+        """Creates an `IODataset` from a avro file's dataset object.
 
     Args:
       filename: A string, the filename of a avro file.
@@ -214,15 +213,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAvro")):
-      return avro_dataset_ops.AvroIODataset(
-          filename, schema, columns=columns, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromAvro")):
+            return avro_dataset_ops.AvroIODataset(
+                filename, schema, columns=columns, internal=True
+            )
 
-  @classmethod
-  def from_lmdb(cls,
-                filename,
-                **kwargs):
-    """Creates an `IODataset` from a lmdb file.
+    @classmethod
+    def from_lmdb(cls, filename, **kwargs):
+        """Creates an `IODataset` from a lmdb file.
 
     Args:
       filename: A string, the filename of a lmdb file.
@@ -232,17 +230,12 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
-      return lmdb_dataset_ops.LMDBIODataset(
-          filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromLMDB")):
+            return lmdb_dataset_ops.LMDBIODataset(filename, internal=True)
 
-  @classmethod
-  def from_json(cls,
-                filename,
-                columns=None,
-                mode=None,
-                **kwargs):
-    """Creates an `IODataset` from a json file.
+    @classmethod
+    def from_json(cls, filename, columns=None, mode=None, **kwargs):
+        """Creates an `IODataset` from a json file.
 
     Args:
       filename: A string, the filename of a json file.
@@ -255,16 +248,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromJSON")):
-      return json_dataset_ops.JSONIODataset(
-          filename, columns=columns, mode=mode, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromJSON")):
+            return json_dataset_ops.JSONIODataset(
+                filename, columns=columns, mode=mode, internal=True
+            )
 
-  @classmethod
-  def from_parquet(cls,
-                   filename,
-                   columns=None,
-                   **kwargs):
-    """Creates an `IODataset` from a json file.
+    @classmethod
+    def from_parquet(cls, filename, columns=None, **kwargs):
+        """Creates an `IODataset` from a json file.
 
     Args:
       filename: A string, the filename of a json file.
@@ -276,16 +267,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromParquet")):
-      return parquet_dataset_ops.ParquetIODataset(
-          filename, columns=columns, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromParquet")):
+            return parquet_dataset_ops.ParquetIODataset(
+                filename, columns=columns, internal=True
+            )
 
-  @classmethod
-  def from_mnist(cls,
-                 images=None,
-                 labels=None,
-                 **kwargs):
-    """Creates an `IODataset` from MNIST images and/or labels files.
+    @classmethod
+    def from_mnist(cls, images=None, labels=None, **kwargs):
+        """Creates an `IODataset` from MNIST images and/or labels files.
 
     Args:
       images: A string, the filename of MNIST images file.
@@ -296,16 +285,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromMNIST")):
-      return mnist_dataset_ops.MNISTIODataset(
-          images, labels, internal=True, **kwargs)
+        with tf.name_scope(kwargs.get("name", "IOFromMNIST")):
+            return mnist_dataset_ops.MNISTIODataset(
+                images, labels, internal=True, **kwargs
+            )
 
-
-  @classmethod
-  def from_pcap(cls,
-                filename,
-                **kwargs):
-    """Creates an `IODataset` from a pcap file.
+    @classmethod
+    def from_pcap(cls, filename, **kwargs):
+        """Creates an `IODataset` from a pcap file.
 
     Args:
       filename: A string, the filename of a pcap file.
@@ -315,12 +302,14 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromPcap")):
-      return pcap_dataset_ops.PcapIODataset(
-          filename, internal=True, **kwargs)
+        with tf.name_scope(kwargs.get("name", "IOFromPcap")):
+            return pcap_dataset_ops.PcapIODataset(filename, internal=True, **kwargs)
 
-class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=protected-access
-  """StreamIODataset
+
+class StreamIODataset(
+    io_dataset_ops._StreamIODataset
+):  # pylint: disable=protected-access
+    """StreamIODataset
 
   An `StreamIODataset` is a subclass of `tf.data.Dataset` that does not have
   to be definitive, with data backed by IO operations. The data generated from
@@ -345,16 +334,16 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
   ```
 
   """
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
 
-  @classmethod
-  def from_kafka(cls,
-                 topic,
-                 partition=0, offset=0,
-                 servers=None, configuration=None, **kwargs):
-    """Creates an `IODataset` from kafka server with only a start offset.
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
+
+    @classmethod
+    def from_kafka(
+        cls, topic, partition=0, offset=0, servers=None, configuration=None, **kwargs
+    ):
+        """Creates an `IODataset` from kafka server with only a start offset.
 
     Args:
       topic: A `tf.string` tensor containing topic subscription.
@@ -378,23 +367,27 @@ class StreamIODataset(io_dataset_ops._StreamIODataset):  # pylint: disable=prote
       A `StreamIODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromKafka")):
-      return kafka_dataset_ops.KafkaStreamIODataset(
-          topic, partition=partition, offset=offset,
-          servers=servers, configuration=configuration,
-          internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromKafka")):
+            return kafka_dataset_ops.KafkaStreamIODataset(
+                topic,
+                partition=partition,
+                offset=offset,
+                servers=servers,
+                configuration=configuration,
+                internal=True,
+            )
+
 
 class GraphIODataset(tf.data.Dataset):
-  """GraphIODataset"""
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    """GraphIODataset"""
 
-  @classmethod
-  def from_audio(cls,
-                 filename,
-                 **kwargs):
-    """Creates an `GraphIODataset` from an audio file.
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
+
+    @classmethod
+    def from_audio(cls, filename, **kwargs):
+        """Creates an `GraphIODataset` from an audio file.
 
     The following audio file formats are supported:
     - WAV
@@ -407,19 +400,17 @@ class GraphIODataset(tf.data.Dataset):
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromAudio")):
-      resource = core_ops.io_audio_readable_init(filename)
-      dtype = cls._dtype
-      shape, _, _ = core_ops.io_audio_readable_spec(resource)
-      return audio_dataset_ops.AudioGraphIODataset(
-          resource, shape, dtype, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromAudio")):
+            resource = core_ops.io_audio_readable_init(filename)
+            dtype = cls._dtype
+            shape, _, _ = core_ops.io_audio_readable_spec(resource)
+            return audio_dataset_ops.AudioGraphIODataset(
+                resource, shape, dtype, internal=True
+            )
 
-  @classmethod
-  def from_ffmpeg(cls,
-                  filename,
-                  stream,
-                  **kwargs):
-    """Creates an `GraphIODataset` from a media file by FFmpeg.
+    @classmethod
+    def from_ffmpeg(cls, filename, stream, **kwargs):
+        """Creates an `GraphIODataset` from a media file by FFmpeg.
 
     Args:
       filename: A string, the filename of a media file.
@@ -429,20 +420,27 @@ class GraphIODataset(tf.data.Dataset):
       A `IODataset`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
-      from tensorflow_io.core.python.ops import ffmpeg_ops # pylint: disable=import-outside-toplevel
-      if stream.startswith("a:"):
-        resource = ffmpeg_ops.io_ffmpeg_audio_readable_init(
-            filename, int(stream[2:]))
-        dtype = cls._dtype
-        return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
-            resource, dtype, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromFFmpeg")):
+            from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel
+                ffmpeg_ops,
+            )
 
-      if stream.startswith("v:"):
-        resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
-            filename, int(stream[2:]))
-        dtype = cls._dtype
-        return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
-            resource, dtype, internal=True)
+            if stream.startswith("a:"):
+                resource = ffmpeg_ops.io_ffmpeg_audio_readable_init(
+                    filename, int(stream[2:])
+                )
+                dtype = cls._dtype
+                return ffmpeg_dataset_ops.FFmpegAudioGraphIODataset(
+                    resource, dtype, internal=True
+                )
 
-      return None
+            if stream.startswith("v:"):
+                resource = ffmpeg_ops.io_ffmpeg_video_readable_init(
+                    filename, int(stream[2:])
+                )
+                dtype = cls._dtype
+                return ffmpeg_dataset_ops.FFmpegVideoGraphIODataset(
+                    resource, dtype, internal=True
+                )
+
+            return None

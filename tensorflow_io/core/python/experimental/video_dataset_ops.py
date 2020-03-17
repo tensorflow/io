@@ -17,35 +17,36 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class VideoCaptureIODataset(tf.data.Dataset):
-  """VideoCaptureIODataset"""
-
-  def __init__(self,
-               device,
-               internal=True):
     """VideoCaptureIODataset"""
-    with tf.name_scope("VideoCaptureIODataset"):
-      assert internal
 
-      resource = core_ops.io_video_capture_readable_init(device)
+    def __init__(self, device, internal=True):
+        """VideoCaptureIODataset"""
+        with tf.name_scope("VideoCaptureIODataset"):
+            assert internal
 
-      self._resource = resource
+            resource = core_ops.io_video_capture_readable_init(device)
 
-      dataset = tf.data.experimental.Counter()
-      dataset = dataset.map(
-          lambda i: core_ops.io_video_capture_readable_read(self._resource, i))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v)[0], 0)))
-      dataset = dataset.unbatch()
+            self._resource = resource
 
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda i: core_ops.io_video_capture_readable_read(self._resource, i)
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.unbatch()
 
-  def _inputs(self):
-    return []
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    def _inputs(self):
+        return []
+
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

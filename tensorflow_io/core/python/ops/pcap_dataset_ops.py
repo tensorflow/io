@@ -20,40 +20,49 @@ import uuid
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class PcapIODataset(tf.data.Dataset):
-  """PcapIODataset"""
+    """PcapIODataset"""
 
-  def __init__(self, filename, internal=True, **kwargs):
-    if not internal:
-      raise ValueError("PcapIODataset constructor is private; please use one "
-                       "of the factory methods instead (e.g., "
-                       "IODataset.from_pcap())")
-    with tf.name_scope("PcapIODataset") as scope:
-      capacity = kwargs.get("capacity", 4096)
-      resource = core_ops.io_pcap_readable_init(
-          filename,
-          container=scope,
-          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
+    def __init__(self, filename, internal=True, **kwargs):
+        if not internal:
+            raise ValueError(
+                "PcapIODataset constructor is private; please use one "
+                "of the factory methods instead (e.g., "
+                "IODataset.from_pcap())"
+            )
+        with tf.name_scope("PcapIODataset") as scope:
+            capacity = kwargs.get("capacity", 4096)
+            resource = core_ops.io_pcap_readable_init(
+                filename,
+                container=scope,
+                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            )
 
-      dataset = tf.data.Dataset.range(0, sys.maxsize, capacity)
-      dataset = dataset.map(
-          lambda index: core_ops.io_pcap_readable_read(
-              resource, start=index, stop=index+capacity))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v.value)[0], 0)))
-      dataset = dataset.map(lambda v: (v.label, v.value))
-      dataset = dataset.unbatch()
+            dataset = tf.data.Dataset.range(0, sys.maxsize, capacity)
+            dataset = dataset.map(
+                lambda index: core_ops.io_pcap_readable_read(
+                    resource, start=index, stop=index + capacity
+                )
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(
+                    lambda v: tf.greater(tf.shape(v.value)[0], 0)
+                )
+            )
+            dataset = dataset.map(lambda v: (v.label, v.value))
+            dataset = dataset.unbatch()
 
-      self._capacity = capacity
-      self._resource = resource
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._capacity = capacity
+            self._resource = resource
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

@@ -19,40 +19,44 @@ import tensorflow as tf
 # Note: BaseDataset could be used by Dataset implementations
 # that does not utilize DataInput implementation.
 class BaseDataset(tf.compat.v2.data.Dataset):
-  """A Base Dataset"""
+    """A Base Dataset"""
 
-  def __init__(self, variant, dtypes, shapes):
-    """Create a Base Dataset."""
-    self._dtypes = dtypes
-    self._shapes = shapes
-    super().__init__(variant)
+    def __init__(self, variant, dtypes, shapes):
+        """Create a Base Dataset."""
+        self._dtypes = dtypes
+        self._shapes = shapes
+        super().__init__(variant)
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    e = [
-        tf.TensorSpec(
-            p.as_list(), q) for (p, q) in zip(
-                self._shapes, self._dtypes)
-    ]
-    if len(e) == 1:
-      return e[0]
-    return tuple(e)
+    @property
+    def element_spec(self):
+        e = [
+            tf.TensorSpec(p.as_list(), q) for (p, q) in zip(self._shapes, self._dtypes)
+        ]
+        if len(e) == 1:
+            return e[0]
+        return tuple(e)
+
 
 class Dataset(BaseDataset):
-  """A Dataset that takes DataInput"""
+    """A Dataset that takes DataInput"""
 
-  def __init__(self, fn, data_input, batch, dtypes, shapes):
-    """Create a Dataset."""
-    self._fn = fn
-    self._data_input = data_input
-    self._batch = 0 if batch is None else batch
-    self._dtypes = dtypes
-    self._shapes = shapes
-    super().__init__(fn(
-        self._data_input,
-        self._batch,
-        output_types=self._dtypes,
-        output_shapes=self._shapes), self._dtypes, self._shapes)
+    def __init__(self, fn, data_input, batch, dtypes, shapes):
+        """Create a Dataset."""
+        self._fn = fn
+        self._data_input = data_input
+        self._batch = 0 if batch is None else batch
+        self._dtypes = dtypes
+        self._shapes = shapes
+        super().__init__(
+            fn(
+                self._data_input,
+                self._batch,
+                output_types=self._dtypes,
+                output_shapes=self._shapes,
+            ),
+            self._dtypes,
+            self._shapes,
+        )

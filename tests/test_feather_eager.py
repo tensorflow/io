@@ -21,32 +21,34 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-import tensorflow_io as tfio # pylint: disable=wrong-import-position
+import tensorflow_io as tfio  # pylint: disable=wrong-import-position
+
 
 def test_feather_format():
-  """test_feather_format"""
-  data = {
-      'bool': np.asarray([e%2 for e in range(100)], np.bool),
-      'int8': np.asarray(range(100), np.int8),
-      'int16': np.asarray(range(100), np.int16),
-      'int32': np.asarray(range(100), np.int32),
-      'int64': np.asarray(range(100), np.int64),
-      'float': np.asarray(range(100), np.float32),
-      'double': np.asarray(range(100), np.float64),
-  }
-  df = pd.DataFrame(data).sort_index(axis=1)
-  with tempfile.NamedTemporaryFile(delete=False) as f:
-    df.to_feather(f)
+    """test_feather_format"""
+    data = {
+        "bool": np.asarray([e % 2 for e in range(100)], np.bool),
+        "int8": np.asarray(range(100), np.int8),
+        "int16": np.asarray(range(100), np.int16),
+        "int32": np.asarray(range(100), np.int32),
+        "int64": np.asarray(range(100), np.int64),
+        "float": np.asarray(range(100), np.float32),
+        "double": np.asarray(range(100), np.float64),
+    }
+    df = pd.DataFrame(data).sort_index(axis=1)
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df.to_feather(f)
 
-  df = pd.read_feather(f.name)
+    df = pd.read_feather(f.name)
 
-  feather = tfio.IOTensor.from_feather(f.name)
-  for column in df.columns:
-    assert feather(column).shape == [100]
-    assert feather(column).dtype == column
-    assert np.all(feather(column).to_tensor().numpy() == data[column])
+    feather = tfio.IOTensor.from_feather(f.name)
+    for column in df.columns:
+        assert feather(column).shape == [100]
+        assert feather(column).dtype == column
+        assert np.all(feather(column).to_tensor().numpy() == data[column])
 
-  os.unlink(f.name)
+    os.unlink(f.name)
+
 
 if __name__ == "__main__":
-  test.main()
+    test.main()

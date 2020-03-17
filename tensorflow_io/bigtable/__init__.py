@@ -28,8 +28,8 @@ from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableClient
 from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableTable
 
 _allowed_symbols = [
-    'BigtableClient',
-    'BigtableTable',
+    "BigtableClient",
+    "BigtableTable",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

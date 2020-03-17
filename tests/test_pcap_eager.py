@@ -21,41 +21,50 @@ import numpy as np
 
 import tensorflow_io as tfio
 
+
 def test_pcap_input():
-  """test_pcap_input
+    """test_pcap_input
   """
-  print("Testing PcapDataset")
-  pcap_filename = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), "test_pcap", "http.pcap")
-  file_url = "file://" + pcap_filename
+    print("Testing PcapDataset")
+    pcap_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_pcap", "http.pcap"
+    )
+    file_url = "file://" + pcap_filename
 
-  dataset = tfio.IODataset.from_pcap(file_url, capacity=5).batch(1)
+    dataset = tfio.IODataset.from_pcap(file_url, capacity=5).batch(1)
 
-  packets_total = 0
-  for v in dataset:
-    (packet_timestamp, packet_data) = v
-    if packets_total == 0:
-      assert np.isclose(
-          packet_timestamp.numpy()[0],
-          1084443427.311224,
-          rtol=1e-15) # we know this is the correct value in the test pcap file
-      assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
-    packets_total += 1
-  assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
+    packets_total = 0
+    for v in dataset:
+        (packet_timestamp, packet_data) = v
+        if packets_total == 0:
+            assert np.isclose(
+                packet_timestamp.numpy()[0], 1084443427.311224, rtol=1e-15
+            )  # we know this is the correct value in the test pcap file
+            assert (
+                len(packet_data.numpy()[0]) == 62
+            )  # we know this is the correct packet data buffer length in the test pcap file
+        packets_total += 1
+    assert (
+        packets_total == 43
+    )  # we know this is the correct number of packets in the test pcap file
 
-  dataset = tfio.IODataset.from_pcap(file_url).batch(1)
+    dataset = tfio.IODataset.from_pcap(file_url).batch(1)
 
-  packets_total = 0
-  for v in dataset:
-    (packet_timestamp, packet_data) = v
-    if packets_total == 0:
-      assert np.isclose(
-          packet_timestamp.numpy()[0],
-          1084443427.311224,
-          rtol=1e-15) # we know this is the correct value in the test pcap file
-      assert len(packet_data.numpy()[0]) == 62 # we know this is the correct packet data buffer length in the test pcap file
-    packets_total += 1
-  assert packets_total == 43 # we know this is the correct number of packets in the test pcap file
+    packets_total = 0
+    for v in dataset:
+        (packet_timestamp, packet_data) = v
+        if packets_total == 0:
+            assert np.isclose(
+                packet_timestamp.numpy()[0], 1084443427.311224, rtol=1e-15
+            )  # we know this is the correct value in the test pcap file
+            assert (
+                len(packet_data.numpy()[0]) == 62
+            )  # we know this is the correct packet data buffer length in the test pcap file
+        packets_total += 1
+    assert (
+        packets_total == 43
+    )  # we know this is the correct number of packets in the test pcap file
+
 
 if __name__ == "__main__":
-  test.main()
+    test.main()
