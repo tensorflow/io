@@ -51,7 +51,7 @@ else
   done
 fi
 
-echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT Pyupgrade=$RUN_PYUPGRADE --Entries:-- $RUN_ENTRIES"
+echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT Pyupgrade=$RUN_PYUPGRADE [Entries]: $RUN_ENTRIES"
 
 BLACK_PATH=@@BLACK_PATH@@
 PYLINT_PATH=@@PYLINT_PATH@@
@@ -94,8 +94,12 @@ black_func() {
 
 pylint_func() {
   echo $1 $2
+  # Note: --indent-string='    ' to override google 2 spaces and match black
+  # Note: --max-line-length=88 to override default and match black
+  # Note: --disable=bad-continuation to avoid conflict with black
   # TODO: --disable=abstract-method should be removed eventually
-  $pylint_path --disable=abstract-method $2
+  # TODO: --disable=abstract-class-instantiated should be removed eventually
+  $pylint_path --indent-string='    ' --max-line-length=88 --disable=bad-continuation --disable=abstract-method --disable=abstract-class-instantiated $2
 }
 
 buildifier_func() {
@@ -139,11 +143,10 @@ if [[ "$RUN_ENTRIES" == "--" ]]; then
 )
 else
 ( \
-    echo "TODO: check 'tensorflow_io and test' instead of 'tensorflow_io/core/python/api' only" && \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find tensorflow_io/core/python/api -type f \
+            find tensorflow_io tests -type f \
                 \( -name '*.py' \) \
         ) ; do \
         black_func $mode "$i" ; \

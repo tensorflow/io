@@ -21,9 +21,9 @@ from tensorflow.python.util.all_util import remove_undocumented
 from tensorflow_io.gcs.python.ops.gcs_config_ops import *
 
 _allowed_symbols = [
-    'configure_colab_session',
-    'configure_gcs',
-    'BlockCacheParams',
-    'ConfigureGcsHook',
+    "configure_colab_session",
+    "configure_gcs",
+    "BlockCacheParams",
+    "ConfigureGcsHook",
 ]
 remove_undocumented(__name__, _allowed_symbols)

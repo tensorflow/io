@@ -23,24 +23,24 @@ import tensorflow as tf
 from tensorflow.python.platform import test
 from tensorflow_io import gcs
 
-tf_v1 = tf.version.VERSION.startswith('1')
+tf_v1 = tf.version.VERSION.startswith("1")
+
 
 class GcsConfigOpsTest(test.TestCase):
-  """GCS Config OPS test"""
+    """GCS Config OPS test"""
 
-  @pytest.mark.skipif(sys.platform == "darwin", reason=None)
-  def test_set_block_cache(self):
-    """test_set_block_cache"""
-    cfg = gcs.BlockCacheParams(max_bytes=1024*1024*1024)
-    if tf_v1:
-      with tf.Session() as session:
-        gcs.configure_gcs(session,
-                          credentials=None,
-                          block_cache=cfg,
-                          device=None)
-    else:
-      gcs.configure_gcs(block_cache=cfg)
+    @pytest.mark.skipif(sys.platform == "darwin", reason=None)
+    def test_set_block_cache(self):
+        """test_set_block_cache"""
+        cfg = gcs.BlockCacheParams(max_bytes=1024 * 1024 * 1024)
+        if tf_v1:
+            with tf.Session() as session:
+                gcs.configure_gcs(
+                    session, credentials=None, block_cache=cfg, device=None
+                )
+        else:
+            gcs.configure_gcs(block_cache=cfg)
 
 
-if __name__ == '__main__':
-  test.main()
+if __name__ == "__main__":
+    test.main()

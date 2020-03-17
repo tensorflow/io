@@ -18,38 +18,43 @@ import sys
 
 import tensorflow as tf
 
+
 class _StreamIODataset(tf.compat.v2.data.Dataset):
-  """_StreamIODataset"""
+    """_StreamIODataset"""
 
-  def __init__(self, function, internal=True, **kwargs):
-    if not internal:
-      raise ValueError("StreamIODataset constructor is private; please use one "
-                       "of the factory methods instead (e.g., "
-                       "IODataset.from_kafka())")
-    with tf.name_scope("StreamIODataset"):
-      capacity = kwargs.get("capacity", 4096)
-      dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
-      dataset = dataset.map(lambda index: function(index, index+capacity))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v)[0], 0)))
-      dataset = dataset.unbatch()
+    def __init__(self, function, internal=True, **kwargs):
+        if not internal:
+            raise ValueError(
+                "StreamIODataset constructor is private; please use one "
+                "of the factory methods instead (e.g., "
+                "IODataset.from_kafka())"
+            )
+        with tf.name_scope("StreamIODataset"):
+            capacity = kwargs.get("capacity", 4096)
+            dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
+            dataset = dataset.map(lambda index: function(index, index + capacity))
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.unbatch()
 
-      self._function = function
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._function = function
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec
+
 
 class _IODataset(_StreamIODataset):
-  """_IODataset"""
+    """_IODataset"""
 
-  def __init__(self, function, internal=False, **kwargs):
-    with tf.name_scope("IODataset"):
-      super().__init__(function, internal=internal, **kwargs)
+    def __init__(self, function, internal=False, **kwargs):
+        with tf.name_scope("IODataset"):
+            super().__init__(function, internal=internal, **kwargs)

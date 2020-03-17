@@ -17,49 +17,49 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class AudioGraphIODataset(tf.data.Dataset):
-  """AudioGraphIODataset"""
+    """AudioGraphIODataset"""
 
-  def __init__(self,
-               resource,
-               shape, dtype,
-               internal=True):
-    """AudioGraphIODataset."""
-    with tf.name_scope("AudioGraphIODataset"):
-      assert internal
+    def __init__(self, resource, shape, dtype, internal=True):
+        """AudioGraphIODataset."""
+        with tf.name_scope("AudioGraphIODataset"):
+            assert internal
 
-      capacity = 1024 #kwargs.get("capacity", 4096)
+            capacity = 1024  # kwargs.get("capacity", 4096)
 
-      self._resource = resource
-      dataset = tf.data.Dataset.range(0, shape[0], capacity)
-      dataset = dataset.map(lambda index: core_ops.io_audio_readable_read(
-          resource, index, index+capacity, dtype=dtype))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v)[0], 0)))
-      dataset = dataset.unbatch()
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._resource = resource
+            dataset = tf.data.Dataset.range(0, shape[0], capacity)
+            dataset = dataset.map(
+                lambda index: core_ops.io_audio_readable_read(
+                    resource, index, index + capacity, dtype=dtype
+                )
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.unbatch()
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec
+
 
 class AudioIODataset(AudioGraphIODataset):
-  """AudioIODataset"""
+    """AudioIODataset"""
 
-  def __init__(self,
-               filename,
-               internal=True):
-    """AudioIODataset."""
-    with tf.name_scope("FromAudio"):
-      resource = core_ops.io_audio_readable_init(filename)
-      shape, dtype, _ = core_ops.io_audio_readable_spec(resource)
-      shape = tf.TensorShape(shape)
-      dtype = tf.as_dtype(dtype.numpy())
-      super().__init__(
-          resource, shape, dtype, internal=internal)
+    def __init__(self, filename, internal=True):
+        """AudioIODataset."""
+        with tf.name_scope("FromAudio"):
+            resource = core_ops.io_audio_readable_init(filename)
+            shape, dtype, _ = core_ops.io_audio_readable_spec(resource)
+            shape = tf.TensorShape(shape)
+            dtype = tf.as_dtype(dtype.numpy())
+            super().__init__(resource, shape, dtype, internal=internal)

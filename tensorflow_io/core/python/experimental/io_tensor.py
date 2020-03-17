@@ -18,18 +18,17 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor
 from tensorflow_io.core.python.experimental import openexr_io_tensor_ops
 
+
 class IOTensor(io_tensor.IOTensor):
-  """IOTensor"""
+    """IOTensor"""
 
-  #=============================================================================
-  # Factory Methods
-  #=============================================================================
+    # =============================================================================
+    # Factory Methods
+    # =============================================================================
 
-  @classmethod
-  def from_exr(cls,
-               filename,
-               **kwargs):
-    """Creates an `IOTensor` from a OpenEXR file.
+    @classmethod
+    def from_exr(cls, filename, **kwargs):
+        """Creates an `IOTensor` from a OpenEXR file.
 
     Args:
       filename: A string, the filename of a OpenEXR file.
@@ -39,5 +38,5 @@ class IOTensor(io_tensor.IOTensor):
       A `IOTensor`.
 
     """
-    with tf.name_scope(kwargs.get("name", "IOFromOpenEXR")):
-      return openexr_io_tensor_ops.EXRIOTensor(filename, internal=True)
+        with tf.name_scope(kwargs.get("name", "IOFromOpenEXR")):
+            return openexr_io_tensor_ops.EXRIOTensor(filename, internal=True)

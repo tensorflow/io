@@ -25,41 +25,46 @@ import tensorflow as tf
 # In case test is done with TFIO_DATAPATH specified, the
 # import path need to be extended to capture generated grpc files:
 grpcpath = os.path.join(os.path.dirname(__file__), "..", "..", "grpc")
-datapath = os.environ.get('TFIO_DATAPATH')
+datapath = os.environ.get("TFIO_DATAPATH")
 if datapath is not None:
-  grpcpath = os.path.join(datapath, "tensorflow_io", "core", "grpc")
+    grpcpath = os.path.join(datapath, "tensorflow_io", "core", "grpc")
 sys.path.append(grpcpath)
-import endpoint_pb2 # pylint: disable=wrong-import-position
-import endpoint_pb2_grpc # pylint: disable=wrong-import-position
+import endpoint_pb2  # pylint: disable=wrong-import-position
+import endpoint_pb2_grpc  # pylint: disable=wrong-import-position
+
 
 class GRPCEndpoint(endpoint_pb2_grpc.GRPCEndpointServicer):
-  """GRPCEndpoint"""
-  def __init__(self, data):
-    self._grpc_server = grpc.server(
-        concurrent.futures.ThreadPoolExecutor(max_workers=4))
-    port = self._grpc_server.add_insecure_port("localhost:0")
-    self._endpoint = "localhost:"+str(port)
-    self._data = data
-    super().__init__()
-    endpoint_pb2_grpc.add_GRPCEndpointServicer_to_server(
-        self, self._grpc_server)
+    """GRPCEndpoint"""
 
-  def start(self):
-    self._grpc_server.start()
+    def __init__(self, data):
+        self._grpc_server = grpc.server(
+            concurrent.futures.ThreadPoolExecutor(max_workers=4)
+        )
+        port = self._grpc_server.add_insecure_port("localhost:0")
+        self._endpoint = "localhost:" + str(port)
+        self._data = data
+        super().__init__()
+        endpoint_pb2_grpc.add_GRPCEndpointServicer_to_server(self, self._grpc_server)
 
-  def stop(self):
-    self._grpc_server.stop(0)
+    def start(self):
+        self._grpc_server.start()
 
-  def endpoint(self):
-    return self._endpoint
+    def stop(self):
+        self._grpc_server.stop(0)
 
-  def ReadRecord(self, request, context): # pylint: disable=unused-argument
-    if len(self._data.shape) == 1:
-      tensor = tf.compat.v1.make_tensor_proto(
-          self._data[request.offset:request.offset+request.length])
-    else:
-      tensor = tf.compat.v1.make_tensor_proto(
-          self._data[request.offset:request.offset+request.length, :])
-    record = google.protobuf.any_pb2.Any()
-    record.Pack(tensor)
-    return endpoint_pb2.Response(record=record)
+    def endpoint(self):
+        return self._endpoint
+
+    def ReadRecord(self, request, context):  # pylint: disable=unused-argument
+        """ReadRecord"""
+        if len(self._data.shape) == 1:
+            tensor = tf.compat.v1.make_tensor_proto(
+                self._data[request.offset : request.offset + request.length]
+            )
+        else:
+            tensor = tf.compat.v1.make_tensor_proto(
+                self._data[request.offset : request.offset + request.length, :]
+            )
+        record = google.protobuf.any_pb2.Any()
+        record.Pack(tensor)
+        return endpoint_pb2.Response(record=record)

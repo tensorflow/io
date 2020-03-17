@@ -17,84 +17,92 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class KafkaIODataset(tf.data.Dataset):
-  """KafkaIODataset"""
+    """KafkaIODataset"""
 
-  def __init__(self,
-               topic,
-               partition,
-               start, stop,
-               servers, configuration,
-               internal=True):
-    """KafkaIODataset."""
-    with tf.name_scope("KafkaIODataset"):
-      assert internal
+    def __init__(
+        self, topic, partition, start, stop, servers, configuration, internal=True
+    ):
+        """KafkaIODataset."""
+        with tf.name_scope("KafkaIODataset"):
+            assert internal
 
-      metadata = list(configuration or [])
-      if servers is not None:
-        metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init(
-          topic, partition, offset=0, metadata=metadata)
-      start, stop = core_ops.io_kafka_readable_spec(resource, start, stop)
+            metadata = list(configuration or [])
+            if servers is not None:
+                metadata.append("bootstrap.servers=%s" % servers)
+            resource = core_ops.io_kafka_readable_init(
+                topic, partition, offset=0, metadata=metadata
+            )
+            start, stop = core_ops.io_kafka_readable_spec(resource, start, stop)
 
-      self._resource = resource
-      self._start, self._stop = start, stop
+            self._resource = resource
+            self._start, self._stop = start, stop
 
-      step = 1024
-      indices_start = tf.data.Dataset.range(0, stop, step)
-      indices_stop = indices_start.skip(1).concatenate(
-          tf.data.Dataset.from_tensor_slices([stop]))
-      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
-      def f(start, stop):
-        return core_ops.io_kafka_readable_read(
-            self._resource, start=start, stop=stop)
-      dataset = dataset.map(f)
-      dataset = dataset.unbatch()
+            step = 1024
+            indices_start = tf.data.Dataset.range(0, stop, step)
+            indices_stop = indices_start.skip(1).concatenate(
+                tf.data.Dataset.from_tensor_slices([stop])
+            )
+            dataset = tf.data.Dataset.zip((indices_start, indices_stop))
 
-      self._dataset = dataset
-      super().__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+            def f(start, stop):
+                return core_ops.io_kafka_readable_read(
+                    self._resource, start=start, stop=stop
+                )
 
-  def _inputs(self):
-    return []
+            dataset = dataset.map(f)
+            dataset = dataset.unbatch()
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
+
+    def _inputs(self):
+        return []
+
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec
+
 
 class KafkaStreamIODataset(tf.data.Dataset):
-  """KafkaStreamIODataset"""
+    """KafkaStreamIODataset"""
 
-  def __init__(self,
-               topic,
-               partition, offset,
-               servers, configuration,
-               internal=True):
-    """KafkaStreamIODataset."""
-    with tf.name_scope("KafkaStreamIODataset"):
-      assert internal
+    def __init__(self, topic, partition, offset, servers, configuration, internal=True):
+        """KafkaStreamIODataset."""
+        with tf.name_scope("KafkaStreamIODataset"):
+            assert internal
 
-      metadata = list(configuration or [])
-      if servers is not None:
-        metadata.append("bootstrap.servers=%s" % servers)
-      resource = core_ops.io_kafka_readable_init(
-          topic, partition, offset, metadata=metadata)
+            metadata = list(configuration or [])
+            if servers is not None:
+                metadata.append("bootstrap.servers=%s" % servers)
+            resource = core_ops.io_kafka_readable_init(
+                topic, partition, offset, metadata=metadata
+            )
 
-      self._resource = resource
+            self._resource = resource
 
-      dataset = tf.data.experimental.Counter()
-      dataset = dataset.map(
-          lambda i: core_ops.io_kafka_readable_next(self._resource, i))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v.message)[0], 0)))
-      dataset = dataset.unbatch()
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda i: core_ops.io_kafka_readable_next(self._resource, i)
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(
+                    lambda v: tf.greater(tf.shape(v.message)[0], 0)
+                )
+            )
+            dataset = dataset.unbatch()
 
-      self._dataset = dataset
-      super().__init__(self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

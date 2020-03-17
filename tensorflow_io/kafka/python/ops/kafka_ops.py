@@ -17,21 +17,22 @@
 from tensorflow_io.core.python.ops import core_ops
 
 
-class KafkaOutputSequence():
-  """KafkaOutputSequence"""
+class KafkaOutputSequence:
+    """KafkaOutputSequence"""
 
-  def __init__(self, topic, servers="localhost", configuration=None):
-    """Create a `KafkaOutputSequence`.
+    def __init__(self, topic, servers="localhost", configuration=None):
+        """Create a `KafkaOutputSequence`.
     """
-    self._topic = topic
-    metadata = list(configuration or [])
-    if servers is not None:
-      metadata.append("bootstrap.servers=%s" % servers)
-    self._resource = core_ops.io_kafka_output_sequence(
-        topic=topic, metadata=metadata)
+        self._topic = topic
+        metadata = list(configuration or [])
+        if servers is not None:
+            metadata.append("bootstrap.servers=%s" % servers)
+        self._resource = core_ops.io_kafka_output_sequence(
+            topic=topic, metadata=metadata
+        )
 
-  def setitem(self, index, item):
-    core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
+    def setitem(self, index, item):
+        core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
 
-  def flush(self):
-    core_ops.io_kafka_output_sequence_flush(self._resource)
+    def flush(self):
+        core_ops.io_kafka_output_sequence_flush(self._resource)

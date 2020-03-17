@@ -17,65 +17,75 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
-class GRPCStreamIODataset(tf.data.Dataset):
-  """GRPCStreamIODataset"""
 
-  def __init__(self, endpoint, shape, dtype):
-    """Create a GRPC Reader.
+class GRPCStreamIODataset(tf.data.Dataset):
+    """GRPCStreamIODataset"""
+
+    def __init__(self, endpoint, shape, dtype):
+        """Create a GRPC Reader.
 
     Args:
       endpoint: A `tf.string` tensor containing one or more endpoints.
     """
-    with tf.name_scope("GRPCStreamIODataset"):
-      shape = tf.cast(shape, tf.int64)
+        with tf.name_scope("GRPCStreamIODataset"):
+            shape = tf.cast(shape, tf.int64)
 
-      resource = core_ops.io_grpc_readable_init(endpoint)
+            resource = core_ops.io_grpc_readable_init(endpoint)
 
-      self._resource = resource
-      self._shape = tf.cast(shape, tf.int64)
-      self._dtype = dtype
+            self._resource = resource
+            self._shape = tf.cast(shape, tf.int64)
+            self._dtype = dtype
 
-      step = 1
-      indices_start = tf.data.Dataset.range(0, shape[0], step)
-      indices_stop = indices_start.skip(1).concatenate(
-          tf.data.Dataset.from_tensor_slices([shape[0]]))
-      dataset = tf.data.Dataset.zip((indices_start, indices_stop))
-      def f(start, stop):
-        shape = tf.concat(
-            [tf.convert_to_tensor([stop - start], tf.int64), self._shape[1:]],
-            axis=0)
-        return core_ops.io_grpc_readable_read(
-            self._resource, start=start, shape=shape, dtype=self._dtype)
-      dataset = dataset.map(f)
-      dataset = dataset.unbatch()
+            step = 1
+            indices_start = tf.data.Dataset.range(0, shape[0], step)
+            indices_stop = indices_start.skip(1).concatenate(
+                tf.data.Dataset.from_tensor_slices([shape[0]])
+            )
+            dataset = tf.data.Dataset.zip((indices_start, indices_stop))
 
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            def f(start, stop):
+                shape = tf.concat(
+                    [tf.convert_to_tensor([stop - start], tf.int64), self._shape[1:]],
+                    axis=0,
+                )
+                return core_ops.io_grpc_readable_read(
+                    self._resource, start=start, shape=shape, dtype=self._dtype
+                )
 
-  @staticmethod
-  def from_numpy(a, internal=False):
-    """from_numpy"""
-    assert internal
+            dataset = dataset.map(f)
+            dataset = dataset.unbatch()
 
-    from tensorflow_io.core.python.experimental import grpc_endpoint # pylint: disable=import-outside-toplevel
-    grpc_server = grpc_endpoint.GRPCEndpoint(a)
-    grpc_server.start()
-    endpoint = grpc_server.endpoint()
-    print("ENDPOINT: ", endpoint)
-    dtype = a.dtype
-    shape = list(a.shape)
-    dataset = GRPCStreamIODataset(endpoint, shape, dtype)
-    dataset._grpc_server = grpc_server # pylint: disable=protected-access
-    return dataset
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def __del__(self):
-    if hasattr(self, '_grpc_server') and self._grpc_server is not None:
-      self._grpc_server.stop()
+    @staticmethod
+    def from_numpy(a, internal=False):
+        """from_numpy"""
+        assert internal
 
-  def _inputs(self):
-    return []
+        from tensorflow_io.core.python.experimental import (  # pylint: disable=import-outside-toplevel
+            grpc_endpoint,
+        )
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+        grpc_server = grpc_endpoint.GRPCEndpoint(a)
+        grpc_server.start()
+        endpoint = grpc_server.endpoint()
+        print("ENDPOINT: ", endpoint)
+        dtype = a.dtype
+        shape = list(a.shape)
+        dataset = GRPCStreamIODataset(endpoint, shape, dtype)
+        dataset._grpc_server = grpc_server  # pylint: disable=protected-access
+        return dataset
+
+    def __del__(self):
+        if hasattr(self, "_grpc_server") and self._grpc_server is not None:
+            self._grpc_server.stop()
+
+    def _inputs(self):
+        return []
+
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

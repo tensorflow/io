@@ -17,41 +17,42 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class PubSubStreamIODataset(tf.data.Dataset):
-  """PubSubStreamGraphIODataset"""
+    """PubSubStreamGraphIODataset"""
 
-  def __init__(self,
-               subscription,
-               endpoint=None,
-               timeout=10000,
-               internal=True):
-    """PubSubStreamIODataset."""
-    with tf.name_scope("PubSubStreamIODataset"):
-      assert internal
+    def __init__(self, subscription, endpoint=None, timeout=10000, internal=True):
+        """PubSubStreamIODataset."""
+        with tf.name_scope("PubSubStreamIODataset"):
+            assert internal
 
-      metadata = []
-      if endpoint is not None:
-        metadata.append("endpoint=%s" % endpoint)
-      metadata.append("timeout=%d" % timeout)
-      resource = core_ops.io_pub_sub_readable_init(subscription, metadata)
+            metadata = []
+            if endpoint is not None:
+                metadata.append("endpoint=%s" % endpoint)
+            metadata.append("timeout=%d" % timeout)
+            resource = core_ops.io_pub_sub_readable_init(subscription, metadata)
 
-      self._resource = resource
+            self._resource = resource
 
-      dataset = tf.data.experimental.Counter()
-      dataset = dataset.map(
-          lambda i: core_ops.io_pub_sub_readable_read(self._resource, i))
-      dataset = dataset.apply(
-          tf.data.experimental.take_while(
-              lambda v: tf.greater(tf.shape(v.id)[0], 0)))
-      dataset = dataset.unbatch()
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda i: core_ops.io_pub_sub_readable_read(self._resource, i)
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(
+                    lambda v: tf.greater(tf.shape(v.id)[0], 0)
+                )
+            )
+            dataset = dataset.unbatch()
 
-      self._dataset = dataset
-      super().__init__(
-          self._dataset._variant_tensor) # pylint: disable=protected-access
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
-  def _inputs(self):
-    return []
+    def _inputs(self):
+        return []
 
-  @property
-  def element_spec(self):
-    return self._dataset.element_spec
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec
