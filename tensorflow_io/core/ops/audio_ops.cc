@@ -96,7 +96,6 @@ REGISTER_OP("IO>AudioEncodeWAV")
       return Status::OK();
     });
 
-
 REGISTER_OP("IO>AudioDecodeFlac")
     .Input("input: string")
     .Input("shape: int64")
@@ -130,8 +129,7 @@ REGISTER_OP("IO>AudioEncodeFlac")
 REGISTER_OP("IO>AudioDecodeOgg")
     .Input("input: string")
     .Input("shape: int64")
-    .Output("value: dtype")
-    .Attr("dtype: {int16, int32}")
+    .Output("value: float32")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
@@ -148,10 +146,9 @@ REGISTER_OP("IO>AudioDecodeOgg")
     });
 
 REGISTER_OP("IO>AudioEncodeOgg")
-    .Input("input: dtype")
+    .Input("input: float32")
     .Input("rate: int64")
     .Output("value: string")
-    .Attr("dtype: {int16}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       return Status::OK();

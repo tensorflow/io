@@ -350,11 +350,19 @@ def fixture_audio_ogg():
       "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value, tf.int16)
+  value = tf.cast(value, tf.float32) / 32768.0
 
   args = ogg_path
-  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args)
-  expected = [v for _, v in enumerate(value)]
+  def func(args):
+    delta = tf.constant(0.00002, tf.float32)
+    v = tfio.IODataset.graph(tf.float32).from_audio(args)
+    e = tf.data.Dataset.from_tensor_slices([value])
+    e = e.unbatch()
+    dataset = tf.data.Dataset.zip((v, e))
+    dataset = dataset.map(lambda v, e: (v - e))
+    dataset = dataset.map(lambda v: tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta)))
+    return dataset
+  expected = [tf.ones_like(v, tf.bool) for _, v in enumerate(value)]
 
   return args, func, expected
 
@@ -390,11 +398,19 @@ def fixture_audio_mp3():
       "test_audio", "l1-fl6.raw")
   raw = np.fromfile(raw_path, np.int16)
   raw = raw.reshape([-1, 2])
-  value = tf.cast(raw, tf.int16)
+  value = tf.cast(raw, tf.float32) / 32768.0
 
   args = path
-  func = lambda args: tfio.IODataset.graph(tf.int16).from_audio(args)
-  expected = [v for _, v in enumerate(value)]
+  def func(args):
+    delta = tf.constant(0.00005, tf.float32)
+    v = tfio.IODataset.graph(tf.float32).from_audio(args)
+    e = tf.data.Dataset.from_tensor_slices([value])
+    e = e.unbatch()
+    dataset = tf.data.Dataset.zip((v, e))
+    dataset = dataset.map(lambda v, e: (v - e))
+    dataset = dataset.map(lambda v: tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta)))
+    return dataset
+  expected = [tf.ones_like(v, tf.bool) for _, v in enumerate(value)]
 
   return args, func, expected
 
