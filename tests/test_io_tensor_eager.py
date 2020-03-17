@@ -180,13 +180,14 @@ def fixture_audio_mp3():
       "test_audio", "l1-fl6.raw")
   raw = np.fromfile(raw_path, np.int16)
   raw = raw.reshape([-1, 2])
-  value = tf.cast(raw, tf.int16)
+  value = tf.cast(raw, tf.float32) / 32768.0
 
   args = path
-  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
+  func = lambda args: tfio.IOTensor.graph(tf.float32).from_audio(args)
   expected = value
+  equal = lambda a, b: np.allclose(a, b, atol=0.00005)
 
-  return args, func, expected, np.array_equal
+  return args, func, expected, equal
 
 @pytest.fixture(name="audio_rate_mp3", scope="module")
 def fixture_audio_rate_mp3():
