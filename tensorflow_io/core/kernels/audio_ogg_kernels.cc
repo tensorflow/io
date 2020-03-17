@@ -107,7 +107,7 @@ class OggReadableResource : public AudioReadableResourceBase {
     int64 rate = vi->rate;
 
     shape_ = TensorShape({samples, channels});
-    dtype_ = DT_INT16;
+    dtype_ = DT_FLOAT;
     rate_ = rate;
 
     return Status::OK();
@@ -139,20 +139,27 @@ class OggReadableResource : public AudioReadableResourceBase {
       return errors::InvalidArgument("seek failed: ", returned);
     }
 
-    int bitstream = 0;
-    long bytes_read = 0;
-    long bytes_to_read = value->NumElements() * sizeof(int16);
-    while (bytes_read < bytes_to_read) {
-      long chunk = ov_read(&ogg_vorbis_file_,
-                           (char*)value->flat<int16>().data() + bytes_read,
-                           bytes_to_read - bytes_read, 0, 2, 1, &bitstream);
+    int64 channels = value->shape().dim_size(1);
+
+    long samples_read = 0;
+    long samples_to_read = value->shape().dim_size(0);
+    while (samples_read < samples_to_read) {
+      float** buffer;
+      int bitstream = 0;
+      long chunk = ov_read_float(&ogg_vorbis_file_, &buffer,
+                                 samples_to_read - samples_read, &bitstream);
       if (chunk < 0) {
         return errors::InvalidArgument("read failed: ", chunk);
       }
       if (chunk == 0) {
         return errors::InvalidArgument("not enough data: ");
       }
-      bytes_read += chunk;
+      for (int64 c = 0; c < channels; c++) {
+        for (int64 i = 0; i < chunk; i++) {
+          value->matrix<float>()(samples_read + i, c) = buffer[c][i];
+        }
+      }
+      samples_read += chunk;
     }
     return Status::OK();
   }
@@ -267,18 +274,6 @@ class AudioEncodeOggOp : public OpKernel {
     const int64 samples = input_tensor->shape().dim_size(0);
     const int64 channels = input_tensor->shape().dim_size(1);
 
-    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
-    // TODO: support more data types
-    switch (input_tensor->dtype()) {
-      case DT_INT16:
-        break;
-      default:
-        OP_REQUIRES(context, false,
-                    errors::InvalidArgument(
-                        "data type ", DataTypeString(input_tensor->dtype()),
-                        " not supported"));
-    }
-
     vorbis_info vi;
     vorbis_info_init(&vi);
     std::unique_ptr<vorbis_info, void (*)(vorbis_info*)> vi_scope(
@@ -366,15 +361,10 @@ class AudioEncodeOggOp : public OpKernel {
     float** buffer = vorbis_analysis_buffer(&vd, samples);
 
     // uninterleave samples
-    switch (input_tensor->dtype()) {
-      case DT_INT16:
-        for (int64 i = 0; i < samples; i++) {
-          for (int64 c = 0; c < channels; c++) {
-            buffer[c][i] =
-                float(input_tensor->flat<int16>()(i * channels + c)) / 32768.f;
-          }
-        }
-        break;
+    for (int64 i = 0; i < samples; i++) {
+      for (int64 c = 0; c < channels; c++) {
+        buffer[c][i] = input_tensor->matrix<float>()(i, c);
+      }
     }
 
     ogg_packet op;

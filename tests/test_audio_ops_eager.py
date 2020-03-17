@@ -140,11 +140,17 @@ def fixture_decode_ogg():
       "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value, tf.int16)
+  value = tf.cast(value, tf.float32) / 32768.0
 
+  # calculate the delta and expect a small diff
   args = content
-  func = lambda e: tfio.experimental.audio.decode_ogg(e, dtype=tf.int16)
-  expected = value
+  def func(e):
+    delta = tf.constant(0.00002, tf.float32)
+    v = tfio.experimental.audio.decode_ogg(e)
+    v = v - value
+    v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+    return v
+  expected = tf.ones([14336, 2], tf.bool)
 
   return args, func, expected
 
@@ -156,17 +162,15 @@ def fixture_encode_ogg():
       "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value, tf.int16)
+  value = tf.cast(value, tf.float32) / 32768.0
 
   # calculate the delta and expect a small diff
-  # TODO: a better way to test lossy audio?
   args = value
   def func(e):
-    delta = tf.constant(0.03, tf.float32)
+    delta = tf.constant(0.05, tf.float32)
     v = tfio.experimental.audio.encode_ogg(e, rate=44100)
-    v = tfio.experimental.audio.decode_ogg(v, dtype=tf.int16)
+    v = tfio.experimental.audio.decode_ogg(v)
     v = v - e
-    v = tf.cast(v, tf.float32) / 65536.0
     v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
     return v
   expected = tf.ones([14336, 2], tf.bool)

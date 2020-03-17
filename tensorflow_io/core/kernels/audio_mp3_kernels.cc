@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/audio_kernels.h"
 
 #define MINIMP3_IMPLEMENTATION
+#define MINIMP3_FLOAT_OUTPUT
 #include "minimp3_ex.h"
 
 namespace tensorflow {
@@ -87,7 +88,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
     int64 rate = mp3dec_ex_.info.hz;
 
     shape_ = TensorShape({samples, channels});
-    dtype_ = DT_INT16;
+    dtype_ = DT_FLOAT;
     rate_ = rate;
 
     return Status::OK();
@@ -119,7 +120,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
       return errors::InvalidArgument("seek to ", sample_start,
                                      " failed: ", mp3dec_ex_.last_error);
     }
-    size_t returned = mp3dec_ex_read(&mp3dec_ex_, value->flat<int16>().data(),
+    size_t returned = mp3dec_ex_read(&mp3dec_ex_, value->flat<float>().data(),
                                      value->NumElements());
     if (returned != value->NumElements()) {
       return errors::InvalidArgument("read ", value->NumElements(), " from ",

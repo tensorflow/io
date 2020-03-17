@@ -55,7 +55,7 @@ def fixture_audio_wav():
   func = lambda e: tfio.IOTensor.graph(tf.int16).from_audio(e)
   expected = value
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_rate_wav", scope="module")
 def fixture_audio_rate_wav():
@@ -68,7 +68,7 @@ def fixture_audio_rate_wav():
   func = lambda e: tfio.IOTensor.graph(tf.int16).from_audio(e).rate
   expected = tf.constant(44100)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_wav_24", scope="module")
 def fixture_audio_wav_24():
@@ -87,7 +87,7 @@ def fixture_audio_wav_24():
   func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args)
   expected = value
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_rate_wav_24", scope="module")
 def fixture_audio_rate_wav_24():
@@ -100,7 +100,7 @@ def fixture_audio_rate_wav_24():
   func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args).rate
   expected = tf.constant(44100)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_ogg", scope="module")
 def fixture_audio_ogg():
@@ -113,13 +113,14 @@ def fixture_audio_ogg():
       "test_audio", "ZASFX_ADSR_no_sustain.wav")
   audio = tf.audio.decode_wav(tf.io.read_file(path))
   value = audio.audio * (1 << 15)
-  value = tf.cast(value, tf.int16)
+  value = tf.cast(value, tf.float32) / 32768.0
 
   args = ogg_path
-  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
+  func = lambda args: tfio.IOTensor.graph(tf.float32).from_audio(args)
   expected = value
+  equal = lambda a, b: np.allclose(a, b, atol=0.00002)
 
-  return args, func, expected
+  return args, func, expected, equal
 
 @pytest.fixture(name="audio_rate_ogg", scope="module")
 def fixture_audio_rate_ogg():
@@ -132,7 +133,7 @@ def fixture_audio_rate_ogg():
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
   expected = tf.constant(44100)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_flac", scope="module")
 def fixture_audio_flac():
@@ -151,7 +152,7 @@ def fixture_audio_flac():
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
   expected = value
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_rate_flac", scope="module")
 def fixture_audio_rate_flac():
@@ -164,7 +165,7 @@ def fixture_audio_rate_flac():
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
   expected = tf.constant(44100)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="audio_mp3", scope="module")
 def fixture_audio_mp3():
@@ -179,13 +180,14 @@ def fixture_audio_mp3():
       "test_audio", "l1-fl6.raw")
   raw = np.fromfile(raw_path, np.int16)
   raw = raw.reshape([-1, 2])
-  value = tf.cast(raw, tf.int16)
+  value = tf.cast(raw, tf.float32) / 32768.0
 
   args = path
-  func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args)
+  func = lambda args: tfio.IOTensor.graph(tf.float32).from_audio(args)
   expected = value
+  equal = lambda a, b: np.allclose(a, b, atol=0.00005)
 
-  return args, func, expected
+  return args, func, expected, equal
 
 @pytest.fixture(name="audio_rate_mp3", scope="module")
 def fixture_audio_rate_mp3():
@@ -198,7 +200,7 @@ def fixture_audio_rate_mp3():
   func = lambda args: tfio.IOTensor.graph(tf.int16).from_audio(args).rate
   expected = tf.constant(44100)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="kafka")
 def fixture_kafka():
@@ -210,7 +212,7 @@ def fixture_kafka():
     return v
   expected = [("D" + str(i)).encode() for i in range(10)]
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="hdf5", scope="module")
 def fixture_hdf5(request):
@@ -233,7 +235,7 @@ def fixture_hdf5(request):
     shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="hdf5_graph", scope="module")
 def fixture_hdf5_graph(request):
@@ -257,7 +259,7 @@ def fixture_hdf5_graph(request):
     shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="hdf5_scalar", scope="module")
 def fixture_hdf5_scalar(request):
@@ -307,7 +309,7 @@ def fixture_hdf5_scalar(request):
     shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="hdf5_multiple_dimension", scope="module")
 def fixture_hdf5_multiple_dimension(request):
@@ -330,7 +332,7 @@ def fixture_hdf5_multiple_dimension(request):
     shutil.rmtree(tmp_path)
   request.addfinalizer(fin)
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="arrow", scope="module")
 def fixture_arrow():
@@ -347,7 +349,7 @@ def fixture_arrow():
   func = lambda t: tfio.IOTensor.from_arrow(t)(column)
   expected = table[column].to_pylist()
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 @pytest.fixture(name="arrow_graph", scope="module")
 def fixture_arrow_graph():
@@ -366,7 +368,7 @@ def fixture_arrow_graph():
   func = lambda _: tfio.IOTensor.from_arrow(table, spec=spec)(column)
   expected = table.column(column).to_pylist()
 
-  return args, func, expected
+  return args, func, expected, np.array_equal
 
 # scalar is a special IOTensor that is alias to Tensor
 @pytest.mark.parametrize(
@@ -380,14 +382,14 @@ def fixture_arrow_graph():
 )
 def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_scalar"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   values = func(args)
 
   # Test to_tensor
   entries = [value.to_tensor() for value in values]
   assert len(entries) == len(expected)
-  assert np.all([v == e for v, e in zip(entries, expected)])
+  assert np.all([equal(v, e) for v, e in zip(entries, expected)])
 
 # slice (__getitem__) is the most basic operation for IOTensor
 @pytest.mark.parametrize(
@@ -415,19 +417,19 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
 )
 def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_slice"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   io_tensor = func(args)
 
   # Test to_tensor
   entries = io_tensor.to_tensor()
   assert len(entries) == len(expected)
-  assert np.array_equal(entries, expected)
+  assert equal(entries, expected)
 
   # Test __getitem__, use 7 to partition
   indices = list(range(0, len(expected), 7))
   for start, stop in list(zip(indices, indices[1:] + [len(expected)])):
-    assert np.array_equal(io_tensor[start:stop], expected[start:stop])
+    assert equal(io_tensor[start:stop], expected[start:stop])
 
 # full slicing/index across multiple dimensions
 @pytest.mark.parametrize(
@@ -441,7 +443,7 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
 )
 def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_slice_multiple_dimension"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   io_tensor = func(args)
 
@@ -451,7 +453,7 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
     indices_1 = list(range(0, len(expected[0]), 11))
     for start_1, stop_1 in list(
         zip(indices_1, indices_1[1:] + [len(expected[0])])):
-      assert np.array_equal(
+      assert equal(
           io_tensor[start_0:stop_0, start_1:stop_1],
           expected[start_0:stop_0, start_1:stop_1])
 
@@ -498,7 +500,7 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
 def test_io_tensor_slice_in_dataset(
     fixture_lookup, io_tensor_fixture, num_parallel_calls):
   """test_io_tensor_slice_in_dataset"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   # Test to_tensor within dataset
 
@@ -515,7 +517,7 @@ def test_io_tensor_slice_in_dataset(
   item = 0
   for entries in dataset:
     assert len(entries) == len(expected)
-    assert np.array_equal(entries, expected)
+    assert equal(entries, expected)
     item += 1
   assert item == 2
 
@@ -532,7 +534,7 @@ def test_io_tensor_slice_in_dataset(
   item = 0
   for entries in dataset:
     assert len(entries) == len(expected[:100])
-    assert np.array_equal(entries, expected[:100])
+    assert equal(entries, expected[:100])
     item += 1
   assert item == 2
 
@@ -556,11 +558,11 @@ def test_io_tensor_slice_in_dataset(
 )
 def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_slice"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   # Test meta data attached to IOTensor
   meta = func(args)
-  assert meta == expected
+  assert equal(meta, expected)
 
 # meta inside dataset is also supported for GraphIOTensor
 @pytest.mark.parametrize(
@@ -582,7 +584,7 @@ def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
 )
 def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
   """test_io_tensor_slice"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   # Note: @tf.function is actually not needed, as tf.data.Dataset
   # will automatically wrap the `func` into a graph anyway.
@@ -596,7 +598,7 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
 
   item = 0
   for meta in dataset:
-    assert meta == expected
+    assert equal(meta, expected)
     item += 1
   assert item == 2
 
@@ -627,7 +629,7 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
 )
 def test_io_tensor_benchmark(benchmark, fixture_lookup, io_tensor_fixture):
   """test_io_tensor_benchmark"""
-  args, func, expected = fixture_lookup(io_tensor_fixture)
+  args, func, expected, equal = fixture_lookup(io_tensor_fixture)
 
   def f(v):
     io_tensor = func(v)
@@ -635,4 +637,4 @@ def test_io_tensor_benchmark(benchmark, fixture_lookup, io_tensor_fixture):
 
   entries = benchmark(f, args)
 
-  assert np.array_equal(entries, expected)
+  assert equal(entries, expected)
