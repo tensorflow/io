@@ -14,9 +14,6 @@
 # ==============================================================================
 """Tests for ArrowDataset."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from collections import namedtuple
 import io
@@ -29,8 +26,6 @@ import pytest
 
 import numpy.testing as npt
 import tensorflow as tf
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-  tf.compat.v1.enable_eager_execution()
 
 from tensorflow import dtypes # pylint: disable=wrong-import-position
 from tensorflow import errors # pylint: disable=wrong-import-position
@@ -38,10 +33,6 @@ from tensorflow import test   # pylint: disable=wrong-import-position
 
 import tensorflow_io.arrow as arrow_io # pylint: disable=wrong-import-position
 from tensorflow_io import IOTensor # pylint: disable=wrong-import-position
-
-if sys.version_info == (3, 4):
-  pytest.skip(
-      "pyarrow is not supported with python 3.4", allow_module_level=True)
 
 import pyarrow as pa  # pylint: disable=wrong-import-order,wrong-import-position
 from pyarrow.feather import write_feather # pylint: disable=wrong-import-order,wrong-import-position
@@ -155,7 +146,7 @@ class ArrowTestBase(test.TestCase):
                            truth_data.output_types[col],
                            isinstance(truth_data.data[col][0], list)))
               for col in range(len(truth_data.output_types))]
-    names = ["%s_[%s]" % (i, a.type) for i, a in enumerate(arrays)]
+    names = ["{}_[{}]".format(i, a.type) for i, a in enumerate(arrays)]
     return pa.RecordBatch.from_arrays(arrays, names)
 
 
@@ -165,7 +156,7 @@ class ArrowIOTensorTest(ArrowTestBase):
   @classmethod
   def setUpClass(cls): # pylint: disable=invalid-name
     """setUpClass"""
-    super(ArrowIOTensorTest, cls).setUpClass()
+    super().setUpClass()
     cls.scalar_shapes = tuple(
         [tf.TensorShape([len(c)]) for c in cls.scalar_data])
     cls.list_fixed_shapes = tuple(
@@ -246,6 +237,38 @@ class ArrowIOTensorTest(ArrowTestBase):
     self.assertGreater(table[0].num_chunks, 1)
     iot = IOTensor.from_arrow(table)
     self.run_test_case(iot, truth_data, table.column_names)
+
+  def test_arrow_io_dataset_map_from_file(self):
+    """test_arrow_io_dataset_map_from_file"""
+    column = 'a'
+    dtype = dtypes.int64
+    column_dtype = self.get_arrow_type(dtype, False)
+    arr = pa.array(list(range(100)), column_dtype)
+    table = pa.Table.from_arrays([arr], [column])
+    spec = {column: dtype}
+
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+      with pa.RecordBatchFileWriter(f.name, table.schema) as writer:
+        for batch in table.to_batches():
+          writer.write_batch(batch)
+
+    def from_file(_):
+      reader = pa.RecordBatchFileReader(f.name)
+      t = reader.read_all()
+      tio = IOTensor.from_arrow(t, spec=spec)
+      return tio(column).to_tensor()
+
+    num_iters = 2
+    ds = tf.data.Dataset.range(num_iters).map(from_file)
+    expected = table[column].to_pylist()
+
+    iter_count = 0
+    for result in ds:
+      npt.assert_array_equal(result, expected)
+      iter_count += 1
+
+    self.assertEqual(iter_count, num_iters)
+    os.unlink(f.name)
 
 
 class ArrowDatasetTest(ArrowTestBase):
@@ -430,7 +453,7 @@ class ArrowDatasetTest(ArrowTestBase):
     sock.bind(('127.0.0.1', 0))
     sock.listen(1)
     host_addr, port = sock.getsockname()
-    host = "%s:%s" % (host_addr, port)
+    host = "{}:{}".format(host_addr, port)
 
     def run_server(num_batches):
       conn, _ = sock.accept()
@@ -746,6 +769,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.assertEqual(x, expected[0])
         expected.pop(0)
 
+  @pytest.mark.skipif(sys.version_info == (3, 5), reason="TODO")
   def test_tf_function(self):
     """ Test that an ArrowDataset can be used in tf.function call
     """

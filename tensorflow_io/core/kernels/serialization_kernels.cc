@@ -40,7 +40,7 @@ class DecodeJSONOp : public OpKernel {
     // TODO: support batch (1-D) input
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     const Tensor* names_tensor;
     OP_REQUIRES_OK(context, context->input("names", &names_tensor));
@@ -58,10 +58,10 @@ class DecodeJSONOp : public OpKernel {
       OP_REQUIRES_OK(context,
                      context->allocate_output(i, shapes_[i], &value_tensor));
       rapidjson::Value* entry =
-          rapidjson::Pointer(names_tensor->flat<string>()(i).c_str()).Get(d);
+          rapidjson::Pointer(names_tensor->flat<tstring>()(i).c_str()).Get(d);
       OP_REQUIRES(context, (entry != nullptr),
                   errors::InvalidArgument("no value for ",
-                                          names_tensor->flat<string>()(i)));
+                                          names_tensor->flat<tstring>()(i)));
       if (entry->IsArray()) {
         OP_REQUIRES(context, entry->Size() == value_tensor->NumElements(),
                     errors::InvalidArgument(
@@ -91,7 +91,7 @@ class DecodeJSONOp : public OpKernel {
             break;
           case DT_STRING:
             for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<string>()(j) = (*entry)[j].GetString();
+              value_tensor->flat<tstring>()(j) = (*entry)[j].GetString();
             }
             break;
           default:
@@ -117,7 +117,7 @@ class DecodeJSONOp : public OpKernel {
             value_tensor->scalar<double>()() = entry->GetDouble();
             break;
           case DT_STRING:
-            value_tensor->scalar<string>()() = entry->GetString();
+            value_tensor->scalar<tstring>()() = entry->GetString();
             break;
           default:
             OP_REQUIRES(
@@ -158,7 +158,7 @@ class DecodeAvroOp : public OpKernel {
 
     const Tensor* schema_tensor;
     OP_REQUIRES_OK(context, context->input("schema", &schema_tensor));
-    const string& schema = schema_tensor->scalar<string>()();
+    const string& schema = schema_tensor->scalar<tstring>()();
 
     std::unordered_map<string, Tensor*> values;
     for (int64 i = 0; i < names_tensor->NumElements(); i++) {
@@ -166,7 +166,7 @@ class DecodeAvroOp : public OpKernel {
       OP_REQUIRES_OK(context, context->allocate_output(static_cast<int64>(i),
                                                        input_tensor->shape(),
                                                        &value_tensor));
-      values[names_tensor->flat<string>()(i)] = value_tensor;
+      values[names_tensor->flat<tstring>()(i)] = value_tensor;
     }
     avro::ValidSchema avro_schema;
     std::istringstream ss(schema);
@@ -177,7 +177,7 @@ class DecodeAvroOp : public OpKernel {
     for (int64 entry_index = 0; entry_index < context->input(0).NumElements();
          entry_index++) {
       avro::GenericDatum datum(avro_schema);
-      const string& entry = input_tensor->flat<string>()(entry_index);
+      const string& entry = input_tensor->flat<tstring>()(entry_index);
       std::unique_ptr<avro::InputStream> in =
           avro::memoryInputStream((const uint8_t*)entry.data(), entry.size());
 
@@ -253,32 +253,32 @@ class DecodeAvroOp : public OpKernel {
         // make a concrete explicit copy as otherwise avro may override the
         // underlying buffer.
         const string& datum_value = datum.value<string>();
-        value_tensor->flat<string>()(index).resize(datum_value.size());
+        value_tensor->flat<tstring>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
+          memcpy(&value_tensor->flat<tstring>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_BYTES: {
         const std::vector<uint8_t>& datum_value =
             datum.value<std::vector<uint8_t>>();
-        value_tensor->flat<string>()(index).resize(datum_value.size());
+        value_tensor->flat<tstring>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
+          memcpy(&value_tensor->flat<tstring>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_FIXED: {
         const std::vector<uint8_t>& datum_value =
             datum.value<avro::GenericFixed>().value();
-        value_tensor->flat<string>()(index).resize(datum_value.size());
+        value_tensor->flat<tstring>()(index).resize(datum_value.size());
         if (datum_value.size() > 0) {
-          memcpy(&value_tensor->flat<string>()(index)[0], &datum_value[0],
+          memcpy(&value_tensor->flat<tstring>()(index)[0], &datum_value[0],
                  datum_value.size());
         }
       } break;
       case avro::AVRO_ENUM:
-        value_tensor->flat<string>()(index) =
+        value_tensor->flat<tstring>()(index) =
             datum.value<avro::GenericEnum>().symbol();
         break;
       default:
@@ -313,7 +313,7 @@ class DecodeAvroOp : public OpKernel {
         value_tensor->flat<double>()(index) = 0;
         break;
       case DT_STRING:
-        value_tensor->flat<string>()(index) = "";
+        value_tensor->flat<tstring>()(index) = "";
         break;
       default:
         return errors::InvalidArgument("data type not supported: ",
@@ -358,12 +358,12 @@ class EncodeAvroOp : public OpKernel {
 
     std::unordered_map<string, const Tensor*> values;
     for (int64 i = 0; i < names_tensor->NumElements(); i++) {
-      values[names_tensor->flat<string>()(i)] = &context->input(i);
+      values[names_tensor->flat<tstring>()(i)] = &context->input(i);
     }
 
     const Tensor* schema_tensor;
     OP_REQUIRES_OK(context, context->input("schema", &schema_tensor));
-    const string& schema = schema_tensor->scalar<string>()();
+    const string& schema = schema_tensor->scalar<tstring>()();
 
     avro::ValidSchema avro_schema;
     std::istringstream ss(schema);
@@ -386,7 +386,7 @@ class EncodeAvroOp : public OpKernel {
       e->init(*o);
       avro::encode(*e, datum);
       o->flush();
-      value_tensor->flat<string>()(entry_index) = ss.str();
+      value_tensor->flat<tstring>()(entry_index) = ss.str();
     }
   }
 
@@ -455,7 +455,7 @@ class EncodeAvroOp : public OpKernel {
       case avro::AVRO_STRING: {
         // make a concrete explicit copy as otherwise avro may override the
         // underlying buffer.
-        const string& datum_value = value_tensor->flat<string>()(index);
+        const string& datum_value = value_tensor->flat<tstring>()(index);
         datum.value<string>().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<string>()[0], &datum_value[0],
@@ -463,7 +463,7 @@ class EncodeAvroOp : public OpKernel {
         }
       } break;
       case avro::AVRO_BYTES: {
-        const string& datum_value = value_tensor->flat<string>()(index);
+        const string& datum_value = value_tensor->flat<tstring>()(index);
         datum.value<std::vector<uint8_t>>().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<std::vector<uint8_t>>()[0], &datum_value[0],
@@ -471,7 +471,7 @@ class EncodeAvroOp : public OpKernel {
         }
       } break;
       case avro::AVRO_FIXED: {
-        const string& datum_value = value_tensor->flat<string>()(index);
+        const string& datum_value = value_tensor->flat<tstring>()(index);
         datum.value<avro::GenericFixed>().value().resize(datum_value.size());
         if (datum_value.size() > 0) {
           memcpy(&datum.value<avro::GenericFixed>().value()[0], &datum_value[0],
@@ -480,7 +480,7 @@ class EncodeAvroOp : public OpKernel {
       } break;
       case avro::AVRO_ENUM:
         datum.value<avro::GenericEnum>().set(
-            value_tensor->flat<string>()(index));
+            value_tensor->flat<tstring>()(index));
         break;
       default:
         return errors::InvalidArgument("data type not supported: ",

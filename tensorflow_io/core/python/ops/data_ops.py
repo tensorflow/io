@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Dataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 
@@ -28,7 +25,7 @@ class BaseDataset(tf.compat.v2.data.Dataset):
     """Create a Base Dataset."""
     self._dtypes = dtypes
     self._shapes = shapes
-    super(BaseDataset, self).__init__(variant)
+    super().__init__(variant)
 
   def _inputs(self):
     return []
@@ -54,7 +51,7 @@ class Dataset(BaseDataset):
     self._batch = 0 if batch is None else batch
     self._dtypes = dtypes
     self._shapes = shapes
-    super(Dataset, self).__init__(fn(
+    super().__init__(fn(
         self._data_input,
         self._batch,
         output_types=self._dtypes,

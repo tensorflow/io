@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """LibSVM"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from tensorflow import sparse
 from tensorflow_io.core.python.ops import core_ops

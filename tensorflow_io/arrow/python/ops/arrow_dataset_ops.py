@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Arrow Dataset."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from functools import partial
 import io
@@ -130,7 +127,7 @@ class ArrowBaseDataset(dataset_ops.DatasetV2):
         batch_size=self._batch_size,
         batch_mode=self._batch_mode,
         **self._flat_structure)
-    super(ArrowBaseDataset, self).__init__(variant_tensor)
+    super().__init__(variant_tensor)
 
   def _inputs(self):
     return []
@@ -213,7 +210,7 @@ class ArrowDataset(ArrowBaseDataset):
           buffer_size)
       # Keep a reference to the arrow buffers used
       self._arrow_buffer_refs = [arrow_buffer]
-    super(ArrowDataset, self).__init__(
+    super().__init__(
         make_variant_fn,
         columns,
         output_types,
@@ -357,7 +354,7 @@ class ArrowFeatherDataset(ArrowBaseDataset):
         filenames,
         dtype=dtypes.string,
         name="filenames")
-    super(ArrowFeatherDataset, self).__init__(
+    super().__init__(
         partial(core_ops.io_arrow_feather_dataset, filenames),
         columns,
         output_types,
@@ -442,7 +439,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
         endpoints,
         dtype=dtypes.string,
         name="endpoints")
-    super(ArrowStreamDataset, self).__init__(
+    super().__init__(
         partial(core_ops.io_arrow_stream_dataset, endpoints),
         columns,
         output_types,

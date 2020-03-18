@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """FFmpegIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -46,7 +43,7 @@ class FFmpegVideoIOTensor(io_tensor_ops.BaseIOTensor):
                spec, function,
                internal=False):
     with tf.name_scope("FFmpegVideoIOTensor"):
-      super(FFmpegVideoIOTensor, self).__init__(
+      super().__init__(
           spec, function, internal=internal)
 
 
@@ -57,7 +54,7 @@ class FFmpegAudioIOTensor(io_tensor_ops.BaseIOTensor):
                internal=False):
     with tf.name_scope("FFmpegAudioIOTensor"):
       self._rate = rate
-      super(FFmpegAudioIOTensor, self).__init__(
+      super().__init__(
           spec, function, internal=internal)
 
   @io_tensor_ops._IOTensorMeta # pylint: disable=protected-access
@@ -71,7 +68,7 @@ class FFmpegSubtitleIOTensor(io_tensor_ops.BaseIOTensor):
                spec, function,
                internal=False):
     with tf.name_scope("FFmpegSubtitleIOTensor"):
-      super(FFmpegSubtitleIOTensor, self).__init__(
+      super().__init__(
           spec, function, internal=internal)
 
 class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=protected-access
@@ -88,7 +85,7 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
       resource, columns = ffmpeg_ops.io_ffmpeg_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
@@ -117,6 +114,6 @@ class FFmpegIOTensor(io_tensor_ops._CollectionIOTensor): # pylint: disable=prote
               FFmpegSubtitleIOTensor(
                   spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
-      super(FFmpegIOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements,
           internal=internal)

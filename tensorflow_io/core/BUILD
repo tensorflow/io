@@ -174,8 +174,8 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
-        "@dcmtk",
         "@easyexif",
+        "@fmjpeg2koj",
         "@freetype",
         "@libtiff",
         "@libwebp",
@@ -187,6 +187,7 @@ cc_library(
 
 exports_files([
     "swift/audio.swift",
+    "swift/video.swift",
 ])
 
 cc_library(
@@ -213,6 +214,26 @@ cc_library(
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
             "//tools/build/swift:audio_swift",
+        ],
+        "//conditions:default": [],
+    }),
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "video_ops",
+    srcs = [
+        "kernels/video_kernels.cc",
+        "kernels/video_kernels.h",
+        "ops/video_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [
+            "//tools/build/swift:video_swift",
         ],
         "//conditions:default": [],
     }),
@@ -526,6 +547,7 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -542,18 +564,18 @@ cc_binary(
         "//tensorflow_io/core:serialization_ops",
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
+        "//tensorflow_io/core:video_ops",
+        "//tensorflow_io/ignite:ignite_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
-            "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
-            "//tensorflow_io/ignite:ignite_ops",
         ],
     }),
 )

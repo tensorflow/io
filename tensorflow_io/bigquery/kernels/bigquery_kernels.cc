@@ -182,14 +182,14 @@ class BigQueryReadSessionOp : public OpKernel {
         "streams",
         {readSessionResponse->streams_size()},
         &streams_t));
-    auto streams_vec = streams_t->vec<string>();
+    auto streams_vec = streams_t->vec<tstring>();
     for (int i = 0; i < readSessionResponse->streams_size(); i++) {
       streams_vec(i) = readSessionResponse->streams(i).name();
     }
     Tensor* avro_schema_t = nullptr;
     OP_REQUIRES_OK(ctx,
                    ctx->allocate_output("avro_schema", {}, &avro_schema_t));
-    avro_schema_t->scalar<string>()() =
+    avro_schema_t->scalar<tstring>()() =
         readSessionResponse->avro_schema().schema();
   }
 

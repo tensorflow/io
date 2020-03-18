@@ -132,7 +132,7 @@ class SqlIterableResource : public ResourceBase {
     for (int64 i = 0; i < field_tensor->NumElements(); i++) {
       Tensor* value;
       TF_RETURN_IF_ERROR(allocate_func(i, &value));
-      char* field_name = (char*)(field_tensor->flat<string>()(i).c_str());
+      char* field_name = (char*)(field_tensor->flat<tstring>()(i).c_str());
       int field_number = PQfnumber(result_.get(), field_name);
       int field_type = PQftype(result_.get(), field_number);
       char* data = PQgetvalue(result_.get(), index, field_number);
@@ -165,11 +165,11 @@ class SqlIterableInitOp : public ResourceOpKernel<SqlIterableResource> {
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    const string& input = input_tensor->scalar<tstring>()();
 
     const Tensor* endpoint_tensor;
     OP_REQUIRES_OK(context, context->input("endpoint", &endpoint_tensor));
-    const string& endpoint = endpoint_tensor->scalar<string>()();
+    const string& endpoint = endpoint_tensor->scalar<tstring>()();
 
     int64 count;
     std::vector<string> fields;
@@ -188,7 +188,7 @@ class SqlIterableInitOp : public ResourceOpKernel<SqlIterableResource> {
                        2, TensorShape({static_cast<int64>(fields.size())}),
                        &field_tensor));
     for (size_t i = 0; i < fields.size(); i++) {
-      field_tensor->flat<string>()(i) = fields[i];
+      field_tensor->flat<tstring>()(i) = fields[i];
     }
     Tensor* dtype_tensor;
     OP_REQUIRES_OK(context,

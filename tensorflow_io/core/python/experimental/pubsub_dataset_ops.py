@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """PubSubDataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -49,7 +46,7 @@ class PubSubStreamIODataset(tf.data.Dataset):
       dataset = dataset.unbatch()
 
       self._dataset = dataset
-      super(PubSubStreamIODataset, self).__init__(
+      super().__init__(
           self._dataset._variant_tensor) # pylint: disable=protected-access
 
   def _inputs(self):

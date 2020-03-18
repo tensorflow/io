@@ -32,7 +32,7 @@ enum ArrowBatchMode {
   BATCH_AUTO,
 };
 
-Status GetBatchModeStr(ArrowBatchMode batch_mode, string* batch_mode_str) {
+Status GetBatchModeStr(ArrowBatchMode batch_mode, tstring* batch_mode_str) {
   switch (batch_mode) {
     case ArrowBatchMode::BATCH_KEEP_REMAINDER:
       *batch_mode_str = "keep_remainder";
@@ -365,7 +365,7 @@ class ArrowOpKernelBase : public DatasetOpKernel {
     int64 batch_size;
     OP_REQUIRES_OK(ctx, ParseScalarArgument(ctx, "batch_size", &batch_size));
 
-    string batch_mode_str;
+    tstring batch_mode_str;
     OP_REQUIRES_OK(ctx,
         ParseScalarArgument(ctx, "batch_mode", &batch_mode_str));
     ArrowBatchMode batch_mode;
@@ -469,7 +469,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       Node* batch_size = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
       Node* batch_mode = nullptr;
-      string batch_mode_str;
+      tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(
@@ -614,7 +614,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       Node* batch_size = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
       Node* batch_mode = nullptr;
-      string batch_mode_str;
+      tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(
@@ -640,7 +640,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env* env)
           EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        const string& batches = dataset()->batches_.scalar<string>()();
+        const string& batches = dataset()->batches_.scalar<tstring>()();
         auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
         CHECK_ARROW(
@@ -705,7 +705,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
     std::vector<string> filenames;
     filenames.reserve(filenames_tensor->NumElements());
     for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
-      filenames.push_back(filenames_tensor->flat<string>()(i));
+      filenames.push_back(filenames_tensor->flat<tstring>()(i));
     }
 
     *output = new Dataset(
@@ -747,7 +747,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       Node* batch_size = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
       Node* batch_mode = nullptr;
-      string batch_mode_str;
+      tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(
@@ -863,7 +863,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
     std::vector<string> endpoints;
     endpoints.reserve(endpoints_tensor->NumElements());
     for (int i = 0; i < endpoints_tensor->NumElements(); ++i) {
-      endpoints.push_back(endpoints_tensor->flat<string>()(i));
+      endpoints.push_back(endpoints_tensor->flat<tstring>()(i));
     }
 
     *output = new Dataset(
@@ -905,7 +905,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       Node* batch_size = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
       Node* batch_mode = nullptr;
-      string batch_mode_str;
+      tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(

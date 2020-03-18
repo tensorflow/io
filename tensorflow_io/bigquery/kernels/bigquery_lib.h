@@ -221,10 +221,10 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
           ((*out_tensors)[i]).scalar<double>()() = field.value<double>();
           break;
         case avro::AVRO_STRING:
-          ((*out_tensors)[i]).scalar<string>()() = field.value<string>();
+          ((*out_tensors)[i]).scalar<tstring>()() = field.value<string>();
           break;
         case avro::AVRO_ENUM:
-          ((*out_tensors)[i]).scalar<string>()() =
+          ((*out_tensors)[i]).scalar<tstring>()() =
               field.value<avro::GenericEnum>().symbol();
           break;
         case avro::AVRO_NULL:
@@ -245,7 +245,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
               ((*out_tensors)[i]).scalar<double>()() = 0.0;
               break;
             case DT_STRING:
-              ((*out_tensors)[i]).scalar<string>()() = "";
+              ((*out_tensors)[i]).scalar<tstring>()() = "";
               break;
             default:
               return errors::InvalidArgument(

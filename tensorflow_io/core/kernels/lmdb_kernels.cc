@@ -86,7 +86,7 @@ class LMDBReadable : public IOReadableInterface {
       if (status != MDB_SUCCESS) {
         break;
       }
-      value->flat<string>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
+      value->flat<tstring>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
       (*record_read)++;
     }
     return Status::OK();
@@ -170,13 +170,13 @@ class LMDBMapping : public IOMappingInterface {
     for (int64 i = 0; i < key.NumElements(); i++) {
       MDB_val mdb_key;
       MDB_val mdb_data;
-      mdb_key.mv_data = (void *)key.flat<string>()(i).data();
-      mdb_key.mv_size = key.flat<string>()(i).size();
+      mdb_key.mv_data = (void *)key.flat<tstring>()(i).data();
+      mdb_key.mv_size = key.flat<tstring>()(i).size();
       int status = mdb_get(mdb_txn_, mdb_dbi_, &mdb_key, &mdb_data);
       if (status != MDB_SUCCESS) {
-        return errors::InvalidArgument("unable to get value from key(", key.flat<string>()(i), "): ", status);
+        return errors::InvalidArgument("unable to get value from key(", key.flat<tstring>()(i), "): ", status);
       }
-      value->flat<string>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
+      value->flat<tstring>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
     }
     return Status::OK();
   }

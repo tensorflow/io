@@ -13,9 +13,6 @@
 # the License.
 # ==============================================================================
 """Test IODataset"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import sys
@@ -153,7 +150,7 @@ def fixture_pubsub(request):
       subscription_path, topic_path, retain_acked_messages=True)
   print('Subscription created: {}'.format(subscription))
   for n in range(0, 10):
-    data_v = u'Message number {}'.format(n)
+    data_v = 'Message number {}'.format(n)
     # Data must be a bytestring
     data_v = data_v.encode('utf-8')
     # When you publish a message, the client returns a future.
@@ -550,7 +547,7 @@ def fixture_to_file(request):
   args = filename
   func = tfio.experimental.IODataset.to_file
   def data_func(filename):
-    with open(filename, "r") as f:
+    with open(filename) as f:
       lines = list(f)
     return lines
 
@@ -702,7 +699,7 @@ def fixture_kafka():
   def func(q):
     v = tfio.IODataset.from_kafka(q)
     return v
-  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+  expected = [(("D" + str(i)).encode(), b"") for i in range(10)]
 
   return args, func, expected
 
@@ -741,7 +738,7 @@ def fixture_kafka_stream():
   def func(q):
     v = tfio.IODataset.stream().from_kafka(q)
     return v
-  expected = [(("D" + str(i)).encode(), "".encode()) for i in range(10)]
+  expected = [(("D" + str(i)).encode(), b"") for i in range(10)]
 
   return args, func, expected
 
@@ -802,6 +799,44 @@ def fixture_sql_graph():
       np.float32(i + 3000),
       np.float64(i + 4000),
   ) for i in range(10)]
+
+  return args, func, expected
+
+# video capture stream never repeat so
+# we only test basic operation only.
+@pytest.fixture(name="video_capture")
+def fixture_video_capture():
+  """fixture_video_capture
+  # Note: on Linux v4l2loopback is used, and the following is needed:
+  #   gst-launch-1.0 videotestsrc ! v4l2sink device=/dev/video0
+  # otherwise fmt will not work with
+  #   $ v4l2-ctl -d /dev/video0 -V
+  #   VIDIOC_G_FMT: failed: Invalid argument
+  # Note: the following is a validation
+  # YUV image could be converted to JPEG with:
+  # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
+  # Linux: ffmpeg -s 320x240 -pix_fmt yuyv422 -i frame_{i}.yuv frame_{i}.jpg
+  dataset = tfio.experimental.IODataset.stream().from_video_capture(
+      "/dev/video0").take(5)
+  i = 0
+  for frame in dataset:
+    print("Frame {}: shape({}) dtype({}) length({})".format(
+        i, frame.shape, frame.dtype, tf.strings.length(frame)))
+    tf.io.write_file("frame_{}.yuv".format(i), frame)
+    i += 1
+  """
+
+  args = "/dev/video0"
+  def func(q):
+    dataset = tfio.experimental.IODataset.stream().from_video_capture(
+        q)
+    dataset = dataset.map(tf.strings.length)
+    dataset = dataset.take(10)
+    return dataset
+  # macOS (NV12): 1382400 = (1280 + 1280 / 2) * 720
+  # Linux (YUYV): 153600 = 320 * 240 * 2
+  value = 1382400 if sys.platform == "darwin" else 153600
+  expected = [value for _ in range(10)]
 
   return args, func, expected
 
@@ -868,6 +903,14 @@ def fixture_sql_graph():
                     reason="TODO PostgreSQL not tested on macOS/Windows"),
             ],
         ),
+        pytest.param(
+            "video_capture",
+            marks=[
+                pytest.mark.skipif(
+                    os.environ.get("TEST_VIDEO_CAPTURE", "") != "true",
+                    reason="Video capture not enabled"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -892,6 +935,7 @@ def fixture_sql_graph():
         "kafka[avro]",
         "kafka[stream]",
         "sql",
+        "capture[video]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -966,6 +1010,14 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
                     reason="TODO PostgreSQL not tested on macOS/Windows"),
             ],
         ),
+        pytest.param(
+            "video_capture",
+            marks=[
+                pytest.mark.skipif(
+                    os.environ.get("TEST_VIDEO_CAPTURE", "") != "true",
+                    reason="Video capture not enabled"),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -988,6 +1040,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "kafka[avro]",
         "kafka[stream]",
         "sql",
+        "capture[video]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):

@@ -198,7 +198,11 @@ Status IGFS::GetChildren(const string &file_name, std::vector<string> *result) {
 
 Status IGFS::GetMatchingPaths(const string &pattern,
                               std::vector<string> *results) {
+#if defined(_MSC_VER)
+  return errors::Unimplemented("IGFS::GetMatchingPaths");
+#else
   return internal::GetMatchingPaths(this, Env::Default(), pattern, results);
+#endif
 }
 
 Status IGFS::DeleteFile(const string &file_name) {

@@ -25,7 +25,7 @@ class DecodePNMOp : public OpKernel {
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    const string& input = input_tensor->scalar<string>()();
+    string input = input_tensor->scalar<tstring>()();
     size_t pos = 0;
     size_t off = input.find_first_of(" \t\r\n", pos);
     OP_REQUIRES(context, (off != string::npos),

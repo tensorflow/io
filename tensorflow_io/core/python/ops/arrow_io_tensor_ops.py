@@ -13,32 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 """FeatherIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import io_tensor_ops
 from tensorflow_io.core.python.ops import core_ops
-
-class _ArrowIOTensorComponentFunction(io_tensor_ops._IOTensorComponentFunction): # pylint: disable=protected-access
-  """_ArrowIOTensorComponentFunction will translate call"""
-  def __init__(self,
-               function,
-               resource,
-               component, column_index, shape, dtype):
-    super(_ArrowIOTensorComponentFunction, self).__init__(
-        function, resource, component, shape, dtype)
-    self._column_index = column_index
-  def __call__(self, start, stop):
-    start, stop, _ = slice(start, stop).indices(self._length)
-    return self._function(
-        self._resource,
-        start=start, stop=stop,
-        column_index=self._column_index,
-        shape=self._shape, dtype=self._dtype)
 
 
 def _extract_table_arrays(table):
@@ -124,6 +104,74 @@ def _extract_table_arrays(table):
   return array_buffer_addrs, array_buffer_sizes, array_lengths
 
 
+class _ArrowIOTensorComponentFunction():
+  """_ArrowIOTensorComponentFunction will translate call"""
+  def __init__(self,
+               function,
+               resource,
+               column_index,
+               shape,
+               dtype):
+    super().__init__()
+    self._function = function
+    self._resource = resource
+    self._column_index = column_index
+    self._shape = shape
+    self._dtype = dtype
+  def __call__(self, start, stop):
+    # get the start and stop, and use 0 (start) and -1 (stop) if needed
+    start = start or 0
+    stop = stop or -1
+    return self._function(
+        self._resource,
+        self._column_index,
+        self._shape,
+        start, stop,
+        dtype=self._dtype)
+  @property
+  def length(self):
+    return self._shape[0]
+
+
+class ArrowBaseIOTensor(io_tensor_ops.BaseIOTensor):
+  """ArrowBaseIOTensor"""
+  def __init__(self,
+               shape,
+               dtype,
+               spec,
+               function,
+               arrow_data_refs,
+               internal=False):
+    super().__init__(spec, function, internal=internal)
+    self._shape = shape
+    self._dtype = dtype
+    self._spec = spec
+    self._arrow_data_refs = arrow_data_refs
+
+  @property
+  def spec(self):
+    """Returns the TensorSpec of the tensor"""
+    return self._spec
+
+  @property
+  def shape(self):
+    """Returns the `TensorShape` that represents the shape of the tensor."""
+    return self._shape
+
+  @property
+  def dtype(self):
+    """Returns the `dtype` of elements in the tensor."""
+    return self._dtype
+
+  def __getitem__(self, key):
+    """Returns the specified piece of this IOTensor."""
+    result = super().__getitem__(key)
+    if not tf.executing_eagerly():
+      # Insert refs into tf.Tensor result so data is valid until evaluated
+      result._arrow_data_refs = self._arrow_data_refs
+    return result
+
+
 class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-access
   """ArrowIOTensor"""
 
@@ -132,16 +180,19 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
   #=============================================================================
   def __init__(self,
                table,
+               spec=None,
                internal=False):
     with tf.name_scope("ArrowIOTensor") as scope:
 
-      # Hold reference to table and schema buffer for life of this op
-      self._table = table
-      self._schema_buffer = table.schema.serialize()
+      # Serialize the schema to send to the kernel
+      schema_buffer = table.schema.serialize()
+
+      # References to prevent data from being freed until op is evaluated
+      arrow_data_refs = [table, schema_buffer]
 
       # Get buffer addresses as long ints
-      schema_buffer_addr = self._schema_buffer.address
-      schema_buffer_size = self._schema_buffer.size
+      schema_buffer_addr = schema_buffer.address
+      schema_buffer_size = schema_buffer.size
       array_buffer_addrs, array_buffer_sizes, array_lengths = \
           _extract_table_arrays(table)
 
@@ -153,24 +204,54 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected-a
           array_buffer_sizes,
           array_lengths,
           container=scope,
-          shared_name="pyarrow.Table%s/%s" % (
+          shared_name="pyarrow.Table{}/{}".format(
               table.schema.names, uuid.uuid4().hex))
 
-      # Create a BaseIOTensor for each column
-      elements = []
-      columns = table.column_names
-      for column_index, column in enumerate(columns):
-        shape, dtype = core_ops.io_arrow_readable_spec(resource, column_index)
-        shape = tf.TensorShape(shape.numpy())
-        dtype = tf.as_dtype(dtype.numpy())
-        spec = tf.TensorSpec(shape, dtype, column)
-        function = _ArrowIOTensorComponentFunction( # pylint: disable=protected-access
-            core_ops.io_arrow_readable_read,
-            resource, column, column_index, shape, dtype)
-        elements.append(
-            io_tensor_ops.BaseIOTensor(
-                spec, function, internal=internal))
+      if tf.executing_eagerly():
+        # Create a BaseIOTensor for each column
+        elements = []
+        columns = table.column_names
+        for column_index, column in enumerate(columns):
+          shape, dtype = core_ops.io_arrow_readable_spec(resource, column_index)
+          shape = tf.TensorShape(shape.numpy())
+          dtype = tf.as_dtype(dtype.numpy())
+          spec = tf.TensorSpec(shape, dtype, column)
+          function = _ArrowIOTensorComponentFunction( # pylint: disable=protected-access
+              core_ops.io_arrow_readable_read,
+              resource, column_index, shape, dtype)
+          elements.append(
+              ArrowBaseIOTensor(
+                  shape, dtype, spec, function, arrow_data_refs,
+                  internal=internal))
+        spec = tuple([e.spec for e in elements])
+      else:
+        assert spec is not None
+        columns, entries = zip(*spec.items())
+        dtypes = [
+            entry if isinstance(
+                entry, tf.dtypes.DType) else entry.dtype for entry in entries]
 
-      spec = tuple([e.spec for e in elements])
-      super(ArrowIOTensor, self).__init__(
+        col_to_idx = {column: i for i, column in enumerate(table.column_names)}
+
+        shapes = []
+        for col in columns:
+          shape, _ = core_ops.io_arrow_readable_spec(resource, col_to_idx[col])
+          shapes.append(shape)
+
+        entries = [
+            tf.TensorSpec(None, dtype, column) for (
+                dtype, column) in zip(dtypes, columns)]
+
+        elements = []
+        for (entry, shape) in zip(entries, shapes):
+          function = _ArrowIOTensorComponentFunction(
+              core_ops.io_arrow_readable_read,
+              resource, col_to_idx[entry.name], shape, entry.dtype)
+          elements.append(
+              ArrowBaseIOTensor(
+                  shape, entry.dtype, entry, function, arrow_data_refs,
+                  internal=internal))
+        spec = tuple(entries)
+
+      super().__init__(
           spec, columns, elements, internal=internal)

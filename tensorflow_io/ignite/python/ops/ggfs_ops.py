@@ -25,8 +25,5 @@ plugged into Hadoop or Spark deployments. This contrib package contains an
 integration between IGFS and TensorFlow.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow_io.core.python.ops # pylint: disable=unused-import

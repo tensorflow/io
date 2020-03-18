@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """IOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -333,11 +330,16 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
   @classmethod
   def from_arrow(cls,
                  table,
+                 spec=None,
                  **kwargs):
     """Creates an `IOTensor` from a pyarrow.Table.
 
     Args:
       table: An instance of a `pyarrow.Table`.
+      spec: A dict of `dataset:tf.TensorSpec` or `dataset:dtype`
+        pairs that specify the dataset selected and the tf.TensorSpec
+        or dtype of the dataset. In eager mode the spec is probed
+        automatically. In graph mode spec has to be specified.
       name: A name prefix for the IOTensor (optional).
 
     Returns:
@@ -345,7 +347,7 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     """
     with tf.name_scope(kwargs.get("name", "IOFromArrow")):
-      return arrow_io_tensor_ops.ArrowIOTensor(table, internal=True)
+      return arrow_io_tensor_ops.ArrowIOTensor(table, spec=spec, internal=True)
 
   @classmethod
   def from_lmdb(cls,

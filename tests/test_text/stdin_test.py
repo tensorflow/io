@@ -13,9 +13,6 @@
 # the License.
 # ==============================================================================
 """Tests for TextDataset with stdin."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import tensorflow as tf
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):

@@ -30,7 +30,9 @@ enum AudioFileFormat {
 
 class AudioReadableResourceBase : public ResourceBase {
  public:
-  virtual Status Init(const string& input) = 0;
+  virtual Status Init(const string& filename,
+                      const void* optional_memory = nullptr,
+                      size_t optional_length = 0) = 0;
   virtual Status Read(
       const int64 start, const int64 stop,
       std::function<Status(const TensorShape& shape, Tensor** value)>
@@ -39,19 +41,24 @@ class AudioReadableResourceBase : public ResourceBase {
 };
 
 Status WAVReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 Status OggReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 Status FlacReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 Status MP3ReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 Status MP4ReadableResourceInit(
-    Env* env, const string& input,
+    Env* env, const string& filename, const void* optional_memory,
+    const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
 
 // Container for decoded audio.

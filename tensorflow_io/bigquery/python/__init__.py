@@ -14,7 +14,3 @@
 # ==============================================================================
 
 """This module contains the Python API for the Cloud BigQuery integration."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function

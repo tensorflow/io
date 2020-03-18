@@ -72,7 +72,7 @@ class DecodeEXRInfoOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
     const string filename = "memory";
-    const string& memory = input_tensor->scalar<string>()();
+    string memory = input_tensor->scalar<tstring>()();
     std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
@@ -126,11 +126,11 @@ class DecodeEXRInfoOp : public OpKernel {
     for (size_t i = 0; i < dtype.size(); i++) {
       for (size_t j = 0; j < dtype[i].size(); j++) {
         dtype_tensor->flat<int64>()(i * maxchannel + j) = dtype[i][j];
-        channel_tensor->flat<string>()(i * maxchannel + j) = channel[i][j];
+        channel_tensor->flat<tstring>()(i * maxchannel + j) = channel[i][j];
       }
       for (size_t j = dtype[i].size(); j < maxchannel; j++) {
         dtype_tensor->flat<int64>()(i * maxchannel + j) = 0;
-        channel_tensor->flat<string>()(i * maxchannel + j) = "";
+        channel_tensor->flat<tstring>()(i * maxchannel + j) = "";
       }
     }
   }
@@ -156,7 +156,7 @@ class DecodeEXROp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("channel", &channel_tensor));
 
     const string filename = "memory";
-    const string& memory = input_tensor->scalar<string>()();
+    string memory = input_tensor->scalar<tstring>()();
     std::unique_ptr<SizedRandomAccessFile> file(new SizedRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
     OP_REQUIRES_OK(context, file->GetFileSize(&size));
@@ -165,7 +165,7 @@ class DecodeEXROp : public OpKernel {
     Imf::MultiPartInputFile input_file(stream);
 
     const int64 index = index_tensor->scalar<int64>()();
-    const string& channel = channel_tensor->scalar<string>()();
+    string channel = channel_tensor->scalar<tstring>()();
 
     Imf::InputPart input_part(input_file, index);
 

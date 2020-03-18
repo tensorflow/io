@@ -13,9 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """ParquetIOTensor"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 
@@ -36,7 +33,7 @@ class ParquetIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
       resource, columns = core_ops.io_parquet_readable_init(
           filename,
           container=scope,
-          shared_name="%s/%s" % (filename, uuid.uuid4().hex))
+          shared_name="{}/{}".format(filename, uuid.uuid4().hex))
       columns = [column.decode() for column in columns.numpy().tolist()]
       elements = []
       for column in columns:
@@ -51,5 +48,5 @@ class ParquetIOTensor(io_tensor_ops._TableIOTensor): # pylint: disable=protected
             io_tensor_ops.BaseIOTensor(
                 spec, function, internal=internal))
       spec = tuple([e.spec for e in elements])
-      super(ParquetIOTensor, self).__init__(
+      super().__init__(
           spec, columns, elements, internal=internal)
