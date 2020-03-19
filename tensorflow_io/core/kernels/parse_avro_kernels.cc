@@ -324,8 +324,8 @@ Status ParseAvro(const AvroParserConfig& config,
     VLOG(5) << "Default value is " << default_value.SummarizeValue(9);
 
     TensorShape resolved_shape;
-    TF_RETURN_IF_ERROR((*value_store).ResolveDenseShape(&resolved_shape, dense.shape,
-      default_shape));
+    TF_RETURN_IF_ERROR((*value_store).ResolveDenseShapeWithBatch(&resolved_shape, dense.shape,
+      default_shape, batch_size));
 
     VLOG(5) << "Creating dense tensor for resolved shape: " << resolved_shape << " given the user shape " << dense.shape;
 
