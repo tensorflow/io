@@ -46,8 +46,18 @@ public:
   virtual Status MakeSparse(Tensor* values, Tensor* indices) const = 0;
 
   // Resolve a shape given a partial shape from the user and a shape from the defaults
+  // TODO(fraudies): Remove once avro dataset is gone
   virtual Status ResolveDenseShape(TensorShape* shape, const PartialTensorShape& partial_shape,
     const TensorShape& default_shape) const = 0;
+
+  // Resolve the user shape, given the batch_size, default_shape, and data shape
+  // In particular checks that
+  // - batch_size + user shape is compatible with non-scalar default shapes
+  // - batch_size + user shape is compatible with data shape
+  virtual Status ResolveDenseShapeWithBatch(TensorShape* shape,
+      const PartialTensorShape& user_shape,
+      const TensorShape& default_shape,
+      size_t batch_size) const = 0;
 
   // Get the shape for sparse values if this value store where represented as sparse tensor
   virtual Status GetSparseValueShape(TensorShape* shape) const = 0;
@@ -180,8 +190,14 @@ public:
   inline const T ReverseIndex(size_t index) const { return values_[values_.size() - index]; }
 
   // Resolve the partial shape provided by the user into a fully defined shape for a dense tensor
+  // TODO(fraudies) Deprecated, remove once make_avro_dataset is gone
   Status ResolveDenseShape(TensorShape* shape, const PartialTensorShape& partial_shape,
     const TensorShape& default_shape) const override;
+
+  Status ResolveDenseShapeWithBatch(TensorShape* shape,
+      const PartialTensorShape& user_shape,
+      const TensorShape& default_shape,
+      size_t batch_size) const override;
 
   Status GetSparseValueShape(TensorShape* shape) const override;
 
@@ -222,8 +238,10 @@ private:
 
   // Is non trivial tensor that has >= 1 dimension and the dimension(0) > 1 value
   inline static bool IsNonTrivialTensor(const TensorShape& tensor_shape) {
+    VLOG(15) << "Checking if " << tensor_shape << " is non-trivial";
     // Check that any of the dimensions is > 1
     for (size_t i_dim = 0; i_dim < tensor_shape.dims(); ++i_dim) {
+        VLOG(15) << "Dimension " << i_dim << " is " << tensor_shape.dim_size(i_dim);
         if (tensor_shape.dim_size(i_dim) > 1) {
             return true;
         }
@@ -293,6 +311,31 @@ ValueBuffer<T>::ValueBuffer(const std::vector<ValueStoreUniquePtr>& others) {
   }
 }
 
+template<typename T>
+Status ValueBuffer<T>::ResolveDenseShapeWithBatch(TensorShape* shape,
+    const PartialTensorShape& user_shape,
+    const TensorShape& default_shape,
+    size_t batch_size) const {
+
+    // Assume non-trivial default shape is consistent with user shape
+    // Assume that all items have the full batch size TODO(fraudies) Make true for null values
+    if (IsNonTrivialTensor(default_shape)) {
+        // Note, data shape does not have to be compatible because we will pad
+        *shape = default_shape;
+    } else {
+        // Default is trivial, get shape from data and ensure it's consistent with users batched shape
+        TensorShape data_shape;
+        shape_builder_.GetDenseShape(&data_shape);
+        PartialTensorShape batched_user_shape(PartialTensorShape({batch_size}).Concatenate(user_shape));
+        if (!batched_user_shape.IsCompatibleWith(data_shape)) {
+            return errors::InvalidArgument("Batched user shape", batched_user_shape,
+                            " is incompatible with data shape: ", *shape);
+        }
+        *shape = data_shape;
+    }
+    return Status::OK();
+}
+
 // TODO(fraudies): Move validation of user defined shape and defaults into the avro dataset
 // To resolve the proper shape for a dense tensor we honor:
 // 1st the user provided partial shape
@@ -307,15 +350,7 @@ Status ValueBuffer<T>::ResolveDenseShape(TensorShape* shape,
 
   // Honor user defined shape if fully defined
   if (user_shape.IsFullyDefined() && user_shape.AsTensorShape(shape) && IsNonTrivialTensor(*shape)) {
-
     VLOG(3) << "Fully defined input shape";
-
-/*
-    if (!user_shape.AsTensorShape(shape)) {
-      return errors::InvalidArgument("Expected ", user_shape, " to be convertible"
-       " into a dense shape.");
-    }
-*/
 
   // If the default is not scalar
   } else if (defaultIsNonTrivialTensor) {

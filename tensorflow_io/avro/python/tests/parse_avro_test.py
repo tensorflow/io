@@ -57,7 +57,8 @@ class AvroDatasetTest(AvroDatasetTestBase):
         for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(OpError):
-                _ = parse_avro(serialized=[serializer.serialize(r) for r in actual_records],
+                _ = parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+                                           for r in actual_records],
                                reader_schema=parser_schema,
                                features=features)
 
@@ -137,11 +138,11 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {
                 "string_value":
                     ops.convert_to_tensor(
-                        np.asarray([
+                        [
                             compat.as_bytes(""),
                             compat.as_bytes("SpecialChars@!#$%^&*()-_=+{}[]|/`~\\\'?"),
                             compat.as_bytes("ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789")
-                        ])
+                        ]
                     ),
                 "bytes_value":
                     ops.convert_to_tensor([
@@ -331,7 +332,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"fixed_len": [6, 7, 8]}
         ]
         features = {
-            "fixed_len[*]": parsing_ops.FixedLenFeature([3], tf_types.int32,
+            "fixed_len[*]": parsing_ops.FixedLenFeature([None, 3], tf_types.int32,
                                                         default_value=[0, 1, 2])
         }
         expected_data = [
@@ -349,118 +350,123 @@ class AvroDatasetTest(AvroDatasetTestBase):
                                 features=features,
                                 batch_size=2)
 
-    def test_null_union_primitive_type(self):
-        reader_schema = """{
-             "type":"record",
-             "name":"data_row",
-             "fields":[
-                {
-                   "name":"multi_type",
-                   "type":[
-                      "null",
-                      "boolean",
-                      "int",
-                      "long",
-                      "float",
-                      "double",
-                      "string"
-                   ]
-                }
-             ]
-          }
-          """
-        record_data = [
-            {
-                "multi_type": 1.0
-            },
-            {
-                "multi_type": 2.0
-            },
-            {
-                "multi_type": 3.0
-            },
-            {
-                "multi_type": True  # converted by py avro implementation into 1
-            },
-            {
-                "multi_type": "abc"
-            },
-            {
-                "multi_type": None
-            }
-        ]
-        features = {
-            "multi_type:boolean": parsing_ops.FixedLenFeature([], tf_types.bool),
-            "multi_type:int": parsing_ops.FixedLenFeature([], tf_types.int32),
-            "multi_type:long": parsing_ops.FixedLenFeature([], tf_types.int64),
-            "multi_type:float": parsing_ops.FixedLenFeature([], tf_types.float32),
-            "multi_type:double": parsing_ops.FixedLenFeature([], tf_types.float64),
-            "multi_type:string": parsing_ops.FixedLenFeature([], tf_types.string)
-        }
-        expected_data = [
-            {
-                "multi_type:boolean":
-                    ops.convert_to_tensor([]),
-                "multi_type:int":
-                    ops.convert_to_tensor([]),
-                "multi_type:long":
-                    ops.convert_to_tensor([]),
-                "multi_type:float":
-                    ops.convert_to_tensor([]),
-                "multi_type:double":
-                    ops.convert_to_tensor([1.0, 2.0, 3.0, 1.0]),
-                "multi_type:string":
-                    ops.convert_to_tensor([compat.as_bytes("abc")])
-            }
-        ]
-        self._test_pass_dataset(reader_schema=reader_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                batch_size=6)
+    # TODO(fraudies): Need to rethink on how we should solve union handling
+    # Currently, this changes the batch size dynamically which I disallowed
+    # It may also cause problems when TF assumes a fixed batch size
+    # def test_null_union_primitive_type(self):
+    #     reader_schema = """{
+    #          "type":"record",
+    #          "name":"data_row",
+    #          "fields":[
+    #             {
+    #                "name":"multi_type",
+    #                "type":[
+    #                   "null",
+    #                   "boolean",
+    #                   "int",
+    #                   "long",
+    #                   "float",
+    #                   "double",
+    #                   "string"
+    #                ]
+    #             }
+    #          ]
+    #       }
+    #       """
+    #     record_data = [
+    #         {
+    #             "multi_type": 1.0
+    #         },
+    #         {
+    #             "multi_type": 2.0
+    #         },
+    #         {
+    #             "multi_type": 3.0
+    #         },
+    #         {
+    #             "multi_type": True  # converted by py avro implementation into 1
+    #         },
+    #         {
+    #             "multi_type": "abc"
+    #         },
+    #         {
+    #             "multi_type": None
+    #         }
+    #     ]
+    #     features = {
+    #         "multi_type:boolean": parsing_ops.FixedLenFeature([], tf_types.bool),
+    #         "multi_type:int": parsing_ops.FixedLenFeature([], tf_types.int32),
+    #         "multi_type:long": parsing_ops.FixedLenFeature([], tf_types.int64),
+    #         "multi_type:float": parsing_ops.FixedLenFeature([], tf_types.float32),
+    #         "multi_type:double": parsing_ops.FixedLenFeature([], tf_types.float64),
+    #         "multi_type:string": parsing_ops.FixedLenFeature([], tf_types.string)
+    #     }
+    #     expected_data = [
+    #         {
+    #             "multi_type:boolean":
+    #                 ops.convert_to_tensor([]),
+    #             "multi_type:int":
+    #                 ops.convert_to_tensor([]),
+    #             "multi_type:long":
+    #                 ops.convert_to_tensor([]),
+    #             "multi_type:float":
+    #                 ops.convert_to_tensor([]),
+    #             "multi_type:double":
+    #                 ops.convert_to_tensor([1.0, 2.0, 3.0, 1.0]),
+    #             "multi_type:string":
+    #                 ops.convert_to_tensor([compat.as_bytes("abc")])
+    #         }
+    #     ]
+    #     self._test_pass_dataset(reader_schema=reader_schema,
+    #                             record_data=record_data,
+    #                             expected_data=expected_data,
+    #                             features=features,
+    #                             batch_size=6)
 
-    def test_union_with_null(self):
-        reader_schema = """{
-             "type": "record",
-             "name": "data_row",
-             "fields": [
-                {
-                   "name": "possible_float_type",
-                   "type": [
-                      "null",
-                      "float"
-                   ]
-                }
-             ]
-          }
-          """
-        record_data = [
-            {
-                "possible_float_type": 1.0
-            },
-            {
-                "possible_float_type": None
-            },
-            {
-                "possible_float_type": -1.0
-            }
-        ]
-        features = {
-            "possible_float_type:float": parsing_ops.FixedLenFeature([],
-                                                                     tf_types.float32)
-        }
-        # TODO(fraudies): If we have a default, then we use that in the place of
-        #  the None
-        expected_data = [
-            {
-                "possible_float_type:float": ops.convert_to_tensor([1.0, -1.0])
-            }
-        ]
-        self._test_pass_dataset(reader_schema=reader_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                batch_size=3)
+    # TODO(fraudies): Provide proper handling of default value aka use default when null
+    # If no default is provided fail there
+    # def test_union_with_null(self):
+    #     reader_schema = """{
+    #          "type": "record",
+    #          "name": "data_row",
+    #          "fields": [
+    #             {
+    #                "name": "possible_float_type",
+    #                "type": [
+    #                   "null",
+    #                   "float"
+    #                ]
+    #             }
+    #          ]
+    #       }
+    #       """
+    #     record_data = [
+    #         {
+    #             "possible_float_type": 1.0
+    #         },
+    #         {
+    #             "possible_float_type": None
+    #         },
+    #         {
+    #             "possible_float_type": -1.0
+    #         }
+    #     ]
+    #     features = {
+    #         "possible_float_type:float": parsing_ops.FixedLenFeature([],
+    #                                                                  tf_types.float32)
+    #     }
+    #     # TODO(fraudies): If we have a default, then we use that in the place of
+    #     #  the None
+    #     expected_data = [
+    #         {
+    #             "possible_float_type:float": ops.convert_to_tensor([1.0, -1.0])
+    #         }
+    #     ]
+    #     self._test_pass_dataset(reader_schema=reader_schema,
+    #                             record_data=record_data,
+    #                             expected_data=expected_data,
+    #                             features=features,
+    #                             batch_size=3)
 
     def test_fixed_length_list(self):
         reader_schema = """{
@@ -512,7 +518,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"int_list": [6, 7]}
         ]
         features = {
-            "int_list[*]": parsing_ops.FixedLenFeature([3], tf_types.int32,
+            "int_list[*]": parsing_ops.FixedLenFeature([None, 3], tf_types.int32,
                                                        default_value=[0, 1, 2])
         }
         expected_data = [
@@ -945,7 +951,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
         features = {
             "nested_record.nested_int": parsing_ops.FixedLenFeature([], tf_types.int32),
             "nested_record.nested_float_list[*]": parsing_ops.FixedLenFeature([2], tf_types.float32),
-            "list_of_records[0].first_name": parsing_ops.FixedLenFeature([1], tf_types.string)
+            "list_of_records[0].first_name": parsing_ops.FixedLenFeature([], tf_types.string)
         }
         expected_data = [
             {
