@@ -989,7 +989,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
-    def test_batch_variable_length_list(self):
+    def test_batch_variable_length_list_batched(self):
         """Test batching with variable length lists raises error
     """
         batch_size = len(self.list_var_data[1])
@@ -1009,6 +1009,26 @@ class ArrowDatasetTest(ArrowTestBase):
 
         with self.assertRaisesRegex(errors.OpError, "variable.*unsupported"):
             self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
+    def test_batch_variable_length_list_unbatched(self):
+        """Test unbatched variable length lists
+    """
+        batch_size = None
+
+        truth_data = TruthData(
+            self.list_var_data, self.list_var_dtypes, self.list_var_shapes
+        )
+
+        batch = self.make_record_batch(truth_data)
+
+        dataset = arrow_io.ArrowDataset.from_record_batches(
+            [batch],
+            truth_data.output_types,
+            truth_data.output_shapes,
+            batch_size=batch_size,
+        )
+
+        self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_unsupported_batch_mode(self):
         """Test using an unsupported batch mode
