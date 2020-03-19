@@ -111,10 +111,10 @@ def make_avro_record_dataset(file_pattern,
     if num_parallel_parser_calls is None:
         num_parallel_parser_calls = dataset_ops.AUTOTUNE
 
-    dataset.map(lambda data: parse_avro(serialized=data,
-                                        reader_schema=reader_schema,
-                                        features=features),
-                num_parallel_calls=num_parallel_parser_calls)
+    dataset = dataset.map(lambda data: parse_avro(serialized=data,
+                                                  reader_schema=reader_schema,
+                                                  features=features),
+                          num_parallel_calls=num_parallel_parser_calls)
 
     if prefetch_buffer_size == 0:
         return dataset
