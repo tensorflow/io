@@ -153,3 +153,17 @@ def decode_mp3(input, shape=None, name=None):  # pylint: disable=redefined-built
     if shape is None:
         shape = tf.constant([-1, -1], tf.int64)
     return core_ops.io_audio_decode_mp3(input, shape=shape, name=name)
+
+
+def encode_mp3(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode MP3 audio into string.
+
+    Args:
+      input: A `Tensor` of the audio input.
+      rate: The sample rate of the audio.
+      name: A name for the operation (optional).
+
+    Returns:
+      output: Encoded audio.
+    """
+    return core_ops.io_audio_encode_mp3(input, rate, name=name)

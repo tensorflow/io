@@ -32,7 +32,7 @@ if [[ $(uname) == "Linux" ]]; then
     add-apt-repository -y ppa:deadsnakes/ppa
     apt-get -y -qq update
   fi
-  apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils
+  apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils libmp3lame0
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   $PYTHON_VERSION get-pip.py -q
 fi
