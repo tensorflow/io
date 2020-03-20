@@ -19,6 +19,12 @@ if [[ "$#" -gt 0 ]]; then
   PYTHON_VERSION="${1}"
   shift
 fi
+
+if [[ "$PYTHON_VERSION" == "python3.8" ]]; then
+  echo "TODO: Python 3.8 test is not supported yet as dependency might not be available"
+  exit 0
+fi
+
 if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq update
   if [[ "${PYTHON_VERSION}" == "python3.7" ]]; then
