@@ -706,12 +706,11 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=2)
 
     def test_bool_array_type(self):
+        """NOTE: need to test this seperately because to_pandas fails with
+        ArrowNotImplementedError: Not implemented type for list in
+        DataFrameBlock: bool
+        see https://issues.apache.org/jira/browse/ARROW-4370
         """
-    NOTE: need to test this seperately because to_pandas fails with
-    ArrowNotImplementedError:
-      Not implemented type for list in DataFrameBlock: bool
-    see https://issues.apache.org/jira/browse/ARROW-4370
-    """
         truth_data = TruthData(
             [[[False, False], [False, True], [True, False], [True, True]]],
             (dtypes.bool,),
@@ -740,8 +739,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_map_and_batch(self):
         """Test that using map then batch produces correct output. This will create
-    a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
-    """
+        a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
+        """
         truth_data = TruthData(
             [list(range(10))], (dtypes.int32,), (tf.TensorShape([]),)
         )
@@ -762,8 +761,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     @pytest.mark.skip(reason="TODO")
     def test_tf_function(self):
-        """ Test that an ArrowDataset can be used in tf.function call
-    """
+        """Test that an ArrowDataset can be used in tf.function call"""
         if not tf.version.VERSION.startswith("2."):
             self.skipTest("Test requires TF2.0 for tf.function")
 
@@ -796,8 +794,7 @@ class ArrowDatasetTest(ArrowTestBase):
             self.assertAlmostEqual(value[1], truth_data.data[1][row], 4)
 
     def test_batch_no_remainder(self):
-        """Test batch_size that does not leave a remainder
-    """
+        """Test batch_size that does not leave a remainder"""
         batch_size = len(self.scalar_data[0])
         num_batches = 2
 
@@ -816,8 +813,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_remainder(self):
-        """Test batch_size that does leave a remainder
-    """
+        """Test batch_size that does leave a remainder"""
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -831,8 +827,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_drop_remainder(self):
-        """Test batch_size that drops remainder data
-    """
+        """Test batch_size that drops remainder data"""
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -852,8 +847,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data_drop_last, batch_size=batch_size)
 
     def test_batch_mode_auto(self):
-        """Test auto batch_mode to size to record batch number of rows
-    """
+        """Test auto batch_mode to size to record batch number of rows"""
         num_batches = 2
 
         single_batch_data = TruthData(
@@ -879,8 +873,9 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch.num_rows)
 
     def test_batch_with_partials(self):
-        """Test batch_size that divides an Arrow record batch into partial batches
-    """
+        """Test batch_size that divides an Arrow record batch into
+        partial batches
+        """
         num_batches = 3
         batch_size = int(len(self.scalar_data[0]) * 1.5)
 
@@ -910,9 +905,9 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_with_partials_and_remainder(self):
-        """ Test batch_size that divides an Arrow record batch into partial batches
-    and leaves remainder data
-    """
+        """Test batch_size that divides an Arrow record batch into
+        partial batches and leaves remainder data
+        """
         num_batches = 3
         batch_size = len(self.scalar_data[0]) + 1
 
@@ -942,8 +937,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_spans_mulitple_partials(self):
-        """Test large batch_size that spans mulitple Arrow record batches
-    """
+        """Test large batch_size that spans mulitple Arrow record batches"""
         num_batches = 6
         batch_size = int(len(self.scalar_data[0]) * 3)
 
@@ -970,8 +964,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_fixed_lists(self):
-        """Test batching with fixed length list types
-    """
+        """Test batching with fixed length list types"""
         batch_size = int(len(self.list_fixed_data[0]) / 2)
 
         truth_data = TruthData(
@@ -989,9 +982,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
-    def test_batch_variable_length_list(self):
-        """Test batching with variable length lists raises error
-    """
+    def test_batch_variable_length_list_batched(self):
+        """Test batching with variable length lists raises error"""
         batch_size = len(self.list_var_data[1])
 
         truth_data = TruthData(
@@ -1010,9 +1002,27 @@ class ArrowDatasetTest(ArrowTestBase):
         with self.assertRaisesRegex(errors.OpError, "variable.*unsupported"):
             self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
+    def test_batch_variable_length_list_unbatched(self):
+        """Test unbatched variable length lists"""
+        batch_size = None
+
+        truth_data = TruthData(
+            self.list_var_data, self.list_var_dtypes, self.list_var_shapes
+        )
+
+        batch = self.make_record_batch(truth_data)
+
+        dataset = arrow_io.ArrowDataset.from_record_batches(
+            [batch],
+            truth_data.output_types,
+            truth_data.output_shapes,
+            batch_size=batch_size,
+        )
+
+        self.run_test_case(dataset, truth_data, batch_size=batch_size)
+
     def test_unsupported_batch_mode(self):
-        """Test using an unsupported batch mode
-    """
+        """Test using an unsupported batch mode"""
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
         with self.assertRaisesRegex(ValueError, "Unsupported batch_mode.*doh"):
