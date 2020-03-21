@@ -15,6 +15,7 @@
 """Test Audio"""
 
 import os
+import sys
 import pytest
 import numpy as np
 
@@ -215,6 +216,61 @@ def fixture_encode_ogg():
     return args, func, expected
 
 
+@pytest.fixture(name="decode_mp3", scope="module")
+def fixture_decode_mp3():
+    """fixture_decode_mp3"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "l1-fl6.bit"
+    )
+    content = tf.io.read_file(path)
+    raw_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "l1-fl6.raw"
+    )
+    raw = np.fromfile(raw_path, np.int16)
+    raw = raw.reshape([-1, 2])
+    value = tf.cast(raw, tf.float32) / 32768.0
+
+    # calculate the delta and expect a small diff
+    args = content
+
+    def func(e):
+        delta = tf.constant(0.00005, tf.float32)
+        v = tfio.experimental.audio.decode_mp3(e)
+        v = v - value
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+        return v
+
+    expected = tf.ones([18816, 2], tf.bool)
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_mp3", scope="module")
+def fixture_encode_mp3():
+    """fixture_encode_mp3"""
+    raw_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "l1-fl6.raw"
+    )
+    raw = np.fromfile(raw_path, np.int16)
+    raw = raw.reshape([-1, 2])
+    value = tf.cast(raw, tf.float32) / 32768.0
+
+    # lame has a delay which will expand the number of samples.
+    # for that this test simply check the number of samples
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_mp3(e, rate=44100)
+        v = tfio.experimental.audio.decode_mp3(v)
+        v = tf.shape(v)
+        return v
+
+    # Should be [18816, 2] but lame expand additional samples
+    expected = tf.constant([21888, 2], tf.int32)
+
+    return args, func, expected
+
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -227,6 +283,16 @@ def fixture_encode_ogg():
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
         pytest.param("encode_ogg"),
+        pytest.param("decode_mp3"),
+        pytest.param(
+            "encode_mp3",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="no lame for darwin or win32",
+                ),
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -236,6 +302,8 @@ def fixture_encode_ogg():
         "encode_flac",
         "decode_ogg",
         "encode_ogg",
+        "decode_mp3",
+        "encode_mp3",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -257,6 +325,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("encode_flac"),
         pytest.param("decode_ogg"),
         pytest.param("encode_ogg"),
+        pytest.param("decode_mp3"),
+        pytest.param(
+            "encode_mp3",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="no lame for darwin or win32",
+                ),
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -266,6 +344,8 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "encode_flac",
         "decode_ogg",
         "encode_ogg",
+        "decode_mp3",
+        "encode_mp3",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
