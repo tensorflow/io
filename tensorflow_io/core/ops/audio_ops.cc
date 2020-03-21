@@ -154,6 +154,34 @@ REGISTER_OP("IO>AudioEncodeOgg")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioDecodeMP3")
+    .Input("input: string")
+    .Input("shape: int64")
+    .Output("value: float32")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle shape;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
+      if (!c->RankKnown(shape)) {
+        c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+        return Status::OK();
+      }
+      if (c->Rank(shape) != 2) {
+        return errors::InvalidArgument("rank must be two, received ",
+                                       c->DebugString(shape));
+      }
+      c->set_output(0, shape);
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>AudioEncodeMP3")
+    .Input("input: float32")
+    .Input("rate: int64")
+    .Output("value: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

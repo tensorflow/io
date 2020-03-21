@@ -191,16 +191,19 @@ exports_files([
 ])
 
 cc_library(
-    name = "audio_ops",
+    name = "audio_video_ops",
     srcs = [
-        "kernels/audio_flac_kernels.cc",
         "kernels/audio_kernels.cc",
         "kernels/audio_kernels.h",
-        "kernels/audio_mp3_kernels.cc",
-        "kernels/audio_mp4_kernels.cc",
-        "kernels/audio_ogg_kernels.cc",
-        "kernels/audio_wav_kernels.cc",
+        "kernels/audio_video_flac_kernels.cc",
+        "kernels/audio_video_mp3_kernels.cc",
+        "kernels/audio_video_mp4_kernels.cc",
+        "kernels/audio_video_ogg_kernels.cc",
+        "kernels/audio_video_wav_kernels.cc",
+        "kernels/video_kernels.cc",
+        "kernels/video_kernels.h",
         "ops/audio_ops.cc",
+        "ops/video_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
@@ -213,27 +216,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
-            "//tools/build/swift:audio_swift",
-        ],
-        "//conditions:default": [],
-    }),
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "video_ops",
-    srcs = [
-        "kernels/video_kernels.cc",
-        "kernels/video_kernels.h",
-        "ops/video_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-    ] + select({
-        "@bazel_tools//src/conditions:darwin": [
-            "//tools/build/swift:video_swift",
+            "//tools/build/swift:audio_video_swift",
         ],
         "//conditions:default": [],
     }),
@@ -545,7 +528,7 @@ cc_binary(
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
-        "//tensorflow_io/core:audio_ops",
+        "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
@@ -564,7 +547,6 @@ cc_binary(
         "//tensorflow_io/core:serialization_ops",
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
-        "//tensorflow_io/core:video_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
