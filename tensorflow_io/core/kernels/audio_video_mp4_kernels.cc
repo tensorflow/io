@@ -30,6 +30,15 @@ int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t frames, const void* data_in,
                               int64_t size_in, void* data_out,
                               int64_t size_out);
+
+void DecodeAVCFunctionFini(void* context);
+void* DecodeAVCFunctionInit(const uint8_t* data_pps, const int64_t size_pps,
+                            const uint8_t* data_sps, const int64_t size_sps,
+                            int64_t* width, int64_t* height, int64_t* bytes);
+int64_t DecodeAVCFunctionNext(void* context, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out);
+
 #elif defined(_MSC_VER)
 void DecodeAACFunctionFini(void* state) { return; }
 void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
@@ -43,6 +52,19 @@ int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               int64_t size_out) {
   return -1;
 }
+
+void DecodeAVCFunctionFini(void* context) { return; }
+void* DecodeAVCFunctionInit(const uint8_t* data_pps, const int64_t size_pps,
+                            const uint8_t* data_sps, const int64_t size_sps,
+                            int64_t* width, int64_t* height, int64_t* bytes) {
+  return nullptr;
+}
+int64_t DecodeAVCFunctionNext(void* context, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out) {
+  return -1;
+}
+
 #else
 #include <dlfcn.h>
 static void (*DecodeAACFunctionFiniPointer)(void* state);
@@ -88,6 +110,18 @@ int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
     return DecodeAACFunctionCallPointer(state, codec, rate, channels, frames,
                                         data_in, size_in, data_out, size_out);
   }
+  return -1;
+}
+
+void DecodeAVCFunctionFini(void* context) { return; }
+void* DecodeAVCFunctionInit(const uint8_t* data_pps, const int64_t size_pps,
+                            const uint8_t* data_sps, const int64_t size_sps,
+                            int64_t* width, int64_t* height, int64_t* bytes) {
+  return nullptr;
+}
+int64_t DecodeAVCFunctionNext(void* context, const void* data_in,
+                              int64_t size_in, void* data_out,
+                              int64_t size_out) {
   return -1;
 }
 #endif
@@ -142,6 +176,9 @@ class MP4ReadableResource : public AudioReadableResourceBase {
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     stream_.reset(new MP4Stream(file_.get(), file_size_));
+
+    // reset the scope as resource might be reused
+    mp4d_demux_scope_.reset(nullptr);
     memset(&mp4d_demux_, 0x00, sizeof(mp4d_demux_));
     if (!MP4D_open(&mp4d_demux_, MP4Stream::ReadCallback, stream_.get(),
                    file_size_)) {
@@ -351,5 +388,199 @@ Status MP4ReadableResourceInit(
   return status;
 }
 
+class VideoReadableResource : public ResourceBase {
+ public:
+  VideoReadableResource(Env* env)
+      : env_(env),
+        mp4d_demux_scope_(nullptr,
+                          [](MP4D_demux_t* p) {
+                            if (p != nullptr) {
+                              MP4D_close(p);
+                            }
+                          }),
+        context_(nullptr, [](void* p) {
+          if (p != nullptr) {
+            DecodeAACFunctionFini(p);
+          }
+        }) {}
+
+  ~VideoReadableResource() {}
+
+  Status Init(const string& filename) {
+    mutex_lock l(mu_);
+
+    file_.reset(new SizedRandomAccessFile(env_, filename, nullptr, 0));
+    TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
+
+    stream_.reset(new MP4Stream(file_.get(), file_size_));
+
+    // reset the scope as resource might be reused
+    mp4d_demux_scope_.reset(nullptr);
+    memset(&mp4d_demux_, 0x00, sizeof(mp4d_demux_));
+    if (!MP4D_open(&mp4d_demux_, MP4Stream::ReadCallback, stream_.get(),
+                   file_size_)) {
+      return errors::InvalidArgument("unable to open file ", filename,
+                                     " as mp4");
+    }
+    mp4d_demux_scope_.reset(&mp4d_demux_);
+    track_index_ = 0;
+    sample_index_ = 0;
+    while (track_index_ < mp4d_demux_.track_count) {
+      if (mp4d_demux_.track[track_index_].handler_type ==
+          MP4D_HANDLER_TYPE_VIDE) {
+        break;
+      }
+    }
+    if (track_index_ >= mp4d_demux_.track_count) {
+      return errors::InvalidArgument("unable to find video stream from ",
+                                     filename);
+    }
+
+    int size_pps = 0;
+    const uint8_t* data_pps =
+        (const uint8_t*)MP4D_read_pps(&mp4d_demux_, track_index_, 0, &size_pps);
+    int size_sps = 0;
+    const uint8_t* data_sps =
+        (const uint8_t*)MP4D_read_sps(&mp4d_demux_, track_index_, 0, &size_sps);
+    int64_t width, height, bytes;
+    context_.reset(DecodeAVCFunctionInit(data_pps, size_pps, data_sps, size_sps,
+                                         &width, &height, &bytes));
+    if (context_.get() == nullptr) {
+      return errors::InvalidArgument("unable to initialize mp4 state");
+    }
+    width_ = width;
+    height_ = height;
+    bytes_ = bytes;
+    return Status::OK();
+  }
+  Status Read(
+      const int64 index,
+      std::function<Status(const TensorShape& shape, Tensor** value_tensor)>
+          allocate_func) {
+    mutex_lock l(mu_);
+
+    if (index == 0) {
+      sample_index_ = 0;
+    }
+    Tensor* value_tensor;
+    if (sample_index_ >= mp4d_demux_.track[track_index_].sample_count) {
+      TF_RETURN_IF_ERROR(allocate_func(TensorShape({0}), &value_tensor));
+      return Status::OK();
+    }
+
+    unsigned frame_bytes, timestamp, duration;
+    int64 off = MP4D_frame_offset(&mp4d_demux_, track_index_, sample_index_,
+                                  &frame_bytes, &timestamp, &duration);
+    string buffer;
+    buffer.resize(frame_bytes);
+    StringPiece result;
+    TF_RETURN_IF_ERROR(
+        file_->Read(off, frame_bytes, &result, (char*)&buffer[0]));
+    if (result.size() != frame_bytes) {
+      return errors::InvalidArgument("unable to read expected data of ",
+                                     frame_bytes, " bytes at ", off);
+    }
+
+    TF_RETURN_IF_ERROR(allocate_func(TensorShape({1}), &value_tensor));
+    tstring& value = value_tensor->flat<tstring>()(0);
+    value.resize(bytes_);
+
+    int64 status = DecodeAVCFunctionNext(
+        context_.get(), (const void*)&buffer[0], frame_bytes, (void*)&value[0],
+        static_cast<int64_t>(bytes_));
+    if (status < 0) {
+      return errors::InvalidArgument("error to decode: ", status);
+    }
+    sample_index_++;
+    return Status::OK();
+  }
+  string DebugString() const override {
+    mutex_lock l(mu_);
+    return "VideoReadableResource";
+  }
+
+ protected:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
+  uint64 file_size_ GUARDED_BY(mu_);
+
+  std::unique_ptr<MP4Stream> stream_;
+  MP4D_demux_t mp4d_demux_;
+  std::unique_ptr<MP4D_demux_t, void (*)(MP4D_demux_t*)> mp4d_demux_scope_;
+  std::unique_ptr<void, void (*)(void*)> context_;
+
+  int64 width_;
+  int64 height_;
+  int64 bytes_;
+
+  int64 track_index_;
+  int64 sample_index_;
+};
+
+class VideoReadableInitOp : public ResourceOpKernel<VideoReadableResource> {
+ public:
+  explicit VideoReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<VideoReadableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<VideoReadableResource>::Compute(context);
+
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+    const string& input = input_tensor->scalar<tstring>()();
+
+    OP_REQUIRES_OK(context, resource_->Init(input));
+  }
+  Status CreateResource(VideoReadableResource** resource)
+      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new VideoReadableResource(env_);
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+class VideoReadableReadOp : public OpKernel {
+ public:
+  explicit VideoReadableReadOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    VideoReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* index_tensor;
+    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
+    const int64 index = index_tensor->scalar<int64>()();
+
+    OP_REQUIRES_OK(context,
+                   resource->Read(index,
+                                  [&](const TensorShape& shape,
+                                      Tensor** value_tensor) -> Status {
+                                    TF_RETURN_IF_ERROR(context->allocate_output(
+                                        0, shape, value_tensor));
+                                    return Status::OK();
+                                  }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>VideoReadableInit").Device(DEVICE_CPU),
+                        VideoReadableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>VideoReadableRead").Device(DEVICE_CPU),
+                        VideoReadableReadOp);
 }  // namespace data
 }  // namespace tensorflow

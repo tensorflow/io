@@ -949,24 +949,24 @@ def fixture_sql_graph():
 @pytest.fixture(name="video_capture")
 def fixture_video_capture():
     """fixture_video_capture
-  # Note: on Linux v4l2loopback is used, and the following is needed:
-  #   gst-launch-1.0 videotestsrc ! v4l2sink device=/dev/video0
-  # otherwise fmt will not work with
-  #   $ v4l2-ctl -d /dev/video0 -V
-  #   VIDIOC_G_FMT: failed: Invalid argument
-  # Note: the following is a validation
-  # YUV image could be converted to JPEG with:
-  # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
-  # Linux: ffmpeg -s 320x240 -pix_fmt yuyv422 -i frame_{i}.yuv frame_{i}.jpg
-  dataset = tfio.experimental.IODataset.stream().from_video_capture(
-      "/dev/video0").take(5)
-  i = 0
-  for frame in dataset:
-    print("Frame {}: shape({}) dtype({}) length({})".format(
-        i, frame.shape, frame.dtype, tf.strings.length(frame)))
-    tf.io.write_file("frame_{}.yuv".format(i), frame)
-    i += 1
-  """
+    # Note: on Linux v4l2loopback is used, and the following is needed:
+    #   gst-launch-1.0 videotestsrc ! v4l2sink device=/dev/video0
+    # otherwise fmt will not work with
+    #   $ v4l2-ctl -d /dev/video0 -V
+    #   VIDIOC_G_FMT: failed: Invalid argument
+    # Note: the following is a validation
+    # YUV image could be converted to JPEG with:
+    # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
+    # Linux: ffmpeg -s 320x240 -pix_fmt yuyv422 -i frame_{i}.yuv frame_{i}.jpg
+    dataset = tfio.experimental.IODataset.stream().from_video_capture(
+        "/dev/video0").take(5)
+    i = 0
+    for frame in dataset:
+      print("Frame {}: shape({}) dtype({}) length({})".format(
+          i, frame.shape, frame.dtype, tf.strings.length(frame)))
+      tf.io.write_file("frame_{}.yuv".format(i), frame)
+      i += 1
+    """
 
     args = "/dev/video0"
 
@@ -980,6 +980,30 @@ def fixture_video_capture():
     # Linux (YUYV): 153600 = 320 * 240 * 2
     value = 1382400 if sys.platform == "darwin" else 153600
     expected = [value for _ in range(10)]
+
+    return args, func, expected
+
+
+@pytest.fixture(name="video_mp4", scope="module")
+def fixture_video_mp4():
+    """fixture_video_mp4"""
+    # TODO: need to check content. But for the moment, only length has been checked.
+    # It is possible to manually validate. Since on mac the output format is NV12
+    # the following could be used to convert to jpg for manual check.
+    # Note the extension should be .yuv as .420v will report error.
+    # macOS: ffmpeg -s 1280x720 -pix_fmt nv12 -i frame_{i}.yuv frame_{i}.jpg
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4"
+    )
+
+    args = path
+
+    def func(e):
+        dataset = tfio.experimental.IODataset.from_video(e)
+        dataset = dataset.map(tf.strings.length)
+        return dataset
+
+    expected = [560 * 320 * 3 / 2 for _ in range(166)]
 
     return args, func, expected
 
@@ -1060,6 +1084,15 @@ def fixture_video_capture():
                 ),
             ],
         ),
+        pytest.param(
+            "video_mp4",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1085,6 +1118,7 @@ def fixture_video_capture():
         "kafka[stream]",
         "sql",
         "capture[video]",
+        "video[mp4]",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
@@ -1162,6 +1196,15 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
                 ),
             ],
         ),
+        pytest.param(
+            "video_mp4",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1185,6 +1228,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "kafka[stream]",
         "sql",
         "capture[video]",
+        "video[mp4]",
     ],
 )
 def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
@@ -1266,6 +1310,15 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
                 ),
             ],
         ),
+        pytest.param(
+            "video_mp4",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1286,6 +1339,7 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "kafka",
         "kafka[avro]",
         "sql",
+        "video[mp4]",
     ],
 )
 def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
@@ -1395,6 +1449,26 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
                 ),
             ],
         ),
+        pytest.param(
+            "video_mp4",
+            None,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
+        pytest.param(
+            "video_mp4",
+            2,
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1427,6 +1501,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "kafka[avro]|2",
         "sql",
         "sql|2",
+        "video[mp4]",
+        "video[mp4]|2",
     ],
 )
 def test_io_dataset_in_dataset_parallel(
@@ -1505,6 +1581,15 @@ def test_io_dataset_in_dataset_parallel(
                 ),
             ],
         ),
+        pytest.param(
+            "video_mp4",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "linux"),
+                    reason="TODO Windows is not supported",
+                ),
+            ],
+        ),
     ],
     ids=[
         "mnist",
@@ -1521,6 +1606,7 @@ def test_io_dataset_in_dataset_parallel(
         "numpy[file/tuple]",
         "numpy[file/dict]",
         "sql",
+        "video[mp4]",
     ],
 )
 def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
