@@ -101,9 +101,12 @@ def write_config():
             bazel_rc.write(
                 'build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'.format(library_name)
             )
-            # Needed for GRPC build
             if sys.platform == "darwin":
+                # Needed for GRPC build
+                # Pin to 10.13 to avoid discrepancy with release
                 bazel_rc.write('build --copt="-DGRPC_BAZEL_BUILD"\n')
+                bazel_rc.write('build --copt="-mmacosx-version-min=10.13"\n')
+                bazel_rc.write('build --linkopt="-mmacosx-version-min=10.13"\n')
             for argv in sys.argv[1:]:
                 if argv == "--cuda":
                     bazel_rc.write('build --action_env TF_NEED_CUDA="1"\n')
