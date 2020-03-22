@@ -42,15 +42,3 @@ cc_library(
         "@avro",
     ],
 )
-
-# TODO(fraudies): To enable these tests we need to solve this error
-#  munmap_chunk(): invalid pointer: 0x0000000001ee3600
-# This error appears when including avro_parser_tree.cc
-#cc_test(
-#    name = "prefix_tree_test",
-#    srcs = ["prefix_tree_test.cc"],
-#    deps = [
-#        ":avro_utils",
-#        "@com_google_googletest//:gtest_main",
-#    ],
-#)
