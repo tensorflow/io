@@ -116,12 +116,32 @@ class FlacStreamDecoder {
                p->sample_index);
 
     switch (p->sample_value->dtype()) {
+      case DT_UINT8:
+        // convert to unsigned by adding 0x80
+        for (int64 channel = 0; channel < frame->header.channels; channel++) {
+          for (int64 index = 0; index < samples_to_read; index++) {
+            int64 sample_index = p->sample_index + index - p->sample_start;
+            p->sample_value->tensor<uint8, 2>()(sample_index, channel) =
+                (static_cast<uint8>(buffer[channel][index] + 0x80));
+          }
+        }
+        break;
       case DT_INT16:
         for (int64 channel = 0; channel < frame->header.channels; channel++) {
           for (int64 index = 0; index < samples_to_read; index++) {
             int64 sample_index = p->sample_index + index - p->sample_start;
             p->sample_value->tensor<int16, 2>()(sample_index, channel) =
                 buffer[channel][index];
+          }
+        }
+        break;
+      case DT_INT32:
+        // left shift 8 bit as we want to fill int32
+        for (int64 channel = 0; channel < frame->header.channels; channel++) {
+          for (int64 index = 0; index < samples_to_read; index++) {
+            int64 sample_index = p->sample_index + index - p->sample_start;
+            p->sample_value->tensor<int32, 2>()(sample_index, channel) =
+                (static_cast<int32>(buffer[channel][index]) << 8);
           }
         }
         break;
@@ -247,8 +267,14 @@ class FlacReadableResource : public AudioReadableResourceBase {
     int64 rate = stream_decoder_->rate;
     DataType dtype = DT_INVALID;
     switch (stream_decoder_->bits_per_sample) {
+      case 8:
+        dtype = DT_UINT8;
+        break;
       case 16:
         dtype = DT_INT16;
+        break;
+      case 24:
+        dtype = DT_INT32;
         break;
       default:
         return errors::InvalidArgument("invalid_bits_per_sample: ",
@@ -364,6 +390,7 @@ class AudioDecodeFlacOp : public OpKernel {
   mutable mutex mu_;
   Env* env_ GUARDED_BY(mu_);
 };
+
 class AudioEncodeFlacOp : public OpKernel {
  public:
   explicit AudioEncodeFlacOp(OpKernelConstruction* context)
@@ -382,10 +409,16 @@ class AudioEncodeFlacOp : public OpKernel {
     const int64 samples = input_tensor->shape().dim_size(0);
     const int64 channels = input_tensor->shape().dim_size(1);
 
-    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
-    // TODO: support more data types
+    int64 bytes_per_sample;
     switch (input_tensor->dtype()) {
+      case DT_UINT8:
+        bytes_per_sample = 1;
+        break;
       case DT_INT16:
+        bytes_per_sample = 2;
+        break;
+      case DT_INT32:
+        bytes_per_sample = 3;
         break;
       default:
         OP_REQUIRES(context, false,
@@ -454,14 +487,35 @@ class AudioEncodeFlacOp : public OpKernel {
                         ? (FlacStreamEncoder::kSampleBufferCount)
                         : (samples - count);
       switch (input_tensor->dtype()) {
-        case DT_INT16: {
+        case DT_UINT8:
+          // convert to signed by sub 0x80
+          for (int64 i = 0; i < chunk; i++) {
+            for (int64 c = 0; c < channels; c++) {
+              pcm.get()[i * channels + c] =
+                  static_cast<int32>(
+                      input_tensor->flat<uint8>()((count + i) * channels + c)) -
+                  0x80;
+            }
+          }
+          break;
+        case DT_INT16:
           for (int64 i = 0; i < chunk; i++) {
             for (int64 c = 0; c < channels; c++) {
               pcm.get()[i * channels + c] =
                   input_tensor->flat<int16>()((count + i) * channels + c);
             }
           }
-        } break;
+          break;
+        case DT_INT32:
+          // right shift 8 bit as int32 was filled
+          for (int64 i = 0; i < chunk; i++) {
+            for (int64 c = 0; c < channels; c++) {
+              pcm.get()[i * channels + c] =
+                  (input_tensor->flat<int32>()((count + i) * channels + c) >>
+                   8);
+            }
+          }
+          break;
       }
       ok = FLAC__stream_encoder_process_interleaved(encoder.get(), pcm.get(),
                                                     chunk);

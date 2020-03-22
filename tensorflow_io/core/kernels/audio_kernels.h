@@ -19,6 +19,10 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
+Status PartitionsLookup(const std::vector<int64>& partitions, const int64 start,
+                        const int64 stop, int64* upper, int64* lower,
+                        int64* extra);
+
 class AudioReadableResourceBase : public ResourceBase {
  public:
   virtual Status Init(const string& filename,

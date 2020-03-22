@@ -105,6 +105,113 @@ def fixture_encode_wav():
     return args, func, expected
 
 
+@pytest.fixture(name="decode_wav_u8", scope="module")
+def fixture_decode_wav_u8():
+    """fixture_decode_wav_u8"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.u8.wav",
+    )
+    content = tf.io.read_file(path)
+
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+    value = (value + 1.0) * 128.0
+    value = tf.cast(value, tf.uint8)
+
+    args = content
+
+    def func(e):
+        delta = tf.constant(3.0, tf.float32)
+        v = tfio.experimental.audio.decode_wav(e, dtype=tf.uint8)
+        v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+        return v
+
+    expected = tf.ones([14336, 2], tf.bool)
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_wav_u8", scope="module")
+def fixture_encode_wav_u8():
+    """fixture_encode_wav_u8"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+    value = (value + 1.0) / 2.0 * 256.0
+    value = tf.cast(value, tf.uint8)
+
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_wav(e, rate=44100)
+        return tfio.experimental.audio.decode_wav(v, dtype=tf.uint8)
+
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="decode_wav_s24", scope="module")
+def fixture_decode_wav_s24():
+    """fixture_decode_wav_s24"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.s24.wav",
+    )
+    content = tf.io.read_file(path)
+
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio * (1 << 31)
+    value = tf.cast(value, tf.int32)
+
+    args = content
+    func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.int32)
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_wav_s24", scope="module")
+def fixture_encode_wav_s24():
+    """fixture_encode_wav_s24"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio * (1 << 31)
+    value = tf.cast(value, tf.int32)
+
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_wav(e, rate=44100)
+        return tfio.experimental.audio.decode_wav(v, dtype=tf.int32)
+
+    expected = value
+
+    return args, func, expected
+
+
 @pytest.fixture(name="decode_flac", scope="module")
 def fixture_decode_flac():
     """fixture_decode_flac"""
@@ -148,6 +255,117 @@ def fixture_encode_flac():
     def func(e):
         v = tfio.experimental.audio.encode_flac(e, rate=44100)
         return tfio.experimental.audio.decode_flac(v, dtype=tf.int16)
+
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="decode_flac_u8", scope="module")
+def fixture_decode_flac_u8():
+    """fixture_decode_flac_u8"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.u8.flac",
+    )
+    content = tf.io.read_file(path)
+
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+    value = (value + 1.0) * 128.0
+    value = tf.cast(value, tf.uint8)
+
+    args = content
+
+    def func(e):
+        delta = tf.constant(3.0, tf.float32)
+        v = tfio.experimental.audio.decode_flac(e, dtype=tf.uint8)
+        v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+        return v
+
+    expected = tf.ones([14336, 2], tf.bool)
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_flac_u8", scope="module")
+def fixture_encode_flac_u8():
+    """fixture_encode_flac_u8"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+    value = (value + 1.0) / 2.0 * 256.0
+    value = tf.cast(value, tf.uint8)
+
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_flac(e, rate=44100)
+        return tfio.experimental.audio.decode_flac(v, dtype=tf.uint8)
+
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="decode_flac_s24", scope="module")
+def fixture_decode_flac_s24():
+    """fixture_decode_flac_s24"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.s24.flac",
+    )
+    content = tf.io.read_file(path)
+
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+
+    args = content
+
+    def func(e):
+        v = tfio.experimental.audio.decode_flac(e, dtype=tf.int32)
+        v = tf.cast(v, tf.float32) / tf.constant((1 << 31), tf.float32)
+        return v
+
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_flac_s24", scope="module")
+def fixture_encode_flac_s24():
+    """fixture_encode_flac_s24"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio * (1 << 31)
+    value = tf.cast(value, tf.int32)
+
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_flac(e, rate=44100)
+        return tfio.experimental.audio.decode_flac(v, dtype=tf.int32)
 
     expected = value
 
@@ -279,8 +497,16 @@ def fixture_encode_mp3():
         pytest.param("resample"),
         pytest.param("decode_wav"),
         pytest.param("encode_wav"),
+        pytest.param("decode_wav_u8"),
+        pytest.param("encode_wav_u8"),
+        pytest.param("decode_wav_s24"),
+        pytest.param("encode_wav_s24"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_flac_u8"),
+        pytest.param("encode_flac_u8"),
+        pytest.param("decode_flac_s24"),
+        pytest.param("encode_flac_s24"),
         pytest.param("decode_ogg"),
         pytest.param("encode_ogg"),
         pytest.param("decode_mp3"),
@@ -298,8 +524,16 @@ def fixture_encode_mp3():
         "resample",
         "decode_wav",
         "encode_wav",
+        "decode_wav|u8",
+        "encode_wav|u8",
+        "decode_wav|s24",
+        "encode_wav|s24",
         "decode_flac",
         "encode_flac",
+        "decode_flac|u8",
+        "encode_flac|u8",
+        "decode_flac|s24",
+        "encode_flac|s24",
         "decode_ogg",
         "encode_ogg",
         "decode_mp3",
@@ -321,8 +555,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("resample"),
         pytest.param("decode_wav"),
         pytest.param("encode_wav"),
+        pytest.param("decode_wav_u8"),
+        pytest.param("encode_wav_u8"),
+        pytest.param("decode_wav_s24"),
+        pytest.param("encode_wav_s24"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
+        pytest.param("decode_flac_u8"),
+        pytest.param("encode_flac_u8"),
+        pytest.param("decode_flac_s24"),
+        pytest.param("encode_flac_s24"),
         pytest.param("decode_ogg"),
         pytest.param("encode_ogg"),
         pytest.param("decode_mp3"),
@@ -340,8 +582,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "resample",
         "decode_wav",
         "encode_wav",
+        "decode_wav|u8",
+        "encode_wav|u8",
+        "decode_wav|s24",
+        "encode_wav|s24",
         "decode_flac",
         "encode_flac",
+        "decode_flac|u8",
+        "encode_flac|u8",
+        "decode_flac|s24",
+        "encode_flac|s24",
         "decode_ogg",
         "encode_ogg",
         "decode_mp3",

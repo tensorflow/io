@@ -19,6 +19,37 @@ limitations under the License.
 
 namespace tensorflow {
 namespace data {
+// Lookup partitions to find the lower and upper limit [lower, upper) of the
+// partitions that consists of [start, stop), with extra as the extra sample of
+// the first partition to drop. Note the unit is 1 * channels in audio.
+// e.g., ([10, 20, 30, 40]), (15), (30) have 1 (lower), 3 (upper), 5 (extra)
+Status PartitionsLookup(const std::vector<int64>& partitions, const int64 start,
+                        const int64 stop, int64* lower, int64* upper,
+                        int64* extra) {
+  if (partitions.size() == 0) {
+    return errors::InvalidArgument("partitions must have at least one element");
+  }
+  // std::upper_bound is the first element that is greater than `start`
+  auto lower_index =
+      std::upper_bound(partitions.begin(), partitions.end(), start);
+  *lower = lower_index - partitions.begin();
+
+  // we are looking for the first element val >= stop, i.e., val > (stop - 1),
+  // as we return `[lower, upper)`, the upper should be index + 1.
+  auto upper_index = std::upper_bound(lower_index, partitions.end(), stop - 1);
+  if (upper_index == partitions.end()) {
+    *upper = partitions.size();
+  } else {
+    *upper = upper_index - partitions.begin() + 1;
+  }
+
+  if (*lower == 0) {
+    *extra = start;
+  } else {
+    *extra = start - partitions[(*lower) - 1];
+  }
+  return Status::OK();
+}
 namespace {
 
 class AudioReadableResource : public AudioReadableResourceBase {

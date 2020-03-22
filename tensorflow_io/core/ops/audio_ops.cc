@@ -70,7 +70,7 @@ REGISTER_OP("IO>AudioDecodeWAV")
     .Input("input: string")
     .Input("shape: int64")
     .Output("value: dtype")
-    .Attr("dtype: {int16, int32}")
+    .Attr("dtype: {uint8, int16, int32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
@@ -90,7 +90,7 @@ REGISTER_OP("IO>AudioEncodeWAV")
     .Input("input: dtype")
     .Input("rate: int64")
     .Output("value: string")
-    .Attr("dtype: {int16}")
+    .Attr("dtype: {uint8, int16, int32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       return Status::OK();
@@ -100,7 +100,7 @@ REGISTER_OP("IO>AudioDecodeFlac")
     .Input("input: string")
     .Input("shape: int64")
     .Output("value: dtype")
-    .Attr("dtype: {int16, int32}")
+    .Attr("dtype: {uint8, int16, int32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
@@ -120,7 +120,7 @@ REGISTER_OP("IO>AudioEncodeFlac")
     .Input("input: dtype")
     .Input("rate: int64")
     .Output("value: string")
-    .Attr("dtype: {int16}")
+    .Attr("dtype: {uint8, int16, int32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       return Status::OK();

@@ -124,6 +124,7 @@ class WAVReadableResource : public AudioReadableResourceBase {
     int64 position = header_length_ + header_.fmt_size - 16;
 
     int64 nSamples = 0;
+    partitions_.clear();
     do {
       struct DataHeader head;
       TF_RETURN_IF_ERROR(
@@ -138,13 +139,16 @@ class WAVReadableResource : public AudioReadableResourceBase {
                                          "), received: ", head.size);
         }
         nSamples += head.size / header_.nBlockAlign;
+        partitions_.emplace_back(nSamples);
+        partitions_offset_.emplace_back(position);
       }
       position += head.size;
     } while (position < filesize);
 
+    // Note: 8 bit is always 0-255 (uint8)
     switch (header_.wBitsPerSample) {
       case 8:
-        dtype_ = DT_INT8;
+        dtype_ = DT_UINT8;
         break;
       case 16:
         dtype_ = DT_INT16;
@@ -184,103 +188,81 @@ class WAVReadableResource : public AudioReadableResourceBase {
     Tensor* value;
     TF_RETURN_IF_ERROR(allocate_func(
         TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
-
-    int64 sample_offset = 0;
-    if (header_.riff_size + 8 != file_size_) {
-      // corrupted file?
+    if (sample_stop == start) {
+      return Status::OK();
     }
-    int64 filesize = header_.riff_size + 8;
-    int64 position = header_length_ + header_.fmt_size - 16;
-    do {
-      StringPiece result;
-      struct DataHeader head;
-      TF_RETURN_IF_ERROR(
-          file_->Read(position, sizeof(head), &result, (char*)(&head)));
-      position += result.size();
-      if (memcmp(head.mark, "data", 4) == 0) {
-        // Already checked the alignment
-        int64 block_sample_start = sample_offset;
-        int64 block_sample_stop =
-            sample_offset + head.size / header_.nBlockAlign;
-        // only read if block_sample_start and block_sample_stop within range
-        if (sample_start < block_sample_stop &&
-            sample_stop > block_sample_start) {
-          int64 read_sample_start =
-              (block_sample_start > sample_start ? block_sample_start
-                                                 : sample_start);
-          int64 read_sample_stop =
-              (block_sample_stop < sample_stop ? block_sample_stop
-                                               : sample_stop);
-          int64 read_bytes_start =
-              position +
-              (read_sample_start - block_sample_start) * header_.nBlockAlign;
-          int64 read_bytes_stop =
-              position +
-              (read_sample_stop - block_sample_start) * header_.nBlockAlign;
-          string buffer;
-          buffer.resize(read_bytes_stop - read_bytes_start);
-          TF_RETURN_IF_ERROR(file_->Read(read_bytes_start,
-                                         read_bytes_stop - read_bytes_start,
-                                         &result, &buffer[0]));
-          switch (header_.wBitsPerSample) {
-            case 8:
-              if (header_.wBitsPerSample * header_.nChannels !=
-                  header_.nBlockAlign * 8) {
-                return errors::InvalidArgument(
-                    "unsupported wBitsPerSample and header.nBlockAlign: ",
-                    header_.wBitsPerSample, ", ", header_.nBlockAlign);
-              }
-              memcpy((char*)(value->flat<int8>().data()) +
-                         ((read_sample_start - sample_start) *
-                          header_.nBlockAlign),
-                     &buffer[0], (read_bytes_stop - read_bytes_start));
-              break;
-            case 16:
-              if (header_.wBitsPerSample * header_.nChannels !=
-                  header_.nBlockAlign * 8) {
-                return errors::InvalidArgument(
-                    "unsupported wBitsPerSample and header.nBlockAlign: ",
-                    header_.wBitsPerSample, ", ", header_.nBlockAlign);
-              }
-              memcpy((char*)(value->flat<int16>().data()) +
-                         ((read_sample_start - sample_start) *
-                          header_.nBlockAlign),
-                     &buffer[0], (read_bytes_stop - read_bytes_start));
-              break;
-            case 24:
-              // NOTE: The conversion is from signed integer 24 to signed
-              // integer 32 (left shift 8 bits)
-              if (header_.wBitsPerSample * header_.nChannels !=
-                  header_.nBlockAlign * 8) {
-                return errors::InvalidArgument(
-                    "unsupported wBitsPerSample and header.nBlockAlign: ",
-                    header_.wBitsPerSample, ", ", header_.nBlockAlign);
-              }
-              for (int64 i = read_sample_start; i < read_sample_stop; i++) {
-                for (int64 j = 0; j < header_.nChannels; j++) {
-                  char* data_p =
-                      (char*)(value->flat<int32>().data() +
-                              ((i - sample_start) * header_.nChannels + j));
-                  char* read_p = (char*)(&buffer[((i - read_sample_start) *
-                                                  header_.nBlockAlign)]) +
-                                 3 * j;
-                  data_p[3] = read_p[2];
-                  data_p[2] = read_p[1];
-                  data_p[1] = read_p[0];
-                  data_p[0] = 0x00;
-                }
-              }
-              break;
-            default:
-              return errors::InvalidArgument(
-                  "unsupported wBitsPerSample and header.nBlockAlign: ",
-                  header_.wBitsPerSample, ", ", header_.nBlockAlign);
-          }
-        }
-        sample_offset = block_sample_stop;
+
+    const int64 channels = shape_.dim_size(1);
+
+    int64 lower, upper, extra;
+    TF_RETURN_IF_ERROR(
+        PartitionsLookup(partitions_, start, stop, &lower, &upper, &extra));
+
+    int64 base_offset = 0;
+    char* base;
+    switch (dtype_) {
+      case DT_UINT8:
+        base = (char*)(value->flat<uint8>().data());
+        break;
+      case DT_INT16:
+        base = (char*)(value->flat<int16>().data());
+        break;
+      case DT_INT32:
+        base = (char*)(value->flat<int32>().data());
+        break;
+      default:
+        return errors::InvalidArgument("data type ", DataTypeString(dtype_),
+                                       " not supported");
+    }
+    for (int64 i = lower; i < upper; i++) {
+      int64 chunk_offset = 0;
+      int64 chunk_length =
+          (i == 0) ? (partitions_[i]) : (partitions_[i] - partitions_[i - 1]);
+      // extra only applies to the first chunk
+      if (i == lower) {
+        chunk_offset = extra;
+        chunk_length = chunk_length - extra;
       }
-      position += head.size;
-    } while (position < filesize);
+      // make sure copied chunk size is within the value shape
+      if (base_offset + chunk_length > value->shape().dim_size(0)) {
+        chunk_length = value->shape().dim_size(0) - base_offset;
+      }
+      if (chunk_length == 0) {
+        continue;
+      }
+
+      int64 offset = partitions_offset_[i] + chunk_offset * header_.nBlockAlign;
+      int64 length = chunk_length * header_.nBlockAlign;
+
+      string buffer;
+      buffer.resize(length);
+
+      StringPiece result;
+      TF_RETURN_IF_ERROR(file_->Read(offset, length, &result, &buffer[0]));
+
+      switch (header_.wBitsPerSample) {
+        case 8:
+        case 16:
+          memcpy(base + base_offset * header_.nBlockAlign, (char*)(&buffer[0]),
+                 chunk_length * header_.nBlockAlign);
+          break;
+        case 24:
+          for (int64 i = 0; i < chunk_length * channels; i++) {
+            char* in_p = (char*)(&buffer[0]) + i * 3;
+            char* out_p = base + base_offset * header_.nBlockAlign + i * 4;
+            out_p[3] = in_p[2];
+            out_p[2] = in_p[1];
+            out_p[1] = in_p[0];
+            out_p[0] = 0x00;
+          }
+          break;
+        default:
+          return errors::InvalidArgument(
+              "unsupported wBitsPerSample and header.nBlockAlign: ",
+              header_.wBitsPerSample, ", ", header_.nBlockAlign);
+      }
+      base_offset += chunk_length;
+    }
 
     return Status::OK();
   }
@@ -297,6 +279,9 @@ class WAVReadableResource : public AudioReadableResourceBase {
 
   struct WAVHeader header_;
   int64 header_length_;
+
+  std::vector<int64> partitions_;
+  std::vector<int64> partitions_offset_;
 };
 
 class AudioDecodeWAVOp : public OpKernel {
@@ -375,12 +360,20 @@ class AudioEncodeWAVOp : public OpKernel {
     OP_REQUIRES(context, (rate == static_cast<int32>(rate)),
                 errors::InvalidArgument("rate ", rate, " > max(int32)"));
 
-    const int64 bytes_per_sample = DataTypeSize(input_tensor->dtype());
-    void* input_base = nullptr;
-    // TODO: support more data types
+    int64 bytes_per_sample;
+    char* input_base = nullptr;
     switch (input_tensor->dtype()) {
+      case DT_UINT8:
+        bytes_per_sample = 1;
+        input_base = (char*)input_tensor->flat<uint8>().data();
+        break;
       case DT_INT16:
-        input_base = (void*)input_tensor->flat<int16>().data();
+        bytes_per_sample = 2;
+        input_base = (char*)input_tensor->flat<int16>().data();
+        break;
+      case DT_INT32:
+        bytes_per_sample = 3;
+        input_base = (char*)input_tensor->flat<int32>().data();
         break;
       default:
         OP_REQUIRES(context, false,
@@ -399,8 +392,8 @@ class AudioEncodeWAVOp : public OpKernel {
     struct WAVHeader* header = (struct WAVHeader*)&output[0];
     struct DataHeader* data_header =
         (struct DataHeader*)&output[sizeof(struct WAVHeader)];
-    void* output_base =
-        (void*)&output[sizeof(struct WAVHeader) + sizeof(struct DataHeader)];
+    char* output_base =
+        (char*)&output[sizeof(struct WAVHeader) + sizeof(struct DataHeader)];
 
     // RIFF Chunk ID: "RIFF"
     memcpy(header->riff, "RIFF", 4);
@@ -441,10 +434,23 @@ class AudioEncodeWAVOp : public OpKernel {
     // Data Header
     memcpy(data_header->mark, "data", 4);
     data_header->size = input_tensor->NumElements() * bytes_per_sample;
-
     // Data Chunk
-    memcpy(output_base, input_base,
-           input_tensor->NumElements() * bytes_per_sample);
+    switch (input_tensor->dtype()) {
+      case DT_UINT8:
+      case DT_INT16:
+        memcpy(output_base, input_base,
+               input_tensor->NumElements() * bytes_per_sample);
+        break;
+      case DT_INT32:
+        for (int64 i = 0; i < input_tensor->NumElements(); i++) {
+          char* in_p = input_base + i * 4;
+          char* out_p = output_base + i * 3;
+          out_p[2] = in_p[3];
+          out_p[1] = in_p[2];
+          out_p[0] = in_p[1];
+        }
+        break;
+    }
   }
 
  private:
