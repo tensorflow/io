@@ -50,3 +50,37 @@ class VideoCaptureIODataset(tf.data.Dataset):
     @property
     def element_spec(self):
         return self._dataset.element_spec
+
+
+class VideoIODataset(tf.data.Dataset):
+    """VideoIODataset"""
+
+    def __init__(self, filename, internal=True):
+        """VideoIODataset"""
+        with tf.name_scope("VideoIODataset"):
+            assert internal
+
+            resource = core_ops.io_video_readable_init(filename)
+
+            self._resource = resource
+
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda i: core_ops.io_video_readable_read(self._resource, i)
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.unbatch()
+
+            self._dataset = dataset
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
+
+    def _inputs(self):
+        return []
+
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec
