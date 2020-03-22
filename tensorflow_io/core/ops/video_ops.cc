@@ -40,6 +40,25 @@ REGISTER_OP("IO>VideoCaptureReadableRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>VideoReadableInit")
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>VideoReadableRead")
+    .Input("input: resource")
+    .Input("index: int64")
+    .Output("value: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

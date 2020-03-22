@@ -1,4 +1,5 @@
 import AVFoundation
+import VideoToolbox
 
 class VideoDataOutputSampleBufferDelegate : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     
@@ -160,4 +161,93 @@ func VideoCaptureFiniFunction(context: UnsafeMutablePointer<VideoContext>) -> Vo
         context.deinitialize(count: 1)
         context.deallocate()
     }
+}
+
+typealias AVCContext = (session: VTDecompressionSession, formatDescription : CMVideoFormatDescription, width: Int64, height: Int64)
+
+@_silgen_name("DecodeAVCFunctionInit")
+func DecodeAVCFunctionInit(data_pps: UnsafePointer<UInt8>, size_pps: Int64, data_sps: UnsafePointer<UInt8>, size_sps: Int64, width: UnsafeMutablePointer<Int64>, height: UnsafeMutablePointer<Int64>, bytes: UnsafeMutablePointer<Int64>) -> UnsafeMutablePointer<AVCContext>?  {
+    
+    let parameterSetSizes : [Int] = [ Int(size_pps), Int(size_sps) ]
+    let parameterSetPointers : [UnsafePointer<UInt8>] = [ data_pps, data_sps ]
+    
+    var formatDescription : CMVideoFormatDescription?
+    let v = CMVideoFormatDescriptionCreateFromH264ParameterSets(allocator: nil, parameterSetCount: 2, parameterSetPointers: parameterSetPointers, parameterSetSizes: parameterSetSizes, nalUnitHeaderLength: 4, formatDescriptionOut: &formatDescription )
+    
+    width.pointee = Int64(formatDescription!.dimensions.width)
+    height.pointee = Int64(formatDescription!.dimensions.height)
+    bytes.pointee = Int64(formatDescription!.dimensions.width * formatDescription!.dimensions.height * 3 / 2)
+    
+    var session: VTDecompressionSession? = nil
+    
+    let status = VTDecompressionSessionCreate(allocator: nil, formatDescription: formatDescription!, decoderSpecification: nil, imageBufferAttributes: nil, outputCallback: nil, decompressionSessionOut: &session)
+    
+    let context = UnsafeMutablePointer<AVCContext>.allocate(capacity: 1)
+    context.initialize(to: (session: session!, formatDescription: formatDescription!, width: width.pointee, height: height.pointee))
+    
+    return context
+    
+    
+}
+
+@_silgen_name("DecodeAVCFunctionNext")
+func DecodeAVCFunctionNext(context: UnsafeMutablePointer<AVCContext>, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int64 {
+    
+    let blockBuffer = try! CMBlockBuffer(length: Int(size_in))
+    
+    CMBlockBufferReplaceDataBytes(with: data_in, blockBuffer: blockBuffer, offsetIntoDestination: 0, dataLength: Int(size_in))
+    
+    let sampleBuffer = try! CMSampleBuffer(dataBuffer: blockBuffer, formatDescription: context.pointee.formatDescription, numSamples: 1, sampleTimings: [], sampleSizes: [1])
+    
+    func outputHandler(status: OSStatus, infoFlags: VTDecodeInfoFlags, buffer: CVImageBuffer?, t1: CMTime, t2: CMTime) -> Void {
+        
+        let bytesPerRow0 = Int(context.pointee.width)
+        let bytesPaddedPerRow0 = CVPixelBufferGetBytesPerRowOfPlane(buffer!, 0)
+        let heightOfPlane0 = CVPixelBufferGetHeightOfPlane(buffer!, 0)
+        
+        let bytesPerRow1 = Int(context.pointee.width)
+        let bytesPaddedPerRow1 = CVPixelBufferGetBytesPerRowOfPlane(buffer!, 1)
+        let heightOfPlane1 = CVPixelBufferGetHeightOfPlane(buffer!, 1)
+        
+        if size_out < bytesPerRow0 * heightOfPlane0 + bytesPerRow1 * heightOfPlane1 {
+            return
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer!, CVPixelBufferLockFlags(rawValue: 0))
+        
+        let baseAddress0 = CVPixelBufferGetBaseAddressOfPlane(buffer!, 0)
+        
+        var bytesAdvanced0 = 0
+        var bytesPaddedAdvanced0 = 0
+        for _ in 1...heightOfPlane0 {
+            data_out.advanced(by: bytesAdvanced0).copyMemory(from: baseAddress0!.advanced(by: bytesPaddedAdvanced0), byteCount: bytesPerRow0)
+            
+            bytesAdvanced0 += bytesPerRow0
+            bytesPaddedAdvanced0 += bytesPaddedPerRow0
+        }
+        
+        let baseAddress1 = CVPixelBufferGetBaseAddressOfPlane(buffer!, 1)
+        
+        var bytesAdvanced1 = bytesAdvanced0
+        var bytesPaddedAdvanced1 = 0
+        for _ in 1...heightOfPlane1 {
+            data_out.advanced(by: bytesAdvanced1).copyMemory(from: baseAddress1!.advanced(by: bytesPaddedAdvanced1), byteCount: bytesPerRow1)
+            
+            bytesAdvanced1 += bytesPerRow1
+            bytesPaddedAdvanced1 += bytesPaddedPerRow1
+        }
+        
+        CVPixelBufferUnlockBaseAddress(buffer!, CVPixelBufferLockFlags(rawValue: 0))
+        
+        return
+    }
+    VTDecompressionSessionDecodeFrame(context.pointee.session, sampleBuffer: sampleBuffer, flags: [], infoFlagsOut: nil, outputHandler: outputHandler)
+    
+    return 0
+}
+
+@_silgen_name("DecodeAVCFunctionFini")
+func DecodeAVCFunctionFini(context: UnsafeMutablePointer<AVCContext>) -> Void {
+    context.deinitialize(count: 1)
+    context.deallocate()
 }
