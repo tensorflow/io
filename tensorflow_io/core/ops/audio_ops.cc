@@ -126,7 +126,7 @@ REGISTER_OP("IO>AudioEncodeFlac")
       return Status::OK();
     });
 
-REGISTER_OP("IO>AudioDecodeOgg")
+REGISTER_OP("IO>AudioDecodeVorbis")
     .Input("input: string")
     .Input("shape: int64")
     .Output("value: float32")
@@ -145,7 +145,7 @@ REGISTER_OP("IO>AudioDecodeOgg")
       return Status::OK();
     });
 
-REGISTER_OP("IO>AudioEncodeOgg")
+REGISTER_OP("IO>AudioEncodeVorbis")
     .Input("input: float32")
     .Input("rate: int64")
     .Output("value: string")

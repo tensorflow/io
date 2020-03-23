@@ -397,9 +397,9 @@ def fixture_audio_wav_s24():
     return args, func, expected
 
 
-@pytest.fixture(name="audio_ogg", scope="module")
-def fixture_audio_ogg():
-    """fixture_audio_ogg"""
+@pytest.fixture(name="audio_vorbis", scope="module")
+def fixture_audio_vorbis():
+    """fixture_audio_vorbis"""
     ogg_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -1028,15 +1028,15 @@ def fixture_video_mp4():
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_s24"),
+        pytest.param("audio_flac"),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "win32", reason="TODO Fail on Windows"
                 ),
             ],
         ),
-        pytest.param("audio_flac"),
         pytest.param("audio_mp3"),
         pytest.param(
             "prometheus_scrape",
@@ -1101,8 +1101,8 @@ def fixture_video_mp4():
         "prometheus",
         "audio[wav]",
         "audio[wav|s24]",
-        "audio[ogg]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "prometheus[scrape]",
         "kinesis",
@@ -1150,15 +1150,15 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_s24"),
+        pytest.param("audio_flac"),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "win32", reason="TODO Fail on Windows"
                 ),
             ],
         ),
-        pytest.param("audio_flac"),
         pytest.param("audio_mp3"),
         pytest.param(
             "prometheus_scrape",
@@ -1213,8 +1213,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         "prometheus",
         "audio[wav]",
         "audio[wav|s24]",
-        "audio[ogg]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "prometheus[scrape]",
         "hdf5",
@@ -1283,15 +1283,15 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_s24"),
+        pytest.param("audio_flac"),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "win32", reason="TODO Fail on Windows"
                 ),
             ],
         ),
-        pytest.param("audio_flac"),
         pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
@@ -1327,8 +1327,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
         "prometheus",
         "audio[wav]",
         "audio[wav|s24]",
-        "audio[ogg]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "hdf5",
         "grpc",
@@ -1397,8 +1397,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("audio_wav", 2),
         pytest.param("audio_wav_s24", None),
         pytest.param("audio_wav_s24", 2),
+        pytest.param("audio_flac", None),
+        pytest.param("audio_flac", 2),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             None,
             marks=[
                 pytest.mark.skipif(
@@ -1407,7 +1409,7 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             ],
         ),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             2,
             marks=[
                 pytest.mark.skipif(
@@ -1415,8 +1417,6 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
                 ),
             ],
         ),
-        pytest.param("audio_flac", None),
-        pytest.param("audio_flac", 2),
         pytest.param("audio_mp3", None),
         pytest.param("audio_mp3", 2),
         pytest.param("hdf5_graph", None),
@@ -1483,10 +1483,10 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         "audio[wav]|2",
         "audio[wav|s24]",
         "audio[wav|s24]|2",
-        "audio[ogg]",
-        "audio[ogg]|2",
         "audio[flac]",
         "audio[flac]|2",
+        "audio[vorbis]",
+        "audio[vorbis]|2",
         "audio[mp3]",
         "audio[mp3]|2",
         "hdf5",
@@ -1557,15 +1557,15 @@ def test_io_dataset_in_dataset_parallel(
         ),
         pytest.param("audio_wav"),
         pytest.param("audio_wav_s24"),
+        pytest.param("audio_flac"),
         pytest.param(
-            "audio_ogg",
+            "audio_vorbis",
             marks=[
                 pytest.mark.skipif(
                     sys.platform == "win32", reason="TODO Fail on Windows"
                 ),
             ],
         ),
-        pytest.param("audio_flac"),
         pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("numpy"),
@@ -1597,8 +1597,8 @@ def test_io_dataset_in_dataset_parallel(
         "prometheus",
         "audio[wav]",
         "audio[wav|s24]",
-        "audio[ogg]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "hdf5",
         "numpy",

@@ -74,8 +74,8 @@ class AudioReadableResource : public AudioReadableResourceBase {
       return WAVReadableResourceInit(env_, filename, optional_memory,
                                      optional_length, resource_);
     } else if (memcmp(header, "OggS", 4) == 0) {
-      return OggReadableResourceInit(env_, filename, optional_memory,
-                                     optional_length, resource_);
+      return OggVorbisReadableResourceInit(env_, filename, optional_memory,
+                                           optional_length, resource_);
     } else if (memcmp(header, "fLaC", 4) == 0) {
       return FlacReadableResourceInit(env_, filename, optional_memory,
                                       optional_length, resource_);
@@ -87,8 +87,8 @@ class AudioReadableResource : public AudioReadableResourceBase {
     }
     if (memcmp(&header[4], "ftyp", 4) == 0) {
       LOG(ERROR) << "MP4A file is not fully supported!";
-      return MP4ReadableResourceInit(env_, filename, optional_memory,
-                                     optional_length, resource_);
+      return MP4AACReadableResourceInit(env_, filename, optional_memory,
+                                        optional_length, resource_);
     }
     return errors::InvalidArgument("unknown file type: ", filename);
   }

@@ -39,11 +39,11 @@ Status WAVReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status OggReadableResourceInit(
+Status FlacReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status FlacReadableResourceInit(
+Status OggVorbisReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
@@ -51,7 +51,7 @@ Status MP3ReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status MP4ReadableResourceInit(
+Status MP4AACReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);

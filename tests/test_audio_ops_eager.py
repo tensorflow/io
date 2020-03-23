@@ -372,9 +372,9 @@ def fixture_encode_flac_s24():
     return args, func, expected
 
 
-@pytest.fixture(name="decode_ogg", scope="module")
-def fixture_decode_ogg():
-    """fixture_decode_ogg"""
+@pytest.fixture(name="decode_vorbis", scope="module")
+def fixture_decode_vorbis():
+    """fixture_decode_vorbis"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -396,7 +396,7 @@ def fixture_decode_ogg():
 
     def func(e):
         delta = tf.constant(0.00002, tf.float32)
-        v = tfio.experimental.audio.decode_ogg(e)
+        v = tfio.experimental.audio.decode_vorbis(e)
         v = v - value
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -406,9 +406,9 @@ def fixture_decode_ogg():
     return args, func, expected
 
 
-@pytest.fixture(name="encode_ogg", scope="module")
-def fixture_encode_ogg():
-    """fixture_encode_ogg"""
+@pytest.fixture(name="encode_vorbis", scope="module")
+def fixture_encode_vorbis():
+    """fixture_encode_vorbis"""
     wav_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -423,8 +423,8 @@ def fixture_encode_ogg():
 
     def func(e):
         delta = tf.constant(0.05, tf.float32)
-        v = tfio.experimental.audio.encode_ogg(e, rate=44100)
-        v = tfio.experimental.audio.decode_ogg(v)
+        v = tfio.experimental.audio.encode_vorbis(e, rate=44100)
+        v = tfio.experimental.audio.decode_vorbis(v)
         v = v - e
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -507,8 +507,8 @@ def fixture_encode_mp3():
         pytest.param("encode_flac_u8"),
         pytest.param("decode_flac_s24"),
         pytest.param("encode_flac_s24"),
-        pytest.param("decode_ogg"),
-        pytest.param("encode_ogg"),
+        pytest.param("decode_vorbis"),
+        pytest.param("encode_vorbis"),
         pytest.param("decode_mp3"),
         pytest.param(
             "encode_mp3",
@@ -534,8 +534,8 @@ def fixture_encode_mp3():
         "encode_flac|u8",
         "decode_flac|s24",
         "encode_flac|s24",
-        "decode_ogg",
-        "encode_ogg",
+        "decode_vorbis",
+        "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
     ],
@@ -565,8 +565,8 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("encode_flac_u8"),
         pytest.param("decode_flac_s24"),
         pytest.param("encode_flac_s24"),
-        pytest.param("decode_ogg"),
-        pytest.param("encode_ogg"),
+        pytest.param("decode_vorbis"),
+        pytest.param("encode_vorbis"),
         pytest.param("decode_mp3"),
         pytest.param(
             "encode_mp3",
@@ -592,8 +592,8 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "encode_flac|u8",
         "decode_flac|s24",
         "encode_flac|s24",
-        "decode_ogg",
-        "encode_ogg",
+        "decode_vorbis",
+        "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
     ],

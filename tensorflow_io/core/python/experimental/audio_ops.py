@@ -107,8 +107,8 @@ def encode_flac(input, rate, name=None):  # pylint: disable=redefined-builtin
     return core_ops.io_audio_encode_flac(input, rate, name=name)
 
 
-def decode_ogg(input, shape=None, name=None):  # pylint: disable=redefined-builtin
-    """Decode Ogg audio from input string.
+def decode_vorbis(input, shape=None, name=None):  # pylint: disable=redefined-builtin
+    """Decode Ogg(Vorbis) audio from input string.
 
     Args:
       input: A string `Tensor` of the audio input.
@@ -121,11 +121,11 @@ def decode_ogg(input, shape=None, name=None):  # pylint: disable=redefined-built
     """
     if shape is None:
         shape = tf.constant([-1, -1], tf.int64)
-    return core_ops.io_audio_decode_ogg(input, shape=shape, name=name)
+    return core_ops.io_audio_decode_vorbis(input, shape=shape, name=name)
 
 
-def encode_ogg(input, rate, name=None):  # pylint: disable=redefined-builtin
-    """Encode Ogg audio into string.
+def encode_vorbis(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode Ogg(Vorbis) audio into string.
 
     Args:
       input: A `Tensor` of the audio input.
@@ -135,7 +135,7 @@ def encode_ogg(input, rate, name=None):  # pylint: disable=redefined-builtin
     Returns:
       output: Encoded audio.
     """
-    return core_ops.io_audio_encode_ogg(input, rate, name=name)
+    return core_ops.io_audio_encode_vorbis(input, rate, name=name)
 
 
 def decode_mp3(input, shape=None, name=None):  # pylint: disable=redefined-builtin

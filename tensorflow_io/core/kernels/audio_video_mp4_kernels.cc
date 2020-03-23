@@ -151,9 +151,9 @@ class MP4Stream {
   int64 size = 0;
 };
 
-class MP4ReadableResource : public AudioReadableResourceBase {
+class MP4AACReadableResource : public AudioReadableResourceBase {
  public:
-  MP4ReadableResource(Env* env)
+  MP4AACReadableResource(Env* env)
       : env_(env),
         mp4d_demux_scope_(nullptr,
                           [](MP4D_demux_t* p) {
@@ -166,7 +166,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
             DecodeAACFunctionFini(p);
           }
         }) {}
-  ~MP4ReadableResource() {}
+  ~MP4AACReadableResource() {}
 
   Status Init(const string& filename, const void* optional_memory,
               const size_t optional_length) override {
@@ -356,7 +356,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
 
     return Status::OK();
   }
-  string DebugString() const override { return "MP4ReadableResource"; }
+  string DebugString() const override { return "MP4AACReadableResource"; }
 
  private:
   mutable mutex mu_;
@@ -386,11 +386,11 @@ class MP4ReadableResource : public AudioReadableResourceBase {
 
 }  // namespace
 
-Status MP4ReadableResourceInit(
+Status MP4AACReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
-  resource.reset(new MP4ReadableResource(env));
+  resource.reset(new MP4AACReadableResource(env));
   Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);
