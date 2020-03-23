@@ -511,7 +511,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.5', '3.6', '3.7', 3.8]
     steps:
       - uses: actions/download-artifact@v1
         with:
