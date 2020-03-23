@@ -64,8 +64,8 @@ def fixture_audio_data_24():
     sys.platform == "linux" and sys.version_info < (3, 6),
     reason="need ubuntu 18.04 which is python 3.6",
 )
-def test_mp4():
-    """test_mp4"""
+def test_aac():
+    """test_aac"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",

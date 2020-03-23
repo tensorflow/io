@@ -151,9 +151,9 @@ class MP4Stream {
   int64 size = 0;
 };
 
-class MP4ReadableResource : public AudioReadableResourceBase {
+class MP4AACReadableResource : public AudioReadableResourceBase {
  public:
-  MP4ReadableResource(Env* env)
+  MP4AACReadableResource(Env* env)
       : env_(env),
         mp4d_demux_scope_(nullptr,
                           [](MP4D_demux_t* p) {
@@ -166,7 +166,7 @@ class MP4ReadableResource : public AudioReadableResourceBase {
             DecodeAACFunctionFini(p);
           }
         }) {}
-  ~MP4ReadableResource() {}
+  ~MP4AACReadableResource() {}
 
   Status Init(const string& filename, const void* optional_memory,
               const size_t optional_length) override {
@@ -192,13 +192,17 @@ class MP4ReadableResource : public AudioReadableResourceBase {
       if (mp4d_demux_.track[track_index].handler_type ==
           MP4D_HANDLER_TYPE_SOUN) {
         int64 samples = 0;
+        partitions_.clear();
+        partitions_.reserve(mp4d_demux_.track[track_index].sample_count);
         for (int64 i = 0; i < mp4d_demux_.track[track_index].sample_count;
              i++) {
           unsigned frame_bytes, timestamp, duration;
           MP4D_frame_offset(&mp4d_demux_, track_index, i, &frame_bytes,
                             &timestamp, &duration);
           samples += duration;
+          partitions_.emplace_back(samples);
         }
+
         int64 channels =
             mp4d_demux_.track[track_index].SampleDescription.audio.channelcount;
         int64 rate = mp4d_demux_.track[track_index]
@@ -277,78 +281,82 @@ class MP4ReadableResource : public AudioReadableResourceBase {
       return Status::OK();
     }
 
-    int64 sample_index = 0;
-    for (int64 i = 0; i < mp4d_demux_.track[track_index_].sample_count; i++) {
+    int64 lower, upper, extra;
+    TF_RETURN_IF_ERROR(PartitionsLookup(partitions_, sample_start, sample_stop,
+                                        &lower, &upper, &extra));
+
+    int64 base_offset = 0;
+    char* base = (char*)(value->flat<float>().data());
+    for (int64 i = lower; i < upper; i++) {
+      int64 chunk_offset = 0;
+      int64 chunk_length =
+          (i == 0) ? (partitions_[i]) : (partitions_[i] - partitions_[i - 1]);
+      if (i == lower) {
+        chunk_offset = extra;
+        chunk_length = chunk_length - extra;
+      }
+      if (base_offset + chunk_length > value->shape().dim_size(0)) {
+        chunk_length = value->shape().dim_size(0) - base_offset;
+      }
+      if (chunk_length == 0) {
+        continue;
+      }
+
       unsigned frame_bytes, timestamp, duration;
       MP4D_file_offset_t frame_offset = MP4D_frame_offset(
           &mp4d_demux_, track_index_, i, &frame_bytes, &timestamp, &duration);
-      // [sample_start, sample_stop) in [sample_index, sample_index + duration)
-      int64 sample_copy_start =
-          sample_start > sample_index ? sample_start : sample_index;
-      int64 sample_copy_stop = sample_stop < (sample_index + duration)
-                                   ? sample_stop
-                                   : (sample_index + duration);
-      if (sample_copy_start < sample_copy_stop) {
-        void* state = state_.get();
-        int64 codec = codec_;
-        int64 rate = rate_;
-        int64 channels = shape_.dim_size(1);
-        int64 frames = duration;
 
-        int64 header_bytes = 7;
-        int64 size_in = frame_bytes + header_bytes;
-        int64 size_out =
-            duration * channels * sizeof(float);  // TODO: expand to other types
+      void* state = state_.get();
+      int64 codec = codec_;
+      int64 rate = rate_;
+      int64 channels = shape_.dim_size(1);
+      int64 frames = duration;
 
-        string data_in, data_out;
-        data_in.resize(size_in);
-        data_out.resize(size_out);
+      int64 header_bytes = 7;
+      int64 size_in = frame_bytes + header_bytes;
+      int64 size_out = duration * channels * sizeof(float);
 
-        StringPiece result;
-        TF_RETURN_IF_ERROR(file_->Read(frame_offset, frame_bytes, &result,
-                                       (char*)&data_in[header_bytes]));
-        if (result.size() != frame_bytes) {
-          return errors::InvalidArgument(
-              "unable to read ", frame_bytes, " from offset ", frame_offset,
-              " for track ", track_index_, " and sample indices in ", i);
-        }
+      string data_in, data_out;
+      data_in.resize(size_in);
+      data_out.resize(size_out);
 
-        // Add ADTS Header (without CRC)
-        *((unsigned char*)&data_in[0]) = 0xFF;
-        *((unsigned char*)&data_in[1]) = 0xF1;
-        *((unsigned char*)&data_in[2]) =
-            (((profile_ - 1) << 6) + (frequency_index_ << 2) +
-             (channel_configuration_ >> 2));
-        ;
-        *((unsigned char*)&data_in[3]) =
-            (((channel_configuration_ & 3) << 6) + (size_in >> 11));
-        *((unsigned char*)&data_in[4]) = (((size_in & 0x07FF) >> 3));
-        *((unsigned char*)&data_in[5]) = (((size_in & 0x0007) << 5) + 0x1F);
-        *((unsigned char*)&data_in[6]) = 0xFC;
-
-        int64 status = DecodeAACFunctionCall(
-            state, codec, rate, channels, frames, (void*)&data_in[0], size_in,
-            (void*)&data_out[0], size_out);
-        if (status != 0) {
-          return errors::InvalidArgument("unable to convert AAC data: ",
-                                         status);
-        }
-        char* base =
-            (char*)(value->flat<float>().data()) +
-            (sample_copy_start - sample_start) * channels * sizeof(float);
-        char* source =
-            (char*)(&data_out[0]) +
-            (sample_copy_start - sample_index) * channels * sizeof(float);
-        size_t size =
-            (sample_copy_stop - sample_copy_start) * channels * sizeof(float);
-        memcpy(base, source, size);
+      StringPiece result;
+      TF_RETURN_IF_ERROR(file_->Read(frame_offset, frame_bytes, &result,
+                                     (char*)&data_in[header_bytes]));
+      if (result.size() != frame_bytes) {
+        return errors::InvalidArgument(
+            "unable to read ", frame_bytes, " from offset ", frame_offset,
+            " for track ", track_index_, " and sample indices in ", i);
       }
-      sample_index += duration;
+
+      // Add ADTS Header (without CRC)
+      *((unsigned char*)&data_in[0]) = 0xFF;
+      *((unsigned char*)&data_in[1]) = 0xF1;
+      *((unsigned char*)&data_in[2]) =
+          (((profile_ - 1) << 6) + (frequency_index_ << 2) +
+           (channel_configuration_ >> 2));
+      *((unsigned char*)&data_in[3]) =
+          (((channel_configuration_ & 3) << 6) + (size_in >> 11));
+      *((unsigned char*)&data_in[4]) = (((size_in & 0x07FF) >> 3));
+      *((unsigned char*)&data_in[5]) = (((size_in & 0x0007) << 5) + 0x1F);
+      *((unsigned char*)&data_in[6]) = 0xFC;
+
+      int64 status = DecodeAACFunctionCall(state, codec, rate, channels, frames,
+                                           (void*)&data_in[0], size_in,
+                                           (void*)&data_out[0], size_out);
+      if (status != 0) {
+        return errors::InvalidArgument("unable to convert AAC data: ", status);
+      }
+      char* chunk = (char*)(&data_out[0]);
+      memcpy(base + base_offset * channels * sizeof(float),
+             chunk + chunk_offset * channels * sizeof(float),
+             chunk_length * channels * sizeof(float));
+      base_offset += chunk_length;
     }
 
     return Status::OK();
   }
-  string DebugString() const override { return "MP4ReadableResource"; }
+  string DebugString() const override { return "MP4AACReadableResource"; }
 
  private:
   mutable mutex mu_;
@@ -372,15 +380,17 @@ class MP4ReadableResource : public AudioReadableResourceBase {
   int64 profile_;
   int64 channel_configuration_;
   int64 frequency_index_;
+
+  std::vector<int64> partitions_;
 };
 
 }  // namespace
 
-Status MP4ReadableResourceInit(
+Status MP4AACReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
-  resource.reset(new MP4ReadableResource(env));
+  resource.reset(new MP4AACReadableResource(env));
   Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);
