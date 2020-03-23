@@ -81,10 +81,10 @@ static ov_callbacks OggVorbisCallbacks = {
     (int (*)(void*, ogg_int64_t, int))OggVorbisStream::SeekCallback,
     (int (*)(void*))NULL, (long (*)(void*))OggVorbisStream::TellCallback};
 
-class OggReadableResource : public AudioReadableResourceBase {
+class OggVorbisReadableResource : public AudioReadableResourceBase {
  public:
-  OggReadableResource(Env* env) : env_(env) {}
-  ~OggReadableResource() {}
+  OggVorbisReadableResource(Env* env) : env_(env) {}
+  ~OggVorbisReadableResource() {}
 
   Status Init(const string& filename, const void* optional_memory,
               const size_t optional_length) override {
@@ -163,7 +163,7 @@ class OggReadableResource : public AudioReadableResourceBase {
     }
     return Status::OK();
   }
-  string DebugString() const override { return "OggReadableResource"; }
+  string DebugString() const override { return "OggVorbisReadableResource"; }
 
  private:
   mutable mutex mu_;
@@ -178,9 +178,10 @@ class OggReadableResource : public AudioReadableResourceBase {
   std::unique_ptr<OggVorbisStream> stream_;
 };
 
-class AudioDecodeOggOp : public OpKernel {
+class AudioDecodeVorbisOp : public OpKernel {
  public:
-  explicit AudioDecodeOggOp(OpKernelConstruction* context) : OpKernel(context) {
+  explicit AudioDecodeVorbisOp(OpKernelConstruction* context)
+      : OpKernel(context) {
     env_ = context->env();
   }
 
@@ -193,8 +194,8 @@ class AudioDecodeOggOp : public OpKernel {
 
     const tstring& input = input_tensor->scalar<tstring>()();
 
-    std::unique_ptr<OggReadableResource> resource(
-        new OggReadableResource(env_));
+    std::unique_ptr<OggVorbisReadableResource> resource(
+        new OggVorbisReadableResource(env_));
     OP_REQUIRES_OK(context,
                    resource->Init("memory", input.data(), input.size()));
 
@@ -232,9 +233,9 @@ class AudioDecodeOggOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-Status OggEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
-                              ogg_stream_state& os, ogg_page& og,
-                              ogg_packet& op, tstring* output) {
+Status OggVorbisEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
+                                    ogg_stream_state& os, ogg_page& og,
+                                    ogg_packet& op, tstring* output) {
   int s;
   while (vorbis_analysis_blockout(&vd, &vb) == 1) {
     vorbis_analysis(&vb, NULL);
@@ -257,9 +258,10 @@ Status OggEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
   return Status::OK();
 }
 
-class AudioEncodeOggOp : public OpKernel {
+class AudioEncodeVorbisOp : public OpKernel {
  public:
-  explicit AudioEncodeOggOp(OpKernelConstruction* context) : OpKernel(context) {
+  explicit AudioEncodeVorbisOp(OpKernelConstruction* context)
+      : OpKernel(context) {
     env_ = context->env();
   }
 
@@ -372,12 +374,12 @@ class AudioEncodeOggOp : public OpKernel {
     // tell the library how much we actually submitted
     vorbis_analysis_wrote(&vd, samples);
     OP_REQUIRES_OK(context,
-                   OggEncodeStreamProcess(vd, vb, os, og, op, &output));
+                   OggVorbisEncodeStreamProcess(vd, vb, os, og, op, &output));
 
     // end of file
     vorbis_analysis_wrote(&vd, 0);
     OP_REQUIRES_OK(context,
-                   OggEncodeStreamProcess(vd, vb, os, og, op, &output));
+                   OggVorbisEncodeStreamProcess(vd, vb, os, og, op, &output));
   }
 
  private:
@@ -385,18 +387,18 @@ class AudioEncodeOggOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeOgg").Device(DEVICE_CPU),
-                        AudioDecodeOggOp);
-REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeOgg").Device(DEVICE_CPU),
-                        AudioEncodeOggOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeVorbis").Device(DEVICE_CPU),
+                        AudioDecodeVorbisOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeVorbis").Device(DEVICE_CPU),
+                        AudioEncodeVorbisOp);
 
 }  // namespace
 
-Status OggReadableResourceInit(
+Status OggVorbisReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource) {
-  resource.reset(new OggReadableResource(env));
+  resource.reset(new OggVorbisReadableResource(env));
   Status status = resource->Init(filename, optional_memory, optional_length);
   if (!status.ok()) {
     resource.reset(nullptr);

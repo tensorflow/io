@@ -80,49 +80,50 @@ def fixture_audio_rate_wav():
     return args, func, expected, np.array_equal
 
 
-@pytest.fixture(name="audio_wav_24", scope="module")
-def fixture_audio_wav_24():
-    """fixture_audio_wav_24"""
+@pytest.fixture(name="audio_wav_s24", scope="module")
+def fixture_audio_wav_s24():
+    """fixture_audio_wav_s24"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
-        "ZASFX_ADSR_no_sustain.24.wav",
+        "ZASFX_ADSR_no_sustain.s24.wav",
     )
-    raw_path = os.path.join(
+
+    wav_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
-        "ZASFX_ADSR_no_sustain.24.s32",
+        "ZASFX_ADSR_no_sustain.wav",
     )
-    value = np.fromfile(raw_path, np.int32)
-    value = np.reshape(value, [14336, 2])
-    value = tf.constant(value)
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio * (1 << 31)
+    value = tf.cast(value, tf.int32)
 
     args = path
-    func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args)
+    func = lambda e: tfio.IOTensor.graph(tf.int32).from_audio(e)
     expected = value
 
     return args, func, expected, np.array_equal
 
 
-@pytest.fixture(name="audio_rate_wav_24", scope="module")
-def fixture_audio_rate_wav_24():
-    """fixture_audio_rate_wav_24"""
+@pytest.fixture(name="audio_rate_wav_s24", scope="module")
+def fixture_audio_rate_wav_s24():
+    """fixture_audio_rate_wav_s24"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
-        "ZASFX_ADSR_no_sustain.24.wav",
+        "ZASFX_ADSR_no_sustain.s24.wav",
     )
 
     args = path
-    func = lambda args: tfio.IOTensor.graph(tf.int32).from_audio(args).rate
+    func = lambda e: tfio.IOTensor.graph(tf.int32).from_audio(e).rate
     expected = tf.constant(44100)
 
     return args, func, expected, np.array_equal
 
 
-@pytest.fixture(name="audio_ogg", scope="module")
-def fixture_audio_ogg():
-    """fixture_audio_ogg"""
+@pytest.fixture(name="audio_vorbis", scope="module")
+def fixture_audio_vorbis():
+    """fixture_audio_vorbis"""
     ogg_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -145,9 +146,9 @@ def fixture_audio_ogg():
     return args, func, expected, equal
 
 
-@pytest.fixture(name="audio_rate_ogg", scope="module")
-def fixture_audio_rate_ogg():
-    """fixture_audio_rate_ogg"""
+@pytest.fixture(name="audio_rate_vorbis", scope="module")
+def fixture_audio_rate_vorbis():
+    """fixture_audio_rate_vorbis"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -446,9 +447,9 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
     ("io_tensor_fixture"),
     [
         pytest.param("audio_wav"),
-        pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param("audio_wav_s24"),
         pytest.param("audio_flac"),
+        pytest.param("audio_vorbis"),
         pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("kafka"),
@@ -456,9 +457,9 @@ def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
     ],
     ids=[
         "audio[wav]",
-        "audio[wav/24bit]",
-        "audio[ogg]",
+        "audio[wav|s24]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "hdf5",
         "kafka",
@@ -509,12 +510,12 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
     [
         pytest.param("audio_wav", None),
         pytest.param("audio_wav", 2),
-        pytest.param("audio_wav_24", None),
-        pytest.param("audio_wav_24", 2),
-        pytest.param("audio_ogg", None),
-        pytest.param("audio_ogg", 2),
+        pytest.param("audio_wav_s24", None),
+        pytest.param("audio_wav_s24", 2),
         pytest.param("audio_flac", None),
         pytest.param("audio_flac", 2),
+        pytest.param("audio_vorbis", None),
+        pytest.param("audio_vorbis", 2),
         pytest.param("audio_mp3", None),
         pytest.param("audio_mp3", 2),
         pytest.param("hdf5_graph", None),
@@ -527,12 +528,12 @@ def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
     ids=[
         "audio[wav]",
         "audio[wav]|2",
-        "audio[wav/24bit]",
-        "audio[wav/24bit]|2",
-        "audio[ogg]",
-        "audio[ogg]|2",
+        "audio[wav|s24]",
+        "audio[wav|s24]|2",
         "audio[flac]",
         "audio[flac]|2",
+        "audio[vorbis]",
+        "audio[vorbis]|2",
         "audio[mp3]",
         "audio[mp3]|2",
         "hdf5",
@@ -591,16 +592,16 @@ def test_io_tensor_slice_in_dataset(
     ("io_tensor_fixture"),
     [
         pytest.param("audio_rate_wav"),
-        pytest.param("audio_rate_wav_24"),
-        pytest.param("audio_rate_ogg"),
+        pytest.param("audio_rate_wav_s24"),
         pytest.param("audio_rate_flac"),
+        pytest.param("audio_rate_vorbis"),
         pytest.param("audio_rate_mp3"),
     ],
     ids=[
         "audio[rate][wav]",
-        "audio[rate][wav/24bit]",
-        "audio[rate][ogg]",
+        "audio[rate][wav|s24]",
         "audio[rate][flac]",
+        "audio[rate][vorbis]",
         "audio[rate][mp3]",
     ],
 )
@@ -618,16 +619,16 @@ def test_io_tensor_meta(fixture_lookup, io_tensor_fixture):
     ("io_tensor_fixture"),
     [
         pytest.param("audio_rate_wav"),
-        pytest.param("audio_rate_wav_24"),
-        pytest.param("audio_rate_ogg"),
+        pytest.param("audio_rate_wav_s24"),
         pytest.param("audio_rate_flac"),
+        pytest.param("audio_rate_vorbis"),
         pytest.param("audio_rate_mp3"),
     ],
     ids=[
         "audio[rate][wav]",
-        "audio[rate][wav/24bit]",
-        "audio[rate][ogg]",
+        "audio[rate][wav|s24]",
         "audio[rate][flac]",
+        "audio[rate][vorbis]",
         "audio[rate][mp3]",
     ],
 )
@@ -658,18 +659,18 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
     ("io_tensor_fixture"),
     [
         pytest.param("audio_wav"),
-        pytest.param("audio_wav_24"),
-        pytest.param("audio_ogg"),
+        pytest.param("audio_wav_s24"),
         pytest.param("audio_flac"),
+        pytest.param("audio_vorbis"),
         pytest.param("audio_mp3"),
         pytest.param("hdf5"),
         pytest.param("arrow"),
     ],
     ids=[
         "audio[wav]",
-        "audio[wav/24bit]",
-        "audio[ogg]",
+        "audio[wav|s24]",
         "audio[flac]",
+        "audio[vorbis]",
         "audio[mp3]",
         "hdf5",
         "arrow",

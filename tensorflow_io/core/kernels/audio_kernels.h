@@ -19,6 +19,10 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
+Status PartitionsLookup(const std::vector<int64>& partitions, const int64 start,
+                        const int64 stop, int64* upper, int64* lower,
+                        int64* extra);
+
 class AudioReadableResourceBase : public ResourceBase {
  public:
   virtual Status Init(const string& filename,
@@ -35,11 +39,11 @@ Status WAVReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status OggReadableResourceInit(
+Status FlacReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status FlacReadableResourceInit(
+Status OggVorbisReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
@@ -47,7 +51,7 @@ Status MP3ReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);
-Status MP4ReadableResourceInit(
+Status MP4AACReadableResourceInit(
     Env* env, const string& filename, const void* optional_memory,
     const size_t optional_length,
     std::unique_ptr<AudioReadableResourceBase>& resource);

@@ -20,8 +20,10 @@ from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disabl
     encode_wav,
     decode_flac,
     encode_flac,
-    decode_ogg,
-    encode_ogg,
+    decode_vorbis,
+    encode_vorbis,
     decode_mp3,
     encode_mp3,
+    AudioIOTensor,
+    AudioIODataset,
 )
