@@ -13,6 +13,7 @@ cc_library(
         "source/scale_*.cc",
     ]) + [
         "source/convert_argb.cc",
+        "source/convert_from_argb.cc",
         "source/cpu_id.cc",
         "source/planar_functions.cc",
     ],

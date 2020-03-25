@@ -168,6 +168,7 @@ cc_library(
         "kernels/image_pnm_kernels.cc",
         "kernels/image_tiff_kernels.cc",
         "kernels/image_webp_kernels.cc",
+        "kernels/image_yuy2_kernels.cc",
         "ops/image_ops.cc",
     ],
     copts = tf_io_copts(),

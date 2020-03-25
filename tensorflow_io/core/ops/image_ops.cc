@@ -183,6 +183,17 @@ REGISTER_OP("IO>DecodeNV12")
       return Status::OK();
     });
 
+REGISTER_OP("IO>DecodeYUY2")
+    .Input("input: string")
+    .Input("size: int32")
+    .Output("image: uint8")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), 3}));
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
