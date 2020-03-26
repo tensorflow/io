@@ -17,12 +17,10 @@ limitations under the License.
 #include "api/Compiler.hh"
 #include <sstream>
 
-namespace tensorflow {
-namespace data {
-
+namespace {
 class AvroDataInputStream : public avro::InputStream {
 public:
-  AvroDataInputStream(io::BufferedInputStream* s, size_t avro_data_buffer_size)
+  AvroDataInputStream(tensorflow::io::BufferedInputStream* s, size_t avro_data_buffer_size)
     : buffered_input_stream_(s), avro_data_buffer_size_(avro_data_buffer_size) { }
   bool next(const uint8_t** data, size_t* len) override {
 
@@ -56,12 +54,17 @@ public:
     return pos_;
   }
 private:
-  io::BufferedInputStream* buffered_input_stream_;
+  tensorflow::io::BufferedInputStream* buffered_input_stream_;
   const size_t avro_data_buffer_size_;
-  string chunk_;
+  tensorflow::string chunk_;
   size_t pos_ = 0;
   bool do_seek = false;
 };
+
+}
+
+namespace tensorflow {
+namespace data {
 
 Status AvroFileStreamReader::OnWorkStartup() {
 
