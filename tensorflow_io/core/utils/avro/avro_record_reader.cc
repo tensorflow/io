@@ -18,12 +18,10 @@ limitations under the License.
 #include "api/Generic.hh"
 #include "api/Compiler.hh"
 
-namespace tensorflow {
-namespace data {
-
+namespace {
 class AvroDataInputStream : public avro::InputStream {
 public:
-  AvroDataInputStream(std::unique_ptr<io::BufferedInputStream> input_stream, size_t buffer_size)
+  AvroDataInputStream(std::unique_ptr<tensorflow::io::BufferedInputStream> input_stream, size_t buffer_size)
     : input_stream_(std::move(input_stream)), buffer_size_(buffer_size) { }
   bool next(const uint8_t** data, size_t* len) override {
 
@@ -57,12 +55,16 @@ public:
     return pos_;
   }
 private:
-  std::unique_ptr<io::BufferedInputStream> input_stream_;
+  std::unique_ptr<tensorflow::io::BufferedInputStream> input_stream_;
   const size_t buffer_size_;
-  string chunk_;
+  tensorflow::string chunk_;
   size_t pos_ = 0;
   bool do_seek = false;
 };
+}
+
+namespace tensorflow {
+namespace data {
 
 AvroRecordReader::AvroRecordReader(RandomAccessFile* file,
                                    const AvroReaderOptions& options) :
