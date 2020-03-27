@@ -14,4 +14,6 @@
 # ==============================================================================
 """tensorflow_io.version"""
 
-from tensorflow_io.core.python.ops.version_ops import version as VERSION # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.version_ops import (  # pylint: disable=unused-import
+    version as VERSION,
+)

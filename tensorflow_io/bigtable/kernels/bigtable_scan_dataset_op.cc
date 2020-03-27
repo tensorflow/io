@@ -26,13 +26,13 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
   using DatasetOpKernel::DatasetOpKernel;
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
-    string prefix;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<string>(ctx, "prefix", &prefix));
-    string start_key;
+    tstring prefix;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "prefix", &prefix));
+    tstring start_key;
     OP_REQUIRES_OK(ctx,
-                   ParseScalarArgument<string>(ctx, "start_key", &start_key));
-    string end_key;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<string>(ctx, "end_key", &end_key));
+                   ParseScalarArgument<tstring>(ctx, "start_key", &start_key));
+    tstring end_key;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "end_key", &end_key));
 
     OP_REQUIRES(ctx, !(prefix.empty() && start_key.empty()),
                 errors::InvalidArgument(
@@ -46,11 +46,11 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
                       "If prefix is specified, end_key must be empty."));
     }
 
-    std::vector<string> column_families;
-    std::vector<string> columns;
-    OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "column_families",
+    std::vector<tstring> column_families;
+    std::vector<tstring> columns;
+    OP_REQUIRES_OK(ctx, ParseVectorArgument<tstring>(ctx, "column_families",
                                                     &column_families));
-    OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "columns", &columns));
+    OP_REQUIRES_OK(ctx, ParseVectorArgument<tstring>(ctx, "columns", &columns));
     OP_REQUIRES(
         ctx, column_families.size() == columns.size(),
         errors::InvalidArgument("len(columns) != len(column_families)"));
@@ -91,8 +91,8 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
    public:
     explicit Dataset(OpKernelContext* ctx, BigtableTableResource* table,
                      string prefix, string start_key, string end_key,
-                     std::vector<string> column_families,
-                     std::vector<string> columns, float probability,
+                     std::vector<tstring> column_families,
+                     std::vector<tstring> columns, float probability,
                      const DataTypeVector& output_types,
                      std::vector<PartialTensorShape> output_shapes)
         : DatasetBase(DatasetContext(ctx)),
@@ -176,7 +176,7 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
                       std::vector<Tensor>* out_tensors) override {
         out_tensors->reserve(dataset()->columns_.size() + 1);
         Tensor row_key_tensor(ctx->allocator({}), DT_STRING, {});
-        row_key_tensor.scalar<string>()() = string(row.row_key());
+        row_key_tensor.scalar<tstring>()() = string(row.row_key());
         out_tensors->emplace_back(std::move(row_key_tensor));
 
         if (row.cells().size() > 2 * dataset()->columns_.size()) {
@@ -194,7 +194,7 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
             if (cell_itr->family_name() == dataset()->column_families_[i] &&
                 string(cell_itr->column_qualifier()) ==
                     dataset()->columns_[i]) {
-              col_tensor.scalar<string>()() = string(cell_itr->value());
+              col_tensor.scalar<tstring>()() = string(cell_itr->value());
               found_column = true;
             }
           }
@@ -213,10 +213,10 @@ class BigtableScanDatasetOp : public DatasetOpKernel {
     const string prefix_;
     const string start_key_;
     const string end_key_;
-    const std::vector<string> column_families_;
-    const std::vector<string> columns_;
-    const string column_family_regex_;
-    const string column_regex_;
+    std::vector<tstring> column_families_;
+    std::vector<tstring> columns_;
+    string column_family_regex_;
+    string column_regex_;
     const float probability_;
     const DataTypeVector output_types_;
     const std::vector<PartialTensorShape> output_shapes_;

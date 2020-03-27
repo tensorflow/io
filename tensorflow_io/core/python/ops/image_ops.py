@@ -13,14 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 """Image Ops."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from tensorflow_io.core.python.ops import core_ops
 
+
 def decode_webp(contents, name=None):
-  """
+    """
   Decode a WebP-encoded image to a uint8 tensor.
 
   Args:
@@ -30,10 +28,11 @@ def decode_webp(contents, name=None):
   Returns:
     A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
   """
-  return core_ops.io_decode_web_p(contents, name=name)
+    return core_ops.io_decode_web_p(contents, name=name)
+
 
 def encode_bmp(image, name=None):
-  """
+    """
   Encode a uint8 tensor to bmp image.
 
   Args:
@@ -43,4 +42,4 @@ def encode_bmp(image, name=None):
   Returns:
     A `Tensor` of type `string`.
   """
-  return core_ops.io_encode_bmp(image, name=name)
+    return core_ops.io_encode_bmp(image, name=name)

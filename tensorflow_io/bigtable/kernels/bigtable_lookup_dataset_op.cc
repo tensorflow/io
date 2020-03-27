@@ -31,11 +31,11 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
     OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 1), &table));
     core::ScopedUnref scoped_unref(table);
 
-    std::vector<string> column_families;
-    std::vector<string> columns;
-    OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "column_families",
+    std::vector<tstring> column_families;
+    std::vector<tstring> columns;
+    OP_REQUIRES_OK(ctx, ParseVectorArgument<tstring>(ctx, "column_families",
                                                     &column_families));
-    OP_REQUIRES_OK(ctx, ParseVectorArgument<string>(ctx, "columns", &columns));
+    OP_REQUIRES_OK(ctx, ParseVectorArgument<tstring>(ctx, "columns", &columns));
     OP_REQUIRES(
         ctx, column_families.size() == columns.size(),
         errors::InvalidArgument("len(columns) != len(column_families)"));
@@ -60,8 +60,8 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
    public:
     explicit Dataset(OpKernelContext* ctx, const DatasetBase* input,
                      BigtableTableResource* table,
-                     std::vector<string> column_families,
-                     std::vector<string> columns,
+                     std::vector<tstring> column_families,
+                     std::vector<tstring> columns,
                      const DataTypeVector& output_types,
                      std::vector<PartialTensorShape> output_shapes)
         : DatasetBase(DatasetContext(ctx)),
@@ -109,8 +109,8 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
 
    private:
     static ::google::cloud::bigtable::Filter MakeFilter(
-        const std::vector<string>& column_families,
-        const std::vector<string>& columns) {
+        const std::vector<tstring>& column_families,
+        const std::vector<tstring>& columns) {
       string column_family_regex = RegexFromStringSet(column_families);
       string column_regex = RegexFromStringSet(columns);
 
@@ -156,13 +156,13 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
           ::google::cloud::StatusOr<
               std::pair<bool, ::google::cloud::bigtable::Row>>
               row = dataset()->table_->table().ReadRow(
-                  input_tensors[0].scalar<string>()(), dataset()->filter_);
+                  input_tensors[0].scalar<tstring>()(), dataset()->filter_);
           if (!row.ok()) {
             return GcpStatusToTfStatus(row.status());
           }
           if (!row->first) {
             return errors::DataLoss("Row key '",
-                                    input_tensors[0].scalar<string>()(),
+                                    input_tensors[0].scalar<tstring>()(),
                                     "' not found.");
           }
           TF_RETURN_IF_ERROR(ParseRow(ctx, row->second, out_tensors));
@@ -180,7 +180,7 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
                       std::vector<Tensor>* out_tensors) {
         out_tensors->reserve(dataset()->columns_.size() + 1);
         Tensor row_key_tensor(ctx->allocator({}), DT_STRING, {});
-        row_key_tensor.scalar<string>()() = string(row.row_key());
+        row_key_tensor.scalar<tstring>()() = string(row.row_key());
         out_tensors->emplace_back(std::move(row_key_tensor));
 
         if (row.cells().size() > 2 * dataset()->columns_.size()) {
@@ -198,7 +198,7 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
             if (cell_itr->family_name() == dataset()->column_families_[i] &&
                 string(cell_itr->column_qualifier()) ==
                     dataset()->columns_[i]) {
-              col_tensor.scalar<string>()() = string(cell_itr->value());
+              col_tensor.scalar<tstring>()() = string(cell_itr->value());
               found_column = true;
             }
           }
@@ -218,8 +218,8 @@ class BigtableLookupDatasetOp : public UnaryDatasetOpKernel {
 
     const DatasetBase* const input_;
     BigtableTableResource* table_;
-    const std::vector<string> column_families_;
-    const std::vector<string> columns_;
+    const std::vector<tstring> column_families_;
+    const std::vector<tstring> columns_;
     const DataTypeVector output_types_;
     const std::vector<PartialTensorShape> output_shapes_;
     const ::google::cloud::bigtable::Filter filter_;

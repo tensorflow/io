@@ -16,6 +16,53 @@ lint(
 exports_files(["lint.tpl"])
 
 py_binary(
+    name = "pyupgrade_py",
+    srcs = ["pyupgrade_python.py"],
+    main = "pyupgrade_python.py",
+    deps = [
+        requirement("pyupgrade"),
+        requirement("tokenize-rt"),
+    ],
+)
+
+genrule(
+    name = "pyupgrade",
+    srcs = [],
+    outs = ["pyupgrade"],
+    cmd = "echo '$(location :pyupgrade_py) \"$$@\"' > $@",
+    executable = True,
+    tools = [
+        ":pyupgrade_py",
+    ],
+)
+
+py_binary(
+    name = "black_py",
+    srcs = ["black_python.py"],
+    main = "black_python.py",
+    deps = [
+        requirement("black"),
+        requirement("regex"),
+        requirement("appdirs"),
+        requirement("click"),
+        requirement("toml"),
+        requirement("typed_ast"),
+        requirement("pathspec"),
+    ],
+)
+
+genrule(
+    name = "black",
+    srcs = [],
+    outs = ["black"],
+    cmd = "echo '$(location :black_py) \"$$@\"' > $@",
+    executable = True,
+    tools = [
+        ":black_py",
+    ],
+)
+
+py_binary(
     name = "pylint_py",
     srcs = ["pylint_python.py"],
     main = "pylint_python.py",

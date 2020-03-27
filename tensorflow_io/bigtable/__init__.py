@@ -22,17 +22,14 @@ for high-speed data loading.
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from tensorflow.python.util.all_util import remove_undocumented
 from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableClient
 from tensorflow_io.bigtable.python.ops.bigtable_api import BigtableTable
 
 _allowed_symbols = [
-    'BigtableClient',
-    'BigtableTable',
+    "BigtableClient",
+    "BigtableTable",
 ]
 
 remove_undocumented(__name__, allowed_exception_list=_allowed_symbols)

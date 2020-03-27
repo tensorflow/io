@@ -2,24 +2,48 @@
 
 MODE=@@MODE@@
 
-RUN_CLANG=no
+echo "$MODE: " $@
+
+
 RUN_BAZEL=no
+RUN_BLACK=no
+RUN_CLANG=no
 RUN_PYLINT=no
+RUN_PYUPGRADE=no
+RUN_ENTRIES=all
 if [[ $# -eq 0 ]]; then
-  RUN_CLANG=true
   RUN_BAZEL=true
+  RUN_BLACK=true
+  RUN_CLANG=true
   RUN_PYLINT=true
+  RUN_PYUPGRADE=true
 else
-  for i in "$@"; do
-    if [[ "$i" == "clang" ]]; then
-      echo clang $i
-      RUN_CLANG=true
-    elif [[ "$i" == "bazel" ]]; then
-      echo bazel $i
+  while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "bazel" ]]; then
+      shift
+      echo "$MODE: " bazel
       RUN_BAZEL=true
-    elif [[ "$i" == "pylint" ]]; then
-      echo pylint $i
+    elif [[ "$1" == "black" ]]; then
+      shift
+      echo "$MODE: " black
+      RUN_BLACK=true
+    elif [[ "$1" == "clang" ]]; then
+      shift
+      echo "$MODE: " clang
+      RUN_CLANG=true
+    elif [[ "$1" == "pylint" ]]; then
+      shift
+      echo "$MODE: " pylint
       RUN_PYLINT=true
+    elif [[ "$1" == "pyupgrade" ]]; then
+      shift
+      echo "$MODE: " pyupgrade
+      RUN_PYUPGRADE=true
+    elif [[ "$1" == "--" ]]; then
+      shift
+      echo "$MODE: " "--"
+      RUN_ENTRIES="--"
+      break
     else
       echo "unknown command: $i"
       exit 1
@@ -27,33 +51,55 @@ else
   done
 fi
 
-echo "Selected: Pylint=$RUN_PYLINT Bazel=$RUN_BAZEL Clang=$RUN_CLANG"
+echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT Pyupgrade=$RUN_PYUPGRADE [Entries]: $RUN_ENTRIES"
 
+BLACK_PATH=@@BLACK_PATH@@
 PYLINT_PATH=@@PYLINT_PATH@@
 BUILDIFIER_PATH=@@BUILDIFIER_PATH@@
 CLANG_FORMAT_PATH=@@CLANG_FORMAT_PATH@@
+PYUPGRADE_PATH=@@PYUPGRADE_PATH@@
 
 mode="$MODE"
 
+black_path=$(readlink "$BLACK_PATH")
 pylint_path=$(readlink "$PYLINT_PATH")
 buildifier_path=$(readlink "$BUILDIFIER_PATH")
 clang_format_path=$(readlink "$CLANG_FORMAT_PATH")
+pyupgrade_path=$(readlink "$PYUPGRADE_PATH")
 
 echo "mode:" $mode
+echo "black:" $black_path
 echo "pylint:" $pylint_path
 echo "buildifier:" $buildifier_path
 echo "clang-format:" $clang_format_path
+echo "pyupgrade:" $pyupgrade_path
 
 if [[ "$mode" == "lint" ]]; then
-    echo 
+  if [[ "$RUN_PYLINT" == "true" ]]; then
+    echo
     echo "WARN: pylint does not have lint mode, use check instead"
-    echo 
+    echo
+  fi
 fi
 
 
+black_func() {
+  echo $1 $2
+  if [[ "$1" == "lint" ]]; then
+    $black_path $2
+  else
+    $black_path --check $2
+  fi
+}
+
 pylint_func() {
   echo $1 $2
-  $pylint_path $2
+  # Note: --indent-string='    ' to override google 2 spaces and match black
+  # Note: --max-line-length=88 to override default and match black
+  # Note: --disable=bad-continuation to avoid conflict with black
+  # TODO: --disable=abstract-method should be removed eventually
+  # TODO: --disable=abstract-class-instantiated should be removed eventually
+  $pylint_path --indent-string='    ' --max-line-length=88 --disable=bad-continuation --disable=abstract-method --disable=abstract-class-instantiated $2
 }
 
 buildifier_func() {
@@ -67,7 +113,6 @@ buildifier_func() {
 
 clang_format_func() {
   echo $1 $2
-  return # TODO: enable after TF 2.1
   if [[ "$1" == "lint" ]]; then
     $clang_format_path --style=google -i $2
   else
@@ -75,10 +120,54 @@ clang_format_func() {
   fi
 }
 
+pyupgrade_func() {
+  echo $1 $2
+  if [[ "$1" == "lint" ]]; then
+    $pyupgrade_path --exit-zero-even-if-changed --py3-only $2
+  else
+    $pyupgrade_path --py3-only $2
+  fi
+}
+
 set -e
+
+if [[ "$RUN_BLACK" == "true" ]]; then
+echo "Run Black"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        black_func $mode "$i" ; \
+    done \
+)
+else
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in \
+        $( \
+            find tensorflow_io tests -type f \
+                \( -name '*.py' \) \
+        ) ; do \
+        black_func $mode "$i" ; \
+    done \
+)
+fi
+
+fi
+
 
 if [[ "$RUN_PYLINT" == "true" ]]; then
 echo "Run Pylint"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        pylint_func $mode "$i" ; \
+    done \
+)
+else
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -91,9 +180,19 @@ echo "Run Pylint"
 )
 fi
 
+fi
 
 if [[ "$RUN_BAZEL" == "true" ]]; then
 echo "Run Bazel Buildifier"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        buildifier_func $mode "$i" ; \
+    done \
+)
+else
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -119,8 +218,19 @@ echo "Run Bazel Buildifier"
 )
 fi
 
+fi
+
 if [[ "$RUN_CLANG" == "true" ]]; then
 echo "Run Clang Format"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        clang_format_func $mode "$i" ; \
+    done \
+)
+else
 ( \
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
@@ -136,4 +246,30 @@ echo "Run Clang Format"
 )
 fi
 
+fi
+
+if [[ "$RUN_PYUPGRADE" == "true" ]]; then
+echo "Run Pyupgrade"
+
+if [[ "$RUN_ENTRIES" == "--" ]]; then
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in $@ ; do \
+        pyupgrade_func $mode "$i" ; \
+    done \
+)
+else
+( \
+    cd "$BUILD_WORKSPACE_DIRECTORY" && \
+    for i in \
+        $( \
+            find tensorflow_io tests -type f \
+                \( -name '*.py' \) \
+        ) ; do \
+        pyupgrade_func $mode "$i" ; \
+    done \
+)
+fi
+
+fi
 exit 0

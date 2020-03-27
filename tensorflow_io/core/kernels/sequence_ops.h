@@ -102,7 +102,7 @@ class OutputSequenceSetItemOp : public OpKernel {
                     "Item tensor must be scalar, but had shape: ",
                     item_tensor->shape().DebugString()));
     const int64 index = index_tensor->scalar<int64>()();
-    const string& item = item_tensor->scalar<string>()();
+    const string& item = item_tensor->scalar<tstring>()();
     OP_REQUIRES_OK(ctx, sequence->SetItem(index, item.c_str()));
   }
  private:

@@ -19,6 +19,37 @@ limitations under the License.
 
 namespace tensorflow {
 namespace data {
+// Lookup partitions to find the lower and upper limit [lower, upper) of the
+// partitions that consists of [start, stop), with extra as the extra sample of
+// the first partition to drop. Note the unit is 1 * channels in audio.
+// e.g., ([10, 20, 30, 40]), (15), (30) have 1 (lower), 3 (upper), 5 (extra)
+Status PartitionsLookup(const std::vector<int64>& partitions, const int64 start,
+                        const int64 stop, int64* lower, int64* upper,
+                        int64* extra) {
+  if (partitions.size() == 0) {
+    return errors::InvalidArgument("partitions must have at least one element");
+  }
+  // std::upper_bound is the first element that is greater than `start`
+  auto lower_index =
+      std::upper_bound(partitions.begin(), partitions.end(), start);
+  *lower = lower_index - partitions.begin();
+
+  // we are looking for the first element val >= stop, i.e., val > (stop - 1),
+  // as we return `[lower, upper)`, the upper should be index + 1.
+  auto upper_index = std::upper_bound(lower_index, partitions.end(), stop - 1);
+  if (upper_index == partitions.end()) {
+    *upper = partitions.size();
+  } else {
+    *upper = upper_index - partitions.begin() + 1;
+  }
+
+  if (*lower == 0) {
+    *extra = start;
+  } else {
+    *extra = start - partitions[(*lower) - 1];
+  }
+  return Status::OK();
+}
 namespace {
 
 class AudioReadableResource : public AudioReadableResourceBase {
@@ -26,29 +57,40 @@ class AudioReadableResource : public AudioReadableResourceBase {
   AudioReadableResource(Env* env) : env_(env), resource_(nullptr) {}
   ~AudioReadableResource() {}
 
-  Status Init(const string& input) override {
+  Status Init(const string& filename, const void* optional_memory,
+              const size_t optional_length) override {
     mutex_lock l(mu_);
-    std::unique_ptr<tensorflow::RandomAccessFile> file;
-    TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(input, &file));
+    std::unique_ptr<SizedRandomAccessFile> file;
+    file.reset(new SizedRandomAccessFile(env_, filename, optional_memory,
+                                         optional_length));
+    // Note: check file size is the indicator that the file is valid, as file
+    // could be filename only or filename + buffer(memory/length)
+    uint64 file_size;
+    TF_RETURN_IF_ERROR(file->GetFileSize(&file_size));
     char header[8];
     StringPiece result;
     TF_RETURN_IF_ERROR(file->Read(0, sizeof(header), &result, header));
     if (memcmp(header, "RIFF", 4) == 0) {
-      return WAVReadableResourceInit(env_, input, resource_);
+      return WAVReadableResourceInit(env_, filename, optional_memory,
+                                     optional_length, resource_);
     } else if (memcmp(header, "OggS", 4) == 0) {
-      return OggReadableResourceInit(env_, input, resource_);
+      return OggVorbisReadableResourceInit(env_, filename, optional_memory,
+                                           optional_length, resource_);
     } else if (memcmp(header, "fLaC", 4) == 0) {
-      return FlacReadableResourceInit(env_, input, resource_);
+      return FlacReadableResourceInit(env_, filename, optional_memory,
+                                      optional_length, resource_);
     }
-    Status status = MP3ReadableResourceInit(env_, input, resource_);
+    Status status = MP3ReadableResourceInit(env_, filename, optional_memory,
+                                            optional_length, resource_);
     if (status.ok()) {
       return status;
     }
     if (memcmp(&header[4], "ftyp", 4) == 0) {
       LOG(ERROR) << "MP4A file is not fully supported!";
-      return MP4ReadableResourceInit(env_, input, resource_);
+      return MP4AACReadableResourceInit(env_, filename, optional_memory,
+                                        optional_length, resource_);
     }
-    return errors::InvalidArgument("unknown file type: ", input);
+    return errors::InvalidArgument("unknown file type: ", filename);
   }
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
     mutex_lock l(mu_);
@@ -85,7 +127,8 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<string>()()));
+    OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(),
+                                            nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
       EXCLUSIVE_LOCKS_REQUIRED(mu_) override {

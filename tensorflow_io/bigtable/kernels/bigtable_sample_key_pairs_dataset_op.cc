@@ -27,14 +27,14 @@ class BigtableSampleKeyPairsDatasetOp : public DatasetOpKernel {
   using DatasetOpKernel::DatasetOpKernel;
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
-    string prefix;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<string>(ctx, "prefix", &prefix));
+    tstring prefix;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "prefix", &prefix));
 
-    string start_key;
+    tstring start_key;
     OP_REQUIRES_OK(ctx,
-                   ParseScalarArgument<string>(ctx, "start_key", &start_key));
-    string end_key;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<string>(ctx, "end_key", &end_key));
+                   ParseScalarArgument<tstring>(ctx, "start_key", &start_key));
+    tstring end_key;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "end_key", &end_key));
 
     BigtableTableResource* resource;
     OP_REQUIRES_OK(ctx,
@@ -176,11 +176,11 @@ class BigtableSampleKeyPairsDatasetOp : public DatasetOpKernel {
         *end_of_sequence = false;
         out_tensors->emplace_back(ctx->allocator({}), DT_STRING,
                                   TensorShape({}));
-        out_tensors->back().scalar<string>()() = keys_[index_];
+        out_tensors->back().scalar<tstring>()() = keys_[index_];
 
         out_tensors->emplace_back(ctx->allocator({}), DT_STRING,
                                   TensorShape({}));
-        out_tensors->back().scalar<string>()() = keys_[index_ + 1];
+        out_tensors->back().scalar<tstring>()() = keys_[index_ + 1];
         ++index_;
 
         return Status::OK();

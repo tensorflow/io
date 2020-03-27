@@ -28,7 +28,7 @@ class DecodeTIFFInfoOp : public OpKernel {
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    std::istringstream input_stream(input_tensor->scalar<string>()(), std::ios_base::in | std::ios_base::binary);
+    std::istringstream input_stream(input_tensor->scalar<tstring>()(), std::ios_base::in | std::ios_base::binary);
 
     std::unique_ptr<TIFF, void(*)(TIFF*)> tiff(TIFFStreamOpen("memory", &input_stream), [](TIFF* p) { if (p != nullptr) { TIFFClose(p); } });
     OP_REQUIRES(context, (tiff.get() != nullptr), errors::InvalidArgument("unable to open TIFF from memory"));
@@ -112,7 +112,7 @@ class DecodeTIFFOp : public OpKernel {
     const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
-    std::istringstream input_stream(input_tensor->scalar<string>()(), std::ios_base::in | std::ios_base::binary);
+    std::istringstream input_stream(input_tensor->scalar<tstring>()(), std::ios_base::in | std::ios_base::binary);
 
     std::unique_ptr<TIFF, void(*)(TIFF*)> tiff(TIFFStreamOpen("memory", &input_stream), [](TIFF* p) { if (p != nullptr) { TIFFClose(p); } });
     OP_REQUIRES(context, (tiff.get() != nullptr), errors::InvalidArgument("unable to open TIFF from memory"));

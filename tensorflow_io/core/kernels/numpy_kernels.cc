@@ -90,27 +90,28 @@ Status ParseNumpyHeader(io::InputStreamInterface* stream,
   string descr;
   bool fortran_order = false;
 
-  string magic;
+  tstring magic;
   TF_RETURN_IF_ERROR(stream->ReadNBytes(6, &magic));
   if (magic != "\x93NUMPY") {
     return errors::InvalidArgument("numpy file header magic number invalid");
   }
-  string version;
+  tstring version;
   TF_RETURN_IF_ERROR(stream->ReadNBytes(2, &version));
   // TODO (yongtang): Support 2.0 which use 4 bytes for length.
   if (!(version[0] == 1 || version[1] == 0)) {
     return errors::InvalidArgument(
         "numpy file version only support 1.0: ", version[0], ".", version[1]);
   }
-  string chunk;
+  tstring chunk;
   TF_RETURN_IF_ERROR(stream->ReadNBytes(2, &chunk));
   int64 length = (uint64)(chunk[0]) + ((uint64)chunk[1] << 8);
   if ((magic.size() + version.size() + chunk.size() + length) % 16 != 0) {
     return errors::InvalidArgument(
         "numpy file header length is not aligned properly: ", length);
   }
-  string dict;
-  TF_RETURN_IF_ERROR(stream->ReadNBytes(length, &dict));
+  tstring tdict;
+  TF_RETURN_IF_ERROR(stream->ReadNBytes(length, &tdict));
+  string dict = tdict;
   // {'descr': '<i8', 'fortran_order': False, 'shape': (4,), }\x20...\n
   if (dict.back() != '\n') {
     return errors::InvalidArgument("numpy file header should end with '\\n'");
@@ -233,7 +234,7 @@ class ZipObjectInputStream : public io::InputStreamInterface {
   ZipObjectInputStream(unzFile uf) : uf_(uf) {}
   virtual ~ZipObjectInputStream() {}
 
-  virtual Status ReadNBytes(int64 bytes_to_read, string* result) override {
+  virtual Status ReadNBytes(int64 bytes_to_read, tstring* result) override {
     if (bytes_to_read < 0) {
       return errors::InvalidArgument("Can't read a negative number of bytes: ",
                                      bytes_to_read);
@@ -379,7 +380,7 @@ class NumpyInfoOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    string filename = filename_tensor.scalar<tstring>()();
 
     uint64 size;
     OP_REQUIRES_OK(context, env_->GetFileSize(filename, &size));
@@ -416,7 +417,7 @@ class NumpyInfoOp : public OpKernel {
                    context->allocate_output(2, output_shape, &dtypes_tensor));
 
     for (size_t i = 0; i < arrays.size(); i++) {
-      arrays_tensor->flat<string>()(i) = arrays[i];
+      arrays_tensor->flat<tstring>()(i) = arrays[i];
       for (size_t j = 0; j < shapes[i].size(); j++) {
         shapes_tensor->flat<int64>()(i * maxrank + j) = shapes[i][j];
       }
@@ -440,10 +441,10 @@ class NumpySpecOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& array_tensor = context->input(1);
-    const string array = array_tensor.scalar<string>()();
+    string array = array_tensor.scalar<tstring>()();
 
     uint64 size;
     OP_REQUIRES_OK(context, env_->GetFileSize(filename, &size));
@@ -506,10 +507,10 @@ class NumpyReadOp : public OpKernel {
     const int64 address = address_tensor.scalar<int64>()();
 
     const Tensor& filename_tensor = context->input(1);
-    const string& filename = filename_tensor.scalar<string>()();
+    string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& array_tensor = context->input(2);
-    const string& array = array_tensor.scalar<string>()();
+    string array = array_tensor.scalar<tstring>()();
 
     const Tensor& shape_tensor = context->input(3);
 
@@ -638,7 +639,7 @@ class NumpyReadOp : public OpKernel {
         context->allocate_output(0, output_shape, &output_tensor));           \
     void* p = output_tensor->flat<TYPE>().data();                             \
     if (bytes_stop > bytes_start) {                                           \
-      string buffer;                                                          \
+      tstring buffer;                                                          \
       TF_RETURN_IF_ERROR(                                                     \
           stream->ReadNBytes(bytes_stop - bytes_start, &buffer));             \
       memcpy(p, buffer.data(), bytes_stop - bytes_start);                     \

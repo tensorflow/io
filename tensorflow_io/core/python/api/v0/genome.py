@@ -18,6 +18,8 @@ This package provides ops for reading common genomics file formats and
 performing common genomics IO-related operations.
 """
 
-from tensorflow_io.core.python.ops.genome_ops import read_fastq # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.genome_ops import sequences_to_onehot # pylint: disable=unused-import
-from tensorflow_io.core.python.ops.genome_ops import phred_sequences_to_probability # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.genome_ops import (  # pylint: disable=unused-import
+    read_fastq,
+    sequences_to_onehot,
+    phred_sequences_to_probability,
+)

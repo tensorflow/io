@@ -58,10 +58,10 @@ class ListArchiveEntriesOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    const string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& memory_tensor = context->input(1);
-    const string memory = memory_tensor.scalar<string>()();
+    const string memory = memory_tensor.scalar<tstring>()();
 
     std::unique_ptr<ArchiveRandomAccessFile> file(new ArchiveRandomAccessFile(env_, filename, memory.data(), memory.size()));
     uint64 size;
@@ -125,13 +125,13 @@ class ListArchiveEntriesOp : public OpKernel {
 
     Tensor* format_tensor;
     OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({}), &format_tensor));
-    format_tensor->scalar<string>()() = format;
+    format_tensor->scalar<tstring>()() = format;
 
     Tensor* entries_tensor;
     OP_REQUIRES_OK(context, context->allocate_output(1, TensorShape({static_cast<int64>(entries.size())}), &entries_tensor));
 
     for (size_t i = 0; i < entries.size(); i++) {
-        entries_tensor->flat<string>()(i) = entries[i];
+        entries_tensor->flat<tstring>()(i) = entries[i];
     }
   }
  private:
@@ -148,20 +148,20 @@ class ReadArchiveOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     const Tensor& filename_tensor = context->input(0);
-    const string filename = filename_tensor.scalar<string>()();
+    const string filename = filename_tensor.scalar<tstring>()();
 
     const Tensor& format_tensor = context->input(1);
-    const string format = format_tensor.scalar<string>()();
+    const string format = format_tensor.scalar<tstring>()();
 
     const Tensor& entries_tensor = context->input(2);
     std::unordered_map<string, int64> entries;
     for (int64 i = 0; i < entries_tensor.NumElements(); i++) {
-      OP_REQUIRES(context, entries.find(entries_tensor.flat<string>()(i)) == entries.end(), errors::InvalidArgument("duplicate entries: ", entries_tensor.flat<string>()(i)));
-      entries[entries_tensor.flat<string>()(i)] = i;
+      OP_REQUIRES(context, entries.find(entries_tensor.flat<tstring>()(i)) == entries.end(), errors::InvalidArgument("duplicate entries: ", entries_tensor.flat<tstring>()(i)));
+      entries[entries_tensor.flat<tstring>()(i)] = i;
     }
 
     const Tensor& memory_tensor = context->input(3);
-    const string memory = memory_tensor.scalar<string>()();
+    const string memory = memory_tensor.scalar<tstring>()();
 
     Tensor* output_tensor;
     OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({static_cast<int64>(entries.size())}), &output_tensor));
@@ -176,7 +176,7 @@ class ReadArchiveOp : public OpKernel {
       output_string.resize(size);
       StringPiece result;
       OP_REQUIRES_OK(context, file->Read(0, size, &result, &output_string[0]));
-      output_tensor->flat<string>()(0) = std::move(output_string);
+      output_tensor->flat<tstring>()(0) = std::move(output_string);
       return;
     }
 
@@ -189,9 +189,9 @@ class ReadArchiveOp : public OpKernel {
       io::RandomAccessInputStream file_stream(file.get());
       io::ZlibCompressionOptions zlib_compression_options = zlib_compression_options = io::ZlibCompressionOptions::GZIP();
       io::ZlibInputStream compression_stream(&file_stream, 65536, 65536,  zlib_compression_options);
-      string output_string;
+      tstring output_string;
       Status status = compression_stream.ReadNBytes(INT_MAX, &output_string);
-      output_tensor->flat<string>()(0) = std::move(output_string);
+      output_tensor->flat<tstring>()(0) = std::move(output_string);
       return;
     }
 
@@ -221,7 +221,7 @@ class ReadArchiveOp : public OpKernel {
           }
           bytes_read += size;
         }
-        output_tensor->flat<string>()(entries[entryname]) = std::move(output_string);
+        output_tensor->flat<tstring>()(entries[entryname]) = std::move(output_string);
       }
     }
 

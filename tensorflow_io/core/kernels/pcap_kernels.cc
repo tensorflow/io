@@ -36,9 +36,9 @@ class PcapInputStream : public io::BufferedInputStream {
   explicit PcapInputStream(RandomAccessFile* file)
       : io::BufferedInputStream(file, 256 * 1024) {}
 
-  Status ReadRecord(double& timestamp, string* packet_data,
+  Status ReadRecord(double& timestamp, tstring* packet_data,
                     int64& record_read) {
-    string buffer;
+    tstring buffer;
     buffer.clear();
 
     // read packet header
@@ -67,7 +67,7 @@ class PcapInputStream : public io::BufferedInputStream {
   }
 
   Status ReadHeader() {
-    string buffer;
+    tstring buffer;
     // read file header
     TF_RETURN_IF_ERROR(ReadNBytes(sizeof(struct PcapFileHeader), &buffer));
     struct PcapFileHeader* header = (struct PcapFileHeader*)buffer.data();
@@ -221,14 +221,14 @@ class PcapReadable : public IOReadableInterface {
     while ((*record_read) < record_to_read) {
       int64 record_count = 0;
       double packet_timestamp;
-      string packet_data_buffer;
+      tstring packet_data_buffer;
       Status status = stream_->ReadRecord(packet_timestamp, &packet_data_buffer,
                                           record_count);
       if (!(status.ok() || errors::IsOutOfRange(status))) {
         return status;
       }
       if (record_count > 0) {
-        value->flat<string>()(*record_read) = packet_data_buffer;
+        value->flat<tstring>()(*record_read) = packet_data_buffer;
         label->flat<double>()(*record_read) = packet_timestamp;
         (*record_read) += record_count;
       } else {

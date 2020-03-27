@@ -174,8 +174,8 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
-        "@dcmtk",
         "@easyexif",
+        "@fmjpeg2koj",
         "@freetype",
         "@libtiff",
         "@libwebp",
@@ -187,19 +187,23 @@ cc_library(
 
 exports_files([
     "swift/audio.swift",
+    "swift/video.swift",
 ])
 
 cc_library(
-    name = "audio_ops",
+    name = "audio_video_ops",
     srcs = [
-        "kernels/audio_flac_kernels.cc",
         "kernels/audio_kernels.cc",
         "kernels/audio_kernels.h",
-        "kernels/audio_mp3_kernels.cc",
-        "kernels/audio_mp4_kernels.cc",
-        "kernels/audio_ogg_kernels.cc",
-        "kernels/audio_wav_kernels.cc",
+        "kernels/audio_video_flac_kernels.cc",
+        "kernels/audio_video_mp3_kernels.cc",
+        "kernels/audio_video_mp4_kernels.cc",
+        "kernels/audio_video_ogg_kernels.cc",
+        "kernels/audio_video_wav_kernels.cc",
+        "kernels/video_kernels.cc",
+        "kernels/video_kernels.h",
         "ops/audio_ops.cc",
+        "ops/video_ops.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
@@ -212,7 +216,7 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [
-            "//tools/build/swift:audio_swift",
+            "//tools/build/swift:audio_video_swift",
         ],
         "//conditions:default": [],
     }),
@@ -530,8 +534,9 @@ cc_binary(
     deps = [
         "//tensorflow_io/arrow:arrow_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
-        "//tensorflow_io/core:audio_ops",
+        "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -555,7 +560,6 @@ cc_binary(
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
-            "//tensorflow_io/core:azfs_ops",
             "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",

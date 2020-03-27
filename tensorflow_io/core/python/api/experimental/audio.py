@@ -14,4 +14,16 @@
 # ==============================================================================
 """tensorflow_io.experimental.audio"""
 
-from tensorflow_io.core.python.experimental.audio_ops import resample # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disable=unused-import
+    resample,
+    decode_wav,
+    encode_wav,
+    decode_flac,
+    encode_flac,
+    decode_vorbis,
+    encode_vorbis,
+    decode_mp3,
+    encode_mp3,
+    AudioIOTensor,
+    AudioIODataset,
+)
