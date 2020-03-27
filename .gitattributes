@@ -3,3 +3,4 @@ dwaLookups.* linguist-generated=true
 b44ExpLogTable.* linguist-generated=true
 toFloat.* linguist-generated=true
 eLut.* linguist-generated=true
+*.inc linguist-generated=true

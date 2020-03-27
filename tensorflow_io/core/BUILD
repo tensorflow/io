@@ -177,6 +177,7 @@ cc_library(
         "@easyexif",
         "@fmjpeg2koj",
         "@freetype",
+        "@libgeotiff",
         "@libtiff",
         "@libwebp",
         "@openexr",
