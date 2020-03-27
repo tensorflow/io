@@ -86,9 +86,9 @@ class AudioReadableResource : public AudioReadableResourceBase {
       return status;
     }
     if (memcmp(&header[4], "ftyp", 4) == 0) {
-      LOG(ERROR) << "MP4A file is not fully supported!";
-      return MP4AACReadableResourceInit(env_, filename, optional_memory,
-                                        optional_length, resource_);
+      return errors::InvalidArgument(
+          "mp4(aac) is not supported in AudioIOTensor or AudioIODataset: ",
+          filename);
     }
     return errors::InvalidArgument("unknown file type: ", filename);
   }

@@ -536,6 +536,43 @@ def fixture_encode_mp3():
     return args, func, expected
 
 
+@pytest.fixture(name="decode_aac", scope="module")
+def fixture_decode_aac():
+    """fixture_decode_aac"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.mp4",
+    )
+    content = tf.io.read_file(path)
+
+    # The test file gs-16b-2c-44100hz.wav is generated from the
+    # method itself on macOS so it is not exactly a good test.
+    # However, the manual playing of the file has been largely
+    # match so we consider it ok.
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.ffmpeg.wav"
+        if sys.platform == "linux"
+        else "gs-16b-2c-44100hz.wav",
+    )
+    value = tfio.experimental.audio.decode_wav(
+        tf.io.read_file(wav_path), dtype=tf.int16
+    )
+
+    args = content
+
+    def func(e):
+        v = tfio.experimental.audio.decode_aac(e)
+        v = tf.cast(v * (1 << 15), tf.int16)
+        return v
+
+    expected = value
+
+    return args, func, expected
+
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -568,6 +605,16 @@ def fixture_encode_mp3():
                 ),
             ],
         ),
+        pytest.param(
+            "decode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -589,6 +636,7 @@ def fixture_encode_mp3():
         "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
+        "decode_aac",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -630,6 +678,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
                 ),
             ],
         ),
+        pytest.param(
+            "decode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -651,6 +709,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
+        "decode_aac",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
