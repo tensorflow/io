@@ -22,11 +22,11 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
-VERSION=5.3.1
+VERSION=5.4.1
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    curl -sSOL http://packages.confluent.io/archive/5.3/confluent-community-5.3.1-2.12.tar.gz
-    tar -xzf confluent-community-5.3.1-2.12.tar.gz
+    curl -sSOL http://packages.confluent.io/archive/5.4/confluent-community-5.4.1-2.12.tar.gz
+    tar -xzf confluent-community-5.4.1-2.12.tar.gz
     (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
     echo Wait 10 secs until zookeeper is up and running
     sleep 10
