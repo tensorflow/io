@@ -564,11 +564,14 @@ def fixture_decode_aac():
     args = content
 
     def func(e):
+        delta = tf.constant(2.0, tf.float32)
         v = tfio.experimental.audio.decode_aac(e)
         v = tf.cast(v * (1 << 15), tf.int16)
+        v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
 
-    expected = value
+    expected = tf.ones([697344, 2], tf.bool)
 
     return args, func, expected
 
