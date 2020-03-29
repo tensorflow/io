@@ -201,6 +201,15 @@ REGISTER_OP("IO>AudioDecodeAAC")
       return Status::OK();
     });
 
+REGISTER_OP("IO>AudioEncodeAAC")
+    .Input("input: float32")
+    .Input("rate: int64")
+    .Output("value: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

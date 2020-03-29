@@ -192,6 +192,27 @@ def decode_aac(input, shape=None, name=None):  # pylint: disable=redefined-built
     return core_ops.io_audio_decode_aac(input, shape=shape, name=name)
 
 
+def encode_aac(input, rate, name=None):  # pylint: disable=redefined-builtin
+    """Encode MP4(AAC) audio into string.
+
+    Args:
+      input: A `Tensor` of the audio input.
+      rate: The sample rate of the audio.
+      name: A name for the operation (optional).
+
+    Returns:
+      output: Encoded audio.
+    """
+    if sys.platform == "linux":
+        try:
+            from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel,unused-import
+                ffmpeg_ops,
+            )
+        except NotImplementedError:
+            pass
+    return core_ops.io_audio_encode_aac(input, rate, name=name)
+
+
 class AudioIOTensor:
     """AudioIOTensor"""
 
