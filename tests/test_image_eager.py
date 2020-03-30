@@ -291,5 +291,32 @@ def test_decode_hdr():
     # tf.io.write_file('sample.png', png)
 
 
+def test_decode_tiff_geotiff():
+    """Test case for decode_tiff_geotiff"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "GeogToWGS84GeoKey5.tif",
+    )
+    shape, dtype = tfio.experimental.image.decode_tiff_info(tf.io.read_file(filename))
+    # only one item for now
+    assert np.all(shape.shape == [1, 3])
+    assert np.all(dtype.shape == [1])
+    assert np.all(shape[0] == [101, 101, 1])
+    assert np.all(dtype[0].numpy() == tf.uint8)
+
+    image = tfio.experimental.image.decode_tiff(tf.io.read_file(filename))
+
+    png_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "GeogToWGS84GeoKey5.png",
+    )
+    png_image = tf.image.decode_png(tf.io.read_file(png_filename))
+
+    image = image[:, :, 0:3]
+    assert np.all(png_image.numpy() == image.numpy())
+
+
 if __name__ == "__main__":
     test.main()
