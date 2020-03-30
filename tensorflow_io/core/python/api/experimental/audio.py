@@ -24,6 +24,7 @@ from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disabl
     encode_vorbis,
     decode_mp3,
     encode_mp3,
+    decode_aac,
     AudioIOTensor,
     AudioIODataset,
 )

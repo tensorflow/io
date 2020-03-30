@@ -70,7 +70,7 @@ REGISTER_OP("IO>AudioDecodeWAV")
     .Input("input: string")
     .Input("shape: int64")
     .Output("value: dtype")
-    .Attr("dtype: {uint8, int16, int32}")
+    .Attr("dtype: {uint8, int16, int32, float32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
@@ -90,7 +90,7 @@ REGISTER_OP("IO>AudioEncodeWAV")
     .Input("input: dtype")
     .Input("rate: int64")
     .Output("value: string")
-    .Attr("dtype: {uint8, int16, int32}")
+    .Attr("dtype: {uint8, int16, int32, float32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       return Status::OK();
@@ -179,6 +179,25 @@ REGISTER_OP("IO>AudioEncodeMP3")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>AudioDecodeAAC")
+    .Input("input: string")
+    .Input("shape: int64")
+    .Output("value: float32")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle shape;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
+      if (!c->RankKnown(shape)) {
+        c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+        return Status::OK();
+      }
+      if (c->Rank(shape) != 2) {
+        return errors::InvalidArgument("rank must be two, received ",
+                                       c->DebugString(shape));
+      }
+      c->set_output(0, shape);
       return Status::OK();
     });
 

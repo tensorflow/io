@@ -1,15 +1,15 @@
 import AVFoundation
 
 @_silgen_name("DecodeAACFunctionCall")
-func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64, channels: Int64, frames: Int64, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int {
+func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: Int64, channels: Int64, frame_in_chunk: UnsafePointer<Int64>, data_in_chunk: UnsafePointer<UnsafeRawPointer>, size_in_chunk: UnsafePointer<Int64>, chunk: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int {
     
     let header_bytes = Int64(7)
     var stream_description_in = AudioStreamBasicDescription(
         mSampleRate: Double(rate),
         mFormatID: kAudioFormatMPEG4AAC,
-        mFormatFlags: 0,
+        mFormatFlags: UInt32(MPEG4ObjectID.AAC_LC.rawValue),
         mBytesPerPacket: 0,
-        mFramesPerPacket:  0,
+        mFramesPerPacket:  1024,
         mBytesPerFrame: 0,
         mChannelsPerFrame: UInt32(channels),
         mBitsPerChannel: 0,
@@ -18,17 +18,31 @@ func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: I
         return -1
     }
     
+    var maximumPacketSize = 0
+    for i in 0..<Int(chunk) {
+        let size_in = size_in_chunk.advanced(by: i).pointee
+        if maximumPacketSize < Int(size_in - header_bytes) {
+            maximumPacketSize = Int(size_in - header_bytes)
+        }
+    }
+    
     let buffer_in = AVAudioCompressedBuffer(
         format: format_in,
-        packetCapacity: 1,
-        maximumPacketSize: Int(size_in - header_bytes))
+        packetCapacity: UInt32(chunk),
+        maximumPacketSize: maximumPacketSize)
     
-    buffer_in.data.copyMemory(from:data_in.advanced(by: Int(header_bytes)), byteCount:Int(size_in - header_bytes))
-    buffer_in.byteLength = UInt32(size_in - header_bytes)
-    buffer_in.packetCount = 1
-    buffer_in.packetDescriptions!.pointee.mDataByteSize = UInt32(size_in - header_bytes)
-    buffer_in.packetDescriptions!.pointee.mStartOffset = 0
-    buffer_in.packetDescriptions!.pointee.mVariableFramesInPacket = 0
+    var offset: Int64 = 0
+    for i in 0..<Int(chunk) {
+        let data_in = data_in_chunk.advanced(by: i).pointee
+        let size_in = size_in_chunk.advanced(by: i).pointee
+        buffer_in.data.advanced(by: Int(offset)).copyMemory(from:data_in.advanced(by: Int(header_bytes)), byteCount:Int(size_in - header_bytes))
+        buffer_in.packetDescriptions!.advanced(by: i).pointee = AudioStreamPacketDescription(mStartOffset: offset, mVariableFramesInPacket: UInt32(0), mDataByteSize: UInt32(size_in - header_bytes))
+        
+        offset += Int64(size_in - header_bytes)
+    }
+    
+    buffer_in.byteLength = UInt32(offset)
+    buffer_in.packetCount = UInt32(chunk)
     
     guard let format_out = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
@@ -38,7 +52,11 @@ func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: I
             return -2
     }
     
-    guard let buffer_out = AVAudioPCMBuffer(pcmFormat:format_out, frameCapacity: UInt32(frames)) else {
+    var frameCapacity: UInt32 = 0
+    for i in 0..<Int(chunk) {
+        frameCapacity += UInt32(frame_in_chunk.advanced(by: i).pointee)
+    }
+    guard let buffer_out = AVAudioPCMBuffer(pcmFormat:format_out, frameCapacity: frameCapacity) else {
         return -3
     }
     
@@ -46,9 +64,19 @@ func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: I
         return -4
     }
     
-    let input_block : AVAudioConverterInputBlock = {
-        packetCount, inputStatus in inputStatus.pointee = AVAudioConverterInputStatus.haveData
-        return buffer_in
+    converter.primeMethod = AVAudioConverterPrimeMethod.none
+    converter.primeInfo = AVAudioConverterPrimeInfo.init(leadingFrames: 0, trailingFrames: 0)
+    
+    var haveData = true
+    let input_block : AVAudioConverterInputBlock = { packetCount, inputStatus in
+        if (!haveData) {
+            inputStatus.pointee = AVAudioConverterInputStatus.endOfStream;
+            return nil;
+        } else {
+            haveData = false
+            inputStatus.pointee = AVAudioConverterInputStatus.haveData
+            return  buffer_in; // fill and return input buffer
+        }
     }
     
     var error : NSError?
@@ -65,11 +93,9 @@ func DecodeAACFunctionCall(state: UnsafeMutableRawPointer, codec: Int64, rate: I
     }
     
     let data_out_source = buffer_out.floatChannelData!.pointee
-    let size_out_source = Int(buffer_out.frameLength) * Int(channels) * 4 // sizeof(float) = 4
+    let size_out_source = Int(buffer_out.frameLength) * Int(channels) * MemoryLayout<Float>.size
     
-    if (size_out_source != size_out) {
-        return -8
-    }
+    
     data_out.copyMemory(from: data_out_source, byteCount: size_out_source)
     
     return 0

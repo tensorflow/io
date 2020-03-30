@@ -56,27 +56,6 @@ def fixture_audio_data_24():
     return path, value, rate
 
 
-# TODO: Consolidate with other tests in
-# test_io_dataset_eager.py/test_io_tensor_eager.py
-# Audio from:
-# https://docs.espressif.com/projects/esp-adf/en/latest/design-guide/audio-samples.html
-@pytest.mark.skipif(
-    sys.platform == "linux" and sys.version_info < (3, 6),
-    reason="need ubuntu 18.04 which is python 3.6",
-)
-def test_aac():
-    """test_aac"""
-    path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_audio",
-        "gs-16b-2c-44100hz.mp4",
-    )
-    audio = tfio.IOTensor.from_audio(path)
-    _ = audio.to_tensor().numpy()
-    # raw_path = "gs-16b-2c-44100hz.pcm"
-    # audio.to_tensor().numpy().tofile(raw_path)
-
-
 @pytest.mark.parametrize(
     ("io_tensor_func"),
     [
