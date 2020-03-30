@@ -212,6 +212,53 @@ def fixture_encode_wav_s24():
     return args, func, expected
 
 
+@pytest.fixture(name="decode_wav_f32", scope="module")
+def fixture_decode_wav_f32():
+    """fixture_decode_wav_f32"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.f32.wav",
+    )
+    content = tf.io.read_file(path)
+
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+
+    args = content
+    func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.float32)
+    expected = value
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_wav_f32", scope="module")
+def fixture_encode_wav_f32():
+    """fixture_encode_wav_f32"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "ZASFX_ADSR_no_sustain.wav",
+    )
+    audio = tf.audio.decode_wav(tf.io.read_file(wav_path))
+    value = audio.audio
+
+    args = value
+
+    def func(e):
+        v = tfio.experimental.audio.encode_wav(e, rate=44100)
+        return tfio.experimental.audio.decode_wav(v, dtype=tf.float32)
+
+    expected = value
+
+    return args, func, expected
+
+
 @pytest.fixture(name="decode_flac", scope="module")
 def fixture_decode_flac():
     """fixture_decode_flac"""
@@ -489,6 +536,46 @@ def fixture_encode_mp3():
     return args, func, expected
 
 
+@pytest.fixture(name="decode_aac", scope="module")
+def fixture_decode_aac():
+    """fixture_decode_aac"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.mp4",
+    )
+    content = tf.io.read_file(path)
+
+    # The test file gs-16b-2c-44100hz.wav is generated from the
+    # method itself on macOS so it is not exactly a good test.
+    # However, the manual playing of the file has been largely
+    # match so we consider it ok.
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.ffmpeg.wav"
+        if sys.platform == "linux"
+        else "gs-16b-2c-44100hz.wav",
+    )
+    value = tfio.experimental.audio.decode_wav(
+        tf.io.read_file(wav_path), dtype=tf.int16
+    )
+
+    args = content
+
+    def func(e):
+        delta = tf.constant(2.0, tf.float32)
+        v = tfio.experimental.audio.decode_aac(e)
+        v = tf.cast(v * (1 << 15), tf.int16)
+        v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+        return v
+
+    expected = tf.ones([697344, 2], tf.bool)
+
+    return args, func, expected
+
+
 # By default, operations runs in eager mode,
 # Note as of now shape inference is skipped in eager mode
 @pytest.mark.parametrize(
@@ -501,6 +588,8 @@ def fixture_encode_mp3():
         pytest.param("encode_wav_u8"),
         pytest.param("decode_wav_s24"),
         pytest.param("encode_wav_s24"),
+        pytest.param("decode_wav_f32"),
+        pytest.param("encode_wav_f32"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_flac_u8"),
@@ -519,6 +608,16 @@ def fixture_encode_mp3():
                 ),
             ],
         ),
+        pytest.param(
+            "decode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -528,6 +627,8 @@ def fixture_encode_mp3():
         "encode_wav|u8",
         "decode_wav|s24",
         "encode_wav|s24",
+        "decode_wav|f32",
+        "encode_wav|f32",
         "decode_flac",
         "encode_flac",
         "decode_flac|u8",
@@ -538,6 +639,7 @@ def fixture_encode_mp3():
         "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
+        "decode_aac",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -559,6 +661,8 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param("encode_wav_u8"),
         pytest.param("decode_wav_s24"),
         pytest.param("encode_wav_s24"),
+        pytest.param("decode_wav_f32"),
+        pytest.param("encode_wav_f32"),
         pytest.param("decode_flac"),
         pytest.param("encode_flac"),
         pytest.param("decode_flac_u8"),
@@ -577,6 +681,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
                 ),
             ],
         ),
+        pytest.param(
+            "decode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -586,6 +700,8 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "encode_wav|u8",
         "decode_wav|s24",
         "encode_wav|s24",
+        "decode_wav|f32",
+        "encode_wav|f32",
         "decode_flac",
         "encode_flac",
         "decode_flac|u8",
@@ -596,6 +712,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "encode_vorbis",
         "decode_mp3",
         "encode_mp3",
+        "decode_aac",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):

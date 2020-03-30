@@ -27,9 +27,10 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t frames, const void* data_in,
-                              int64_t size_in, void* data_out,
-                              int64_t size_out);
+                              const int64_t* frame_in_chunk,
+                              const void** data_in_chunk,
+                              const int64_t* size_in_chunk, int64_t chunk,
+                              void* data_out, int64_t size_out);
 
 void DecodeAVCFunctionFini(void* context);
 void* DecodeAVCFunctionInit(const uint8_t* data_pps, const int64_t size_pps,
@@ -47,9 +48,10 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t frames, const void* data_in,
-                              int64_t size_in, void* data_out,
-                              int64_t size_out) {
+                              const int64_t* frame_in_chunk,
+                              const void** data_in_chunk,
+                              const int64_t* size_in_chunk, int64_t chunk,
+                              void* data_out, int64_t size_out) {
   return -1;
 }
 
@@ -73,8 +75,9 @@ static void* (*DecodeAACFunctionInitPointer)(const int64_t codec,
                                              const int64_t channels);
 static int64_t (*DecodeAACFunctionCallPointer)(
     void* state, const int64_t codec, const int64_t rate,
-    const int64_t channels, const int64_t frames, const void* data_in,
-    int64_t size_in, void* data_out, int64_t size_out);
+    const int64_t channels, const int64_t* frame_in_chunk,
+    const void** data_in_chunk, const int64_t* size_in_chunk, int64_t chunk,
+    void* data_out, int64_t size_out);
 
 void DecodeAACFunctionFini(void* state) {
   if (DecodeAACFunctionFiniPointer != nullptr) {
@@ -103,12 +106,14 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t frames, const void* data_in,
-                              int64_t size_in, void* data_out,
-                              int64_t size_out) {
+                              const int64_t* frame_in_chunk,
+                              const void** data_in_chunk,
+                              const int64_t* size_in_chunk, int64_t chunk,
+                              void* data_out, int64_t size_out) {
   if (DecodeAACFunctionCallPointer != nullptr) {
-    return DecodeAACFunctionCallPointer(state, codec, rate, channels, frames,
-                                        data_in, size_in, data_out, size_out);
+    return DecodeAACFunctionCallPointer(
+        state, codec, rate, channels, frame_in_chunk, data_in_chunk,
+        size_in_chunk, chunk, data_out, size_out);
   }
   return -1;
 }
@@ -191,18 +196,26 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
          track_index++) {
       if (mp4d_demux_.track[track_index].handler_type ==
           MP4D_HANDLER_TYPE_SOUN) {
+        if (mp4d_demux_.track[track_index].sample_count < preroll_ + padding_) {
+          return errors::InvalidArgument(
+              "need at least ", preroll_ + padding_,
+              " packets: ", mp4d_demux_.track[track_index].sample_count);
+        }
+
+        int indication = mp4d_demux_.track[track_index].object_type_indication;
         int64 samples = 0;
         partitions_.clear();
         partitions_.reserve(mp4d_demux_.track[track_index].sample_count);
-        for (int64 i = 0; i < mp4d_demux_.track[track_index].sample_count;
-             i++) {
+
+        for (int64 i = preroll_;
+             i < mp4d_demux_.track[track_index].sample_count; i++) {
           unsigned frame_bytes, timestamp, duration;
           MP4D_frame_offset(&mp4d_demux_, track_index, i, &frame_bytes,
                             &timestamp, &duration);
           samples += duration;
           partitions_.emplace_back(samples);
         }
-
+        samples = partitions_[(partitions_.size() - 1) - padding_];
         int64 channels =
             mp4d_demux_.track[track_index].SampleDescription.audio.channelcount;
         int64 rate = mp4d_demux_.track[track_index]
@@ -281,45 +294,41 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
       return Status::OK();
     }
 
+    void* state = state_.get();
+    int64 codec = codec_;
+    int64 rate = rate_;
+    int64 channels = shape_.dim_size(1);
+
     int64 lower, upper, extra;
     TF_RETURN_IF_ERROR(PartitionsLookup(partitions_, sample_start, sample_stop,
                                         &lower, &upper, &extra));
 
-    int64 base_offset = 0;
-    char* base = (char*)(value->flat<float>().data());
-    for (int64 i = lower; i < upper; i++) {
-      int64 chunk_offset = 0;
-      int64 chunk_length =
-          (i == 0) ? (partitions_[i]) : (partitions_[i] - partitions_[i - 1]);
-      if (i == lower) {
-        chunk_offset = extra;
-        chunk_length = chunk_length - extra;
-      }
-      if (base_offset + chunk_length > value->shape().dim_size(0)) {
-        chunk_length = value->shape().dim_size(0) - base_offset;
-      }
-      if (chunk_length == 0) {
-        continue;
-      }
+    // we need append padding_ at the end.
+    upper += padding_;
 
+    int64 frames = 0;
+
+    std::vector<int64> frame_in_chunk;
+    std::vector<string> data_in_buffer;
+    std::vector<void*> data_in_chunk;
+    std::vector<int64> size_in_chunk;
+    for (int64 i = lower; i < upper; i++) {
       unsigned frame_bytes, timestamp, duration;
       MP4D_file_offset_t frame_offset = MP4D_frame_offset(
           &mp4d_demux_, track_index_, i, &frame_bytes, &timestamp, &duration);
 
-      void* state = state_.get();
-      int64 codec = codec_;
-      int64 rate = rate_;
-      int64 channels = shape_.dim_size(1);
-      int64 frames = duration;
+      frames += duration;
+      frame_in_chunk.push_back(duration);
 
       int64 header_bytes = 7;
+
       int64 size_in = frame_bytes + header_bytes;
-      int64 size_out = duration * channels * sizeof(float);
+      data_in_buffer.push_back(string());
+      data_in_buffer.back().resize(size_in);
+      data_in_chunk.push_back(&data_in_buffer.back()[0]);
+      size_in_chunk.push_back(size_in);
 
-      string data_in, data_out;
-      data_in.resize(size_in);
-      data_out.resize(size_out);
-
+      char* data_in = (char*)data_in_chunk.back();
       StringPiece result;
       TF_RETURN_IF_ERROR(file_->Read(frame_offset, frame_bytes, &result,
                                      (char*)&data_in[header_bytes]));
@@ -340,20 +349,21 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
       *((unsigned char*)&data_in[4]) = (((size_in & 0x07FF) >> 3));
       *((unsigned char*)&data_in[5]) = (((size_in & 0x0007) << 5) + 0x1F);
       *((unsigned char*)&data_in[6]) = 0xFC;
-
-      int64 status = DecodeAACFunctionCall(state, codec, rate, channels, frames,
-                                           (void*)&data_in[0], size_in,
-                                           (void*)&data_out[0], size_out);
-      if (status != 0) {
-        return errors::InvalidArgument("unable to convert AAC data: ", status);
-      }
-      char* chunk = (char*)(&data_out[0]);
-      memcpy(base + base_offset * channels * sizeof(float),
-             chunk + chunk_offset * channels * sizeof(float),
-             chunk_length * channels * sizeof(float));
-      base_offset += chunk_length;
     }
 
+    int64 size_out = frames * channels * sizeof(float);
+    string data_out;
+    data_out.resize(size_out);
+    int64 status = DecodeAACFunctionCall(
+        state, codec, rate, channels, (int64_t*)&frame_in_chunk[0],
+        (const void**)&data_in_chunk[0], (int64_t*)&size_in_chunk[0],
+        data_in_chunk.size(), (void*)&data_out[0], size_out);
+    if (status != 0) {
+      return errors::InvalidArgument("unable to convert AAC data: ", status);
+    }
+    char* base = (char*)(value->flat<float>().data());
+    char* data = (char*)&data_out[0] + extra * channels * sizeof(float);
+    memcpy(base, data, value->NumElements() * sizeof(float));
     return Status::OK();
   }
   string DebugString() const override { return "MP4AACReadableResource"; }
@@ -382,8 +392,68 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
   int64 frequency_index_;
 
   std::vector<int64> partitions_;
+
+  // decoder delay for preroll, and padding at the end?
+  const int64 preroll_ = 1;
+  const int64 padding_ = 1;
 };
 
+class AudioDecodeAACOp : public OpKernel {
+ public:
+  explicit AudioDecodeAACOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* shape_tensor;
+    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+
+    const tstring& input = input_tensor->scalar<tstring>()();
+
+    std::unique_ptr<MP4AACReadableResource> resource(
+        new MP4AACReadableResource(env_));
+    OP_REQUIRES_OK(context,
+                   resource->Init("memory", input.data(), input.size()));
+
+    int32 rate;
+    DataType dtype;
+    TensorShape shape;
+    OP_REQUIRES_OK(context, resource->Spec(&shape, &dtype, &rate));
+
+    OP_REQUIRES(context, (dtype == context->expected_output_dtype(0)),
+                errors::InvalidArgument(
+                    "dtype mismatch: ", DataTypeString(dtype), " vs. ",
+                    DataTypeString(context->expected_output_dtype(0))));
+
+    PartialTensorShape provided_shape;
+    OP_REQUIRES_OK(context, PartialTensorShape::MakePartialShape(
+                                shape_tensor->flat<int64>().data(),
+                                shape_tensor->NumElements(), &provided_shape));
+    OP_REQUIRES(context, (provided_shape.IsCompatibleWith(shape)),
+                errors::InvalidArgument(
+                    "shape mismatch: ", provided_shape.DebugString(), " vs. ",
+                    shape.DebugString()));
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Read(0, shape.dim_size(0),
+                       [&](const TensorShape& shape, Tensor** value) -> Status {
+                         TF_RETURN_IF_ERROR(
+                             context->allocate_output(0, shape, value));
+                         return Status::OK();
+                       }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeAAC").Device(DEVICE_CPU),
+                        AudioDecodeAACOp);
 }  // namespace
 
 Status MP4AACReadableResourceInit(

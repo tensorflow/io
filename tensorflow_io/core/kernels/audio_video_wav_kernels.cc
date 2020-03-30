@@ -62,10 +62,10 @@ Status ValidateWAVHeader(struct WAVHeader* header) {
         "WAV file must have `fmt_size ` 16, 18, or 40, received: ",
         header->fmt_size);
   }
-  if (header->wFormatTag != 1 &&
+  if (header->wFormatTag != 1 && header->wFormatTag != 3 &&
       header->wFormatTag != static_cast<int16>(0xFFFE)) {
     return errors::InvalidArgument(
-        "WAV file must have `wFormatTag` 1 or 0xFFFE, received: ",
+        "WAV file must have `wFormatTag` 1 or 3 or 0xFFFE, received: ",
         header->wFormatTag);
   }
   if (header->nChannels <= 0) {
@@ -154,7 +154,13 @@ class WAVReadableResource : public AudioReadableResourceBase {
         dtype_ = DT_INT16;
         break;
       case 24:
-        dtype_ = DT_INT32;
+        dtype_ = DT_INT32;  // 24 stands for int24 (converts to INT32)
+        break;
+      case 32:
+        // header_.wFormatTag == 3 means IEEE float, but some WAV may still use
+        // PCM
+        // TODO: pass dtype from Init().
+        dtype_ = DT_FLOAT;
         break;
       default:
         return errors::InvalidArgument("unsupported wBitsPerSample: ",
@@ -207,8 +213,11 @@ class WAVReadableResource : public AudioReadableResourceBase {
       case DT_INT16:
         base = (char*)(value->flat<int16>().data());
         break;
-      case DT_INT32:
+      case DT_INT32:  // 24 stands for int24 (converts to INT32)
         base = (char*)(value->flat<int32>().data());
+        break;
+      case DT_FLOAT:
+        base = (char*)(value->flat<float>().data());
         break;
       default:
         return errors::InvalidArgument("data type ", DataTypeString(dtype_),
@@ -243,10 +252,11 @@ class WAVReadableResource : public AudioReadableResourceBase {
       switch (header_.wBitsPerSample) {
         case 8:
         case 16:
+        case 32:
           memcpy(base + base_offset * header_.nBlockAlign, (char*)(&buffer[0]),
                  chunk_length * header_.nBlockAlign);
           break;
-        case 24:
+        case 24:  // 24 stands for int24 (converts to INT32)
           for (int64 i = 0; i < chunk_length * channels; i++) {
             char* in_p = (char*)(&buffer[0]) + i * 3;
             char* out_p = base + base_offset * header_.nBlockAlign + i * 4;
@@ -371,9 +381,13 @@ class AudioEncodeWAVOp : public OpKernel {
         bytes_per_sample = 2;
         input_base = (char*)input_tensor->flat<int16>().data();
         break;
-      case DT_INT32:
+      case DT_INT32:  // 24 stands for int24 (converts to INT32)
         bytes_per_sample = 3;
         input_base = (char*)input_tensor->flat<int32>().data();
+        break;
+      case DT_FLOAT:
+        bytes_per_sample = 4;
+        input_base = (char*)input_tensor->flat<float>().data();
         break;
       default:
         OP_REQUIRES(context, false,
@@ -410,9 +424,11 @@ class AudioEncodeWAVOp : public OpKernel {
     // fmt Chunk size: 16, 18, or 40
     header->fmt_size = 16;
 
-    // Format code: WAVE_FORMAT_PCM (1) for PCM.
-    // WAVE_FORMAT_EXTENSIBLE (0xFFFE) for SubFormat
-    header->wFormatTag = 1;
+    // Format code:
+    //  WAVE_FORMAT_PCM (1) for PCM.
+    //  WAVE_FORMAT_IEEE_FLOAT (3) for IEEE float
+    //  WAVE_FORMAT_EXTENSIBLE (0xFFFE) for SubFormat
+    header->wFormatTag = (input_tensor->dtype() == DT_FLOAT) ? (3) : (1);
 
     // Number of channels
     header->nChannels = channels;
@@ -438,10 +454,11 @@ class AudioEncodeWAVOp : public OpKernel {
     switch (input_tensor->dtype()) {
       case DT_UINT8:
       case DT_INT16:
+      case DT_FLOAT:
         memcpy(output_base, input_base,
                input_tensor->NumElements() * bytes_per_sample);
         break;
-      case DT_INT32:
+      case DT_INT32:  // 24 stands for int24 (converts to INT32)
         for (int64 i = 0; i < input_tensor->NumElements(); i++) {
           char* in_p = input_base + i * 4;
           char* out_p = output_base + i * 3;
