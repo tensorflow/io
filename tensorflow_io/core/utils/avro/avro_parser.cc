@@ -321,7 +321,7 @@ string ArrayIndexParser::ToString(size_t level) const {
   return ss.str();
 }
 
-ArrayFilterParser::ArrayFilterParser(const string& lhs, const string& rhs, ArrayFilterType type)
+ArrayFilterParser::ArrayFilterParser(const tstring& lhs, const tstring& rhs, ArrayFilterType type)
   : AvroParser(""), lhs_(lhs), rhs_(rhs), type_(type) { }
 
 ArrayFilterParser::ArrayFilterType ArrayFilterParser::ToArrayFilterType(
