@@ -332,7 +332,8 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
           spec: A dict of `dataset:tf.TensorSpec` or `dataset:dtype`
             pairs that specify the dataset selected and the tf.TensorSpec
             or dtype of the dataset. In eager mode the spec is probed
-            automatically. In graph mode spec has to be specified.
+            automatically. In graph mode `spec` is required and columns
+            in the `pyarrow.Table` can be keyed by column name or index.
           name: A name prefix for the IOTensor (optional).
 
         Returns:
