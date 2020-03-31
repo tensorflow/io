@@ -72,7 +72,7 @@ public:
   virtual bool ValuesMatchAtReverseIndex(const ValueStore& store, size_t reverse_index) const = 0;
 
   // Check if the value matches at the reverse index
-  virtual bool ValueMatchesAtReverseIndex(const string& value, size_t reverse_index) const = 0;
+  virtual bool ValueMatchesAtReverseIndex(const tstring& value, size_t reverse_index) const = 0;
 
   // Is empty when this store has no values
   virtual bool IsEmpty() const = 0;
@@ -211,7 +211,8 @@ public:
 
   virtual bool ValuesMatchAtReverseIndex(const ValueStore& store, size_t reverse_index) const override;
 
-  virtual bool ValueMatchesAtReverseIndex(const string& value, size_t reverse_index) const override;
+  virtual bool ValueMatchesAtReverseIndex(const tstring& value, size_t reverse_index) const
+  override;
 
   inline bool IsEmpty() const override { return GetNumberOfElements() == 0; }
 
@@ -542,13 +543,15 @@ bool ValueBuffer<T>::ValuesMatchAtReverseIndex(const ValueStore& store, size_t r
 }
 
 template <typename T>
-inline bool ValueBuffer<T>::ValueMatchesAtReverseIndex(const string& value, size_t reverse_index) const {
+inline bool ValueBuffer<T>::ValueMatchesAtReverseIndex(const tstring& value, size_t reverse_index)
+const {
   // TODO(fraudies): Check if we want to match other types through parsing of string
   return false;
 }
 
 template <>
-inline bool ValueBuffer<string>::ValueMatchesAtReverseIndex(const string& value, size_t reverse_index) const {
+inline bool ValueBuffer<tstring>::ValueMatchesAtReverseIndex(const tstring& value, size_t
+reverse_index) const {
   // If there is no value to match there is no match
   if (IsEmpty()) {
     return false;

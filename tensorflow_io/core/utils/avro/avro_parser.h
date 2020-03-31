@@ -191,15 +191,15 @@ private:
 class ArrayFilterParser : public AvroParser {
 public:
   enum ArrayFilterType { kLhsIsConstant, kRhsIsConstant, kNoConstant };
-  ArrayFilterParser(const string& lhs, const string& rhs, ArrayFilterType type);
+  ArrayFilterParser(const tstring& lhs, const tstring& rhs, ArrayFilterType type);
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
     const avro::GenericDatum& datum) const override;
   virtual string ToString(size_t level = 0) const;
   static ArrayFilterType ToArrayFilterType(bool lhs_is_constant, bool rhs_is_constant);
   inline std::set<avro::Type> GetSupportedTypes() const override { return {avro::AVRO_ARRAY}; }
 private:
-  string lhs_;
-  string rhs_;
+  tstring lhs_;
+  tstring rhs_;
   ArrayFilterType type_;
 };
 
