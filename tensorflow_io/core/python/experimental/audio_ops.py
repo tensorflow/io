@@ -115,7 +115,6 @@ def decode_vorbis(input, shape=None, name=None):  # pylint: disable=redefined-bu
     Args:
       input: A string `Tensor` of the audio input.
       shape: The shape of the audio.
-      dtype: The data type of the audio, only tf.int16 is supported.
       name: A name for the operation (optional).
 
     Returns:
@@ -146,7 +145,6 @@ def decode_mp3(input, shape=None, name=None):  # pylint: disable=redefined-built
     Args:
       input: A string `Tensor` of the audio input.
       shape: The shape of the audio.
-      dtype: The data type of the audio, only tf.int16 is supported.
       name: A name for the operation (optional).
 
     Returns:
@@ -171,6 +169,29 @@ def encode_mp3(input, rate, name=None):  # pylint: disable=redefined-builtin
     return core_ops.io_audio_encode_mp3(input, rate, name=name)
 
 
+def decode_aac(input, shape=None, name=None):  # pylint: disable=redefined-builtin
+    """Decode MP4 (AAC) audio from input string.
+
+    Args:
+      input: A string `Tensor` of the audio input.
+      shape: The shape of the audio.
+      name: A name for the operation (optional).
+
+    Returns:
+      output: Decoded audio as tf.float32.
+    """
+    if shape is None:
+        shape = tf.constant([-1, -1], tf.int64)
+    if sys.platform == "linux":
+        try:
+            from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel,unused-import
+                ffmpeg_ops,
+            )
+        except NotImplementedError:
+            pass
+    return core_ops.io_audio_decode_aac(input, shape=shape, name=name)
+
+
 class AudioIOTensor:
     """AudioIOTensor"""
 
@@ -181,13 +202,6 @@ class AudioIOTensor:
         with tf.name_scope("AudioIOTensor"):
             if not tf.executing_eagerly():
                 assert dtype is not None, "dtype must be provided in graph mode"
-            if sys.platform == "linux":
-                try:
-                    from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel,unused-import
-                        ffmpeg_ops,
-                    )
-                except NotImplementedError:
-                    pass
             resource = core_ops.io_audio_readable_init(filename)
             if tf.executing_eagerly():
                 shape, dtype, rate = core_ops.io_audio_readable_spec(resource)
@@ -282,13 +296,6 @@ class AudioIODataset(tf.data.Dataset):
         with tf.name_scope("AudioIODataset"):
             if not tf.executing_eagerly():
                 assert dtype is not None, "dtype must be provided in graph mode"
-            if sys.platform == "linux":
-                try:
-                    from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel,unused-import
-                        ffmpeg_ops,
-                    )
-                except NotImplementedError:
-                    pass
             resource = core_ops.io_audio_readable_init(filename)
             if tf.executing_eagerly():
                 shape, dtype, _ = core_ops.io_audio_readable_spec(resource)

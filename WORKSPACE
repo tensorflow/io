@@ -1,6 +1,7 @@
 workspace(name = "org_tensorflow_io")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("//third_party/toolchains/tf:tf_configure.bzl", "tf_configure")
 
 tf_configure(name = "local_config_tf")
@@ -107,6 +108,43 @@ http_archive(
     strip_prefix = "openexr-2.4.0",
     urls = [
         "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
+    ],
+)
+
+new_git_repository(
+    name = "libyuv",
+    build_file = "//third_party:libyuv.BUILD",
+    commit = "7f00d67d7c279f13b73d3be9c2d85873a7e2fbaf",
+    remote = "https://chromium.googlesource.com/libyuv/libyuv",
+)
+
+http_archive(
+    name = "libgeotiff",
+    build_file = "//third_party:libgeotiff.BUILD",
+    sha256 = "12c26422e89da7032efcd60d48f3d82c7c0b4c9f3f61aa30c5e3df512946c6cf",
+    strip_prefix = "libgeotiff-1.5.1",
+    urls = [
+        "https://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.5.1.zip",
+    ],
+)
+
+http_archive(
+    name = "proj",
+    build_file = "//third_party:proj.BUILD",
+    sha256 = "0b157e1aa81df4d0dbd89368a0005916bb717f0c09143b4dbc1b20d59204e9f2",
+    strip_prefix = "proj-6.2.0",
+    urls = [
+        "https://download.osgeo.org/proj/proj-6.2.0.zip",
+    ],
+)
+
+http_archive(
+    name = "sqlite",
+    build_file = "//third_party:sqlite.BUILD",
+    sha256 = "adf051d4c10781ea5cfabbbc4a2577b6ceca68590d23b58b8260a8e24cc5f081",
+    strip_prefix = "sqlite-amalgamation-3300100",
+    urls = [
+        "https://www.sqlite.org/2019/sqlite-amalgamation-3300100.zip",
     ],
 )
 

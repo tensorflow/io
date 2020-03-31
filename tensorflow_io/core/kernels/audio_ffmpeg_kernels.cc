@@ -50,8 +50,9 @@ class DecodeAACFunctionState {
     }
     return true;
   }
-  int64 Call(const int64 rate, const int64 channels, const void* data_in,
-             const int64 size_in, void* data_out, int64 size_out) {
+  int64 Call(const int64 rate, const int64 channels, const char** data_in_chunk,
+             const int64_t* size_in_chunk, int64_t chunk, char* data_out,
+             int64_t size_out) {
     std::unique_ptr<AVCodecContext, void (*)(AVCodecContext*)> codec_context(
         nullptr, [](AVCodecContext* p) {
           if (p != nullptr) {
@@ -90,35 +91,44 @@ class DecodeAACFunctionState {
       LOG(ERROR) << "unable to create frame";
       return -1;
     }
-    int ret =
-        av_parser_parse2(codec_parser_context_.get(), codec_context.get(),
-                         &packet->data, &packet->size, (const uint8_t*)data_in,
-                         size_in, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
-    if (ret < 0) {
-      LOG(ERROR) << "unable to parse: " << ret;
-      return ret;
-    }
-    if (ret != size_in) {
-      LOG(ERROR) << "size does not match: " << ret << " vs. " << size_in;
-      return -1;
-    }
     int64 offset = 0;
-    if (packet->size > 0) {
-      ret = Decode(codec_context.get(), packet.get(), frame.get(), channels,
-                   data_out, size_out, &offset);
+    for (int64_t i = 0; i < chunk; i++) {
+      const char* data_in = data_in_chunk[i];
+      const int64_t size_in = size_in_chunk[i];
+      int ret = av_parser_parse2(codec_parser_context_.get(),
+                                 codec_context.get(), &packet->data,
+                                 &packet->size, (const uint8_t*)data_in,
+                                 size_in, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
       if (ret < 0) {
-        LOG(ERROR) << "unable to decode: " << ret;
+        LOG(ERROR) << "unable to parse: " << ret;
         return ret;
       }
+      if (ret != size_in) {
+        LOG(ERROR) << "size does not match: " << ret << " vs. " << size_in;
+        return -1;
+      }
+      if (packet->size > 0) {
+        int64 size_returned = 0;
+        ret = Decode(codec_context.get(), packet.get(), frame.get(), channels,
+                     &data_out[offset], size_out - offset, &size_returned);
+        if (ret < 0) {
+          LOG(ERROR) << "unable to decode: " << ret;
+          return ret;
+        }
+        offset += size_returned;
+      }
     }
+
     packet->data = nullptr;
     packet->size = 0;
-    ret = Decode(codec_context.get(), packet.get(), frame.get(), channels,
-                 data_out, size_out, &offset);
+    int64 size_returned = 0;
+    int ret = Decode(codec_context.get(), packet.get(), frame.get(), channels,
+                     &data_out[offset], size_out - offset, &size_returned);
     if (ret < 0) {
       LOG(ERROR) << "unable to decode and flush out: " << ret;
       return ret;
     }
+    offset += size_returned;
     if (offset != size_out) {
       LOG(WARNING) << "output mismatch: " << offset << " vs. " << size_out
                    << ret;
@@ -209,12 +219,14 @@ void* DecodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
 
 int64_t DecodeAACFunctionCallFFmpeg(void* state, const int64_t codec,
                                     const int64_t rate, const int64_t channels,
-                                    const int64_t frames, const void* data_in,
-                                    int64_t size_in, void* data_out,
-                                    int64_t size_out) {
+                                    const int64_t* frame_in_chunk,
+                                    const void** data_in_chunk,
+                                    const int64_t* size_in_chunk, int64_t chunk,
+                                    void* data_out, int64_t size_out) {
   if (state != nullptr) {
     return static_cast<tensorflow::data::DecodeAACFunctionState*>(state)->Call(
-        rate, channels, data_in, size_in, data_out, size_out);
+        rate, channels, (const char**)data_in_chunk, size_in_chunk, chunk,
+        (char*)data_out, size_out);
   }
   return -1;
 }

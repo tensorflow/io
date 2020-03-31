@@ -32,6 +32,9 @@ from tensorflow import test  # pylint: disable=wrong-import-position
 
 import tensorflow_io.arrow as arrow_io  # pylint: disable=wrong-import-position
 from tensorflow_io import IOTensor  # pylint: disable=wrong-import-position
+from tensorflow_io.core.python.ops.arrow_io_tensor_ops import (
+    ArrowIOResource,
+)  # pylint: disable=wrong-import-position
 
 import pyarrow as pa  # pylint: disable=wrong-import-order,wrong-import-position
 from pyarrow.feather import (
@@ -270,6 +273,84 @@ class ArrowIOTensorTest(ArrowTestBase):
 
         self.assertEqual(iter_count, num_iters)
         os.unlink(f.name)
+
+    def test_arrow_io_dataset_map_py_func(self):
+        """test_arrow_io_dataset_map_from_py_func"""
+        column = "a"
+        dtype = dtypes.int64
+        column_dtype = self.get_arrow_type(dtype, False)
+        arr = pa.array(list(range(100)), column_dtype)
+        table = pa.Table.from_arrays([arr], [column])
+        spec = {column: dtype}
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            with pa.RecordBatchFileWriter(f.name, table.schema) as writer:
+                for batch in table.to_batches():
+                    writer.write_batch(batch)
+
+        def read_table(filename):
+            filename = filename.numpy().decode("utf-8")
+            reader = pa.RecordBatchFileReader(filename)
+            return reader.read_all()
+
+        def from_py_func(filename):
+            table_res = ArrowIOResource.from_py_function(read_table, [filename])
+            tio = IOTensor.from_arrow(table_res, spec=spec)
+            return tio(column).to_tensor()
+
+        num_iters = 2
+        ds = tf.data.Dataset.from_tensor_slices([f.name, f.name]).map(from_py_func)
+        expected = table[column].to_pylist()
+
+        iter_count = 0
+        for result in ds:
+            npt.assert_array_equal(result, expected)
+            iter_count += 1
+
+        self.assertEqual(iter_count, num_iters)
+        os.unlink(f.name)
+
+    def test_spec_selection_by_column_name(self):
+        """test_spec_selection_by_column_name"""
+
+        def from_func(_):
+            a = pa.array([1, 2, 3], type=pa.int32())
+            b = pa.array([4, 5, 6], type=pa.int64())
+            c = pa.array([7, 8, 9], type=pa.float32())
+            t = pa.Table.from_arrays([a, b, c], ["a", "b", "c"])
+            foo = IOTensor.from_arrow(t, spec={"b": tf.int64})
+            return foo("b").to_tensor()
+
+        ds = tf.data.Dataset.range(1).map(from_func)
+        results = list(ds.as_numpy_iterator())
+        self.assertEqual(len(results), 1)
+        result = results[0]
+
+        b = pa.array([4, 5, 6], type=pa.int64())
+        expected = b.to_numpy()
+
+        npt.assert_array_equal(result, expected)
+
+    def test_spec_selection_by_column_index(self):
+        """test_spec_selection_by_column_index"""
+
+        def from_func(_):
+            a = pa.array([1, 2, 3], type=pa.int32())
+            b = pa.array([4, 5, 6], type=pa.int64())
+            c = pa.array([7, 8, 9], type=pa.float32())
+            t = pa.Table.from_arrays([a, b, c], ["a", "b", "c"])
+            foo = IOTensor.from_arrow(t, spec={1: tf.int64})
+            return foo(1).to_tensor()
+
+        ds = tf.data.Dataset.range(1).map(from_func)
+        results = list(ds.as_numpy_iterator())
+        self.assertEqual(len(results), 1)
+        result = results[0]
+
+        b = pa.array([4, 5, 6], type=pa.int64())
+        expected = b.to_numpy()
+
+        npt.assert_array_equal(result, expected)
 
 
 class ArrowDatasetTest(ArrowTestBase):
@@ -706,7 +787,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data, batch_size=2)
 
     def test_bool_array_type(self):
-        """NOTE: need to test this seperately because to_pandas fails with
+        """NOTE: need to test this separately because to_pandas fails with
         ArrowNotImplementedError: Not implemented type for list in
         DataFrameBlock: bool
         see https://issues.apache.org/jira/browse/ARROW-4370
