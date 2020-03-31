@@ -57,7 +57,7 @@ public:
 private:
   std::unique_ptr<tensorflow::io::BufferedInputStream> input_stream_;
   const size_t buffer_size_;
-  tensorflow::string chunk_;
+  tensorflow::tstring chunk_;
   size_t pos_ = 0;
   bool do_seek = false;
 };
@@ -96,7 +96,7 @@ AvroRecordReader::AvroRecordReader(RandomAccessFile* file,
   }
 }
 
-Status AvroRecordReader::ReadRecord(uint64* offset, string* record) {
+Status AvroRecordReader::ReadRecord(uint64* offset, tstring* record) {
   // TODO: Wire up offset, setting, seeking etc.  note, may only be possible to sync points
   if (!reader_->read(*datum_)) {
       VLOG(7) << "Could not read datum from file!";

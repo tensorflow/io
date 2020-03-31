@@ -264,7 +264,7 @@ typedef ValueBuffer<int32> IntValueBuffer;
 typedef ValueBuffer<int64> LongValueBuffer;
 typedef ValueBuffer<float> FloatValueBuffer;
 typedef ValueBuffer<double> DoubleValueBuffer;
-typedef ValueBuffer<string> StringValueBuffer;
+typedef ValueBuffer<tstring> StringValueBuffer;
 
 
 // Unfortunately, need to provide type information for casting

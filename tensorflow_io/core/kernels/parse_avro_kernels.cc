@@ -130,7 +130,7 @@ int ResolveDefaultShape(TensorShape* resolved, const PartialTensorShape& default
 
 class StringDatumRangeReader {
  public:
-  StringDatumRangeReader(const gtl::ArraySlice<string>& serialized, size_t start, size_t end)
+  StringDatumRangeReader(const gtl::ArraySlice<tstring>& serialized, size_t start, size_t end)
     : serialized_(serialized), current_(start), end_(end), decoder_(avro::binaryDecoder()) { }
 
   bool read(avro::GenericDatum& datum) {
@@ -145,7 +145,7 @@ class StringDatumRangeReader {
     return false;
   }
  private:
-  const gtl::ArraySlice<string>& serialized_;
+  const gtl::ArraySlice<tstring>& serialized_;
   size_t current_;
   const size_t end_;
   avro::DecoderPtr decoder_;
@@ -158,7 +158,7 @@ class StringDatumRangeReader {
 Status ParseAvro(const AvroParserConfig& config,
                  const AvroParserTree& parser_tree,
                  const avro::ValidSchema& reader_schema,
-                 const gtl::ArraySlice<string>& serialized,
+                 const gtl::ArraySlice<tstring>& serialized,
                  thread::ThreadPool* thread_pool,
                  AvroResult* result) {
   DCHECK(result != nullptr);
@@ -439,8 +439,8 @@ class ParseAvroOp : public OpKernel {
       config.sparse.push_back({sparse_keys_[d], sparse_types_[d]});
     }
 
-    auto serialized_t = serialized->flat<string>();
-    gtl::ArraySlice<string> slice(serialized_t.data(), serialized_t.size());
+    auto serialized_t = serialized->flat<tstring>();
+    gtl::ArraySlice<tstring> slice(serialized_t.data(), serialized_t.size());
 
     AvroResult result;
     OP_REQUIRES_OK(

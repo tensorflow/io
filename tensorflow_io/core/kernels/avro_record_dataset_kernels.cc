@@ -43,8 +43,8 @@ constexpr char kOffset[] = "offset";
 
 class AvroRecordDatasetOp::Dataset : public DatasetBase {
  public:
-  explicit Dataset(OpKernelContext* ctx, std::vector<string> filenames,
-                   int64 buffer_size, const string& reader_schema)
+  explicit Dataset(OpKernelContext* ctx, std::vector<tstring> filenames,
+                   int64 buffer_size, const tstring& reader_schema)
       : DatasetBase(DatasetContext(ctx)),
         filenames_(std::move(filenames)),
         options_(AvroReaderOptions::CreateReaderOptions()) {
@@ -106,7 +106,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
           out_tensors->emplace_back(ctx->allocator({}), DT_STRING,
                                     TensorShape({}));
           Status s =
-              reader_->ReadRecord(&out_tensors->back().scalar<string>()());
+              reader_->ReadRecord(&out_tensors->back().scalar<tstring>()());
           if (s.ok()) {
             *end_of_sequence = false;
             return Status::OK();
@@ -204,7 +204,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     std::unique_ptr<SequentialAvroRecordReader> reader_ GUARDED_BY(mu_);
   };
 
-  const std::vector<string> filenames_;
+  const std::vector<tstring> filenames_;
   AvroReaderOptions options_;
 };
 
@@ -220,11 +220,11 @@ void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
         ctx, filenames_tensor->dims() <= 1,
         errors::InvalidArgument("`filenames` must be a scalar or a vector."));
 
-    std::vector<string> filenames;
+    std::vector<tstring> filenames;
     filenames.reserve(filenames_tensor->NumElements());
     for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
-      VLOG(2) << "Reading file: " << filenames_tensor->flat<string>()(i);
-      filenames.push_back(filenames_tensor->flat<string>()(i));
+      VLOG(2) << "Reading file: " << filenames_tensor->flat<tstring>()(i);
+      filenames.push_back(filenames_tensor->flat<tstring>()(i));
     }
 
     int64 buffer_size = -1;
@@ -233,9 +233,9 @@ void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
     OP_REQUIRES(ctx, buffer_size >= 0,
                 errors::InvalidArgument(
                     "`buffer_size` must be >= 0 (0 == no buffering)"));
-    string reader_schema = "";
+    tstring reader_schema = "";
     OP_REQUIRES_OK(ctx,
-                   ParseScalarArgument<string>(ctx, kReaderSchema, &reader_schema));
+                   ParseScalarArgument<tstring>(ctx, kReaderSchema, &reader_schema));
 
     *output =
         new Dataset(ctx, std::move(filenames), buffer_size, reader_schema);

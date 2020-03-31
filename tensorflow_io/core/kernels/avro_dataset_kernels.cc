@@ -89,7 +89,7 @@ class AvroDatasetOp : public DatasetOpKernel {
     std::vector<string> filenames;
     filenames.reserve(filenames_tensor->NumElements());
     for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
-      filenames.push_back(filenames_tensor->flat<string>()(i));
+      filenames.push_back(filenames_tensor->flat<tstring>()(i));
     }
 
     int64 batch_size;

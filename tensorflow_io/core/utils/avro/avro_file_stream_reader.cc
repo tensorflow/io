@@ -56,7 +56,7 @@ public:
 private:
   tensorflow::io::BufferedInputStream* buffered_input_stream_;
   const size_t avro_data_buffer_size_;
-  tensorflow::string chunk_;
+  tensorflow::tstring chunk_;
   size_t pos_ = 0;
   bool do_seek = false;
 };

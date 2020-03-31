@@ -48,7 +48,7 @@ public:
   // Read the record at "*offset" into *record and update *offset to
   // point to the offset of the next record.  Returns OK on success,
   // OUT_OF_RANGE for end of file, or something else for an error.
-  Status ReadRecord(uint64* offset, string* string);
+  Status ReadRecord(uint64* offset, tstring* string);
 private:
 
   std::unique_ptr<avro::GenericDatum> datum_;
@@ -73,7 +73,7 @@ class SequentialAvroRecordReader {
 
   // Reads the next record in the file into *record. Returns OK on success,
   // OUT_OF_RANGE for end of file, or something else for an error.
-  Status ReadRecord(string* record) {
+  Status ReadRecord(tstring* record) {
     return underlying_.ReadRecord(&offset_, record);
   }
 
