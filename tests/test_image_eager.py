@@ -318,5 +318,39 @@ def test_decode_tiff_geotiff():
     assert np.all(png_image.numpy() == image.numpy())
 
 
+def test_decode_nv12():
+    """Test case for decode_nv12"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.nv12"
+    )
+    png_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.nv12.png"
+    )
+    png = tf.image.decode_png(tf.io.read_file(png_filename))
+
+    contents = tf.io.read_file(filename)
+    rgb = tfio.experimental.image.decode_nv12(contents, size=[256, 256])
+    assert rgb.dtype == tf.uint8
+    assert rgb.shape == [256, 256, 3]
+    assert np.all(rgb == png)
+
+
+def test_decode_yuy2():
+    """Test case for decode_yuy2"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.yuy2"
+    )
+    png_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.yuy2.png"
+    )
+    png = tf.image.decode_png(tf.io.read_file(png_filename))
+
+    contents = tf.io.read_file(filename)
+    rgb = tfio.experimental.image.decode_yuy2(contents, size=[256, 256])
+    assert rgb.dtype == tf.uint8
+    assert rgb.shape == [256, 256, 3]
+    assert np.all(rgb == png)
+
+
 if __name__ == "__main__":
     test.main()

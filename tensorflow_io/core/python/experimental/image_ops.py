@@ -137,7 +137,7 @@ def decode_pnm(contents, dtype=tf.uint8, name=None):
 
 def decode_hdr(contents, name=None):
     """
-    Decode a HDR-encoded image to a uint8 tensor.
+    Decode a HDR-encoded image to a tf.float tensor.
 
     Args:
       contents: A `Tensor` of type `string`. 0-D.  The HDR-encoded image.
@@ -147,3 +147,35 @@ def decode_hdr(contents, name=None):
       A `Tensor` of type `float` and shape of `[height, width, 3]` (RGB).
     """
     return core_ops.io_decode_hdr(contents, name=name)
+
+
+def decode_nv12(contents, size, name=None):
+    """
+    Decode a NV12-encoded image to a uint8 tensor.
+
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The NV12-encoded image.
+      size: A 1-D int32 Tensor of 2 elements: height, width. The size
+        for the images.
+      name: A name for the operation (optional).
+
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
+    """
+    return core_ops.io_decode_nv12(contents, size=size, name=name)
+
+
+def decode_yuy2(contents, size, name=None):
+    """
+    Decode a YUY2-encoded image to a uint8 tensor.
+
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The YUY2-encoded image.
+      size: A 1-D int32 Tensor of 2 elements: height, width. The size
+        for the images.
+      name: A name for the operation (optional).
+
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
+    """
+    return core_ops.io_decode_yuy2(contents, size=size, name=name)

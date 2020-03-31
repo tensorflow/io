@@ -1,6 +1,7 @@
 workspace(name = "org_tensorflow_io")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("//third_party/toolchains/tf:tf_configure.bzl", "tf_configure")
 
 tf_configure(name = "local_config_tf")
@@ -108,6 +109,13 @@ http_archive(
     urls = [
         "https://github.com/openexr/openexr/archive/v2.4.0.tar.gz",
     ],
+)
+
+new_git_repository(
+    name = "libyuv",
+    build_file = "//third_party:libyuv.BUILD",
+    commit = "7f00d67d7c279f13b73d3be9c2d85873a7e2fbaf",
+    remote = "https://chromium.googlesource.com/libyuv/libyuv",
 )
 
 http_archive(

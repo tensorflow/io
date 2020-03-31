@@ -23,4 +23,6 @@ from tensorflow_io.core.python.experimental.image_ops import (  # pylint: disabl
     decode_exr,
     decode_pnm,
     decode_hdr,
+    decode_nv12,
+    decode_yuy2,
 )
