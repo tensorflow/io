@@ -108,7 +108,7 @@ Status AvroRecordReader::ReadRecord(uint64* offset, tstring* record) {
   encoder_->flush();
   VLOG(7) << "Output stream has " << writer_stream->byteCount() << " written.";
   std::unique_ptr<avro::InputStream> reader_stream = avro::memoryInputStream(*writer_stream);
-  uint64_t n_data = 0;
+  size_t n_data = 0;
   const uint8_t* data = nullptr;
   while (reader_stream->next(&data, &n_data)) {
     record->append((const char*) data, n_data);
