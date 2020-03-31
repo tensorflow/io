@@ -157,6 +157,7 @@ REGISTER_OP("IO>ArrowReadableFromMemoryInit")
 REGISTER_OP("IO>ArrowReadableSpec")
   .Input("input: resource")
   .Input("column_index: int32")
+  .Input("column_name: string")
   .Output("shape: int64")
   .Output("dtype: int64")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
@@ -168,6 +169,7 @@ REGISTER_OP("IO>ArrowReadableSpec")
 REGISTER_OP("IO>ArrowReadableRead")
   .Input("input: resource")
   .Input("column_index: int32")
+  .Input("column_name: string")
   .Input("shape: int64")
   .Input("start: int64")
   .Input("stop: int64")
@@ -175,7 +177,7 @@ REGISTER_OP("IO>ArrowReadableRead")
   .Attr("dtype: type")
   .SetShapeFn([](shape_inference::InferenceContext* c) {
     shape_inference::ShapeHandle full;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &full));
+    TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(3, &full));
     if (!(c->RankKnown(full) && c->Rank(full) > 0)) {
       c->set_output(0, full);
       return Status::OK();
