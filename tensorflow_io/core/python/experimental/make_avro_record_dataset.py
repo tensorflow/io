@@ -12,28 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from tensorflow.python.data.experimental.ops import shuffle_ops
-from tensorflow.python.data.ops import dataset_ops
+"""make_avro_record_dataset"""
 
-from tensorflow_io.core.python.experimental.avro_record_dataset_ops import AvroRecordDataset
+import tensorflow as tf
+
+from tensorflow_io.core.python.experimental.avro_record_dataset_ops import (
+    AvroRecordDataset,
+)
 from tensorflow_io.core.python.experimental.parse_avro_ops import parse_avro
 
 # heavily inspired by make_tf_record_dataset from
 # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/data/experimental/ops/readers.py
 
-def make_avro_record_dataset(file_pattern,
-                             features,
-                             batch_size,
-                             reader_schema,
-                             reader_buffer_size=None,
-                             num_epochs=None,
-                             shuffle=True,
-                             shuffle_buffer_size=None,
-                             shuffle_seed=None,
-                             prefetch_buffer_size=dataset_ops.AUTOTUNE,
-                             num_parallel_reads=None,
-                             num_parallel_parser_calls=None,
-                             drop_final_batch=False):
+
+def make_avro_record_dataset(
+    file_pattern,
+    features,
+    batch_size,
+    reader_schema,
+    reader_buffer_size=None,
+    num_epochs=None,
+    shuffle=True,
+    shuffle_buffer_size=None,
+    shuffle_seed=None,
+    prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
+    num_parallel_reads=None,
+    num_parallel_parser_calls=None,
+    drop_final_batch=False,
+):
     """Reads and (optionally) parses avro files into a dataset.
     Provides common functionality such as batching, optional parsing, shuffling,
     and performing defaults.
@@ -76,8 +82,7 @@ def make_avro_record_dataset(file_pattern,
       or a `batch_size`-length 1-D tensor of strings if `parser_fn` is
       unspecified.
     """
-    files = dataset_ops.Dataset.list_files(
-        file_pattern, shuffle=shuffle, seed=shuffle_seed)
+    files = tf.data.Dataset.list_files(file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
     if num_parallel_reads is None:
         # Note: We considered auto-tuning this value, but there is a concern
@@ -87,18 +92,21 @@ def make_avro_record_dataset(file_pattern,
         num_parallel_reads = 24
 
     if reader_buffer_size is None:
-        reader_buffer_size = 1024*1024
+        reader_buffer_size = 1024 * 1024
 
     dataset = AvroRecordDataset(
-        files, buffer_size=reader_buffer_size,
+        files,
+        buffer_size=reader_buffer_size,
         num_parallel_reads=num_parallel_reads,
-        reader_schema=reader_schema)
+        reader_schema=reader_schema,
+    )
 
     if shuffle_buffer_size is None:
         # TODO(josh11b): Auto-tune this value when not specified
         shuffle_buffer_size = 10000
     dataset = _maybe_shuffle_and_repeat(
-        dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed)
+        dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed
+    )
 
     # NOTE(mrry): We set `drop_final_batch=True` when `num_epochs is None` to
     # improve the shape inference, because it makes the batch dimension static.
@@ -109,29 +117,33 @@ def make_avro_record_dataset(file_pattern,
     dataset = dataset.batch(batch_size, drop_remainder=drop_final_batch)
 
     if num_parallel_parser_calls is None:
-        num_parallel_parser_calls = dataset_ops.AUTOTUNE
+        num_parallel_parser_calls = tf.data.experimental.AUTOTUNE
 
-    dataset = dataset.map(lambda data: parse_avro(serialized=data,
-                                                  reader_schema=reader_schema,
-                                                  features=features),
-                          num_parallel_calls=num_parallel_parser_calls)
+    dataset = dataset.map(
+        lambda data: parse_avro(
+            serialized=data, reader_schema=reader_schema, features=features
+        ),
+        num_parallel_calls=num_parallel_parser_calls,
+    )
 
     if prefetch_buffer_size == 0:
         return dataset
-    else:
-        return dataset.prefetch(buffer_size=prefetch_buffer_size)
+    return dataset.prefetch(buffer_size=prefetch_buffer_size)
 
 
 def _maybe_shuffle_and_repeat(
-        dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed):
+    dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed
+):
     """Optionally shuffle and repeat dataset, as requested."""
     if num_epochs != 1 and shuffle:
         # Use shuffle_and_repeat for perf
         return dataset.apply(
-            shuffle_ops.shuffle_and_repeat(shuffle_buffer_size, num_epochs,
-                                           shuffle_seed))
-    elif shuffle:
+            tf.data.experimental.shuffle_and_repeat(
+                shuffle_buffer_size, num_epochs, shuffle_seed
+            )
+        )
+    if shuffle:
         return dataset.shuffle(shuffle_buffer_size, shuffle_seed)
-    elif num_epochs != 1:
+    if num_epochs != 1:
         return dataset.repeat(num_epochs)
     return dataset

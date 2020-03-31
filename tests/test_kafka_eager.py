@@ -37,7 +37,7 @@ def test_kafka_io_tensor():
     assert len(kafka.to_tensor()) == 10
 
 
-@pytest.mark.xfail(reason="TODO")
+@pytest.mark.skip(reason="TODO")
 def test_kafka_output_sequence():
     """Test case based on fashion mnist tutorial"""
     fashion_mnist = tf.keras.datasets.fashion_mnist
