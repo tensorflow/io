@@ -326,7 +326,9 @@ Status ValueBuffer<T>::ResolveDenseShapeWithBatch(TensorShape* shape,
         // Default is trivial, get shape from data and ensure it's consistent with users batched shape
         TensorShape data_shape;
         shape_builder_.GetDenseShape(&data_shape);
-        PartialTensorShape batched_user_shape(PartialTensorShape({batch_size}).Concatenate(user_shape));
+        PartialTensorShape batched_user_shape(PartialTensorShape({static_cast<long long>
+                                                                  (batch_size)}).Concatenate
+                                                                  (user_shape));
         if (!batched_user_shape.IsCompatibleWith(data_shape)) {
             return errors::InvalidArgument("Batched user shape", batched_user_shape,
                             " is incompatible with data shape: ", *shape);
