@@ -16,18 +16,20 @@ limitations under the License.
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow_io/core/utils/avro/parse_avro_attrs.h"
+#include "tensorflow_io/core/avro/utils/parse_avro_attrs.h"
 
 namespace tensorflow {
 
 using ::tensorflow::shape_inference::ShapeHandle;
 
-// Copied verbatim from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
+// Copied verbatim from
+// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
 // since this is not exposed publicly
 // Adds output shapes for dense tensors in Parse*Example ops.
 template <typename TensorShapeType>  // TensorShape or PartialTensorShape
 Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
-                            const ShapeHandle& prefix, shape_inference::InferenceContext* c,
+                            const ShapeHandle& prefix,
+                            shape_inference::InferenceContext* c,
                             int* output_idx) {
   for (const auto& dense_shape : dense_shapes) {
     ShapeHandle s;
@@ -38,11 +40,13 @@ Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
   return Status::OK();
 }
 
-// Copied verbatim from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
+// Copied verbatim from
+// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
 // since this is not exposed publicly
 // Adds output shapes for sparse tensors in Parse*Example ops.
 void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
-                           int64 rank_delta, shape_inference::InferenceContext* c,
+                           int64 rank_delta,
+                           shape_inference::InferenceContext* c,
                            int* output_idx) {
   // Rank of SparseTensor is rank of input tensor plus rank_delta.
   shape_inference::DimensionOrConstant rank(c->UnknownDim());
@@ -78,7 +82,6 @@ REGISTER_OP("IO>ParseAvro")
     .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("dense_shapes: list(shape) >= 0")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-
       size_t num_dense;
       size_t num_sparse;
       int64 num_sparse_from_user;
@@ -128,7 +131,8 @@ REGISTER_OP("IO>ParseAvro")
       string reader_schema_str;
       TF_RETURN_IF_ERROR(c->GetAttr("reader_schema", &reader_schema_str));
       if (reader_schema_str.empty()) {
-        return errors::InvalidArgument("User must provide a valid reader_schema_str, got ",
+        return errors::InvalidArgument(
+            "User must provide a valid reader_schema_str, got ",
             reader_schema_str);
       }
 
@@ -181,9 +185,9 @@ REGISTER_OP("IO>AvroDataset")
     .Attr("dense_shapes: list(shape) >= 0")
     .Attr("output_types: list(type) >= 1")
     .Attr("output_shapes: list(shape) >= 1")
-                                              // Output components will be
-                                              // sorted by key (dense_keys and
-                                              // sparse_keys combined) here.
+    // Output components will be
+    // sorted by key (dense_keys and
+    // sparse_keys combined) here.
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       int64 num_dense;
@@ -230,10 +234,10 @@ REGISTER_OP("IO>ListAvroColumns")
     .Output("columns: string")
     .Output("dtypes: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>ReadAvro")
     .Input("filename: string")
@@ -245,58 +249,58 @@ REGISTER_OP("IO>ReadAvro")
     .Attr("dtype: type")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>AvroReadableInit")
-  .Input("input: string")
-  .Input("metadata: string")
-  .Output("resource: resource")
-  .Output("components: string")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Output("components: string")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>AvroReadableSpec")
-  .Input("input: resource")
-  .Output("shape: int64")
-  .Output("dtype: int64")
-  .Attr("component: string")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .Attr("component: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>AvroReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("component: string")
-  .Attr("filter: list(string) = []")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("value: dtype")
+    .Attr("component: string")
+    .Attr("filter: list(string) = []")
+    .Attr("shape: shape")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      PartialTensorShape shape;
+      TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+      c->set_output(0, entry);
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>AvroReadablePartitions")
-  .Input("input: resource")
-  .Output("partitions: int64")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Output("partitions: int64")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
 }  // namespace tensorflow
