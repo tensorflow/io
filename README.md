@@ -22,8 +22,6 @@ data processing replaced by tensorflow-io:
 ```python
 import tensorflow as tf
 import tensorflow_io as tfio
-import tensorflow_io
-`
 
 # Read MNIST into Dataset
 d_train = tfio.IODataset.from_mnist(
@@ -114,7 +112,7 @@ version of TensorFlow I/O according to the table below:
 
 ### Lint
 
-TensorFlow I/O's code conforms through Pylint, Bazel Buildifier, and Clang Format. The following will check the source code and report any lint issues:
+TensorFlow I/O's code conforms through Pylint, Bazel Buildifier, Clang Format, Black, and Pyupgrade. The following will check the source code and report any lint issues:
 ```sh
 bazel run //tools/lint:check
 ```
@@ -135,6 +133,12 @@ Fix with Bazel Buildifier or Clang Format could be done with:
 ```
 bazel run //tools/lint:lint -- bazel clang
 ```
+
+Check lint with Black or Pyupgrade for an individual python file could be done with:
+```
+bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
+```
+
 
 ### Python
 
