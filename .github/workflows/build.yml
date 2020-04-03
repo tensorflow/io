@@ -386,7 +386,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [lint, linux-wheel, macos-wheel, windows-wheel]
+    needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
