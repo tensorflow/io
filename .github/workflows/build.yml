@@ -158,6 +158,9 @@ jobs:
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: wheelhouse
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
