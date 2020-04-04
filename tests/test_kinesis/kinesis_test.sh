@@ -26,9 +26,8 @@ if [[ $(uname) == "Darwin" ]]; then
     pip install -q --user localstack
     $HOME/Library/Python/2.7/bin/localstack start &
 else
-    pip install --user setuptools
-    pip install --user localstack
-    echo XXXXXX $(sudo find / -name localstack)
-    localstack start &
+    python3 -m pip install --user -U setuptools wheel
+    python3 -m pip install --user localstack
+    $HOME/.local/bin/localstack start &
 fi
 exit 0

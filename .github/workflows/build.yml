@@ -161,6 +161,10 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
+      - run: |
+          set -x -e
+          python -m pip install -U wheel setuptools
+          python --version
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
