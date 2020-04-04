@@ -24,10 +24,12 @@ fi
 
 if [[ $(uname) == "Darwin" ]]; then
     pip install -q --user localstack
-    $HOME/Library/Python/2.7/bin/localstack start &
+    $HOME/Library/Python/2.7/bin/localstack start --host &
 else
-    python3 -m pip install --user -U setuptools wheel
-    python3 -m pip install --user localstack
-    $HOME/.local/bin/localstack start &
+    sudo apt-get install -y -qq python-dev libsasl2-dev gcc
+    python -m pip install --user -U pip
+    python -m pip install --user -U setuptools wheel
+    python -m pip install --user localstack
+    $HOME/.local/bin/localstack start --host &
 fi
 exit 0
