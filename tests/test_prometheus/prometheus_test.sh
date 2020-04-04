@@ -24,16 +24,14 @@ fi
 action=$1
 
 if [ "$action" == "start" ]; then
-cat <<EOF >.coredns
+cat <<EOF >Corefile
 .:1053 {
   whoami 
   prometheus
 }
 EOF
 
-docker run -d --rm --name=tensorflow-io-coredns --net=host -v $PWD/.coredns:/Corefile coredns/coredns
-
-cat <<EOF >.prometheus
+cat <<EOF >prometheus.yml
 global:
   scrape_interval:     1s
   evaluation_interval: 1s
@@ -51,7 +49,15 @@ scrape_configs:
   - targets: ['localhost:9153']
 EOF
 
-docker run -d --rm --name=tensorflow-io-prometheus --net=host -v $PWD/.prometheus:/etc/prometheus/prometheus.yml prom/prometheus
+curl -s -OL https://github.com/prometheus/prometheus/releases/download/v2.15.2/prometheus-2.15.2.linux-amd64.tar.gz
+tar -xzf prometheus-2.15.2.linux-amd64.tar.gz --strip-components=1
+
+curl -s -OL https://github.com/coredns/coredns/releases/download/v1.6.7/coredns_1.6.7_linux_amd64.tgz
+tar -xzf coredns_1.6.7_linux_amd64.tgz
+
+./coredns &
+
+./prometheus &
 
 # wait for coredns and prometheus up
 sleep 5
@@ -63,7 +69,4 @@ dig @localhost -p 1053 www.google.com
 dig @localhost -p 1053 www.google.com
 dig @localhost -p 1053 www.google.com
 
-else
-docker rm -f tensorflow-io-coredns
-docker rm -f tensorflow-io-prometheus
 fi

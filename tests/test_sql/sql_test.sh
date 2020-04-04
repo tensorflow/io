@@ -36,13 +36,11 @@ echo running from "$base"
 action=$1
 container=$2
 if [ "$action" == "start" ]; then
-    echo pull postgres:$VERSION
-    docker pull postgres:$VERSION
-    echo pull postgres:$VERSION successfully
-    docker run -d --rm --net=host --name=$container -v $base:/v -w /v postgres:$VERSION
-    #echo wait 10 secs until container is up and running
-    sleep 10
-    docker exec -i $container bash -c "psql -h localhost -U postgres -f run.sql"
+    sudo apt-get -y -qq update
+    sudo apt-get -y -qq install postgresql
+    sudo service postgresql start
+    sudo -u postgres psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+    sudo -u postgres PGPASSWORD=postgres psql -h localhost -U postgres -f tests/test_sql/run.sql
     echo container $container started successfully
 elif [ "$action" == "stop" ]; then
     docker rm -f $container

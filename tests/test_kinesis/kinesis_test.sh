@@ -25,24 +25,10 @@ fi
 if [[ $(uname) == "Darwin" ]]; then
     pip install -q --user localstack
     $HOME/Library/Python/2.7/bin/localstack start &
-    exit 0
-fi
-
-action=$1
-container=$2
-if [ "$action" == "start" ]; then
-    echo pull localstack/localstack:0.8.10
-    docker pull localstack/localstack:0.8.10
-    echo pull localstack/localstack:0.8.10 successfully
-    docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
-    echo Container $container started successfully
-elif [ "$action" == "stop" ]; then
-    docker rm -f $container
-    echo Container $container removed successfully
 else
-  echo "Usage: $0 start|stop <kinesis container name>" >&2
-  exit 1
+    pip install --user setuptools
+    pip install --user localstack
+    echo XXXXXX $(sudo find / -name localstack)
+    localstack start &
 fi
-
-
-
+exit 0

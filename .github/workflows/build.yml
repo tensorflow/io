@@ -268,7 +268,6 @@ jobs:
       - name: Setup Linux
         run: |
           set -x -e
-          bash -x -e tests/test_ignite/start_ignite.sh
           bash -x -e tests/test_kafka/kafka_test.sh start kafka
           bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
           bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
