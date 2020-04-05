@@ -17,11 +17,6 @@
 set -e
 set -o pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 start|stop <kafka container name>" >&2
-  exit 1
-fi
-
 VERSION=5.4.1
 
 curl -sSOL http://packages.confluent.io/archive/5.4/confluent-community-5.4.1-2.12.tar.gz

@@ -17,9 +17,15 @@
 set -e
 set -o pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 start|stop <kinesis container name>" >&2
-  exit 1
+if [ "$#" -eq 1 ]; then
+  container=$1
+  echo pull localstack/localstack:0.8.10
+  docker pull localstack/localstack:0.8.10
+  echo pull localstack/localstack:0.8.10 successfully
+  docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
+  echo Container $container started successfully
+
+  exit 0
 fi
 
 if [[ $(uname) == "Darwin" ]]; then

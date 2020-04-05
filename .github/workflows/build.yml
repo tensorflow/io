@@ -168,9 +168,9 @@ jobs:
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
-          bash -x -e tests/test_kafka/kafka_test.sh start kafka
+          bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+          bash -x -e tests/test_pubsub/pubsub_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -272,12 +272,12 @@ jobs:
       - name: Setup Linux
         run: |
           set -x -e
-          bash -x -e tests/test_kafka/kafka_test.sh start kafka
-          bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-          bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+          bash -x -e tests/test_kafka/kafka_test.sh
+          bash -x -e tests/test_kinesis/kinesis_test.sh
+          bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_sql/sql_test.sh start sql
+          bash -x -e tests/test_sql/sql_test.sh
       - name: Test Linux
         run: |
           set -x -e
