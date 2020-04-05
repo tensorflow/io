@@ -52,9 +52,21 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           set -x -e
-          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04" > source.sh
+          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:18.04 \
+            bash -x -e source.sh
+
+  ubuntu-2004:
+    name: Ubuntu 20.04
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
             bash -x -e source.sh
 
   centos-8:
