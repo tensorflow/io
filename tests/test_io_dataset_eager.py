@@ -886,7 +886,10 @@ def fixture_sql():
 
     def func(q):
         dataset = tfio.experimental.IODataset.from_sql(
-            q, endpoint="postgresql://postgres@localhost?port=5432&dbname=test_db"
+            q,
+            endpoint=(
+                "postgresql://postgres:postgres@localhost?port=5432&dbname=test_db"
+            ),
         )
         dataset = dataset.map(
             lambda v: (v["id"], v["i32"], v["i64"], v["f32"], v["f64"])
@@ -916,7 +919,9 @@ def fixture_sql_graph():
     def func(q):
         dataset = tfio.experimental.IODataset.from_sql(
             q,
-            endpoint="postgresql://postgres@localhost?port=5432&dbname=test_db",
+            endpoint=(
+                "postgresql://postgres:postgres@localhost?port=5432&dbname=test_db"
+            ),
             spec={
                 "id": tf.TensorSpec([None], tf.int64),
                 "i32": tf.TensorSpec([None], tf.int32),
