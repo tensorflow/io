@@ -15,7 +15,6 @@
 """Tests for IGFS."""
 
 import os
-import sys
 import platform
 
 import pytest
@@ -31,8 +30,7 @@ from tensorflow.compat.v1 import gfile  # pylint: disable=wrong-import-position
 
 import tensorflow_io.ignite as ignite_io  # pylint: disable=wrong-import-position
 
-if sys.platform == "darwin":
-    pytest.skip("ignite+java 10 is failing on macOS", allow_module_level=True)
+pytest.skip("ignite+java 10 is failing", allow_module_level=True)
 
 
 class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init

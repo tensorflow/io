@@ -70,12 +70,12 @@ ls wheelhouse/*
 
 ## Set test services
 bash -x -e tests/test_ignite/start_ignite.sh
-bash -x -e tests/test_kafka/kafka_test.sh start kafka
-bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+bash -x -e tests/test_kafka/kafka_test.sh
+bash -x -e tests/test_kinesis/kinesis_test.sh kinesis
+bash -x -e tests/test_pubsub/pubsub_test.sh pubsub
 bash -x -e tests/test_prometheus/prometheus_test.sh start
 bash -x -e tests/test_azure/start_azure.sh
-bash -x -e tests/test_sql/sql_test.sh start sql
+bash -x -e tests/test_sql/sql_test.sh sql
 
 docker run -i --rm -v $PWD:/v -w /v --net=host \
   buildpack-deps:18.04 bash -x -e .github/workflows/build.wheel.sh python${PYTHON_VERSION}
