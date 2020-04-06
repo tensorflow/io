@@ -17,32 +17,25 @@
 set -e
 set -o pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 start|stop <kinesis container name>" >&2
-  exit 1
+if [ "$#" -eq 1 ]; then
+  container=$1
+  echo pull localstack/localstack:0.8.10
+  docker pull localstack/localstack:0.8.10
+  echo pull localstack/localstack:0.8.10 successfully
+  docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
+  echo Container $container started successfully
+
+  exit 0
 fi
 
 if [[ $(uname) == "Darwin" ]]; then
     pip install -q --user localstack
-    $HOME/Library/Python/2.7/bin/localstack start &
-    exit 0
-fi
-
-action=$1
-container=$2
-if [ "$action" == "start" ]; then
-    echo pull localstack/localstack:0.8.10
-    docker pull localstack/localstack:0.8.10
-    echo pull localstack/localstack:0.8.10 successfully
-    docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
-    echo Container $container started successfully
-elif [ "$action" == "stop" ]; then
-    docker rm -f $container
-    echo Container $container removed successfully
+    $HOME/Library/Python/2.7/bin/localstack start --host &
 else
-  echo "Usage: $0 start|stop <kinesis container name>" >&2
-  exit 1
+    sudo apt-get install -y -qq python-dev libsasl2-dev gcc
+    python -m pip install --user -U pip
+    python -m pip install --user -U setuptools wheel
+    python -m pip install --user localstack
+    $HOME/.local/bin/localstack start --host &
 fi
-
-
-
+exit 0

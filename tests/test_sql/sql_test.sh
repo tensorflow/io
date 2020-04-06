@@ -19,9 +19,22 @@ set -e
 set -o pipefail
 
 VERSION=12.1
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 start|stop <sql container name>" >&2
-  exit 1
+if [ "$#" -eq 1 ]; then
+  script=$(readlink -f "$0")
+  base=$(dirname "$script")
+  echo running from "$base"
+
+  container=$1
+  echo pull postgres:$VERSION
+  docker pull postgres:$VERSION
+  echo pull postgres:$VERSION successfully
+  docker run -d --rm --net=host --name=$container -v $base:/v -w /v postgres:$VERSION
+  #echo wait 10 secs until container is up and running
+  sleep 10
+  docker exec -i $container bash -c "psql -h localhost -U postgres -f run.sql"
+  echo container $container started successfully
+
+  exit 0
 fi
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -33,24 +46,10 @@ script=$(readlink -f "$0")
 base=$(dirname "$script")
 echo running from "$base"
 
-action=$1
-container=$2
-if [ "$action" == "start" ]; then
-    echo pull postgres:$VERSION
-    docker pull postgres:$VERSION
-    echo pull postgres:$VERSION successfully
-    docker run -d --rm --net=host --name=$container -v $base:/v -w /v postgres:$VERSION
-    #echo wait 10 secs until container is up and running
-    sleep 10
-    docker exec -i $container bash -c "psql -h localhost -U postgres -f run.sql"
-    echo container $container started successfully
-elif [ "$action" == "stop" ]; then
-    docker rm -f $container
-    echo container $container removed successfully
-else
-  echo "usage: $0 start|stop <sql container name>" >&2
-  exit 1
-fi
-
-
-
+sudo apt-get -y -qq update
+sudo apt-get -y -qq install postgresql
+sudo service postgresql start
+sudo -u postgres psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
+sudo -u postgres PGPASSWORD=postgres psql -h localhost -U postgres -f tests/test_sql/run.sql
+echo container $container started successfully
+exit 0
