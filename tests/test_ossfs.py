@@ -82,6 +82,10 @@ class OSSFSTest(test.TestCase):
         self.assertFalse(gfile.Exists(f))
         self.assertTrue(gfile.Exists(f2))
 
+        f3 = get_oss_path("test_file_3")
+        gfile.Copy(f2, f3, overwrite=True)
+        self.assertTrue(gfile.Exists(f3))
+
     def test_dir_operations(self):
         """ Test directory operations"""
 
@@ -139,6 +143,23 @@ class OSSFSTest(test.TestCase):
         content_s = gfile.ListDirectory(get_oss_path("rename_d1/"))
         self.assertEqual(content, content_s)
         self.assertIn("d2", content)
+
+        # Test Rename non-empty directories
+        not_empty_dir = get_oss_path("not_empty_dir/")
+        rename_not_empty_dir = get_oss_path("rename_not_empty_dir/")
+        gfile.MakeDirs(not_empty_dir)
+        not_empty_file = get_oss_path("not_empty_dir/not_empty_file")
+        rename_not_empty_file = get_oss_path("rename_not_empty_dir/not_empty_file")
+        with gfile.Open(not_empty_file, mode="w") as fh:
+            content = "file content"
+            fh.write(content)
+        self.assertTrue(gfile.Exists(not_empty_dir))
+        self.assertTrue(gfile.Exists(not_empty_file))
+        gfile.Rename(not_empty_dir, rename_not_empty_dir, overwrite=True)
+        self.assertFalse(gfile.Exists(not_empty_dir))
+        self.assertFalse(gfile.Exists(not_empty_file))
+        self.assertTrue(gfile.Exists(rename_not_empty_dir))
+        self.assertTrue(gfile.Exists(rename_not_empty_file))
 
 
 if __name__ == "__main__":
