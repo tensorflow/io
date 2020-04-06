@@ -130,7 +130,9 @@ class OSSRandomAccessFile : public RandomAccessFile {
 
   Status Read(uint64 offset, size_t n, StringPiece* result,
               char* scratch) const override {
-    if (offset > total_file_length_) {
+    // offset is 0 based, so last offset should be
+    // just before total_file_length_
+    if (offset >= total_file_length_) {
       return errors::OutOfRange("EOF reached, ", offset,
                                 " is read out of file length ",
                                 total_file_length_);
