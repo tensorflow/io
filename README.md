@@ -187,10 +187,10 @@ Development of tensorflow-io on Linux is similiar to development on macOS. The r
 are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
 versions might be required though.
 
-##### Ubuntu 18.04
+##### Ubuntu 18.04/20.04
 
-Ubuntu 18.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
-the shared libraries on Ubuntu 18.04:
+Ubuntu 18.04/20.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 18.04/20.04:
 ```sh
 # Install gcc/g++, git, unzip/curl (for bazel), and python3
 sudo apt-get -y -qq update
@@ -203,7 +203,10 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
-# Install tensorflow and configure bazel
+# Install latest tensorflow
+sudo python3 -m pip install tensorflow
+
+# Configure bazel
 ./configure.sh
 
 # Build shared libraries
@@ -219,7 +222,7 @@ TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.p
 ##### CentOS 8
 
 CentOS 8 requires gcc/g++, git, and python 3. The following will install dependencies and build
-the shared libraries on Ubuntu 18.04:
+the shared libraries on CentOS 8:
 ```sh
 # Install gcc/g++, git, unzip/which (for bazel), and python3
 sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
