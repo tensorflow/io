@@ -1035,12 +1035,18 @@ Status OSSFileSystem::RenameFile(const std::string& src,
 
   Status status = IsDirectory(src);
   if (status.ok()) {
+    if (!str_util::EndsWith(sobject, "/")){
+      sobject += "/";
+    }
+    if (!str_util::EndsWith(dobject, "/")){
+      dobject += "/";
+    }
     std::vector<std::string> childPaths;
     _ListObjects(pool, oss_options, sbucket, sobject, &childPaths, true, false,
                  false, 1000);
     for (const auto& child : childPaths) {
-      std::string tmp_sobject = sobject + "/" + child;
-      std::string tmp_dobject = dobject + "/" + child;
+      std::string tmp_sobject = sobject + child;
+      std::string tmp_dobject = dobject + child;
 
       aos_str_set(&source_object, tmp_sobject.c_str());
       aos_str_set(&dest_object, tmp_dobject.c_str());
@@ -1058,14 +1064,6 @@ Status OSSFileSystem::RenameFile(const std::string& src,
                                 " failed, errMsg: ", msg);
       }
       _DeleteObjectInternal(oss_options, sbucket, tmp_sobject);
-    }
-
-    if (!str_util::EndsWith(sobject, "/")) {
-      sobject += "/";
-    }
-
-    if (!str_util::EndsWith(dobject, "/")) {
-      dobject += "/";
     }
   }
 
