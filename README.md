@@ -234,10 +234,7 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
-# Install latest tensorflow
-sudo python3 -m pip install tensorflow
-
-# Configure bazel
+# Install tensorflow and configure bazel
 ./configure.sh
 
 # Build shared libraries
