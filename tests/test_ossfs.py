@@ -82,6 +82,10 @@ class OSSFSTest(test.TestCase):
         self.assertFalse(gfile.Exists(f))
         self.assertTrue(gfile.Exists(f2))
 
+        f3 = get_oss_path("test_file_3")
+        gfile.Copy(f2, f3, overwrite=True)
+        self.assertTrue(gfile.Exists(f3))
+
     def test_dir_operations(self):
         """ Test directory operations"""
 
