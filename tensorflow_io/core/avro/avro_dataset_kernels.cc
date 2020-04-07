@@ -21,7 +21,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 
-#include "tensorflow_io/core/utils/avro/avro_file_stream_reader.h"
+#include "tensorflow_io/core/avro/utils/avro_file_stream_reader.h"
 
 // As boiler plate I used
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/framework/dataset.h  DatasetBase

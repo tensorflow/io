@@ -23,7 +23,7 @@ limitations under the License.
 #include "api/Compiler.hh"
 #include "api/Decoder.hh"
 
-#include "tensorflow_io/core/utils/avro/avro_parser_tree.h"
+#include "tensorflow_io/core/avro/utils/avro_parser_tree.h"
 
 
 namespace tensorflow {
