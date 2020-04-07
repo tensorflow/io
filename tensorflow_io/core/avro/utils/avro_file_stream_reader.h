@@ -12,13 +12,13 @@ limitations under the License.
 #ifndef TENSORFLOW_DATA_AVRO_FILE_STREAM_READER_H_
 #define TENSORFLOW_DATA_AVRO_FILE_STREAM_READER_H_
 
+#include "api/DataFile.hh"
+#include "api/Stream.hh"
+#include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
 #include "tensorflow_io/core/avro/utils/avro_parser_tree.h"
-#include "tensorflow/core/lib/core/status.h"
-#include "api/Stream.hh"
-#include "api/DataFile.hh"
 
 namespace tensorflow {
 namespace data {
@@ -26,7 +26,6 @@ namespace data {
 // Container for the parser configuration that holds
 //    - dense tensor information (name, type, shape, default, variable length)
 struct AvroParseConfig {
-
   // Parse configuration for dense tensors
   struct Dense {
     // The feature name
@@ -73,7 +72,6 @@ struct AvroParseConfig {
   int64 avro_data_buffer_size;
 };
 
-
 // Container for the
 //    - sparse indices,
 //    - sparse values,
@@ -86,40 +84,41 @@ struct AvroResult {
   std::vector<Tensor> dense_values;
 };
 
-
 // The avro reader does the following
 //    1. streams data from a random access file by blocks
 //    2. feeds stream into avro stream to decode blocks into avro generic datum
 //    3. parses the avro generic datum into tensors
 // Supports batching
 class AvroFileStreamReader {
-public:
+ public:
   AvroFileStreamReader(Env* env, const string& filename,
-    const string& reader_schema_str, const AvroParseConfig& config)
-    : env_(env),
-      filename_(filename),
-      reader_schema_str_(reader_schema_str),
-      config_(config),
-      file_(nullptr),
-      input_stream_(nullptr),
-      buffered_input_stream_(nullptr),
-      reader_(nullptr),
-      allocator_(tensorflow::cpu_allocator()) { }
+                       const string& reader_schema_str,
+                       const AvroParseConfig& config)
+      : env_(env),
+        filename_(filename),
+        reader_schema_str_(reader_schema_str),
+        config_(config),
+        file_(nullptr),
+        input_stream_(nullptr),
+        buffered_input_stream_(nullptr),
+        reader_(nullptr),
+        allocator_(tensorflow::cpu_allocator()) {}
 
   // Open file and stream into file
   Status OnWorkStartup();
 
   // Reads up to batch_size elements and parses them into tensors
   Status Read(AvroResult* result);
-private:
 
-  // Checks that there are no duplicate keys in the sparse feature names and dense feature names
+ private:
+  // Checks that there are no duplicate keys in the sparse feature names and
+  // dense feature names
   std::vector<std::pair<string, DataType>> CreateKeysAndTypesFromConfig();
 
   // Resolves the shape from defaults into a dense tensor shape
   static int ResolveDefaultShape(TensorShape* resolved,
-    const PartialTensorShape& default_shape,
-    int64 batch_size);
+                                 const PartialTensorShape& default_shape,
+                                 int64 batch_size);
 
   // TensorFlow env for IO
   Env* env_;
@@ -143,7 +142,7 @@ private:
   std::unique_ptr<io::BufferedInputStream> buffered_input_stream_;
 
   // Avro data file reader to read generic datum from file stream
-  std::unique_ptr<avro::DataFileReader<avro::GenericDatum> > reader_;
+  std::unique_ptr<avro::DataFileReader<avro::GenericDatum>> reader_;
 
   // Avro schema
   avro::ValidSchema reader_schema_;
@@ -151,7 +150,8 @@ private:
   // The parser tree that this reader leverages to parse the data into tensors
   AvroParserTree avro_parser_tree_;
 
-  // Cache allocator here to avoid lock contention in `tensorflow::cpu_allocator()`
+  // Cache allocator here to avoid lock contention in
+  // `tensorflow::cpu_allocator()`
   Allocator* allocator_;
 };
 

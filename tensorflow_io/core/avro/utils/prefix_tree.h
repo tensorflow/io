@@ -12,9 +12,9 @@ limitations under the License.
 #ifndef TENSORFLOW_DATA_PREFIX_TREE_H_
 #define TENSORFLOW_DATA_PREFIX_TREE_H_
 
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace tensorflow {
 namespace data {
@@ -24,13 +24,16 @@ using PrefixTreeNodeSharedPtr = std::shared_ptr<PrefixTreeNode>;
 
 // A prefix tree node
 class PrefixTreeNode {
-public:
+ public:
   // Constructs a prefix tree node for the given prefix and father
-  PrefixTreeNode(const std::string& prefix = "", PrefixTreeNode* father = nullptr);
+  PrefixTreeNode(const std::string& prefix = "",
+                 PrefixTreeNode* father = nullptr);
 
   // Get the children of this tree node
   // TODO(fraudies): For better performance convert this into an iterator
-  inline std::vector<PrefixTreeNodeSharedPtr> GetChildren() const { return children_; }
+  inline std::vector<PrefixTreeNodeSharedPtr> GetChildren() const {
+    return children_;
+  }
 
   // Get the prefix for this tree node
   inline std::string GetPrefix() const { return prefix_; };
@@ -52,7 +55,8 @@ public:
 
   // Return a string representation of this tree node in human readable format
   std::string ToString(int level) const;
-private:
+
+ private:
   // The prefix for this tree node
   std::string prefix_;
 
@@ -66,7 +70,7 @@ private:
 // An ordered prefix tree maintains the order of it's children
 // This order is defined by
 class OrderedPrefixTree {
-public:
+ public:
   // Construct a prefix tree with the optional root_name
   OrderedPrefixTree(const std::string& root_name = "");
 
@@ -76,28 +80,33 @@ public:
   // Get the root of the prefix tree
   inline PrefixTreeNodeSharedPtr GetRoot() const { return root_; }
 
-  // Tries to insert these prefixes; no changes are made to the tree if they don't exist yet
+  // Tries to insert these prefixes; no changes are made to the tree if they
+  // don't exist yet
   void Insert(const std::vector<std::string>& prefixes);
 
   // Builds an ordered prefix tree for the provided list of prefixes.
-  static void Build(OrderedPrefixTree* tree, const std::vector<std::vector<std::string>>& prefixes_list);
+  static void Build(OrderedPrefixTree* tree,
+                    const std::vector<std::vector<std::string>>& prefixes_list);
 
-  // Will return the node as far as the prefixes could be matched and put the unmatched part in remaining
-  PrefixTreeNodeSharedPtr FindNearest(std::vector<std::string>* remaining,
-    const std::vector<std::string>& prefixes) const;
+  // Will return the node as far as the prefixes could be matched and put the
+  // unmatched part in remaining
+  PrefixTreeNodeSharedPtr FindNearest(
+      std::vector<std::string>* remaining,
+      const std::vector<std::string>& prefixes) const;
 
   // Returns tree node if found otherwise nullptr
   PrefixTreeNodeSharedPtr Find(const std::vector<std::string>& prefixes) const;
 
-  // Returns a string representation of the ordered prefix tree in a human readable format
+  // Returns a string representation of the ordered prefix tree in a human
+  // readable format
   std::string ToString() const;
-private:
 
+ private:
   // The root node for this prefix tree
   PrefixTreeNodeSharedPtr root_;
 };
 
-}
-}
+}  // namespace data
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_PREFIX_TREE_H_
+#endif  // TENSORFLOW_DATA_PREFIX_TREE_H_

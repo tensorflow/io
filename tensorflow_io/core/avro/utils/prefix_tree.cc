@@ -9,14 +9,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include <sstream>
 #include "tensorflow_io/core/avro/utils/prefix_tree.h"
+#include <sstream>
 
 namespace tensorflow {
 namespace data {
 
-PrefixTreeNode::PrefixTreeNode(const std::string& prefix, PrefixTreeNode* father)
-  : prefix_(prefix), father_(father) { }
+PrefixTreeNode::PrefixTreeNode(const std::string& prefix,
+                               PrefixTreeNode* father)
+    : prefix_(prefix), father_(father) {}
 
 std::string PrefixTreeNode::GetName(char separator) const {
   std::string name;
@@ -31,7 +32,8 @@ std::string PrefixTreeNode::GetName(char separator) const {
 
 // TODO(fraudies): Could be optimized by using a set in addition to the vector
 // Vector will be used for order and the set for fast access
-PrefixTreeNodeSharedPtr PrefixTreeNode::Find(const std::string& child_prefix) const {
+PrefixTreeNodeSharedPtr PrefixTreeNode::Find(
+    const std::string& child_prefix) const {
   for (auto child : children_) {
     std::string prefix((*child).GetPrefix());
     if (prefix.compare(child_prefix) == 0) {
@@ -41,8 +43,10 @@ PrefixTreeNodeSharedPtr PrefixTreeNode::Find(const std::string& child_prefix) co
   return nullptr;
 }
 
-PrefixTreeNodeSharedPtr PrefixTreeNode::FindOrAddChild(const std::string& child_prefix) {
-  // If we could not find it make it, add it, and assign it; otherwise we assigned it
+PrefixTreeNodeSharedPtr PrefixTreeNode::FindOrAddChild(
+    const std::string& child_prefix) {
+  // If we could not find it make it, add it, and assign it; otherwise we
+  // assigned it
   PrefixTreeNodeSharedPtr child(Find(child_prefix));
   if (child == nullptr) {
     // Note, the child we found will be the father
@@ -69,7 +73,7 @@ std::string PrefixTreeNode::ToString(int level) const {
 // Ordered prefix tree
 // -------------------------------------------------------------------------------------------------
 OrderedPrefixTree::OrderedPrefixTree(const std::string& root_name)
-  : root_(new PrefixTreeNode(root_name)) { }
+    : root_(new PrefixTreeNode(root_name)) {}
 
 void OrderedPrefixTree::Insert(const std::vector<std::string>& prefixes) {
   PrefixTreeNodeSharedPtr node = root_;
@@ -78,15 +82,18 @@ void OrderedPrefixTree::Insert(const std::vector<std::string>& prefixes) {
   }
 }
 
-void OrderedPrefixTree::Build(OrderedPrefixTree* tree,
-  const std::vector<std::vector<std::string>>& prefixes_list) {
-  for (auto prefixes = prefixes_list.begin(); prefixes != prefixes_list.end(); ++prefixes) {
+void OrderedPrefixTree::Build(
+    OrderedPrefixTree* tree,
+    const std::vector<std::vector<std::string>>& prefixes_list) {
+  for (auto prefixes = prefixes_list.begin(); prefixes != prefixes_list.end();
+       ++prefixes) {
     (*tree).Insert(*prefixes);
   }
 }
 
-PrefixTreeNodeSharedPtr OrderedPrefixTree::FindNearest(std::vector<std::string>* remaining,
-  const std::vector<std::string>& prefixes) const {
+PrefixTreeNodeSharedPtr OrderedPrefixTree::FindNearest(
+    std::vector<std::string>* remaining,
+    const std::vector<std::string>& prefixes) const {
   // copy vector elements
   *remaining = prefixes;
   // If the root has a prefix
@@ -117,7 +124,8 @@ PrefixTreeNodeSharedPtr OrderedPrefixTree::FindNearest(std::vector<std::string>*
   return node;
 }
 
-PrefixTreeNodeSharedPtr OrderedPrefixTree::Find(const std::vector<std::string>& prefixes) const {
+PrefixTreeNodeSharedPtr OrderedPrefixTree::Find(
+    const std::vector<std::string>& prefixes) const {
   std::vector<std::string> remaining;
   PrefixTreeNodeSharedPtr node = FindNearest(&remaining, prefixes);
   return remaining.size() == 0 ? node : nullptr;
@@ -127,5 +135,5 @@ std::string OrderedPrefixTree::ToString() const {
   return root_.get() != nullptr ? (*root_).ToString(0) : "empty tree";
 }
 
-}
-}
+}  // namespace data
+}  // namespace tensorflow
