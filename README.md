@@ -324,6 +324,7 @@ to run all tests, execute the following commands:
 $ bash -x -e tests/test_ignite/start_ignite.sh
 $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+$ bash -x -e tests/test_bigtable/bigtable_test.sh start bigtable
 ```
 
 #### Running Python and Bazel Style Checks

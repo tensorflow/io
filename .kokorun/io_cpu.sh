@@ -72,7 +72,7 @@ ls wheelhouse/*
 bash -x -e tests/test_ignite/start_ignite.sh
 bash -x -e tests/test_kafka/kafka_test.sh start kafka
 bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
-bash -x -e tests/test_pubsub/pubsub_test.sh start pubsub
+bash -x -e tests/test_pubsub/bigtable_test.sh start pubsub
 bash -x -e tests/test_prometheus/prometheus_test.sh start
 bash -x -e tests/test_azure/start_azure.sh
 bash -x -e tests/test_sql/sql_test.sh start sql

@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License.  You may obtain a copy of
@@ -983,6 +983,64 @@ def fixture_video_capture():
 
     return args, func, expected
 
+@pytest.fixture(name="bigtable")
+def fixture_bigtable():
+    """fixture_bigtable"""
+
+    from google.auth.credentials import AnonymousCredentials
+    from google.cloud.bigtable import Client
+    import os
+    import datetime
+    from google.cloud.bigtable import column_family
+
+    project_id = "tf_io_bigtable_Project";
+    instance_id = "tf_io_instance";
+    table_id = "tf_io_table-" + datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M-%S-%f');
+    column_family_id = 'tf_io_cf';
+
+    os.environ["BIGTABLE_EMULATOR_HOST"] = 'localhost:8086';
+
+    client = Client(project=project_id,
+            credentials=AnonymousCredentials(),
+            admin=True)
+    instance = client.instance(instance_id)
+
+    print('Creating the {} table.'.format(table_id))
+    table = instance.table(table_id)
+
+    print('Creating column family with Max Version GC rule...')
+    max_versions_rule = column_family.MaxVersionsGCRule(2)
+    column_families = {column_family_id: max_versions_rule}
+    if not table.exists():
+        table.create(column_families=column_families)
+    else:
+        print("Table {} already exists.".format(table_id))
+
+    print('Writing record to the table.')
+    record_value = 'Testing BigTable integration with Tensorflow IO!'
+    rows = []
+    column = 'first_column'.encode()
+    row_key = 'record1'.encode()
+    row = table.direct_row(row_key)
+    row.set_cell(column_family_id,
+                 column,
+                 record_value,
+                 timestamp=datetime.datetime.utcnow())
+    rows.append(row)
+    table.mutate_rows(rows)
+
+    args = row_key;
+
+    def func(q):
+        v = tfio.experimental.IODataset.from_bigtable(
+            q, project_id, instance_id, table_id);
+        v = v.map(lambda e: e.data);
+        return v;
+
+    expected = [record_value];
+
+    return args, func, expected
+
 
 # This test make sure dataset works in tf.keras inference.
 # The requirement for tf.keras inference is the support of `iter()`:
@@ -1060,6 +1118,7 @@ def fixture_video_capture():
                 ),
             ],
         ),
+        pytest.param("bigtable"),
     ],
     ids=[
         "mnist",
@@ -1085,6 +1144,7 @@ def fixture_video_capture():
         "kafka[stream]",
         "sql",
         "capture[video]",
+        "bigtable",
     ],
 )
 def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):

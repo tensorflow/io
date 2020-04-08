@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ from tensorflow_io.core.python.experimental import file_dataset_ops
 from tensorflow_io.core.python.experimental import numpy_dataset_ops
 from tensorflow_io.core.python.experimental import sql_dataset_ops
 from tensorflow_io.core.python.experimental import video_dataset_ops
+from tensorflow_io.core.python.experimental import bigtable_dataset_ops
 
 
 class IODataset(io_dataset.IODataset):
@@ -254,6 +255,21 @@ class IODataset(io_dataset.IODataset):
     """
         with tf.name_scope(kwargs.get("name", "IOToText")):
             return file_dataset_ops.to_file(dataset, filename)
+
+    @classmethod
+    def from_bigtable(cls, project=None, instance=None, table=None, **kwargs):
+        """Creates an `StreamIODataset` from a pubsub endpoint.
+
+    Args:
+      endpoint: A string, the address of pubsub endpoint.
+      timeout: An integer, the timeout of the pubsub pull.
+      name: A name prefix for the IODataset (optional).
+
+    Returns:
+      A `IODataset`.
+    """
+        with tf.name_scope(kwargs.get("name", "IOFromBigTable")):
+            return bigtable_dataset_ops.BigTableIODataset(project, instance, table)
 
 
 class StreamIODataset(tf.data.Dataset):
