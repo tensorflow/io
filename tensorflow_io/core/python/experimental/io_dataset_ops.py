@@ -258,12 +258,10 @@ class IODataset(io_dataset.IODataset):
 
     @classmethod
     def from_bigtable(cls, project=None, instance=None, table=None, **kwargs):
-        """Creates an `StreamIODataset` from a pubsub endpoint.
+        """Creates an `BigTableIODataset` from a bigtable endpoint.
 
     Args:
-      endpoint: A string, the address of pubsub endpoint.
-      timeout: An integer, the timeout of the pubsub pull.
-      name: A name prefix for the IODataset (optional).
+        ##TODO: add argument docs
 
     Returns:
       A `IODataset`.
