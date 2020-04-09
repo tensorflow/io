@@ -100,7 +100,8 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
     apiv1beta1::ReadRowsRequest readRowsRequest;
     readRowsRequest.mutable_read_position()->mutable_stream()->set_name(
         this->dataset()->stream());
-    readRowsRequest.mutable_read_position()->set_offset(0);
+    readRowsRequest.mutable_read_position()->set_offset(
+        this->dataset()->offset());
 
     read_rows_context_ = absl::make_unique<::grpc::ClientContext>();
     read_rows_context_->AddMetadata(
@@ -226,6 +227,12 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
         case avro::AVRO_ENUM:
           ((*out_tensors)[i]).scalar<tstring>()() =
               field.value<avro::GenericEnum>().symbol();
+          break;
+        case avro::AVRO_BYTES: {
+          const std::vector<uint8_t>& field_value = field.value<std::vector<uint8_t>>();
+          ((*out_tensors)[i]).scalar<tstring>()() =
+              string((char *)&field_value[0], field_value.size());
+          }
           break;
         case avro::AVRO_NULL:
           switch(output_types[i]) {

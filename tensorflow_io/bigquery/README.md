@@ -14,7 +14,7 @@ In order to use BigQuery connector, you need to make sure that Google Cloud SDK
 is propertly configured and that you have BigQuery Storage API enabled.
 Depending on environment you are using some prerequisites might be already met.
 
-1. [Select or create a GCP project.](https://pantheon.corp.google.com/projectselector2/home/dashboard)
+1. [Select or create a GCP project.](https://console.cloud.google.com/cloud-resource-manager)
 2. [Install and initialize the Cloud SDK.](https://cloud.google.com/sdk/docs/)
 3. [Setup Authentication.](https://cloud.google.com/docs/authentication/#service_accounts)
 If you choose to use [service account](https://cloud.google.com/docs/authentication/production)
