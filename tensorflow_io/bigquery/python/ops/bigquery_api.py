@@ -185,11 +185,12 @@ class BigQueryReadSession:
     """
         return self._streams
 
-    def read_rows(self, stream):
+    def read_rows(self, stream, offset=0):
         """Retrieves rows (including values) from the BigQuery service.
 
     Args:
       stream: name of the stream to read from.
+      offset: Position in the stream.
 
     Returns:
       A `tf.data.Dataset` returning the row keys and the cell contents.
@@ -203,6 +204,7 @@ class BigQueryReadSession:
             self._output_types,
             self._avro_schema,
             stream,
+            offset,
         )
 
     @deprecation.deprecated_args(
@@ -212,7 +214,7 @@ class BigQueryReadSession:
         "sloppy",
     )
     def parallel_read_rows(
-        self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None
+        self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None,
     ):
         """Retrieves rows from the BigQuery service in parallel streams.
 
@@ -270,9 +272,14 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
     """_BigQueryDataset represents a dataset that retrieves keys and values."""
 
     def __init__(
-        self, client_resource, selected_fields, output_types, avro_schema, stream
+        self,
+        client_resource,
+        selected_fields,
+        output_types,
+        avro_schema,
+        stream,
+        offset,
     ):
-
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
@@ -295,6 +302,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
             output_types=output_types,
             avro_schema=avro_schema,
             stream=stream,
+            offset=offset,
         )
         super().__init__(variant_tensor)
 

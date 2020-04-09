@@ -41,20 +41,14 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     """Fake server for Cloud BigQuery Storage API."""
 
     def __init__(
-        self,
-        avro_schema,
-        avro_serialized_rows_per_stream,
-        avro_serialized_rows_count_per_stream,
+        self, avro_schema, rows_per_stream,
     ):
         self._project_id = ""
         self._table_id = ""
         self._dataset_id = ""
         self._streams = list()
-        self._avro_serialized_rows_per_stream = avro_serialized_rows_per_stream
-        self._avro_serialized_rows_count_per_stream = (
-            avro_serialized_rows_count_per_stream
-        )
         self._avro_schema = avro_schema
+        self._rows_per_stream = rows_per_stream
 
         self._grpc_server = grpc.server(
             concurrent.futures.ThreadPoolExecutor(max_workers=4)
@@ -84,6 +78,17 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
             + str(stream_index)
         )
 
+    @staticmethod
+    def serialize_to_avro(rows, schema):
+        """Serializes specified rows into avro format."""
+        string_output = BytesIO()
+        json_schema = json.loads(schema)
+        for row in rows:
+            fastavro.schemaless_writer(string_output, json_schema, row)
+        avro_output = string_output.getvalue()
+        string_output.close()
+        return avro_output
+
     def CreateReadSession(self, request, context):  # pylint: disable=unused-argument
         """CreateReadSession"""
         print("called CreateReadSession on a fake server")
@@ -102,16 +107,16 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
 
     def ReadRows(self, request, context):  # pylint: disable=unused-argument
         """ReadRows"""
-        print("called ReadRows on a fake server")
+        print("called ReadRows on a fake server: %s" % str(request))
         response = storage_pb2.ReadRowsResponse()
         stream_index = self._streams.index(request.read_position.stream.name)
-        if 0 <= stream_index < len(self._avro_serialized_rows_per_stream):
-            response.avro_rows.serialized_binary_rows = self._avro_serialized_rows_per_stream[  # pylint: disable=line-too-long
-                stream_index
-            ]
-            response.avro_rows.row_count = self._avro_serialized_rows_count_per_stream[
-                stream_index
-            ]
+        if 0 <= stream_index < len(self._rows_per_stream):
+            rows = self._rows_per_stream[stream_index][request.read_position.offset :]
+            serialized_rows = FakeBigQueryServer.serialize_to_avro(
+                rows, self._avro_schema
+            )
+            response.avro_rows.serialized_binary_rows = serialized_rows
+            response.avro_rows.row_count = len(rows)
         yield response
 
 
@@ -221,17 +226,6 @@ class BigqueryOpsTest(test.TestCase):
     }
 
     @staticmethod
-    def _serialize_to_avro(rows, schema):
-        """Serializes specified rows into avro format."""
-        string_output = BytesIO()
-        json_schema = json.loads(schema)
-        for row in rows:
-            fastavro.schemaless_writer(string_output, json_schema, row)
-        avro_output = string_output.getvalue()
-        string_output.close()
-        return avro_output
-
-    @staticmethod
     def _normalize_dictionary(dictionary):
         """Normalizes dictionary."""
         for key, value in dictionary.items():
@@ -240,7 +234,7 @@ class BigqueryOpsTest(test.TestCase):
                 dictionary[key] = value.numpy()
             value = dictionary[key]
             if isinstance(value, bytes):
-                # because _serialize_to_avro serialize strings as byte arrays
+                # because FakeBigQueryServer.serialize_to_avro serializes strings as byte arrays
                 dictionary[key] = value.decode()
         return dict(dictionary)
 
@@ -248,12 +242,7 @@ class BigqueryOpsTest(test.TestCase):
     def setUpClass(cls):  # pylint: disable=invalid-name
         """setUpClass"""
         cls.server = FakeBigQueryServer(
-            cls.AVRO_SCHEMA,
-            [
-                cls._serialize_to_avro(cls.STREAM_1_ROWS, cls.AVRO_SCHEMA),
-                cls._serialize_to_avro(cls.STREAM_2_ROWS, cls.AVRO_SCHEMA),
-            ],
-            [len(cls.STREAM_1_ROWS), len(cls.STREAM_2_ROWS)],
+            cls.AVRO_SCHEMA, [cls.STREAM_1_ROWS, cls.STREAM_2_ROWS]
         )
         cls.server.start()
 
@@ -284,7 +273,7 @@ class BigqueryOpsTest(test.TestCase):
 
         row = read_rows_response.next()
         self.assertEqual(
-            self._serialize_to_avro(self.STREAM_1_ROWS, self.AVRO_SCHEMA),
+            FakeBigQueryServer.serialize_to_avro(self.STREAM_1_ROWS, self.AVRO_SCHEMA),
             row.avro_rows.serialized_binary_rows,
         )
         self.assertEqual(len(self.STREAM_1_ROWS), row.avro_rows.row_count)
@@ -296,15 +285,13 @@ class BigqueryOpsTest(test.TestCase):
         read_rows_response = stub.ReadRows(read_rows_request)
         row = read_rows_response.next()
         self.assertEqual(
-            self._serialize_to_avro(self.STREAM_2_ROWS, self.AVRO_SCHEMA),
+            FakeBigQueryServer.serialize_to_avro(self.STREAM_2_ROWS, self.AVRO_SCHEMA),
             row.avro_rows.serialized_binary_rows,
         )
         self.assertEqual(len(self.STREAM_2_ROWS), row.avro_rows.row_count)
 
-    def test_read_rows(self):
-        """Test for reading rows."""
-        client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
-        read_session = client.read_session(
+    def _get_read_session(self, client):
+        return client.read_session(
             self.PARENT,
             self.GCP_PROJECT_ID,
             self.TABLE_ID,
@@ -320,6 +307,11 @@ class BigqueryOpsTest(test.TestCase):
             ],
             requested_streams=2,
         )
+
+    def test_read_rows(self):
+        """Test for reading rows."""
+        client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
+        read_session = self._get_read_session(client)
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
@@ -345,25 +337,25 @@ class BigqueryOpsTest(test.TestCase):
         with self.assertRaises(errors.OutOfRangeError):
             itr2.get_next()
 
+    def test_read_rows_with_offset(self):
+        """Test for reading rows with offset."""
+        client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
+        read_session = self._get_read_session(client)
+
+        streams_list = read_session.get_streams()
+        self.assertEqual(len(streams_list), 2)
+        dataset1 = read_session.read_rows(streams_list[0], offset=1)
+        itr1 = iter(dataset1)
+        self.assertEqual(
+            self.STREAM_1_ROWS[1], self._normalize_dictionary(itr1.get_next())
+        )
+        with self.assertRaises(errors.OutOfRangeError):
+            itr1.get_next()
+
     def test_parallel_read_rows(self):
         """Test for reading rows in parallel."""
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
-        read_session = client.read_session(
-            self.PARENT,
-            self.GCP_PROJECT_ID,
-            self.TABLE_ID,
-            self.DATASET_ID,
-            ["string", "boolean", "int", "long", "float", "double"],
-            [
-                dtypes.string,
-                dtypes.bool,
-                dtypes.int32,
-                dtypes.int64,
-                dtypes.float32,
-                dtypes.float64,
-            ],
-            requested_streams=2,
-        )
+        read_session = self._get_read_session(client)
 
         dataset = read_session.parallel_read_rows()
         itr = iter(dataset)

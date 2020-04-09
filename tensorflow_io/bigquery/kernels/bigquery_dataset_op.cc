@@ -28,6 +28,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   explicit BigQueryDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("selected_fields", &selected_fields_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("offset", &offset_));
   }
   using DatasetOpKernel::DatasetOpKernel;
 
@@ -55,12 +56,14 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     *output =
         new Dataset(ctx, client_resource, output_types_vector,
                     std::move(output_shapes), std::move(stream),
-                    std::move(avro_schema), selected_fields_, output_types_);
+                    std::move(avro_schema), selected_fields_, output_types_,
+                    offset_);
   }
 
  private:
   std::vector<string> selected_fields_;
   std::vector<DataType> output_types_;
+  int64 offset_;
 
   class Dataset : public DatasetBase {
    public:
@@ -71,7 +74,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
                      string stream,
                      string avro_schema,
                      std::vector<string> selected_fields,
-                     std::vector<DataType> output_types)
+                     std::vector<DataType> output_types,
+                     int64 offset_)
         : DatasetBase(DatasetContext(ctx)),
           client_resource_(client_resource),
           output_types_vector_(output_types_vector),
@@ -79,7 +83,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
           stream_(stream),
           selected_fields_(selected_fields),
           output_types_(output_types),
-          schema_(absl::make_unique<avro::ValidSchema>())  {
+          offset_(offset_),
+          schema_(absl::make_unique<avro::ValidSchema>()) {
       client_resource_->Ref();
       std::istringstream istream(avro_schema);
       avro::compileJsonSchema(istream, *schema_);
@@ -110,6 +115,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     const std::vector<DataType>& output_types() const { return output_types_; }
 
     const std::unique_ptr<avro::ValidSchema>& schema() const { return schema_; }
+
+    const int64 offset() const { return offset_; }
 
     string DebugString() const override {
       return "BigQueryScanDatasetOp::Dataset";
@@ -142,6 +149,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     const std::vector<string> selected_fields_;
     const std::vector<DataType> output_types_;
     const std::unique_ptr<avro::ValidSchema> schema_;
+    const int64 offset_;
   };
 };
 
