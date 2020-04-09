@@ -1,6 +1,5 @@
 pandoc: '2.9'
 pkgdown: 1.4.1
 pkgdown_sha: ~
-articles:
-  introduction: introduction.html
+articles: []
 
