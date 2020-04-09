@@ -112,9 +112,10 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         stream_index = self._streams.index(request.read_position.stream.name)
         if 0 <= stream_index < len(self._rows_per_stream):
             rows = self._rows_per_stream[stream_index][request.read_position.offset :]
-            response.avro_rows.serialized_binary_rows = FakeBigQueryServer.serialize_to_avro(
-                rows, self._avro_schema
-            )
+            response.avro_rows.serialized_binary_rows = \
+                FakeBigQueryServer.serialize_to_avro(
+                    rows, self._avro_schema
+                )
             response.avro_rows.row_count = len(rows)
         yield response
 
