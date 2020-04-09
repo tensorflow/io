@@ -41,9 +41,7 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     """Fake server for Cloud BigQuery Storage API."""
 
     def __init__(
-        self,
-        avro_schema,
-        rows_per_stream,
+        self, avro_schema, rows_per_stream,
     ):
         self._project_id = ""
         self._table_id = ""
@@ -113,8 +111,10 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         response = storage_pb2.ReadRowsResponse()
         stream_index = self._streams.index(request.read_position.stream.name)
         if 0 <= stream_index < len(self._rows_per_stream):
-            rows = self._rows_per_stream[stream_index][request.read_position.offset:]
-            response.avro_rows.serialized_binary_rows = FakeBigQueryServer.serialize_to_avro(rows, self._avro_schema)
+            rows = self._rows_per_stream[stream_index][request.read_position.offset :]
+            response.avro_rows.serialized_binary_rows = FakeBigQueryServer.serialize_to_avro(
+                rows, self._avro_schema
+            )
             response.avro_rows.row_count = len(rows)
         yield response
 
@@ -241,8 +241,7 @@ class BigqueryOpsTest(test.TestCase):
     def setUpClass(cls):  # pylint: disable=invalid-name
         """setUpClass"""
         cls.server = FakeBigQueryServer(
-            cls.AVRO_SCHEMA,
-            [cls.STREAM_1_ROWS, cls.STREAM_2_ROWS]
+            cls.AVRO_SCHEMA, [cls.STREAM_1_ROWS, cls.STREAM_2_ROWS]
         )
         cls.server.start()
 
