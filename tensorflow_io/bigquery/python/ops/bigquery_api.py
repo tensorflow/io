@@ -204,7 +204,7 @@ class BigQueryReadSession:
             self._output_types,
             self._avro_schema,
             stream,
-            offset
+            offset,
         )
 
     @deprecation.deprecated_args(
@@ -214,11 +214,7 @@ class BigQueryReadSession:
         "sloppy",
     )
     def parallel_read_rows(
-        self,
-        cycle_length=None,
-        sloppy=False,
-        block_length=1,
-        num_parallel_calls=None,
+        self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None,
     ):
         """Retrieves rows from the BigQuery service in parallel streams.
 
@@ -282,7 +278,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         output_types,
         avro_schema,
         stream,
-        offset
+        offset,
     ):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
@@ -306,7 +302,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
             output_types=output_types,
             avro_schema=avro_schema,
             stream=stream,
-            offset=offset
+            offset=offset,
         )
         super().__init__(variant_tensor)
 
