@@ -394,7 +394,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
   std::vector<int64> partitions_;
 
   // decoder delay for preroll, and padding at the end?
-  const int64 preroll_ = 1;
+  const int64 preroll_ = 0;
   const int64 padding_ = 1;
 };
 
