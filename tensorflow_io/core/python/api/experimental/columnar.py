@@ -14,7 +14,7 @@
 # ==============================================================================
 """tensorflow_io.experimental.columnar"""
 
-from tensorflow_io.core.python.experimental.columnar import (  # pylint: disable=unused-import
+from tensorflow_io.core.python.experimental import (  # pylint: disable=unused-import
     AvroRecordDataset,
     parse_avro,
     make_avro_record_dataset,
