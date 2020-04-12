@@ -17,10 +17,10 @@
 from tensorflow_io.core.python.experimental.io_dataset_ops import IODataset
 from tensorflow_io.core.python.experimental.io_tensor import IOTensor
 from tensorflow_io.core.python.experimental.io_layer import IOLayer
-from tensorflow_io.core.python.experimental.columnar.avro_dataset_ops import make_avro_dataset
-from tensorflow_io.core.python.experimental.columnar.avro_record_dataset_ops import AvroRecordDataset
-from tensorflow_io.core.python.experimental.columnar.parse_avro_ops import parse_avro
-from tensorflow_io.core.python.experimental.columnar.make_avro_record_dataset import make_avro_record_dataset
+from tensorflow_io.core.python.experimental.columnar import make_avro_dataset
+from tensorflow_io.core.python.experimental.columnar import AvroRecordDataset
+from tensorflow_io.core.python.experimental.columnar import parse_avro
+from tensorflow_io.core.python.experimental.columnar import make_avro_record_dataset
 
 from tensorflow_io.core.python.api.experimental import serialization
 from tensorflow_io.core.python.api.experimental import ffmpeg
