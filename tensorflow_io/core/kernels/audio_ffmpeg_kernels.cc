@@ -50,9 +50,9 @@ class DecodeAACFunctionState {
     }
     return true;
   }
-  int64 Call(const int64 rate, const int64 channels, const char** data_in_chunk,
-             const int64_t* size_in_chunk, int64_t chunk, char* data_out,
-             int64_t size_out) {
+  int64 Call(const int64 rate, const int64 channels, const char* data_in_chunk,
+             const int64_t* size_in_chunk, int64_t chunk, int64_t frames,
+             char* data_out, int64_t size_out) {
     std::unique_ptr<AVCodecContext, void (*)(AVCodecContext*)> codec_context(
         nullptr, [](AVCodecContext* p) {
           if (p != nullptr) {
@@ -92,9 +92,11 @@ class DecodeAACFunctionState {
       return -1;
     }
     int64 offset = 0;
+    int64 offset_in = 0;
     for (int64_t i = 0; i < chunk; i++) {
-      const char* data_in = data_in_chunk[i];
       const int64_t size_in = size_in_chunk[i];
+      const char* data_in = &data_in_chunk[offset_in];
+      offset_in += size_in;
       int ret = av_parser_parse2(codec_parser_context_.get(),
                                  codec_context.get(), &packet->data,
                                  &packet->size, (const uint8_t*)data_in,
@@ -191,10 +193,182 @@ class DecodeAACFunctionState {
       codec_parser_context_;
 };
 
+class EncodeAACFunctionState {
+ public:
+  EncodeAACFunctionState(const int64 codec, const int64 rate,
+                         const int64 channels)
+      : rate_(rate),
+        channels_(channels),
+        codec_context_(nullptr,
+                       [](AVCodecContext* p) {
+                         if (p != nullptr) {
+                           avcodec_free_context(&p);
+                         }
+                       }),
+        packet_(nullptr,
+                [](AVPacket* p) {
+                  if (p != nullptr) {
+                    av_packet_free(&p);
+                  }
+                }),
+        frame_(nullptr, [](AVFrame* p) {
+          if (p != nullptr) {
+            av_frame_free(&p);
+          }
+        }) {
+    codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);
+    if (codec_ != nullptr) {
+      AVCodecContext* codec_context = avcodec_alloc_context3(codec_);
+      if (codec_context != nullptr) {
+        // check that the encoder supports AV_SAMPLE_FMT_FLTP input
+        const enum AVSampleFormat* p = codec_->sample_fmts;
+        while (*p != AV_SAMPLE_FMT_NONE) {
+          if (*p == AV_SAMPLE_FMT_FLTP) {
+            break;
+          }
+          p++;
+        }
+        if (*p == AV_SAMPLE_FMT_FLTP) {
+          codec_context->sample_rate = rate;
+          codec_context->channels = channels;
+          codec_context->sample_fmt = AV_SAMPLE_FMT_FLTP;
+          if (avcodec_open2(codec_context, codec_, NULL) >= 0) {
+            LOG(INFO) << "aac codec opened successfully";
+
+            AVPacket* packet = av_packet_alloc();
+            AVFrame* frame = av_frame_alloc();
+            if (packet != nullptr && frame != nullptr) {
+              codec_context_.reset(codec_context);
+              packet_.reset(packet);
+              frame_.reset(frame);
+              return;
+            }
+          }
+        }
+        LOG(ERROR) << "unable to support AV_SAMPLE_FMT_FLTP";
+      }
+      avcodec_free_context(&codec_context);
+    }
+  }
+  ~EncodeAACFunctionState() {}
+  bool Valid() {
+    if (codec_context_.get() == nullptr) {
+      return false;
+    }
+    return true;
+  }
+  int64 Call(const float* data_in, const int64_t size_in, char** data_out_chunk,
+             int64_t* size_out_chunk, int64_t* chunk) {
+    frame_->nb_samples = 1024;
+    frame_->format = codec_context_->sample_fmt;
+    frame_->channels = codec_context_->channels;
+
+    // allocate the data buffers
+    int ret = av_frame_get_buffer(frame_.get(), 0);
+    if (ret < 0) {
+      return ret;
+    }
+
+    buffer_.clear();
+    buffer_.reserve(*chunk);
+
+    int64 index = 0;
+    while ((index < *chunk) && (index * 1024 * channels_ < size_in)) {
+      int ret = av_frame_make_writable(frame_.get());
+      if (ret < 0) {
+        return ret;
+      }
+      for (int64 c = 0; c < channels_; c++) {
+        for (int64 i = 0; i < 1024; i++) {
+          ((float*)frame_->data[c])[i] =
+              data_in[(index * 1024 + i) * channels_ + c];
+        }
+      }
+      ret = Encode(codec_context_.get(), packet_.get(), frame_.get(), &buffer_);
+      if (ret < 0) {
+        return ret;
+      }
+      index++;
+    }
+    Encode(codec_context_.get(), packet_.get(), NULL, &buffer_);
+
+    index = 0;
+    while (index < buffer_.size() && index < (*chunk)) {
+      data_out_chunk[index] = &(buffer_[index])[0];
+      size_out_chunk[index] = (buffer_[index]).size();
+      index++;
+    }
+    *chunk = index;
+    return 0;
+  }
+  int Encode(AVCodecContext* codec_context, AVPacket* packet, AVFrame* frame,
+             std::vector<string>* buffer) {
+    int ret = avcodec_send_frame(codec_context, frame);
+    if (ret < 0) {
+      return ret;
+    }
+    while (ret >= 0) {
+      ret = avcodec_receive_packet(codec_context, packet);
+      if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+        return 0;
+      } else if (ret < 0) {
+        LOG(ERROR) << "error encoding audio frame";
+        return -1;
+      }
+      string p;
+      buffer->emplace_back(p);
+      if (packet->size > 0) {
+        buffer->back().resize(packet->size);
+        memcpy(&(buffer->back()[0]), packet->data, packet->size);
+      }
+      av_packet_unref(packet);
+    }
+    return 0;
+  }
+
+ private:
+  int64 rate_;
+  int64 channels_;
+  AVCodec* codec_;
+  std::unique_ptr<AVCodecContext, void (*)(AVCodecContext*)> codec_context_;
+  std::unique_ptr<AVPacket, void (*)(AVPacket*)> packet_;
+  std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame_;
+  std::vector<string> buffer_;
+};
+
 }  // namespace data
 }  // namespace tensorflow
 
 extern "C" {
+void EncodeAACFunctionFiniFFmpeg(void* state) {
+  if (state != nullptr) {
+    delete static_cast<tensorflow::data::EncodeAACFunctionState*>(state);
+  }
+}
+
+void* EncodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
+                                  const int64_t channels) {
+  tensorflow::data::FFmpegInit();
+  tensorflow::data::EncodeAACFunctionState* state =
+      new tensorflow::data::EncodeAACFunctionState(codec, rate, channels);
+  if (state != nullptr) {
+    if (state->Valid()) {
+      return state;
+    }
+    delete state;
+  }
+  return nullptr;
+}
+int64_t EncodeAACFunctionCallFFmpeg(void* state, const float* data_in,
+                                    const int64_t size_in,
+                                    char** data_out_chunk,
+                                    int64_t* size_out_chunk, int64_t* chunk) {
+  if (state != nullptr) {
+    return static_cast<tensorflow::data::EncodeAACFunctionState*>(state)->Call(
+        data_in, size_in, data_out_chunk, size_out_chunk, chunk);
+  }
+  return -1;
+}
 
 void DecodeAACFunctionFiniFFmpeg(void* state) {
   if (state != nullptr) {
@@ -219,14 +393,14 @@ void* DecodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
 
 int64_t DecodeAACFunctionCallFFmpeg(void* state, const int64_t codec,
                                     const int64_t rate, const int64_t channels,
-                                    const int64_t* frame_in_chunk,
-                                    const void** data_in_chunk,
+                                    const void* data_in_chunk,
                                     const int64_t* size_in_chunk, int64_t chunk,
-                                    void* data_out, int64_t size_out) {
+                                    int64_t frames, void* data_out,
+                                    int64_t size_out) {
   if (state != nullptr) {
     return static_cast<tensorflow::data::DecodeAACFunctionState*>(state)->Call(
-        rate, channels, (const char**)data_in_chunk, size_in_chunk, chunk,
-        (char*)data_out, size_out);
+        rate, channels, (const char*)data_in_chunk, size_in_chunk, chunk,
+        frames, (char*)data_out, size_out);
   }
   return -1;
 }
