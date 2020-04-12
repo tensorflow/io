@@ -20,7 +20,7 @@ from tensorflow.python.framework.errors import OpError
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.util import compat
 from tensorflow.python.framework import sparse_tensor
-from tensorflow_io.core.python.experimental.parse_avro_ops import parse_avro
+from tensorflow_io.core.python.experimental.columnar.parse_avro_ops import parse_avro
 
 from tensorflow_io.avro.python.utils.avro_serialization import AvroSerializer
 
