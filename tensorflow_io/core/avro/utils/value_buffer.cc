@@ -23,7 +23,8 @@ void ShapeBuilder::BeginMark() {
 }
 
 void ShapeBuilder::FinishMark() {
-  // Only put the element count if there was a beginning, necessary for nested dimensions
+  // Only put the element count if there was a beginning, necessary for nested
+  // dimensions
   if (has_begin_) {
     element_info_.push_back(element_counter_);
     element_counter_ = 0;
@@ -32,9 +33,7 @@ void ShapeBuilder::FinishMark() {
   has_begin_ = false;
 }
 
-void ShapeBuilder::Increment() {
-  element_counter_++;
-}
+void ShapeBuilder::Increment() { element_counter_++; }
 
 // Assumes that the value buffer has correct markers
 size_t ShapeBuilder::GetNumberOfDimensions() const {
@@ -52,8 +51,9 @@ size_t ShapeBuilder::GetNumberOfDimensions() const {
 void ShapeBuilder::GetDenseShape(TensorShape* shape) const {
   size_t n_dim(GetNumberOfDimensions());
   std::vector<size_t> dimensions(n_dim, 0);
-  std::vector<size_t> counts(n_dim+1, 0); // +1 to simplify logic of setting to 0
-  size_t i_dim = -1; // -1 to make sure indices start from 0
+  std::vector<size_t> counts(n_dim + 1,
+                             0);  // +1 to simplify logic of setting to 0
+  size_t i_dim = -1;              // -1 to make sure indices start from 0
   for (size_t info : element_info_) {
     if (info == kBeginMark) {
       i_dim++;
@@ -75,8 +75,9 @@ void ShapeBuilder::GetDenseShape(TensorShape* shape) const {
 
 bool ShapeBuilder::HasAllElements(const TensorShape& shape) const {
   size_t n_dim(GetNumberOfDimensions());
-  std::vector<size_t> counts(n_dim+1, 0); // +1 to simplify logic of setting to 0
-  size_t i_dim = -1; // -1 to make sure indices start from 0
+  std::vector<size_t> counts(n_dim + 1,
+                             0);  // +1 to simplify logic of setting to 0
+  size_t i_dim = -1;              // -1 to make sure indices start from 0
   for (size_t info : element_info_) {
     if (info == kBeginMark) {
       i_dim++;
@@ -96,16 +97,16 @@ bool ShapeBuilder::HasAllElements(const TensorShape& shape) const {
   return true;
 }
 
-Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_info,
-  const TensorShape& output_shape) const {
-
+Status ShapeBuilder::GetCopyInfo(
+    std::vector<std::pair<size_t, size_t> >* copy_info,
+    const TensorShape& output_shape) const {
   TensorShape shape;
   ReconcileShape(&shape, output_shape);
 
   size_t offset = 0;
   size_t i_dim = 0;
   size_t n_dim = shape.dims();
-  std::vector<size_t> counts(n_dim+1, 0);
+  std::vector<size_t> counts(n_dim + 1, 0);
   std::vector<size_t> dims(CumulativeProductOfDimensionsWithOneAtEnd(shape));
 
   // VLOG(3) << "shape " << shape;
@@ -115,19 +116,20 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
       counts[i_dim]++;
       i_dim++;
 
-    // Close a group
+      // Close a group
     } else if (info == kFinishMark) {
       size_t count = counts[i_dim];
-      size_t length = shape.dim_size(i_dim-1);
+      size_t length = shape.dim_size(i_dim - 1);
       // VLOG(3) << "count = " << count << ", length = " << length;
 
       // Handle the inner most element count
       if (i_dim == n_dim) {
-
         // If the user data has more elements than expected
         if (count > length) {
-          return errors::InvalidArgument("Per shape ", shape, " for dimension ", i_dim-1,
-            " expected at most ", length, " elements but received ", count, " elements");
+          return errors::InvalidArgument("Per shape ", shape, " for dimension ",
+                                         i_dim - 1, " expected at most ",
+                                         length, " elements but received ",
+                                         count, " elements");
         }
 
         if (count > 0) {
@@ -136,7 +138,7 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
         }
         offset += length;
 
-      // Handle where the caller did not provide all finish marks
+        // Handle where the caller did not provide all finish marks
       } else if (count < length) {
         // VLOG(3) << "Update missing finish ";
         // VLOG(3) << "dims[" << i_dim << "] = " << dims[i_dim];
@@ -156,9 +158,9 @@ Status ShapeBuilder::GetCopyInfo(std::vector<std::pair<size_t, size_t> >* copy_i
   return Status::OK();
 }
 
-Status ShapeBuilder::GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_info,
-  const TensorShape& output_shape) const {
-
+Status ShapeBuilder::GetFillInfo(
+    std::vector<std::pair<size_t, size_t> >* fill_info,
+    const TensorShape& output_shape) const {
   TensorShape shape;
   ReconcileShape(&shape, output_shape);
 
@@ -166,7 +168,7 @@ Status ShapeBuilder::GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_i
   size_t i_dim = 0;
   size_t n_dim = shape.dims();
 
-  std::vector<size_t> counts(n_dim+1, 0);
+  std::vector<size_t> counts(n_dim + 1, 0);
   std::vector<size_t> dims(CumulativeProductOfDimensionsWithOneAtEnd(shape));
 
   for (size_t info : element_info_) {
@@ -175,31 +177,34 @@ Status ShapeBuilder::GetFillInfo(std::vector<std::pair<size_t, size_t> >* fill_i
       counts[i_dim]++;
       i_dim++;
 
-    // Close a group
+      // Close a group
     } else if (info == kFinishMark) {
-
       size_t count = counts[i_dim];
-      size_t length = shape.dim_size(i_dim-1);
+      size_t length = shape.dim_size(i_dim - 1);
       bool smaller = count < length;
 
       // Handle the inner most element count
       if (i_dim == n_dim) {
         // If the user data has more elements than expected
         if (count > length) {
-          return errors::InvalidArgument("Per shape ", shape, " for dimension ", i_dim-1,
-            " expected at most ", length, " elements but received ", count, " elements");
+          return errors::InvalidArgument("Per shape ", shape, " for dimension ",
+                                         i_dim - 1, " expected at most ",
+                                         length, " elements but received ",
+                                         count, " elements");
         }
 
         if (smaller) {
-          //LOG(INFO) << "Fill (" << offset+count << ", " << length-count << ")";
-          (*fill_info).push_back(std::make_pair(offset+count, length-count));
+          // LOG(INFO) << "Fill (" << offset+count << ", " << length-count <<
+          // ")";
+          (*fill_info)
+              .push_back(std::make_pair(offset + count, length - count));
         }
         offset += length;
 
-      // Handle where the caller did not provide all finish marks
+        // Handle where the caller did not provide all finish marks
       } else if (smaller) {
         size_t delta = dims[i_dim] * (length - count);
-        //LOG(INFO) << "Fill (" << offset << ", " << delta << ")";
+        // LOG(INFO) << "Fill (" << offset << ", " << delta << ")";
         (*fill_info).push_back(std::make_pair(offset, delta));
         offset += delta;
       }
@@ -217,7 +222,8 @@ Status ShapeBuilder::GetIndices(Tensor* indices) const {
   size_t i_dim = 0;
   size_t offset = 0;
   size_t n_dim(GetNumberOfDimensions());
-  std::vector<int64> counts(n_dim+1, -1); // initialize -1, create +1 number of dimensions
+  std::vector<int64> counts(
+      n_dim + 1, -1);  // initialize -1, create +1 number of dimensions
   auto counts_data = counts.begin();
   auto indices_data = (*indices).flat<int64>().data();
 
@@ -227,16 +233,17 @@ Status ShapeBuilder::GetIndices(Tensor* indices) const {
       counts[i_dim]++;
       i_dim++;
 
-    // Close a group
+      // Close a group
     } else if (info == kFinishMark) {
       counts[i_dim] = -1;
       i_dim--;
     } else {
-
-      // For each of the values create an index vector, while updating the inner-most index
+      // For each of the values create an index vector, while updating the
+      // inner-most index
       for (size_t i_value = 0; i_value < info; ++i_value) {
         counts[i_dim] = i_value;
-        CopyOrMoveBlock(counts_data+1, counts_data+n_dim+1, indices_data + offset);
+        CopyOrMoveBlock(counts_data + 1, counts_data + n_dim + 1,
+                        indices_data + offset);
         offset += n_dim;
       }
     }
@@ -259,23 +266,23 @@ string ShapeBuilder::ToString() const {
   return ss.str();
 }
 
-void ShapeBuilder::ReconcileShape(TensorShape* reconciled, const TensorShape& shape) const {
-    *reconciled = shape;
-    TensorShape dense_shape;
-    GetDenseShape(&dense_shape);
-    // If we have one additional dimensions add that
-    if (dense_shape.dims() == (*reconciled).dims()+1) {
-        (*reconciled).AddDim(dense_shape.dim_size(dense_shape.dims()-1));
-    }
+void ShapeBuilder::ReconcileShape(TensorShape* reconciled,
+                                  const TensorShape& shape) const {
+  *reconciled = shape;
+  TensorShape dense_shape;
+  GetDenseShape(&dense_shape);
+  // If we have one additional dimensions add that
+  if (dense_shape.dims() == (*reconciled).dims() + 1) {
+    (*reconciled).AddDim(dense_shape.dim_size(dense_shape.dims() - 1));
+  }
 }
 
 std::vector<size_t> ShapeBuilder::CumulativeProductOfDimensionsWithOneAtEnd(
-  const TensorShape& shape) const {
-
+    const TensorShape& shape) const {
   size_t n_dim = shape.dims();
-  std::vector<size_t> dims(n_dim+1, 1);
+  std::vector<size_t> dims(n_dim + 1, 1);
   for (size_t i_dim = n_dim; i_dim > 0; --i_dim) {
-    dims[i_dim-1] = shape.dim_size(i_dim-1)*dims[i_dim];
+    dims[i_dim - 1] = shape.dim_size(i_dim - 1) * dims[i_dim];
   }
 
   return dims;
@@ -293,15 +300,16 @@ void ShapeBuilder::Merge(const ShapeBuilder& other) {
     element_info_[1] += other.element_info_[1];
   } else {
     // remove 1 finish mark
-    element_info_.erase(element_info_.end()-1, element_info_.end());
+    element_info_.erase(element_info_.end() - 1, element_info_.end());
     // skip 1 begin mark when copying the other
-    element_info_.insert(element_info_.end(),
-                         other.element_info_.begin()+1, other.element_info_.end());
+    element_info_.insert(element_info_.end(), other.element_info_.begin() + 1,
+                         other.element_info_.end());
   }
 }
 
 Status MergeAs(ValueStoreUniquePtr& merged,
-  const std::vector<ValueStoreUniquePtr>& buffers, DataType dtype) {
+               const std::vector<ValueStoreUniquePtr>& buffers,
+               DataType dtype) {
   switch (dtype) {
     case DT_FLOAT:
       merged.reset(new FloatValueBuffer(buffers));
@@ -322,7 +330,8 @@ Status MergeAs(ValueStoreUniquePtr& merged,
       merged.reset(new StringValueBuffer(buffers));
       break;
     default:
-      return errors::InvalidArgument("Received invalid type: ", DataTypeString(dtype));
+      return errors::InvalidArgument("Received invalid type: ",
+                                     DataTypeString(dtype));
   }
 
   return Status::OK();

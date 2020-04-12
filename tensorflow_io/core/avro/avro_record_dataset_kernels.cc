@@ -17,15 +17,15 @@ limitations under the License.
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/op.h"
-#include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/shape_inference.h"
+#include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 
 #include "tensorflow_io/core/avro/utils/avro_record_reader.h"
-// TODO(fraudies): Wait until TF tensorflow/core/kernels/data/name_utils.h is visible
+// TODO(fraudies): Wait until TF tensorflow/core/kernels/data/name_utils.h is
+// visible
 #include "tensorflow_io/core/avro/utils/name_utils.h"
-
 
 namespace tensorflow {
 namespace data {
@@ -39,7 +39,6 @@ namespace data {
 
 constexpr char kCurrentFileIndex[] = "current_file_index";
 constexpr char kOffset[] = "offset";
-
 
 class AvroRecordDatasetOp::Dataset : public DatasetBase {
  public:
@@ -55,7 +54,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
       options_.reader_schema = reader_schema;
     }
     VLOG(7) << "Created dataset with first filename: " << filenames_[0];
-    VLOG(7) << "Buffer size " << buffer_size/1024 << "kBy";
+    VLOG(7) << "Buffer size " << buffer_size / 1024 << "kBy";
   }
 
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -208,37 +207,35 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
   AvroReaderOptions options_;
 };
 
-
 AvroRecordDatasetOp::AvroRecordDatasetOp(OpKernelConstruction* ctx)
     : DatasetOpKernel(ctx) {}
 
 void AvroRecordDatasetOp::MakeDataset(OpKernelContext* ctx,
                                       DatasetBase** output) {
-    const Tensor* filenames_tensor;
-    OP_REQUIRES_OK(ctx, ctx->input(kFileNames, &filenames_tensor));
-    OP_REQUIRES(
-        ctx, filenames_tensor->dims() <= 1,
-        errors::InvalidArgument("`filenames` must be a scalar or a vector."));
+  const Tensor* filenames_tensor;
+  OP_REQUIRES_OK(ctx, ctx->input(kFileNames, &filenames_tensor));
+  OP_REQUIRES(
+      ctx, filenames_tensor->dims() <= 1,
+      errors::InvalidArgument("`filenames` must be a scalar or a vector."));
 
-    std::vector<tstring> filenames;
-    filenames.reserve(filenames_tensor->NumElements());
-    for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
-      VLOG(2) << "Reading file: " << filenames_tensor->flat<tstring>()(i);
-      filenames.push_back(filenames_tensor->flat<tstring>()(i));
-    }
+  std::vector<tstring> filenames;
+  filenames.reserve(filenames_tensor->NumElements());
+  for (int i = 0; i < filenames_tensor->NumElements(); ++i) {
+    VLOG(2) << "Reading file: " << filenames_tensor->flat<tstring>()(i);
+    filenames.push_back(filenames_tensor->flat<tstring>()(i));
+  }
 
-    int64 buffer_size = -1;
-    OP_REQUIRES_OK(ctx,
-                   ParseScalarArgument<int64>(ctx, kBufferSize, &buffer_size));
-    OP_REQUIRES(ctx, buffer_size >= 0,
-                errors::InvalidArgument(
-                    "`buffer_size` must be >= 0 (0 == no buffering)"));
-    tstring reader_schema = "";
-    OP_REQUIRES_OK(ctx,
-                   ParseScalarArgument<tstring>(ctx, kReaderSchema, &reader_schema));
+  int64 buffer_size = -1;
+  OP_REQUIRES_OK(ctx,
+                 ParseScalarArgument<int64>(ctx, kBufferSize, &buffer_size));
+  OP_REQUIRES(ctx, buffer_size >= 0,
+              errors::InvalidArgument(
+                  "`buffer_size` must be >= 0 (0 == no buffering)"));
+  tstring reader_schema = "";
+  OP_REQUIRES_OK(
+      ctx, ParseScalarArgument<tstring>(ctx, kReaderSchema, &reader_schema));
 
-    *output =
-        new Dataset(ctx, std::move(filenames), buffer_size, reader_schema);
+  *output = new Dataset(ctx, std::move(filenames), buffer_size, reader_schema);
 }
 
 namespace {

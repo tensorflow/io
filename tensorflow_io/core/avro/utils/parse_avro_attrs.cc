@@ -15,8 +15,8 @@ limitations under the License.
 
 #include "tensorflow_io/core/avro/utils/parse_avro_attrs.h"
 #include "tensorflow/core/framework/types.h"
-#include "tensorflow/core/platform/types.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/platform/types.h"
 
 namespace tensorflow {
 namespace data {

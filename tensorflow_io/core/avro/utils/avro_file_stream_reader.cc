@@ -11,19 +11,20 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/core/avro/utils/avro_file_stream_reader.h"
-#include "tensorflow/core/framework/tensor_util.h"
+#include <sstream>
+#include "api/Compiler.hh"
 #include "api/DataFile.hh"
 #include "api/Generic.hh"
-#include "api/Compiler.hh"
-#include <sstream>
+#include "tensorflow/core/framework/tensor_util.h"
 
 namespace {
 class AvroDataInputStream : public avro::InputStream {
-public:
-  AvroDataInputStream(tensorflow::io::BufferedInputStream* s, size_t avro_data_buffer_size)
-    : buffered_input_stream_(s), avro_data_buffer_size_(avro_data_buffer_size) { }
+ public:
+  AvroDataInputStream(tensorflow::io::BufferedInputStream* s,
+                      size_t avro_data_buffer_size)
+      : buffered_input_stream_(s),
+        avro_data_buffer_size_(avro_data_buffer_size) {}
   bool next(const uint8_t** data, size_t* len) override {
-
     if (*len <= 0 || *len > avro_data_buffer_size_) {
       *len = avro_data_buffer_size_;
     }
@@ -35,7 +36,7 @@ public:
 
     buffered_input_stream_->ReadNBytes(*len, &chunk_);
 
-    *data = (const uint8_t*) chunk_.data();
+    *data = (const uint8_t*)chunk_.data();
     *len = chunk_.size();
 
     pos_ += *len;
@@ -50,10 +51,9 @@ public:
     do_seek = true;
     pos_ += len;
   }
-  size_t byteCount() const override {
-    return pos_;
-  }
-private:
+  size_t byteCount() const override { return pos_; }
+
+ private:
   tensorflow::io::BufferedInputStream* buffered_input_stream_;
   const size_t avro_data_buffer_size_;
   tensorflow::tstring chunk_;
@@ -61,24 +61,24 @@ private:
   bool do_seek = false;
 };
 
-}
+}  // namespace
 
 namespace tensorflow {
 namespace data {
 
 Status AvroFileStreamReader::OnWorkStartup() {
-
   TF_RETURN_IF_ERROR(env_->NewRandomAccessFile(filename_, &file_));
 
   uint64 size = 0;
   TF_RETURN_IF_ERROR(env_->GetFileSize(filename_, &size));
 
-  VLOG(3) << "Creating input stream from file '" << filename_ << "' with size " << size/1024 << " kB";
+  VLOG(3) << "Creating input stream from file '" << filename_ << "' with size "
+          << size / 1024 << " kB";
 
   input_stream_.reset(new io::RandomAccessInputStream(file_.get()));
 
-  buffered_input_stream_.reset(new io::BufferedInputStream(input_stream_.get(),
-    config_.input_stream_buffer_size));
+  buffered_input_stream_.reset(new io::BufferedInputStream(
+      input_stream_.get(), config_.input_stream_buffer_size));
 
   string error;
   std::istringstream ss(reader_schema_str_);
@@ -87,19 +87,21 @@ Status AvroFileStreamReader::OnWorkStartup() {
   }
 
   std::unique_ptr<avro::InputStream> stream(
-    static_cast<avro::InputStream*>(new AvroDataInputStream(buffered_input_stream_.get(),
-      config_.avro_data_buffer_size)));
+      static_cast<avro::InputStream*>(new AvroDataInputStream(
+          buffered_input_stream_.get(), config_.avro_data_buffer_size)));
 
-  reader_.reset(new avro::DataFileReader<avro::GenericDatum>(
-    std::move(stream), reader_schema_));
+  reader_.reset(new avro::DataFileReader<avro::GenericDatum>(std::move(stream),
+                                                             reader_schema_));
 
   // Get the namespace
-  string avro_namespace(reader_schema_.root()->hasName() ? reader_schema_.root()->name().ns() : "");
+  string avro_namespace(reader_schema_.root()->hasName()
+                            ? reader_schema_.root()->name().ns()
+                            : "");
   VLOG(3) << "Retrieved namespace" << avro_namespace;
 
   // Create the parser tree
-  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_,
-    avro_namespace, CreateKeysAndTypesFromConfig()));
+  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_, avro_namespace,
+                                           CreateKeysAndTypesFromConfig()));
 
   return Status::OK();
 }
@@ -109,8 +111,9 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
 
   auto read_value = [&](avro::GenericDatum& d) { return reader_->read(d); };
   uint64 batch_size = 0;
-  TF_RETURN_IF_ERROR(avro_parser_tree_.ParseValues(&key_to_value, read_value,
-    reader_schema_, config_.batch_size, &batch_size));
+  TF_RETURN_IF_ERROR(
+      avro_parser_tree_.ParseValues(&key_to_value, read_value, reader_schema_,
+                                    config_.batch_size, &batch_size));
   VLOG(5) << "Read and parsed " << batch_size << " elements";
 
   // Drop reminder if batch size is not the requested batch size
@@ -134,26 +137,36 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
 
     TensorShape value_shape;
     TF_RETURN_IF_ERROR((*value_store).GetSparseValueShape(&value_shape));
-    (*result).sparse_values[i_sparse] = Tensor(allocator_, sparse.dtype, value_shape);
+    (*result).sparse_values[i_sparse] =
+        Tensor(allocator_, sparse.dtype, value_shape);
 
     TensorShape index_shape;
     TF_RETURN_IF_ERROR((*value_store).GetSparseIndexShape(&index_shape));
-    (*result).sparse_indices[i_sparse] = Tensor(allocator_, DT_INT64, index_shape);
+    (*result).sparse_indices[i_sparse] =
+        Tensor(allocator_, DT_INT64, index_shape);
 
-    TF_RETURN_IF_ERROR((*value_store).MakeSparse(
-      &(*result).sparse_values[i_sparse],
-      &(*result).sparse_indices[i_sparse]));
+    TF_RETURN_IF_ERROR((*value_store)
+                           .MakeSparse(&(*result).sparse_values[i_sparse],
+                                       &(*result).sparse_indices[i_sparse]));
 
-    int64 rank = (*result).sparse_indices[i_sparse].dim_size(1); // rank is the 2nd dimension of the index
-    (*result).sparse_shapes[i_sparse] = Tensor(allocator_, DT_INT64, TensorShape({rank}));
-    TF_RETURN_IF_ERROR((*value_store).GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
+    int64 rank = (*result).sparse_indices[i_sparse].dim_size(
+        1);  // rank is the 2nd dimension of the index
+    (*result).sparse_shapes[i_sparse] =
+        Tensor(allocator_, DT_INT64, TensorShape({rank}));
+    TF_RETURN_IF_ERROR(
+        (*value_store)
+            .GetDenseShapeForSparse(&(*result).sparse_shapes[i_sparse]));
 
-    VLOG(5) << "Sparse values: " << (*result).sparse_values[i_sparse].SummarizeValue(15);
-    VLOG(5) << "Sparse indices: " << (*result).sparse_indices[i_sparse].SummarizeValue(15);
-    VLOG(5) << "Sparse dense shapes: " << (*result).sparse_shapes[i_sparse].SummarizeValue(15);
+    VLOG(5) << "Sparse values: "
+            << (*result).sparse_values[i_sparse].SummarizeValue(15);
+    VLOG(5) << "Sparse indices: "
+            << (*result).sparse_indices[i_sparse].SummarizeValue(15);
+    VLOG(5) << "Sparse dense shapes: "
+            << (*result).sparse_shapes[i_sparse].SummarizeValue(15);
     VLOG(5) << "Value shape: " << value_shape;
     VLOG(5) << "Index shape: " << index_shape;
-    VLOG(5) << "Sparse dense shapes shape: " << (*result).sparse_shapes[i_sparse].shape();
+    VLOG(5) << "Sparse dense shapes shape: "
+            << (*result).sparse_shapes[i_sparse].shape();
   }
 
   // Get dense tensors
@@ -167,12 +180,14 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
 
     TensorShape default_shape;
     Tensor default_value;
-    // If we can resolve the dense shape add batch, otherwise keep things as they are
-    if (ResolveDefaultShape(&default_shape, dense.default_value.shape(), batch_size)) {
+    // If we can resolve the dense shape add batch, otherwise keep things as
+    // they are
+    if (ResolveDefaultShape(&default_shape, dense.default_value.shape(),
+                            batch_size)) {
       default_value = Tensor(allocator_, dense.dtype, default_shape);
-      TF_RETURN_IF_ERROR(tensor::Concat(
-        std::vector<Tensor>(batch_size, dense.default_value),
-        &default_value));
+      TF_RETURN_IF_ERROR(
+          tensor::Concat(std::vector<Tensor>(batch_size, dense.default_value),
+                         &default_value));
     } else {
       default_value = dense.default_value;
       default_shape = default_value.shape();
@@ -182,38 +197,47 @@ Status AvroFileStreamReader::Read(AvroResult* result) {
     VLOG(5) << "Default value is " << default_value.SummarizeValue(9);
 
     TensorShape resolved_shape;
-    TF_RETURN_IF_ERROR((*value_store).ResolveDenseShape(&resolved_shape, dense.shape,
-      default_shape));
+    TF_RETURN_IF_ERROR(
+        (*value_store)
+            .ResolveDenseShape(&resolved_shape, dense.shape, default_shape));
 
-    (*result).dense_values[i_dense] = Tensor(allocator_, dense.dtype, resolved_shape);
+    (*result).dense_values[i_dense] =
+        Tensor(allocator_, dense.dtype, resolved_shape);
 
-    VLOG(5) << "Creating dense tensor for '" << dense.feature_name << "' with " << resolved_shape << " and user shape " << dense.shape;
+    VLOG(5) << "Creating dense tensor for '" << dense.feature_name << "' with "
+            << resolved_shape << " and user shape " << dense.shape;
 
     VLOG(5) << (*value_store).ToString(10);
 
-    TF_RETURN_IF_ERROR((*value_store).MakeDense(&(*result).dense_values[i_dense],
-      resolved_shape, default_value));
+    TF_RETURN_IF_ERROR((*value_store)
+                           .MakeDense(&(*result).dense_values[i_dense],
+                                      resolved_shape, default_value));
 
-    VLOG(5) << "Dense tensor " << (*result).dense_values[i_dense].SummarizeValue(9);
+    VLOG(5) << "Dense tensor "
+            << (*result).dense_values[i_dense].SummarizeValue(9);
   }
 
   return Status::OK();
 }
 
-int AvroFileStreamReader::ResolveDefaultShape(TensorShape* resolved, const PartialTensorShape& default_shape,
-  int64 batch_size) {
-
+int AvroFileStreamReader::ResolveDefaultShape(
+    TensorShape* resolved, const PartialTensorShape& default_shape,
+    int64 batch_size) {
   // If default is not given or a scalar, do not resolve nor replicate
-  if (default_shape.dims() < 1 || (default_shape.dims() == 1 && default_shape.dim_size(0) <= 1)) {
+  if (default_shape.dims() < 1 ||
+      (default_shape.dims() == 1 && default_shape.dim_size(0) <= 1)) {
     return 0;
   }
 
-  // TODO: Check that dense shape matches dimensions, handle cases where the default is not given
-  PartialTensorShape full_shape(PartialTensorShape({batch_size}).Concatenate(default_shape));
+  // TODO: Check that dense shape matches dimensions, handle cases where the
+  // default is not given
+  PartialTensorShape full_shape(
+      PartialTensorShape({batch_size}).Concatenate(default_shape));
   return full_shape.AsTensorShape(resolved);
 }
 
-std::vector<std::pair<string, DataType>> AvroFileStreamReader::CreateKeysAndTypesFromConfig() {
+std::vector<std::pair<string, DataType>>
+AvroFileStreamReader::CreateKeysAndTypesFromConfig() {
   std::vector<std::pair<string, DataType>> keys_and_types;
   for (const AvroParseConfig::Sparse& sparse : config_.sparse) {
     keys_and_types.push_back({sparse.feature_name, sparse.dtype});

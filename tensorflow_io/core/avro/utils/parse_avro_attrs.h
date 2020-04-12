@@ -13,12 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 #include "tensorflow/core/framework/types.h"
-#include "tensorflow/core/platform/types.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/platform/types.h"
 
 namespace tensorflow {
 namespace data {
-
 
 // Checks for valid type for the avro attributes; currently we support bool,
 // int, long, float, double, string.
