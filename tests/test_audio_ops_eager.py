@@ -564,7 +564,7 @@ def fixture_decode_aac():
     args = content
 
     def func(e):
-        delta = tf.constant(1.0, tf.float32)
+        delta = tf.constant(2.0, tf.float32)
         v = tfio.experimental.audio.decode_aac(e)
         v = tf.cast(v * (1 << 15), tf.int16)
         v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
@@ -604,7 +604,7 @@ def fixture_encode_aac():
     args = value
 
     def func(e):
-        delta = tf.constant(1.0, tf.float32)
+        delta = tf.constant(2.0, tf.float32)
         v = tfio.experimental.audio.encode_aac(e, rate=44100)
         v = tfio.experimental.audio.decode_aac(v)
         v = tf.cast(v * (1 << 15), tf.int16)
