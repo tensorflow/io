@@ -18,7 +18,7 @@ import os
 import tempfile
 
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow_io.avro.python.utils.avro_serialization import AvroRecordsToFile
+from tensorflow_io.avro.avro_serialization import AvroRecordsToFile
 
 
 class AvroDatasetTestBase(test_base.DatasetTestBase):
