@@ -15,8 +15,7 @@
 """tensorflow_io.experimental.columnar"""
 
 from tensorflow_io.core.python.experimental.avro_record_dataset_ops import (  # pylint: disable=unused-import
-    AvroRecordDataset,
-    make_avro_dataset
+    AvroRecordDataset
 )
 
 from tensorflow_io.core.python.experimental.make_avro_record_dataset import (  # pylint: disable=unused-import
@@ -25,4 +24,8 @@ from tensorflow_io.core.python.experimental.make_avro_record_dataset import (  #
 
 from tensorflow_io.core.python.experimental.parse_avro_ops import (  # pylint: disable=unused-import
     parse_avro
+)
+
+from tensorflow_io.core.python.experimental.avro_dataset_ops import (  # pylint: disable=unused-import
+    make_avro_dataset
 )
