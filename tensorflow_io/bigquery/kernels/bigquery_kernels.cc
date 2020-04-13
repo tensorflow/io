@@ -71,7 +71,7 @@ class BigQueryClientOp : public OpKernel {
                     grpc::ChannelArguments args;
                     args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
                     args.SetUserAgentPrefix(
-                        strings::StrCat("tensorflow", TF_VERSION_STRING));
+                        strings::StrCat("tensorflow-", TF_VERSION_STRING));
                     args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
                     args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
                     auto channel =

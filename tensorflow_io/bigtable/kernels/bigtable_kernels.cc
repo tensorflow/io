@@ -84,7 +84,7 @@ class BigtableClientOp : public OpKernel {
                 channel_args.SetMaxReceiveMessageSize(
                     max_receive_message_size_);
                 channel_args.SetUserAgentPrefix(
-                    strings::StrCat("tensorflow", TF_VERSION_STRING));
+                    strings::StrCat("tensorflow-", TF_VERSION_STRING));
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
                 client_options.set_channel_arguments(channel_args);
