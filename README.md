@@ -201,7 +201,7 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 sudo python3 -m pip install -U pip
 
 # Install tensorflow and configure bazel
-./configure.sh
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -229,7 +229,7 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 sudo python3 -m pip install -U pip
 
 # Install tensorflow and configure bazel
-./configure.sh
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
