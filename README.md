@@ -80,8 +80,8 @@ install.packages('tfio')
 
 You can also install the development version from Github via:
 ```r
-if (!require("devtools")) install.packages("devtools")
-devtools::install_github("tensorflow/io", subdir = "R-package")
+if (!require("remotes")) install.packages("remotes")
+remotes::install_github("tensorflow/io", subdir = "R-package")
 ```
 
 ### TensorFlow Version Compatibility
