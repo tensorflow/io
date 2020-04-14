@@ -55,7 +55,7 @@ class BigQueryTestClientOp : public OpKernel {
     }
   }
 
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     if (!initialized_) {
       ResourceMgr* mgr = ctx->resource_manager();
@@ -66,7 +66,7 @@ class BigQueryTestClientOp : public OpKernel {
           ctx,
           mgr->LookupOrCreate<BigQueryClientResource>(
               cinfo_.container(), cinfo_.name(), &resource,
-              [this](BigQueryClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(
+              [this](BigQueryClientResource** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(
                   mu_) {
                 LOG(INFO) << "Connecting BigQueryTestClientOp Fake client to:"
                           << fake_server_address_;
@@ -92,8 +92,8 @@ class BigQueryTestClientOp : public OpKernel {
 
  private:
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
   string fake_server_address_;
 };
 

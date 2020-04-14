@@ -57,9 +57,9 @@ class OutputSequence : public ResourceBase {
   }
  protected:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  int64 base_ GUARDED_BY(mu_) = 0;
-  std::deque<std::unique_ptr<string>> fifo_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  int64 base_ TF_GUARDED_BY(mu_) = 0;
+  std::deque<std::unique_ptr<string>> fifo_ TF_GUARDED_BY(mu_);
 };
 
 template<typename T>
@@ -72,7 +72,7 @@ class OutputSequenceOp : public ResourceOpKernel<T> {
  protected:
   void Compute(OpKernelContext* context) = 0;
   Status CreateResource(T** sequence)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *sequence = new T(env_);
     return Status::OK();
   }

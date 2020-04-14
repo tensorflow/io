@@ -61,7 +61,7 @@ class DecodeNV12Op : public OpKernel {
 
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeNV12").Device(DEVICE_CPU), DecodeNV12Op);
 

@@ -92,7 +92,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
   }
 
  private:
-  Status EnsureReaderInitialized() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  Status EnsureReaderInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (reader_) {
       return Status::OK();
     }
@@ -117,7 +117,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
     return Status::OK();
   }
 
-  Status EnsureHasRow(bool* end_of_sequence) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  Status EnsureHasRow(bool* end_of_sequence) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (response_ && current_row_index_ < response_->avro_rows().row_count()) {
       return Status::OK();
     }
@@ -142,7 +142,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
   Status ReadRecord(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
                     const std::vector<string>& columns,
                     const std::vector<DataType>& output_types)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     avro::GenericDatum datum = avro::GenericDatum(*this->dataset()->schema());
     avro::decode(*decoder_, datum);
     if (datum.type() != avro::AVRO_RECORD) {
@@ -271,12 +271,12 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
 
   int current_row_index_ = 0;
   mutex mu_;
-  std::unique_ptr<::grpc::ClientContext> read_rows_context_ GUARDED_BY(mu_);
+  std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
   std::unique_ptr<::grpc::ClientReader<apiv1beta1::ReadRowsResponse>> reader_
-      GUARDED_BY(mu_);
-  std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ GUARDED_BY(mu_);
-  std::unique_ptr<avro::InputStream> memory_input_stream_ GUARDED_BY(mu_);
-  avro::DecoderPtr decoder_ GUARDED_BY(mu_);
+      TF_GUARDED_BY(mu_);
+  std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(mu_);
+  avro::DecoderPtr decoder_ TF_GUARDED_BY(mu_);
 };
 
 }  // namespace data

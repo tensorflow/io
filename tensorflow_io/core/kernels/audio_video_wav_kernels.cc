@@ -280,9 +280,9 @@ class WAVReadableResource : public AudioReadableResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
   DataType dtype_;
   TensorShape shape_;
   int64 rate_;
@@ -345,7 +345,7 @@ class AudioDecodeWAVOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class AudioEncodeWAVOp : public OpKernel {
@@ -472,7 +472,7 @@ class AudioEncodeWAVOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeWAV").Device(DEVICE_CPU),

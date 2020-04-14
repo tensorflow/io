@@ -167,9 +167,9 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
   DataType dtype_;
   TensorShape shape_;
   int64 rate_;
@@ -230,7 +230,7 @@ class AudioDecodeVorbisOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 Status OggVorbisEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
@@ -384,7 +384,7 @@ class AudioEncodeVorbisOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeVorbis").Device(DEVICE_CPU),

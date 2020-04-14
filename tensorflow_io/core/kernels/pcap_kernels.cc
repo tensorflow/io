@@ -250,14 +250,14 @@ class PcapReadable : public IOReadableInterface {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
 
-  int64 record_index_ GUARDED_BY(mu_);
-  bool record_final_ GUARDED_BY(mu_);
+  int64 record_index_ TF_GUARDED_BY(mu_);
+  bool record_final_ TF_GUARDED_BY(mu_);
 
-  std::unique_ptr<PcapInputStream> stream_ GUARDED_BY(mu_);
+  std::unique_ptr<PcapInputStream> stream_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>PcapReadableInit").Device(DEVICE_CPU),

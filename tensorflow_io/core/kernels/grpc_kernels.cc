@@ -73,9 +73,9 @@ class GRPCReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string endpoint_ GUARDED_BY(mu_);
-  std::unique_ptr<GRPCEndpoint::Stub> stub_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string endpoint_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<GRPCEndpoint::Stub> stub_ TF_GUARDED_BY(mu_);
 };
 
 class GRPCReadableInitOp : public ResourceOpKernel<GRPCReadableResource> {
@@ -96,14 +96,14 @@ class GRPCReadableInitOp : public ResourceOpKernel<GRPCReadableResource> {
     OP_REQUIRES_OK(context, resource_->Init(input));
   }
   Status CreateResource(GRPCReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new GRPCReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class GRPCReadableReadOp : public OpKernel {
@@ -139,7 +139,7 @@ class GRPCReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>GRPCReadableInit").Device(DEVICE_CPU),
                         GRPCReadableInitOp);

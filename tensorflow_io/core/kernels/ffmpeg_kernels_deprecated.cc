@@ -696,10 +696,10 @@ class FFmpegReadable : public IOReadableInterface {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
-  std::unique_ptr<FFmpegReadStream> ffmpeg_file_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<FFmpegReadStream> ffmpeg_file_ TF_GUARDED_BY(mu_);
 
   std::vector<DataType> dtypes_;
   std::vector<PartialTensorShape> shapes_;
@@ -747,7 +747,7 @@ class FFmpegDecodeVideoOp : public OpKernel {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
   static const int64 channels_ = 3;
 };
 
