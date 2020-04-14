@@ -126,7 +126,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -163,7 +163,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -423,6 +423,10 @@ jobs:
           path: macOS-3.7-wheel
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-3.8-wheel
+          path: macOS-3.8-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: Linux-3.5-wheel
           path: Linux-3.5-wheel
       - uses: actions/download-artifact@v1
@@ -459,6 +463,7 @@ jobs:
           cp macOS-3.5-wheel/*.whl wheelhouse/
           cp macOS-3.6-wheel/*.whl wheelhouse/
           cp macOS-3.7-wheel/*.whl wheelhouse/
+          cp macOS-3.8-wheel/*.whl wheelhouse/
           cp Linux-3.5-wheel/*.whl wheelhouse/
           cp Linux-3.6-wheel/*.whl wheelhouse/
           cp Linux-3.7-wheel/*.whl wheelhouse/
@@ -495,7 +500,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -634,6 +639,10 @@ jobs:
           path: macOS-3.7-nightly
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-3.8-nightly
+          path: macOS-3.8-nightly
+      - uses: actions/download-artifact@v1
+        with:
           name: Linux-3.5-nightly
           path: Linux-3.5-nightly
       - uses: actions/download-artifact@v1
@@ -670,6 +679,7 @@ jobs:
           cp macOS-3.5-nightly/*.whl dist/
           cp macOS-3.6-nightly/*.whl dist/
           cp macOS-3.7-nightly/*.whl dist/
+          cp macOS-3.8-nightly/*.whl dist/
           cp Linux-3.5-nightly/*.whl dist/
           cp Linux-3.6-nightly/*.whl dist/
           cp Linux-3.7-nightly/*.whl dist/
