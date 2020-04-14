@@ -571,7 +571,48 @@ def fixture_decode_aac():
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
 
-    expected = tf.ones([697344, 2], tf.bool)
+    expected = tf.ones_like(value, tf.bool)
+
+    return args, func, expected
+
+
+@pytest.fixture(name="encode_aac", scope="module")
+def fixture_encode_aac():
+    """fixture_encode_aac"""
+    wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.wav",
+    )
+    value = tfio.experimental.audio.decode_wav(
+        tf.io.read_file(wav_path), dtype=tf.int16
+    )
+    value = tf.cast(value, tf.float32) / 32768.0
+
+    encoded_wav_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        "gs-16b-2c-44100hz.encoded.ffmpeg.wav"
+        if sys.platform == "linux"
+        else "gs-16b-2c-44100hz.encoded.wav",
+    )
+    encoded_value = tfio.experimental.audio.decode_wav(
+        tf.io.read_file(encoded_wav_path), dtype=tf.int16
+    )
+
+    # calculate the delta and expect a small diff
+    args = value
+
+    def func(e):
+        delta = tf.constant(2.0, tf.float32)
+        v = tfio.experimental.audio.encode_aac(e, rate=44100)
+        v = tfio.experimental.audio.decode_aac(v)
+        v = tf.cast(v * (1 << 15), tf.int16)
+        v = tf.cast(v, tf.float32) - tf.cast(encoded_value, tf.float32)
+        v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
+        return v
+
+    expected = tf.ones_like(encoded_value, tf.bool)
 
     return args, func, expected
 
@@ -618,6 +659,16 @@ def fixture_decode_aac():
                 )
             ],
         ),
+        pytest.param(
+            "encode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -640,6 +691,7 @@ def fixture_decode_aac():
         "decode_mp3",
         "encode_mp3",
         "decode_aac",
+        "encode_aac",
     ],
 )
 def test_audio_ops(fixture_lookup, io_data_fixture):
@@ -691,6 +743,16 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
                 )
             ],
         ),
+        pytest.param(
+            "encode_aac",
+            marks=[
+                pytest.mark.skipif(
+                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    or (sys.platform == "win32"),
+                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                )
+            ],
+        ),
     ],
     ids=[
         "resample",
@@ -713,6 +775,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         "decode_mp3",
         "encode_mp3",
         "decode_aac",
+        "encode_aac",
     ],
 )
 def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):

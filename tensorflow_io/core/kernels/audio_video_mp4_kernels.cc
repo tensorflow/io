@@ -20,6 +20,13 @@ limitations under the License.
 
 extern "C" {
 #if defined(__APPLE__)
+void EncodeAACFunctionFini(void* state);
+void* EncodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels);
+int64_t EncodeAACFunctionCall(void* state, const float* data_in,
+                              const int64_t size_in, char** data_out_chunk,
+                              int64_t* size_out_chunk, int64_t* chunk);
+
 void DecodeAACFunctionFini(void* state) { return; }
 void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
                             const int64_t channels) {
@@ -27,10 +34,9 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t* frame_in_chunk,
-                              const void** data_in_chunk,
+                              const void* data_in_chunk,
                               const int64_t* size_in_chunk, int64_t chunk,
-                              void* data_out, int64_t size_out);
+                              int64_t frames, void* data_out, int64_t size_out);
 
 void DecodeAVCFunctionFini(void* context);
 void* DecodeAVCFunctionInit(const uint8_t* data_pps, const int64_t size_pps,
@@ -41,6 +47,17 @@ int64_t DecodeAVCFunctionNext(void* context, const void* data_in,
                               int64_t size_out);
 
 #elif defined(_MSC_VER)
+void EncodeAACFunctionFini(void* state) { return; }
+void* EncodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels) {
+  return nullptr;
+}
+int64_t EncodeAACFunctionCall(void* state, const float* data_in,
+                              const int64_t size_in, char** data_out_chunk,
+                              int64_t* size_out_chunk, int64_t* chunk) {
+  return -1;
+}
+
 void DecodeAACFunctionFini(void* state) { return; }
 void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
                             const int64_t channels) {
@@ -48,10 +65,10 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t* frame_in_chunk,
-                              const void** data_in_chunk,
+                              const void* data_in_chunk,
                               const int64_t* size_in_chunk, int64_t chunk,
-                              void* data_out, int64_t size_out) {
+                              int64_t frames, void* data_out,
+                              int64_t size_out) {
   return -1;
 }
 
@@ -69,15 +86,57 @@ int64_t DecodeAVCFunctionNext(void* context, const void* data_in,
 
 #else
 #include <dlfcn.h>
+static void (*EncodeAACFunctionFiniPointer)(void* state);
+static void* (*EncodeAACFunctionInitPointer)(const int64_t codec,
+                                             const int64_t rate,
+                                             const int64_t channels);
+static int64_t (*EncodeAACFunctionCallPointer)(
+    void* state, const float* data_in, const int64_t size_in,
+    char** data_out_chunk, int64_t* size_out_chunk, int64_t* chunk);
+
+void* EncodeAACFunctionInit(const int64_t codec, const int64_t rate,
+                            const int64_t channels) {
+  *(void**)(&EncodeAACFunctionFiniPointer) =
+      dlsym(RTLD_DEFAULT, "EncodeAACFunctionFiniFFmpeg");
+  *(void**)(&EncodeAACFunctionInitPointer) =
+      dlsym(RTLD_DEFAULT, "EncodeAACFunctionInitFFmpeg");
+  *(void**)(&EncodeAACFunctionCallPointer) =
+      dlsym(RTLD_DEFAULT, "EncodeAACFunctionCallFFmpeg");
+  if (EncodeAACFunctionFiniPointer == nullptr ||
+      EncodeAACFunctionInitPointer == nullptr ||
+      EncodeAACFunctionCallPointer == nullptr) {
+    EncodeAACFunctionFiniPointer = nullptr;
+    EncodeAACFunctionInitPointer = nullptr;
+    EncodeAACFunctionCallPointer = nullptr;
+    return nullptr;
+  }
+  return EncodeAACFunctionInitPointer(codec, rate, channels);
+}
+void EncodeAACFunctionFini(void* state) {
+  if (EncodeAACFunctionFiniPointer != nullptr) {
+    return EncodeAACFunctionFiniPointer(state);
+  }
+  return;
+}
+int64_t EncodeAACFunctionCall(void* state, const float* data_in,
+                              const int64_t size_in, char** data_out_chunk,
+                              int64_t* size_out_chunk, int64_t* chunk) {
+  if (EncodeAACFunctionCallPointer != nullptr) {
+    return EncodeAACFunctionCallPointer(state, data_in, size_in, data_out_chunk,
+                                        size_out_chunk, chunk);
+  }
+  return -1;
+}
+
 static void (*DecodeAACFunctionFiniPointer)(void* state);
 static void* (*DecodeAACFunctionInitPointer)(const int64_t codec,
                                              const int64_t rate,
                                              const int64_t channels);
 static int64_t (*DecodeAACFunctionCallPointer)(
     void* state, const int64_t codec, const int64_t rate,
-    const int64_t channels, const int64_t* frame_in_chunk,
-    const void** data_in_chunk, const int64_t* size_in_chunk, int64_t chunk,
-    void* data_out, int64_t size_out);
+    const int64_t channels, const void* data_in_chunk,
+    const int64_t* size_in_chunk, int64_t chunk, int64_t frames, void* data_out,
+    int64_t size_out);
 
 void DecodeAACFunctionFini(void* state) {
   if (DecodeAACFunctionFiniPointer != nullptr) {
@@ -106,14 +165,14 @@ void* DecodeAACFunctionInit(const int64_t codec, const int64_t rate,
 }
 int64_t DecodeAACFunctionCall(void* state, const int64_t codec,
                               const int64_t rate, const int64_t channels,
-                              const int64_t* frame_in_chunk,
-                              const void** data_in_chunk,
+                              const void* data_in_chunk,
                               const int64_t* size_in_chunk, int64_t chunk,
-                              void* data_out, int64_t size_out) {
+                              int64_t frames, void* data_out,
+                              int64_t size_out) {
   if (DecodeAACFunctionCallPointer != nullptr) {
-    return DecodeAACFunctionCallPointer(
-        state, codec, rate, channels, frame_in_chunk, data_in_chunk,
-        size_in_chunk, chunk, data_out, size_out);
+    return DecodeAACFunctionCallPointer(state, codec, rate, channels,
+                                        data_in_chunk, size_in_chunk, chunk,
+                                        frames, data_out, size_out);
   }
   return -1;
 }
@@ -306,29 +365,31 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
     // we need append padding_ at the end.
     upper += padding_;
 
-    int64 frames = 0;
+    static const int64 header_bytes = 7;
 
-    std::vector<int64> frame_in_chunk;
-    std::vector<string> data_in_buffer;
-    std::vector<void*> data_in_chunk;
-    std::vector<int64> size_in_chunk;
+    int64 bytes = 0;
+    int64 frames = 0;
     for (int64 i = lower; i < upper; i++) {
       unsigned frame_bytes, timestamp, duration;
       MP4D_file_offset_t frame_offset = MP4D_frame_offset(
           &mp4d_demux_, track_index_, i, &frame_bytes, &timestamp, &duration);
 
+      bytes += frame_bytes + header_bytes;
       frames += duration;
-      frame_in_chunk.push_back(duration);
+    }
+    string data_in_chunk;
+    data_in_chunk.resize(bytes);
+    std::vector<int64> size_in_chunk;
 
-      int64 header_bytes = 7;
+    int64 offset = 0;
+    for (int64 i = lower; i < upper; i++) {
+      unsigned frame_bytes, timestamp, duration;
+      MP4D_file_offset_t frame_offset = MP4D_frame_offset(
+          &mp4d_demux_, track_index_, i, &frame_bytes, &timestamp, &duration);
 
+      char* data_in = (char*)&data_in_chunk[offset];
       int64 size_in = frame_bytes + header_bytes;
-      data_in_buffer.push_back(string());
-      data_in_buffer.back().resize(size_in);
-      data_in_chunk.push_back(&data_in_buffer.back()[0]);
-      size_in_chunk.push_back(size_in);
 
-      char* data_in = (char*)data_in_chunk.back();
       StringPiece result;
       TF_RETURN_IF_ERROR(file_->Read(frame_offset, frame_bytes, &result,
                                      (char*)&data_in[header_bytes]));
@@ -337,6 +398,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
             "unable to read ", frame_bytes, " from offset ", frame_offset,
             " for track ", track_index_, " and sample indices in ", i);
       }
+      size_in_chunk.push_back(size_in);
 
       // Add ADTS Header (without CRC)
       *((unsigned char*)&data_in[0]) = 0xFF;
@@ -349,15 +411,17 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
       *((unsigned char*)&data_in[4]) = (((size_in & 0x07FF) >> 3));
       *((unsigned char*)&data_in[5]) = (((size_in & 0x0007) << 5) + 0x1F);
       *((unsigned char*)&data_in[6]) = 0xFC;
+
+      offset += size_in;
     }
 
     int64 size_out = frames * channels * sizeof(float);
     string data_out;
     data_out.resize(size_out);
-    int64 status = DecodeAACFunctionCall(
-        state, codec, rate, channels, (int64_t*)&frame_in_chunk[0],
-        (const void**)&data_in_chunk[0], (int64_t*)&size_in_chunk[0],
-        data_in_chunk.size(), (void*)&data_out[0], size_out);
+    int64 status =
+        DecodeAACFunctionCall(state, codec, rate, channels, &data_in_chunk[0],
+                              (int64_t*)&size_in_chunk[0], size_in_chunk.size(),
+                              frames, (void*)&data_out[0], size_out);
     if (status != 0) {
       return errors::InvalidArgument("unable to convert AAC data: ", status);
     }
@@ -394,7 +458,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
   std::vector<int64> partitions_;
 
   // decoder delay for preroll, and padding at the end?
-  const int64 preroll_ = 1;
+  const int64 preroll_ = 0;
   const int64 padding_ = 1;
 };
 
@@ -452,8 +516,180 @@ class AudioDecodeAACOp : public OpKernel {
   Env* env_ GUARDED_BY(mu_);
 };
 
+static int AudioEncodeMP4AACWriteCallback(int64_t offset, const void* buffer,
+                                          size_t size, void* token) {
+  tstring* p = static_cast<tstring*>(token);
+  if (offset + size > p->size()) {
+    p->resize(offset + size);
+  }
+  if (size > 0) {
+    memcpy(&(*p)[offset], buffer, size);
+  }
+  return 0;
+}
+
+class AudioEncodeAACOp : public OpKernel {
+ public:
+  explicit AudioEncodeAACOp(OpKernelConstruction* context) : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* rate_tensor;
+    OP_REQUIRES_OK(context, context->input("rate", &rate_tensor));
+
+    const int64 channels = input_tensor->shape().dim_size(1);
+    OP_REQUIRES(
+        context, (channels == static_cast<int16>(channels)),
+        errors::InvalidArgument("channels ", channels, " > max(int16)"));
+
+    const int64 rate = rate_tensor->scalar<int64>()();
+    OP_REQUIRES(context, (rate == static_cast<int32>(rate)),
+                errors::InvalidArgument("rate ", rate, " > max(int32)"));
+
+    // Code from buildAacAudioSpecificConfig:
+    // ExoPlayer/library/core/src/main/java/com/google/android/exoplayer2/util/CodecSpecificDataUtil.java
+    static const int AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE[] = {
+        96000, 88200, 64000, 48000, 44100, 32000, 24000,
+        22050, 16000, 12000, 11025, 8000,  7350};
+    static const int AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[] = {
+        0,  //
+        1,  // mono: <FC>
+        2,  // stereo: (FL, FR)
+        3,  // 3.0: <FC>, (FL, FR)
+        4,  // 4.0: <FC>, (FL, FR), <BC>
+        5,  // 5.0 back: <FC>, (FL, FR), (SL, SR)
+        6,  // 5.1 back: <FC>, (FL, FR), (SL, SR), <BC>, [LFE]
+        8,  // 7.1 wide back: <FC>, (FCL, FCR), (FL, FR), (SL, SR), [LFE]
+            // AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID,
+            // AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID,
+            // AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID,
+            // 7, // 6.1: <FC>, (FL, FR), (SL, SR), <RC>, [LFE]
+            // 8, // 7.1: <FC>, (FL, FR), (SL, SR), (BL, BR), [LFE]
+            // AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID,
+            // 8, // 7.1 top: <FC>, (FL, FR), (SL, SR), [LFE], (FTL, FTR)
+            // AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID
+    };
+
+    int audioObjectType = 2;  // AUDIO_OBJECT_TYPE_AAC_LC
+    int sampleRateIndex = -1;
+    for (int i = 0;
+         i < sizeof(AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE) /
+                 sizeof(AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE[0]);
+         i++) {
+      if (rate == AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE[i]) {
+        sampleRateIndex = i;
+        break;
+      }
+    }
+    OP_REQUIRES(
+        context, (sampleRateIndex >= 0),
+        errors::InvalidArgument("sample rate ", rate, " not supported"));
+    int channelConfig = -1;
+    for (int i = 0;
+         i < sizeof(AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE) /
+                 sizeof(AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[0]);
+         i++) {
+      if (channels == AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[i]) {
+        channelConfig = i;
+        break;
+      }
+    }
+    OP_REQUIRES(
+        context, (channelConfig >= 0),
+        errors::InvalidArgument("channels ", channels, " not supported"));
+    std::unique_ptr<void, void (*)(void*)> state(nullptr, [](void* p) {
+      if (p != nullptr) {
+        EncodeAACFunctionFini(p);
+      }
+    });
+
+    state.reset(EncodeAACFunctionInit(0, rate, channels));
+    OP_REQUIRES(context, (state.get() != nullptr),
+                errors::InvalidArgument("unable to initialize encoder"));
+
+    const float* data_in = input_tensor->flat<float>().data();
+    const int64_t size_in = input_tensor->NumElements();
+
+    int64_t chunk = input_tensor->NumElements() / channels / 1024 + 1;
+    std::vector<char*> data_out_chunk((size_t)chunk);
+    std::vector<int64_t> size_out_chunk((size_t)chunk);
+    int status =
+        EncodeAACFunctionCall(state.get(), data_in, size_in, &data_out_chunk[0],
+                              &size_out_chunk[0], &chunk);
+    OP_REQUIRES(context, (status == 0),
+                errors::InvalidArgument("unable to encode aac"));
+
+    Tensor* output_tensor = nullptr;
+    OP_REQUIRES_OK(
+        context, context->allocate_output(0, TensorShape({}), &output_tensor));
+
+    tstring& output = output_tensor->scalar<tstring>()();
+    int64 size_out = 0;
+    for (int64 i = 0; i < chunk; i++) {
+      size_out += size_out_chunk[i];
+    }
+    // At least size_out + 4096
+    output.reserve(size_out + 4096);
+
+    std::unique_ptr<MP4E_mux_t, void (*)(MP4E_mux_t*)> mux(nullptr,
+                                                           [](MP4E_mux_t* p) {
+                                                             if (p != nullptr) {
+                                                               MP4E_close(p);
+                                                               ;
+                                                             }
+                                                           });
+    mux.reset(MP4E_open(0, 0, &output, AudioEncodeMP4AACWriteCallback));
+    OP_REQUIRES(context, (mux.get() != nullptr),
+                errors::InvalidArgument("unable open mux"));
+
+    MP4E_track_t tr;
+    tr.track_media_kind = e_audio;
+    tr.language[0] = 'u';
+    tr.language[1] = 'n';
+    tr.language[2] = 'd';
+    tr.language[3] = 0;
+    tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
+    tr.time_scale = rate;
+    tr.default_duration = 0;
+    tr.u.a.channelcount = channels;
+    int audio_track_id = MP4E_add_track(mux.get(), &tr);
+
+    unsigned char dsi[2];
+    dsi[0] = (unsigned char)(((audioObjectType << 3) & 0xF8) |
+                             ((sampleRateIndex >> 1) & 0x07));
+    dsi[1] = (unsigned char)(((sampleRateIndex << 7) & 0x80) |
+                             ((channelConfig << 3) & 0x78));
+
+    status = MP4E_set_dsi(mux.get(), audio_track_id, dsi, sizeof(dsi));
+    OP_REQUIRES(context, (status == 0),
+                errors::InvalidArgument("unable to set dsi: ", status));
+
+    for (int64 i = 0; i < chunk; i++) {
+      status =
+          MP4E_put_sample(mux.get(), audio_track_id, data_out_chunk[i],
+                          size_out_chunk[i], 1024, MP4E_SAMPLE_RANDOM_ACCESS);
+      OP_REQUIRES(
+          context, (status == 0),
+          errors::InvalidArgument("unable to mux packet ", i, ":", status));
+    }
+    // close mux
+    mux.reset(nullptr);
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ GUARDED_BY(mu_);
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeAAC").Device(DEVICE_CPU),
                         AudioDecodeAACOp);
+REGISTER_KERNEL_BUILDER(Name("IO>AudioEncodeAAC").Device(DEVICE_CPU),
+                        AudioEncodeAACOp);
+
 }  // namespace
 
 Status MP4AACReadableResourceInit(
