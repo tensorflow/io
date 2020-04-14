@@ -136,14 +136,14 @@ class PubSubReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string subscription_ GUARDED_BY(mu_);
-  string endpoint_ GUARDED_BY(mu_);
-  int64 timeout_ GUARDED_BY(mu_);
-  std::unique_ptr<Subscriber::Stub> stub_ GUARDED_BY(mu_);
-  string message_id_ GUARDED_BY(mu_);
-  string message_data_ GUARDED_BY(mu_);
-  int64 message_time_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string subscription_ TF_GUARDED_BY(mu_);
+  string endpoint_ TF_GUARDED_BY(mu_);
+  int64 timeout_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<Subscriber::Stub> stub_ TF_GUARDED_BY(mu_);
+  string message_id_ TF_GUARDED_BY(mu_);
+  string message_data_ TF_GUARDED_BY(mu_);
+  int64 message_time_ TF_GUARDED_BY(mu_);
 };
 
 class PubSubReadableInitOp : public ResourceOpKernel<PubSubReadableResource> {
@@ -171,14 +171,14 @@ class PubSubReadableInitOp : public ResourceOpKernel<PubSubReadableResource> {
     OP_REQUIRES_OK(context, resource_->Init(input, metadata));
   }
   Status CreateResource(PubSubReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PubSubReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class PubSubReadableReadOp : public OpKernel {
@@ -207,7 +207,7 @@ class PubSubReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>PubSubReadableInit").Device(DEVICE_CPU),
                         PubSubReadableInitOp);

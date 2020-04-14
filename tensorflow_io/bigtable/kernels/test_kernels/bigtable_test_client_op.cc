@@ -36,7 +36,7 @@ class BigtableTestClientOp : public OpKernel {
       }
     }
   }
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     if (!initialized_) {
       ResourceMgr* mgr = ctx->resource_manager();
@@ -47,7 +47,7 @@ class BigtableTestClientOp : public OpKernel {
           mgr->LookupOrCreate<BigtableClientResource>(
               cinfo_.container(), cinfo_.name(), &resource,
               [this, ctx](BigtableClientResource** ret)
-                  EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                     std::shared_ptr<google::cloud::bigtable::DataClient> client(
                         new BigtableTestClient());
                     // Note: must make explicit copies to sequence
@@ -68,8 +68,8 @@ class BigtableTestClientOp : public OpKernel {
 
  private:
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>BigtableTestClient").Device(DEVICE_CPU),

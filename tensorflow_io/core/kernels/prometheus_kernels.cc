@@ -195,14 +195,14 @@ class PrometheusReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string query_ GUARDED_BY(mu_);
-  string endpoint_ GUARDED_BY(mu_);
-  int64 start_ GUARDED_BY(mu_);
-  int64 stop_ GUARDED_BY(mu_);
-  std::vector<string> jobs_ GUARDED_BY(mu_);
-  std::vector<string> instances_ GUARDED_BY(mu_);
-  std::vector<string> names_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string query_ TF_GUARDED_BY(mu_);
+  string endpoint_ TF_GUARDED_BY(mu_);
+  int64 start_ TF_GUARDED_BY(mu_);
+  int64 stop_ TF_GUARDED_BY(mu_);
+  std::vector<string> jobs_ TF_GUARDED_BY(mu_);
+  std::vector<string> instances_ TF_GUARDED_BY(mu_);
+  std::vector<string> names_ TF_GUARDED_BY(mu_);
 };
 
 class PrometheusReadableInitOp
@@ -238,14 +238,14 @@ class PrometheusReadableInitOp
             }));
   }
   Status CreateResource(PrometheusReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PrometheusReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class PrometheusReadableSpecOp : public OpKernel {
@@ -277,7 +277,7 @@ class PrometheusReadableSpecOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class PrometheusReadableReadOp : public OpKernel {
@@ -326,7 +326,7 @@ class PrometheusReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>PrometheusReadableInit").Device(DEVICE_CPU),
                         PrometheusReadableInitOp);
@@ -373,7 +373,7 @@ class PrometheusScrapeOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>PrometheusScrape").Device(DEVICE_CPU),
                         PrometheusScrapeOp);

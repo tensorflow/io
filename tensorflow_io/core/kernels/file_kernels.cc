@@ -69,7 +69,7 @@ class FileInfoOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class FileReadOp : public OpKernel {
@@ -124,7 +124,7 @@ class FileReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class FileResource : public ResourceBase {
@@ -159,7 +159,7 @@ class FileResource : public ResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
   std::unique_ptr<WritableFile> file_;
 };
 
@@ -180,14 +180,14 @@ class FileInitOp : public ResourceOpKernel<FileResource> {
     OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()()));
   }
   Status CreateResource(FileResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FileResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class FileCallOp : public OpKernel {
@@ -223,7 +223,7 @@ class FileCallOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class FileSyncOp : public OpKernel {
@@ -242,7 +242,7 @@ class FileSyncOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>FileInfo").Device(DEVICE_CPU), FileInfoOp);

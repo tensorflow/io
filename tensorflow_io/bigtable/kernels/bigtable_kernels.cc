@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/threadpool.h"
+#include "tensorflow/core/public/version.h"
 
 namespace tensorflow {
 namespace {
@@ -63,7 +64,7 @@ class BigtableClientOp : public OpKernel {
     }
   }
 
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     if (!initialized_) {
       ResourceMgr* mgr = ctx->resource_manager();
@@ -74,7 +75,7 @@ class BigtableClientOp : public OpKernel {
           mgr->LookupOrCreate<BigtableClientResource>(
               cinfo_.container(), cinfo_.name(), &resource,
               [this, ctx](
-                  BigtableClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                  BigtableClientResource** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                 auto client_options =
                     google::cloud::bigtable::ClientOptions()
                         .set_connection_pool_size(connection_pool_size_)
@@ -82,7 +83,8 @@ class BigtableClientOp : public OpKernel {
                 auto channel_args = client_options.channel_arguments();
                 channel_args.SetMaxReceiveMessageSize(
                     max_receive_message_size_);
-                channel_args.SetUserAgentPrefix("tensorflow");
+                channel_args.SetUserAgentPrefix(
+                    strings::StrCat("tensorflow-", TF_VERSION_STRING));
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
                 client_options.set_channel_arguments(channel_args);
@@ -108,8 +110,8 @@ class BigtableClientOp : public OpKernel {
   int32 max_receive_message_size_;
 
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>BigtableClient").Device(DEVICE_CPU),
@@ -134,7 +136,7 @@ class BigtableTableOp : public OpKernel {
     }
   }
 
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     if (!initialized_) {
       ResourceMgr* mgr = ctx->resource_manager();
@@ -164,8 +166,8 @@ class BigtableTableOp : public OpKernel {
   string table_;  // Note: this is const after construction.
 
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>BigtableTable").Device(DEVICE_CPU),

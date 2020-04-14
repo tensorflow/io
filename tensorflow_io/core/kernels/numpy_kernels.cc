@@ -430,7 +430,7 @@ class NumpyInfoOp : public OpKernel {
 
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class NumpySpecOp : public OpKernel {
@@ -492,7 +492,7 @@ class NumpySpecOp : public OpKernel {
 
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class NumpyReadOp : public OpKernel {
@@ -686,8 +686,8 @@ class NumpyReadOp : public OpKernel {
 
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  ::tensorflow::DataType dtype_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  ::tensorflow::DataType dtype_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>NumpyInfo").Device(DEVICE_CPU), NumpyInfoOp);
