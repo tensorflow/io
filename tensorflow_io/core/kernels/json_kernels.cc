@@ -258,9 +258,9 @@ class JSONReadable : public IOReadableInterface {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
   std::shared_ptr<ArrowRandomAccessFile> json_file_;
   std::shared_ptr<::arrow::json::TableReader> reader_;
   std::shared_ptr<::arrow::Table> table_;

@@ -128,7 +128,7 @@ class BigtableReaderDatasetIterator : public DatasetIterator<Dataset> {
                           std::vector<Tensor>* out_tensors) = 0;
 
  private:
-  Status EnsureIteratorInitialized() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  Status EnsureIteratorInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (reader_) {
       return Status::OK();
     }
@@ -145,8 +145,8 @@ class BigtableReaderDatasetIterator : public DatasetIterator<Dataset> {
   }
 
   mutex mu_;
-  std::unique_ptr<::google::cloud::bigtable::RowReader> reader_ GUARDED_BY(mu_);
-  ::google::cloud::bigtable::RowReader::iterator iterator_ GUARDED_BY(mu_);
+  std::unique_ptr<::google::cloud::bigtable::RowReader> reader_ TF_GUARDED_BY(mu_);
+  ::google::cloud::bigtable::RowReader::iterator iterator_ TF_GUARDED_BY(mu_);
 };
 
 }  // namespace data

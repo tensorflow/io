@@ -131,7 +131,7 @@ class BigtableTestClient : public ::google::cloud::bigtable::DataClient {
   mutex mu_;
   const std::string project_id_ = "testproject";
   const std::string instance_id_ = "testinstance";
-  Table table_ GUARDED_BY(mu_);
+  Table table_ TF_GUARDED_BY(mu_);
 };
 
 }  // namespace tensorflow

@@ -163,7 +163,7 @@ class ReadTextOp : public OpKernel {
   }
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>ReadText").Device(DEVICE_CPU),

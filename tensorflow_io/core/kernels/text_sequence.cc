@@ -56,7 +56,7 @@ class TextOutputSequence : public OutputSequence {
     return Status::OK();
   }
  private:
-  std::vector<string> destination_ GUARDED_BY(mu_);
+  std::vector<string> destination_ TF_GUARDED_BY(mu_);
 };
 
 class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {

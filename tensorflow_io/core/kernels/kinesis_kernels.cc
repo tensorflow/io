@@ -396,13 +396,13 @@ class KinesisReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string stream_ GUARDED_BY(mu_);
-  string shard_ GUARDED_BY(mu_);
-  Aws::String iterator_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string stream_ TF_GUARDED_BY(mu_);
+  string shard_ TF_GUARDED_BY(mu_);
+  Aws::String iterator_ TF_GUARDED_BY(mu_);
   std::unique_ptr<Aws::Kinesis::KinesisClient, decltype(&ShutdownClient)>
-      client_ GUARDED_BY(mu_);
-  int64 interval_ GUARDED_BY(mu_);
+      client_ TF_GUARDED_BY(mu_);
+  int64 interval_ TF_GUARDED_BY(mu_);
 };
 
 class KinesisReadableInitOp : public ResourceOpKernel<KinesisReadableResource> {
@@ -430,14 +430,14 @@ class KinesisReadableInitOp : public ResourceOpKernel<KinesisReadableResource> {
     OP_REQUIRES_OK(context, resource_->Init(input, metadata));
   }
   Status CreateResource(KinesisReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KinesisReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class KinesisReadableReadOp : public OpKernel {
@@ -471,7 +471,7 @@ class KinesisReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>KinesisReadableInit").Device(DEVICE_CPU),
                         KinesisReadableInitOp);

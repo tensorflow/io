@@ -161,11 +161,8 @@ python3 --version
 curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
 sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
 
-# Install latest tensorflow
-sudo python3 -m pip install tensorflow
-
-# Configure bazel
-./configure.sh
+# Install tensorflow and configure bazel
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -203,11 +200,8 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
-# Install latest tensorflow
-sudo python3 -m pip install tensorflow
-
-# Configure bazel
-./configure.sh
+# Install tensorflow and configure bazel
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -235,7 +229,7 @@ sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
 sudo python3 -m pip install -U pip
 
 # Install tensorflow and configure bazel
-./configure.sh
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...

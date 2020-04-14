@@ -95,7 +95,7 @@ class SampleRowKeysResponse : public grpc::ClientReaderInterface<
 
  private:
   mutex mu_;
-  uint64 num_messages_sent_ GUARDED_BY(mu_) = 0;
+  uint64 num_messages_sent_ TF_GUARDED_BY(mu_) = 0;
   BigtableTestClient* client_;  // Not owned.
 };
 
@@ -264,7 +264,7 @@ class ReadRowsResponse : public grpc::ClientReaderInterface<
   }
 
   mutex mu_;
-  bool sent_first_message_ GUARDED_BY(mu_) = false;
+  bool sent_first_message_ TF_GUARDED_BY(mu_) = false;
   BigtableTestClient* client_;  // Not owned.
   const google::bigtable::v2::ReadRowsRequest request_;
 };

@@ -434,9 +434,9 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
   DataType dtype_;
   TensorShape shape_;
   int64 rate_;
@@ -513,7 +513,7 @@ class AudioDecodeAACOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 static int AudioEncodeMP4AACWriteCallback(int64_t offset, const void* buffer,
@@ -682,7 +682,7 @@ class AudioEncodeAACOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioDecodeAAC").Device(DEVICE_CPU),
@@ -817,9 +817,9 @@ class VideoReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
 
   std::unique_ptr<MP4Stream> stream_;
   MP4D_demux_t mp4d_demux_;
@@ -852,14 +852,14 @@ class VideoReadableInitOp : public ResourceOpKernel<VideoReadableResource> {
     OP_REQUIRES_OK(context, resource_->Init(input));
   }
   Status CreateResource(VideoReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new VideoReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class VideoReadableReadOp : public OpKernel {
@@ -891,7 +891,7 @@ class VideoReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>VideoReadableInit").Device(DEVICE_CPU),

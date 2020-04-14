@@ -136,8 +136,8 @@ class ListArchiveEntriesOp : public OpKernel {
   }
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::vector<string> filters_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::vector<string> filters_ TF_GUARDED_BY(mu_);
 };
 
 class ReadArchiveOp : public OpKernel {
@@ -228,7 +228,7 @@ class ReadArchiveOp : public OpKernel {
   }
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>ListArchiveEntries").Device(DEVICE_CPU),

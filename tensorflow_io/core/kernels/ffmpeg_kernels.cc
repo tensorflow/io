@@ -386,13 +386,13 @@ class FFmpegAudioReadableResource : public ResourceBase {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string filename_ GUARDED_BY(mu_);
-  int64 audio_index_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
-  std::unique_ptr<FFmpegAudioStream> ffmpeg_audio_stream_ GUARDED_BY(mu_);
-  int64 sample_index_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string filename_ TF_GUARDED_BY(mu_);
+  int64 audio_index_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<FFmpegAudioStream> ffmpeg_audio_stream_ TF_GUARDED_BY(mu_);
+  int64 sample_index_ TF_GUARDED_BY(mu_);
 };
 
 class FFmpegAudioReadableInitOp : public ResourceOpKernel<FFmpegAudioReadableResource> {
@@ -414,13 +414,13 @@ class FFmpegAudioReadableInitOp : public ResourceOpKernel<FFmpegAudioReadableRes
     OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(), index_tensor->scalar<int64>()()));
   }
   Status CreateResource(FFmpegAudioReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FFmpegAudioReadableResource(env_);
     return Status::OK();
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 
@@ -452,7 +452,7 @@ class FFmpegAudioReadableNextOp : public OpKernel {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class FFmpegVideoStream : public FFmpegStream {
@@ -636,13 +636,13 @@ class FFmpegVideoReadableResource : public ResourceBase {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string filename_ GUARDED_BY(mu_);
-  int64 video_index_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
-  std::unique_ptr<FFmpegVideoStream> ffmpeg_video_stream_ GUARDED_BY(mu_);
-  int64 frame_index_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string filename_ TF_GUARDED_BY(mu_);
+  int64 video_index_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<FFmpegVideoStream> ffmpeg_video_stream_ TF_GUARDED_BY(mu_);
+  int64 frame_index_ TF_GUARDED_BY(mu_);
 };
 
 class FFmpegVideoReadableInitOp : public ResourceOpKernel<FFmpegVideoReadableResource> {
@@ -664,13 +664,13 @@ class FFmpegVideoReadableInitOp : public ResourceOpKernel<FFmpegVideoReadableRes
     OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()(), index_tensor->scalar<int64>()()));
   }
   Status CreateResource(FFmpegVideoReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FFmpegVideoReadableResource(env_);
     return Status::OK();
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 
@@ -702,7 +702,7 @@ class FFmpegVideoReadableNextOp : public OpKernel {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>FfmpegAudioReadableInit").Device(DEVICE_CPU),

@@ -113,7 +113,7 @@ class VideoCaptureReadableResource : public ResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 
   std::unique_ptr<void, void (*)(void*)> context_;
   int64 bytes_;
@@ -140,14 +140,14 @@ class VideoCaptureReadableInitOp
     OP_REQUIRES_OK(context, resource_->Init(input));
   }
   Status CreateResource(VideoCaptureReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new VideoCaptureReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class VideoCaptureReadableReadOp : public OpKernel {
@@ -173,7 +173,7 @@ class VideoCaptureReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>VideoCaptureReadableInit").Device(DEVICE_CPU),
                         VideoCaptureReadableInitOp);

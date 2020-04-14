@@ -144,12 +144,12 @@ class SqlIterableResource : public ResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<PGconn, void (*)(PGconn*)> conn_ GUARDED_BY(mu_);
-  std::unique_ptr<PGresult, void (*)(PGresult*)> result_ GUARDED_BY(mu_);
-  int64 count_ GUARDED_BY(mu_);
-  std::vector<string> fields_ GUARDED_BY(mu_);
-  std::vector<DataType> dtypes_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<PGconn, void (*)(PGconn*)> conn_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<PGresult, void (*)(PGresult*)> result_ TF_GUARDED_BY(mu_);
+  int64 count_ TF_GUARDED_BY(mu_);
+  std::vector<string> fields_ TF_GUARDED_BY(mu_);
+  std::vector<DataType> dtypes_ TF_GUARDED_BY(mu_);
 };
 
 class SqlIterableInitOp : public ResourceOpKernel<SqlIterableResource> {
@@ -200,14 +200,14 @@ class SqlIterableInitOp : public ResourceOpKernel<SqlIterableResource> {
     }
   }
   Status CreateResource(SqlIterableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new SqlIterableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class SqlIterableReadOp : public OpKernel {
@@ -242,7 +242,7 @@ class SqlIterableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>SqlIterableInit").Device(DEVICE_CPU),

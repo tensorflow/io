@@ -188,7 +188,7 @@ class BigtableSampleKeyPairsDatasetOp : public DatasetOpKernel {
 
      private:
       mutex mu_;
-      size_t index_ GUARDED_BY(mu_) = 0;
+      size_t index_ TF_GUARDED_BY(mu_) = 0;
       // Note: we store the keys_ on the iterator instead of the dataset
       // because we want to re-sample the row keys in case there have been
       // tablet rebalancing operations since the dataset was created.

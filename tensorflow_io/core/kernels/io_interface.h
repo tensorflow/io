@@ -111,7 +111,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
   }
   Status CreateResource(Type** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new Type(env_);
     return Status::OK();
   }
