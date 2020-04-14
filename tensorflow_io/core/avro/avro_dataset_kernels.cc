@@ -426,8 +426,8 @@ class AvroDatasetOp : public DatasetOpKernel {
       }
 
       mutex mu_;
-      size_t current_file_index_ GUARDED_BY(mu_) = 0;
-      std::unique_ptr<AvroFileStreamReader> reader_ GUARDED_BY(mu_);
+      size_t current_file_index_ TF_GUARDED_BY(mu_) = 0;
+      std::unique_ptr<AvroFileStreamReader> reader_ TF_GUARDED_BY(mu_);
     };  // class Iterator
 
     static AvroParseConfig BuildConfig(
