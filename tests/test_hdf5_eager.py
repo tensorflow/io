@@ -31,7 +31,7 @@ def test_hdf5():
     def create_datasets(runpath, cnt=10):
         os.makedirs(runpath, exist_ok=True)
         for i in range(cnt):
-            f = h5py.File(f"{runpath}/file_{i}.h5", "w")
+            f = h5py.File("{}/file_{}.h5".format(runpath, i), "w")
             total_samples = np.random.randint(50000, 100000)
             f.create_dataset("features", data=np.random.random((total_samples, 60)))
             f.create_dataset("targets", data=np.random.random((total_samples, 3)))
