@@ -103,13 +103,13 @@ class LMDBReadable : public IOReadableInterface {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 
-  MDB_env* mdb_env_ GUARDED_BY(mu_) = nullptr;
-  MDB_txn* mdb_txn_ GUARDED_BY(mu_) = nullptr;
-  MDB_dbi mdb_dbi_ GUARDED_BY(mu_) = 0;
+  MDB_env* mdb_env_ TF_GUARDED_BY(mu_) = nullptr;
+  MDB_txn* mdb_txn_ TF_GUARDED_BY(mu_) = nullptr;
+  MDB_dbi mdb_dbi_ TF_GUARDED_BY(mu_) = 0;
 
-  MDB_cursor* mdb_cursor_ GUARDED_BY(mu_) = nullptr;
+  MDB_cursor* mdb_cursor_ TF_GUARDED_BY(mu_) = nullptr;
 };
 
 class LMDBMapping : public IOMappingInterface {
@@ -187,11 +187,11 @@ class LMDBMapping : public IOMappingInterface {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 
-  MDB_env* mdb_env_ GUARDED_BY(mu_) = nullptr;
-  MDB_txn* mdb_txn_ GUARDED_BY(mu_) = nullptr;
-  MDB_dbi mdb_dbi_ GUARDED_BY(mu_) = 0;
+  MDB_env* mdb_env_ TF_GUARDED_BY(mu_) = nullptr;
+  MDB_txn* mdb_txn_ TF_GUARDED_BY(mu_) = nullptr;
+  MDB_dbi mdb_dbi_ TF_GUARDED_BY(mu_) = 0;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>LMDBReadableInit").Device(DEVICE_CPU),

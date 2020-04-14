@@ -192,7 +192,7 @@ class OSSRandomAccessFile : public RandomAccessFile {
   /// A helper function to actually read the data from OSS. This function loads
   /// buffer_ from OSS based on its current capacity.
   Status LoadBufferFromOSS(size_t desired_buffer_size) const
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     size_t range_start = buffer_start_offset_;
     size_t range_end = buffer_start_offset_ + std::min(buffer_.capacity() - 1,
                                                        desired_buffer_size - 1);
@@ -259,10 +259,10 @@ class OSSRandomAccessFile : public RandomAccessFile {
   size_t read_ahead_bytes_;
 
   mutable mutex mu_;
-  mutable std::vector<char> buffer_ GUARDED_BY(mu_);
+  mutable std::vector<char> buffer_ TF_GUARDED_BY(mu_);
   // The original file offset of the first byte in the buffer.
-  mutable size_t buffer_start_offset_ GUARDED_BY(mu_) = 0;
-  mutable size_t buffer_size_ GUARDED_BY(mu_) = 0;
+  mutable size_t buffer_start_offset_ TF_GUARDED_BY(mu_) = 0;
+  mutable size_t buffer_size_ TF_GUARDED_BY(mu_) = 0;
 };
 
 class OSSReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {

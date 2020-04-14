@@ -348,7 +348,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
      private:
       // Sets up Kafka streams to read from the topic at
       // `current_topic_index_`.
-      Status SetupStreamsLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      Status SetupStreamsLocked(Env* env) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
         if (current_topic_index_ >= dataset()->topics_.size()) {
           return errors::InvalidArgument(
               "current_topic_index_:", current_topic_index_,
@@ -474,7 +474,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
       }
 
       // Resets all Kafka streams.
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
         if (consumer_.get()) {
           consumer_->unassign();
           consumer_->close();
@@ -483,12 +483,12 @@ class KafkaDatasetOp : public DatasetOpKernel {
       }
 
       mutex mu_;
-      bool run_ GUARDED_BY(mu_) = true;
-      size_t current_topic_index_ GUARDED_BY(mu_) = 0;
-      int64 offset_ GUARDED_BY(mu_) = 0;
-      int64 limit_ GUARDED_BY(mu_) = -1;
-      std::unique_ptr<RdKafka::TopicPartition> topic_partition_ GUARDED_BY(mu_);
-      std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
+      bool run_ TF_GUARDED_BY(mu_) = true;
+      size_t current_topic_index_ TF_GUARDED_BY(mu_) = 0;
+      int64 offset_ TF_GUARDED_BY(mu_) = 0;
+      int64 limit_ TF_GUARDED_BY(mu_) = -1;
+      std::unique_ptr<RdKafka::TopicPartition> topic_partition_ TF_GUARDED_BY(mu_);
+      std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
       KafkaEventCb kafka_event_cb = KafkaEventCb(run_);
     };
 
@@ -698,9 +698,9 @@ class KafkaOutputSequence : public OutputSequence {
   }
 
  private:
-  int32 partition_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::Producer> producer_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::Topic> topic_ GUARDED_BY(mu_);
+  int32 partition_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::Producer> producer_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::Topic> topic_ TF_GUARDED_BY(mu_);
   static const int timeout_ = 5000;
 };
 
@@ -782,7 +782,7 @@ class KafkaEventCb : public RdKafka::EventCb {
 
  private:
   mutable mutex mu_;
-  bool run_ GUARDED_BY(mu_) = true;
+  bool run_ TF_GUARDED_BY(mu_) = true;
 };
 
 class DecodeAvroResource : public ResourceBase {
@@ -807,8 +807,8 @@ class DecodeAvroResource : public ResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  string schema_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  string schema_ TF_GUARDED_BY(mu_);
   std::istringstream schema_stream_;
   avro::ValidSchema avro_schema_;
 };
@@ -952,7 +952,7 @@ class DecodeAvroOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class EncodeAvroOp : public OpKernel {
@@ -1074,14 +1074,14 @@ class DecodeAvroInitOp : public ResourceOpKernel<DecodeAvroResource> {
     OP_REQUIRES_OK(context, resource_->Init(input_tensor->scalar<tstring>()()));
   }
   Status CreateResource(DecodeAvroResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new DecodeAvroResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaDataset").Device(DEVICE_CPU),

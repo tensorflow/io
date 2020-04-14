@@ -285,18 +285,18 @@ class ArrowDatasetBase : public DatasetBase {
 
     // Setup Arrow record batch consumer and initialze current_batch_
     virtual Status SetupStreamsLocked(Env* env)
-        EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+        TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
     // Get the next Arrow record batch, if available. If not then
     // current_batch_ will be set to nullptr to indicate no further batches.
-    virtual Status NextStreamLocked(Env* env) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    virtual Status NextStreamLocked(Env* env) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       current_batch_ = nullptr;
       current_row_idx_ = 0;
       return Status::OK();
     }
 
     // Reset the Arrow record batch consumer when done with batches.
-    virtual void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    virtual void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       // This is the final state of the iterator after end_of_sequence=true
       current_batch_ = nullptr;
       current_row_idx_ = 1;
@@ -314,9 +314,9 @@ class ArrowDatasetBase : public DatasetBase {
     }
 
     mutex mu_;
-    std::shared_ptr<arrow::RecordBatch> current_batch_ GUARDED_BY(mu_) =
+    std::shared_ptr<arrow::RecordBatch> current_batch_ TF_GUARDED_BY(mu_) =
         nullptr;
-    int64_t current_row_idx_ GUARDED_BY(mu_) = 0;
+    int64_t current_row_idx_ TF_GUARDED_BY(mu_) = 0;
   };
 
   const std::vector<int32> columns_;
@@ -494,7 +494,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
 
      private:
       Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         buffer_ = std::make_shared<arrow::Buffer>(
             dataset()->buffer_ptr_,
             dataset()->buffer_size_);
@@ -514,7 +514,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       }
 
       Status NextStreamLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < num_batches_) {
           CHECK_ARROW(
@@ -523,19 +523,19 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
         reader_.reset();
         current_batch_idx_ = 0;
         num_batches_ = 0;
       }
 
-      std::shared_ptr<arrow::Buffer> buffer_ GUARDED_BY(mu_);
-      std::shared_ptr<arrow::io::BufferReader> buffer_reader_ GUARDED_BY(mu_);
+      std::shared_ptr<arrow::Buffer> buffer_ TF_GUARDED_BY(mu_);
+      std::shared_ptr<arrow::io::BufferReader> buffer_reader_ TF_GUARDED_BY(mu_);
       std::shared_ptr<arrow::ipc::RecordBatchFileReader> reader_
-          GUARDED_BY(mu_);
-      int current_batch_idx_ GUARDED_BY(mu_) = 0;
-      int num_batches_ GUARDED_BY(mu_) = 0;
+          TF_GUARDED_BY(mu_);
+      int current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
+      int num_batches_ TF_GUARDED_BY(mu_) = 0;
     };
 
     const uint8_t* buffer_ptr_;
@@ -639,7 +639,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
 
      private:
       Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& batches = dataset()->batches_.scalar<tstring>()();
         auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
@@ -655,7 +655,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       }
 
       Status NextStreamLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < num_batches_) {
           CHECK_ARROW(
@@ -664,7 +664,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
         reader_.reset();
         current_batch_idx_ = 0;
@@ -672,9 +672,9 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       }
 
       std::shared_ptr<arrow::ipc::RecordBatchFileReader> reader_
-          GUARDED_BY(mu_);
-      int current_batch_idx_ GUARDED_BY(mu_) = 0;
-      int num_batches_ GUARDED_BY(mu_) = 0;
+          TF_GUARDED_BY(mu_);
+      int current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
+      int num_batches_ TF_GUARDED_BY(mu_) = 0;
     };
 
     const Tensor batches_;
@@ -772,7 +772,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
 
      private:
       Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& filename = dataset()->filenames_[current_file_idx_];
 
         // Init a TF file from the filename and determine size
@@ -809,7 +809,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       }
 
       Status NextStreamLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < record_batches_.size()) {
           current_batch_ = record_batches_[current_batch_idx_];
@@ -821,17 +821,17 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
         current_file_idx_ = 0;
         current_batch_idx_ = 0;
         record_batches_.clear();
       }
 
-      size_t current_file_idx_ GUARDED_BY(mu_) = 0;
-      size_t current_batch_idx_ GUARDED_BY(mu_) = 0;
+      size_t current_file_idx_ TF_GUARDED_BY(mu_) = 0;
+      size_t current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
       std::vector<std::shared_ptr<arrow::RecordBatch>> record_batches_
-          GUARDED_BY(mu_);
+          TF_GUARDED_BY(mu_);
     };
 
     const std::vector<string> filenames_;
@@ -930,7 +930,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
 
      private:
       Status SetupStreamsLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         const string& endpoint = dataset()->endpoints_[current_endpoint_idx_];
         string endpoint_type;
         string endpoint_value;
@@ -956,7 +956,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       }
 
       Status NextStreamLocked(Env* env)
-          EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
         if (current_batch_ == nullptr &&
@@ -967,16 +967,16 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         return Status::OK();
       }
 
-      void ResetStreamsLocked() EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
         current_endpoint_idx_ = 0;
         reader_.reset();
         in_stream_.reset();
       }
 
-      size_t current_endpoint_idx_ GUARDED_BY(mu_) = 0;
-      std::shared_ptr<arrow::io::InputStream> in_stream_ GUARDED_BY(mu_);
-      std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ GUARDED_BY(mu_);
+      size_t current_endpoint_idx_ TF_GUARDED_BY(mu_) = 0;
+      std::shared_ptr<arrow::io::InputStream> in_stream_ TF_GUARDED_BY(mu_);
+      std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ TF_GUARDED_BY(mu_);
     };
 
     const std::vector<string> endpoints_;

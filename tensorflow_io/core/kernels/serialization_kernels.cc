@@ -132,8 +132,8 @@ class DecodeJSONOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::vector<TensorShape> shapes_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu_);
 };
 
 class DecodeAvroOp : public OpKernel {
@@ -324,8 +324,8 @@ class DecodeAvroOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::vector<TensorShape> shapes_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu_);
 };
 
 class EncodeAvroOp : public OpKernel {
@@ -491,7 +491,7 @@ class EncodeAvroOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>DecodeJSON").Device(DEVICE_CPU), DecodeJSONOp);

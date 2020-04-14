@@ -53,7 +53,7 @@ class BigQueryClientOp : public OpKernel {
     }
   }
 
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     if (!initialized_) {
       ResourceMgr* mgr = ctx->resource_manager();
@@ -64,7 +64,7 @@ class BigQueryClientOp : public OpKernel {
           mgr->LookupOrCreate<BigQueryClientResource>(
               cinfo_.container(), cinfo_.name(), &resource,
               [this, ctx](BigQueryClientResource** ret)
-                  EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                     std::string server_name =
                         "dns:///bigquerystorage.googleapis.com";
                     auto creds = ::grpc::GoogleDefaultCredentials();
@@ -95,8 +95,8 @@ class BigQueryClientOp : public OpKernel {
 
  private:
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>BigQueryClient").Device(DEVICE_CPU),
@@ -127,7 +127,7 @@ class BigQueryReadSessionOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("requested_streams", &requested_streams_));
   }
 
-  void Compute(OpKernelContext* ctx) override LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     mutex_lock l(mu_);
     ResourceMgr* mgr = ctx->resource_manager();
     OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
@@ -206,8 +206,8 @@ class BigQueryReadSessionOp : public OpKernel {
   int requested_streams_;
 
   mutex mu_;
-  ContainerInfo cinfo_ GUARDED_BY(mu_);
-  bool initialized_ GUARDED_BY(mu_) = false;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>BigQueryReadSession").Device(DEVICE_CPU),

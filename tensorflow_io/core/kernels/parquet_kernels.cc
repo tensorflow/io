@@ -238,9 +238,9 @@ class ParquetReadable : public IOReadableInterface {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
   std::shared_ptr<ArrowRandomAccessFile> parquet_file_;
   std::unique_ptr<::parquet::ParquetFileReader> parquet_reader_;
   std::shared_ptr<::parquet::FileMetaData> parquet_metadata_;
