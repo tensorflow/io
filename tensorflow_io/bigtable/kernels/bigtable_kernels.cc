@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/threadpool.h"
+#include "tensorflow/core/public/version.h"
 
 namespace tensorflow {
 namespace {
@@ -82,7 +83,8 @@ class BigtableClientOp : public OpKernel {
                 auto channel_args = client_options.channel_arguments();
                 channel_args.SetMaxReceiveMessageSize(
                     max_receive_message_size_);
-                channel_args.SetUserAgentPrefix("tensorflow");
+                channel_args.SetUserAgentPrefix(
+                    strings::StrCat("tensorflow-", TF_VERSION_STRING));
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
                 channel_args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
                 client_options.set_channel_arguments(channel_args);

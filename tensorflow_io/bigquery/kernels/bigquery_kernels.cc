@@ -29,6 +29,7 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/strings/stringprintf.h"
+#include "tensorflow/core/public/version.h"
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {
@@ -39,8 +40,7 @@ static constexpr int kMaxReceiveMessageSize = 1 << 24;  // 16 MBytes
 
 class BigQueryClientOp : public OpKernel {
  public:
-  explicit BigQueryClientOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
-  }
+  explicit BigQueryClientOp(OpKernelConstruction* ctx) : OpKernel(ctx) {}
 
   ~BigQueryClientOp() override {
     if (cinfo_.resource_is_private_to_kernel()) {
@@ -63,27 +63,28 @@ class BigQueryClientOp : public OpKernel {
           ctx,
           mgr->LookupOrCreate<BigQueryClientResource>(
               cinfo_.container(), cinfo_.name(), &resource,
-              [this, ctx](
-                  BigQueryClientResource** ret) EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                std::string server_name =
-                    "dns:///bigquerystorage.googleapis.com";
-                auto creds = ::grpc::GoogleDefaultCredentials();
-                grpc::ChannelArguments args;
-                args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
-                args.SetUserAgentPrefix("tensorflow");
-                args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
-                args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
-                auto channel = ::grpc::CreateCustomChannel(
-                    server_name, creds, args);
-                VLOG(3) << "Creating GRPC channel";
-                auto stub =
-                    absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
-                        channel);
-                VLOG(3) << "Done creating GRPC channel";
+              [this, ctx](BigQueryClientResource** ret)
+                  EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                    std::string server_name =
+                        "dns:///bigquerystorage.googleapis.com";
+                    auto creds = ::grpc::GoogleDefaultCredentials();
+                    grpc::ChannelArguments args;
+                    args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
+                    args.SetUserAgentPrefix(
+                        strings::StrCat("tensorflow-", TF_VERSION_STRING));
+                    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
+                    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
+                    auto channel =
+                        ::grpc::CreateCustomChannel(server_name, creds, args);
+                    VLOG(3) << "Creating GRPC channel";
+                    auto stub =
+                        absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
+                            channel);
+                    VLOG(3) << "Done creating GRPC channel";
 
-                *ret = new BigQueryClientResource(std::move(stub));
-                return Status::OK();
-              }));
+                    *ret = new BigQueryClientResource(std::move(stub));
+                    return Status::OK();
+                  }));
       core::ScopedUnref resource_cleanup(resource);
       initialized_ = true;
     }
@@ -149,18 +150,19 @@ class BigQueryReadSessionOp : public OpKernel {
     createReadSessionRequest.mutable_read_options()->set_row_restriction(
         row_restriction_);
     createReadSessionRequest.set_requested_streams(requested_streams_);
-    createReadSessionRequest.set_sharding_strategy(apiv1beta1::ShardingStrategy::BALANCED);
+    createReadSessionRequest.set_sharding_strategy(
+        apiv1beta1::ShardingStrategy::BALANCED);
     createReadSessionRequest.set_format(apiv1beta1::DataFormat::AVRO);
     VLOG(3) << "createReadSessionRequest: "
             << createReadSessionRequest.DebugString();
     ::grpc::ClientContext context;
-    context.AddMetadata("x-goog-request-params",
-                        strings::Printf("table_reference.dataset_id=%s&table_"
-                                        "reference.project_id=%s",
-                                        dataset_id_.c_str(),
-                                        project_id_.c_str()));
+    context.AddMetadata(
+        "x-goog-request-params",
+        strings::Printf("table_reference.dataset_id=%s&table_"
+                        "reference.project_id=%s",
+                        dataset_id_.c_str(), project_id_.c_str()));
     context.set_deadline(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_seconds(60, GPR_TIMESPAN)));
+                                      gpr_time_from_seconds(60, GPR_TIMESPAN)));
 
     std::shared_ptr<apiv1beta1::ReadSession> readSessionResponse =
         std::make_shared<apiv1beta1::ReadSession>();
@@ -178,10 +180,9 @@ class BigQueryReadSessionOp : public OpKernel {
     }
 
     Tensor* streams_t = nullptr;
-    OP_REQUIRES_OK(ctx, ctx->allocate_output(
-        "streams",
-        {readSessionResponse->streams_size()},
-        &streams_t));
+    OP_REQUIRES_OK(
+        ctx, ctx->allocate_output(
+                 "streams", {readSessionResponse->streams_size()}, &streams_t));
     auto streams_vec = streams_t->vec<tstring>();
     for (int i = 0; i < readSessionResponse->streams_size(); i++) {
       streams_vec(i) = readSessionResponse->streams(i).name();
