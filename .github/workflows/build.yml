@@ -211,50 +211,10 @@ jobs:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: wheelhouse
 
-  linux-test:
-    name: Test ${{ matrix.python }} Linux
-    needs: linux-wheel
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
-        exclude:
-          - os: ubuntu-16.04
-            python: '3.6'
-          - os: ubuntu-16.04
-            python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-wheel
-          path: wheelhouse
-      - name: Setup Linux
-        run: |
-          set -x -e
-          bash -x -e tests/test_kafka/kafka_test.sh
-          bash -x -e tests/test_kinesis/kinesis_test.sh
-          bash -x -e tests/test_pubsub/pubsub_test.sh
-          bash -x -e tests/test_prometheus/prometheus_test.sh start
-          bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_sql/sql_test.sh
-      - name: Test Linux
-        run: |
-          set -x -e
-          df -h
-          docker run -i --rm -v $PWD:/v -w /v --net=host \
-            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
-            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
-
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [linux-test, macos-test]
+    needs: [macos-test]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
