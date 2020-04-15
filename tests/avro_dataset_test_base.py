@@ -18,8 +18,7 @@ import os
 import tempfile
 
 from tensorflow.python.data.kernel_tests import test_base
-from tensorflow_io.avro.avro_serialization import AvroRecordsToFile
-
+import avro_serialization
 
 class AvroDatasetTestBase(test_base.DatasetTestBase):
 
@@ -28,7 +27,7 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
 
         # Write test records into temporary output directory
         filename = os.path.join(tempfile.mkdtemp(), "test.avro")
-        writer = AvroRecordsToFile(filename=filename,
+        writer = avro_serialization.AvroRecordsToFile(filename=filename,
                                    writer_schema=writer_schema)
         writer.write_records(records)
 
