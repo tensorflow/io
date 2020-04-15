@@ -381,7 +381,7 @@ jobs:
   nightly:
     name: Nightly
     if: github.event_name == 'push'
-    needs: [linux-nightly, macos-nightly]
+    needs: [macos-nightly]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
