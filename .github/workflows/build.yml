@@ -290,7 +290,7 @@ jobs:
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: [lint, build-number, macos-bazel]
+    needs: [build-number, macos-bazel]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -333,7 +333,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [lint, build-number, linux-bazel]
+    needs: [build-number, linux-bazel]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
