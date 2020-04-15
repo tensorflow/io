@@ -39,7 +39,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     def _test_pass_dataset(self, reader_schema, record_data, expected_data, features, batch_size):
         # Note, The batch size could be inferred from the expected data but found it better to be
         # explicit here
-        serializer = AvroSerializer(reader_schema)
+        serializer = avro_serialization.AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(expected_data, AvroDatasetTest._batcher(record_data, batch_size)):
             # Get any key out of expected datum
             actual_datum = tfio.experimental.columnar.parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
@@ -51,7 +51,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     def _test_fail_dataset(self, reader_schema, record_data, features, batch_size, **kwargs):
         parser_schema = kwargs.get("parser_schema", reader_schema)
-        serializer = AvroSerializer(reader_schema)
+        serializer = avro_serialization.AvroSerializer(reader_schema)
         for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(OpError):

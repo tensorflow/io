@@ -26,9 +26,9 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     @staticmethod
     def _load_records_as_tensors(filenames, schema):
-        serializer = AvroSerializer(schema)
+        serializer = avro_serialization.AvroSerializer(schema)
         return map(lambda s: ops.convert_to_tensor(serializer.serialize(s), dtype=tf_types.string),
-                   reduce(lambda a, b: a+b, [AvroFileToRecords(filename).get_records() for filename in filenames]))
+                   reduce(lambda a, b: a+b, [avro_serialization.AvroFileToRecords(filename).get_records() for filename in filenames]))
 
     def _test_pass_dataset(self, writer_schema, record_data, **kwargs):
         filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema,
