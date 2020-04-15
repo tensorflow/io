@@ -45,53 +45,6 @@ jobs:
           bash -x -e source.sh
           python3 -c 'import tensorflow as tf; print(tf.version.VERSION)'
 
-  ubuntu-1804:
-    name: Ubuntu 18.04
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - run: |
-          set -x -e
-          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:18.04 \
-            bash -x -e source.sh
-
-  ubuntu-2004:
-    name: Ubuntu 20.04
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - run: |
-          set -x -e
-          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
-            bash -x -e source.sh
-
-  centos-8:
-    name: CentOS 8
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - run: |
-          set -x -e
-          python3 .github/workflows/build.instruction.py README.md "##### CentOS 8" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host centos:8 \
-            bash -x -e source.sh
-
-  centos-7:
-    name: CentOS 7
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - run: |
-          set -x -e
-          python3 .github/workflows/build.instruction.py README.md "##### CentOS 7" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host centos:7 \
-            bash -x -e source.sh
 
   macos-bazel:
     name: Bazel macOS
