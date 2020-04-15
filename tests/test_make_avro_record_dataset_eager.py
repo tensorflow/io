@@ -24,7 +24,7 @@ class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     def _test_pass_dataset(self, writer_schema, record_data, expected_data,
                            features, reader_schema, batch_size, **kwargs):
-        filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
+        filenames = avro_dataset_test_base.AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
         actual_dataset = tfio.experimental.columnar.make_avro_record_dataset(
