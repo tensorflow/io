@@ -52,11 +52,11 @@ def test_hdf5():
                     cnt += t[0].shape[0]
 
             except Exception as e:
-                print(f"Failed going through {p}")
+                print("Failed going through {}".format(p))
                 raise e
-            print(f"Success going through {p}")
+            print("Success going through {}".format(p))
 
-    print(f"Iterated {cnt} items")
+    print("Iterated {} items".format(cnt))
 
     shutil.rmtree(runpath)
 
