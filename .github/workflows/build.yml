@@ -406,7 +406,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [macos-test]
+    needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
