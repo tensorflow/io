@@ -13,20 +13,6 @@ env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v1
-      - name: Run Lint Script
-        run: |
-          set -x -e
-          git log --pretty -1
-          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
-          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          bazel run -s --verbose_failures //tools/lint:check -- bazel pylint pyupgrade black
-
   macos-test:
     name: Test ${{ matrix.python }} macOS
     needs: macos-wheel
@@ -64,6 +50,21 @@ jobs:
           set -x -e
           python --version
           bash -x -e .github/workflows/build.wheel.sh python
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Run Lint Script
+        run: |
+          set -x -e
+          git log --pretty -1
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          bazel run -s --verbose_failures //tools/lint:check -- bazel pylint pyupgrade black
+
 
   macos:
     name: macOS
