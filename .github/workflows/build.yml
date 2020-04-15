@@ -251,115 +251,10 @@ jobs:
             buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
 
-  windows-bazel:
-    name: Bazel Windows
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
-        with:
-          python-version: 3.7.6
-      - name: Bazel on Windows
-        env:
-          PYTHON_VERSION: 3.7.6
-          BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
-        shell: cmd
-        run: |
-          @echo on
-          choco install bazel --version=%BAZEL_VERSION%
-          bazel version
-          cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
-          python3 --version
-          python3 -m pip install wheel setuptools
-          python3 -m pip --version
-          python3 setup.py --package-version | xargs python3 -m pip install
-          python3 tools/build/configure.py
-          cat .bazelrc
-          bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-
-  windows-wheel:
-    name: Wheel ${{ matrix.python }} Windows
-    needs: windows-bazel
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Wheel ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          python --version
-          python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel
-          ls -la dist
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-wheel
-          path: dist
-
-  windows-test:
-    name: Test ${{ matrix.python }} Windows
-    needs: windows-wheel
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-wheel
-          path: wheel
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '8.x'
-      - name: Setup ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          bash -x -e tests/test_azure/start_azure.sh
-      - name: Install ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          python --version
-          (cd wheel && ls *.whl | xargs python -m pip install)
-      - name: Test ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          python --version
-          python -m pip install -U pytest-benchmark
-          rm -rf tensorflow_io
-          (cd tests && python -m pytest -s -v test_lmdb_eager.py)
-          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff")
-          (python -m pytest -s -v test_serialization_eager.py)
-          (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5 or audio or to_file")
-          python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
-          (python -m pytest -s -v test_bigquery_eager.py)
-          (python -m pytest -s -v test_dicom_eager.py)
-          (python -m pytest -s -v test_dicom.py)
-
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [linux-test, macos-test, windows-test]
+    needs: [linux-test, macos-test]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
@@ -537,45 +432,10 @@ jobs:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
 
-  windows-nightly:
-    name: Nightly ${{ matrix.python }} Windows
-    if: github.event_name == 'push'
-    needs: [lint, build-number, windows-bazel]
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python: ['3.5', '3.6', '3.7', 3.8]
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Wheel ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          python --version
-          python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
-          ls -la dist
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-nightly
-          path: dist
-
   nightly:
     name: Nightly
     if: github.event_name == 'push'
-    needs: [linux-nightly, macos-nightly, windows-nightly]
+    needs: [linux-nightly, macos-nightly]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
