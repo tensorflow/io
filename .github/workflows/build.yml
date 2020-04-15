@@ -34,7 +34,7 @@ jobs:
 
   macos-test:
     name: Test ${{ matrix.python }} macOS
-    needs: macos-wheel
+    #needs: macos-wheel
     runs-on: macos-latest
     strategy:
       matrix:
