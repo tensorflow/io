@@ -17,7 +17,7 @@
 from functools import reduce
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes as tf_types
-from tensorflow_io.core.python.experimental.columnar.avro_record_dataset_ops import AvroRecordDataset
+from tensorflow_io.core.python.experimental.columnar import AvroRecordDataset
 from tensorflow_io.avro.avro_serialization import AvroFileToRecords, AvroSerializer
 
 from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase

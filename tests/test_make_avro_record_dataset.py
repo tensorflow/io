@@ -15,7 +15,7 @@
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import parsing_ops
-from tensorflow_io.core.python.experimental.columnar.make_avro_record_dataset import make_avro_record_dataset
+from tensorflow_io.core.python.experimental.columnar import make_avro_record_dataset
 from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
 
 
