@@ -12,21 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import avro_dataset_test_base
+import avro_serialization
+import tensorflow_io as tfio
+
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import parsing_ops
-from tensorflow_io.core.python.experimental.columnar import make_avro_record_dataset
-from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
 
-
-class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
+class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     def _test_pass_dataset(self, writer_schema, record_data, expected_data,
                            features, reader_schema, batch_size, **kwargs):
         filenames = AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
                                                      records=record_data)
 
-        actual_dataset = make_avro_record_dataset(
+        actual_dataset = tfio.experimental.columnar.make_avro_record_dataset(
             file_pattern=filenames,
             features=features,
             batch_size=batch_size,
@@ -94,3 +95,6 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
                                 features=features,
                                 reader_schema=writer_schema,
                                 batch_size=3, num_epochs=1)
+
+if __name__ == "__main__":
+    test.main()

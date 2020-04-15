@@ -14,20 +14,17 @@
 # ==============================================================================
 
 import numpy as np
+import tensorflow_io as tfio
+import avro_dataset_test_base
+import avro_serialization
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
 from tensorflow.python.framework.errors import OpError
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.util import compat
 from tensorflow.python.framework import sparse_tensor
-from tensorflow_io.core.python.experimental.columnar import parse_avro
 
-from tensorflow_io.avro.avro_serialization import AvroSerializer
-
-from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
-
-
-class AvroDatasetTest(AvroDatasetTestBase):
+class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     def assertDataEqual(self, expected, actual):
         for name, datum in expected.items():
@@ -45,7 +42,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
         serializer = AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(expected_data, AvroDatasetTest._batcher(record_data, batch_size)):
             # Get any key out of expected datum
-            actual_datum = parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+            actual_datum = tfio.experimental.columnar.parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
                                                   for r in actual_records],
                                       reader_schema=reader_schema,
                                       features=features)
@@ -58,7 +55,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
         for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(OpError):
-                _ = parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+                _ = tfio.experimental.columnar.parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
                                            for r in actual_records],
                                reader_schema=parser_schema,
                                features=features)
@@ -1827,3 +1824,6 @@ class AvroDatasetTest(AvroDatasetTestBase):
                                 expected_data=expected_data,
                                 features=features,
                                 batch_size=2)
+
+if __name__ == "__main__":
+    test.main()

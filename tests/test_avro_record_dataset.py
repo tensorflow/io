@@ -14,16 +14,15 @@
 # ==============================================================================
 
 # Examples: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/data/experimental/kernel_tests/stats_dataset_test_base.py
+import tensorflow_io as tfio
+import avro_dataset_test_base
+import avro_serialization
+
 from functools import reduce
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes as tf_types
-from tensorflow_io.core.python.experimental.columnar import AvroRecordDataset
-from tensorflow_io.avro.avro_serialization import AvroFileToRecords, AvroSerializer
 
-from tensorflow_io.avro.python.tests.avro_dataset_test_base import AvroDatasetTestBase
-
-
-class AvroRecordDatasetTest(AvroDatasetTestBase):
+class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
     @staticmethod
     def _load_records_as_tensors(filenames, schema):
@@ -35,7 +34,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema,
                                                        records=record_data)
         expected_data = AvroRecordDatasetTest._load_records_as_tensors(filenames, writer_schema)
-        actual_dataset = AvroRecordDataset(
+        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
             reader_schema=kwargs.get("reader_schema"))
@@ -47,7 +46,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema,
                                                        records=record_data)
         expected_data = AvroRecordDatasetTest._load_records_as_tensors(filenames, reader_schema)
-        actual_dataset = AvroRecordDataset(
+        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
             reader_schema=reader_schema)
@@ -150,3 +149,6 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         self._test_pass_dataset_resolved(writer_schema=writer_schema,
                                          reader_schema=reader_schema,
                                          record_data=record_data)
+
+if __name__ == "__main__":
+    test.main()
