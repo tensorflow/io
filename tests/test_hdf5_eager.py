@@ -42,7 +42,7 @@ def test_hdf5():
 
     for i in range(2):
         cnt = 0
-        for p in glob.glob(f"{runpath}/*.h5"):
+        for p in glob.glob("{}/*.h5".format(runpath)):
             try:
                 features = tfio.IODataset.from_hdf5(p, "/features")
                 targets = tfio.IODataset.from_hdf5(p, "/targets")
