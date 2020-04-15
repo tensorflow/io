@@ -134,69 +134,6 @@ jobs:
           python --version
           bash -x -e .github/workflows/build.wheel.sh python
 
-  linux-bazel:
-    name: Bazel Linux
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: Bazel on Linux
-        run: |
-          set -x -e
-          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
-          docker run -i --rm -v $PWD:/v -w /v --net=host \
-            -e BAZEL_VERSION=${BAZEL_VERSION} \
-            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
-            gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
-          sudo chown -R $(id -nu):$(id -ng) .
-          sudo find build/tensorflow_io -name '*runfiles*' | sudo xargs rm -rf
-          sudo cp .bazelrc build/tensorflow_io/
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: build/tensorflow_io
-
-  linux-wheel:
-    name: Wheel ${{ matrix.python }} Linux
-    needs: linux-bazel
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
-        exclude:
-          - os: ubuntu-16.04
-            python: '3.6'
-          - os: ubuntu-16.04
-            python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - name: Wheel ${{ matrix.python }} Linux
-        run: |
-          set -x -e
-          mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
-      - name: Auditwheel ${{ matrix.python }} Linux
-        run: |
-          set -x -e
-          ls dist/*
-          for f in dist/*.whl; do
-            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
-          done
-          sudo chown -R $(id -nu):$(id -ng) .
-          ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-wheel
-          path: wheelhouse
-
   release:
     name: Release
     if: github.event_name == 'push'
@@ -333,7 +270,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [build-number, linux-bazel]
+    needs: [build-number]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
