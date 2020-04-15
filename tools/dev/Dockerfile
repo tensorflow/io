@@ -51,6 +51,7 @@ RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     pyarrow==${ARROW_VERSION} \
     pandas \
     fastavro \
+    avro \
     gast==0.2.2 \
     ${PIP_ADD_PACKAGES} \
     "
