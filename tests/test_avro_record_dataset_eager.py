@@ -14,6 +14,8 @@
 # ==============================================================================
 
 # Examples: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/data/experimental/kernel_tests/stats_dataset_test_base.py
+import unittest
+
 import tensorflow_io as tfio
 import avro_dataset_test_base
 import avro_serialization
