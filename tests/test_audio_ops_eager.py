@@ -46,14 +46,14 @@ def fixture_resample():
     expected_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
-        "ZASFX_ADSR_no_sustain-4410-quality-1.wav",
+        "ZASFX_ADSR_no_sustain-4410-quality-default.wav",
     )
     expected_audio = tf.audio.decode_wav(tf.io.read_file(expected_path))
     expected_value = expected_audio.audio * (1 << 15)
     expected_value = tf.cast(expected_value, tf.int16)
 
     args = value
-    func = lambda e: tfio.audio.resample(e, 44100, 4410, 1)
+    func = lambda e: tfio.audio.resample(e, 44100, 4410)
     expected = expected_value
 
     return args, func, expected
@@ -557,9 +557,7 @@ def fixture_decode_aac():
         if sys.platform == "linux"
         else "gs-16b-2c-44100hz.wav",
     )
-    value = tfio.audio.decode_wav(
-        tf.io.read_file(wav_path), dtype=tf.int16
-    )
+    value = tfio.audio.decode_wav(tf.io.read_file(wav_path), dtype=tf.int16)
 
     args = content
 
@@ -584,9 +582,7 @@ def fixture_encode_aac():
         "test_audio",
         "gs-16b-2c-44100hz.wav",
     )
-    value = tfio.audio.decode_wav(
-        tf.io.read_file(wav_path), dtype=tf.int16
-    )
+    value = tfio.audio.decode_wav(tf.io.read_file(wav_path), dtype=tf.int16)
     value = tf.cast(value, tf.float32) / 32768.0
 
     encoded_wav_path = os.path.join(
