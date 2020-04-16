@@ -49,7 +49,7 @@ def decode_wav(
     Args:
       input: A string `Tensor` of the audio input.
       shape: The shape of the audio.
-      dtype: The data type of the audio, only tf.int16 and tf.int32 are supported.
+      dtype: The data type of the audio, only tf.uint8, tf.int16 and tf.int32 are supported.
       name: A name for the operation (optional).
 
     Returns:
@@ -57,7 +57,7 @@ def decode_wav(
     """
     if shape is None:
         shape = tf.constant([-1, -1], tf.int64)
-    assert dtype is not None, "dtype (tf.int16/tf.int32) must be provided"
+    assert dtype is not None, "dtype (tf.uint8/tf.int16/tf.int32) must be provided"
     return core_ops.io_audio_decode_wav(input, shape=shape, dtype=dtype, name=name)
 
 
@@ -83,7 +83,7 @@ def decode_flac(
     Args:
       input: A string `Tensor` of the audio input.
       shape: The shape of the audio.
-      dtype: The data type of the audio, only tf.int16 is supported.
+      dtype: The data type of the audio, only tf.uint8, tf.int16 and tf.int32 are supported.
       name: A name for the operation (optional).
 
     Returns:
@@ -91,7 +91,7 @@ def decode_flac(
     """
     if shape is None:
         shape = tf.constant([-1, -1], tf.int64)
-    assert dtype is not None, "dtype (tf.int16) must be provided"
+    assert dtype is not None, "dtype (tf.uint8/tf.int16/tf.int32) must be provided"
     return core_ops.io_audio_decode_flac(input, shape=shape, dtype=dtype, name=name)
 
 

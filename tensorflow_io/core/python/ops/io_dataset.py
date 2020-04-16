@@ -15,7 +15,7 @@
 """IODataset"""
 
 import tensorflow as tf
-from tensorflow_io.core.python.experimental import audio_ops
+from tensorflow_io.core.python.ops import audio_ops
 from tensorflow_io.core.python.ops import io_dataset_ops
 from tensorflow_io.core.python.ops import hdf5_dataset_ops
 from tensorflow_io.core.python.ops import avro_dataset_ops

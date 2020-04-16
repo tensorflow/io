@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental.audio"""
+"""tensorflow_io.audio"""
 
-from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disable=unused-import
+from tensorflow_io.core.python.ops.audio_ops import (  # pylint: disable=unused-import
     resample,
     decode_wav,
     encode_wav,
