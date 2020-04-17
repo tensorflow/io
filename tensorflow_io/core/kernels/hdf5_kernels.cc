@@ -462,15 +462,15 @@ class HDF5ReadableResource : public ResourceBase {
   string DebugString() const override { return "HDF5ReadableResource"; }
 
  protected:
-  Env* env_ GUARDED_BY(mu);
-  string filename_ GUARDED_BY(mu);
-  std::unique_ptr<HDF5FileImage> file_image_ GUARDED_BY(mu);
+  Env* env_ TF_GUARDED_BY(mu);
+  string filename_ TF_GUARDED_BY(mu);
+  std::unique_ptr<HDF5FileImage> file_image_ TF_GUARDED_BY(mu);
 
-  std::vector<DataType> dtypes_ GUARDED_BY(mu);
-  std::vector<TensorShape> shapes_ GUARDED_BY(mu);
-  std::unordered_map<string, int64> columns_index_ GUARDED_BY(mu);
+  std::vector<DataType> dtypes_ TF_GUARDED_BY(mu);
+  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu);
+  std::unordered_map<string, int64> columns_index_ TF_GUARDED_BY(mu);
 
-  std::pair<string, string> complex_names_ GUARDED_BY(mu);
+  std::pair<string, string> complex_names_ TF_GUARDED_BY(mu);
 };
 
 class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
@@ -501,14 +501,14 @@ class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
     }
   }
   Status CreateResource(HDF5ReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new HDF5ReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 class HDF5ReadableSpecOp : public OpKernel {
  public:
@@ -546,7 +546,7 @@ class HDF5ReadableSpecOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class HDF5ReadableReadOp : public OpKernel {
@@ -614,7 +614,7 @@ class HDF5ReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInit").Device(DEVICE_CPU),
                         HDF5ReadableInitOp);

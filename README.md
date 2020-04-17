@@ -157,15 +157,12 @@ with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-55470121
 # macOS's default python3 is 3.7.3
 python3 --version
 
-# Install bazel 2.0.0:
-curl -OL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-darwin-x86_64.sh
-sudo bash -x -e bazel-2.0.0-installer-darwin-x86_64.sh
+# Install bazel 3.0.0:
+curl -OL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-darwin-x86_64.sh
+sudo bash -x -e bazel-3.0.0-installer-darwin-x86_64.sh
 
-# Install latest tensorflow
-sudo python3 -m pip install tensorflow
-
-# Configure bazel
-./configure.sh
+# Install tensorflow and configure bazel
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -196,18 +193,15 @@ the shared libraries on Ubuntu 18.04/20.04:
 sudo apt-get -y -qq update
 sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
 
-# Install Bazel 2.0.0
-curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
-sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+# Install Bazel 3.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-3.0.0-installer-linux-x86_64.sh
 
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
-# Install latest tensorflow
-sudo python3 -m pip install tensorflow
-
-# Configure bazel
-./configure.sh
+# Install tensorflow and configure bazel
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -227,15 +221,15 @@ the shared libraries on CentOS 8:
 # Install gcc/g++, git, unzip/which (for bazel), and python3
 sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
 
-# Install Bazel 2.0.0
-curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
-sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+# Install Bazel 3.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-3.0.0-installer-linux-x86_64.sh
 
 # Upgrade pip
 sudo python3 -m pip install -U pip
 
 # Install tensorflow and configure bazel
-./configure.sh
+sudo ./configure.sh
 
 # Build shared libraries
 bazel build -s --verbose_failures //tensorflow_io/...
@@ -260,9 +254,9 @@ The following will install bazel, devtoolset-9, rh-python36, and build the share
 sudo yum install -y centos-release-scl
 sudo yum install -y devtoolset-9 git rh-python36
 
-# Install Bazel 2.0.0
-curl -sSOL https://github.com/bazelbuild/bazel/releases/download/2.0.0/bazel-2.0.0-installer-linux-x86_64.sh
-sudo bash -x -e bazel-2.0.0-installer-linux-x86_64.sh
+# Install Bazel 3.0.0
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-linux-x86_64.sh
+sudo bash -x -e bazel-3.0.0-installer-linux-x86_64.sh
 
 # Upgrade pip
 scl enable rh-python36 devtoolset-9 \

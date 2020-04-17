@@ -127,8 +127,8 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::shared_ptr<arrow::Table> table_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::shared_ptr<arrow::Table> table_ TF_GUARDED_BY(mu_);
 };
 
 class ArrowReadableFromMemoryInitOp : public ResourceOpKernel<ArrowReadableResource> {
@@ -234,14 +234,14 @@ class ArrowReadableFromMemoryInitOp : public ResourceOpKernel<ArrowReadableResou
   }
 
   Status CreateResource(ArrowReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new ArrowReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class ArrowReadableSpecOp : public OpKernel {
@@ -479,7 +479,7 @@ class ListFeatherColumnsOp : public OpKernel {
   }
  private:
   mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>ListFeatherColumns").Device(DEVICE_CPU),
@@ -701,11 +701,11 @@ class FeatherReadable : public IOReadableInterface {
   }
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<SizedRandomAccessFile> file_ GUARDED_BY(mu_);
-  uint64 file_size_ GUARDED_BY(mu_);
-  std::shared_ptr<ArrowRandomAccessFile> feather_file_ GUARDED_BY(mu_);
-  std::unique_ptr<arrow::ipc::feather::TableReader> reader_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
+  uint64 file_size_ TF_GUARDED_BY(mu_);
+  std::shared_ptr<ArrowRandomAccessFile> feather_file_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<arrow::ipc::feather::TableReader> reader_ TF_GUARDED_BY(mu_);
 
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;

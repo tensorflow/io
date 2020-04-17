@@ -55,7 +55,7 @@ class KafkaEventCb : public RdKafka::EventCb {
 
  private:
   mutable mutex mu_;
-  bool run_ GUARDED_BY(mu_) = true;
+  bool run_ TF_GUARDED_BY(mu_) = true;
 };
 
 class KafkaReadableResource : public ResourceBase {
@@ -359,9 +359,9 @@ class KafkaReadableResource : public ResourceBase {
     return Status::OK();
   }
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::TopicPartition> subscription_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::KafkaConsumer> consumer_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::TopicPartition> subscription_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
   KafkaEventCb kafka_event_cb_ = KafkaEventCb();
   static const int timeout_ = 5000;
 };
@@ -400,14 +400,14 @@ class KafkaReadableInitOp : public ResourceOpKernel<KafkaReadableResource> {
                    resource_->Init(topic, partition, offset, metadata));
   }
   Status CreateResource(KafkaReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KafkaReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class KafkaReadableNextOp : public OpKernel {
@@ -441,7 +441,7 @@ class KafkaReadableNextOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class KafkaReadableReadOp : public OpKernel {
@@ -479,7 +479,7 @@ class KafkaReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class KafkaReadableSpecOp : public OpKernel {
@@ -520,7 +520,7 @@ class KafkaReadableSpecOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 /*
 class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
@@ -557,14 +557,14 @@ class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
                    resource_->Init(topic, partition, offset, metadata));
   }
   Status CreateResource(KafkaIterableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KafkaIterableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 */
 class LayerKafkaResource : public ResourceBase {
@@ -668,10 +668,10 @@ class LayerKafkaResource : public ResourceBase {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::Producer> producer_ GUARDED_BY(mu_);
-  std::unique_ptr<RdKafka::Topic> topic_ GUARDED_BY(mu_);
-  int32 partition_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::Producer> producer_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::Topic> topic_ TF_GUARDED_BY(mu_);
+  int32 partition_ TF_GUARDED_BY(mu_);
   static const int timeout_ = 5000;
 };
 
@@ -704,14 +704,14 @@ class LayerKafkaInitOp : public ResourceOpKernel<LayerKafkaResource> {
                                             metadata));
   }
   Status CreateResource(LayerKafkaResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new LayerKafkaResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class LayerKafkaCallOp : public OpKernel {
@@ -740,7 +740,7 @@ class LayerKafkaCallOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class LayerKafkaSyncOp : public OpKernel {
@@ -759,7 +759,7 @@ class LayerKafkaSyncOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInit").Device(DEVICE_CPU),

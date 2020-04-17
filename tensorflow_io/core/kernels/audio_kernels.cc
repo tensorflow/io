@@ -109,8 +109,8 @@ class AudioReadableResource : public AudioReadableResourceBase {
 
  protected:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
-  std::unique_ptr<AudioReadableResourceBase> resource_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<AudioReadableResourceBase> resource_ TF_GUARDED_BY(mu_);
 };
 
 class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
@@ -131,14 +131,14 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
                                             nullptr, 0));
   }
   Status CreateResource(AudioReadableResource** resource)
-      EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new AudioReadableResource(env_);
     return Status::OK();
   }
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class AudioReadableSpecOp : public OpKernel {
@@ -178,7 +178,7 @@ class AudioReadableSpecOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class AudioReadableReadOp : public OpKernel {
@@ -214,7 +214,7 @@ class AudioReadableReadOp : public OpKernel {
 
  private:
   mutable mutex mu_;
-  Env* env_ GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 class AudioResampleOp : public OpKernel {
