@@ -14,7 +14,7 @@ RUN rm /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-ge
     ffmpeg \
     dnsutils
 
-ARG BAZEL_VERSION=2.0.0
+ARG BAZEL_VERSION=3.0.0
 ARG BAZEL_OS=linux
 
 RUN curl -sL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh -o bazel-install.sh && \

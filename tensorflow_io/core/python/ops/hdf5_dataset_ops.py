@@ -14,6 +14,8 @@
 # ==============================================================================
 """HDF5Dataset"""
 
+import uuid
+
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -27,7 +29,11 @@ class HDF5IODataset(tf.data.Dataset):
             assert internal
 
             # TODO: unique shared_name might be removed if HDF5 is thead-safe?
-            resource, _ = core_ops.io_hdf5_readable_init(filename)
+            resource, _ = core_ops.io_hdf5_readable_init(
+                filename,
+                container="HDF5IODataset",
+                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            )
             if tf.executing_eagerly():
                 shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
                 dtype = tf.as_dtype(dtype.numpy())

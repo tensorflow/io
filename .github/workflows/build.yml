@@ -9,7 +9,7 @@ on:
       - master
 
 env:
-  BAZEL_VERSION: 2.0.0
+  BAZEL_VERSION: 3.0.0
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
