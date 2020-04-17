@@ -149,6 +149,16 @@ system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
 
 Note Xcode installation is needed as tensorflow-io requires Swift for accessing
 Apple's native AVFoundation APIs.
+You might need to enable Xcode command line with following command:
+```sh
+$ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer 
+```
+Restart terminal might be required to make the above change effective.
+
+Use following command to check if Xcode is correctly installed:
+```sh
+$ /usr/bin/xcodebuild -version 
+```
 
 Note also there is a bug in macOS's native python 3.7.3 that could be fixed
 with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
