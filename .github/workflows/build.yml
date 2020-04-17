@@ -13,6 +13,20 @@ env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Run Lint Script
+        run: |
+          set -x -e
+          git log --pretty -1
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+          bazel run -s --verbose_failures //tools/lint:check -- bazel pylint pyupgrade black
+
   macos:
     name: macOS
     runs-on: macos-latest
@@ -31,6 +45,53 @@ jobs:
           bash -x -e source.sh
           python3 -c 'import tensorflow as tf; print(tf.version.VERSION)'
 
+  ubuntu-1804:
+    name: Ubuntu 18.04
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:18.04 \
+            bash -x -e source.sh
+
+  ubuntu-2004:
+    name: Ubuntu 20.04
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
+            bash -x -e source.sh
+
+  centos-8:
+    name: CentOS 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.instruction.py README.md "##### CentOS 8" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host centos:8 \
+            bash -x -e source.sh
+
+  centos-7:
+    name: CentOS 7
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -x -e
+          python3 .github/workflows/build.instruction.py README.md "##### CentOS 7" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host centos:7 \
+            bash -x -e source.sh
 
   macos-bazel:
     name: Bazel macOS
@@ -65,7 +126,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -102,7 +163,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -134,20 +195,283 @@ jobs:
           python --version
           bash -x -e .github/workflows/build.wheel.sh python
 
+  linux-bazel:
+    name: Bazel Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Bazel on Linux
+        run: |
+          set -x -e
+          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            -e BAZEL_VERSION=${BAZEL_VERSION} \
+            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
+            gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
+          sudo chown -R $(id -nu):$(id -ng) .
+          sudo find build/tensorflow_io -name '*runfiles*' | sudo xargs rm -rf
+          sudo cp .bazelrc build/tensorflow_io/
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: build/tensorflow_io
+
+  linux-wheel:
+    name: Wheel ${{ matrix.python }} Linux
+    needs: linux-bazel
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
+        python: ['3.5', '3.6', '3.7', '3.8']
+        exclude:
+          - os: ubuntu-16.04
+            python: '3.6'
+          - os: ubuntu-16.04
+            python: '3.7'
+          - os: ubuntu-16.04
+            python: '3.8'
+          - os: ubuntu-18.04
+            python: '3.5'
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - name: Wheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          mv bazel-bin/tensorflow_io/.bazelrc .
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
+      - name: Auditwheel ${{ matrix.python }} Linux
+        run: |
+          set -x -e
+          ls dist/*
+          for f in dist/*.whl; do
+            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
+          done
+          sudo chown -R $(id -nu):$(id -ng) .
+          ls wheelhouse/*
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: wheelhouse
+
+  linux-test:
+    name: Test ${{ matrix.python }} Linux
+    needs: linux-wheel
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-16.04, ubuntu-18.04]
+        python: ['3.5', '3.6', '3.7', '3.8']
+        exclude:
+          - os: ubuntu-16.04
+            python: '3.6'
+          - os: ubuntu-16.04
+            python: '3.7'
+          - os: ubuntu-16.04
+            python: '3.8'
+          - os: ubuntu-18.04
+            python: '3.5'
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: wheelhouse
+      - name: Setup Linux
+        run: |
+          set -x -e
+          bash -x -e tests/test_kafka/kafka_test.sh
+          bash -x -e tests/test_kinesis/kinesis_test.sh
+          bash -x -e tests/test_pubsub/pubsub_test.sh
+          bash -x -e tests/test_prometheus/prometheus_test.sh start
+          bash -x -e tests/test_azure/start_azure.sh
+          bash -x -e tests/test_sql/sql_test.sh
+      - name: Test Linux
+        run: |
+          set -x -e
+          df -h
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
+            bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
+
+  windows-bazel:
+    name: Bazel Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.7.6
+      - name: Bazel on Windows
+        env:
+          PYTHON_VERSION: 3.7.6
+          BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
+        shell: cmd
+        run: |
+          @echo on
+          choco install bazel --version=%BAZEL_VERSION%
+          bazel version
+          cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
+          python3 --version
+          python3 -m pip install wheel setuptools
+          python3 -m pip --version
+          python3 setup.py --package-version | xargs python3 -m pip install
+          python3 tools/build/configure.py
+          cat .bazelrc
+          bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+
+  windows-wheel:
+    name: Wheel ${{ matrix.python }} Windows
+    needs: windows-bazel
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python: ['3.5', '3.6', '3.7', '3.8']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Wheel ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          python --version
+          python -m pip install -U wheel setuptools
+          python setup.py --data bazel-bin -q bdist_wheel
+          ls -la dist
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: dist
+
+  windows-test:
+    name: Test ${{ matrix.python }} Windows
+    needs: windows-wheel
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python: ['3.5', '3.6', '3.7', '3.8']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-wheel
+          path: wheel
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '8.x'
+      - name: Setup ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          bash -x -e tests/test_azure/start_azure.sh
+      - name: Install ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          python --version
+          (cd wheel && ls *.whl | xargs python -m pip install)
+      - name: Test ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          python --version
+          python -m pip install -U pytest-benchmark
+          rm -rf tensorflow_io
+          (cd tests && python -m pytest -s -v test_lmdb_eager.py)
+          (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff")
+          (python -m pytest -s -v test_serialization_eager.py)
+          (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5 or audio or to_file")
+          python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
+          (python -m pytest -s -v test_bigquery_eager.py)
+          (python -m pytest -s -v test_dicom_eager.py)
+          (python -m pytest -s -v test_dicom.py)
+
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [macos-test]
+    needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-3.5-wheel
+          path: macOS-3.5-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: macOS-3.6-wheel
           path: macOS-3.6-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.7-wheel
+          path: macOS-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-3.8-wheel
+          path: macOS-3.8-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.5-wheel
+          path: Linux-3.5-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.6-wheel
+          path: Linux-3.6-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.7-wheel
+          path: Linux-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Linux-3.8-wheel
+          path: Linux-3.8-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.5-wheel
+          path: Windows-3.5-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.6-wheel
+          path: Windows-3.6-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.7-wheel
+          path: Windows-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.8-wheel
+          path: Windows-3.8-wheel
       - run: |
           set -e -x
           mkdir -p wheelhouse
+          cp macOS-3.5-wheel/*.whl wheelhouse/
           cp macOS-3.6-wheel/*.whl wheelhouse/
+          cp macOS-3.7-wheel/*.whl wheelhouse/
+          cp macOS-3.8-wheel/*.whl wheelhouse/
+          cp Linux-3.5-wheel/*.whl wheelhouse/
+          cp Linux-3.6-wheel/*.whl wheelhouse/
+          cp Linux-3.7-wheel/*.whl wheelhouse/
+          cp Linux-3.8-wheel/*.whl wheelhouse/
+          cp Windows-3.5-wheel/*.whl wheelhouse/
+          cp Windows-3.6-wheel/*.whl wheelhouse/
+          cp Windows-3.7-wheel/*.whl wheelhouse/
+          cp Windows-3.8-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
       - uses: actions/upload-artifact@v1
@@ -172,11 +496,11 @@ jobs:
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: [build-number, macos-bazel]
+    needs: [lint, build-number, macos-bazel]
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6']
+        python: ['3.5', '3.6', '3.7', '3.8']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -215,7 +539,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [build-number]
+    needs: [lint, build-number, linux-bazel]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -260,10 +584,45 @@ jobs:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
 
+  windows-nightly:
+    name: Nightly ${{ matrix.python }} Windows
+    if: github.event_name == 'push'
+    needs: [lint, build-number, windows-bazel]
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python: ['3.5', '3.6', '3.7', 3.8]
+    steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: BUILD_NUMBER
+      - uses: einaregilsson/build-number@v2
+      - run: echo "Build number is $BUILD_NUMBER"
+      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: bazel-bin/tensorflow_io
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Wheel ${{ matrix.python }} Windows
+        shell: cmd
+        run: |
+          @echo on
+          python --version
+          python -m pip install -U wheel setuptools
+          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+          ls -la dist
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ${{ runner.os }}-${{ matrix.python }}-nightly
+          path: dist
+
   nightly:
     name: Nightly
     if: github.event_name == 'push'
-    needs: [macos-nightly]
+    needs: [linux-nightly, macos-nightly, windows-nightly]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
