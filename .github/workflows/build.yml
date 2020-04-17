@@ -52,6 +52,7 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:18.04 \
@@ -64,6 +65,7 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 18.04/20.04" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
@@ -76,6 +78,7 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py README.md "##### CentOS 8" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host centos:8 \
@@ -88,6 +91,7 @@ jobs:
       - uses: actions/checkout@v1
       - run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py README.md "##### CentOS 7" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host centos:7 \
@@ -203,6 +207,7 @@ jobs:
       - name: Bazel on Linux
         run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             -e BAZEL_VERSION=${BAZEL_VERSION} \
@@ -284,6 +289,7 @@ jobs:
       - name: Setup Linux
         run: |
           set -x -e
+          bash -x -e .github/workflows/build.space.sh
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_kinesis/kinesis_test.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
