@@ -747,15 +747,20 @@ http_archive(
 
 http_archive(
     name = "com_grail_bazel_toolchain",
-    strip_prefix = "bazel-toolchain-0.4.4",
-    urls = ["https://github.com/grailbio/bazel-toolchain/archive/0.4.4.tar.gz"],
+    # TODO: Remove after https://github.com/grailbio/bazel-toolchain/pull/43
+    patch_cmds = [
+        "sed -i.bak 's/>= 9/== 9/g' toolchain/tools/llvm_release_name.py",
+    ],
+    sha256 = "226936ab8c28e4946b17e4349d6478cfabafbd8a2614dcf525f97e56b7902899",
+    strip_prefix = "bazel-toolchain-533bee6d2b27ba772a237542722607313aefdf01",
+    urls = ["https://github.com/grailbio/bazel-toolchain/archive/533bee6d2b27ba772a237542722607313aefdf01.tar.gz"],
 )
 
 load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 
 llvm_toolchain(
     name = "llvm_toolchain",
-    llvm_version = "8.0.0",
+    llvm_version = "10.0.0",
 )
 
 http_archive(
