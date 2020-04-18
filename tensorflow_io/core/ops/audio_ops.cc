@@ -59,7 +59,6 @@ REGISTER_OP("IO>AudioResample")
     .Input("rate_in: int64")
     .Input("rate_out: int64")
     .Output("output: T")
-    .Attr("quality: int")
     .Attr("T: type")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
