@@ -776,10 +776,11 @@ http_archive(
 
 http_archive(
     name = "com_googlesource_code_cctz",
-    strip_prefix = "cctz-master",
+    sha256 = "4ee3497b413229083998dd4295fa070b47a7253d88a15306733a06bae15ce945",
+    strip_prefix = "cctz-44541cf2b85ced2a6e5ad4276183a9812d1a54ab",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/cctz/archive/master.zip",
-        "https://github.com/google/cctz/archive/master.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/cctz/archive/44541cf2b85ced2a6e5ad4276183a9812d1a54ab.zip",
+        "https://github.com/google/cctz/archive/44541cf2b85ced2a6e5ad4276183a9812d1a54ab.zip",
     ],
 )
 
