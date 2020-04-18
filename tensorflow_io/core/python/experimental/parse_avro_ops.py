@@ -91,7 +91,7 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     (sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
      dense_shapes) = _features_to_raw_params(
         features,
-        [parsing_ops.VarLenFeature, parsing_ops.SparseFeature, parsing_ops.FixedLenFeature])
+        [tf.io.VarLenFeature, tf.io.SparseFeature, tf.io.FixedLenFeature])
 
     outputs = _parse_avro(
         serialized, reader_schema, avro_names, sparse_keys, sparse_types, dense_keys,
@@ -177,8 +177,8 @@ def _prepend_none_dimension(features):
     if features:
         modified_features = dict(features)  # Create a copy to modify
         for key, feature in features.items():
-            if isinstance(feature, parsing_ops.FixedLenFeature):
-                modified_features[key] = parsing_ops.FixedLenFeature(
+            if isinstance(feature, tf.io.FixedLenFeature):
+                modified_features[key] = tf.io.FixedLenFeature(
                     [None] + list(feature.shape),
                     feature.dtype,
                     feature.default_value)
@@ -212,8 +212,8 @@ def _build_keys_for_sparse_features(features):
         modified_features = dict(features)  # Create a copy to modify
         # NOTE: We iterate over sorted keys to keep things deterministic.
         for key, feature in features.items():
-            if isinstance(feature, parsing_ops.SparseFeature):
-                modified_features[key] = parsing_ops.SparseFeature(
+            if isinstance(feature, tf.io.SparseFeature):
+                modified_features[key] = tf.io.SparseFeature(
                     index_key=resolve_index_key(key, feature.index_key),
                     value_key=resolve_key(key, feature.value_key),
                     dtype=feature.dtype,
@@ -259,15 +259,15 @@ def _features_to_raw_params(features, types):
         # NOTE: We iterate over sorted keys to keep things deterministic.
         for key in sorted(features.keys()):
             feature = features[key]
-            if isinstance(feature, parsing_ops.VarLenFeature):
-                if parsing_ops.VarLenFeature not in types:
+            if isinstance(feature, tf.io.VarLenFeature):
+                if tf.io.VarLenFeature not in types:
                     raise ValueError("Unsupported VarLenFeature %s." % (feature,))
                 if not feature.dtype:
                     raise ValueError("Missing type for feature %s." % key)
                 sparse_keys.append(key)
                 sparse_types.append(feature.dtype)
-            elif isinstance(feature, parsing_ops.SparseFeature):
-                if parsing_ops.SparseFeature not in types:
+            elif isinstance(feature, tf.io.SparseFeature):
+                if tf.io.SparseFeature not in types:
                     raise ValueError("Unsupported SparseFeature %s." % (feature,))
 
                 if not feature.index_key:
@@ -302,8 +302,8 @@ def _features_to_raw_params(features, types):
                 else:
                     sparse_keys.append(feature.value_key)
                     sparse_types.append(feature.dtype)
-            elif isinstance(feature, parsing_ops.FixedLenFeature):
-                if parsing_ops.FixedLenFeature not in types:
+            elif isinstance(feature, tf.io.FixedLenFeature):
+                if tf.io.FixedLenFeature not in types:
                     raise ValueError("Unsupported FixedLenFeature %s." % (feature,))
                 if not feature.dtype:
                     raise ValueError("Missing type for feature %s." % key)
