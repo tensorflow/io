@@ -155,7 +155,7 @@ with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-55470121
 
 ```sh
 # Use following command to check if Xcode is correctly installed:
-/usr/bin/xcodebuild -version 
+xcodebuild -version
 
 # macOS's default python3 is 3.7.3
 python3 --version
@@ -176,10 +176,8 @@ bazel build -s --verbose_failures //tensorflow_io/...
 sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
-If Xcode is installed, but /usr/bin/xcodebuild -version is not showing so, you might need to enable Xcode command line with following command:
-xcode-select -s /Applications/Xcode.app/Contents/Developer 
 
-Restart terminal might be required to make the above change effective.
+If Xcode is installed, but `xcodebuild -version` is not showing so, you might need to enable Xcode command line with the command `xcode-select -s /Applications/Xcode.app/Contents/Developer`. Restart terminal might be required to make the above change effective.
 
 Note from the above the generated shared libraries (.so) are located in bazel-bin directory.
 When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed for shared libraries to
