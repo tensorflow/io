@@ -17,7 +17,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Run Lint Script
         run: |
           set -x -e
@@ -31,7 +31,7 @@ jobs:
     name: macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           set -x -e
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
@@ -49,7 +49,7 @@ jobs:
     name: Ubuntu 18.04
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -62,7 +62,7 @@ jobs:
     name: Ubuntu 20.04
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -75,7 +75,7 @@ jobs:
     name: CentOS 8
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -88,7 +88,7 @@ jobs:
     name: CentOS 7
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -101,7 +101,7 @@ jobs:
     name: Bazel macOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Bazel on macOS
         run: |
           set -x -e
@@ -132,7 +132,7 @@ jobs:
       matrix:
         python: ['3.5', '3.6', '3.7', '3.8']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -167,9 +167,9 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -203,7 +203,7 @@ jobs:
     name: Bazel Linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Bazel on Linux
         run: |
           set -x -e
@@ -239,7 +239,7 @@ jobs:
           - os: ubuntu-18.04
             python: '3.5'
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -270,7 +270,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
         exclude:
           - os: ubuntu-16.04
             python: '3.6'
@@ -281,7 +281,7 @@ jobs:
           - os: ubuntu-18.04
             python: '3.5'
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -308,7 +308,7 @@ jobs:
     name: Bazel Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: 3.7.6
@@ -342,7 +342,7 @@ jobs:
       matrix:
         python: ['3.5', '3.6', '3.7', '3.8']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -369,9 +369,9 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -502,7 +502,7 @@ jobs:
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: [lint, build-number, macos-bazel]
+    needs: [build-number, release]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -513,7 +513,7 @@ jobs:
           name: BUILD_NUMBER
       - uses: einaregilsson/build-number@v2
       - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -545,7 +545,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [lint, build-number, linux-bazel]
+    needs: [build-number, release]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -566,7 +566,7 @@ jobs:
           name: BUILD_NUMBER
       - uses: einaregilsson/build-number@v2
       - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -593,7 +593,7 @@ jobs:
   windows-nightly:
     name: Nightly ${{ matrix.python }} Windows
     if: github.event_name == 'push'
-    needs: [lint, build-number, windows-bazel]
+    needs: [build-number, release]
     runs-on: windows-latest
     strategy:
       matrix:
@@ -604,7 +604,7 @@ jobs:
           name: BUILD_NUMBER
       - uses: einaregilsson/build-number@v2
       - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
