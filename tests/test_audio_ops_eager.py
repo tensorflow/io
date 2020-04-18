@@ -46,14 +46,14 @@ def fixture_resample():
     expected_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
-        "ZASFX_ADSR_no_sustain-4410-quality-1.wav",
+        "ZASFX_ADSR_no_sustain-4410-quality-default.wav",
     )
     expected_audio = tf.audio.decode_wav(tf.io.read_file(expected_path))
     expected_value = expected_audio.audio * (1 << 15)
     expected_value = tf.cast(expected_value, tf.int16)
 
     args = value
-    func = lambda e: tfio.experimental.audio.resample(e, 44100, 4410, 1)
+    func = lambda e: tfio.audio.resample(e, 44100, 4410)
     expected = expected_value
 
     return args, func, expected
@@ -74,7 +74,7 @@ def fixture_decode_wav():
     value = tf.cast(value, tf.int16)
 
     args = content
-    func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.int16)
+    func = lambda e: tfio.audio.decode_wav(e, dtype=tf.int16)
     expected = value
 
     return args, func, expected
@@ -99,7 +99,7 @@ def fixture_encode_wav():
     audio = tf.convert_to_tensor(audio)
 
     args = audio
-    func = lambda e: tfio.experimental.audio.encode_wav(e, rate=44100)
+    func = lambda e: tfio.audio.encode_wav(e, rate=44100)
     expected = value
 
     return args, func, expected
@@ -129,7 +129,7 @@ def fixture_decode_wav_u8():
 
     def func(e):
         delta = tf.constant(3.0, tf.float32)
-        v = tfio.experimental.audio.decode_wav(e, dtype=tf.uint8)
+        v = tfio.audio.decode_wav(e, dtype=tf.uint8)
         v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -155,8 +155,8 @@ def fixture_encode_wav_u8():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_wav(e, rate=44100)
-        return tfio.experimental.audio.decode_wav(v, dtype=tf.uint8)
+        v = tfio.audio.encode_wav(e, rate=44100)
+        return tfio.audio.decode_wav(v, dtype=tf.uint8)
 
     expected = value
 
@@ -183,7 +183,7 @@ def fixture_decode_wav_s24():
     value = tf.cast(value, tf.int32)
 
     args = content
-    func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.int32)
+    func = lambda e: tfio.audio.decode_wav(e, dtype=tf.int32)
     expected = value
 
     return args, func, expected
@@ -204,8 +204,8 @@ def fixture_encode_wav_s24():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_wav(e, rate=44100)
-        return tfio.experimental.audio.decode_wav(v, dtype=tf.int32)
+        v = tfio.audio.encode_wav(e, rate=44100)
+        return tfio.audio.decode_wav(v, dtype=tf.int32)
 
     expected = value
 
@@ -231,7 +231,7 @@ def fixture_decode_wav_f32():
     value = audio.audio
 
     args = content
-    func = lambda e: tfio.experimental.audio.decode_wav(e, dtype=tf.float32)
+    func = lambda e: tfio.audio.decode_wav(e, dtype=tf.float32)
     expected = value
 
     return args, func, expected
@@ -251,8 +251,8 @@ def fixture_encode_wav_f32():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_wav(e, rate=44100)
-        return tfio.experimental.audio.decode_wav(v, dtype=tf.float32)
+        v = tfio.audio.encode_wav(e, rate=44100)
+        return tfio.audio.decode_wav(v, dtype=tf.float32)
 
     expected = value
 
@@ -279,7 +279,7 @@ def fixture_decode_flac():
     value = tf.cast(value, tf.int16)
 
     args = content
-    func = lambda e: tfio.experimental.audio.decode_flac(e, dtype=tf.int16)
+    func = lambda e: tfio.audio.decode_flac(e, dtype=tf.int16)
     expected = value
 
     return args, func, expected
@@ -300,8 +300,8 @@ def fixture_encode_flac():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_flac(e, rate=44100)
-        return tfio.experimental.audio.decode_flac(v, dtype=tf.int16)
+        v = tfio.audio.encode_flac(e, rate=44100)
+        return tfio.audio.decode_flac(v, dtype=tf.int16)
 
     expected = value
 
@@ -332,7 +332,7 @@ def fixture_decode_flac_u8():
 
     def func(e):
         delta = tf.constant(3.0, tf.float32)
-        v = tfio.experimental.audio.decode_flac(e, dtype=tf.uint8)
+        v = tfio.audio.decode_flac(e, dtype=tf.uint8)
         v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -358,8 +358,8 @@ def fixture_encode_flac_u8():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_flac(e, rate=44100)
-        return tfio.experimental.audio.decode_flac(v, dtype=tf.uint8)
+        v = tfio.audio.encode_flac(e, rate=44100)
+        return tfio.audio.decode_flac(v, dtype=tf.uint8)
 
     expected = value
 
@@ -387,7 +387,7 @@ def fixture_decode_flac_s24():
     args = content
 
     def func(e):
-        v = tfio.experimental.audio.decode_flac(e, dtype=tf.int32)
+        v = tfio.audio.decode_flac(e, dtype=tf.int32)
         v = tf.cast(v, tf.float32) / tf.constant((1 << 31), tf.float32)
         return v
 
@@ -411,8 +411,8 @@ def fixture_encode_flac_s24():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_flac(e, rate=44100)
-        return tfio.experimental.audio.decode_flac(v, dtype=tf.int32)
+        v = tfio.audio.encode_flac(e, rate=44100)
+        return tfio.audio.decode_flac(v, dtype=tf.int32)
 
     expected = value
 
@@ -443,7 +443,7 @@ def fixture_decode_vorbis():
 
     def func(e):
         delta = tf.constant(0.00002, tf.float32)
-        v = tfio.experimental.audio.decode_vorbis(e)
+        v = tfio.audio.decode_vorbis(e)
         v = v - value
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -470,8 +470,8 @@ def fixture_encode_vorbis():
 
     def func(e):
         delta = tf.constant(0.05, tf.float32)
-        v = tfio.experimental.audio.encode_vorbis(e, rate=44100)
-        v = tfio.experimental.audio.decode_vorbis(v)
+        v = tfio.audio.encode_vorbis(e, rate=44100)
+        v = tfio.audio.decode_vorbis(v)
         v = v - e
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -500,7 +500,7 @@ def fixture_decode_mp3():
 
     def func(e):
         delta = tf.constant(0.00005, tf.float32)
-        v = tfio.experimental.audio.decode_mp3(e)
+        v = tfio.audio.decode_mp3(e)
         v = v - value
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
         return v
@@ -525,8 +525,8 @@ def fixture_encode_mp3():
     args = value
 
     def func(e):
-        v = tfio.experimental.audio.encode_mp3(e, rate=44100)
-        v = tfio.experimental.audio.decode_mp3(v)
+        v = tfio.audio.encode_mp3(e, rate=44100)
+        v = tfio.audio.decode_mp3(v)
         v = tf.shape(v)
         return v
 
@@ -557,15 +557,13 @@ def fixture_decode_aac():
         if sys.platform == "linux"
         else "gs-16b-2c-44100hz.wav",
     )
-    value = tfio.experimental.audio.decode_wav(
-        tf.io.read_file(wav_path), dtype=tf.int16
-    )
+    value = tfio.audio.decode_wav(tf.io.read_file(wav_path), dtype=tf.int16)
 
     args = content
 
     def func(e):
         delta = tf.constant(2.0, tf.float32)
-        v = tfio.experimental.audio.decode_aac(e)
+        v = tfio.audio.decode_aac(e)
         v = tf.cast(v * (1 << 15), tf.int16)
         v = tf.cast(v, tf.float32) - tf.cast(value, tf.float32)
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))
@@ -584,9 +582,7 @@ def fixture_encode_aac():
         "test_audio",
         "gs-16b-2c-44100hz.wav",
     )
-    value = tfio.experimental.audio.decode_wav(
-        tf.io.read_file(wav_path), dtype=tf.int16
-    )
+    value = tfio.audio.decode_wav(tf.io.read_file(wav_path), dtype=tf.int16)
     value = tf.cast(value, tf.float32) / 32768.0
 
     encoded_wav_path = os.path.join(
@@ -596,7 +592,7 @@ def fixture_encode_aac():
         if sys.platform == "linux"
         else "gs-16b-2c-44100hz.encoded.wav",
     )
-    encoded_value = tfio.experimental.audio.decode_wav(
+    encoded_value = tfio.audio.decode_wav(
         tf.io.read_file(encoded_wav_path), dtype=tf.int16
     )
 
@@ -605,8 +601,8 @@ def fixture_encode_aac():
 
     def func(e):
         delta = tf.constant(2.0, tf.float32)
-        v = tfio.experimental.audio.encode_aac(e, rate=44100)
-        v = tfio.experimental.audio.decode_aac(v)
+        v = tfio.audio.encode_aac(e, rate=44100)
+        v = tfio.audio.decode_aac(v)
         v = tf.cast(v * (1 << 15), tf.int16)
         v = tf.cast(v, tf.float32) - tf.cast(encoded_value, tf.float32)
         v = tf.math.logical_and(tf.math.less(v, delta), tf.math.greater(v, -delta))

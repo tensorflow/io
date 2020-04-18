@@ -20,3 +20,4 @@ from tensorflow_io.core.python.ops.io_tensor import IOTensor
 
 from tensorflow_io.core.python.api.v0 import genome
 from tensorflow_io.core.python.api.v0 import image
+from tensorflow_io.core.python.api.v0 import audio
