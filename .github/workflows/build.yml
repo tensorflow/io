@@ -167,7 +167,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
@@ -270,7 +270,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
         exclude:
           - os: ubuntu-16.04
             python: '3.6'
@@ -369,7 +369,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.5', '3.6', '3.7']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/download-artifact@v1
