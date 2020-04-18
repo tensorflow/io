@@ -484,6 +484,23 @@ load("@upb//bazel:workspace_deps.bzl", "upb_deps")
 
 upb_deps()
 
+http_archive(
+    name = "build_bazel_rules_swift",
+    # TODO: Remove once build_bazel_rules_swift support selectively choose the platform (macOS or Linux or Windows) to invoke the toolchain.
+    patch_cmds = [
+        "sed -i.bak 's/        _create_linux_toolchain/        print/g' swift/internal/swift_autoconfiguration.bzl",
+    ],
+    sha256 = "da799f591aed933f63575ef0fbf7b7a20a84363633f031fcd48c936cee771502",
+    strip_prefix = "rules_swift-1b0fd91696928ce940bcc220f36c898694f10115",
+    urls = [
+        "https://github.com/bazelbuild/rules_swift/archive/1b0fd91696928ce940bcc220f36c898694f10115.tar.gz",
+    ],
+)
+
+load("@build_bazel_rules_swift//swift:repositories.bzl", "swift_rules_dependencies")
+
+swift_rules_dependencies()
+
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
 
 apple_rules_dependencies()
@@ -835,26 +852,3 @@ http_archive(
         "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
     ],
 )
-
-load("//:tools/build/tensorflow_io.bzl", "tf_io_swift")
-
-tf_io_swift()
-
-"""
-http_archive(
-    name = "build_bazel_apple_support",
-    sha256 = "ad8ae80e93612b8151019367a3d1604d7a51c14480dae1254e10252007e8260c",
-    strip_prefix = "apple_support-501b4afb27745c4813a88ffa28acd901408014e4",
-    urls = [
-        "https://github.com/bazelbuild/apple_support/archive/501b4afb27745c4813a88ffa28acd901408014e4.tar.gz",
-    ],
-)
-
-load("@build_bazel_rules_swift//swift:repositories.bzl", "swift_rules_dependencies")
-
-swift_rules_dependencies()
-
-load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
-
-apple_support_dependencies()
-"""
