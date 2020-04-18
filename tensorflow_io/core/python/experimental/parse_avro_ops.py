@@ -15,9 +15,10 @@
 import collections
 import re
 
+import tensorflow as tf
 from tensorflow.python.ops import parsing_ops
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import dtypes
+#from tensorflow.python.framework import ops
+#from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.ops import array_ops
@@ -140,7 +141,7 @@ def _parse_avro(serialized,
     Returns:
       A `dict` mapping keys to `Tensor`s and `SparseTensor`s.
     """
-    with ops.name_scope(name, "ParseAvro", [serialized, names]):
+    with tf.name_scope(name or "ParseAvro"):
         (names, dense_defaults_vec, sparse_keys, sparse_types,
          dense_keys, dense_shapes, _) = _process_raw_parameters(
             names, dense_defaults, sparse_keys, sparse_types, dense_keys,
@@ -287,12 +288,12 @@ def _features_to_raw_params(features, types):
                 for index_key in sorted(index_keys):
                     if index_key in sparse_keys:
                         dtype = sparse_types[sparse_keys.index(index_key)]
-                        if dtype != dtypes.int64:
+                        if dtype != tf.int64:
                             raise ValueError("Conflicting type %s vs int64 for feature %s." %
                                              (dtype, index_key))
                     else:
                         sparse_keys.append(index_key)
-                        sparse_types.append(dtypes.int64)
+                        sparse_types.append(tf.int64)
                 if feature.value_key in sparse_keys:
                     dtype = sparse_types[sparse_keys.index(feature.value_key)]
                     if dtype != feature.dtype:
@@ -401,17 +402,17 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
 
         # ************* START difference: This part is different from the originally copied code ***************
         if default_value is None:
-            if dense_types[i] == dtypes.string:
+            if dense_types[i] == tf.string:
                 default_value = ""
-            elif dense_types[i] == dtypes.bool:
+            elif dense_types[i] == tf.bool:
                 default_value = False
             else:  # Should be numeric type
                 default_value = 0
-            default_value = ops.convert_to_tensor(
+            default_value = tf.convert_to_tensor(
                 default_value, dtype=dense_types[i])
-        elif not isinstance(default_value, ops.Tensor):
+        elif not isinstance(default_value, tf.Tensor):
             key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
-            default_value = ops.convert_to_tensor(
+            default_value = tf.convert_to_tensor(
                 default_value, dtype=dense_types[i], name=key_name)
             # If we have a shape and the first dimension is not None
             if dense_shape.rank and dense_shape.dims[0].value:

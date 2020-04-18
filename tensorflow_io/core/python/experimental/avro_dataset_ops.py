@@ -25,7 +25,8 @@
 import collections
 import re
 
-from tensorflow.python.framework import ops
+#import tensorflow as tf
+#from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
@@ -40,7 +41,7 @@ from tensorflow.python.ops import sparse_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow.python.data.experimental.ops import readers
-from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.ops import core_ops # leave it as it is as it's internal file, using internal api is ok, for tests/*.py only public APIs are acceptable.
 
 # Note: I've hidden the dataset because it does not apply the mapping for
 # sparse tensors
@@ -54,13 +55,13 @@ class _AvroDataset(DatasetSource):
                  drop_remainder, num_parallel_calls, input_stream_buffer_size,
                  avro_data_buffer_size):
 
-        self._filenames = ops.convert_to_tensor(
+        self._filenames = tf.ops.convert_to_tensor(
             filenames, dtypes.string, name="filenames")
         self._features = _AvroDataset._build_keys_for_sparse_features(features)
         self._reader_schema = reader_schema
-        self._batch_size = ops.convert_to_tensor(
+        self._batch_size = tf.ops.convert_to_tensor(
             batch_size, dtype=dtypes.int64, name="batch_size")
-        self._drop_remainder = ops.convert_to_tensor(
+        self._drop_remainder = tf.ops.convert_to_tensor(
             drop_remainder, dtype=dtypes.bool, name="drop_remainder")
         self._num_parallel_calls = num_parallel_calls
         self._input_stream_buffer_size = input_stream_buffer_size
@@ -94,7 +95,7 @@ class _AvroDataset(DatasetSource):
                 self._dense_types + self._sparse_types))
         output_classes = dict(
             zip(self._dense_keys + self._sparse_keys,
-                [ops.Tensor for _ in range(len(self._dense_defaults))] +
+                [tf.ops.Tensor for _ in range(len(self._dense_defaults))] +
                 [sparse_tensor.SparseTensor for _ in range(len(self._sparse_keys))
                  ]))
 
@@ -263,11 +264,11 @@ class _AvroDataset(DatasetSource):
                     default_value = False
                 else:  # Should be numeric type
                     default_value = 0
-                default_value = ops.convert_to_tensor(
+                default_value = tf.ops.convert_to_tensor(
                     default_value, dtype=dense_types[i])
-            elif not isinstance(default_value, ops.Tensor):
+            elif not isinstance(default_value, tf.ops.Tensor):
                 key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
-                default_value = ops.convert_to_tensor(
+                default_value = tf.ops.convert_to_tensor(
                     default_value, dtype=dense_types[i], name=key_name)
                 # If we have a shape and the first dimension is not None
                 if dense_shape.rank and dense_shape.dims[0].value:

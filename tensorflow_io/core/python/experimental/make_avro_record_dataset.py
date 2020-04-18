@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from tensorflow.python.data.experimental.ops import shuffle_ops
-from tensorflow.python.data.ops import dataset_ops
+import tensorflow as tf
 
 from tensorflow_io.core.python.experimental.avro_record_dataset_ops import AvroRecordDataset
 from tensorflow_io.core.python.experimental.parse_avro_ops import parse_avro
@@ -30,7 +29,7 @@ def make_avro_record_dataset(file_pattern,
                              shuffle=True,
                              shuffle_buffer_size=None,
                              shuffle_seed=None,
-                             prefetch_buffer_size=dataset_ops.AUTOTUNE,
+                             prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
                              num_parallel_reads=None,
                              num_parallel_parser_calls=None,
                              drop_final_batch=False):
@@ -76,7 +75,7 @@ def make_avro_record_dataset(file_pattern,
       or a `batch_size`-length 1-D tensor of strings if `parser_fn` is
       unspecified.
     """
-    files = dataset_ops.Dataset.list_files(
+    files = tf.data.Dataset.list_files(
         file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
     if num_parallel_reads is None:
@@ -109,7 +108,7 @@ def make_avro_record_dataset(file_pattern,
     dataset = dataset.batch(batch_size, drop_remainder=drop_final_batch)
 
     if num_parallel_parser_calls is None:
-        num_parallel_parser_calls = dataset_ops.AUTOTUNE
+        num_parallel_parser_calls = tf.data.experimental.AUTOTUNE
 
     dataset = dataset.map(lambda data: parse_avro(serialized=data,
                                                   reader_schema=reader_schema,
@@ -128,7 +127,7 @@ def _maybe_shuffle_and_repeat(
     if num_epochs != 1 and shuffle:
         # Use shuffle_and_repeat for perf
         return dataset.apply(
-            shuffle_ops.shuffle_and_repeat(shuffle_buffer_size, num_epochs,
+            tf.data.experimental.shuffle_and_repeat(shuffle_buffer_size, num_epochs,
                                            shuffle_seed))
     elif shuffle:
         return dataset.shuffle(shuffle_buffer_size, shuffle_seed)

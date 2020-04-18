@@ -24,34 +24,54 @@ from functools import reduce
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import dtypes as tf_types
 
-class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
+class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     @staticmethod
     def _load_records_as_tensors(filenames, schema):
         serializer = avro_serialization.AvroSerializer(schema)
-        return map(lambda s: ops.convert_to_tensor(serializer.serialize(s), dtype=tf_types.string),
-                   reduce(lambda a, b: a+b, [avro_serialization.AvroFileToRecords(filename).get_records() for filename in filenames]))
+        return map(
+            lambda s: ops.convert_to_tensor(
+                serializer.serialize(s), dtype=tf_types.string
+            ),
+            reduce(
+                lambda a, b: a + b,
+                [
+                    avro_serialization.AvroFileToRecords(filename).get_records()
+                    for filename in filenames
+                ],
+            ),
+        )
 
     def _test_pass_dataset(self, writer_schema, record_data, **kwargs):
-        filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema,
-                                                       records=record_data)
-        expected_data = AvroRecordDatasetTest._load_records_as_tensors(filenames, writer_schema)
+        filenames = AvroRecordDatasetTest._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+        expected_data = AvroRecordDatasetTest._load_records_as_tensors(
+            filenames, writer_schema
+        )
         actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
-            reader_schema=kwargs.get("reader_schema"))
+            reader_schema=kwargs.get("reader_schema"),
+        )
         data = iter(actual_dataset)
         for expected in expected_data:
             self.assertValuesEqual(expected=expected, actual=next(data))
 
-    def _test_pass_dataset_resolved(self, writer_schema, reader_schema, record_data, **kwargs):
-        filenames = AvroRecordDatasetTest._setup_files(writer_schema=writer_schema,
-                                                       records=record_data)
-        expected_data = AvroRecordDatasetTest._load_records_as_tensors(filenames, reader_schema)
+    def _test_pass_dataset_resolved(
+        self, writer_schema, reader_schema, record_data, **kwargs
+    ):
+        filenames = AvroRecordDatasetTest._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+        expected_data = AvroRecordDatasetTest._load_records_as_tensors(
+            filenames, reader_schema
+        )
         actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
-            reader_schema=reader_schema)
+            reader_schema=reader_schema,
+        )
 
         data = iter(actual_dataset)
         for expected in expected_data:
@@ -72,22 +92,18 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                   }
               ]}"""
         record_data = [
-            {
-                "index": 0,
-                "string_value": ""
-            },
-            {
-                "index": 1,
-                "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\\'?"
-            },
+            {"index": 0, "string_value": ""},
+            {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
             {
                 "index": 2,
-                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789"
-            }
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789",
+            },
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    @unittest.skip("disable this test for now as it requires further investigation to pass with tf 2.2 RC3")
+    @unittest.skip(
+        "disable this test for now as it requires further investigation to pass with tf 2.2 RC3"
+    )
     def test_with_schema_projection(self):
         writer_schema = """{
               "type": "record",
@@ -113,22 +129,18 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                   }
               ]}"""
         record_data = [
-            {
-                "index": 0,
-                "string_value": ""
-            },
-            {
-                "index": 1,
-                "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\\'?"
-            },
+            {"index": 0, "string_value": ""},
+            {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
             {
                 "index": 2,
-                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789"
-            }
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789",
+            },
         ]
-        self._test_pass_dataset_resolved(writer_schema=writer_schema,
-                                         reader_schema=reader_schema,
-                                         record_data=record_data)
+        self._test_pass_dataset_resolved(
+            writer_schema=writer_schema,
+            reader_schema=reader_schema,
+            record_data=record_data,
+        )
 
     def test_schema_type_promotion(self):
         writer_schema = """{
@@ -147,11 +159,14 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
               ]}"""
         record_data = [
             {"int_value": 0, "long_value": 111},
-            {"int_value": 1, "long_value": 222}
+            {"int_value": 1, "long_value": 222},
         ]
-        self._test_pass_dataset_resolved(writer_schema=writer_schema,
-                                         reader_schema=reader_schema,
-                                         record_data=record_data)
+        self._test_pass_dataset_resolved(
+            writer_schema=writer_schema,
+            reader_schema=reader_schema,
+            record_data=record_data,
+        )
+
 
 if __name__ == "__main__":
     test.main()
