@@ -19,7 +19,7 @@ import tensorflow as tf
 from tensorflow.python.ops import parsing_ops
 #from tensorflow.python.framework import ops
 #from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import sparse_tensor
+#from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.ops import array_ops
 from tensorflow.python.platform import tf_logging
@@ -162,7 +162,7 @@ def _parse_avro(serialized,
         (sparse_indices, sparse_values, sparse_shapes, dense_values) = outputs
 
         sparse_tensors = [
-            sparse_tensor.SparseTensor(ix, val, shape) for (ix, val, shape)
+            tf.sparse.SparseTensor(ix, val, shape) for (ix, val, shape)
             in zip(sparse_indices, sparse_values, sparse_shapes)]
 
         return dict(zip(sparse_keys + dense_keys, sparse_tensors + dense_values))
