@@ -22,7 +22,6 @@ from tensorflow.python.ops import parsing_ops
 #from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
 #from tensorflow.python.ops import array_ops
-from tensorflow.python.platform import tf_logging
 
 from tensorflow_io.core.python.ops import core_ops
 
@@ -282,7 +281,7 @@ def _features_to_raw_params(features, types):
                 if isinstance(index_keys, str):
                     index_keys = [index_keys]
                 elif len(index_keys) > 1:
-                    tf_logging.warning("SparseFeature is a complicated feature config "
+                    tf.logging.warning("SparseFeature is a complicated feature config "
                                        "and should only be used after careful "
                                        "consideration of VarLenFeature.")
                 for index_key in sorted(index_keys):
