@@ -179,8 +179,8 @@ bazel build -s --verbose_failures //tensorflow_io/...
 sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
-
-You might need to enable Xcode command line with following command:
+If Xcode is installed, but /usr/bin/xcodebuild -version is not showing so, you might need to enable 
+Xcode command line with following command:
 xcode-select -s /Applications/Xcode.app/Contents/Developer 
 
 Restart terminal might be required to make the above change effective.
