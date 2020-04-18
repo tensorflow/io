@@ -17,12 +17,7 @@ import re
 
 import tensorflow as tf
 from tensorflow.python.ops import parsing_ops
-#from tensorflow.python.framework import ops
-#from tensorflow.python.framework import dtypes
-#from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
-#from tensorflow.python.ops import array_ops
-
 from tensorflow_io.core.python.ops import core_ops
 
 
