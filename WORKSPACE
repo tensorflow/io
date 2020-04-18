@@ -818,15 +818,11 @@ http_archive(
 
 http_archive(
     name = "com_grail_bazel_toolchain",
-    # TODO: Remove after https://github.com/grailbio/bazel-toolchain/pull/43
-    patch_cmds = [
-        "sed -i.bak 's/>= 9/== 9/g' toolchain/tools/llvm_release_name.py",
-    ],
-    sha256 = "226936ab8c28e4946b17e4349d6478cfabafbd8a2614dcf525f97e56b7902899",
-    strip_prefix = "bazel-toolchain-533bee6d2b27ba772a237542722607313aefdf01",
+    sha256 = "9e6065ded4b7453143e1586d6819729a63cd233114b72bf85ff3435367b02c90",
+    strip_prefix = "bazel-toolchain-edd07e96a2ecaa131af9234d6582875d980c0ac7",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grailbio/bazel-toolchain/archive/533bee6d2b27ba772a237542722607313aefdf01.tar.gz",
-        "https://github.com/grailbio/bazel-toolchain/archive/533bee6d2b27ba772a237542722607313aefdf01.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
+        "https://github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
     ],
 )
 
