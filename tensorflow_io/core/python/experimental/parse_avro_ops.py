@@ -21,7 +21,7 @@ from tensorflow.python.ops import parsing_ops
 #from tensorflow.python.framework import dtypes
 #from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.ops import array_ops
+#from tensorflow.python.ops import array_ops
 from tensorflow.python.platform import tf_logging
 
 from tensorflow_io.core.python.ops import core_ops
@@ -416,7 +416,7 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
                 default_value, dtype=dense_types[i], name=key_name)
             # If we have a shape and the first dimension is not None
             if dense_shape.rank and dense_shape.dims[0].value:
-                default_value = array_ops.reshape(default_value, dense_shape)
+                default_value = tf.reshape(default_value, dense_shape)
         # ************* END difference: This part is different from the originally copied code *****************
         dense_defaults_vec.append(default_value)
 
