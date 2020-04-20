@@ -25,6 +25,20 @@ cc_library(
 )
 
 cc_library(
+    name = "optimization",
+    srcs = [
+        "kernels/io_optimization.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "sequence_ops",
     srcs = [
         "kernels/sequence_ops.h",
@@ -560,6 +574,7 @@ cc_binary(
             "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
+            "//tensorflow_io/core:optimization",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
         ],
