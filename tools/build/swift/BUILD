@@ -10,6 +10,7 @@ swift_library(
     ],
     linkopts = [
         "-L/usr/lib/swift",
+        "-Wl,-rpath,/usr/lib/swift",
     ],
     module_name = "audio_video",
     alwayslink = True,
