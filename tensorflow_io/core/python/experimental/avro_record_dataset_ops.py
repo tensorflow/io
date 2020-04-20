@@ -13,11 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
+import tensorflow as tf
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.readers import _create_or_validate_filenames_dataset, _create_dataset_reader
 from tensorflow.python.data.util import convert
-from tensorflow.python.framework import tensor_spec
-from tensorflow.python.framework import dtypes
 from tensorflow_io.core.python.ops import core_ops
 
 _DEFAULT_READER_BUFFER_SIZE_BYTES = 256 * 1024  # 256 KB
@@ -44,7 +43,7 @@ class _AvroRecordDataset(dataset_ops.DatasetSource):
             "reader_schema",
             reader_schema,
             argument_default=_DEFAULT_READER_SCHEMA,
-            argument_dtype=dtypes.string)
+            argument_dtype=tf.dtypes.string)
         variant_tensor = core_ops.io_avro_record_dataset(self._filenames,
                                                          self._buffer_size,
                                                          self._reader_schema)
@@ -52,7 +51,7 @@ class _AvroRecordDataset(dataset_ops.DatasetSource):
 
     @property
     def element_spec(self):
-        return tensor_spec.TensorSpec([], dtypes.string)
+        return tf.TensorSpec([], tf.dtypes.string)
 
 
 class AvroRecordDataset(dataset_ops.DatasetV2):
@@ -112,4 +111,4 @@ class AvroRecordDataset(dataset_ops.DatasetV2):
 
     @property
     def element_spec(self):
-        return tensor_spec.TensorSpec([], dtypes.string)
+        return tf.TensorSpec([], tf.dtypes.string)
