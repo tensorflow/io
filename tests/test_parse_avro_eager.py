@@ -395,12 +395,12 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     #         }
     #     ]
     #     features = {
-    #         "multi_type:boolean": parsing_ops.FixedLenFeature([], tf_types.bool),
-    #         "multi_type:int": parsing_ops.FixedLenFeature([], tf_types.int32),
-    #         "multi_type:long": parsing_ops.FixedLenFeature([], tf_types.int64),
-    #         "multi_type:float": parsing_ops.FixedLenFeature([], tf_types.float32),
-    #         "multi_type:double": parsing_ops.FixedLenFeature([], tf_types.float64),
-    #         "multi_type:string": parsing_ops.FixedLenFeature([], tf_types.string)
+    #         "multi_type:boolean": parsing_ops.FixedLenFeature([], tf.dtypes.bool),
+    #         "multi_type:int": parsing_ops.FixedLenFeature([], tf.dtypes.int32),
+    #         "multi_type:long": parsing_ops.FixedLenFeature([], tf.dtypes.int64),
+    #         "multi_type:float": parsing_ops.FixedLenFeature([], tf.dtypes.float32),
+    #         "multi_type:double": parsing_ops.FixedLenFeature([], tf.dtypes.float64),
+    #         "multi_type:string": parsing_ops.FixedLenFeature([], tf.dtypes.string)
     #     }
     #     expected_data = [
     #         {
@@ -454,7 +454,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     #     ]
     #     features = {
     #         "possible_float_type:float": parsing_ops.FixedLenFeature([],
-    #                                                                  tf_types.float32)
+    #                                                                  tf.dtypes.float32)
     #     }
     #     # TODO(fraudies): If we have a default, then we use that in the place of
     #     #  the None
@@ -1041,7 +1041,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                 }
             }
         ]
-        # TODO(fraudies): Using FixedLenFeature([1], tf_types.int32) this segfaults
+        # TODO(fraudies): Using FixedLenFeature([1], tf.dtypes.int32) this segfaults
         features = {
             "map_of_records['second'].age": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
