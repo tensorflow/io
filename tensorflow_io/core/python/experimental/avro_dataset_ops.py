@@ -30,7 +30,7 @@ from tensorflow.python.data.util import structure
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow.python.data.experimental.ops import readers
-from tensorflow_io.core.python.ops import core_ops # leave it as it is as it's internal file, using internal api is ok, for tests/*.py only public APIs are acceptable.
+from tensorflow_io.core.python.ops import core_ops
 
 # Note: I've hidden the dataset because it does not apply the mapping for
 # sparse tensors
