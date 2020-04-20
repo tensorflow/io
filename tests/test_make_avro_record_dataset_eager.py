@@ -15,10 +15,7 @@
 import avro_dataset_test_base
 import avro_serialization
 import tensorflow_io as tfio
-
-from tensorflow.python.framework import dtypes as tf_types
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import parsing_ops
+import tensorflow as tf
 
 class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
@@ -51,11 +48,11 @@ class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_value": 2}
         ]
         features = {
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
+            "int_value": tf.io.FixedLenFeature([], tf.dtypes.int32)
         }
         expected_data = [
-            {"int_value": ops.convert_to_tensor([0, 1])},
-            {"int_value": ops.convert_to_tensor([2])}
+            {"int_value": tf.convert_to_tensor([0, 1])},
+            {"int_value": tf.convert_to_tensor([2])}
         ]
         self._test_pass_dataset(writer_schema=writer_schema,
                                 record_data=record_data,
@@ -83,10 +80,10 @@ class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list": [6, 7, 8]}
         ]
         features = {
-            "int_list[*]": parsing_ops.FixedLenFeature([3], tf_types.int32)
+            "int_list[*]": tf.io.FixedLenFeature([3], tf.dtypes.int32)
         }
         expected_data = [
-            {"int_list[*]": ops.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
+            {"int_list[*]": tf.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
         ]
 
         self._test_pass_dataset(writer_schema=writer_schema,
