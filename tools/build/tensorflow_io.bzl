@@ -18,11 +18,9 @@ def tf_io_copts():
                 "/DNDEBUG",
             ],
             "@bazel_tools//src/conditions:darwin": [
-                "-std=c++11",
                 "-DNDEBUG",
             ],
             "//conditions:default": [
-                "-std=c++11",
                 "-DNDEBUG",
                 "-pthread",
             ],
