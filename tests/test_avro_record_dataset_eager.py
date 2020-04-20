@@ -17,21 +17,19 @@
 import unittest
 
 import tensorflow_io as tfio
+import tensorflow as tf
 import avro_dataset_test_base
 import avro_serialization
 
 from functools import reduce
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import dtypes as tf_types
-
 
 class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     @staticmethod
     def _load_records_as_tensors(filenames, schema):
         serializer = avro_serialization.AvroSerializer(schema)
         return map(
-            lambda s: ops.convert_to_tensor(
-                serializer.serialize(s), dtype=tf_types.string
+            lambda s: tf.convert_to_tensor(
+                serializer.serialize(s), dtype=tf.dtypes.string
             ),
             reduce(
                 lambda a, b: a + b,
