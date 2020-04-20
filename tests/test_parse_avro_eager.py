@@ -19,7 +19,6 @@ import tensorflow_io as tfio
 import tensorflow as tf
 import avro_dataset_test_base
 import avro_serialization
-from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.framework import ops
 from tensorflow.python.framework.errors import OpError
 from tensorflow.python.ops import parsing_ops
@@ -44,7 +43,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         serializer = avro_serialization.AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(expected_data, AvroDatasetTest._batcher(record_data, batch_size)):
             # Get any key out of expected datum
-            actual_datum = tfio.experimental.columnar.parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+            actual_datum = tfio.experimental.columnar.parse_avro(serialized=[tf.convert_to_tensor(serializer.serialize(r))
                                                   for r in actual_records],
                                       reader_schema=reader_schema,
                                       features=features)
@@ -57,7 +56,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(OpError):
-                _ = tfio.experimental.columnar.parse_avro(serialized=[ops.convert_to_tensor(serializer.serialize(r))
+                _ = tfio.experimental.columnar.parse_avro(serialized=[tf.convert_to_tensor(serializer.serialize(r))
                                            for r in actual_records],
                                reader_schema=parser_schema,
                                features=features)
@@ -138,7 +137,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "string_value":
-                    ops.convert_to_tensor(
+                    tf.convert_to_tensor(
                         [
                             compat.as_bytes(""),
                             compat.as_bytes("SpecialChars@!#$%^&*()-_=+{}[]|/`~\\\'?"),
@@ -146,7 +145,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                         ]
                     ),
                 "bytes_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         compat.as_bytes(""),
                         compat.as_bytes("SpecialChars@!#$%^&*()-_=+{}[]|/`~\\\'?"),
                         compat.as_bytes("ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789")
@@ -156,31 +155,31 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                 # In addition, precision is not maintained by the conversion, thus, I simplify set 1.0
                 # and -1.0 instead of proper values 3.40282306074e+38 and -3.40282306074e+38.
                 "double_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         0.0,
                         -1.0,
                         1.0
                     ]),
                 "float_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         0.0,
                         -1.0,
                         1.0
                     ]),
                 "long_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         0,
                         9223372036854775807,
                         -9223372036854775807 - 1
                     ]),
                 "int_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         0,
                         2147483648 - 1,
                         -2147483648
                     ]),
                 "boolean_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         False,
                         True,
                         False
@@ -236,13 +235,13 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "fixed_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         compat.as_bytes("0123456789"),
                         compat.as_bytes("1234567890"),
                         compat.as_bytes("2345678901")
                     ]),
                 "enum_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         b"BLUE",
                         b"GREEN",
                         b"BROWN"
@@ -271,8 +270,8 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             "int_value": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
         expected_data = [
-            {"int_value": ops.convert_to_tensor([0, 1])},
-            {"int_value": ops.convert_to_tensor([2])}
+            {"int_value": tf.convert_to_tensor([0, 1])},
+            {"int_value": tf.convert_to_tensor([2])}
         ]
         self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
@@ -305,8 +304,8 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         # Note, last batch is NOT dropped
         expected_data = [
-            {"fixed_len[*]": ops.convert_to_tensor([[0, 1], [1, 1], [2, 1]])},
-            {"fixed_len[*]": ops.convert_to_tensor([[3, 1]])}
+            {"fixed_len[*]": tf.convert_to_tensor([[0, 1], [1, 1], [2, 1]])},
+            {"fixed_len[*]": tf.convert_to_tensor([[3, 1]])}
         ]
         self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
@@ -337,11 +336,11 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                                                         default_value=[0, 1, 2])
         }
         expected_data = [
-            {"fixed_len[*]": ops.convert_to_tensor([
+            {"fixed_len[*]": tf.convert_to_tensor([
                 [0, 1, 2],
                 [3, 4, 5]])
             },
-            {"fixed_len[*]": ops.convert_to_tensor([
+            {"fixed_len[*]": tf.convert_to_tensor([
                 [6, 7, 8]])
             }
         ]
@@ -405,17 +404,17 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     #     expected_data = [
     #         {
     #             "multi_type:boolean":
-    #                 ops.convert_to_tensor([]),
+    #                 tf.convert_to_tensor([]),
     #             "multi_type:int":
-    #                 ops.convert_to_tensor([]),
+    #                 tf.convert_to_tensor([]),
     #             "multi_type:long":
-    #                 ops.convert_to_tensor([]),
+    #                 tf.convert_to_tensor([]),
     #             "multi_type:float":
-    #                 ops.convert_to_tensor([]),
+    #                 tf.convert_to_tensor([]),
     #             "multi_type:double":
-    #                 ops.convert_to_tensor([1.0, 2.0, 3.0, 1.0]),
+    #                 tf.convert_to_tensor([1.0, 2.0, 3.0, 1.0]),
     #             "multi_type:string":
-    #                 ops.convert_to_tensor([compat.as_bytes("abc")])
+    #                 tf.convert_to_tensor([compat.as_bytes("abc")])
     #         }
     #     ]
     #     self._test_pass_dataset(reader_schema=reader_schema,
@@ -460,7 +459,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     #     #  the None
     #     expected_data = [
     #         {
-    #             "possible_float_type:float": ops.convert_to_tensor([1.0, -1.0])
+    #             "possible_float_type:float": tf.convert_to_tensor([1.0, -1.0])
     #         }
     #     ]
     #     self._test_pass_dataset(reader_schema=reader_schema,
@@ -491,7 +490,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             "int_list[*]": parsing_ops.FixedLenFeature([3], tf.dtypes.int32)
         }
         expected_data = [
-            {"int_list[*]": ops.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
+            {"int_list[*]": tf.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
         ]
 
         self._test_pass_dataset(reader_schema=reader_schema,
@@ -523,7 +522,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                                                        default_value=[0, 1, 2])
         }
         expected_data = [
-            {"int_list[*]": ops.convert_to_tensor([
+            {"int_list[*]": tf.convert_to_tensor([
                 [0, 1, 2],
                 [3, 1, 2],
                 [6, 7, 2]])
@@ -558,7 +557,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                                                        default_value=0)
         }
         expected_data = [
-            {"int_list[*]": ops.convert_to_tensor([
+            {"int_list[*]": tf.convert_to_tensor([
                 [0, 1, 2],
                 [3, 0, 0],
                 [6, 7, 0]])
@@ -613,7 +612,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         expected_data = [
             {"int_list[*].nested_int_list[*]":
-                 ops.convert_to_tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])}
+                 tf.convert_to_tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])}
         ]
         self._test_pass_dataset(reader_schema=reader_schema,
                                 record_data=record_data,
@@ -651,7 +650,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         # Note, the outer dimension is the batch dimension
         expected_data = [
-            {"int_list[*][*]": ops.convert_to_tensor([
+            {"int_list[*][*]": tf.convert_to_tensor([
                 [[0, 1, 2], [10, 11, 12], [20, 21, 22]],
                 [[1, 2, 3], [11, 12, 13], [21, 22, 23]]
             ])},
@@ -959,11 +958,11 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "nested_record.nested_int":
-                    ops.convert_to_tensor([0, 5, 7]),
+                    tf.convert_to_tensor([0, 5, 7]),
                 "nested_record.nested_float_list[*]":
-                    ops.convert_to_tensor([[0.0, 10.0], [-2.0, 7.0], [3.0, 4.0]]),
+                    tf.convert_to_tensor([[0.0, 10.0], [-2.0, 7.0], [3.0, 4.0]]),
                 "list_of_records[0].first_name":
-                    ops.convert_to_tensor([compat.as_bytes("Herbert"),
+                    tf.convert_to_tensor([compat.as_bytes("Herbert"),
                                            compat.as_bytes("Doug"),
                                            compat.as_bytes("Karl")])
             }
@@ -1047,7 +1046,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         expected_data = [
             {
-                "map_of_records['second'].age": ops.convert_to_tensor([30, 66, 21])
+                "map_of_records['second'].age": tf.convert_to_tensor([30, 66, 21])
             }
         ]
         self._test_pass_dataset(reader_schema=reader_schema,
@@ -1648,7 +1647,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "com.test.string_value":
-                    ops.convert_to_tensor([
+                    tf.convert_to_tensor([
                         compat.as_bytes("a"),
                         compat.as_bytes("bb")
                     ])
