@@ -19,8 +19,6 @@ import tensorflow_io as tfio
 import tensorflow as tf
 import avro_dataset_test_base
 import avro_serialization
-from tensorflow.python.util import compat
-from tensorflow.python.framework import sparse_tensor
 
 class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
@@ -698,11 +696,11 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                                                      size=4)
         }
         expected_data = [
-            {"sparse_type": sparse_tensor.SparseTensorValue(
+            {"sparse_type": tf.compat.v1.SparseTensorValue(
                 indices=[[0, 0], [0, 3], [1, 2]],
                 values=[5.0, 2.0, 7.0],
                 dense_shape=[2, 4])},
-            {"sparse_type": sparse_tensor.SparseTensorValue(
+            {"sparse_type": tf.compat.v1.SparseTensorValue(
                 indices=[[0, 1], [1, 3]],
                 values=[6.0, 3.0],
                 dense_shape=[2, 4])}
@@ -770,11 +768,11 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         expected_data = [
             {
-                "first_value": sparse_tensor.SparseTensorValue(
+                "first_value": tf.compat.v1.SparseTensorValue(
                     indices=[[0, 0], [0, 3], [1, 0]],
                     values=[5.0, 2.0, 2.0],
                     dense_shape=[2, 4]),
-                "second_value": sparse_tensor.SparseTensorValue(
+                "second_value": tf.compat.v1.SparseTensorValue(
                     indices=[[0, 2], [1, 1]],
                     values=[7.0, 2.0],
                     dense_shape=[2, 3])
@@ -809,7 +807,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         expected_data = [
             {"int_list[*]":
-                sparse_tensor.SparseTensorValue(
+                tf.compat.v1.SparseTensorValue(
                     indices=[[0, 0], [0, 1], [1, 0], [1, 1], [1, 2], [2, 0]],
                     values=[1, 2, 3, 4, 5, 6],
                     dense_shape=[3, 3]
@@ -848,7 +846,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         expected_data = [
             {"int_list_list[*][*]":
-                sparse_tensor.SparseTensorValue(
+                tf.compat.v1.SparseTensorValue(
                     indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
                     values=[1, 2, 3, 4, 5, 6, 6],
                     dense_shape=[3, 2, 3]
@@ -1261,13 +1259,13 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "guests[gender='male'].name":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=[[0, 0], [1, 0], [1, 1]],
                         values=[tf.compat.as_bytes("Hans"), tf.compat.as_bytes("Joel"),
                                 tf.compat.as_bytes("Marc")],
                         dense_shape=[2, 2]),
                 "guests[gender='female'].name":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=[[0, 0], [0, 1], [1, 0]],
                         values=[tf.compat.as_bytes("Mary"), tf.compat.as_bytes("July"),
                                 tf.compat.as_bytes("JoAn")],
@@ -1327,7 +1325,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "guests[gender='wrong_value'].name":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=np.empty(shape=[0, 2], dtype=np.int64),
                         values=np.empty(shape=[0], dtype=np.str),
                         dense_shape=np.asarray([2, 0]))
@@ -1524,7 +1522,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "guests[gender='female'].address.street":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=[[0, 0]],
                         values=[tf.compat.as_bytes("Ellis St")],
                         dense_shape=[1, 1])
@@ -1598,13 +1596,13 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "guests[gender='male'].name":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=[[0, 0], [1, 0], [1, 1]],
                         values=[tf.compat.as_bytes("Hans"), tf.compat.as_bytes("Joel"),
                                 tf.compat.as_bytes("Marc")],
                         dense_shape=[2, 2]),
                 "guests[gender='female'].name":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         indices=[[0, 0], [0, 1], [1, 0]],
                         values=[tf.compat.as_bytes("Mary"), tf.compat.as_bytes("July"),
                                 tf.compat.as_bytes("JoAn")],
@@ -1818,7 +1816,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         expected_data = [
             {
                 "guests[gender='female'].address":
-                    sparse_tensor.SparseTensorValue(
+                    tf.compat.v1.SparseTensorValue(
                         np.asarray([[0, 0, 29040]]),
                         np.asarray([3]),
                         np.asarray([1, 1, 94040]))
