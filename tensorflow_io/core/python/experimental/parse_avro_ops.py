@@ -17,7 +17,6 @@ import re
 
 import tensorflow as tf
 from tensorflow.python.ops import parsing_ops
-from tensorflow.python.framework import tensor_shape
 from tensorflow_io.core.python.ops import core_ops
 
 
@@ -385,7 +384,7 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
             set(dense_keys).intersection(set(sparse_keys)))
 
     # Convert dense_shapes to TensorShape object.
-    dense_shapes = [tensor_shape.as_shape(shape) for shape in dense_shapes]
+    dense_shapes = [tf.TensorShape(shape) for shape in dense_shapes]
 
     dense_defaults_vec = []
     for i, key in enumerate(dense_keys):

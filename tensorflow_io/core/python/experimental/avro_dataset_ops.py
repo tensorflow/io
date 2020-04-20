@@ -29,7 +29,7 @@ import tensorflow as tf
 #from tensorflow.python.framework import ops
 #from tensorflow.python.framework import dtypes
 #from tensorflow.python.framework import sparse_tensor
-from tensorflow.python.framework import tensor_shape
+#from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import tensor_spec
 from tensorflow.python.framework import tensor_util
 from tensorflow.python.platform import tf_logging
@@ -247,7 +247,7 @@ class _AvroDataset(DatasetSource):
                 set(dense_keys).intersection(set(sparse_keys)))
 
         # Convert dense_shapes to TensorShape object.
-        dense_shapes = [tensor_shape.as_shape(shape) for shape in dense_shapes]
+        dense_shapes = [tf.TensorShape(shape) for shape in dense_shapes]
 
         dense_defaults_vec = []
         for i, key in enumerate(dense_keys):
