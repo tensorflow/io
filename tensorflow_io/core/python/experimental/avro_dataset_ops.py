@@ -25,10 +25,10 @@
 import collections
 import re
 
-#import tensorflow as tf
+import tensorflow as tf
 #from tensorflow.python.framework import ops
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import sparse_tensor
+#from tensorflow.python.framework import dtypes
+#from tensorflow.python.framework import sparse_tensor
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import tensor_spec
 from tensorflow.python.framework import tensor_util
@@ -56,13 +56,13 @@ class _AvroDataset(DatasetSource):
                  avro_data_buffer_size):
 
         self._filenames = tf.ops.convert_to_tensor(
-            filenames, dtypes.string, name="filenames")
+            filenames, tf.string, name="filenames")
         self._features = _AvroDataset._build_keys_for_sparse_features(features)
         self._reader_schema = reader_schema
         self._batch_size = tf.ops.convert_to_tensor(
-            batch_size, dtype=dtypes.int64, name="batch_size")
+            batch_size, dtype=tf.int64, name="batch_size")
         self._drop_remainder = tf.ops.convert_to_tensor(
-            drop_remainder, dtype=dtypes.bool, name="drop_remainder")
+            drop_remainder, dtype=tf.bool, name="drop_remainder")
         self._num_parallel_calls = num_parallel_calls
         self._input_stream_buffer_size = input_stream_buffer_size
         self._avro_data_buffer_size = avro_data_buffer_size
@@ -96,7 +96,7 @@ class _AvroDataset(DatasetSource):
         output_classes = dict(
             zip(self._dense_keys + self._sparse_keys,
                 [tf.ops.Tensor for _ in range(len(self._dense_defaults))] +
-                [sparse_tensor.SparseTensor for _ in range(len(self._sparse_keys))
+                [tf.sparse.SparseTensor for _ in range(len(self._sparse_keys))
                  ]))
 
         self._element_spec = structure.convert_legacy_structure(
@@ -258,9 +258,9 @@ class _AvroDataset(DatasetSource):
 
             # ************* START difference: This part is different from the originally copied code ***************
             if default_value is None:
-                if dense_types[i] == dtypes.string:
+                if dense_types[i] == tf.string:
                     default_value = ""
-                elif dense_types[i] == dtypes.bool:
+                elif dense_types[i] == tf.bool:
                     default_value = False
                 else:  # Should be numeric type
                     default_value = 0
@@ -352,12 +352,12 @@ class _AvroDataset(DatasetSource):
                     for index_key in sorted(index_keys):
                         if index_key in sparse_keys:
                             dtype = sparse_types[sparse_keys.index(index_key)]
-                            if dtype != dtypes.int64:
+                            if dtype != tf.int64:
                                 raise ValueError("Conflicting type %s vs int64 for feature %s." %
                                                  (dtype, index_key))
                         else:
                             sparse_keys.append(index_key)
-                            sparse_types.append(dtypes.int64)
+                            sparse_types.append(tf.int64)
                             sparse_dense_shapes.append(feature.size)
                     if feature.value_key in sparse_keys:
                         dtype = sparse_types[sparse_keys.index(feature.value_key)]
@@ -473,7 +473,7 @@ def make_avro_dataset(
     """
     dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
     if shuffle:
-        n_filenames = array_ops.shape(filenames, out_type=dtypes.int64)[0]
+        n_filenames = array_ops.shape(filenames, out_type=tf.int64)[0]
         dataset = dataset.shuffle(n_filenames, shuffle_seed)
 
     if label_keys is None:
