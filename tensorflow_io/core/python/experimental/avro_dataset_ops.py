@@ -29,7 +29,7 @@ import tensorflow as tf
 from tensorflow.python.data.util import structure
 #from tensorflow.python.data.util import nest
 from tensorflow.python.ops import parsing_ops
-from tensorflow.python.ops import array_ops
+#from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import sparse_ops
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
@@ -265,7 +265,7 @@ class _AvroDataset(DatasetSource):
                     default_value, dtype=dense_types[i], name=key_name)
                 # If we have a shape and the first dimension is not None
                 if dense_shape.rank and dense_shape.dims[0].value:
-                    default_value = array_ops.reshape(default_value, dense_shape)
+                    default_value = tf.reshape(default_value, dense_shape)
             # ************* END difference: This part is different from the originally copied code *****************
             dense_defaults_vec.append(default_value)
 
@@ -466,7 +466,7 @@ def make_avro_dataset(
     """
     dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
     if shuffle:
-        n_filenames = array_ops.shape(filenames, out_type=tf.int64)[0]
+        n_filenames = tf.shape(filenames, out_type=tf.int64)[0]
         dataset = dataset.shuffle(n_filenames, shuffle_seed)
 
     if label_keys is None:
