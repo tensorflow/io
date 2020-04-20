@@ -26,15 +26,8 @@ import collections
 import re
 
 import tensorflow as tf
-#from tensorflow.python.framework import ops
-#from tensorflow.python.framework import dtypes
-#from tensorflow.python.framework import sparse_tensor
-#from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import tensor_spec
-from tensorflow.python.framework import tensor_util
-from tensorflow.python.platform import tf_logging
 from tensorflow.python.data.util import structure
-from tensorflow.python.data.util import nest
+#from tensorflow.python.data.util import nest
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import sparse_ops
@@ -71,8 +64,8 @@ class _AvroDataset(DatasetSource):
         (sparse_keys, sparse_types, sparse_dense_shapes, dense_keys, dense_types,
          dense_defaults, dense_shapes) = _AvroDataset._features_to_raw_params(
             self._features, [
-                parsing_ops.VarLenFeature, parsing_ops.SparseFeature,
-                parsing_ops.FixedLenFeature
+                tf.io.VarLenFeature, tf.io.SparseFeature,
+                tf.io.FixedLenFeature
             ])
 
         (_, dense_defaults_vec, sparse_keys, sparse_types, dense_keys, dense_shapes,
@@ -102,24 +95,24 @@ class _AvroDataset(DatasetSource):
         self._element_spec = structure.convert_legacy_structure(
             output_types, output_shapes, output_classes)
 
-        constant_drop_remainder = tensor_util.constant_value(self._drop_remainder)
+        constant_drop_remainder = tf.get_static_value(self._drop_remainder)
         # pylint: disable=protected-access
         if constant_drop_remainder:
             # NOTE(mrry): `constant_drop_remainder` may be `None` (unknown statically)
             # or `False` (explicitly retaining the remainder).
             # pylint: disable=g-long-lambda
-            self._element_spec = nest.map_structure(
+            self._element_spec = tf.nest.map_structure(
                 lambda component_spec: component_spec._batch(
-                    tensor_util.constant_value(self._batch_size)),
+                    tf.get_static_value(self._batch_size)),
                 self._element_spec)
         else:
-            self._element_spec = nest.map_structure(
+            self._element_spec = tf.nest.map_structure(
                 lambda component_spec: component_spec._batch(None),
                 self._element_spec)
 
         # With batch dimension
-        self._dense_shapes = [spec.shape for spec in nest.flatten(self._element_spec)
-                              if isinstance(spec, tensor_spec.TensorSpec)]
+        self._dense_shapes = [spec.shape for spec in tf.nest.flatten(self._element_spec)
+                              if isinstance(spec, tf.TensorSpec)]
 
         variant_tensor = (core_ops.io_avro_dataset(
             filenames=self._filenames, # pylint: disable=protected-access
@@ -167,8 +160,8 @@ class _AvroDataset(DatasetSource):
             # NOTE: We iterate over sorted keys to keep things deterministic.
             for key in sorted(features.keys()):
                 feature = features[key]
-                if isinstance(feature, parsing_ops.SparseFeature):
-                    features[key] = parsing_ops.SparseFeature(
+                if isinstance(feature, tf.io.SparseFeature):
+                    features[key] = tf.io.SparseFeature(
                         index_key=resolve_index_key(key, feature.index_key),
                         value_key=resolve_key(key, feature.value_key),
                         dtype=feature.dtype,
@@ -319,16 +312,16 @@ class _AvroDataset(DatasetSource):
             # NOTE: We iterate over sorted keys to keep things deterministic.
             for key in sorted(features.keys()):
                 feature = features[key]
-                if isinstance(feature, parsing_ops.VarLenFeature):
-                    if parsing_ops.VarLenFeature not in types:
+                if isinstance(feature, tf.io.VarLenFeature):
+                    if tf.io.VarLenFeature not in types:
                         raise ValueError("Unsupported VarLenFeature %s." % (feature,))
                     if not feature.dtype:
                         raise ValueError("Missing type for feature %s." % key)
                     sparse_keys.append(key)
                     sparse_types.append(feature.dtype)
                     sparse_dense_shapes.append(None)
-                elif isinstance(feature, parsing_ops.SparseFeature):
-                    if parsing_ops.SparseFeature not in types:
+                elif isinstance(feature, tf.io.SparseFeature):
+                    if tf.io.SparseFeature not in types:
                         raise ValueError("Unsupported SparseFeature %s." % (feature,))
 
                     if not feature.index_key:
@@ -346,7 +339,7 @@ class _AvroDataset(DatasetSource):
                     if isinstance(index_keys, str):
                         index_keys = [index_keys]
                     elif len(index_keys) > 1:
-                        tf_logging.warning("SparseFeature is a complicated feature config "
+                        tf.logging.warning("SparseFeature is a complicated feature config "
                                            "and should only be used after careful "
                                            "consideration of VarLenFeature.")
                     for index_key in sorted(index_keys):
@@ -368,8 +361,8 @@ class _AvroDataset(DatasetSource):
                         sparse_keys.append(feature.value_key)
                         sparse_types.append(feature.dtype)
                         sparse_dense_shapes.append(None)  # Unknown and variable length
-                elif isinstance(feature, parsing_ops.FixedLenFeature):
-                    if parsing_ops.FixedLenFeature not in types:
+                elif isinstance(feature, tf.io.FixedLenFeature):
+                    if tf.io.FixedLenFeature not in types:
                         raise ValueError("Unsupported FixedLenFeature %s." % (feature,))
                     if not feature.dtype:
                         raise ValueError("Missing type for feature %s." % key)
@@ -509,7 +502,7 @@ def make_avro_dataset(
         dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed)
 
     if any(
-            isinstance(feature, parsing_ops.SparseFeature)
+            isinstance(feature, tf.io.SparseFeature)
             for _, feature in features.items()
     ):
         # pylint: disable=protected-access
@@ -525,7 +518,7 @@ def make_avro_dataset(
         :param tensor_features: the output features dict from avrodataset
         """
         for feature_name, feature in features.items():
-            if isinstance(feature, parsing_ops.SparseFeature) and isinstance(feature.size, list) and len(feature.size) > 1:
+            if isinstance(feature, tf.io.SparseFeature) and isinstance(feature.size, list) and len(feature.size) > 1:
                 # Have -1 for unknown batch
                 reshape = [-1] + list(feature.size)
                 tensor_features[feature_name] = sparse_ops.sparse_reshape(tensor_features[feature_name], reshape)
