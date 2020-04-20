@@ -29,9 +29,6 @@ import tensorflow as tf
 from tensorflow.python.data.util import structure
 #from tensorflow.python.data.util import nest
 from tensorflow.python.ops import parsing_ops
-#from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import sparse_ops
-from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow.python.data.experimental.ops import readers
 from tensorflow_io.core.python.ops import core_ops # leave it as it is as it's internal file, using internal api is ok, for tests/*.py only public APIs are acceptable.
@@ -393,7 +390,7 @@ def make_avro_dataset(
         shuffle=True,
         shuffle_buffer_size=10000,
         shuffle_seed=None,
-        prefetch_buffer_size=dataset_ops.AUTOTUNE,
+        prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
         num_parallel_reads=1
 ):
     """Makes an avro dataset.
@@ -464,7 +461,7 @@ def make_avro_dataset(
       avro_data_buffer_size: The size of the avro data buffer in By
 
     """
-    dataset = dataset_ops.Dataset.from_tensor_slices(filenames)
+    dataset = tf.data.Dataset.from_tensor_slices(filenames)
     if shuffle:
         n_filenames = tf.shape(filenames, out_type=tf.int64)[0]
         dataset = dataset.shuffle(n_filenames, shuffle_seed)
@@ -521,7 +518,7 @@ def make_avro_dataset(
             if isinstance(feature, tf.io.SparseFeature) and isinstance(feature.size, list) and len(feature.size) > 1:
                 # Have -1 for unknown batch
                 reshape = [-1] + list(feature.size)
-                tensor_features[feature_name] = sparse_ops.sparse_reshape(tensor_features[feature_name], reshape)
+                tensor_features[feature_name] = tf.sparse.reshape(tensor_features[feature_name], reshape)
         return tensor_features
 
     dataset = dataset.map(reshape_sp_function, num_parallel_calls=num_parallel_calls)
