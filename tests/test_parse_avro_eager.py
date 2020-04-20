@@ -16,6 +16,7 @@
 import unittest
 import numpy as np
 import tensorflow_io as tfio
+import tensorflow as tf
 import avro_dataset_test_base
 import avro_serialization
 from tensorflow.python.framework import dtypes as tf_types
@@ -126,13 +127,13 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             }
         ]
         features = {
-            "string_value": parsing_ops.FixedLenFeature([], tf_types.string),
-            "bytes_value": parsing_ops.FixedLenFeature([], tf_types.string),
-            "double_value": parsing_ops.FixedLenFeature([], tf_types.float64),
-            "float_value": parsing_ops.FixedLenFeature([], tf_types.float32),
-            "long_value": parsing_ops.FixedLenFeature([], tf_types.int64),
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int32),
-            "boolean_value": parsing_ops.FixedLenFeature([], tf_types.bool)
+            "string_value": parsing_ops.FixedLenFeature([], tf.dtypes.string),
+            "bytes_value": parsing_ops.FixedLenFeature([], tf.dtypes.string),
+            "double_value": parsing_ops.FixedLenFeature([], tf.dtypes.float64),
+            "float_value": parsing_ops.FixedLenFeature([], tf.dtypes.float32),
+            "long_value": parsing_ops.FixedLenFeature([], tf.dtypes.int64),
+            "int_value": parsing_ops.FixedLenFeature([], tf.dtypes.int32),
+            "boolean_value": parsing_ops.FixedLenFeature([], tf.dtypes.bool)
         }
         expected_data = [
             {
@@ -229,8 +230,8 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             }
         ]
         features = {
-            "fixed_value": parsing_ops.FixedLenFeature([], tf_types.string),
-            "enum_value": parsing_ops.FixedLenFeature([], tf_types.string)
+            "fixed_value": parsing_ops.FixedLenFeature([], tf.dtypes.string),
+            "enum_value": parsing_ops.FixedLenFeature([], tf.dtypes.string)
         }
         expected_data = [
             {
@@ -267,7 +268,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_value": 2}
         ]
         features = {
-            "int_value": parsing_ops.FixedLenFeature([], tf_types.int32)
+            "int_value": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
         expected_data = [
             {"int_value": ops.convert_to_tensor([0, 1])},
@@ -299,7 +300,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"fixed_len": [3]}
         ]
         features = {
-            "fixed_len[*]": parsing_ops.FixedLenFeature([2], tf_types.int32,
+            "fixed_len[*]": parsing_ops.FixedLenFeature([2], tf.dtypes.int32,
                                                         default_value=[0, 1])
         }
         # Note, last batch is NOT dropped
@@ -332,7 +333,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"fixed_len": [6, 7, 8]}
         ]
         features = {
-            "fixed_len[*]": parsing_ops.FixedLenFeature([None, 3], tf_types.int32,
+            "fixed_len[*]": parsing_ops.FixedLenFeature([None, 3], tf.dtypes.int32,
                                                         default_value=[0, 1, 2])
         }
         expected_data = [
@@ -487,7 +488,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list": [6, 7, 8]}
         ]
         features = {
-            "int_list[*]": parsing_ops.FixedLenFeature([3], tf_types.int32)
+            "int_list[*]": parsing_ops.FixedLenFeature([3], tf.dtypes.int32)
         }
         expected_data = [
             {"int_list[*]": ops.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
@@ -518,7 +519,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list": [6, 7]}
         ]
         features = {
-            "int_list[*]": parsing_ops.FixedLenFeature([None, 3], tf_types.int32,
+            "int_list[*]": parsing_ops.FixedLenFeature([None, 3], tf.dtypes.int32,
                                                        default_value=[0, 1, 2])
         }
         expected_data = [
@@ -553,7 +554,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list": [6, 7]}
         ]
         features = {
-            "int_list[*]": parsing_ops.FixedLenFeature([None], tf_types.int32,
+            "int_list[*]": parsing_ops.FixedLenFeature([None], tf.dtypes.int32,
                                                        default_value=0)
         }
         expected_data = [
@@ -608,7 +609,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         features = {
             "int_list[*].nested_int_list[*]":
-                parsing_ops.FixedLenFeature([2, 3], tf_types.int32)
+                parsing_ops.FixedLenFeature([2, 3], tf.dtypes.int32)
         }
         expected_data = [
             {"int_list[*].nested_int_list[*]":
@@ -646,7 +647,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         # This is a limitation inside TensorFlow where shape ranks need to be known
         # inside _from_compatible_tensor_list
         features = {
-            "int_list[*][*]": parsing_ops.FixedLenFeature([None, None], tf_types.int32)
+            "int_list[*][*]": parsing_ops.FixedLenFeature([None, None], tf.dtypes.int32)
         }
         # Note, the outer dimension is the batch dimension
         expected_data = [
@@ -697,7 +698,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {
             "sparse_type": parsing_ops.SparseFeature(index_key="index",
                                                      value_key="value",
-                                                     dtype=tf_types.float32,
+                                                     dtype=tf.dtypes.float32,
                                                      size=4)
         }
         expected_data = [
@@ -764,11 +765,11 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {
             "first_value": parsing_ops.SparseFeature(index_key="index",
                                                      value_key="value",
-                                                     dtype=tf_types.float32,
+                                                     dtype=tf.dtypes.float32,
                                                      size=4),
             "second_value": parsing_ops.SparseFeature(index_key="index",
                                                       value_key="value",
-                                                      dtype=tf_types.float32,
+                                                      dtype=tf.dtypes.float32,
                                                       size=3)
         }
         expected_data = [
@@ -808,7 +809,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list": [6]}
         ]
         features = {
-            'int_list[*]': parsing_ops.VarLenFeature(tf_types.int32)
+            'int_list[*]': parsing_ops.VarLenFeature(tf.dtypes.int32)
         }
         expected_data = [
             {"int_list[*]":
@@ -847,7 +848,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"int_list_list": [[6]]},
         ]
         features = {
-            'int_list_list[*][*]': parsing_ops.VarLenFeature(tf_types.int32)
+            'int_list_list[*][*]': parsing_ops.VarLenFeature(tf.dtypes.int32)
         }
         expected_data = [
             {"int_list_list[*][*]":
@@ -951,9 +952,9 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             }
         ]
         features = {
-            "nested_record.nested_int": parsing_ops.FixedLenFeature([], tf_types.int32),
-            "nested_record.nested_float_list[*]": parsing_ops.FixedLenFeature([2], tf_types.float32),
-            "list_of_records[0].first_name": parsing_ops.FixedLenFeature([], tf_types.string)
+            "nested_record.nested_int": parsing_ops.FixedLenFeature([], tf.dtypes.int32),
+            "nested_record.nested_float_list[*]": parsing_ops.FixedLenFeature([2], tf.dtypes.float32),
+            "list_of_records[0].first_name": parsing_ops.FixedLenFeature([], tf.dtypes.string)
         }
         expected_data = [
             {
@@ -1042,7 +1043,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         # TODO(fraudies): Using FixedLenFeature([1], tf_types.int32) this segfaults
         features = {
-            "map_of_records['second'].age": parsing_ops.FixedLenFeature([], tf_types.int32)
+            "map_of_records['second'].age": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
         expected_data = [
             {
@@ -1069,7 +1070,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
           }
           """
         record_data = [{"index": 0}]
-        features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
+        features = {"index": parsing_ops.FixedLenFeature([], tf.dtypes.int64)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_parse_int_as_sparse_type_fail(self):
@@ -1091,7 +1092,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                 parsing_ops.SparseFeature(
                     index_key="index",
                     value_key="value",
-                    dtype=tf_types.float32,
+                    dtype=tf.dtypes.float32,
                     size=10)
         }
         self._test_fail_dataset(schema, record_data, features, 1)
@@ -1110,7 +1111,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
           }
           """
         record_data = [{"weight": 0.5}]
-        features = {"weight": parsing_ops.FixedLenFeature([], tf_types.float64)}
+        features = {"weight": parsing_ops.FixedLenFeature([], tf.dtypes.float64)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
     def test_fixed_length_without_proper_default_fail(self):
@@ -1138,7 +1139,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             }
         ]
         features = {
-            "int_list_type": parsing_ops.FixedLenFeature([], tf_types.int32)
+            "int_list_type": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
@@ -1153,7 +1154,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
           }"""
         record_data = [{"int_type": 0}]
         features = {
-            "wrong_spelling": parsing_ops.FixedLenFeature([], tf_types.int32)
+            "wrong_spelling": parsing_ops.FixedLenFeature([], tf.dtypes.int32)
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
@@ -1189,7 +1190,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "list_of_records[2].name":
-                parsing_ops.FixedLenFeature([], tf_types.string)
+                parsing_ops.FixedLenFeature([], tf.dtypes.string)
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
@@ -1257,9 +1258,9 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         features = {
             "guests[gender='male'].name":
-                parsing_ops.VarLenFeature(tf_types.string),
+                parsing_ops.VarLenFeature(tf.dtypes.string),
             "guests[gender='female'].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         expected_data = [
             {
@@ -1325,7 +1326,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[gender='wrong_value'].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         expected_data = [
             {
@@ -1374,7 +1375,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[wrong_key='female'].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -1410,7 +1411,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[forgot_the_separator].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -1446,7 +1447,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[used=too=many=separators].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -1522,7 +1523,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[gender='female'].address.street":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         expected_data = [
             {
@@ -1594,9 +1595,9 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }]
         features = {
             "guests[gender='male'].name":
-                parsing_ops.VarLenFeature(tf_types.string),
+                parsing_ops.VarLenFeature(tf.dtypes.string),
             "guests[gender='female'].name":
-                parsing_ops.VarLenFeature(tf_types.string)
+                parsing_ops.VarLenFeature(tf.dtypes.string)
         }
         expected_data = [
             {
@@ -1634,7 +1635,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             ]
           }"""
         features = {
-            "com.test.string_value": parsing_ops.FixedLenFeature([], tf_types.string)
+            "com.test.string_value": parsing_ops.FixedLenFeature([], tf.dtypes.string)
         }
         record_data = [
             {
@@ -1680,7 +1681,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                 {"name": "boolean_type"}
             ]
           }"""
-        features = {"index": parsing_ops.FixedLenFeature([], tf_types.int64)}
+        features = {"index": parsing_ops.FixedLenFeature([], tf.dtypes.int64)}
         self._test_fail_dataset(valid_schema, record_data, features, 1,
                                 parser_schema=broken_schema)
 
@@ -1698,7 +1699,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
               ]
             }"""
         features = {
-            "string_value": parsing_ops.FixedLenFeature([], tf_types.string)
+            "string_value": parsing_ops.FixedLenFeature([], tf.dtypes.string)
         }
         record_data = [
             {
@@ -1813,7 +1814,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                 parsing_ops.SparseFeature(
                     index_key="zip",
                     value_key="street_no",
-                    dtype=tf_types.int32,
+                    dtype=tf.dtypes.int32,
                     size=94040)
         }
         # Note, the filter introduces an additional index,
