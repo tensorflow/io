@@ -27,7 +27,6 @@ import re
 
 import tensorflow as tf
 from tensorflow.python.data.util import structure
-#from tensorflow.python.data.util import nest
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow.python.data.experimental.ops import readers
