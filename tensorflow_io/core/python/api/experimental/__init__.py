@@ -22,5 +22,4 @@ from tensorflow_io.core.python.api.experimental import serialization
 from tensorflow_io.core.python.api.experimental import ffmpeg
 from tensorflow_io.core.python.api.experimental import image
 from tensorflow_io.core.python.api.experimental import text
-from tensorflow_io.core.python.api.experimental import audio
 from tensorflow_io.core.python.api.experimental import columnar
