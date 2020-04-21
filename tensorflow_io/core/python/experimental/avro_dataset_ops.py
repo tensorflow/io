@@ -21,6 +21,7 @@
 
 # For tf export use examples see
 # sql_dataset_test_base.py for use and readers.py for definition
+"""AVRODataset"""
 
 import collections
 import re
@@ -29,7 +30,6 @@ import tensorflow as tf
 from tensorflow.python.data.util import structure
 from tensorflow.python.ops import parsing_ops
 from tensorflow.python.data.ops.dataset_ops import DatasetSource
-from tensorflow.python.data.experimental.ops import readers
 from tensorflow_io.core.python.ops import core_ops
 
 # Note: I've hidden the dataset because it does not apply the mapping for
@@ -40,34 +40,64 @@ from tensorflow_io.core.python.ops import core_ops
 class _AvroDataset(DatasetSource):
     """A `DatasetSource` that reads and parses Avro records from files."""
 
-    def __init__(self, filenames, features, reader_schema, batch_size,
-                 drop_remainder, num_parallel_calls, input_stream_buffer_size,
-                 avro_data_buffer_size):
+    def __init__(
+        self,
+        filenames,
+        features,
+        reader_schema,
+        batch_size,
+        drop_remainder,
+        num_parallel_calls,
+        input_stream_buffer_size,
+        avro_data_buffer_size,
+    ):
 
         self._filenames = tf.ops.convert_to_tensor(
-            filenames, tf.string, name="filenames")
+            filenames, tf.string, name="filenames"
+        )
         self._features = _AvroDataset._build_keys_for_sparse_features(features)
         self._reader_schema = reader_schema
         self._batch_size = tf.ops.convert_to_tensor(
-            batch_size, dtype=tf.int64, name="batch_size")
+            batch_size, dtype=tf.int64, name="batch_size"
+        )
         self._drop_remainder = tf.ops.convert_to_tensor(
-            drop_remainder, dtype=tf.bool, name="drop_remainder")
+            drop_remainder, dtype=tf.bool, name="drop_remainder"
+        )
         self._num_parallel_calls = num_parallel_calls
         self._input_stream_buffer_size = input_stream_buffer_size
         self._avro_data_buffer_size = avro_data_buffer_size
 
         # Copied from _ParseExampleDataset from data/experimental/ops/parsing_ops.py
-        (sparse_keys, sparse_types, sparse_dense_shapes, dense_keys, dense_types,
-         dense_defaults, dense_shapes) = _AvroDataset._features_to_raw_params(
-            self._features, [
-                tf.io.VarLenFeature, tf.io.SparseFeature,
-                tf.io.FixedLenFeature
-            ])
+        (
+            sparse_keys,
+            sparse_types,
+            sparse_dense_shapes,
+            dense_keys,
+            dense_types,
+            dense_defaults,
+            dense_shapes,
+        ) = _AvroDataset._features_to_raw_params(
+            self._features,
+            [tf.io.VarLenFeature, tf.io.SparseFeature, tf.io.FixedLenFeature],
+        )
 
-        (_, dense_defaults_vec, sparse_keys, sparse_types, dense_keys, dense_shapes,
-         dense_shape_as_shape) = _AvroDataset._process_raw_parameters(
-            None, dense_defaults, sparse_keys, sparse_types, dense_keys,
-            dense_types, dense_shapes)
+        (
+            _,
+            dense_defaults_vec,
+            sparse_keys,
+            sparse_types,
+            dense_keys,
+            dense_shapes,
+            _,
+        ) = _AvroDataset._process_raw_parameters(
+            None,
+            dense_defaults,
+            sparse_keys,
+            sparse_types,
+            dense_keys,
+            dense_types,
+            dense_shapes,
+        )
 
         self._sparse_keys = sparse_keys
         self._sparse_types = sparse_types
@@ -75,21 +105,28 @@ class _AvroDataset(DatasetSource):
         self._dense_defaults = dense_defaults_vec
         self._dense_types = dense_types
 
-
         output_shapes = dict(
-            zip(self._dense_keys + self._sparse_keys,
-                dense_shapes + sparse_dense_shapes))
+            zip(
+                self._dense_keys + self._sparse_keys, dense_shapes + sparse_dense_shapes
+            )
+        )
         output_types = dict(
-            zip(self._dense_keys + self._sparse_keys,
-                self._dense_types + self._sparse_types))
+            zip(
+                self._dense_keys + self._sparse_keys,
+                self._dense_types + self._sparse_types,
+            )
+        )
         output_classes = dict(
-            zip(self._dense_keys + self._sparse_keys,
-                [tf.ops.Tensor for _ in range(len(self._dense_defaults))] +
-                [tf.sparse.SparseTensor for _ in range(len(self._sparse_keys))
-                 ]))
+            zip(
+                self._dense_keys + self._sparse_keys,
+                [tf.ops.Tensor for _ in range(len(self._dense_defaults))]
+                + [tf.sparse.SparseTensor for _ in range(len(self._sparse_keys))],
+            )
+        )
 
         self._element_spec = structure.convert_legacy_structure(
-            output_types, output_shapes, output_classes)
+            output_types, output_shapes, output_classes
+        )
 
         constant_drop_remainder = tf.get_static_value(self._drop_remainder)
         # pylint: disable=protected-access
@@ -99,19 +136,24 @@ class _AvroDataset(DatasetSource):
             # pylint: disable=g-long-lambda
             self._element_spec = tf.nest.map_structure(
                 lambda component_spec: component_spec._batch(
-                    tf.get_static_value(self._batch_size)),
-                self._element_spec)
+                    tf.get_static_value(self._batch_size)
+                ),
+                self._element_spec,
+            )
         else:
             self._element_spec = tf.nest.map_structure(
-                lambda component_spec: component_spec._batch(None),
-                self._element_spec)
+                lambda component_spec: component_spec._batch(None), self._element_spec
+            )
 
         # With batch dimension
-        self._dense_shapes = [spec.shape for spec in tf.nest.flatten(self._element_spec)
-                              if isinstance(spec, tf.TensorSpec)]
+        self._dense_shapes = [
+            spec.shape
+            for spec in tf.nest.flatten(self._element_spec)
+            if isinstance(spec, tf.TensorSpec)
+        ]
 
-        variant_tensor = (core_ops.io_avro_dataset(
-            filenames=self._filenames, # pylint: disable=protected-access
+        variant_tensor = core_ops.io_avro_dataset(
+            filenames=self._filenames,  # pylint: disable=protected-access
             batch_size=self._batch_size,
             drop_remainder=self._drop_remainder,
             dense_defaults=self._dense_defaults,
@@ -122,7 +164,8 @@ class _AvroDataset(DatasetSource):
             dense_keys=self._dense_keys,
             sparse_types=self._sparse_types,
             dense_shapes=self._dense_shapes,
-            **self._flat_structure))
+            **self._flat_structure
+        )
 
         super(_AvroDataset, self).__init__(variant_tensor)
 
@@ -137,20 +180,20 @@ class _AvroDataset(DatasetSource):
 
         :param features:  A map of features with keys to TensorFlow features.
 
-        :return: A map of features where for the sparse feature the 'index_key' and the 'value_key' have been expanded
-                 properly for the parser in the native code.
+        :return: A map of features where for the sparse feature the 'index_key'
+                 and the 'value_key' have been expanded properly for the parser
+                 in the native code.
         """
+
         def resolve_key(parser_key, index_or_value_key):
-            if not index_or_value_key.startswith('@'):
-                return parser_key + '[*].' + index_or_value_key
-            else:
-                return index_or_value_key[1:]
+            if not index_or_value_key.startswith("@"):
+                return parser_key + "[*]." + index_or_value_key
+            return index_or_value_key[1:]
 
         def resolve_index_key(key_, index_key):
             if isinstance(index_key, list):
                 return [resolve_key(key_, index_key_) for index_key_ in index_key]
-            else:
-                return resolve_key(key_, index_key)
+            return resolve_key(key_, index_key)
 
         if features:
             # NOTE: We iterate over sorted keys to keep things deterministic.
@@ -162,7 +205,8 @@ class _AvroDataset(DatasetSource):
                         value_key=resolve_key(key, feature.value_key),
                         dtype=feature.dtype,
                         size=feature.size,
-                        already_sorted=feature.already_sorted)
+                        already_sorted=feature.already_sorted,
+                    )
         return features
 
     # Pulled this method from tensorflow/python/ops/parsing_ops.py
@@ -172,8 +216,15 @@ class _AvroDataset(DatasetSource):
     # - handling had to change because we don't have a batch dimension when
     #   calling this method
     @staticmethod
-    def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
-                                dense_keys, dense_types, dense_shapes):
+    def _process_raw_parameters(
+        names,
+        dense_defaults,
+        sparse_keys,
+        sparse_types,
+        dense_keys,
+        dense_types,
+        dense_shapes,
+    ):
         """Process raw parameters to params used by `gen_parsing_ops`.
         Args:
           names: A vector (1-D Tensor) of strings (optional), the names of
@@ -207,33 +258,40 @@ class _AvroDataset(DatasetSource):
             match up.
         """
         names = [] if names is None else names
-        dense_defaults = collections.OrderedDict(
-        ) if dense_defaults is None else dense_defaults
+        dense_defaults = (
+            collections.OrderedDict() if dense_defaults is None else dense_defaults
+        )
         sparse_keys = [] if sparse_keys is None else sparse_keys
         sparse_types = [] if sparse_types is None else sparse_types
         dense_keys = [] if dense_keys is None else dense_keys
         dense_types = [] if dense_types is None else dense_types
-        dense_shapes = ([[]] * len(dense_keys)
-                        if dense_shapes is None else dense_shapes)
+        dense_shapes = [[]] * len(dense_keys) if dense_shapes is None else dense_shapes
 
         num_dense = len(dense_keys)
         num_sparse = len(sparse_keys)
 
         if len(dense_shapes) != num_dense:
-            raise ValueError("len(dense_shapes) != len(dense_keys): %d vs. %d" %
-                             (len(dense_shapes), num_dense))
+            raise ValueError(
+                "len(dense_shapes) != len(dense_keys): %d vs. %d"
+                % (len(dense_shapes), num_dense)
+            )
         if len(dense_types) != num_dense:
-            raise ValueError("len(dense_types) != len(num_dense): %d vs. %d" %
-                             (len(dense_types), num_dense))
+            raise ValueError(
+                "len(dense_types) != len(num_dense): %d vs. %d"
+                % (len(dense_types), num_dense)
+            )
         if len(sparse_types) != num_sparse:
-            raise ValueError("len(sparse_types) != len(sparse_keys): %d vs. %d" %
-                             (len(sparse_types), num_sparse))
+            raise ValueError(
+                "len(sparse_types) != len(sparse_keys): %d vs. %d"
+                % (len(sparse_types), num_sparse)
+            )
         if num_dense + num_sparse == 0:
             raise ValueError("Must provide at least one sparse key or dense key")
         if not set(dense_keys).isdisjoint(set(sparse_keys)):
             raise ValueError(
-                "Dense and sparse keys must not intersect; intersection: %s" %
-                set(dense_keys).intersection(set(sparse_keys)))
+                "Dense and sparse keys must not intersect; intersection: %s"
+                % set(dense_keys).intersection(set(sparse_keys))
+            )
 
         # Convert dense_shapes to TensorShape object.
         dense_shapes = [tf.TensorShape(shape) for shape in dense_shapes]
@@ -254,11 +312,13 @@ class _AvroDataset(DatasetSource):
                 else:  # Should be numeric type
                     default_value = 0
                 default_value = tf.ops.convert_to_tensor(
-                    default_value, dtype=dense_types[i])
+                    default_value, dtype=dense_types[i]
+                )
             elif not isinstance(default_value, tf.ops.Tensor):
                 key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
                 default_value = tf.ops.convert_to_tensor(
-                    default_value, dtype=dense_types[i], name=key_name)
+                    default_value, dtype=dense_types[i], name=key_name
+                )
                 # If we have a shape and the first dimension is not None
                 if dense_shape.rank and dense_shape.dims[0].value:
                     default_value = tf.reshape(default_value, dense_shape)
@@ -268,8 +328,15 @@ class _AvroDataset(DatasetSource):
         # Finally, convert dense_shapes to TensorShapeProto
         dense_shapes_as_proto = [shape.as_proto() for shape in dense_shapes]
 
-        return (names, dense_defaults_vec, sparse_keys, sparse_types, dense_keys,
-                dense_shapes_as_proto, dense_shapes)
+        return (
+            names,
+            dense_defaults_vec,
+            sparse_keys,
+            sparse_types,
+            dense_keys,
+            dense_shapes_as_proto,
+            dense_shapes,
+        )
 
     # Pulled this method from tensorflow/python/ops/parsing_ops.py
     # here to customize dense shape handling of sparse tensors, here we
@@ -322,10 +389,12 @@ class _AvroDataset(DatasetSource):
 
                     if not feature.index_key:
                         raise ValueError(
-                            "Missing index_key for SparseFeature %s." % (feature,))
+                            "Missing index_key for SparseFeature %s." % (feature,)
+                        )
                     if not feature.value_key:
                         raise ValueError(
-                            "Missing value_key for SparseFeature %s." % (feature,))
+                            "Missing value_key for SparseFeature %s." % (feature,)
+                        )
                     if not feature.dtype:
                         raise ValueError("Missing type for feature %s." % key)
                     if not feature.size:
@@ -335,15 +404,19 @@ class _AvroDataset(DatasetSource):
                     if isinstance(index_keys, str):
                         index_keys = [index_keys]
                     elif len(index_keys) > 1:
-                        tf.logging.warning("SparseFeature is a complicated feature config "
-                                           "and should only be used after careful "
-                                           "consideration of VarLenFeature.")
+                        tf.logging.warning(
+                            "SparseFeature is a complicated feature config "
+                            "and should only be used after careful "
+                            "consideration of VarLenFeature."
+                        )
                     for index_key in sorted(index_keys):
                         if index_key in sparse_keys:
                             dtype = sparse_types[sparse_keys.index(index_key)]
                             if dtype != tf.int64:
-                                raise ValueError("Conflicting type %s vs int64 for feature %s." %
-                                                 (dtype, index_key))
+                                raise ValueError(
+                                    "Conflicting type %s vs int64 for feature %s."
+                                    % (dtype, index_key)
+                                )
                         else:
                             sparse_keys.append(index_key)
                             sparse_types.append(tf.int64)
@@ -351,8 +424,10 @@ class _AvroDataset(DatasetSource):
                     if feature.value_key in sparse_keys:
                         dtype = sparse_types[sparse_keys.index(feature.value_key)]
                         if dtype != feature.dtype:
-                            raise ValueError("Conflicting type %s vs %s for feature %s." % (
-                                dtype, feature.dtype, feature.value_key))
+                            raise ValueError(
+                                "Conflicting type %s vs %s for feature %s."
+                                % (dtype, feature.dtype, feature.value_key)
+                            )
                     else:
                         sparse_keys.append(feature.value_key)
                         sparse_types.append(feature.dtype)
@@ -372,25 +447,31 @@ class _AvroDataset(DatasetSource):
                 else:
                     raise ValueError("Invalid feature %s:%s." % (key, feature))
         return (
-            sparse_keys, sparse_types, sparse_dense_shapes, dense_keys, dense_types,
-            dense_defaults, dense_shapes)
+            sparse_keys,
+            sparse_types,
+            sparse_dense_shapes,
+            dense_keys,
+            dense_types,
+            dense_defaults,
+            dense_shapes,
+        )
 
 
 def make_avro_dataset(
-        filenames,
-        reader_schema,
-        features,
-        batch_size,
-        num_epochs,
-        num_parallel_calls=2,
-        label_keys=None,
-        input_stream_buffer_size=16*1024,
-        avro_data_buffer_size=256,
-        shuffle=True,
-        shuffle_buffer_size=10000,
-        shuffle_seed=None,
-        prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
-        num_parallel_reads=1
+    filenames,
+    reader_schema,
+    features,
+    batch_size,
+    num_epochs,
+    num_parallel_calls=2,
+    label_keys=None,
+    input_stream_buffer_size=16 * 1024,
+    avro_data_buffer_size=256,
+    shuffle=True,
+    shuffle_buffer_size=10000,
+    shuffle_seed=None,
+    prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
+    num_parallel_reads=1,
 ):
     """Makes an avro dataset.
 
@@ -474,8 +555,9 @@ def make_avro_dataset(
 
     for label_key in label_keys:
         if label_key not in features:
-            raise ValueError("`label_key` provided (%r) must be in `features`."
-                             % label_key)
+            raise ValueError(
+                "`label_key` provided (%r) must be in `features`." % label_key
+            )
 
     def filename_to_dataset(filename):
         # Batches
@@ -487,46 +569,59 @@ def make_avro_dataset(
             drop_remainder=num_epochs is None,
             num_parallel_calls=num_parallel_calls,
             input_stream_buffer_size=input_stream_buffer_size,
-            avro_data_buffer_size=avro_data_buffer_size
+            avro_data_buffer_size=avro_data_buffer_size,
         )
 
     # Read files sequentially (if num_parallel_reads=1) or in parallel
-    dataset = dataset.interleave(filename_to_dataset, cycle_length=num_parallel_calls,
-                                 num_parallel_calls=num_parallel_reads)
+    dataset = dataset.interleave(
+        filename_to_dataset,
+        cycle_length=num_parallel_calls,
+        num_parallel_calls=num_parallel_reads,
+    )
 
-    dataset = readers._maybe_shuffle_and_repeat(
-        dataset, num_epochs, shuffle, shuffle_buffer_size, shuffle_seed)
+    if shuffle:
+        dataset = dataset.shuffle(shuffle_buffer_size, shuffle_seed)
+    if num_epochs != 1:
+        dataset = dataset.repeat(num_epochs)
 
-    if any(
-            isinstance(feature, tf.io.SparseFeature)
-            for _, feature in features.items()
-    ):
+    if any(isinstance(feature, tf.io.SparseFeature) for _, feature in features.items()):
         # pylint: disable=protected-access
         # pylint: disable=g-long-lambda
         dataset = dataset.map(
             lambda x: parsing_ops._construct_sparse_tensors_for_sparse_features(
-                features, x), num_parallel_calls=num_parallel_calls)
+                features, x
+            ),
+            num_parallel_calls=num_parallel_calls,
+        )
 
         # Take care of sparse shape assignment in features
+
     def reshape_sp_function(tensor_features):
-        """Note, that sparse merge produces a rank of 2*n instead of n+1 when merging n dimensional tensors.
-        But the index is produced with rank n+1. We correct the shape here through this method.
+        """Note, that sparse merge produces a rank of 2*n instead of n+1 when
+        merging n dimensional tensors. But the index is produced with rank n+1.
+        We correct the shape here through this method.
         :param tensor_features: the output features dict from avrodataset
         """
         for feature_name, feature in features.items():
-            if isinstance(feature, tf.io.SparseFeature) and isinstance(feature.size, list) and len(feature.size) > 1:
+            if (
+                isinstance(feature, tf.io.SparseFeature)
+                and isinstance(feature.size, list)
+                and len(feature.size) > 1
+            ):
                 # Have -1 for unknown batch
                 reshape = [-1] + list(feature.size)
-                tensor_features[feature_name] = tf.sparse.reshape(tensor_features[feature_name], reshape)
+                tensor_features[feature_name] = tf.sparse.reshape(
+                    tensor_features[feature_name], reshape
+                )
         return tensor_features
 
     dataset = dataset.map(reshape_sp_function, num_parallel_calls=num_parallel_calls)
 
     if len(label_keys) > 0:
         dataset = dataset.map(
-            lambda x: (x, {label_key_: x.pop(label_key_)
-                           for label_key_ in label_keys}),
-            num_parallel_calls=num_parallel_calls)
+            lambda x: (x, {label_key_: x.pop(label_key_) for label_key_ in label_keys}),
+            num_parallel_calls=num_parallel_calls,
+        )
 
     dataset = dataset.prefetch(prefetch_buffer_size)
 

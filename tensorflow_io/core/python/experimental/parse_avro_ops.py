@@ -25,6 +25,7 @@ from tensorflow_io.core.python.ops import core_ops
 # Note, there are several changes to 2.1.0
 # Only copied parts from `parse_example_v2` and `_parse_example_raw`
 
+
 def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     """
     Parses `avro` records into a `dict` of tensors.
@@ -81,27 +82,44 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     if not features:
         raise ValueError("Missing: features was %s." % features)
     features = _build_keys_for_sparse_features(features)
-    (sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
-     dense_shapes) = _features_to_raw_params(
-        features,
-        [tf.io.VarLenFeature, tf.io.SparseFeature, tf.io.FixedLenFeature])
+    (
+        sparse_keys,
+        sparse_types,
+        dense_keys,
+        dense_types,
+        dense_defaults,
+        dense_shapes,
+    ) = _features_to_raw_params(
+        features, [tf.io.VarLenFeature, tf.io.SparseFeature, tf.io.FixedLenFeature]
+    )
 
     outputs = _parse_avro(
-        serialized, reader_schema, avro_names, sparse_keys, sparse_types, dense_keys,
-        dense_types, dense_defaults, dense_shapes, name)
+        serialized,
+        reader_schema,
+        avro_names,
+        sparse_keys,
+        sparse_types,
+        dense_keys,
+        dense_types,
+        dense_defaults,
+        dense_shapes,
+        name,
+    )
     return parsing_ops._construct_sparse_tensors_for_sparse_features(features, outputs)
 
 
-def _parse_avro(serialized,
-                reader_schema,
-                names=None,
-                sparse_keys=None,
-                sparse_types=None,
-                dense_keys=None,
-                dense_types=None,
-                dense_defaults=None,
-                dense_shapes=None,
-                name=None):
+def _parse_avro(
+    serialized,
+    reader_schema,
+    names=None,
+    sparse_keys=None,
+    sparse_types=None,
+    dense_keys=None,
+    dense_types=None,
+    dense_defaults=None,
+    dense_shapes=None,
+    name=None,
+):
     """Parses Avro records.
     Args:
     serialized: A vector (1-D Tensor) of strings, a batch of binary
@@ -135,10 +153,23 @@ def _parse_avro(serialized,
       A `dict` mapping keys to `Tensor`s and `SparseTensor`s.
     """
     with tf.name_scope(name or "ParseAvro"):
-        (names, dense_defaults_vec, sparse_keys, sparse_types,
-         dense_keys, dense_shapes, _) = _process_raw_parameters(
-            names, dense_defaults, sparse_keys, sparse_types, dense_keys,
-            dense_types, dense_shapes)
+        (
+            names,
+            dense_defaults_vec,
+            sparse_keys,
+            sparse_types,
+            dense_keys,
+            dense_shapes,
+            _,
+        ) = _process_raw_parameters(
+            names,
+            dense_defaults,
+            sparse_keys,
+            sparse_types,
+            dense_keys,
+            dense_types,
+            dense_shapes,
+        )
 
         outputs = core_ops.io_parse_avro(
             serialized=serialized,
@@ -150,13 +181,15 @@ def _parse_avro(serialized,
             num_sparse=len(sparse_keys),
             dense_keys=dense_keys,
             dense_shapes=dense_shapes,
-            name=name)
+            name=name,
+        )
 
         (sparse_indices, sparse_values, sparse_shapes, dense_values) = outputs
 
         sparse_tensors = [
-            tf.sparse.SparseTensor(ix, val, shape) for (ix, val, shape)
-            in zip(sparse_indices, sparse_values, sparse_shapes)]
+            tf.sparse.SparseTensor(ix, val, shape)
+            for (ix, val, shape) in zip(sparse_indices, sparse_values, sparse_shapes)
+        ]
 
         return dict(zip(sparse_keys + dense_keys, sparse_tensors + dense_values))
 
@@ -172,9 +205,8 @@ def _prepend_none_dimension(features):
         for key, feature in features.items():
             if isinstance(feature, tf.io.FixedLenFeature):
                 modified_features[key] = tf.io.FixedLenFeature(
-                    [None] + list(feature.shape),
-                    feature.dtype,
-                    feature.default_value)
+                    [None] + list(feature.shape), feature.dtype, feature.default_value
+                )
         return modified_features
     else:
         return features
@@ -189,9 +221,10 @@ def _build_keys_for_sparse_features(features):
     :return: A map of features where for the sparse feature the 'index_key' and the 'value_key' have been expanded
              properly for the parser in the native code.
     """
+
     def resolve_key(parser_key, index_or_value_key):
-        if not index_or_value_key.startswith('@'):
-            return parser_key + '[*].' + index_or_value_key
+        if not index_or_value_key.startswith("@"):
+            return parser_key + "[*]." + index_or_value_key
         else:
             return index_or_value_key[1:]
 
@@ -211,7 +244,8 @@ def _build_keys_for_sparse_features(features):
                     value_key=resolve_key(key, feature.value_key),
                     dtype=feature.dtype,
                     size=feature.size,
-                    already_sorted=feature.already_sorted)
+                    already_sorted=feature.already_sorted,
+                )
         return modified_features
     else:
         return features
@@ -265,33 +299,41 @@ def _features_to_raw_params(features, types):
 
                 if not feature.index_key:
                     raise ValueError(
-                        "Missing index_key for SparseFeature %s." % (feature,))
+                        "Missing index_key for SparseFeature %s." % (feature,)
+                    )
                 if not feature.value_key:
                     raise ValueError(
-                        "Missing value_key for SparseFeature %s." % (feature,))
+                        "Missing value_key for SparseFeature %s." % (feature,)
+                    )
                 if not feature.dtype:
                     raise ValueError("Missing type for feature %s." % key)
                 index_keys = feature.index_key
                 if isinstance(index_keys, str):
                     index_keys = [index_keys]
                 elif len(index_keys) > 1:
-                    tf.logging.warning("SparseFeature is a complicated feature config "
-                                       "and should only be used after careful "
-                                       "consideration of VarLenFeature.")
+                    tf.logging.warning(
+                        "SparseFeature is a complicated feature config "
+                        "and should only be used after careful "
+                        "consideration of VarLenFeature."
+                    )
                 for index_key in sorted(index_keys):
                     if index_key in sparse_keys:
                         dtype = sparse_types[sparse_keys.index(index_key)]
                         if dtype != tf.int64:
-                            raise ValueError("Conflicting type %s vs int64 for feature %s." %
-                                             (dtype, index_key))
+                            raise ValueError(
+                                "Conflicting type %s vs int64 for feature %s."
+                                % (dtype, index_key)
+                            )
                     else:
                         sparse_keys.append(index_key)
                         sparse_types.append(tf.int64)
                 if feature.value_key in sparse_keys:
                     dtype = sparse_types[sparse_keys.index(feature.value_key)]
                     if dtype != feature.dtype:
-                        raise ValueError("Conflicting type %s vs %s for feature %s." % (
-                            dtype, feature.dtype, feature.value_key))
+                        raise ValueError(
+                            "Conflicting type %s vs %s for feature %s."
+                            % (dtype, feature.dtype, feature.value_key)
+                        )
                 else:
                     sparse_keys.append(feature.value_key)
                     sparse_types.append(feature.dtype)
@@ -310,8 +352,13 @@ def _features_to_raw_params(features, types):
             else:
                 raise ValueError("Invalid feature %s:%s." % (key, feature))
     return (
-        sparse_keys, sparse_types, dense_keys, dense_types, dense_defaults,
-        dense_shapes)
+        sparse_keys,
+        sparse_types,
+        dense_keys,
+        dense_types,
+        dense_defaults,
+        dense_shapes,
+    )
 
 
 # Pulled this method from tensorflow/python/ops/parsing_ops.py
@@ -320,8 +367,15 @@ def _features_to_raw_params(features, types):
 # - more types
 # - handling had to change because we don't have a batch dimension when
 #   calling this method
-def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
-                            dense_keys, dense_types, dense_shapes):
+def _process_raw_parameters(
+    names,
+    dense_defaults,
+    sparse_keys,
+    sparse_types,
+    dense_keys,
+    dense_types,
+    dense_shapes,
+):
     """Process raw parameters to params used by `gen_parsing_ops`.
     Args:
       names: A vector (1-D Tensor) of strings (optional), the names of
@@ -355,33 +409,40 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
         match up.
     """
     names = [] if names is None else names
-    dense_defaults = collections.OrderedDict(
-    ) if dense_defaults is None else dense_defaults
+    dense_defaults = (
+        collections.OrderedDict() if dense_defaults is None else dense_defaults
+    )
     sparse_keys = [] if sparse_keys is None else sparse_keys
     sparse_types = [] if sparse_types is None else sparse_types
     dense_keys = [] if dense_keys is None else dense_keys
     dense_types = [] if dense_types is None else dense_types
-    dense_shapes = ([[]] * len(dense_keys)
-                    if dense_shapes is None else dense_shapes)
+    dense_shapes = [[]] * len(dense_keys) if dense_shapes is None else dense_shapes
 
     num_dense = len(dense_keys)
     num_sparse = len(sparse_keys)
 
     if len(dense_shapes) != num_dense:
-        raise ValueError("len(dense_shapes) != len(dense_keys): %d vs. %d" %
-                         (len(dense_shapes), num_dense))
+        raise ValueError(
+            "len(dense_shapes) != len(dense_keys): %d vs. %d"
+            % (len(dense_shapes), num_dense)
+        )
     if len(dense_types) != num_dense:
-        raise ValueError("len(dense_types) != len(num_dense): %d vs. %d" %
-                         (len(dense_types), num_dense))
+        raise ValueError(
+            "len(dense_types) != len(num_dense): %d vs. %d"
+            % (len(dense_types), num_dense)
+        )
     if len(sparse_types) != num_sparse:
-        raise ValueError("len(sparse_types) != len(sparse_keys): %d vs. %d" %
-                         (len(sparse_types), num_sparse))
+        raise ValueError(
+            "len(sparse_types) != len(sparse_keys): %d vs. %d"
+            % (len(sparse_types), num_sparse)
+        )
     if num_dense + num_sparse == 0:
         raise ValueError("Must provide at least one sparse key or dense key")
     if not set(dense_keys).isdisjoint(set(sparse_keys)):
         raise ValueError(
-            "Dense and sparse keys must not intersect; intersection: %s" %
-            set(dense_keys).intersection(set(sparse_keys)))
+            "Dense and sparse keys must not intersect; intersection: %s"
+            % set(dense_keys).intersection(set(sparse_keys))
+        )
 
     # Convert dense_shapes to TensorShape object.
     dense_shapes = [tf.TensorShape(shape) for shape in dense_shapes]
@@ -401,12 +462,12 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
                 default_value = False
             else:  # Should be numeric type
                 default_value = 0
-            default_value = tf.convert_to_tensor(
-                default_value, dtype=dense_types[i])
+            default_value = tf.convert_to_tensor(default_value, dtype=dense_types[i])
         elif not isinstance(default_value, tf.Tensor):
             key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
             default_value = tf.convert_to_tensor(
-                default_value, dtype=dense_types[i], name=key_name)
+                default_value, dtype=dense_types[i], name=key_name
+            )
             # If we have a shape and the first dimension is not None
             if dense_shape.rank and dense_shape.dims[0].value:
                 default_value = tf.reshape(default_value, dense_shape)
@@ -416,5 +477,12 @@ def _process_raw_parameters(names, dense_defaults, sparse_keys, sparse_types,
     # Finally, convert dense_shapes to TensorShapeProto
     dense_shapes_as_proto = [shape.as_proto() for shape in dense_shapes]
 
-    return (names, dense_defaults_vec, sparse_keys, sparse_types, dense_keys,
-            dense_shapes_as_proto, dense_shapes)
+    return (
+        names,
+        dense_defaults_vec,
+        sparse_keys,
+        sparse_types,
+        dense_keys,
+        dense_shapes_as_proto,
+        dense_shapes,
+    )

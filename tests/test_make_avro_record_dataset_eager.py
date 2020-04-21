@@ -12,17 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import avro_dataset_test_base
-import avro_serialization
-import tensorflow_io as tfio
+"""MakeAvroRecordDatasetTest"""
 import tensorflow as tf
+import avro_dataset_test_base
+import tensorflow_io as tfio
+
 
 class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
+    """MakeAvroRecordDatasetTest"""
 
-    def _test_pass_dataset(self, writer_schema, record_data, expected_data,
-                           features, reader_schema, batch_size, **kwargs):
-        filenames = avro_dataset_test_base.AvroDatasetTestBase._setup_files(writer_schema=writer_schema,
-                                                     records=record_data)
+    def _test_pass_dataset(
+        self,
+        writer_schema,
+        record_data,
+        expected_data,
+        features,
+        reader_schema,
+        batch_size,
+        **kwargs
+    ):
+        """_test_pass_dataset"""
+        filenames = avro_dataset_test_base.AvroDatasetTestBase._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
 
         actual_dataset = tfio.experimental.columnar.make_avro_record_dataset(
             file_pattern=filenames,
@@ -30,38 +42,37 @@ class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=batch_size,
             reader_schema=reader_schema,
             shuffle=kwargs.get("shuffle", None),
-            num_epochs=kwargs.get("num_epochs", None))
+            num_epochs=kwargs.get("num_epochs", None),
+        )
 
-        self._verify_output(expected_data=expected_data,
-                            actual_dataset=actual_dataset)
+        self._verify_output(expected_data=expected_data, actual_dataset=actual_dataset)
 
     def test_batching(self):
+        """test_batching"""
         writer_schema = """{
               "type": "record",
               "name": "row",
               "fields": [
                   {"name": "int_value", "type": "int"}
               ]}"""
-        record_data = [
-            {"int_value": 0},
-            {"int_value": 1},
-            {"int_value": 2}
-        ]
-        features = {
-            "int_value": tf.io.FixedLenFeature([], tf.dtypes.int32)
-        }
+        record_data = [{"int_value": 0}, {"int_value": 1}, {"int_value": 2}]
+        features = {"int_value": tf.io.FixedLenFeature([], tf.dtypes.int32)}
         expected_data = [
             {"int_value": tf.convert_to_tensor([0, 1])},
-            {"int_value": tf.convert_to_tensor([2])}
+            {"int_value": tf.convert_to_tensor([2])},
         ]
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=2, num_epochs=1)
+        self._test_pass_dataset(
+            writer_schema=writer_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            reader_schema=writer_schema,
+            batch_size=2,
+            num_epochs=1,
+        )
 
     def test_fixed_length_list(self):
+        """test_fixed_length_list"""
         writer_schema = """{
               "type": "record",
               "name": "row",
@@ -77,21 +88,23 @@ class MakeAvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         record_data = [
             {"int_list": [0, 1, 2]},
             {"int_list": [3, 4, 5]},
-            {"int_list": [6, 7, 8]}
+            {"int_list": [6, 7, 8]},
         ]
-        features = {
-            "int_list[*]": tf.io.FixedLenFeature([3], tf.dtypes.int32)
-        }
+        features = {"int_list[*]": tf.io.FixedLenFeature([3], tf.dtypes.int32)}
         expected_data = [
             {"int_list[*]": tf.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
         ]
 
-        self._test_pass_dataset(writer_schema=writer_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                reader_schema=writer_schema,
-                                batch_size=3, num_epochs=1)
+        self._test_pass_dataset(
+            writer_schema=writer_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            reader_schema=writer_schema,
+            batch_size=3,
+            num_epochs=1,
+        )
+
 
 if __name__ == "__main__":
     test.main()

@@ -14,16 +14,20 @@
 # ==============================================================================
 
 # Examples: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/data/experimental/kernel_tests/stats_dataset_test_base.py
+"""AvroRecrodDatasetTest"""
+
 import unittest
 
-import tensorflow_io as tfio
+from functools import reduce
 import tensorflow as tf
+import tensorflow_io as tfio
 import avro_dataset_test_base
 import avro_serialization
 
-from functools import reduce
 
 class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
+    """AvroRecordDatasetTest"""
+
     @staticmethod
     def _load_records_as_tensors(filenames, schema):
         serializer = avro_serialization.AvroSerializer(schema)
@@ -41,6 +45,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         )
 
     def _test_pass_dataset(self, writer_schema, record_data, **kwargs):
+        """test_pass_dataset"""
         filenames = AvroRecordDatasetTest._setup_files(
             writer_schema=writer_schema, records=record_data
         )
@@ -59,6 +64,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     def _test_pass_dataset_resolved(
         self, writer_schema, reader_schema, record_data, **kwargs
     ):
+        """test_pass_dataset_resolved"""
         filenames = AvroRecordDatasetTest._setup_files(
             writer_schema=writer_schema, records=record_data
         )
@@ -76,6 +82,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             self.assertValuesEqual(expected=expected, actual=next(data))
 
     def test_wout_reader_schema(self):
+        """test_wout_reader_schema"""
         writer_schema = """{
               "type": "record",
               "name": "dataTypes",
@@ -94,15 +101,15 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
             {
                 "index": 2,
-                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789",
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVW"
+                + "Zabcdefghijklmnopqrstuvwz0123456789",
             },
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    @unittest.skip(
-        "disable this test for now as it requires further investigation to pass with tf 2.2 RC3"
-    )
+    @unittest.skip("requres further investigation to pass with tf 2.2 RC3")
     def test_with_schema_projection(self):
+        """test_with_schema_projection"""
         writer_schema = """{
               "type": "record",
               "name": "dataTypes",
@@ -131,7 +138,8 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
             {
                 "index": 2,
-                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcdefghijklmnopqrstuvwz0123456789",
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcde"
+                + "fghijklmnopqrstuvwz0123456789",
             },
         ]
         self._test_pass_dataset_resolved(
@@ -141,6 +149,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         )
 
     def test_schema_type_promotion(self):
+        """test_schema_type_promotion"""
         writer_schema = """{
               "type": "record",
               "name": "row",

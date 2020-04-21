@@ -15,13 +15,17 @@
 
 import tensorflow as tf
 from tensorflow.python.data.ops import dataset_ops
-from tensorflow.python.data.ops.readers import _create_or_validate_filenames_dataset, _create_dataset_reader
+from tensorflow.python.data.ops.readers import (
+    _create_or_validate_filenames_dataset,
+    _create_dataset_reader,
+)
 from tensorflow.python.data.util import convert
 from tensorflow_io.core.python.ops import core_ops
 
 _DEFAULT_READER_BUFFER_SIZE_BYTES = 256 * 1024  # 256 KB
 _DEFAULT_READER_SCHEMA = ""
 # From https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/data/ops/readers.py
+
 
 class _AvroRecordDataset(dataset_ops.DatasetSource):
     """A `Dataset` comprising records from one or more AvroRecord files."""
@@ -38,15 +42,17 @@ class _AvroRecordDataset(dataset_ops.DatasetSource):
         self._buffer_size = convert.optional_param_to_tensor(
             "buffer_size",
             buffer_size,
-            argument_default=_DEFAULT_READER_BUFFER_SIZE_BYTES)
+            argument_default=_DEFAULT_READER_BUFFER_SIZE_BYTES,
+        )
         self._reader_schema = convert.optional_param_to_tensor(
             "reader_schema",
             reader_schema,
             argument_default=_DEFAULT_READER_SCHEMA,
-            argument_dtype=tf.dtypes.string)
-        variant_tensor = core_ops.io_avro_record_dataset(self._filenames,
-                                                         self._buffer_size,
-                                                         self._reader_schema)
+            argument_dtype=tf.dtypes.string,
+        )
+        variant_tensor = core_ops.io_avro_record_dataset(
+            self._filenames, self._buffer_size, self._reader_schema
+        )
         super(_AvroRecordDataset, self).__init__(variant_tensor)
 
     @property
@@ -57,11 +63,9 @@ class _AvroRecordDataset(dataset_ops.DatasetSource):
 class AvroRecordDataset(dataset_ops.DatasetV2):
     """A `Dataset` comprising records from one or more AvroRecord files."""
 
-    def __init__(self,
-                 filenames,
-                 buffer_size=None,
-                 num_parallel_reads=None,
-                 reader_schema=None):
+    def __init__(
+        self, filenames, buffer_size=None, num_parallel_reads=None, reader_schema=None
+    ):
         """Creates a `AvroRecordDataset` to read one or more AvroRecord files.
         Args:
           filenames: A `tf.string` tensor or `tf.data.Dataset` containing one or
@@ -92,19 +96,23 @@ class AvroRecordDataset(dataset_ops.DatasetV2):
         def creator_fn(filename):
             return _AvroRecordDataset(filename, buffer_size, reader_schema)
 
-        self._impl = _create_dataset_reader(creator_fn, filenames,
-                                            num_parallel_reads)
+        self._impl = _create_dataset_reader(creator_fn, filenames, num_parallel_reads)
         variant_tensor = self._impl._variant_tensor  # pylint: disable=protected-access
         super(AvroRecordDataset, self).__init__(variant_tensor)
 
-    def _clone(self,
-               filenames=None,
-               buffer_size=None,
-               num_parallel_reads=None,
-               reader_schema=None):
-        return AvroRecordDataset(filenames or self._filenames, buffer_size or
-                                 self._buffer_size, num_parallel_reads or self._num_parallel_reads,
-                                 reader_schema or self._reader_schema)
+    def _clone(
+        self,
+        filenames=None,
+        buffer_size=None,
+        num_parallel_reads=None,
+        reader_schema=None,
+    ):
+        return AvroRecordDataset(
+            filenames or self._filenames,
+            buffer_size or self._buffer_size,
+            num_parallel_reads or self._num_parallel_reads,
+            reader_schema or self._reader_schema,
+        )
 
     def _inputs(self):
         return self._impl._inputs()  # pylint: disable=protected-access

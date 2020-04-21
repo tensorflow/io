@@ -14,41 +14,53 @@
 # ==============================================================================
 
 # Examples: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/data/experimental/kernel_tests/stats_dataset_test_base.py
+"""Util for avro dataset test."""
+
+
 import os
 import tempfile
 
 from tensorflow.python.data.kernel_tests import test_base
 import avro_serialization
 
+
 class AvroDatasetTestBase(test_base.DatasetTestBase):
+    """AvroDatasetTestBase"""
 
     @staticmethod
     def _setup_files(writer_schema, records):
-
+        """setup_files"""
         # Write test records into temporary output directory
         filename = os.path.join(tempfile.mkdtemp(), "test.avro")
-        writer = avro_serialization.AvroRecordsToFile(filename=filename,
-                                   writer_schema=writer_schema)
+        writer = avro_serialization.AvroRecordsToFile(
+            filename=filename, writer_schema=writer_schema
+        )
         writer.write_records(records)
 
         return [filename]
 
-    def assertDataEqual(self, expected, actual):
+    def assert_data_equal(self, expected, actual):
+        """assert_data_equal"""
 
-        def _assertEqual(_expected, _actual):
-            for name, datum in _expected.items():
-                self.assertValuesEqual(expected=datum, actual=_actual[name])
+        def _assert_equal(expected, actual):
+            for name, datum in expected.items():
+                self.assertValuesEqual(expected=datum, actual=actual[name])
 
         if isinstance(expected, tuple):
-            assert isinstance(expected, tuple), \
-                "Found type {} but expected type {}".format(type(actual), tuple)
-            assert len(expected) == 2, \
-                "Found {} components in expected dataset but must have {}" \
-                    .format(len(expected), 2)
+            assert isinstance(
+                expected, tuple
+            ), "Found type {} but expected type {}".format(type(actual), tuple)
+            assert (
+                len(expected) == 2
+            ), "Found {} components in expected dataset but must have {}".format(
+                len(expected), 2
+            )
 
-            assert len(actual) == 2, \
-                "Found {} components in actual dataset but expected {}" \
-                    .format(len(actual), 2)
+            assert (
+                len(actual) == 2
+            ), "Found {} components in actual dataset but expected {}".format(
+                len(actual), 2
+            )
 
             expected_features, expected_labels = expected
             actual_features, actual_labels = actual
@@ -57,11 +69,11 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
             _assertEqual(expected_labels, actual_labels)
 
         else:
-            _assertEqual(expected, actual)
+            _assert_equal(expected, actual)
 
     def _verify_output(self, expected_data, actual_dataset):
 
         next_data = iter(actual_dataset)
 
         for expected in expected_data:
-            self.assertDataEqual(expected=expected, actual=next(next_data))
+            self.assert_data_equal(expected=expected, actual=next(next_data))
