@@ -58,6 +58,9 @@ class _AvroRecordDataset(tf.data.Dataset):
     def element_spec(self):
         return tf.TensorSpec([], tf.dtypes.string)
 
+    def _inputs(self):
+        return []
+
 
 class AvroRecordDataset(tf.data.Dataset):
     """A `Dataset` comprising records from one or more AvroRecord files."""

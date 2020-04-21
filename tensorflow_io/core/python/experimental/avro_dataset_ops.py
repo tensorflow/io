@@ -337,6 +337,12 @@ class _AvroDataset(tf.data.Dataset):
             dense_shapes,
         )
 
+    @staticmethod
+    def __check_none(instance, missing_str, for_str):
+        """if instance is None, raise error """
+        if not instance:
+            raise ValueError("Missing %s for %s." % (missing_str, for_str))
+
     # Pulled this method from tensorflow/python/ops/parsing_ops.py
     # here to customize dense shape handling of sparse tensors, here we
     # - assume the shape parameter is set by the user
@@ -377,27 +383,17 @@ class _AvroDataset(tf.data.Dataset):
                 if isinstance(feature, tf.io.VarLenFeature):
                     if tf.io.VarLenFeature not in types:
                         raise ValueError("Unsupported VarLenFeature %s." % (feature,))
-                    if not feature.dtype:
-                        raise ValueError("Missing type for feature %s." % key)
+                    __check_none(feature.dtype, "type", "feature " + key)
                     sparse_keys.append(key)
                     sparse_types.append(feature.dtype)
                     sparse_dense_shapes.append(None)
                 elif isinstance(feature, tf.io.SparseFeature):
                     if tf.io.SparseFeature not in types:
                         raise ValueError("Unsupported SparseFeature %s." % (feature,))
-
-                    if not feature.index_key:
-                        raise ValueError(
-                            "Missing index_key for SparseFeature %s." % (feature,)
-                        )
-                    if not feature.value_key:
-                        raise ValueError(
-                            "Missing value_key for SparseFeature %s." % (feature,)
-                        )
-                    if not feature.dtype:
-                        raise ValueError("Missing type for feature %s." % key)
-                    if not feature.size:
-                        raise ValueError("Missing size for feature %s." % key)
+                    __check_none(feature.index_key, "index_key", "SparseFeature " + key)
+                    __check_none(feature.value_key, "value_key", "SparseFeature " + key)
+                    __check_none(feature.dtype, "type", "feature " + key)
+                    __check_none(feature.size, "size", "feature " + key)
 
                     index_keys = feature.index_key
                     if isinstance(index_keys, str):
@@ -434,10 +430,9 @@ class _AvroDataset(tf.data.Dataset):
                 elif isinstance(feature, tf.io.FixedLenFeature):
                     if tf.io.FixedLenFeature not in types:
                         raise ValueError("Unsupported FixedLenFeature %s." % (feature,))
-                    if not feature.dtype:
-                        raise ValueError("Missing type for feature %s." % key)
-                    if feature.shape is None:
-                        raise ValueError("Missing shape for feature %s." % key)
+                    __check_none(feature.dtype, "type", "feature " + key)
+                    __check_none(feature.shape, "shape", "feature " + key)
+
                     dense_keys.append(key)
                     dense_shapes.append(feature.shape)
                     dense_types.append(feature.dtype)
