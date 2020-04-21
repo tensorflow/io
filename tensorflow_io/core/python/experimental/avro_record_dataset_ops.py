@@ -18,7 +18,6 @@ from tensorflow.python.data.ops.readers import (
     _create_or_validate_filenames_dataset,
     _create_dataset_reader,
 )
-from tensorflow.python.data.util import convert
 from tensorflow_io.core.python.ops import core_ops
 
 _DEFAULT_READER_BUFFER_SIZE_BYTES = 256 * 1024  # 256 KB
@@ -38,12 +37,12 @@ class _AvroRecordDataset(tf.data.Dataset):
           reader_schema: (Optional.) A `tf.string` scalar representing the reader schema or None
         """
         self._filenames = filenames
-        self._buffer_size = convert.optional_param_to_tensor(
+        self._buffer_size = _AvroRecordDataset.__optional_param_to_tensor(
             "buffer_size",
             buffer_size,
             argument_default=_DEFAULT_READER_BUFFER_SIZE_BYTES,
         )
-        self._reader_schema = convert.optional_param_to_tensor(
+        self._reader_schema = _AvroRecordDataset.__optional_param_to_tensor(
             "reader_schema",
             reader_schema,
             argument_default=_DEFAULT_READER_SCHEMA,
@@ -53,6 +52,21 @@ class _AvroRecordDataset(tf.data.Dataset):
             self._filenames, self._buffer_size, self._reader_schema
         )
         super(_AvroRecordDataset, self).__init__(variant_tensor)
+
+
+    #Copied from https://github.com/tensorflow/tensorflow/blob/f40a875355557483aeae60ffcf757fc9626c752b
+    #            /tensorflow/python/data/util/convert.py#L26-L35
+    @staticmethod
+    def __optional_param_to_tensor(argument_name,
+                                   argument_value,
+                                   argument_default=0,
+                                   argument_dtype=tf.dtypes.int64):
+        """optional_param_to_tensor"""
+        if argument_value is not None:
+            return tf.convert_to_tensor(
+                argument_value, dtype=argument_dtype, name=argument_name)
+        else:
+            return tf.constant(argument_default, dtype=argument_dtype, name=argument_name)
 
     @property
     def element_spec(self):
