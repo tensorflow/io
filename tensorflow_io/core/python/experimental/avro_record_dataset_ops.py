@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""_AvroRecordDataset"""
 
 import tensorflow as tf
 from tensorflow.python.data.ops.readers import (
@@ -34,7 +35,8 @@ class _AvroRecordDataset(tf.data.Dataset):
           filenames: A `tf.string` tensor containing one or more filenames.
           buffer_size: (Optional.) A `tf.int64` scalar representing the number of
             bytes in the read buffer. 0 means no buffering.
-          reader_schema: (Optional.) A `tf.string` scalar representing the reader schema or None
+          reader_schema: (Optional.) A `tf.string` scalar
+          representing the reader schema or None
         """
         self._filenames = filenames
         self._buffer_size = _AvroRecordDataset.__optional_param_to_tensor(
@@ -51,22 +53,23 @@ class _AvroRecordDataset(tf.data.Dataset):
         variant_tensor = core_ops.io_avro_record_dataset(
             self._filenames, self._buffer_size, self._reader_schema
         )
-        super(_AvroRecordDataset, self).__init__(variant_tensor)
+        super().__init__(variant_tensor)
 
-
-    #Copied from https://github.com/tensorflow/tensorflow/blob/f40a875355557483aeae60ffcf757fc9626c752b
+    # Copied from https://github.com/tensorflow/tensorflow/blob/f40a875355557483aeae60ffcf757fc9626c752b
     #            /tensorflow/python/data/util/convert.py#L26-L35
     @staticmethod
-    def __optional_param_to_tensor(argument_name,
-                                   argument_value,
-                                   argument_default=0,
-                                   argument_dtype=tf.dtypes.int64):
+    def __optional_param_to_tensor(
+        argument_name,
+        argument_value,
+        argument_default=0,
+        argument_dtype=tf.dtypes.int64,
+    ):
         """optional_param_to_tensor"""
         if argument_value is not None:
             return tf.convert_to_tensor(
-                argument_value, dtype=argument_dtype, name=argument_name)
-        else:
-            return tf.constant(argument_default, dtype=argument_dtype, name=argument_name)
+                argument_value, dtype=argument_dtype, name=argument_name
+            )
+        return tf.constant(argument_default, dtype=argument_dtype, name=argument_name)
 
     @property
     def element_spec(self):
@@ -114,7 +117,7 @@ class AvroRecordDataset(tf.data.Dataset):
 
         self._impl = _create_dataset_reader(creator_fn, filenames, num_parallel_reads)
         variant_tensor = self._impl._variant_tensor  # pylint: disable=protected-access
-        super(AvroRecordDataset, self).__init__(variant_tensor)
+        super().__init__(variant_tensor)
 
     def _clone(
         self,

@@ -29,6 +29,9 @@ import re
 import tensorflow as tf
 from tensorflow.python.data.util import structure
 from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.experimental.parse_avro_ops import (
+    construct_tensors_for_composite_features,
+)
 
 # Note: I've hidden the dataset because it does not apply the mapping for
 # sparse tensors
@@ -165,7 +168,7 @@ class _AvroDataset(tf.data.Dataset):
             **self._flat_structure
         )
 
-        super(_AvroDataset, self).__init__(variant_tensor)
+        super().__init__(variant_tensor)
 
     @property
     def element_spec(self):
@@ -340,7 +343,7 @@ class _AvroDataset(tf.data.Dataset):
     def __check_none(instance, missing_str, for_str):
         """if instance is None, raise error """
         if not instance:
-            raise ValueError("Missing %s for %s." % (missing_str, for_str))
+            raise ValueError("Missing {} for {}.".format(missing_str, for_str))
 
     # Pulled this method from tensorflow/python/ops/parsing_ops.py
     # here to customize dense shape handling of sparse tensors, here we
@@ -380,23 +383,35 @@ class _AvroDataset(tf.data.Dataset):
             for key in sorted(features.keys()):
                 feature = features[key]
                 if isinstance(feature, tf.io.VarLenFeature):
-                    _AvroDataset.__handle_varlen_feature(feature, key,
-                                                         sparse_dense_shapes,
-                                                         sparse_keys,
-                                                         sparse_types, types)
+                    _AvroDataset.__handle_varlen_feature(
+                        feature,
+                        key,
+                        sparse_dense_shapes,
+                        sparse_keys,
+                        sparse_types,
+                        types,
+                    )
                 elif isinstance(feature, tf.io.SparseFeature):
-                    _AvroDataset.__handle_sparse_feature(feature, key,
-                                                         sparse_dense_shapes,
-                                                         sparse_keys,
-                                                         sparse_types, types)
+                    _AvroDataset.__handle_sparse_feature(
+                        feature,
+                        key,
+                        sparse_dense_shapes,
+                        sparse_keys,
+                        sparse_types,
+                        types,
+                    )
                 elif isinstance(feature, tf.io.FixedLenFeature):
-                    _AvroDataset.__handle_fixedlen_feature(dense_defaults,
-                                                           dense_keys,
-                                                           dense_shapes,
-                                                           dense_types, feature,
-                                                           key, types)
+                    _AvroDataset.__handle_fixedlen_feature(
+                        dense_defaults,
+                        dense_keys,
+                        dense_shapes,
+                        dense_types,
+                        feature,
+                        key,
+                        types,
+                    )
                 else:
-                    raise ValueError("Invalid feature %s:%s." % (key, feature))
+                    raise ValueError("Invalid feature {}:{}.".format(key, feature))
         return (
             sparse_keys,
             sparse_types,
@@ -408,10 +423,12 @@ class _AvroDataset(tf.data.Dataset):
         )
 
     @staticmethod
-    def __handle_fixedlen_feature(dense_defaults, dense_keys, dense_shapes,
-        dense_types, feature, key, types):
+    def __handle_fixedlen_feature(
+        dense_defaults, dense_keys, dense_shapes, dense_types, feature, key, types
+    ):
+        """handle_fixedlen_feature"""
         if tf.io.FixedLenFeature not in types:
-            raise ValueError("Unsupported FixedLenFeature %s." % (feature,))
+            raise ValueError("Unsupported FixedLenFeature {}.".format(feature))
         __check_none(feature.dtype, "type", "feature " + key)
         __check_none(feature.shape, "shape", "feature " + key)
         dense_keys.append(key)
@@ -421,14 +438,18 @@ class _AvroDataset(tf.data.Dataset):
             dense_defaults[key] = feature.default_value
 
     @staticmethod
-    def __handle_sparse_feature(feature, key, sparse_dense_shapes, sparse_keys,
-        sparse_types, types):
+    def __handle_sparse_feature(
+        feature, key, sparse_dense_shapes, sparse_keys, sparse_types, types
+    ):
+        """handle_sparse_feature"""
         if tf.io.SparseFeature not in types:
-            raise ValueError("Unsupported SparseFeature %s." % (feature,))
-        _AvroDataset.__check_none(feature.index_key, "index_key",
-                                  "SparseFeature " + key)
-        _AvroDataset.__check_none(feature.value_key, "value_key",
-                                  "SparseFeature " + key)
+            raise ValueError("Unsupported SparseFeature {}.".format(feature))
+        _AvroDataset.__check_none(
+            feature.index_key, "index_key", "SparseFeature " + key
+        )
+        _AvroDataset.__check_none(
+            feature.value_key, "value_key", "SparseFeature " + key
+        )
         _AvroDataset.__check_none(feature.dtype, "type", "feature " + key)
         _AvroDataset.__check_none(feature.size, "size", "feature " + key)
         index_keys = feature.index_key
@@ -465,10 +486,12 @@ class _AvroDataset(tf.data.Dataset):
             sparse_dense_shapes.append(None)  # Unknown and variable length
 
     @staticmethod
-    def __handle_varlen_feature(feature, key, sparse_dense_shapes, sparse_keys,
-        sparse_types, types):
+    def __handle_varlen_feature(
+        feature, key, sparse_dense_shapes, sparse_keys, sparse_types, types
+    ):
+        """handle_varlen_feature"""
         if tf.io.VarLenFeature not in types:
-            raise ValueError("Unsupported VarLenFeature %s." % (feature,))
+            raise ValueError("Unsupported VarLenFeature {}.".format(feature))
         _AvroDataset.__check_none(feature.dtype, "type", "feature " + key)
         sparse_keys.append(key)
         sparse_types.append(feature.dtype)
@@ -606,51 +629,11 @@ def make_avro_dataset(
         # pylint: disable=protected-access
         # pylint: disable=g-long-lambda
         dataset = dataset.map(
-            lambda x: __construct_tensors_for_composite_features(
-                features, x
-            ),
+            lambda x: construct_tensors_for_composite_features(features, x),
             num_parallel_calls=num_parallel_calls,
         )
 
-        # Take care of sparse shape assignment in features
-
-
-    # adapted from https://github.com/tensorflow/tensorflow/blob/6d0f422525d8c1dd3184d39494abacd32b52a840/tensorflow/python/ops/parsing_config.py#L661 and skipped RaggedFeature part
-    def __construct_tensors_for_composite_features(features, tensor_dict):
-      tensor_dict = dict(tensor_dict)  # Do not modify argument passed in.
-      updates = {}
-      for key in sorted(features.keys()):
-        feature = features[key]
-        if isinstance(feature, SparseFeature):
-          # Construct SparseTensors for SparseFeatures
-          if isinstance(feature.index_key, str):
-            sp_ids = tensor_dict[feature.index_key]
-          else:
-            sp_ids = [tensor_dict[index_key] for index_key in feature.index_key]
-          sp_values = tensor_dict[feature.value_key]
-          updates[key] = sparse_ops.sparse_merge(
-              sp_ids,
-              sp_values,
-              vocab_size=feature.size,
-              already_sorted=feature.already_sorted)
-        else:
-            # We processed a single tf.Example.
-            for partition in reversed(feature.partitions):
-              rt = _add_ragged_partition(rt, partition, tensor_dict,
-                                         feature.row_splits_dtype, feature.validate)
-        updates[key] = rt
-
-      # Process updates after all composite tensors have been constructed (in case
-      # multiple features use the same value_key, and one uses that key as its
-      # feature key).
-      tensor_dict.update(updates)
-
-      # Remove tensors from dictionary that were only used to construct
-      # tensors for SparseFeature or RaggedTensor.
-      for key in set(tensor_dict) - set(features):
-        del tensor_dict[key]
-      return tensor_dict
-
+    # Take care of sparse shape assignment in features
     def reshape_sp_function(tensor_features):
         """Note, that sparse merge produces a rank of 2*n instead of n+1 when
         merging n dimensional tensors. But the index is produced with rank n+1.

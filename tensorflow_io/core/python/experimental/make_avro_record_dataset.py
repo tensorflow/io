@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""make_avro_record_dataset"""
+
 import tensorflow as tf
 
 from tensorflow_io.core.python.experimental.avro_record_dataset_ops import (
@@ -126,8 +128,7 @@ def make_avro_record_dataset(
 
     if prefetch_buffer_size == 0:
         return dataset
-    else:
-        return dataset.prefetch(buffer_size=prefetch_buffer_size)
+    return dataset.prefetch(buffer_size=prefetch_buffer_size)
 
 
 def _maybe_shuffle_and_repeat(
@@ -141,8 +142,8 @@ def _maybe_shuffle_and_repeat(
                 shuffle_buffer_size, num_epochs, shuffle_seed
             )
         )
-    elif shuffle:
+    if shuffle:
         return dataset.shuffle(shuffle_buffer_size, shuffle_seed)
-    elif num_epochs != 1:
+    if num_epochs != 1:
         return dataset.repeat(num_epochs)
     return dataset
