@@ -14,7 +14,6 @@
 # ==============================================================================
 
 import tensorflow as tf
-from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.data.ops.readers import (
     _create_or_validate_filenames_dataset,
     _create_dataset_reader,
@@ -27,7 +26,7 @@ _DEFAULT_READER_SCHEMA = ""
 # From https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/data/ops/readers.py
 
 
-class _AvroRecordDataset(dataset_ops.DatasetSource):
+class _AvroRecordDataset(tf.data.Dataset):
     """A `Dataset` comprising records from one or more AvroRecord files."""
 
     def __init__(self, filenames, buffer_size=None, reader_schema=None):
