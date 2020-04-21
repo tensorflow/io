@@ -80,12 +80,7 @@ class AvroSchemaReader:
         with open(filename, "rb") as file_handle:
             reader = DataFileReader(file_handle, DatumReader())
             self.schema_json = ""
-            if six.PY2:
-                self.schema_json = str(reader.datum_reader.writers_schema)
-
-else:
-                self.schema_json = str(reader.datum_reader.writer_schema)
-
+            self.schema_json = str(reader.datum_reader.writer_schema)
 
     def get_schema_json(self):
         return self.schema_json

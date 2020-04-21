@@ -29,7 +29,6 @@ import re
 import tensorflow as tf
 from tensorflow.python.data.util import structure
 from tensorflow.python.ops import parsing_ops
-from tensorflow.python.data.ops.dataset_ops import DatasetSource
 from tensorflow_io.core.python.ops import core_ops
 
 # Note: I've hidden the dataset because it does not apply the mapping for
@@ -37,7 +36,7 @@ from tensorflow_io.core.python.ops import core_ops
 # Such mapping is not possible inside the dataset, rather it needs to happen
 # through a map on the output of the dataset which is a map of keys to tensors
 # This can be changed when eager mode is the default and the only mode supported
-class _AvroDataset(DatasetSource):
+class _AvroDataset(tf.data.Dataset):
     """A `DatasetSource` that reads and parses Avro records from files."""
 
     def __init__(

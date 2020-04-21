@@ -60,7 +60,7 @@ class _AvroRecordDataset(dataset_ops.DatasetSource):
         return tf.TensorSpec([], tf.dtypes.string)
 
 
-class AvroRecordDataset(dataset_ops.DatasetV2):
+class AvroRecordDataset(tf.data.Dataset):
     """A `Dataset` comprising records from one or more AvroRecord files."""
 
     def __init__(
