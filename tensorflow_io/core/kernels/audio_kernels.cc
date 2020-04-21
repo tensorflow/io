@@ -219,16 +219,7 @@ class AudioReadableReadOp : public OpKernel {
 
 class AudioResampleOp : public OpKernel {
  public:
-  explicit AudioResampleOp(OpKernelConstruction* context) : OpKernel(context) {
-    OP_REQUIRES_OK(context, context->GetAttr("quality", &quality_));
-    OP_REQUIRES(
-        context,
-        (SPEEX_RESAMPLER_QUALITY_MIN <= quality_ &&
-         quality_ <= SPEEX_RESAMPLER_QUALITY_MAX),
-        errors::InvalidArgument("quality ", quality_, " not supported, need [",
-                                SPEEX_RESAMPLER_QUALITY_MIN, ", ",
-                                SPEEX_RESAMPLER_QUALITY_MAX, "]"));
-  }
+  explicit AudioResampleOp(OpKernelConstruction* context) : OpKernel(context) {}
 
   void Compute(OpKernelContext* context) override {
     const Tensor* input_tensor;
@@ -304,7 +295,7 @@ class AudioResampleOp : public OpKernel {
   }
 
  private:
-  int64 quality_;
+  static const int64 quality_ = SPEEX_RESAMPLER_QUALITY_DEFAULT;
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>AudioReadableInit").Device(DEVICE_CPU),
