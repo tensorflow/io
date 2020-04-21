@@ -169,39 +169,43 @@ class _AvroDataset(tf.data.Dataset):
 
         super().__init__(variant_tensor)
 
-
     @staticmethod
     # copied from https://github.com/tensorflow/tensorflow/blob/
     # 858bd4506a8b390fc5b2dcbeb3057f4a92e8a1e2/tensorflow/python/data/util/structure.py#L119
     def _convert_legacy_structure(output_types, output_shapes, output_classes):
-      """convert_legacy_structure"""
-      flat_types = nest.flatten(output_types)
-      flat_shapes = nest.flatten(output_shapes)
-      flat_classes = nest.flatten(output_classes)
-      flat_ret = []
-      for flat_type, flat_shape, flat_class in zip(flat_types, flat_shapes,
-                                                   flat_classes):
-          if isinstance(flat_class, tf.TypeSpec):
-              flat_ret.append(flat_class)
-          elif issubclass(flat_class, tf.sparse.SparseTensor):
-              flat_ret.append(tf.SparseTensorSpec(flat_shape, flat_type))
-          elif issubclass(flat_class, tf.Tensor):
-              flat_ret.append(tf.TensorSpec(flat_shape, flat_type))
-          elif issubclass(flat_class, tf.TensorArray):
-              # We sneaked the dynamic_size and infer_shape into the legacy shape.
-              flat_ret.append(
-                  tf.TensorArraySpec(
-                      flat_shape[2:], flat_type,
-                      dynamic_size=tf.compat.dimension_value(flat_shape[0]),
-                      infer_shape=tf.compat.dimension_value(flat_shape[1])))
-          else:
-              # NOTE(mrry): Since legacy structures produced by iterators only
-              # comprise Tensors, SparseTensors, and nests, we do not need to
-              # support all structure types here.
-              raise TypeError(
-                  "Could not build a structure for output class %r" % (flat_class,))
+        """convert_legacy_structure"""
+        flat_types = nest.flatten(output_types)
+        flat_shapes = nest.flatten(output_shapes)
+        flat_classes = nest.flatten(output_classes)
+        flat_ret = []
+        for flat_type, flat_shape, flat_class in zip(
+            flat_types, flat_shapes, flat_classes
+        ):
+            if isinstance(flat_class, tf.TypeSpec):
+                flat_ret.append(flat_class)
+            elif issubclass(flat_class, tf.sparse.SparseTensor):
+                flat_ret.append(tf.SparseTensorSpec(flat_shape, flat_type))
+            elif issubclass(flat_class, tf.Tensor):
+                flat_ret.append(tf.TensorSpec(flat_shape, flat_type))
+            elif issubclass(flat_class, tf.TensorArray):
+                # We sneaked the dynamic_size and infer_shape into the legacy shape.
+                flat_ret.append(
+                    tf.TensorArraySpec(
+                        flat_shape[2:],
+                        flat_type,
+                        dynamic_size=tf.compat.dimension_value(flat_shape[0]),
+                        infer_shape=tf.compat.dimension_value(flat_shape[1]),
+                    )
+                )
+            else:
+                # NOTE(mrry): Since legacy structures produced by iterators only
+                # comprise Tensors, SparseTensors, and nests, we do not need to
+                # support all structure types here.
+                raise TypeError(
+                    "Could not build a structure for output class {!r}".format(flat_class)
+                )
 
-      return nest.pack_sequence_as(output_classes, flat_ret)
+        return nest.pack_sequence_as(output_classes, flat_ret)
 
     @property
     def element_spec(self):
