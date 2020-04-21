@@ -276,15 +276,15 @@ cc_library(
 
 cc_library(
     name = "avro_ops",
-    hdrs = [
-        "avro/avro_record_dataset_kernels.h",
-    ],
     srcs = [
-        "kernels/avro_kernels.cc",
         "avro/avro_dataset_kernels.cc",
         "avro/avro_record_dataset_kernels.cc",
         "avro/parse_avro_kernels.cc",
+        "kernels/avro_kernels.cc",
         "ops/avro_ops.cc",
+    ],
+    hdrs = [
+        "avro/avro_record_dataset_kernels.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
