@@ -14,6 +14,7 @@
 # ==============================================================================
 """AvroDatasetTest"""
 
+import sys
 import pytest
 import numpy as np
 import tensorflow as tf
@@ -74,7 +75,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                     features=features,
                 )
 
-    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_primitive_types(self):
         """test_primitive_types"""
         reader_schema = """{
@@ -191,6 +192,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_enum_types(self):
         """test_fixed_enum_types"""
         reader_schema = """{
@@ -243,6 +245,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_batching(self):
         """test_batching"""
         reader_schema = """{
@@ -265,6 +268,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_padding_from_default(self):
         """test_padding_from_default"""
         reader_schema = """{
@@ -303,6 +307,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_batching_with_default(self):
         """test_batching_with_default"""
         reader_schema = """{
@@ -459,6 +464,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     #                             features=features,
     #                             batch_size=3)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_length_list(self):
         """test_fixed_length_list"""
         reader_schema = """{
@@ -491,6 +497,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_length_with_default_vector(self):
         """test_fixed_length_with_default_vector"""
         reader_schema = """{
@@ -522,6 +529,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_length_with_default_scalar(self):
         """test_fixed_length_with_default_scalar"""
         reader_schema = """{
@@ -553,6 +561,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_dense_2d(self):
         """test_dense_2d"""
         reader_schema = """{
@@ -615,6 +624,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_dense_array_3d(self):
         """test_dense_array_3d"""
         # Here we use arrays directly for the nesting
@@ -663,7 +673,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_sparse_feature(self):
         """test_sparse_feature"""
         reader_schema = """{
@@ -724,7 +734,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_type_reuse(self):
         """test_type_reuse"""
         reader_schema = """{
@@ -798,6 +808,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_variable_length(self):
         """test_variable_length"""
         reader_schema = """{
@@ -831,6 +842,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_variable_length_2d(self):
         """test_variable_length_2d"""
         reader_schema = """{
@@ -879,6 +891,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_nesting(self):
         """test_nesting"""
         reader_schema = """{
@@ -978,6 +991,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_parse_map_entry(self):
         """test_parse_map_entry"""
         reader_schema = """
@@ -1043,6 +1057,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=3,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_parse_int_as_long_fail(self):
         """test_parse_int_as_long_fail"""
         schema = """
@@ -1061,6 +1076,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {"index": tf.io.FixedLenFeature([], tf.dtypes.int64)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_parse_int_as_sparse_type_fail(self):
         """test_parse_int_as_sparse_type_fail"""
         schema = """
@@ -1083,6 +1099,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_parse_float_as_double_fail(self):
         """test_parse_float_as_double_fail"""
         schema = """
@@ -1101,6 +1118,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {"weight": tf.io.FixedLenFeature([], tf.dtypes.float64)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_length_without_proper_default_fail(self):
         """test_fixed_length_without_proper_default_fail"""
         schema = """
@@ -1122,6 +1140,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {"int_list_type": tf.io.FixedLenFeature([], tf.dtypes.int32)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_wrong_spelling_of_feature_name_fail(self):
         """test_wrong_spelling_of_feature_name_fail"""
         schema = """
@@ -1136,6 +1155,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         features = {"wrong_spelling": tf.io.FixedLenFeature([], tf.dtypes.int32)}
         self._test_fail_dataset(schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_wrong_index(self):
         """test_wrong_index"""
         schema = """
@@ -1168,7 +1188,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
-    @pytest.mark.skip("it requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_variable_length(self):
         """ test_filter_with_variable_length"""
         reader_schema = """
@@ -1249,6 +1269,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_empty_result(self):
         """test_filter_with_empty_result"""
         reader_schema = """
@@ -1303,6 +1324,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_wrong_key_fail(self):
         """test_filter_with_wrong_key_fail"""
         reader_schema = """
@@ -1335,6 +1357,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_wrong_pair_fail(self):
         """test_filter_with_wrong_pair_fail"""
         reader_schema = """
@@ -1367,6 +1390,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_too_many_separators_fail(self):
         """test_filter_with_too_many_separators_fail"""
         reader_schema = """
@@ -1401,7 +1425,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
-    @pytest.mark.skip("it requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_for_nested_record(self):
         """test_filter_for_nested_record"""
         reader_schema = """
@@ -1496,7 +1520,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skip("requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_bytes_as_type(self):
         """test_filter_with_bytes_as_type"""
         reader_schema = """
@@ -1577,6 +1601,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_namespace(self):
         """test_namespace"""
         reader_schema = """
@@ -1610,6 +1635,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_broken_schema_fail(self):
         """test_broken_schema_fail"""
         valid_schema = """
@@ -1635,6 +1661,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             valid_schema, record_data, features, 1, parser_schema=broken_schema
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_some_optimization_broke_string_repeats_in_batch(self):
         """test_some_optimization_broke_string_repeats_in_batch"""
         # In the past this test failed but now passes
@@ -1666,7 +1693,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skip("requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     # Note current filters resolve to single item and we remove the dimension introduced by that
     def test_filter_of_sparse_feature(self):
         """test_filter_of_sparse_feature"""

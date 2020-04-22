@@ -17,6 +17,7 @@
 """AvroRecrodDatasetTest"""
 
 from functools import reduce
+import sys
 import pytest
 import tensorflow as tf
 import tensorflow_io as tfio
@@ -106,7 +107,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    @pytest.mark.skip("requres further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_with_schema_projection(self):
         """test_with_schema_projection"""
         writer_schema = """{
