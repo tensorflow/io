@@ -101,6 +101,12 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
             << this->dataset()->stream();
   }
 
+  Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
+    return errors::Unimplemented("SaveInternal");
+  }
+  Status RestoreInternal(IteratorContext* ctx, IteratorStateReader* reader) override {
+    return errors::Unimplemented("Iterator does not support 'RestoreInternal')");
+  }
   virtual Status EnsureReaderInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (reader_) {
       return Status::OK();

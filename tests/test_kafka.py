@@ -118,9 +118,7 @@ class KafkaDatasetTest(test.TestCase):
                     [("D" + str(i + 5)).encode() for i in range(5)], sess.run(get_next)
                 )
 
-    @pytest.mark.skipif(
-        (hasattr(tf, "version") and tf.version.VERSION.startswith("2.0.")), reason=None
-    )
+    @pytest.mark.skip(reason="TODO")
     def test_kafka_dataset_save_and_restore(self):
         """Tests for KafkaDataset save and restore."""
         g = tf.Graph()
