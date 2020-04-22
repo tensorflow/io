@@ -221,6 +221,11 @@ class AvroDatasetOp : public DatasetOpKernel {
 
     string DebugString() const override { return "AvroDatasetOp::Dataset"; }
 
+    Status CheckExternalState() const override {
+      return Status::OK();
+    }
+
+
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b,
@@ -341,6 +346,12 @@ class AvroDatasetOp : public DatasetOpKernel {
           }
 
         } while (true);
+      }
+      Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
+        return errors::Unimplemented("SaveInternal");
+      }
+      Status RestoreInternal(IteratorContext* ctx, IteratorStateReader* reader) override {
+        return errors::Unimplemented("Iterator does not support 'RestoreInternal')");
       }
 
      private:
