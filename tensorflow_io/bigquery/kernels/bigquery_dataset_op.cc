@@ -160,7 +160,11 @@ class BigQueryDatasetOp : public DatasetOpKernel {
       return "BigQueryScanDatasetOp::Dataset";
     }
 
-    tensorflow::BigQueryClientResource *client_resource() const {
+    Status CheckExternalState() const override {
+      return Status::OK();
+    }
+
+    tensorflow::BigQueryClientResource* client_resource() const {
       return client_resource_;
     }
 

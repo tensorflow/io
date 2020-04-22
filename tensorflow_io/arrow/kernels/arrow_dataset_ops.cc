@@ -270,7 +270,7 @@ class ArrowDatasetBase : public DatasetBase {
     }
 
    protected:
-    Status SaveInternal(IteratorStateWriter* writer) override {
+    Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
       return errors::Unimplemented("SaveInternal is currently not supported");
     }
 
@@ -425,6 +425,10 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
           buffer_ptr_(buffer_ptr),
           buffer_size_(buffer_size) {}
 
+    Status CheckExternalState() const override {
+      return Status::OK();
+    }
+
     string DebugString() const override {
       return "ArrowZeroCopyDatasetOp::Dataset";
     }
@@ -548,6 +552,10 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
 
     string DebugString() const override {
       return "ArrowSerializedDatasetOp::Dataset";
+    }
+
+    Status CheckExternalState() const override {
+      return Status::OK();
     }
 
    protected:
@@ -676,6 +684,10 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
 
     string DebugString() const override {
       return "ArrowFeatherDatasetOp::Dataset";
+    }
+
+    Status CheckExternalState() const override {
+      return Status::OK();
     }
 
    protected:
@@ -820,6 +832,10 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
 
     string DebugString() const override {
       return "ArrowStreamDatasetOp::Dataset";
+    }
+
+    Status CheckExternalState() const override {
+      return Status::OK();
     }
 
    protected:

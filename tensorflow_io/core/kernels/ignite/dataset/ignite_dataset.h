@@ -34,6 +34,9 @@ class IgniteDataset : public DatasetBase {
   const DataTypeVector& output_dtypes() const override;
   const std::vector<PartialTensorShape>& output_shapes() const override;
   string DebugString() const override;
+  Status CheckExternalState() const override {
+      return Status::OK();
+  }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,

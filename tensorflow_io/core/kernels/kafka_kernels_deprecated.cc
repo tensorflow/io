@@ -133,6 +133,10 @@ class KafkaDatasetOp : public DatasetOpKernel {
 
     string DebugString() const override { return "KafkaDatasetOp::Dataset"; }
 
+    Status CheckExternalState() const override {
+      return Status::OK();
+    }
+
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b,
@@ -283,8 +287,10 @@ class KafkaDatasetOp : public DatasetOpKernel {
       }
 
      protected:
-      Status SaveInternal(IteratorStateWriter* writer) override {
+      Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
         mutex_lock l(mu_);
+        return errors::Unimplemented("SaveInternal");
+/*
         TF_RETURN_IF_ERROR(writer->WriteScalar(full_name("current_topic_index"),
                                                current_topic_index_));
 
@@ -300,6 +306,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                     << ", current offset: " << offset_;
         }
         return Status::OK();
+*/
       }
 
       Status RestoreInternal(IteratorContext* ctx,
