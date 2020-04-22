@@ -16,9 +16,8 @@
 # Examples: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/data/experimental/kernel_tests/stats_dataset_test_base.py
 """AvroRecrodDatasetTest"""
 
-import unittest
-
 from functools import reduce
+import pytest
 import tensorflow as tf
 import tensorflow_io as tfio
 import avro_dataset_test_base
@@ -107,7 +106,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    @unittest.skip("requres further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skip("requres further investigation to pass with tf 2.2 RC3")
     def test_with_schema_projection(self):
         """test_with_schema_projection"""
         writer_schema = """{

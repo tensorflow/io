@@ -14,7 +14,7 @@
 # ==============================================================================
 """AvroDatasetTest"""
 
-import unittest
+import pytest
 import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
@@ -74,7 +74,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                     features=features,
                 )
 
-    @unittest.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
     def test_primitive_types(self):
         """test_primitive_types"""
         reader_schema = """{
@@ -663,7 +663,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @unittest.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
     def test_sparse_feature(self):
         """test_sparse_feature"""
         reader_schema = """{
@@ -724,7 +724,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @unittest.skip("it's causing seg fault in mac with long value parser")
+    @pytest.mark.skip("it's causing seg fault in mac with long value parser")
     def test_type_reuse(self):
         """test_type_reuse"""
         reader_schema = """{
@@ -1168,7 +1168,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(schema, record_data, features, 1)
 
-    @unittest.skip("it requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skip("it requires further investigation to pass with tf 2.2 RC3")
     def test_filter_with_variable_length(self):
         """ test_filter_with_variable_length"""
         reader_schema = """
@@ -1401,7 +1401,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
-    @unittest.skip("it requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skip("it requires further investigation to pass with tf 2.2 RC3")
     def test_filter_for_nested_record(self):
         """test_filter_for_nested_record"""
         reader_schema = """
@@ -1496,7 +1496,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @unittest.skip("requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skip("requires further investigation to pass with tf 2.2 RC3")
     def test_filter_with_bytes_as_type(self):
         """test_filter_with_bytes_as_type"""
         reader_schema = """
@@ -1666,7 +1666,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @unittest.skip("requires further investigation to pass with tf 2.2 RC3")
+    @pytest.mark.skip("requires further investigation to pass with tf 2.2 RC3")
     # Note current filters resolve to single item and we remove the dimension introduced by that
     def test_filter_of_sparse_feature(self):
         """test_filter_of_sparse_feature"""
