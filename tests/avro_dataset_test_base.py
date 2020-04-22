@@ -20,11 +20,11 @@
 import os
 import tempfile
 
-from tensorflow.python.data.kernel_tests import test_base
+import tensorflow as tf
 import avro_serialization
 
 
-class AvroDatasetTestBase(test_base.DatasetTestBase):
+class AvroDatasetTestBase(tf.test.TestCase):
     """AvroDatasetTestBase"""
 
     @staticmethod
@@ -39,12 +39,25 @@ class AvroDatasetTestBase(test_base.DatasetTestBase):
 
         return [filename]
 
+    def assert_values_equal(self, expected, actual):
+        """Asserts that two values are equal."""
+        if isinstance(expected, dict):
+            self.assertItemsEqual(list(expected.keys()), list(actual.keys()))
+            for k in expected.keys():
+                self.assert_values_equal(expected[k], actual[k])
+        elif isinstance(expected, (tf.SparseTensor, tf.compat.v1.SparseTensorValue)):
+            self.assertAllEqual(expected.indices, actual.indices)
+            self.assertAllEqual(expected.values, actual.values)
+            self.assertAllEqual(expected.dense_shape, actual.dense_shape)
+        else:
+            self.assertAllEqual(expected, actual)
+
     def assert_data_equal(self, expected, actual):
         """assert_data_equal"""
 
         def _assert_equal(expected, actual):
             for name, datum in expected.items():
-                self.assertValuesEqual(expected=datum, actual=actual[name])
+                self.assert_values_equal(expected=datum, actual=actual[name])
 
         if isinstance(expected, tuple):
             assert isinstance(

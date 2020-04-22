@@ -59,7 +59,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         )
         data = iter(actual_dataset)
         for expected in expected_data:
-            self.assertValuesEqual(expected=expected, actual=next(data))
+            self.assert_values_equal(expected=expected, actual=next(data))
 
     def _test_pass_dataset_resolved(
         self, writer_schema, reader_schema, record_data, **kwargs
@@ -79,7 +79,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
 
         data = iter(actual_dataset)
         for expected in expected_data:
-            self.assertValuesEqual(expected=expected, actual=next(data))
+            self.assert_values_equal(expected=expected, actual=next(data))
 
     def test_wout_reader_schema(self):
         """test_wout_reader_schema"""

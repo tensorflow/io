@@ -28,7 +28,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
     def assert_data_equal(self, expected, actual):
         """assert_data_equal"""
         for name, datum in expected.items():
-            self.assertValuesEqual(expected=datum, actual=actual[name])
+            self.assert_values_equal(expected=datum, actual=actual[name])
 
     @staticmethod
     def _batcher(iterable, step):
