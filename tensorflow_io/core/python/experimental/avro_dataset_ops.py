@@ -202,7 +202,9 @@ class _AvroDataset(tf.data.Dataset):
                 # comprise Tensors, SparseTensors, and nests, we do not need to
                 # support all structure types here.
                 raise TypeError(
-                    "Could not build a structure for output class {!r}".format(flat_class)
+                    "Could not build a structure for output class {!r}".format(
+                        flat_class
+                    )
                 )
 
         return nest.pack_sequence_as(output_classes, flat_ret)
