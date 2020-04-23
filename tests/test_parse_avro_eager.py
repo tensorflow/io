@@ -17,13 +17,455 @@
 import sys
 import pytest
 import numpy as np
+from functools import reduce
+import os
+import tempfile
+
 import tensorflow as tf
 import tensorflow_io as tfio
-import avro_dataset_test_base
-import avro_serialization
+
+from io import BytesIO
+from avro.io import DatumReader, DatumWriter, BinaryDecoder, BinaryEncoder
+from avro.datafile import DataFileReader, DataFileWriter
+from avro.schema import Parse as parse
 
 
-class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
+class AvroRecordsToFile:
+    """AvroRecordsToFile"""
+
+    def __init__(self, filename, writer_schema, codec="deflate"):
+        """
+
+        :param filename:
+        :param writer_schema:
+        :param codec:
+        """
+        self.schema = AvroParser(writer_schema).get_schema_object()
+        self.filename = filename
+        self.codec = codec
+
+    def write_records(self, records):
+        with open(self.filename, "wb") as out:
+            writer = DataFileWriter(out, DatumWriter(), self.schema, codec=self.codec)
+            for record in records:
+                writer.append(record)
+            writer.close()
+
+
+class AvroFileToRecords:
+    """AvroFileToRecords"""
+
+    def __init__(self, filename, reader_schema=None):
+        """
+        Reads records as strings where each row is serialized separately
+
+        :param filename: The filename from where to load the records
+        :param reader_schema: Schema used for reading
+
+        :return: An array of serialized string with one string per record
+        """
+        self.records = []
+
+        with open(filename, "rb") as file_handle:
+            datum_reader = (
+                DatumReader(reader_schema=AvroParser(reader_schema).get_schema_object())
+                if reader_schema
+                else DatumReader()
+            )
+            reader = DataFileReader(file_handle, datum_reader)
+
+            self.records += list(reader)
+
+    def get_records(self):
+        return self.records
+
+
+class AvroSchemaReader:
+    """AvroSchemaReader"""
+
+    def __init__(self, filename):
+        """
+        Reads the schema from a file into json string
+        """
+        with open(filename, "rb") as file_handle:
+            reader = DataFileReader(file_handle, DatumReader())
+            self.schema_json = ""
+            self.schema_json = str(reader.datum_reader.writer_schema)
+
+    def get_schema_json(self):
+        return self.schema_json
+
+
+class AvroParser:
+    """AvroParser"""
+
+    def __init__(self, schema_json):
+        """
+        Create an avro parser mostly to abstract away the API change between
+        avro and avro-python3
+
+        :param schema_json:
+        """
+        self.schema_object = parse(schema_json)
+
+    def get_schema_object(self):
+        return self.schema_object
+
+
+class AvroDeserializer:
+    """AvroDeserializer"""
+
+    def __init__(self, schema_json):
+        """
+        Create an avro deserializer.
+
+        :param schema_json: Json string of the schema.
+        """
+        schema_object = AvroParser(schema_json).get_schema_object()
+        # No schema resolution
+        self.datum_reader = DatumReader(schema_object, schema_object)
+
+    def deserialize(self, serialized_bytes):
+        """
+        Deserialize an avro record from bytes.
+
+        :param serialized_bytes: The serialized bytes input.
+
+        :return: The de-serialized record structure in python as map-list object.
+        """
+        return self.datum_reader.read(BinaryDecoder(BytesIO(serialized_bytes)))
+
+
+class AvroSerializer:
+    """AvroSerializer"""
+
+    def __init__(self, schema_json):
+        """
+        Create an avro serializer.
+
+        :param schema_json: Json string of the schema.
+        """
+        self.datum_writer = DatumWriter(AvroParser(schema_json).get_schema_object())
+
+    def serialize(self, datum):
+        """
+        Serialize a datum into a avro formatted string.
+
+        :param datum: The avro datum.
+
+        :return: The serialized bytes.
+        """
+        writer = BytesIO()
+        self.datum_writer.write(datum, BinaryEncoder(writer))
+        return writer.getvalue()
+
+
+class AvroDatasetTestBase(tf.test.TestCase):
+    """AvroDatasetTestBase"""
+
+    @staticmethod
+    def _setup_files(writer_schema, records):
+        """setup_files"""
+        # Write test records into temporary output directory
+        filename = os.path.join(tempfile.mkdtemp(), "test.avro")
+        writer = AvroRecordsToFile(
+            filename=filename, writer_schema=writer_schema
+        )
+        writer.write_records(records)
+
+        return [filename]
+
+    def assert_values_equal(self, expected, actual):
+        """Asserts that two values are equal."""
+        if isinstance(expected, dict):
+            self.assertItemsEqual(list(expected.keys()), list(actual.keys()))
+            for k in expected.keys():
+                self.assert_values_equal(expected[k], actual[k])
+        elif isinstance(expected, (tf.SparseTensor, tf.compat.v1.SparseTensorValue)):
+            self.assertAllEqual(expected.indices, actual.indices)
+            self.assertAllEqual(expected.values, actual.values)
+            self.assertAllEqual(expected.dense_shape, actual.dense_shape)
+        else:
+            self.assertAllEqual(expected, actual)
+
+    def assert_data_equal(self, expected, actual):
+        """assert_data_equal"""
+
+        def _assert_equal(expected, actual):
+            for name, datum in expected.items():
+                self.assert_values_equal(expected=datum, actual=actual[name])
+
+        if isinstance(expected, tuple):
+            assert isinstance(
+                expected, tuple
+            ), "Found type {} but expected type {}".format(type(actual), tuple)
+            assert (
+                len(expected) == 2
+            ), "Found {} components in expected dataset but must have {}".format(
+                len(expected), 2
+            )
+
+            assert (
+                len(actual) == 2
+            ), "Found {} components in actual dataset but expected {}".format(
+                len(actual), 2
+            )
+
+            expected_features, expected_labels = expected
+            actual_features, actual_labels = actual
+
+            _assertEqual(expected_features, actual_features)
+            _assertEqual(expected_labels, actual_labels)
+
+        else:
+            _assert_equal(expected, actual)
+
+    def _verify_output(self, expected_data, actual_dataset):
+
+        next_data = iter(actual_dataset)
+
+        for expected in expected_data:
+            self.assert_data_equal(expected=expected, actual=next(next_data))
+
+class AvroRecordDatasetTest(AvroDatasetTestBase):
+    """AvroRecordDatasetTest"""
+
+    @staticmethod
+    def _load_records_as_tensors(filenames, schema):
+        serializer = AvroSerializer(schema)
+        return map(
+            lambda s: tf.convert_to_tensor(
+                serializer.serialize(s), dtype=tf.dtypes.string
+            ),
+            reduce(
+                lambda a, b: a + b,
+                [
+                    AvroFileToRecords(filename).get_records()
+                    for filename in filenames
+                ],
+            ),
+        )
+
+    def _test_pass_dataset(self, writer_schema, record_data, **kwargs):
+        """test_pass_dataset"""
+        filenames = AvroRecordDatasetTest._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+        expected_data = AvroRecordDatasetTest._load_records_as_tensors(
+            filenames, writer_schema
+        )
+        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
+            filenames=filenames,
+            num_parallel_reads=kwargs.get("num_parallel_reads", 1),
+            reader_schema=kwargs.get("reader_schema"),
+        )
+        data = iter(actual_dataset)
+        for expected in expected_data:
+            self.assert_values_equal(expected=expected, actual=next(data))
+
+    def _test_pass_dataset_resolved(
+        self, writer_schema, reader_schema, record_data, **kwargs
+    ):
+        """test_pass_dataset_resolved"""
+        filenames = AvroRecordDatasetTest._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+        expected_data = AvroRecordDatasetTest._load_records_as_tensors(
+            filenames, reader_schema
+        )
+        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
+            filenames=filenames,
+            num_parallel_reads=kwargs.get("num_parallel_reads", 1),
+            reader_schema=reader_schema,
+        )
+
+        data = iter(actual_dataset)
+        for expected in expected_data:
+            self.assert_values_equal(expected=expected, actual=next(data))
+
+    def test_wout_reader_schema(self):
+        """test_wout_reader_schema"""
+        writer_schema = """{
+              "type": "record",
+              "name": "dataTypes",
+              "fields": [
+                  {
+                     "name":"index",
+                     "type":"int"
+                  },
+                  {
+                     "name":"string_value",
+                     "type":"string"
+                  }
+              ]}"""
+        record_data = [
+            {"index": 0, "string_value": ""},
+            {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
+            {
+                "index": 2,
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVW"
+                                + "Zabcdefghijklmnopqrstuvwz0123456789",
+            },
+        ]
+        self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
+
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
+    def test_with_schema_projection(self):
+        """test_with_schema_projection"""
+        writer_schema = """{
+              "type": "record",
+              "name": "dataTypes",
+              "fields": [
+                  {
+                     "name":"index",
+                     "type":"int"
+                  },
+                  {
+                     "name":"string_value",
+                     "type":"string"
+                  }
+              ]}"""
+        # Test projection
+        reader_schema = """{
+              "type": "record",
+              "name": "dataTypes",
+              "fields": [
+                  {
+                     "name":"string_value",
+                     "type":"string"
+                  }
+              ]}"""
+        record_data = [
+            {"index": 0, "string_value": ""},
+            {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
+            {
+                "index": 2,
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcde"
+                                + "fghijklmnopqrstuvwz0123456789",
+            },
+        ]
+        self._test_pass_dataset_resolved(
+            writer_schema=writer_schema,
+            reader_schema=reader_schema,
+            record_data=record_data,
+        )
+
+    def test_schema_type_promotion(self):
+        """test_schema_type_promotion"""
+        writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "int_value", "type": "int"},
+                  {"name": "long_value", "type": "long"}
+              ]}"""
+        reader_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "int_value", "type": "long"},
+                  {"name": "long_value", "type": "double"}
+              ]}"""
+        record_data = [
+            {"int_value": 0, "long_value": 111},
+            {"int_value": 1, "long_value": 222},
+        ]
+        self._test_pass_dataset_resolved(
+            writer_schema=writer_schema,
+            reader_schema=reader_schema,
+            record_data=record_data,
+        )
+
+
+class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
+    """MakeAvroRecordDatasetTest"""
+
+    def _test_pass_dataset(
+        self,
+        writer_schema,
+        record_data,
+        expected_data,
+        features,
+        reader_schema,
+        batch_size,
+        **kwargs
+    ):
+        """_test_pass_dataset"""
+        filenames = AvroDatasetTestBase._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+
+        actual_dataset = tfio.experimental.columnar.make_avro_record_dataset(
+            file_pattern=filenames,
+            features=features,
+            batch_size=batch_size,
+            reader_schema=reader_schema,
+            shuffle=kwargs.get("shuffle", None),
+            num_epochs=kwargs.get("num_epochs", None),
+        )
+
+        self._verify_output(expected_data=expected_data, actual_dataset=actual_dataset)
+
+    def test_batching(self):
+        """test_batching"""
+        writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {"name": "int_value", "type": "int"}
+              ]}"""
+        record_data = [{"int_value": 0}, {"int_value": 1}, {"int_value": 2}]
+        features = {"int_value": tf.io.FixedLenFeature([], tf.dtypes.int32)}
+        expected_data = [
+            {"int_value": tf.convert_to_tensor([0, 1])},
+            {"int_value": tf.convert_to_tensor([2])},
+        ]
+        self._test_pass_dataset(
+            writer_schema=writer_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            reader_schema=writer_schema,
+            batch_size=2,
+            num_epochs=1,
+        )
+
+    def test_fixed_length_list(self):
+        """test_fixed_length_list"""
+        writer_schema = """{
+              "type": "record",
+              "name": "row",
+              "fields": [
+                  {
+                     "name": "int_list",
+                     "type": {
+                        "type": "array",
+                        "items": "int"
+                     }
+                  }
+              ]}"""
+        record_data = [
+            {"int_list": [0, 1, 2]},
+            {"int_list": [3, 4, 5]},
+            {"int_list": [6, 7, 8]},
+        ]
+        features = {"int_list[*]": tf.io.FixedLenFeature([3], tf.dtypes.int32)}
+        expected_data = [
+            {"int_list[*]": tf.convert_to_tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]])}
+        ]
+
+        self._test_pass_dataset(
+            writer_schema=writer_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            reader_schema=writer_schema,
+            batch_size=3,
+            num_epochs=1,
+        )
+
+
+class AvroDatasetTest(AvroDatasetTestBase):
     """AvroDatasetTest"""
 
     def assert_data_equal(self, expected, actual):
@@ -43,7 +485,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         """_test_pass_dataset"""
         # Note, The batch size could be inferred from the expected data but found it better to be
         # explicit here
-        serializer = avro_serialization.AvroSerializer(reader_schema)
+        serializer = AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(
             expected_data, AvroDatasetTest._batcher(record_data, batch_size)
         ):
@@ -62,7 +504,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         self, reader_schema, record_data, features, batch_size, **kwargs
     ):
         parser_schema = kwargs.get("parser_schema", reader_schema)
-        serializer = avro_serialization.AvroSerializer(reader_schema)
+        serializer = AvroSerializer(reader_schema)
         for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(tf.errors.OpError):
