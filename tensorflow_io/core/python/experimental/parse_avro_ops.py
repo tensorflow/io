@@ -264,7 +264,7 @@ def construct_tensors_for_composite_features(features, tensor_dict):
             else:
                 sp_ids = [tensor_dict[index_key] for index_key in feature.index_key]
             sp_values = tensor_dict[feature.value_key]
-            updates[key] = sparse_ops.sparse_merge(
+            updates[key] = tf.compat.v1.sparse_merge(
                 sp_ids,
                 sp_values,
                 vocab_size=feature.size,
