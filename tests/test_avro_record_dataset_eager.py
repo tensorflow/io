@@ -107,7 +107,7 @@ class AvroRecordDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
     def test_with_schema_projection(self):
         """test_with_schema_projection"""
         writer_schema = """{

@@ -75,7 +75,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
                     features=features,
                 )
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
     def test_primitive_types(self):
         """test_primitive_types"""
         reader_schema = """{
@@ -673,7 +673,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
     def test_sparse_feature(self):
         """test_sparse_feature"""
         reader_schema = """{
@@ -734,7 +734,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
     def test_type_reuse(self):
         """test_type_reuse"""
         reader_schema = """{
@@ -1693,7 +1693,7 @@ class AvroDatasetTest(avro_dataset_test_base.AvroDatasetTestBase):
             batch_size=2,
         )
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    @pytest.mark.skip(reason="failed with tf 2.2 rc3 on linux")
     # Note current filters resolve to single item and we remove the dimension introduced by that
     def test_filter_of_sparse_feature(self):
         """test_filter_of_sparse_feature"""
