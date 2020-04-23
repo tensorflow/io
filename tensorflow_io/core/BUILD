@@ -571,7 +571,6 @@ cc_binary(
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
-            "//tensorflow_io/bigtable:bigtable_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
