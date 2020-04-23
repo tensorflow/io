@@ -15,19 +15,18 @@
 """AvroDatasetTest"""
 
 import sys
-import pytest
-import numpy as np
 from functools import reduce
 import os
 import tempfile
+from io import BytesIO
+import pytest
+import numpy as np
 
 import tensorflow as tf
-import tensorflow_io as tfio
-
-from io import BytesIO
 from avro.io import DatumReader, DatumWriter, BinaryDecoder, BinaryEncoder
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.schema import Parse as parse
+import tensorflow_io as tfio
 
 
 class AvroRecordsToFile:
@@ -168,9 +167,7 @@ class AvroDatasetTestBase(tf.test.TestCase):
         """setup_files"""
         # Write test records into temporary output directory
         filename = os.path.join(tempfile.mkdtemp(), "test.avro")
-        writer = AvroRecordsToFile(
-            filename=filename, writer_schema=writer_schema
-        )
+        writer = AvroRecordsToFile(filename=filename, writer_schema=writer_schema)
         writer.write_records(records)
 
         return [filename]
@@ -227,6 +224,7 @@ class AvroDatasetTestBase(tf.test.TestCase):
         for expected in expected_data:
             self.assert_data_equal(expected=expected, actual=next(next_data))
 
+
 class AvroRecordDatasetTest(AvroDatasetTestBase):
     """AvroRecordDatasetTest"""
 
@@ -239,10 +237,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
             ),
             reduce(
                 lambda a, b: a + b,
-                [
-                    AvroFileToRecords(filename).get_records()
-                    for filename in filenames
-                ],
+                [AvroFileToRecords(filename).get_records() for filename in filenames],
             ),
         )
 
@@ -304,7 +299,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
             {
                 "index": 2,
                 "string_value": "ABCDEFGHIJKLMNOPQRSTUVW"
-                                + "Zabcdefghijklmnopqrstuvwz0123456789",
+                + "Zabcdefghijklmnopqrstuvwz0123456789",
             },
         ]
         self._test_pass_dataset(writer_schema=writer_schema, record_data=record_data)
@@ -341,7 +336,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
             {
                 "index": 2,
                 "string_value": "ABCDEFGHIJKLMNOPQRSTUVWZabcde"
-                                + "fghijklmnopqrstuvwz0123456789",
+                + "fghijklmnopqrstuvwz0123456789",
             },
         ]
         self._test_pass_dataset_resolved(
