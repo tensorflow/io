@@ -1,4 +1,4 @@
-#include "tensorflow_io/gstpufs/gs_tpu_file_system.h"
+#include "tensorflow_io/core/kernels/gstpufs/gs_tpu_file_system.h"
 
 namespace tensorflow {
 

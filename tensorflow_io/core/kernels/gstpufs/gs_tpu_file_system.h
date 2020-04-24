@@ -1,5 +1,5 @@
-#ifndef THIRD_PARTY_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
-#define THIRD_PARTY_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
+#ifndef TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
+#define TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
 
 #include "tensorflow/core/platform/cloud/gcs_file_system.h"
 #include "absl/memory/memory.h"
@@ -33,4 +33,4 @@ class RetryingGsTpuFileSystem : public RetryingFileSystem<GsTpuFileSystem> {
 
 }  // namespace tensorflow
 
-#endif  // THIRD_PARTY_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
+#endif  // TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_

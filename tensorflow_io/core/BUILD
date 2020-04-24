@@ -568,7 +568,6 @@ cc_binary(
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/ignite:ignite_ops",
-        "//tensorflow_io/gstpufs:gs_tpu_file_system",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
@@ -577,6 +576,7 @@ cc_binary(
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
+            "//tensorflow_io/core/kernels/gstpufs:gs_tpu_file_system",
             "//tensorflow_io/core/oss:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
         ],
