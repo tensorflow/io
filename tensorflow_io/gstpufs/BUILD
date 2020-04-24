@@ -10,7 +10,7 @@ cc_library(
     srcs = ["gs_tpu_file_system.cc"],
     hdrs = ["gs_tpu_file_system.h"],
     copts = tf_io_copts(),
-    linkstatic = 1,  # Needed since alwayslink is broken in bazel b/27630669
+    linkstatic = 1,
     visibility = ["//visibility:public"],
     deps = [
         "@local_config_tf//:tf_header_lib",
