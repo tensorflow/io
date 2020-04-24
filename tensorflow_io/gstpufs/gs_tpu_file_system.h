@@ -7,7 +7,7 @@
 namespace tensorflow {
 
 // GsTpuFileSystem is implemented simply to register "gstpu://" as a file system
-// scheme. It is a class of TpuGcsFileSystem, which implements all of the logic.
+// scheme. It is used to add some file system optimizations for TPU on GCS datasets.
 class GsTpuFileSystem : public GcsFileSystem {
  public:
   GsTpuFileSystem();
