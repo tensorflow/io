@@ -569,7 +569,7 @@ cc_binary(
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/ignite:ignite_ops",
         "//tensorflow_io/gstpufs:gs_tpu_file_system",
-	"@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
