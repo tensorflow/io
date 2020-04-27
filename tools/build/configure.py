@@ -100,6 +100,8 @@ def write_config():
             bazel_rc.write(
                 'build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'.format(library_name)
             )
+            # Needed for LLVM build
+            bazel_rc.write('build --host_cxxopt="-std=c++14"\n')
             bazel_rc.write('build --cxxopt="-std=c++14"\n')
             # Needed for GRPC build
             if sys.platform == "darwin":
