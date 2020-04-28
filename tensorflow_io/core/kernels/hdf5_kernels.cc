@@ -13,8 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow_io/core/kernels/io_kernel.h"
 
 #include <H5Cpp.h>
 #include <hdf5.h>
@@ -473,16 +472,16 @@ class HDF5ReadableResource : public ResourceBase {
   std::pair<string, string> complex_names_ TF_GUARDED_BY(mu);
 };
 
-class HDF5ReadableInitOp : public ResourceOpKernel<HDF5ReadableResource> {
+class HDF5ReadableInitOp : public IOResourceOpKernel<HDF5ReadableResource> {
  public:
   explicit HDF5ReadableInitOp(OpKernelConstruction* context)
-      : ResourceOpKernel<HDF5ReadableResource>(context) {
+      : IOResourceOpKernel<HDF5ReadableResource>(context) {
     env_ = context->env();
   }
 
  private:
   void Compute(OpKernelContext* context) override {
-    ResourceOpKernel<HDF5ReadableResource>::Compute(context);
+    IOResourceOpKernel<HDF5ReadableResource>::Compute(context);
 
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
