@@ -257,7 +257,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
 
     @classmethod
     def from_parquet(cls, filename, columns=None, **kwargs):
-        """Creates an `IODataset` from a json file.
+        """Creates an `IODataset` from a Parquet file.
 
         Args:
           filename: A string, the filename of a json file.
