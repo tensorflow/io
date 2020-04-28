@@ -260,7 +260,7 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
         """Creates an `IODataset` from a Parquet file.
 
         Args:
-          filename: A string, the filename of a json file.
+          filename: A string, the filename of a Parquet file.
           columns: A list of column names. By default (None)
             all columns will be read.
           name: A name prefix for the IOTensor (optional).
