@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow/core/lib/strings/scanner.h"
 
 namespace tensorflow {
 namespace data {
@@ -22,98 +23,76 @@ namespace data {
 template <typename T>
 class IOResourceOpKernel : public OpKernel {
  public:
-  explicit IOResourceOpKernel(OpKernelConstruction* context) : OpKernel(context) {
-    has_resource_type_ = (context->output_type(0) == DT_RESOURCE);
-    if (!has_resource_type_) {
-      // The resource variant of the op may be placed on non-CPU devices, but
-      // this allocation is always on the host. Fortunately we don't need it in
-      // the resource case.
-      OP_REQUIRES_OK(context,
-                     context->allocate_persistent(DT_STRING, TensorShape({2}),
-                                                  &handle_, nullptr));
-    }
+  explicit IOResourceOpKernel(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+    OP_REQUIRES_OK(context, context->GetAttr("container", &container_));
+    OP_REQUIRES(context,
+                (container_.empty() || IsValidContainerName(container_)),
+                errors::InvalidArgument(
+                    "container contains invalid characters: ", container_));
   }
 
-  // The resource is deleted from the resource manager only when it is private
-  // to kernel. Ideally the resource should be deleted when it is no longer held
-  // by anyone, but it would break backward compatibility.
-  ~IOResourceOpKernel() override {
-    if (resource_ != nullptr) {
-      resource_->Unref();
-      if (cinfo_.resource_is_private_to_kernel()) {
-        if (!cinfo_.resource_manager()
-                 ->template Delete<T>(cinfo_.container(), cinfo_.name())
-                 .ok()) {
-          // Do nothing; the resource can have been deleted by session resets.
-        }
-      }
-    }
-  }
+  virtual ~IOResourceOpKernel() {}
 
-  void Compute(OpKernelContext* context) override TF_LOCKS_EXCLUDED(mu_) {
+  Status LookupResource(OpKernelContext* context, T** resource) {
     mutex_lock l(mu_);
-    if (resource_ == nullptr) {
-      ResourceMgr* mgr = context->resource_manager();
-      OP_REQUIRES_OK(context, cinfo_.Init(mgr, def()));
 
-      T* resource;
-      OP_REQUIRES_OK(context,
-                     mgr->LookupOrCreate<T>(
-                         cinfo_.container(), cinfo_.name(), &resource,
-                         [this](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                           Status s = CreateResource(ret);
-                           if (!s.ok() && *ret != nullptr) {
-                             CHECK((*ret)->Unref());
-                           }
-                           return s;
-                         }));
-
-      Status s = VerifyResource(resource);
-      if (TF_PREDICT_FALSE(!s.ok())) {
-        resource->Unref();
-        context->SetStatus(s);
-        return;
-      }
-
-      if (!has_resource_type_) {
-        auto h = handle_.AccessTensor(context)->template flat<tstring>();
-        h(0) = cinfo_.container();
-        h(1) = cinfo_.name();
-      }
-      resource_ = resource;
+    const Tensor* shared_tensor;
+    TF_RETURN_IF_ERROR(context->input("shared", &shared_tensor));
+    string shared = shared_tensor->scalar<tstring>()();
+    if (shared.empty()) {
+      return errors::InvalidArgument("shared cannot be empty: ", shared);
+    } else if (shared[0] == '_') {
+      return errors::InvalidArgument("shared cannot start with '_':", shared);
     }
-    if (has_resource_type_) {
-      OP_REQUIRES_OK(context, MakeResourceHandleToOutput(
-                                  context, 0, cinfo_.container(), cinfo_.name(),
-                                  MakeTypeIndex<T>()));
-    } else {
-      context->set_output_ref(0, &mu_, handle_.AccessTensor(context));
+
+    ResourceMgr* mgr = context->resource_manager();
+
+    TF_RETURN_IF_ERROR(mgr->LookupOrCreate<T>(
+        (container_.empty() ? container_ : mgr->default_container()), shared,
+        resource, [this, context](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+          const Tensor* input_tensor;
+          TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
+          string input = input_tensor->scalar<tstring>()();
+          *ret = new T(env_);
+          if ((*ret) != nullptr) {
+            Status s = (*ret)->Init(input);
+            if (!s.ok()) {
+              CHECK((*ret)->Unref());
+              return s;
+            }
+            return Status::OK();
+          }
+          return errors::InvalidArgument(
+              "unable to allocate memory for resource");
+        }));
+
+    Status s = VerifyResource(*resource);
+    if (!s.ok()) {
+      (*resource)->Unref();
+      return s;
     }
+
+    return Status::OK();
   }
 
- protected:
-  // Variables accessible from subclasses.
-  mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
-  T* resource_ TF_GUARDED_BY(mu_) = nullptr;
-
- private:
-  // Must return a T descendant allocated with new that IOResourceOpKernel will
-  // take ownership of.
-  virtual Status CreateResource(T** resource)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
-
-  // During the first Compute(), resource is either created or looked up using
-  // shared_name. In the latter case, the resource found should be verified if
-  // it is compatible with this op's configuration. The verification may fail in
-  // cases such as two graphs asking queues of the same shared name to have
-  // inconsistent capacities.
   virtual Status VerifyResource(T* resource) { return Status::OK(); }
 
-  PersistentTensor handle_ TF_GUARDED_BY(mu_);
+ protected:
+  mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+  string container_ TF_GUARDED_BY(mu_);
 
-  // Is the output of the operator of type DT_RESOURCE?
-  bool has_resource_type_;
+ private:
+  static bool IsValidContainerName(StringPiece s) {
+    using ::tensorflow::strings::Scanner;
+    return Scanner(s)
+        .One(Scanner::LETTER_DIGIT_DOT)
+        .Any(Scanner::LETTER_DIGIT_DASH_DOT_SLASH)
+        .Eos()
+        .GetResult();
+  }
 };
 
 }  // namespace data

@@ -14,8 +14,6 @@
 # ==============================================================================
 """HDF5IOTensor"""
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.ops import io_tensor_ops
@@ -27,10 +25,10 @@ class BaseHDF5GraphIOTensor:
     # =============================================================================
     # Constructor (private)
     # =============================================================================
-    def __init__(self, resource, component, shape, dtype, internal=False):
+    def __init__(self, filename, component, shape, dtype, internal=False):
         with tf.name_scope("BaseHDF5GraphIOTensor"):
             assert internal
-            self._resource = resource
+            self._filename = filename
             self._component = component
             self._shape = shape
             self._dtype = dtype
@@ -72,7 +70,14 @@ class BaseHDF5GraphIOTensor:
       A `Tensor` with value obtained from this `IOTensor`.
     """
         return core_ops.io_hdf5_readable_read(
-            self._resource, self._component, self._shape, 0, -1, dtype=self._dtype
+            input=self._filename,
+            shared=self._filename,
+            component=self._component,
+            shape=self._shape,
+            start=0,
+            stop=-1,
+            dtype=self._dtype,
+            container="HDF5IOTensor",
         )
 
     # =============================================================================
@@ -93,12 +98,14 @@ class BaseHDF5GraphIOTensor:
         stop = [-1 if e is None else e for e in indices[1]]
 
         item = core_ops.io_hdf5_readable_read(
-            self._resource,
-            self._component,
-            self._shape,
+            input=self._filename,
+            shared=self._filename,
+            component=self._component,
+            shape=self._shape,
             start=start,
             stop=stop,
             dtype=self._dtype,
+            container="HDF5IOTensor",
         )
 
         # in case certain dimension is not slice, then this dimension will need to
@@ -121,24 +128,17 @@ class HDF5IOTensor(
     # Constructor (private)
     # =============================================================================
     def __init__(self, filename, spec=None, internal=False):
-        with tf.name_scope("HDF5IOTensor") as scope:
-            # TODO: unique shared_name might be removed if HDF5 is thead-safe?
-            resource, columns = core_ops.io_hdf5_readable_init(
-                filename,
-                container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+        with tf.name_scope("HDF5IOTensor"):
+            columns, shapes, dtypes = core_ops.io_hdf5_readable_info(
+                filename, shared=filename, container="HDF5IOTensor"
             )
-
-            def f(column):
-                shape, dtype = core_ops.io_hdf5_readable_spec(resource, column)
-                return shape, dtype
-
             if tf.executing_eagerly():
                 columns = tf.unstack(columns)
-                entries = [f(column) for column in columns]
-                shapes, dtypes = zip(*entries)
-                shapes, dtypes = list(shapes), list(dtypes)
-                dtypes = [tf.as_dtype(dtype.numpy()) for dtype in dtypes]
+                shapes = [
+                    tf.boolean_mask(shape, tf.math.greater_equal(shape, 0))
+                    for shape in tf.unstack(shapes)
+                ]
+                dtypes = [tf.as_dtype(dtype.numpy()) for dtype in tf.unstack(dtypes)]
                 entries = [
                     tf.TensorSpec(shape, dtype, column)
                     for (shape, dtype, column) in zip(shapes, dtypes, columns)
@@ -147,17 +147,18 @@ class HDF5IOTensor(
                 assert spec is not None
 
                 entries = spec.items()
-                columns, entries = zip(*entries)
-                columns, entries = list(columns), list(entries)
 
+                def f(column, columns, shapes):
+                    shape = tf.boolean_mask(shapes, tf.math.equal(columns, column))[0]
+                    shape = tf.boolean_mask(shape, tf.math.greater_equal(shape, 0))
+                    return shape
+
+                shapes = [f(column, columns, shapes) for column, _ in entries]
                 dtypes = [
                     entry if isinstance(entry, tf.dtypes.DType) else entry.dtype
-                    for entry in entries
+                    for _, entry in entries
                 ]
-
-                entries = [f(column) for column in columns]
-                shapes, _ = zip(*entries)
-                shapes = list(shapes)
+                columns = [column for column, _ in entries]
 
                 entries = [
                     tf.TensorSpec(None, dtype, column)
@@ -166,7 +167,7 @@ class HDF5IOTensor(
 
             def g(entry, shape):
                 return BaseHDF5GraphIOTensor(
-                    resource, entry.name, shape, entry.dtype, internal=True
+                    filename, entry.name, shape, entry.dtype, internal=True
                 )
 
             elements = [g(entry, shape) for (entry, shape) in zip(entries, shapes)]

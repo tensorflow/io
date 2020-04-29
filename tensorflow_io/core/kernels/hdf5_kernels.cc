@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/io_kernel.h"
-
 #include <H5Cpp.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
+
+#include "tensorflow_io/core/kernels/io_kernel.h"
 
 namespace tensorflow {
 namespace data {
@@ -77,7 +77,7 @@ class HDF5FileImage {
 class HDF5Iterate {
  public:
   HDF5Iterate(haddr_t root) : parent_(root) { groups_[root] = ""; }
-  ~HDF5Iterate() {}
+  virtual ~HDF5Iterate() {}
 
   static herr_t Iterate(hid_t loc_id, const char* name, const H5L_info_t* info,
                         void* operator_data) {
@@ -121,9 +121,10 @@ class HDF5ReadableResource : public ResourceBase {
  public:
   HDF5ReadableResource(Env* env)
       : env_(env), complex_names_(std::pair<string, string>("r", "i")) {}
-  ~HDF5ReadableResource() {}
 
-  Status Init(const string& input, std::vector<string>* components) {
+  virtual ~HDF5ReadableResource() {}
+
+  Status Init(const string& input) {
     mutex_lock l(mu);
 
     filename_ = input;
@@ -258,14 +259,24 @@ class HDF5ReadableResource : public ResourceBase {
     }
 
     columns_index_.reserve(data.datasets_.size());
-    components->reserve(data.datasets_.size());
     for (size_t i = 0; i < data.datasets_.size(); i++) {
       columns_index_[data.datasets_[i]] = i;
-      components->emplace_back(data.datasets_[i]);
     }
 
     return Status::OK();
   }
+
+  Status Components(std::vector<string>* components) {
+    mutex_lock l(mu);
+
+    components->clear();
+    components->reserve(columns_index_.size());
+    for (const std::pair<string, int64>& e : columns_index_) {
+      components->emplace_back(e.first);
+    }
+    return Status::OK();
+  }
+
   Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
     mutex_lock l(mu);
 
@@ -279,6 +290,7 @@ class HDF5ReadableResource : public ResourceBase {
     *dtype = dtypes_[column_index];
     return Status::OK();
   }
+
   Status Read(const string& component,
               const absl::InlinedVector<int64, 4>& start,
               const TensorShape& shape,
@@ -472,94 +484,79 @@ class HDF5ReadableResource : public ResourceBase {
   std::pair<string, string> complex_names_ TF_GUARDED_BY(mu);
 };
 
-class HDF5ReadableInitOp : public IOResourceOpKernel<HDF5ReadableResource> {
+class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
  public:
-  explicit HDF5ReadableInitOp(OpKernelConstruction* context)
-      : IOResourceOpKernel<HDF5ReadableResource>(context) {
-    env_ = context->env();
-  }
+  explicit HDF5ReadableInfoOp(OpKernelConstruction* context)
+      : IOResourceOpKernel<HDF5ReadableResource>(context) {}
 
- private:
+  virtual ~HDF5ReadableInfoOp() {}
+
   void Compute(OpKernelContext* context) override {
-    IOResourceOpKernel<HDF5ReadableResource>::Compute(context);
-
-    const Tensor* input_tensor;
-    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-    string input = input_tensor->scalar<tstring>()();
+    HDF5ReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   IOResourceOpKernel<HDF5ReadableResource>::LookupResource(
+                       context, &resource));
 
     std::vector<string> components;
-    OP_REQUIRES_OK(context, resource_->Init(input, &components));
+    OP_REQUIRES_OK(context, resource->Components(&components));
 
-    Tensor* components_tensor = nullptr;
+    std::vector<TensorShape> shapes;
+    std::vector<DataType> dtypes;
+
+    shapes.resize(components.size());
+    dtypes.resize(components.size());
+
+    int64 rank = 0;
+    for (size_t i = 0; i < components.size(); i++) {
+      OP_REQUIRES_OK(context,
+                     resource->Spec(components[i], &shapes[i], &dtypes[i]));
+      if (rank < shapes[i].dims()) {
+        rank = shapes[i].dims();
+      }
+    }
+
+    Tensor* component_tensor = nullptr;
     OP_REQUIRES_OK(context,
                    context->allocate_output(
-                       1, TensorShape({static_cast<int64>(components.size())}),
-                       &components_tensor));
-    for (size_t i = 0; i < components.size(); i++) {
-      components_tensor->flat<tstring>()(i) = components[i];
-    }
-  }
-  Status CreateResource(HDF5ReadableResource** resource)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *resource = new HDF5ReadableResource(env_);
-    return Status::OK();
-  }
-
- private:
-  mutable mutex mu_;
-  Env* env_ TF_GUARDED_BY(mu_);
-};
-class HDF5ReadableSpecOp : public OpKernel {
- public:
-  explicit HDF5ReadableSpecOp(OpKernelConstruction* context)
-      : OpKernel(context) {
-    env_ = context->env();
-  }
-
-  void Compute(OpKernelContext* context) override {
-    HDF5ReadableResource* resource;
-    OP_REQUIRES_OK(context,
-                   GetResourceFromContext(context, "input", &resource));
-    core::ScopedUnref unref(resource);
-
-    const Tensor* component_tensor;
-    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
-    string component = component_tensor->scalar<tstring>()();
-
-    TensorShape shape;
-    DataType dtype;
-    OP_REQUIRES_OK(context, resource->Spec(component, &shape, &dtype));
-
+                       0, TensorShape({static_cast<int64>(components.size())}),
+                       &component_tensor));
     Tensor* shape_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(
-                                0, TensorShape({shape.dims()}), &shape_tensor));
-    for (int64 i = 0; i < shape.dims(); i++) {
-      shape_tensor->flat<int64>()(i) = shape.dim_size(i);
-    }
-
+    OP_REQUIRES_OK(
+        context,
+        context->allocate_output(
+            1, TensorShape({static_cast<int64>(components.size()), rank}),
+            &shape_tensor));
     Tensor* dtype_tensor = nullptr;
     OP_REQUIRES_OK(context,
-                   context->allocate_output(1, TensorShape({}), &dtype_tensor));
-    dtype_tensor->scalar<int64>()() = dtype;
-  }
+                   context->allocate_output(
+                       2, TensorShape({static_cast<int64>(components.size())}),
+                       &dtype_tensor));
 
- private:
-  mutable mutex mu_;
-  Env* env_ TF_GUARDED_BY(mu_);
+    for (size_t i = 0; i < components.size(); i++) {
+      component_tensor->flat<tstring>()(i) = components[i];
+      for (int64 j = 0; j < shapes[i].dims(); j++) {
+        shape_tensor->matrix<int64>()(i, j) = shapes[i].dim_size(j);
+      }
+      for (int64 j = shapes[i].dims(); j < rank; j++) {
+        shape_tensor->matrix<int64>()(i, j) = -1;
+      }
+      dtype_tensor->flat<int64>()(i) = dtypes[i];
+    }
+  }
 };
 
-class HDF5ReadableReadOp : public OpKernel {
+class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
  public:
   explicit HDF5ReadableReadOp(OpKernelConstruction* context)
-      : OpKernel(context) {
-    env_ = context->env();
-  }
+      : IOResourceOpKernel<HDF5ReadableResource>(context) {}
+
+  virtual ~HDF5ReadableReadOp() {}
 
   void Compute(OpKernelContext* context) override {
     HDF5ReadableResource* resource;
     OP_REQUIRES_OK(context,
-                   GetResourceFromContext(context, "input", &resource));
-    core::ScopedUnref unref(resource);
+                   IOResourceOpKernel<HDF5ReadableResource>::LookupResource(
+                       context, &resource));
 
     const Tensor* component_tensor;
     OP_REQUIRES_OK(context, context->input("component", &component_tensor));
@@ -610,15 +607,9 @@ class HDF5ReadableReadOp : public OpKernel {
                          return Status::OK();
                        }));
   }
-
- private:
-  mutable mutex mu_;
-  Env* env_ TF_GUARDED_BY(mu_);
 };
-REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInit").Device(DEVICE_CPU),
-                        HDF5ReadableInitOp);
-REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableSpec").Device(DEVICE_CPU),
-                        HDF5ReadableSpecOp);
+REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInfo").Device(DEVICE_CPU),
+                        HDF5ReadableInfoOp);
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableRead").Device(DEVICE_CPU),
                         HDF5ReadableReadOp);
 
