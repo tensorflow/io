@@ -13,8 +13,9 @@ limitations under the License.
 #define TENSORFLOW_DATA_AVRO_PARSER_TREE_H_
 
 #include <vector>
-#include "tensorflow_io/core/avro/utils/avro_parser.h"
-#include "tensorflow_io/core/avro/utils/prefix_tree.h"
+
+#include "tensorflow_io/core/kernels/avro/utils/avro_parser.h"
+#include "tensorflow_io/core/kernels/avro/utils/prefix_tree.h"
 
 namespace tensorflow {
 namespace data {

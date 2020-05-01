@@ -10,8 +10,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/avro/utils/avro_file_stream_reader.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_file_stream_reader.h"
+
 #include <sstream>
+
 #include "api/Compiler.hh"
 #include "api/DataFile.hh"
 #include "api/Generic.hh"

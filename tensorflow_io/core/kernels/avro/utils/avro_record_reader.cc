@@ -10,7 +10,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/avro/utils/avro_record_reader.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_record_reader.h"
 
 #include <limits.h>
 

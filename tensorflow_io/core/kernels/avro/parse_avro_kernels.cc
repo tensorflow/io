@@ -11,6 +11,9 @@ limitations under the License.
 ==============================================================================*/
 #include <deque>
 
+#include "api/Compiler.hh"
+#include "api/Decoder.hh"
+#include "api/Generic.hh"
 #include "tensorflow/core/common_runtime/device.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -18,12 +21,7 @@ limitations under the License.
 #include "tensorflow/core/lib/core/blocking_counter.h"
 #include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/gtl/array_slice.h"
-
-#include "api/Compiler.hh"
-#include "api/Decoder.hh"
-#include "api/Generic.hh"
-
-#include "tensorflow_io/core/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_parser_tree.h"
 
 namespace tensorflow {
 namespace data {
