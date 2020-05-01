@@ -22,7 +22,7 @@ limitations under the License.
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 #include "tensorflow/core/lib/io/random_inputstream.h"
-#include "tensorflow_io/core/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_parser_tree.h"
 
 // mostly from here:
 // https://github.com/tensorflow/tensorflow/blob/7ba3600c94bcf02e42905465e2501e56b7bd991b/tensorflow/core/lib/io/record_reader.h

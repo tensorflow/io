@@ -16,7 +16,7 @@ limitations under the License.
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow_io/core/avro/utils/parse_avro_attrs.h"
+#include "tensorflow_io/core/kernels/avro/utils/parse_avro_attrs.h"
 
 namespace tensorflow {
 

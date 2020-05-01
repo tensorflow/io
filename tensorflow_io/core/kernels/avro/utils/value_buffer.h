@@ -13,6 +13,7 @@ limitations under the License.
 #define TENSORFLOW_DATA_VALUE_BUFFER_H_
 
 #include <sstream>
+
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/lib/core/errors.h"

@@ -16,10 +16,11 @@ limitations under the License.
 #include <queue>
 #include <set>
 #include <vector>
+
 #include "api/Generic.hh"
 #include "api/Types.hh"
 #include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow_io/core/avro/utils/value_buffer.h"
+#include "tensorflow_io/core/kernels/avro/utils/value_buffer.h"
 
 namespace tensorflow {
 namespace data {

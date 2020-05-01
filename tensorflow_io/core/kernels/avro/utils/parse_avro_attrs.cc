@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/avro/utils/parse_avro_attrs.h"
+#include "tensorflow_io/core/kernels/avro/utils/parse_avro_attrs.h"
+
 #include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/platform/types.h"
