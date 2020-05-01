@@ -11,8 +11,10 @@ limitations under the License.
 ==============================================================================*/
 
 // RE2 https://github.com/google/re2/blob/master/re2/re2.h
-#include "tensorflow_io/core/avro/utils/avro_parser_tree.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_parser_tree.h"
+
 #include <algorithm>
+
 #include "re2/re2.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/strings/str_util.h"

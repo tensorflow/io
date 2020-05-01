@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow_io/core/avro/avro_record_dataset_kernels.h"
+#include "tensorflow_io/core/kernels/avro/avro_record_dataset_kernels.h"
 
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
@@ -21,11 +21,10 @@ limitations under the License.
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
-
-#include "tensorflow_io/core/avro/utils/avro_record_reader.h"
+#include "tensorflow_io/core/kernels/avro/utils/avro_record_reader.h"
 // TODO(fraudies): Wait until TF tensorflow/core/kernels/data/name_utils.h is
 // visible
-#include "tensorflow_io/core/avro/utils/name_utils.h"
+#include "tensorflow_io/core/kernels/avro/utils/name_utils.h"
 
 namespace tensorflow {
 namespace data {
