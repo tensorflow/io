@@ -499,6 +499,22 @@ cc_library(
 )
 
 cc_library(
+    name = "oss_ops",
+    srcs = [
+        "kernels/oss/oss_file_system.cc",
+        "kernels/oss/oss_file_system.h",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@aliyun_oss_c_sdk",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "azfs_ops",
     srcs = [
         "kernels/azfs_kernels.cc",
@@ -580,7 +596,7 @@ cc_binary(
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
-            "//tensorflow_io/core/oss:oss_ops",
+            "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/gcs:gcs_config_ops",
         ],
     }),

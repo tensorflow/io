@@ -25,7 +25,6 @@ limitations under the License.
 #include "oss_api.h"
 #include "oss_auth.h"
 #include "oss_util.h"
-
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/file_system.h"

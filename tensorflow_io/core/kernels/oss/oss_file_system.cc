@@ -9,8 +9,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include "oss_file_system.h"
+
 #include <pwd.h>
 #include <unistd.h>
+
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -20,7 +23,6 @@ limitations under the License.
 
 #include "aos_string.h"
 #include "oss_define.h"
-#include "oss_file_system.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/lib/strings/str_util.h"
@@ -1037,10 +1039,10 @@ Status OSSFileSystem::RenameFile(const std::string& src,
 
   Status status = IsDirectory(src);
   if (status.ok()) {
-    if (!str_util::EndsWith(sobject, "/")){
+    if (!str_util::EndsWith(sobject, "/")) {
       sobject += "/";
     }
-    if (!str_util::EndsWith(dobject, "/")){
+    if (!str_util::EndsWith(dobject, "/")) {
       dobject += "/";
     }
     std::vector<std::string> childPaths;
@@ -1272,5 +1274,10 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   return Status::OK();
 }
 
+namespace {
+
+REGISTER_FILE_SYSTEM("oss", OSSFileSystem);
+
+}  // namespace
 }  // end namespace io
 }  // end namespace tensorflow
