@@ -315,11 +315,11 @@ http_archive(
 http_archive(
     name = "libpng",
     build_file = "//third_party:libpng.BUILD",
-    sha256 = "daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4",
+    sha256 = "ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307",
     strip_prefix = "libpng-1.6.37",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.sourceforge.net/libpng/libpng-1.6.37.tar.gz",
-        "https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/glennrp/libpng/archive/v1.6.37.tar.gz",
+        "https://github.com/glennrp/libpng/archive/v1.6.37.tar.gz",
     ],
 )
 
