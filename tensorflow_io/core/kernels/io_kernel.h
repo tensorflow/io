@@ -35,49 +35,51 @@ class IOResourceOpKernel : public OpKernel {
 
   virtual ~IOResourceOpKernel() {}
 
-  Status LookupResource(OpKernelContext* context, T** resource) {
-    mutex_lock l(mu_);
-
-    const Tensor* shared_tensor;
-    TF_RETURN_IF_ERROR(context->input("shared", &shared_tensor));
-    string shared = shared_tensor->scalar<tstring>()();
-    if (shared.empty()) {
-      return errors::InvalidArgument("shared cannot be empty: ", shared);
-    } else if (shared[0] == '_') {
-      return errors::InvalidArgument("shared cannot start with '_':", shared);
-    }
-
-    ResourceMgr* mgr = context->resource_manager();
-
-    TF_RETURN_IF_ERROR(mgr->LookupOrCreate<T>(
-        (container_.empty() ? container_ : mgr->default_container()), shared,
-        resource, [this, context](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-          const Tensor* input_tensor;
-          TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
-          string input = input_tensor->scalar<tstring>()();
-          *ret = new T(env_);
-          if ((*ret) != nullptr) {
-            Status s = (*ret)->Init(input);
-            if (!s.ok()) {
-              CHECK((*ret)->Unref());
-              return s;
-            }
-            return Status::OK();
-          }
-          return errors::InvalidArgument(
-              "unable to allocate memory for resource");
-        }));
-
-    Status s = VerifyResource(*resource);
-    if (!s.ok()) {
-      (*resource)->Unref();
-      return s;
-    }
-
+  virtual Status ResourceKernel(OpKernelContext* context, T* resource) {
     return Status::OK();
   }
 
-  virtual Status VerifyResource(T* resource) { return Status::OK(); }
+  void Compute(OpKernelContext* context) override TF_LOCKS_EXCLUDED(mu_) {
+    const Tensor* shared_tensor;
+
+    OP_REQUIRES_OK(context, context->input("shared", &shared_tensor));
+    string shared = shared_tensor->scalar<tstring>()();
+    if (shared.empty()) {
+      // TODO: no resource manager case
+      OP_REQUIRES_OK(
+          context, errors::InvalidArgument("shared cannot be empty: ", shared));
+    }
+
+    OP_REQUIRES(
+        context, (shared[0] != '_'),
+        errors::InvalidArgument("shared cannot start with '_':", shared));
+
+    mutex_lock l(mu_);
+    ResourceMgr* mgr = context->resource_manager();
+
+    T* resource;
+    OP_REQUIRES_OK(
+        context,
+        mgr->LookupOrCreate<T>(
+            (container_.empty() ? container_ : mgr->default_container()),
+            shared, &resource,
+            [this, context](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+              const Tensor* input_tensor;
+              TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
+              string input = input_tensor->scalar<tstring>()();
+              *ret = new T(env_);
+              if ((*ret) != nullptr) {
+                Status s = (*ret)->Init(input);
+                if (!s.ok()) {
+                  CHECK((*ret)->Unref());
+                }
+                return s;
+              }
+              return errors::InvalidArgument(
+                  "unable to allocate memory for resource");
+            }));
+    OP_REQUIRES_OK(context, ResourceKernel(context, resource));
+  }
 
  protected:
   mutex mu_;

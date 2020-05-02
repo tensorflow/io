@@ -491,14 +491,10 @@ class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
 
   virtual ~HDF5ReadableInfoOp() {}
 
-  void Compute(OpKernelContext* context) override {
-    HDF5ReadableResource* resource;
-    OP_REQUIRES_OK(context,
-                   IOResourceOpKernel<HDF5ReadableResource>::LookupResource(
-                       context, &resource));
-
+  Status ResourceKernel(OpKernelContext* context,
+                        HDF5ReadableResource* resource) override {
     std::vector<string> components;
-    OP_REQUIRES_OK(context, resource->Components(&components));
+    TF_RETURN_IF_ERROR(resource->Components(&components));
 
     std::vector<TensorShape> shapes;
     std::vector<DataType> dtypes;
@@ -508,29 +504,24 @@ class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
 
     int64 rank = 0;
     for (size_t i = 0; i < components.size(); i++) {
-      OP_REQUIRES_OK(context,
-                     resource->Spec(components[i], &shapes[i], &dtypes[i]));
+      TF_RETURN_IF_ERROR(resource->Spec(components[i], &shapes[i], &dtypes[i]));
       if (rank < shapes[i].dims()) {
         rank = shapes[i].dims();
       }
     }
 
     Tensor* component_tensor = nullptr;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(
-                       0, TensorShape({static_cast<int64>(components.size())}),
-                       &component_tensor));
+    TF_RETURN_IF_ERROR(context->allocate_output(
+        0, TensorShape({static_cast<int64>(components.size())}),
+        &component_tensor));
     Tensor* shape_tensor = nullptr;
-    OP_REQUIRES_OK(
-        context,
-        context->allocate_output(
-            1, TensorShape({static_cast<int64>(components.size()), rank}),
-            &shape_tensor));
+    TF_RETURN_IF_ERROR(context->allocate_output(
+        1, TensorShape({static_cast<int64>(components.size()), rank}),
+        &shape_tensor));
     Tensor* dtype_tensor = nullptr;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(
-                       2, TensorShape({static_cast<int64>(components.size())}),
-                       &dtype_tensor));
+    TF_RETURN_IF_ERROR(context->allocate_output(
+        2, TensorShape({static_cast<int64>(components.size())}),
+        &dtype_tensor));
 
     for (size_t i = 0; i < components.size(); i++) {
       component_tensor->flat<tstring>()(i) = components[i];
@@ -542,6 +533,7 @@ class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
       }
       dtype_tensor->flat<int64>()(i) = dtypes[i];
     }
+    return Status::OK();
   }
 };
 
@@ -552,22 +544,18 @@ class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
 
   virtual ~HDF5ReadableReadOp() {}
 
-  void Compute(OpKernelContext* context) override {
-    HDF5ReadableResource* resource;
-    OP_REQUIRES_OK(context,
-                   IOResourceOpKernel<HDF5ReadableResource>::LookupResource(
-                       context, &resource));
-
+  Status ResourceKernel(OpKernelContext* context,
+                        HDF5ReadableResource* resource) override {
     const Tensor* component_tensor;
-    OP_REQUIRES_OK(context, context->input("component", &component_tensor));
+    TF_RETURN_IF_ERROR(context->input("component", &component_tensor));
     string component = component_tensor->scalar<tstring>()();
 
     const Tensor* shape_tensor;
-    OP_REQUIRES_OK(context, context->input("shape", &shape_tensor));
+    TF_RETURN_IF_ERROR(context->input("shape", &shape_tensor));
     TensorShape shape(shape_tensor->flat<int64>());
 
     const Tensor* start_tensor;
-    OP_REQUIRES_OK(context, context->input("start", &start_tensor));
+    TF_RETURN_IF_ERROR(context->input("start", &start_tensor));
     absl::InlinedVector<int64, 4> start(shape.dims());
     for (int64 i = 0; i < start_tensor->NumElements(); i++) {
       start[i] = start_tensor->flat<int64>()(i);
@@ -577,7 +565,7 @@ class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
     }
 
     const Tensor* stop_tensor;
-    OP_REQUIRES_OK(context, context->input("stop", &stop_tensor));
+    TF_RETURN_IF_ERROR(context->input("stop", &stop_tensor));
     absl::InlinedVector<int64, 4> stop(stop_tensor->shape().dims());
     for (int64 i = 0; i < stop_tensor->NumElements(); i++) {
       stop[i] = stop_tensor->flat<int64>()(i);
@@ -598,14 +586,13 @@ class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
       shape.set_dim(i, stop[i] - start[i]);
     }
 
-    OP_REQUIRES_OK(
-        context,
-        resource->Read(component, start, shape,
-                       [&](const TensorShape& shape, Tensor** value) -> Status {
-                         TF_RETURN_IF_ERROR(
-                             context->allocate_output(0, shape, value));
-                         return Status::OK();
-                       }));
+    TF_RETURN_IF_ERROR(resource->Read(
+        component, start, shape,
+        [&](const TensorShape& shape, Tensor** value) -> Status {
+          TF_RETURN_IF_ERROR(context->allocate_output(0, shape, value));
+          return Status::OK();
+        }));
+    return Status::OK();
   }
 };
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInfo").Device(DEVICE_CPU),
