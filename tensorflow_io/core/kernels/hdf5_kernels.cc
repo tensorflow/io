@@ -271,7 +271,7 @@ class HDF5ReadableResource : public ResourceBase {
 
     components->clear();
     components->reserve(columns_index_.size());
-    for (const std::pair<string, int64>& e : columns_index_) {
+    for (const std::pair<const string, int64>& e : columns_index_) {
       components->emplace_back(e.first);
     }
     return Status::OK();

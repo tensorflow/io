@@ -33,11 +33,22 @@ class IOResourceOpKernel : public OpKernel {
                     "container contains invalid characters: ", container_));
   }
 
-  virtual ~IOResourceOpKernel() {}
-
-  virtual Status ResourceKernel(OpKernelContext* context, T* resource) {
-    return Status::OK();
+  virtual ~IOResourceOpKernel() {
+    // TODO: LRU cache with adjustable size?
+    if (std::get<0>(resource_created_) != "") {
+      const string& shared = std::get<0>(resource_created_);
+      T* resource = std::get<1>(resource_created_);
+      ResourceMgr* mgr = std::get<2>(resource_created_);
+      Status status = mgr->template Delete<T>(
+          (container_.empty() ? container_ : mgr->default_container()), shared);
+      if (!status.ok()) {
+        // Do nothing; the resource can have been deleted by session resets.
+      }
+    }
   }
+
+  // ResourceKernel needs to be implemented by subclass
+  virtual Status ResourceKernel(OpKernelContext* context, T* resource) = 0;
 
   void Compute(OpKernelContext* context) override TF_LOCKS_EXCLUDED(mu_) {
     const Tensor* shared_tensor;
@@ -45,7 +56,7 @@ class IOResourceOpKernel : public OpKernel {
     OP_REQUIRES_OK(context, context->input("shared", &shared_tensor));
     string shared = shared_tensor->scalar<tstring>()();
     if (shared.empty()) {
-      // TODO: no resource manager case
+      // TODO: non-resource manager  case
       OP_REQUIRES_OK(
           context, errors::InvalidArgument("shared cannot be empty: ", shared));
     }
@@ -55,29 +66,49 @@ class IOResourceOpKernel : public OpKernel {
         errors::InvalidArgument("shared cannot start with '_':", shared));
 
     mutex_lock l(mu_);
-    ResourceMgr* mgr = context->resource_manager();
 
+    // TODO: LRU cache with adjustable size?
+    if (std::get<0>(resource_created_) != "" &&
+        std::get<0>(resource_created_) != shared) {
+      const string& shared = std::get<0>(resource_created_);
+      T* resource = std::get<1>(resource_created_);
+      ResourceMgr* mgr = std::get<2>(resource_created_);
+      Status status = mgr->template Delete<T>(
+          (container_.empty() ? container_ : mgr->default_container()), shared);
+      if (!status.ok()) {
+        // Do nothing; the resource can have been deleted by session resets.
+      }
+      resource_created_ =
+          std::tuple<string, T*, ResourceMgr*>{"", nullptr, nullptr};
+    }
+
+    ResourceMgr* mgr = context->resource_manager();
     T* resource;
     OP_REQUIRES_OK(
         context,
         mgr->LookupOrCreate<T>(
             (container_.empty() ? container_ : mgr->default_container()),
             shared, &resource,
-            [this, context](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+            [this, context, mgr](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
               const Tensor* input_tensor;
               TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
               string input = input_tensor->scalar<tstring>()();
               *ret = new T(env_);
               if ((*ret) != nullptr) {
-                Status s = (*ret)->Init(input);
-                if (!s.ok()) {
+                Status status = (*ret)->Init(input);
+                if (!status.ok()) {
                   CHECK((*ret)->Unref());
                 }
-                return s;
+                if (status.ok()) {
+                  resource_created_ =
+                      std::tuple<string, T*, ResourceMgr*>{input, (*ret), mgr};
+                }
+                return status;
               }
               return errors::InvalidArgument(
                   "unable to allocate memory for resource");
             }));
+    core::ScopedUnref unref(resource);
     OP_REQUIRES_OK(context, ResourceKernel(context, resource));
   }
 
@@ -85,6 +116,10 @@ class IOResourceOpKernel : public OpKernel {
   mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
   string container_ TF_GUARDED_BY(mu_);
+  // Resource created by kernel, and the kernel is responsible for deletion.
+  // In case new resource is created and overrides old one, old one must be
+  // deleted as well.
+  std::tuple<string, T*, ResourceMgr*> resource_created_ TF_GUARDED_BY(mu_);
 
  private:
   static bool IsValidContainerName(StringPiece s) {
