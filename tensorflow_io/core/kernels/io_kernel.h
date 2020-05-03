@@ -65,48 +65,51 @@ class IOResourceOpKernel : public OpKernel {
         context, (shared[0] != '_'),
         errors::InvalidArgument("shared cannot start with '_':", shared));
 
-    mutex_lock g(mu_);
     T* resource;
-    // TODO: LRU cache with adjustable size?
-    if (std::get<0>(resource_created_) != "" &&
-        std::get<0>(resource_created_) != shared) {
-      const string& shared = std::get<0>(resource_created_);
-      T* resource = std::get<1>(resource_created_);
-      ResourceMgr* mgr = std::get<2>(resource_created_);
-      Status status = mgr->template Delete<T>(
-          (container_.empty() ? container_ : mgr->default_container()), shared);
-      if (!status.ok()) {
-        // Do nothing; the resource can have been deleted by session resets.
-      }
-      resource_created_ =
-          std::tuple<string, T*, ResourceMgr*>{"", nullptr, nullptr};
-    }
-
-    ResourceMgr* mgr = context->resource_manager();
-    OP_REQUIRES_OK(
-        context,
-        mgr->LookupOrCreate<T>(
+    {
+      mutex_lock g(mu_);
+      // TODO: LRU cache with adjustable size?
+      if (std::get<0>(resource_created_) != "" &&
+          std::get<0>(resource_created_) != shared) {
+        const string& shared = std::get<0>(resource_created_);
+        T* resource = std::get<1>(resource_created_);
+        ResourceMgr* mgr = std::get<2>(resource_created_);
+        Status status = mgr->template Delete<T>(
             (container_.empty() ? container_ : mgr->default_container()),
-            shared, &resource,
-            [this, context, mgr](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-              const Tensor* input_tensor;
-              TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
-              string input = input_tensor->scalar<tstring>()();
-              *ret = new T(env_);
-              if ((*ret) != nullptr) {
-                Status status = (*ret)->Init(input);
-                if (!status.ok()) {
-                  CHECK((*ret)->Unref());
+            shared);
+        if (!status.ok()) {
+          // Do nothing; the resource can have been deleted by session resets.
+        }
+        resource_created_ =
+            std::tuple<string, T*, ResourceMgr*>{"", nullptr, nullptr};
+      }
+
+      ResourceMgr* mgr = context->resource_manager();
+      OP_REQUIRES_OK(
+          context,
+          mgr->LookupOrCreate<T>(
+              (container_.empty() ? container_ : mgr->default_container()),
+              shared, &resource,
+              [this, context, mgr](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                const Tensor* input_tensor;
+                TF_RETURN_IF_ERROR(context->input("input", &input_tensor));
+                string input = input_tensor->scalar<tstring>()();
+                *ret = new T(env_);
+                if ((*ret) != nullptr) {
+                  Status status = (*ret)->Init(input);
+                  if (!status.ok()) {
+                    CHECK((*ret)->Unref());
+                  }
+                  if (status.ok()) {
+                    resource_created_ = std::tuple<string, T*, ResourceMgr*>{
+                        input, (*ret), mgr};
+                  }
+                  return status;
                 }
-                if (status.ok()) {
-                  resource_created_ =
-                      std::tuple<string, T*, ResourceMgr*>{input, (*ret), mgr};
-                }
-                return status;
-              }
-              return errors::InvalidArgument(
-                  "unable to allocate memory for resource");
-            }));
+                return errors::InvalidArgument(
+                    "unable to allocate memory for resource");
+              }));
+    }
     core::ScopedUnref unref(resource);
     OP_REQUIRES_OK(context, ResourceKernel(context, resource));
   }

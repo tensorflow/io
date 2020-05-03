@@ -115,8 +115,6 @@ class HDF5Iterate {
   haddr_t parent_;
 };
 
-static mutex mu(LINKER_INITIALIZED);
-
 class HDF5ReadableResource : public ResourceBase {
  public:
   HDF5ReadableResource(Env* env)
@@ -124,7 +122,7 @@ class HDF5ReadableResource : public ResourceBase {
 
   virtual ~HDF5ReadableResource() {}
   Status Init(const string& input) {
-    mutex_lock l(mu);
+    mutex_lock l(mu_);
 
     filename_ = input;
 
@@ -266,7 +264,7 @@ class HDF5ReadableResource : public ResourceBase {
   }
 
   Status Components(std::vector<string>* components) {
-    mutex_lock l(mu);
+    mutex_lock l(mu_);
 
     components->clear();
     components->reserve(columns_index_.size());
@@ -277,7 +275,7 @@ class HDF5ReadableResource : public ResourceBase {
   }
 
   Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
-    mutex_lock l(mu);
+    mutex_lock l(mu_);
 
     std::unordered_map<std::string, int64>::const_iterator lookup =
         columns_index_.find(component);
@@ -295,7 +293,8 @@ class HDF5ReadableResource : public ResourceBase {
               const TensorShape& shape,
               std::function<Status(const TensorShape& shape, Tensor** value)>
                   allocate_func) {
-    mutex_lock l(mu);
+    mutex_lock l(mu_);
+
     std::unordered_map<std::string, int64>::const_iterator lookup =
         columns_index_.find(component);
     if (lookup == columns_index_.end()) {
@@ -472,16 +471,19 @@ class HDF5ReadableResource : public ResourceBase {
   string DebugString() const override { return "HDF5ReadableResource"; }
 
  protected:
-  Env* env_ TF_GUARDED_BY(mu);
-  string filename_ TF_GUARDED_BY(mu);
-  std::unique_ptr<HDF5FileImage> file_image_ TF_GUARDED_BY(mu);
+  mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+  string filename_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<HDF5FileImage> file_image_ TF_GUARDED_BY(mu_);
 
-  std::vector<DataType> dtypes_ TF_GUARDED_BY(mu);
-  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu);
-  std::unordered_map<string, int64> columns_index_ TF_GUARDED_BY(mu);
+  std::vector<DataType> dtypes_ TF_GUARDED_BY(mu_);
+  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu_);
+  std::unordered_map<string, int64> columns_index_ TF_GUARDED_BY(mu_);
 
-  std::pair<string, string> complex_names_ TF_GUARDED_BY(mu);
+  std::pair<string, string> complex_names_ TF_GUARDED_BY(mu_);
 };
+
+static mutex mu(LINKER_INITIALIZED);
 
 class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
  public:
@@ -533,6 +535,12 @@ class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
       dtype_tensor->flat<int64>()(i) = dtypes[i];
     }
     return Status::OK();
+  }
+
+  // HDF5 is not multi-threaded so use global mutext for protection
+  void Compute(OpKernelContext* context) override {
+    mutex_lock l(mu);
+    IOResourceOpKernel<HDF5ReadableResource>::Compute(context);
   }
 };
 
@@ -593,7 +601,14 @@ class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
         }));
     return Status::OK();
   }
+
+  // HDF5 is not multi-threaded so use global mutext for protection
+  void Compute(OpKernelContext* context) override {
+    mutex_lock l(mu);
+    IOResourceOpKernel<HDF5ReadableResource>::Compute(context);
+  }
 };
+
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableInfo").Device(DEVICE_CPU),
                         HDF5ReadableInfoOp);
 REGISTER_KERNEL_BUILDER(Name("IO>HDF5ReadableRead").Device(DEVICE_CPU),
