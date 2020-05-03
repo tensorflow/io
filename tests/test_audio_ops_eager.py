@@ -733,9 +733,14 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
             "decode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "darwin" and sys.version_info < (3, 6))
+                    or (sys.platform == "linux" and sys.version_info < (3, 6))
                     or (sys.platform == "win32"),
-                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                    reason=(
+                        "need ubuntu 18.04 which is python 3.6, "
+                        "and darwin with python3.5 is having trouble "
+                        "and no windows support yet"
+                    ),
                 )
             ],
         ),
@@ -743,9 +748,14 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
             "encode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "darwin" and sys.version_info < (3, 6))
+                    or (sys.platform == "linux" and sys.version_info < (3, 6))
                     or (sys.platform == "win32"),
-                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                    reason=(
+                        "need ubuntu 18.04 which is python 3.6, "
+                        "and darwin with python3.5 is having trouble "
+                        "and no windows support yet"
+                    ),
                 )
             ],
         ),
