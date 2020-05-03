@@ -17,6 +17,7 @@ limitations under the License.
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
+#include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow_io/core/kernels/io_kernel.h"
 
 namespace tensorflow {
