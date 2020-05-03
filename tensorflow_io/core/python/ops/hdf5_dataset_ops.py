@@ -14,8 +14,6 @@
 # ==============================================================================
 """HDF5Dataset"""
 
-import uuid
-
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -28,20 +26,20 @@ class HDF5IODataset(tf.data.Dataset):
         with tf.name_scope("HDF5IODataset"):
             assert internal
 
-            # TODO: unique shared_name might be removed if HDF5 is thead-safe?
-            resource, _ = core_ops.io_hdf5_readable_init(
-                filename,
-                container="HDF5IODataset",
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+            columns, shapes, dtypes = core_ops.io_hdf5_readable_info(
+                filename, shared=filename, container="HDF5IODataset"
             )
+            shape = tf.boolean_mask(shapes, tf.math.equal(columns, dataset))[0]
+            shape = tf.boolean_mask(shape, tf.math.greater_equal(shape, 0))
+
             if tf.executing_eagerly():
-                shape, dtype = core_ops.io_hdf5_readable_spec(resource, dataset)
+                dtype = tf.boolean_mask(dtypes, tf.math.equal(columns, dataset))[0]
                 dtype = tf.as_dtype(dtype.numpy())
             else:
                 assert spec is not None
-                shape, _ = core_ops.io_hdf5_readable_spec(resource, dataset)
                 dtype = spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
-            self._resource = resource
+
+            self._filename = filename
             self._component = dataset
             self._shape = shape
             self._dtype = dtype
@@ -55,12 +53,14 @@ class HDF5IODataset(tf.data.Dataset):
 
             def f(start, stop):
                 return core_ops.io_hdf5_readable_read(
-                    self._resource,
+                    input=self._filename,
+                    shared=self._filename,
                     component=self._component,
                     shape=self._shape,
                     start=start,
                     stop=stop,
                     dtype=self._dtype,
+                    container="HDF5IODataset",
                 )
 
             dataset = dataset.map(f)

@@ -61,5 +61,43 @@ def test_hdf5():
     shutil.rmtree(runpath)
 
 
+def test_hdf5_graph():
+    """test_hdf5_graph: GitHub issue 898"""
+
+    def create_datasets(runpath, cnt=10):
+        filenames = ["{}/file_{}.h5".format(runpath, i) for i in range(cnt)]
+        samples = [np.random.randint(50000, 100000) for _ in range(cnt)]
+        os.makedirs(runpath, exist_ok=True)
+        for filename, sample in zip(filenames, samples):
+            f = h5py.File(filename, "w")
+            f.create_dataset("features", data=np.random.random((sample, 60)))
+            f.create_dataset("targets", data=np.random.random((sample, 3)))
+            f.close()
+        return filenames, samples
+
+    runpath = tempfile.mkdtemp()
+    filenames, samples = create_datasets(runpath)
+
+    @tf.function(autograph=False)
+    def f(filename):
+        spec = {"/features": tf.float64, "/targets": tf.float64}
+        hdf5 = tfio.IOTensor.from_hdf5(filename, spec=spec)
+        return tf.shape(hdf5("/features").to_tensor())[0]
+
+    dataset = tf.data.Dataset.from_tensor_slices(filenames)
+    dataset = dataset.map(f, num_parallel_calls=4)
+
+    entries = [entry.numpy() for entry in dataset]
+
+    print("Iterated items")
+    for filename in filenames:
+        print("File: {}".format(filename))
+    print("Samples: {}".format(samples))
+    print("Entries: {}".format(entries))
+    assert np.array_equal(entries, samples)
+
+    shutil.rmtree(runpath)
+
+
 if __name__ == "__main__":
     test.main()
