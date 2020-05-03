@@ -123,7 +123,6 @@ class HDF5ReadableResource : public ResourceBase {
       : env_(env), complex_names_(std::pair<string, string>("r", "i")) {}
 
   virtual ~HDF5ReadableResource() {}
-
   Status Init(const string& input) {
     mutex_lock l(mu);
 

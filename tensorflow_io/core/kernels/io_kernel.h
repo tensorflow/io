@@ -65,8 +65,8 @@ class IOResourceOpKernel : public OpKernel {
         context, (shared[0] != '_'),
         errors::InvalidArgument("shared cannot start with '_':", shared));
 
-    mutex_lock l(mu_);
-
+    mutex_lock g(mu_);
+    T* resource;
     // TODO: LRU cache with adjustable size?
     if (std::get<0>(resource_created_) != "" &&
         std::get<0>(resource_created_) != shared) {
@@ -83,7 +83,6 @@ class IOResourceOpKernel : public OpKernel {
     }
 
     ResourceMgr* mgr = context->resource_manager();
-    T* resource;
     OP_REQUIRES_OK(
         context,
         mgr->LookupOrCreate<T>(
@@ -113,7 +112,7 @@ class IOResourceOpKernel : public OpKernel {
   }
 
  protected:
-  mutex mu_;
+  static mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
   string container_ TF_GUARDED_BY(mu_);
   // Resource created by kernel, and the kernel is responsible for deletion.
@@ -132,5 +131,7 @@ class IOResourceOpKernel : public OpKernel {
   }
 };
 
+template <typename T>
+mutex IOResourceOpKernel<T>::mu_(LINKER_INITIALIZED);
 }  // namespace data
 }  // namespace tensorflow

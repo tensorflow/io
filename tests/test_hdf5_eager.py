@@ -85,7 +85,7 @@ def test_hdf5_graph():
         return tf.shape(hdf5("/features").to_tensor())[0]
 
     dataset = tf.data.Dataset.from_tensor_slices(filenames)
-    dataset = dataset.map(f)
+    dataset = dataset.map(f, num_parallel_calls=4)
 
     entries = [entry.numpy() for entry in dataset]
 
