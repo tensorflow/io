@@ -153,7 +153,7 @@ class BigQueryReaderArrowDatasetIterator
 
  protected:
   Status EnsureHasRow(bool *end_of_sequence)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     if (this->response_ && this->response_->has_arrow_record_batch() &&
         this->current_row_index_ <
             this->response_->arrow_record_batch().row_count()) {
@@ -179,9 +179,9 @@ class BigQueryReaderArrowDatasetIterator
     auto arrow_status =
         arrow::ipc::ReadRecordBatch(this->dataset()->arrow_schema(), &dict_memo,
                                     &buffer_reader_, &this->record_batch_);
-    // if (!arrow_status.ok()) {
-    //   return errors::Internal(s.ToString());
-    // }
+    if (!arrow_status.ok()) {
+      return errors::Internal(arrow_status.ToString());
+    }
 
     VLOG(3) << "got record batch, rows:" << record_batch_->num_rows();
 
@@ -191,7 +191,7 @@ class BigQueryReaderArrowDatasetIterator
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
                     const std::vector<string> &columns,
                     const std::vector<DataType> &output_types)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     out_tensors->clear();
 
     // Assign Tensors for each column in the current row
@@ -217,7 +217,7 @@ class BigQueryReaderArrowDatasetIterator
   }
 
  private:
-  std::shared_ptr<arrow::RecordBatch> record_batch_ TF_GUARDED_BY(mu_);
+  std::shared_ptr<arrow::RecordBatch> record_batch_ TF_GUARDED_BY(this->mu_);
 };
 
 template <typename Dataset>
@@ -233,7 +233,7 @@ class BigQueryReaderAvroDatasetIterator
 
  protected:
   Status EnsureHasRow(bool *end_of_sequence)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     if (this->response_ &&
         this->current_row_index_ < this->response_->avro_rows().row_count()) {
       return Status::OK();
@@ -259,7 +259,7 @@ class BigQueryReaderAvroDatasetIterator
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
                     const std::vector<string> &columns,
                     const std::vector<DataType> &output_types)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     avro::GenericDatum datum =
         avro::GenericDatum(*this->dataset()->avro_schema());
     avro::decode(*this->decoder_, datum);
@@ -387,8 +387,8 @@ class BigQueryReaderAvroDatasetIterator
   }
 
  private:
-  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(mu_);
-  avro::DecoderPtr decoder_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(this->mu_);
+  avro::DecoderPtr decoder_ TF_GUARDED_BY(this->mu_);
 };
 
 }  // namespace data

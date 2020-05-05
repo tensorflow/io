@@ -71,7 +71,8 @@ def main():
        dtypes.int64,
        dtypes.string],
       requested_streams=2,
-      row_restriction="num_characters > 1000")
+      row_restriction="num_characters > 1000",
+      data_format=BigQueryClient.DataFormat.AVRO)
   dataset = read_session.parallel_read_rows()
 
   row_index = 0
