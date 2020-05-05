@@ -6,6 +6,18 @@ load(
 licenses(["notice"])
 
 cc_library(
+    name = "memcached_dao_interfaces",
+    hdrs = [
+        "memcached_dao_interface.h",
+    ],
+    copts = tf_io_copts(),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@libmemcached",
+    ],
+)
+
+cc_library(
     name = "gs_tpu_file_system",
     srcs = ["gs_tpu_file_system.cc"],
     hdrs = ["gs_tpu_file_system.h"],
