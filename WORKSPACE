@@ -10,6 +10,10 @@ load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
 
 cuda_configure(name = "local_config_cuda")
 
+load("//tensorflow_io/core/kernels/gstpufs:workspace.bzl", "gstpufs_repositories")
+
+gstpufs_repositories()
+
 http_archive(
     name = "com_google_protobuf",
     sha256 = "cfcba2df10feec52a84208693937c17a4b5df7775e1635c1e3baffc487b24c9b",
