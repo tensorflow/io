@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <grpc++/grpc++.h>
+
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -41,9 +42,10 @@ namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
 class BigQueryTestClientOp : public OpKernel {
  public:
   explicit BigQueryTestClientOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("fake_server_address", &fake_server_address_));
+    OP_REQUIRES_OK(ctx,
+                   ctx->GetAttr("fake_server_address", &fake_server_address_));
   }
-  
+
   ~BigQueryTestClientOp() override {
     if (cinfo_.resource_is_private_to_kernel()) {
       if (!cinfo_.resource_manager()
@@ -75,8 +77,8 @@ class BigQueryTestClientOp : public OpKernel {
                 auto stub = apiv1beta1::BigQueryStorage::NewStub(channel);
                 LOG(INFO) << "BigQueryTestClientOp waiting for connections";
                 channel->WaitForConnected(
-                  gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                  gpr_time_from_seconds(15, GPR_TIMESPAN)));
+                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(15, GPR_TIMESPAN)));
                 LOG(INFO) << "Done creating BigQueryTestClientOp Fake client";
                 *ret = new BigQueryClientResource(std::move(stub));
                 return Status::OK();
