@@ -13,8 +13,12 @@ cc_library(
     copts = tf_io_copts(),
     visibility = ["//visibility:public"],
     deps = [
-        "@libmemcached",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "@libmemcached",
+	],
+    }),
 )
 
 cc_library(
@@ -28,6 +32,7 @@ cc_library(
         "@com_google_absl//absl/memory",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
+	":memcached_dao_interfaces",
     ],
     alwayslink = 1,
 )
