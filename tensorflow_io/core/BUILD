@@ -572,6 +572,7 @@ cc_binary(
         "@local_config_tf//:tf_header_lib",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [],
         "//conditions:default": [
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:genome_ops",
