@@ -884,11 +884,11 @@ http_archive(
 http_archive(
     name = "speexdsp",
     build_file = "//third_party:speexdsp.BUILD",
-    sha256 = "682042fc6f9bee6294ec453f470dadc26c6ff29b9c9e9ad2ffc1f4312fd64771",
-    strip_prefix = "speexdsp-1.2.0",
+    sha256 = "d7032f607e8913c019b190c2bccc36ea73fc36718ee38b5cdfc4e4c0a04ce9a4",
+    strip_prefix = "speexdsp-SpeexDSP-1.2.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/downloads.xiph.org/releases/speex/speexdsp-1.2.0.tar.gz",
-        "https://downloads.xiph.org/releases/speex/speexdsp-1.2.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/xiph/speexdsp/archive/SpeexDSP-1.2.0.tar.gz",
+        "https://github.com/xiph/speexdsp/archive/SpeexDSP-1.2.0.tar.gz",
     ],
 )
 
