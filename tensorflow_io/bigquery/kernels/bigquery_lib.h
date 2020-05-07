@@ -25,16 +25,27 @@ limitations under the License.
 #include "api/Generic.hh"
 #include "api/Specific.hh"
 #include "api/ValidSchema.hh"
+#include "arrow/api.h"
+#include "arrow/buffer.h"
+#include "arrow/io/memory.h"
+#include "arrow/ipc/api.h"
 #include "google/cloud/bigquery/storage/v1beta1/storage.grpc.pb.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/core/status.h"
+#include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
 
-Status GrpcStatusToTfStatus(const ::grpc::Status& status);
-string GrpcStatusToString(const ::grpc::Status& status);
-
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
+
+Status GrpcStatusToTfStatus(const ::grpc::Status &status);
+string GrpcStatusToString(const ::grpc::Status &status);
+Status GetDataFormat(string data_format_str,
+                     apiv1beta1::DataFormat *data_format);
 
 class BigQueryClientResource : public ResourceBase {
  public:
@@ -46,9 +57,7 @@ class BigQueryClientResource : public ResourceBase {
     return stub_;
   }
 
-  string DebugString() const override {
-    return "BigQueryClientResource";
-  }
+  string DebugString() const override { return "BigQueryClientResource"; }
 
  private:
   std::shared_ptr<apiv1beta1::BigQueryStorage::Stub> stub_;
@@ -56,26 +65,18 @@ class BigQueryClientResource : public ResourceBase {
 
 namespace data {
 
-// BigQueryReaderDatasetIterator is an abstract class for iterators from
+// BigQueryReaderDatasetIteratorBase is an abstract class for iterators from
 // datasets that are "readers" (source datasets, not transformation datasets)
 // that read from BigQuery.
 template <typename Dataset>
-class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
+class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
  public:
-  explicit BigQueryReaderDatasetIterator(
-      const typename DatasetIterator<Dataset>::Params& params)
-      : DatasetIterator<Dataset>(params) {
-    VLOG(3) << "created BigQueryReaderDatasetIterator for stream: "
-            << this->dataset()->stream();
-  }
-
-  Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
-                         bool* end_of_sequence) override {
+  Status GetNextInternal(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
+                         bool *end_of_sequence) override {
     mutex_lock l(mu_);
-    VLOG(3) << "calling BigQueryReaderDatasetIterator.GetNextInternal() index: "
-            << current_row_index_
-            << " stream: "
-            << this->dataset()->stream();
+    VLOG(3)
+        << "calling BigQueryReaderDatasetIteratorBase.GetNextInternal() index: "
+        << current_row_index_ << " stream: " << this->dataset()->stream();
     *end_of_sequence = false;
 
     TF_RETURN_IF_ERROR(EnsureReaderInitialized());
@@ -84,6 +85,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
       VLOG(3) << "end of sequence";
       return Status::OK();
     }
+
     auto status =
         ReadRecord(ctx, out_tensors, this->dataset()->selected_fields(),
                    this->dataset()->output_types());
@@ -91,8 +93,15 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
     return status;
   }
 
- private:
-  Status EnsureReaderInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+ protected:
+  explicit BigQueryReaderDatasetIteratorBase(
+      const typename DatasetIterator<Dataset>::Params &params)
+      : DatasetIterator<Dataset>(params) {
+    VLOG(3) << "created BigQueryReaderDatasetIteratorBase for stream: "
+            << this->dataset()->stream();
+  }
+
+  virtual Status EnsureReaderInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (reader_) {
       return Status::OK();
     }
@@ -117,45 +126,154 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
     return Status::OK();
   }
 
-  Status EnsureHasRow(bool* end_of_sequence) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    if (response_ && current_row_index_ < response_->avro_rows().row_count()) {
+  virtual Status EnsureHasRow(bool *end_of_sequence) = 0;
+  virtual Status ReadRecord(IteratorContext *ctx,
+                            std::vector<Tensor> *out_tensors,
+                            const std::vector<string> &columns,
+                            const std::vector<DataType> &output_types) = 0;
+  int current_row_index_ = 0;
+  mutex mu_;
+  std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<::grpc::ClientReader<apiv1beta1::ReadRowsResponse>> reader_
+      TF_GUARDED_BY(mu_);
+  std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ TF_GUARDED_BY(mu_);
+};
+
+// BigQuery reader for Arrow serialized data.
+template <typename Dataset>
+class BigQueryReaderArrowDatasetIterator
+    : public BigQueryReaderDatasetIteratorBase<Dataset> {
+ public:
+  explicit BigQueryReaderArrowDatasetIterator(
+      const typename BigQueryReaderDatasetIteratorBase<Dataset>::Params &params)
+      : BigQueryReaderDatasetIteratorBase<Dataset>(params) {
+    VLOG(3) << "created BigQueryReaderArrowDatasetIterator for stream: "
+            << this->dataset()->stream();
+  }
+
+ protected:
+  Status EnsureHasRow(bool *end_of_sequence)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
+    if (this->response_ && this->response_->has_arrow_record_batch() &&
+        this->current_row_index_ <
+            this->response_->arrow_record_batch().row_count()) {
       return Status::OK();
     }
 
-    response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
+    this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
+    if (!this->reader_->Read(this->response_.get())) {
+      *end_of_sequence = true;
+      return Status::OK();
+    }
+
+    this->current_row_index_ = 0;
+
+    auto buffer_ = std::make_shared<arrow::Buffer>(
+        reinterpret_cast<const uint8_t *>(&this->response_->arrow_record_batch()
+                                               .serialized_record_batch()[0]),
+        this->response_->arrow_record_batch().serialized_record_batch().size());
+
+    arrow::io::BufferReader buffer_reader_(buffer_);
+    arrow::ipc::DictionaryMemo dict_memo;
+
+    auto arrow_status =
+        arrow::ipc::ReadRecordBatch(this->dataset()->arrow_schema(), &dict_memo,
+                                    &buffer_reader_, &this->record_batch_);
+    if (!arrow_status.ok()) {
+      return errors::Internal(arrow_status.ToString());
+    }
+
+    VLOG(3) << "got record batch, rows:" << record_batch_->num_rows();
+
+    return Status::OK();
+  }
+
+  Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
+                    const std::vector<string> &columns,
+                    const std::vector<DataType> &output_types)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
+    out_tensors->clear();
+
+    // Assign Tensors for each column in the current row
+    for (size_t i = 0; i < columns.size(); ++i) {
+      DataType output_type = output_types[i];
+      std::shared_ptr<arrow::Array> arr = this->record_batch_->column(i);
+
+      if (this->current_row_index_ == 0) {
+        // Array structure is not going to change, so it is sufficient to check
+        // it once.
+        TF_RETURN_IF_ERROR(ArrowUtil::CheckArrayType(arr->type(), output_type));
+      }
+
+      // Allocate a new tensor and assign Arrow data to it
+      Tensor tensor(ctx->allocator({}), output_type, {});
+      TF_RETURN_IF_ERROR(
+          ArrowUtil::AssignTensor(arr, this->current_row_index_, &tensor));
+
+      out_tensors->emplace_back(std::move(tensor));
+    }
+
+    return Status::OK();
+  }
+
+ private:
+  std::shared_ptr<arrow::RecordBatch> record_batch_ TF_GUARDED_BY(this->mu_);
+};
+
+template <typename Dataset>
+class BigQueryReaderAvroDatasetIterator
+    : public BigQueryReaderDatasetIteratorBase<Dataset> {
+ public:
+  explicit BigQueryReaderAvroDatasetIterator(
+      const typename BigQueryReaderDatasetIteratorBase<Dataset>::Params &params)
+      : BigQueryReaderDatasetIteratorBase<Dataset>(params) {
+    VLOG(3) << "created BigQueryReaderAvroDatasetIterator for stream: "
+            << this->dataset()->stream();
+  }
+
+ protected:
+  Status EnsureHasRow(bool *end_of_sequence)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
+    if (this->response_ &&
+        this->current_row_index_ < this->response_->avro_rows().row_count()) {
+      return Status::OK();
+    }
+
+    this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
     VLOG(3) << "calling read";
-    if (!reader_->Read(response_.get())) {
+    if (!this->reader_->Read(this->response_.get())) {
       VLOG(3) << "no data";
       *end_of_sequence = true;
       return Status::OK();
     }
-    current_row_index_ = 0;
-    decoder_ = avro::binaryDecoder();
+    this->current_row_index_ = 0;
+    this->decoder_ = avro::binaryDecoder();
     memory_input_stream_ = avro::memoryInputStream(
-        reinterpret_cast<const uint8_t*>(
-            &response_->avro_rows().serialized_binary_rows()[0]),
-        response_->avro_rows().serialized_binary_rows().size());
-    decoder_->init(*memory_input_stream_);
+        reinterpret_cast<const uint8_t *>(
+            &this->response_->avro_rows().serialized_binary_rows()[0]),
+        this->response_->avro_rows().serialized_binary_rows().size());
+    this->decoder_->init(*memory_input_stream_);
     return Status::OK();
   }
 
-  Status ReadRecord(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
-                    const std::vector<string>& columns,
-                    const std::vector<DataType>& output_types)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    avro::GenericDatum datum = avro::GenericDatum(*this->dataset()->schema());
-    avro::decode(*decoder_, datum);
+  Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
+                    const std::vector<string> &columns,
+                    const std::vector<DataType> &output_types)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
+    avro::GenericDatum datum =
+        avro::GenericDatum(*this->dataset()->avro_schema());
+    avro::decode(*this->decoder_, datum);
     if (datum.type() != avro::AVRO_RECORD) {
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
-    const avro::GenericRecord& record = datum.value<avro::GenericRecord>();
+    const avro::GenericRecord &record = datum.value<avro::GenericRecord>();
     out_tensors->clear();
     // Let's allocate enough space for Tensor, if more than read then slice.
     std::vector<DataType> expected_output_types;
     expected_output_types.reserve(output_types.size());
     for (size_t i = 0; i < columns.size(); i++) {
-      const string& column = columns[i];
-      const avro::GenericDatum& field = record.field(column);
+      const string &column = columns[i];
+      const avro::GenericDatum &field = record.field(column);
       DataType dtype;
       switch (field.type()) {
         case avro::AVRO_BOOL:
@@ -203,8 +321,8 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
       out_tensors->emplace_back(std::move(tensor));
     }
     for (size_t i = 0; i < columns.size(); i++) {
-      const string& column = columns[i];
-      const avro::GenericDatum& field = record.field(column);
+      const string &column = columns[i];
+      const avro::GenericDatum &field = record.field(column);
       switch (field.type()) {
         case avro::AVRO_BOOL:
           ((*out_tensors)[i]).scalar<bool>()() = field.value<bool>();
@@ -229,13 +347,13 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
               field.value<avro::GenericEnum>().symbol();
           break;
         case avro::AVRO_BYTES: {
-          const std::vector<uint8_t>& field_value = field.value<std::vector<uint8_t>>();
+          const std::vector<uint8_t> &field_value =
+              field.value<std::vector<uint8_t>>();
           ((*out_tensors)[i]).scalar<tstring>()() =
               string((char *)&field_value[0], field_value.size());
-          }
-          break;
+        } break;
         case avro::AVRO_NULL:
-          switch(output_types[i]) {
+          switch (output_types[i]) {
             case DT_BOOL:
               ((*out_tensors)[i]).scalar<bool>()() = false;
               break;
@@ -256,8 +374,7 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
               break;
             default:
               return errors::InvalidArgument(
-                "unsupported data type against AVRO_NULL: ",
-                output_types[i]);
+                  "unsupported data type against AVRO_NULL: ", output_types[i]);
           }
           break;
         default:
@@ -269,14 +386,9 @@ class BigQueryReaderDatasetIterator : public DatasetIterator<Dataset> {
     return Status::OK();
   }
 
-  int current_row_index_ = 0;
-  mutex mu_;
-  std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
-  std::unique_ptr<::grpc::ClientReader<apiv1beta1::ReadRowsResponse>> reader_
-      TF_GUARDED_BY(mu_);
-  std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ TF_GUARDED_BY(mu_);
-  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(mu_);
-  avro::DecoderPtr decoder_ TF_GUARDED_BY(mu_);
+ private:
+  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(this->mu_);
+  avro::DecoderPtr decoder_ TF_GUARDED_BY(this->mu_);
 };
 
 }  // namespace data

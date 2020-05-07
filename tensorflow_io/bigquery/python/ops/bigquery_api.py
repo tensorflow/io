@@ -25,6 +25,7 @@ For background on Cloud BigQuery, see: https://cloud.google.com/bigquery .
 
 
 import collections
+import enum
 from operator import itemgetter
 
 from tensorflow.python.data.ops import dataset_ops
@@ -40,6 +41,13 @@ class BigQueryClient:
   BigQueryClient encapsulates a connection to Cloud BigQuery, and exposes the
   `readSession` method to initiate a BigQuery read session.
   """
+
+    class DataFormat(enum.Enum):
+        """Data serialization format to use when reading from BigQuery.
+        """
+
+        AVRO = "AVRO"
+        ARROW = "ARROW"
 
     def __init__(self):
         """Creates a BigQueryClient to start BigQuery read sessions.
@@ -57,6 +65,7 @@ class BigQueryClient:
         output_types=None,
         row_restriction="",
         requested_streams=1,
+        data_format: DataFormat = DataFormat.AVRO,
     ):
         """Opens a session and returns a `BigQueryReadSession` object.
 
@@ -122,13 +131,14 @@ class BigQueryClient:
         if not output_types:
             output_types = [dtypes.string] * len(selected_fields)
 
-        (streams, avro_schema) = core_ops.io_big_query_read_session(
+        (streams, schema) = core_ops.io_big_query_read_session(
             client=self._client_resource,
             parent=parent,
             project_id=project_id,
             table_id=table_id,
             dataset_id=dataset_id,
             requested_streams=requested_streams,
+            data_format=data_format.value,
             selected_fields=selected_fields,
             output_types=output_types,
             row_restriction=row_restriction,
@@ -142,8 +152,9 @@ class BigQueryClient:
             output_types,
             row_restriction,
             requested_streams,
+            data_format,
             streams,
-            avro_schema,
+            schema,
             self._client_resource,
         )
 
@@ -161,8 +172,9 @@ class BigQueryReadSession:
         output_types,
         row_restriction,
         requested_streams,
+        data_format,
         streams,
-        avro_schema,
+        schema,
         client_resource,
     ):
         self._parent = parent
@@ -173,8 +185,9 @@ class BigQueryReadSession:
         self._output_types = output_types
         self._row_restriction = row_restriction
         self._requested_streams = requested_streams
+        self._data_format = data_format
         self._streams = streams
-        self._avro_schema = avro_schema
+        self._schema = schema
         self._client_resource = client_resource
 
     def get_streams(self):
@@ -202,7 +215,8 @@ class BigQueryReadSession:
             self._client_resource,
             self._selected_fields,
             self._output_types,
-            self._avro_schema,
+            self._schema,
+            self._data_format,
             stream,
             offset,
         )
@@ -276,7 +290,8 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         client_resource,
         selected_fields,
         output_types,
-        avro_schema,
+        schema,
+        data_format,
         stream,
         offset,
     ):
@@ -300,7 +315,8 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
             client=client_resource,
             selected_fields=selected_fields,
             output_types=output_types,
-            avro_schema=avro_schema,
+            schema=schema,
+            data_format=data_format.value,
             stream=stream,
             offset=offset,
         )

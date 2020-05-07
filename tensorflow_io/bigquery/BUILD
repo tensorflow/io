@@ -39,6 +39,7 @@ cc_library(
     linkstatic = True,
     deps = [
         ":bigquery_lib_cc",
+        "@arrow",
         "@avro",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:bigquerystorage_cc_grpc",
@@ -56,6 +57,8 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
+        "//tensorflow_io/arrow:arrow_util",
+        "@arrow",
         "@avro",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:bigquerystorage_cc_grpc",
