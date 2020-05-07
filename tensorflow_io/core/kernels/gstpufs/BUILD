@@ -17,7 +17,7 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": [],
         "//conditions:default": [
             "@libmemcached",
-	],
+        ],
     }),
 )
 
@@ -29,10 +29,10 @@ cc_library(
     linkstatic = 1,  # Needed since alwayslink is broken in bazel b/27630669
     visibility = ["//visibility:public"],
     deps = [
+        ":memcached_dao_interfaces",
         "@com_google_absl//absl/memory",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
-	":memcached_dao_interfaces",
     ],
     alwayslink = 1,
 )
