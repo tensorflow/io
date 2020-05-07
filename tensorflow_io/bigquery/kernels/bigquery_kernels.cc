@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include <grpcpp/grpcpp.h>
+
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -125,6 +126,10 @@ class BigQueryReadSessionOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("row_restriction", &row_restriction_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("requested_streams", &requested_streams_));
+
+    string data_format_str;
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("data_format", &data_format_str));
+    OP_REQUIRES_OK(ctx, GetDataFormat(data_format_str, &data_format_));
   }
 
   void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
@@ -152,7 +157,7 @@ class BigQueryReadSessionOp : public OpKernel {
     createReadSessionRequest.set_requested_streams(requested_streams_);
     createReadSessionRequest.set_sharding_strategy(
         apiv1beta1::ShardingStrategy::BALANCED);
-    createReadSessionRequest.set_format(apiv1beta1::DataFormat::AVRO);
+    createReadSessionRequest.set_format(data_format_);
     VLOG(3) << "createReadSessionRequest: "
             << createReadSessionRequest.DebugString();
     ::grpc::ClientContext context;
@@ -175,9 +180,6 @@ class BigQueryReadSessionOp : public OpKernel {
       return;
     }
     VLOG(3) << "readSession response:" << readSessionResponse->DebugString();
-    if (readSessionResponse->has_avro_schema()) {
-      VLOG(3) << "avro schema:" << readSessionResponse->avro_schema().schema();
-    }
 
     Tensor* streams_t = nullptr;
     OP_REQUIRES_OK(
@@ -188,10 +190,24 @@ class BigQueryReadSessionOp : public OpKernel {
       streams_vec(i) = readSessionResponse->streams(i).name();
     }
     Tensor* avro_schema_t = nullptr;
-    OP_REQUIRES_OK(ctx,
-                   ctx->allocate_output("avro_schema", {}, &avro_schema_t));
-    avro_schema_t->scalar<tstring>()() =
-        readSessionResponse->avro_schema().schema();
+    OP_REQUIRES_OK(ctx, ctx->allocate_output("schema", {}, &avro_schema_t));
+
+    if (data_format_ == apiv1beta1::DataFormat::AVRO) {
+      OP_REQUIRES(ctx, readSessionResponse->has_avro_schema(),
+                  errors::InvalidArgument("AVRO schema is missing"));
+      VLOG(3) << "avro schema:" << readSessionResponse->avro_schema().schema();
+      avro_schema_t->scalar<tstring>()() =
+          readSessionResponse->avro_schema().schema();
+    } else if (data_format_ == apiv1beta1::DataFormat::ARROW) {
+      OP_REQUIRES(ctx, readSessionResponse->has_arrow_schema(),
+                  errors::InvalidArgument("AVRO schema is missing"));
+      VLOG(3) << "arrow schema:"
+              << readSessionResponse->arrow_schema().serialized_schema();
+      avro_schema_t->scalar<tstring>()() =
+          readSessionResponse->arrow_schema().serialized_schema();
+    } else {
+      ctx->CtxFailure(errors::InvalidArgument("Invalid data_format"));
+    }
   }
 
  private:
@@ -204,6 +220,7 @@ class BigQueryReadSessionOp : public OpKernel {
   std::vector<DataType> output_types_;
   string row_restriction_;
   int requested_streams_;
+  apiv1beta1::DataFormat data_format_;
 
   mutex mu_;
   ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
