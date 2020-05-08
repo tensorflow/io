@@ -66,7 +66,11 @@ if (datapath is not None) and ("bdist_wheel" in sys.argv):
         if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(
             rootname, "*runfiles*"
         ):
-            for filename in [f for f in filenames if fnmatch.fnmatch(f, "*.so")]:
+            for filename in [
+                f
+                for f in filenames
+                if fnmatch.fnmatch(f, "*.so") or fnmatch.fnmatch(f, "*.py")
+            ]:
                 # NOTE:
                 # cc_grpc_library will generate a lib<name>_cc_grpc.so
                 # proto_library will generate a lib<name>_proto.so
