@@ -10,10 +10,6 @@ load("//third_party/toolchains/gpu:cuda_configure.bzl", "cuda_configure")
 
 cuda_configure(name = "local_config_cuda")
 
-load("//tensorflow_io/core/kernels/gstpufs:workspace.bzl", "gstpufs_repositories")
-
-gstpufs_repositories()
-
 http_archive(
     name = "com_google_protobuf",
     sha256 = "cfcba2df10feec52a84208693937c17a4b5df7775e1635c1e3baffc487b24c9b",
@@ -925,5 +921,16 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
         "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libmemcached",
+    build_file = "//third_party:libmemcached.BUILD",
+    sha256 = "e22c0bb032fde08f53de9ffbc5a128233041d9f33b5de022c0978a2149885f82",
+    strip_prefix = "libmemcached-1.0.18",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
+        "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
     ],
 )
