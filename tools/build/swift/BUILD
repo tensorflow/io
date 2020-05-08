@@ -8,9 +8,15 @@ swift_library(
         "//tensorflow_io/core:swift/audio.swift",
         "//tensorflow_io/core:swift/video.swift",
     ],
+    copts = [
+        "-target",
+        "x86_64-apple-macosx10.13",
+    ],
     linkopts = [
         "-L/usr/lib/swift",
         "-Wl,-rpath,/usr/lib/swift",
+        "-target",
+        "x86_64-apple-macosx10.13",
     ],
     module_name = "audio_video",
     alwayslink = True,
