@@ -112,6 +112,7 @@ jobs:
           python3 tools/build/configure.py
           bazel build \
             ${BAZEL_OPTIMIZATION} \
+            --copt -Wunguarded-availability \
             --copt -mmacosx-version-min=10.13 \
             --linkopt -mmacosx-version-min=10.13 \
             --noshow_progress \
