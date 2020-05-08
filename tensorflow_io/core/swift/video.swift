@@ -38,8 +38,9 @@ class VideoDataOutputSampleBufferDelegate : NSObject, AVCaptureVideoDataOutputSa
         
         defer { semaphore_out.signal() }
         
-        if sampleBuffer.numSamples != 1 {
-            print("number of samples \(sampleBuffer.numSamples) is not supported")
+        let num_samples = CMSampleBufferGetNumSamples(sampleBuffer)
+        if num_samples != 1 {
+            print("number of samples \(num_samples) is not supported")
             return
         }
         
@@ -174,9 +175,10 @@ func DecodeAVCFunctionInit(data_pps: UnsafePointer<UInt8>, size_pps: Int64, data
     var formatDescription : CMVideoFormatDescription?
     let v = CMVideoFormatDescriptionCreateFromH264ParameterSets(allocator: nil, parameterSetCount: 2, parameterSetPointers: parameterSetPointers, parameterSetSizes: parameterSetSizes, nalUnitHeaderLength: 4, formatDescriptionOut: &formatDescription )
     
-    width.pointee = Int64(formatDescription!.dimensions.width)
-    height.pointee = Int64(formatDescription!.dimensions.height)
-    bytes.pointee = Int64(formatDescription!.dimensions.width * formatDescription!.dimensions.height * 3 / 2)
+    let dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription!)
+    width.pointee = Int64(dimensions.width)
+    height.pointee = Int64(dimensions.height)
+    bytes.pointee = Int64(dimensions.width * dimensions.height * 3 / 2)
     
     var session: VTDecompressionSession? = nil
     
@@ -192,12 +194,14 @@ func DecodeAVCFunctionInit(data_pps: UnsafePointer<UInt8>, size_pps: Int64, data
 
 @_silgen_name("DecodeAVCFunctionNext")
 func DecodeAVCFunctionNext(context: UnsafeMutablePointer<AVCContext>, data_in: UnsafeRawPointer, size_in: Int64, data_out: UnsafeMutableRawPointer, size_out: Int64) -> Int64 {
+
+    var blockBuffer: CMBlockBuffer?
+    CMBlockBufferCreateWithMemoryBlock(allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: Int(size_in), blockAllocator:nil, customBlockSource: nil, offsetToData: 0, dataLength: Int(size_in), flags: 0, blockBufferOut: &blockBuffer)
+
+    CMBlockBufferReplaceDataBytes(with: data_in, blockBuffer: blockBuffer!, offsetIntoDestination: 0, dataLength: Int(size_in))
     
-    let blockBuffer = try! CMBlockBuffer(length: Int(size_in))
-    
-    CMBlockBufferReplaceDataBytes(with: data_in, blockBuffer: blockBuffer, offsetIntoDestination: 0, dataLength: Int(size_in))
-    
-    let sampleBuffer = try! CMSampleBuffer(dataBuffer: blockBuffer, formatDescription: context.pointee.formatDescription, numSamples: 1, sampleTimings: [], sampleSizes: [1])
+    var sampleBuffer: CMSampleBuffer?
+    CMSampleBufferCreateReady(allocator: kCFAllocatorDefault, dataBuffer: blockBuffer, formatDescription: context.pointee.formatDescription, sampleCount: 1, sampleTimingEntryCount: 0, sampleTimingArray: nil, sampleSizeEntryCount: 0, sampleSizeArray: nil, sampleBufferOut: &sampleBuffer)
     
     func outputHandler(status: OSStatus, infoFlags: VTDecodeInfoFlags, buffer: CVImageBuffer?, t1: CMTime, t2: CMTime) -> Void {
         
@@ -241,7 +245,7 @@ func DecodeAVCFunctionNext(context: UnsafeMutablePointer<AVCContext>, data_in: U
         
         return
     }
-    VTDecompressionSessionDecodeFrame(context.pointee.session, sampleBuffer: sampleBuffer, flags: [], infoFlagsOut: nil, outputHandler: outputHandler)
+    VTDecompressionSessionDecodeFrame(context.pointee.session, sampleBuffer: sampleBuffer!, flags: [], infoFlagsOut: nil, outputHandler: outputHandler)
     
     return 0
 }
