@@ -1,3 +1,30 @@
+# Release 0.13.0
+
+## Major Features
+* Add Python 3.8 support for Linux/macOS/Windows.
+* Add Graph mode support for ArrowIOTensor.
+* Add make_avro_dataset, parse_avro, and AvroRecordDataset
+  in tfio.experimental.columnar for Avro file format support.
+* Add GeoTIFF support in decode_tiff as an extension.
+* Add Video Capture support for macOS and Linux.
+* Add decode_nv12 and decode_yuy2 in tfio.experimental.image
+  for colorspace conversion to RGB.
+* Add decode_wav/encode_wav, decode_flac/encode_flac,
+  decode_vorbis/encode_vorbis(ogg) decode_mp3/encode_mp3,
+  decode_aac/encode_aac(mp4a) in tfio.audio for audio encoding and
+  decoding support.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Ann Yan, Anthony Hsu, Bryan Cutler, Cheng Ren,
+Florian Raudies, Keqiu Hu, Mark Daoust, Pei-Lun Liao, Pratik Dixit,
+Yong Tang, Yuan Tang, Zou Xu, ashahab, marioecd
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.12.0
 
 ## Major Features
