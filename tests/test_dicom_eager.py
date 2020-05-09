@@ -16,6 +16,7 @@
 
 
 import os
+import numpy as np
 import pytest
 
 import tensorflow as tf
@@ -35,8 +36,7 @@ import tensorflow_io as tfio
 
 
 def test_dicom_input():
-    """test_dicom_input
-  """
+    """test_dicom_input"""
     _ = tfio.image.decode_dicom_data
     _ = tfio.image.decode_dicom_image
     _ = tfio.image.dicom_tags
@@ -70,8 +70,7 @@ def test_dicom_input():
     ],
 )
 def test_decode_dicom_image(fname, exp_shape):
-    """test_decode_dicom_image
-  """
+    """test_decode_dicom_image"""
 
     dcm_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_dicom", fname
@@ -116,8 +115,7 @@ def test_decode_dicom_image(fname, exp_shape):
     ],
 )
 def test_decode_dicom_data(fname, tag, exp_value):
-    """test_decode_dicom_data
-  """
+    """test_decode_dicom_data"""
 
     dcm_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_dicom", fname
@@ -143,6 +141,53 @@ def test_dicom_image_shape():
     dataset = dataset.map(tf.io.read_file)
     dataset = dataset.map(lambda e: tfio.image.decode_dicom_image(e, dtype=tf.uint16))
     dataset = dataset.map(lambda e: tf.image.resize(e, (224, 224)))
+
+
+def test_dicom_image_concurrency():
+    """test_decode_dicom_image_currency"""
+
+    @tf.function
+    def preprocess(dcm_content):
+        tags = tfio.image.decode_dicom_data(
+            dcm_content, tags=[tfio.image.dicom_tags.PatientsName]
+        )
+        tf.print(tags)
+        image = tfio.image.decode_dicom_image(dcm_content, dtype=tf.float32)
+        return image
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "TOSHIBA_J2K_OpenJPEGv2Regression.dcm",
+    )
+
+    dataset = (
+        tf.data.Dataset.from_tensor_slices([dcm_path])
+        .repeat()
+        .map(tf.io.read_file)
+        .map(preprocess, num_parallel_calls=8)
+        .take(200)
+    )
+    for i, item in enumerate(dataset):
+        print(tf.shape(item), i)
+        assert np.array_equal(tf.shape(item), [1, 512, 512, 1])
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "US-PAL-8-10x-echo.dcm",
+    )
+
+    dataset = (
+        tf.data.Dataset.from_tensor_slices([dcm_path])
+        .repeat()
+        .map(tf.io.read_file)
+        .map(preprocess, num_parallel_calls=8)
+        .take(200)
+    )
+    for i, item in enumerate(dataset):
+        print(tf.shape(item), i)
+        assert np.array_equal(tf.shape(item), [10, 430, 600, 3])
 
 
 if __name__ == "__main__":

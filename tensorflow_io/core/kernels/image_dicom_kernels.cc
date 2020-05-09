@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+// clang-format off
 #include "dcmtk/config/osconfig.h"
 
-#include <dcmtk/dcmdata/dcfilefo.h>
+#include "dcmtk/dcmdata/dcfilefo.h"
+
 #include "dcmtk/dcmdata/dcdict.h"
 #include "dcmtk/dcmdata/dcistrmb.h"
 #include "dcmtk/dcmdata/dctk.h"
@@ -26,18 +28,18 @@ limitations under the License.
 
 #include "dcmtk/dcmimgle/diutils.h"
 
-#include "dcmtk/dcmimage/dipipng.h"  /* for dcmimage PNG plugin */
-#include "dcmtk/dcmimage/dipitiff.h" /* for dcmimage TIFF plugin */
-#include "dcmtk/dcmjpeg/dipijpeg.h"  /* for dcmimage JPEG plugin */
+#include "dcmtk/dcmimage/dipipng.h"  // for dcmimage PNG plugin
+#include "dcmtk/dcmimage/dipitiff.h" // for dcmimage TIFF plugin
+#include "dcmtk/dcmjpeg/dipijpeg.h"  // for dcmimage JPEG plugin
 
 #include "dcmtk/dcmimage/diregist.h"
 #include "dcmtk/dcmimgle/dcmimage.h"
 
-#include "dcmtk/dcmdata/dcrledrg.h" /* for DcmRLEDecoderRegistration */
-#include "dcmtk/dcmjpeg/djdecode.h" /* for dcmjpeg decoders */
-#include "dcmtk/dcmjpls/djdecode.h" /* for dcmjpls decoders */
+#include "dcmtk/dcmdata/dcrledrg.h" // for DcmRLEDecoderRegistration
+#include "dcmtk/dcmjpeg/djdecode.h" // for dcmjpeg decoders
+#include "dcmtk/dcmjpls/djdecode.h" // for dcmjpls decoders
 
-#include "fmjpeg2k/djdecode.h" / for fmjpeg2koj decoders * /
+#include "fmjpeg2k/djdecode.h" // for fmjpeg2koj decoders
 
 #include <cstdint>
 #include <exception>
@@ -46,12 +48,54 @@ limitations under the License.
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/types.h"
 
+// clang-format on
+
 typedef uint64_t
     Uint64;  // Uint64 not present in tensorflow::custom-op docker image dcmtk
 
 namespace tensorflow {
 namespace io {
 namespace {
+
+// FMJPEG2K is not safe to cleanup, so use DecoderRegistration
+// to provide protection and only cleanup during program exit.
+class DecoderRegistration {
+ public:
+  static void registerCodecs() { instance().registration(); }
+  static void cleanup() {}
+
+ private:
+  explicit DecoderRegistration() : initialized_(false) {}
+  ~DecoderRegistration() {
+    mutex_lock l(mu_);
+    if (initialized_) {
+      DcmRLEDecoderRegistration::cleanup();    // deregister RLE codecs
+      DJDecoderRegistration::cleanup();        // deregister JPEG codecs
+      DJLSDecoderRegistration::cleanup();      // deregister JPEG-LS codecs
+      FMJPEG2KDecoderRegistration::cleanup();  // deregister fmjpeg2koj
+      initialized_ = false;
+    }
+  }
+
+  void registration() {
+    mutex_lock l(mu_);
+    if (!initialized_) {
+      DcmRLEDecoderRegistration::registerCodecs();    // register RLE codecs
+      DJDecoderRegistration::registerCodecs();        // register JPEG codecs
+      DJLSDecoderRegistration::registerCodecs();      // register JPEG-LS codecs
+      FMJPEG2KDecoderRegistration::registerCodecs();  // register fmjpeg2koj
+      initialized_ = true;
+    }
+  }
+  static DecoderRegistration &instance() {
+    static DecoderRegistration decoder_registration;
+    return decoder_registration;
+  }
+
+ private:
+  mutex mu_;
+  bool initialized_ TF_GUARDED_BY(mu_);
+};
 
 template <typename dtype>
 class DecodeDICOMImageOp : public OpKernel {
@@ -67,18 +111,10 @@ class DecodeDICOMImageOp : public OpKernel {
     // Get the color_dim
     OP_REQUIRES_OK(context, context->GetAttr("color_dim", &color_dim_));
 
-    DcmRLEDecoderRegistration::registerCodecs();    // register RLE codecs
-    DJDecoderRegistration::registerCodecs();        // register JPEG codecs
-    DJLSDecoderRegistration::registerCodecs();      // register JPEG-LS codecs
-    FMJPEG2KDecoderRegistration::registerCodecs();  // register fmjpeg2koj
+    DecoderRegistration::registerCodecs();
   }
 
-  ~DecodeDICOMImageOp() {
-    DcmRLEDecoderRegistration::cleanup();    // deregister RLE codecs
-    DJDecoderRegistration::cleanup();        // deregister JPEG codecs
-    DJLSDecoderRegistration::cleanup();      // deregister JPEG-LS codecs
-    FMJPEG2KDecoderRegistration::cleanup();  // deregister fmjpeg2koj
-  }
+  ~DecodeDICOMImageOp() { DecoderRegistration::cleanup(); }
 
   void Compute(OpKernelContext *context) override {
     // Grab the input file content tensor
