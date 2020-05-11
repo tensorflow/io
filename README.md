@@ -288,6 +288,34 @@ TFIO_DATAPATH=bazel-bin \
     'python3 -m pytest -s -v tests/test_serialization_eager.py'
 ```
 
+#### Python Wheels
+
+It is possible to build python wheels after bazel build is complete with the following command:
+```
+python3 setup.py bdist_wheel --data bazel-bin
+```
+The whl file is will be available in dist directory. Note the bazel binary directory `bazel-bin`
+has to be passed with `--data` args in order for setup.py to locate the necessary share objects,
+as `bazel-bin` is outside of the `tensorflow_io` package directory.
+
+Alternatively, source install could be done with:
+```
+TFIO_DATAPATH=bazel-bin python3 -m pip install .
+```
+with `TFIO_DATAPATH=bazel-bin` passed for the same readon.
+
+Note installing with `-e` is different from the above. The 
+```
+TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
+```
+will not install shared object automatically even with `TFIO_DATAPATH=bazel-bin`. Instead,
+`TFIO_DATAPATH=bazel-bin` has to be passed everytime the program is run after the install:
+```
+TFIO_DATAPATH=bazel-bin python3
+# import tensorflow_io as tfio
+# ...
+```
+
 #### Docker
 
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
