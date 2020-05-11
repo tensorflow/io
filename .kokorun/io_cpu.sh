@@ -56,6 +56,8 @@ docker run -i --rm -v $PWD:/v -w /v --net=host \
   -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
   gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
 
+sudo chown -R $(id -nu):$(id -ng) .
+
 docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host \
   python:${PYTHON_VERSION}-slim python setup.py --data build -q bdist_wheel
 
