@@ -92,9 +92,10 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.13.0 | 2.2.x | May 10, 2020 |
 | 0.12.0 | 2.1.x | Feb 28, 2020 |
 | 0.11.0 | 2.1.x | Jan 10, 2020 |
-| 0.10.0 | 2.0.x | Dec 5, 2019 |
+| 0.10.0 | 2.0.x | Dec 05, 2019 |
 | 0.9.1 | 2.0.x | Nov 15, 2019 |
 | 0.9.0 | 2.0.x | Oct 18, 2019 |
 | 0.8.1 | 1.15.x | Nov 15, 2019 |
@@ -287,6 +288,34 @@ scl enable rh-python36 devtoolset-9 \
 TFIO_DATAPATH=bazel-bin \
   scl enable rh-python36 devtoolset-9 \
     'python3 -m pytest -s -v tests/test_serialization_eager.py'
+```
+
+#### Python Wheels
+
+It is possible to build python wheels after bazel build is complete with the following command:
+```
+python3 setup.py bdist_wheel --data bazel-bin
+```
+The whl file is will be available in dist directory. Note the bazel binary directory `bazel-bin`
+has to be passed with `--data` args in order for setup.py to locate the necessary share objects,
+as `bazel-bin` is outside of the `tensorflow_io` package directory.
+
+Alternatively, source install could be done with:
+```
+TFIO_DATAPATH=bazel-bin python3 -m pip install .
+```
+with `TFIO_DATAPATH=bazel-bin` passed for the same readon.
+
+Note installing with `-e` is different from the above. The
+```
+TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
+```
+will not install shared object automatically even with `TFIO_DATAPATH=bazel-bin`. Instead,
+`TFIO_DATAPATH=bazel-bin` has to be passed everytime the program is run after the install:
+```
+TFIO_DATAPATH=bazel-bin python3
+# import tensorflow_io as tfio
+# ...
 ```
 
 #### Docker

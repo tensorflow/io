@@ -32,7 +32,7 @@ Open View->Command Pallete (Ctrl+Shift+P) and start typing: "Tasks: Configure Bu
 If you are doing this for the first time, editor is going to suggest creating tasks.json file.
 Once you have it, paste following json:
 
-```json
+```jsonc
 {
 	"version": "2.0.0",
 	"tasks": [
@@ -74,7 +74,7 @@ VSCode also has GDB debugger support, it allows adding breakpoints, see values o
 To add debug configuration press the Debug View icon (Debug) on the Sidebar, or use the shortcut Ctrl+Shift+D. Here press the little down arrow next to the play button and select "Add Configuration...".
 It will create launch.json file, add following config here:
 
-```json
+```jsonc
 {
     "name": "(gdb) Launch",
     "type": "cppdbg",
