@@ -20,10 +20,7 @@ import collections
 import numpy as np
 
 import tensorflow as tf
-
-if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
-    tf.compat.v1.enable_eager_execution()
-import tensorflow_io as tfio  # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
 filename = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -45,9 +42,7 @@ filename = "file://" + filename
 # Column 4 (float): Equal to row_index * 1.1.
 # Column 5 (double): Equal to row_index * 1.1111111.
 def test_parquet():
-    """Test case for read_parquet.
-
-  """
+    """Test case for read_parquet."""
     parquet = tfio.IOTensor.from_parquet(filename)
     columns = [
         "boolean_field",
@@ -74,7 +69,6 @@ def test_parquet():
     assert p5.dtype == tf.float64
     assert p6.dtype == tf.string
     assert p7.dtype == tf.string
-
     for i in range(500):  # 500 rows.
         v0 = (i % 2) == 0
         v1 = i
@@ -128,19 +122,6 @@ def test_parquet():
         i += 1
 
 
-def test_parquet_partition():
-    """test_parquet_partition"""
-    for capacity in [1, 2, 3, 11, 12, 13, 50, 51, 100, 200]:
-        parquet = tfio.IOTensor.from_parquet(filename, capacity=capacity)
-        assert np.all(parquet("int32_field").to_tensor().numpy() == list(range(500)))
-        for step in [1, 2, 3, 10, 11, 12, 13, 50, 51, 52, 53]:
-            indices = list(range(0, 100, step))
-            for start, stop in zip(indices, indices[1:] + [100]):
-                expected = list(range(start, stop))
-                items = parquet("int32_field")[start:stop]
-                assert np.all(items.numpy() == expected)
-
-
 def test_parquet_dataset_ordered_dict():
     """Test case for order and dict of parquet dataset"""
     parquet = tfio.IODataset.from_parquet(filename)
@@ -156,6 +137,51 @@ def test_parquet_dataset_ordered_dict():
             (b"flba_field", tf.TensorSpec(shape=(), dtype=tf.string)),
         ]
     )
+
+
+def test_parquet_graph():
+    """Test case for parquet in graph mode."""
+
+    # test parquet dataset
+    @tf.function(autograph=False)
+    def f(e):
+        columns = {
+            "boolean_field": tf.bool,
+            "int32_field": tf.int32,
+            "int64_field": tf.int64,
+            "float_field": tf.float32,
+            "double_field": tf.float64,
+            "ba_field": tf.string,
+            "flba_field": tf.string,
+        }
+        dataset = tfio.IODataset.from_parquet(e, columns)
+        dataset = dataset.batch(500)
+        return tf.data.experimental.get_single_element(dataset)
+
+    data = f(filename)
+
+    for i in range(500):
+        v0 = (i % 2) == 0
+        v1 = i
+        v2 = i * 1000 * 1000 * 1000 * 1000
+        v4 = 1.1 * i
+        v5 = 1.1111111 * i
+        v6 = b"parquet%03d" % i
+        v7 = bytearray(b"").join([bytearray((i % 256,)) for _ in range(10)])
+        p0 = data["boolean_field"][i]
+        p1 = data["int32_field"][i]
+        p2 = data["int64_field"][i]
+        p4 = data["float_field"][i]
+        p5 = data["double_field"][i]
+        p6 = data["ba_field"][i]
+        p7 = data["flba_field"][i]
+        assert v0 == p0.numpy()
+        assert v1 == p1.numpy()
+        assert v2 == p2.numpy()
+        assert np.isclose(v4, p4.numpy())
+        assert np.isclose(v5, p5.numpy())
+        assert v6 == p6.numpy()
+        assert v7 == p7.numpy()
 
 
 if __name__ == "__main__":

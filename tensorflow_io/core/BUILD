@@ -56,6 +56,7 @@ cc_library(
     name = "dataset_ops",
     srcs = [
         "kernels/io_interface.h",
+        "kernels/io_kernel.h",
         "kernels/io_stream.h",
     ],
     copts = tf_io_copts(),
@@ -337,7 +338,6 @@ cc_library(
     name = "hdf5_ops",
     srcs = [
         "kernels/hdf5_kernels.cc",
-        "kernels/io_kernel.h",
         "ops/hdf5_ops.cc",
     ],
     copts = tf_io_copts(),
