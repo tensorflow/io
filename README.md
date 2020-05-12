@@ -92,10 +92,9 @@ version of TensorFlow I/O according to the table below:
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
-| 0.13.0 | 2.2.x | May 10, 2020 |
 | 0.12.0 | 2.1.x | Feb 28, 2020 |
 | 0.11.0 | 2.1.x | Jan 10, 2020 |
-| 0.10.0 | 2.0.x | Dec 05, 2019 |
+| 0.10.0 | 2.0.x | Dec 5, 2019 |
 | 0.9.1 | 2.0.x | Nov 15, 2019 |
 | 0.9.0 | 2.0.x | Oct 18, 2019 |
 | 0.8.1 | 1.15.x | Nov 15, 2019 |
@@ -190,6 +189,8 @@ be located by python.
 Development of tensorflow-io on Linux is similiar to development on macOS. The required packages
 are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
 versions might be required though.
+For instructions how to configure Visual Studio code to be able to build and debug TensorFlow I/O see
+https://github.com/tensorflow/io/blob/master/docs/tutorials/vscode.md
 
 ##### Ubuntu 18.04/20.04
 
@@ -288,34 +289,6 @@ TFIO_DATAPATH=bazel-bin \
     'python3 -m pytest -s -v tests/test_serialization_eager.py'
 ```
 
-#### Python Wheels
-
-It is possible to build python wheels after bazel build is complete with the following command:
-```
-python3 setup.py bdist_wheel --data bazel-bin
-```
-The whl file is will be available in dist directory. Note the bazel binary directory `bazel-bin`
-has to be passed with `--data` args in order for setup.py to locate the necessary share objects,
-as `bazel-bin` is outside of the `tensorflow_io` package directory.
-
-Alternatively, source install could be done with:
-```
-TFIO_DATAPATH=bazel-bin python3 -m pip install .
-```
-with `TFIO_DATAPATH=bazel-bin` passed for the same readon.
-
-Note installing with `-e` is different from the above. The 
-```
-TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
-```
-will not install shared object automatically even with `TFIO_DATAPATH=bazel-bin`. Instead,
-`TFIO_DATAPATH=bazel-bin` has to be passed everytime the program is run after the install:
-```
-TFIO_DATAPATH=bazel-bin python3
-# import tensorflow_io as tfio
-# ...
-```
-
 #### Docker
 
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
@@ -357,24 +330,6 @@ $ bash -x -e tests/test_ignite/start_ignite.sh
 $ bash -x -e tests/test_kafka/kafka_test.sh start kafka
 $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 ```
-
-#### Running Python and Bazel Style Checks
-
-Style checks for Python and Bazel can be run with the following commands
-(docker has to be available):
-
-```sh
-$ bash -x -e .travis/lint.sh
-```
-
-In case there are any Bazel style errors, the following command could be invoked 
-to fix and Bazel style issues:
-
-```sh
-$ docker run -i -t --rm -v $PWD:/v -w /v --net=host golang:1.12 bash -x -e -c 'go get github.com/bazelbuild/buildtools/buildifier && buildifier $(find . -type f \( -name WORKSPACE -or -name BUILD -or -name *.BUILD \))'
-```
-
-After the command is run, any Bazel files with style issues will have been modified and corrected.
 
 ### R
 
@@ -426,22 +381,28 @@ If the system have docker installed, then the following command
 will automatically build manylinux2010 compatible whl package:
 
 ```sh
-bash -x -e .travis/python.release.sh
+ls dist/*
+for f in dist/*.whl; do
+  docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
+done
+sudo chown -R $(id -nu):$(id -ng) .
+ls wheelhouse/*
 ```
 
 It takes some time to build, but once complete, there will be python
-`2.7`, `3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
+`3.5`, `3.6`, `3.7` compatible whl packages available in `wheelhouse`
 directory.
 
 On macOS, the same command could be used though the script expect `python` in shell
 and will only generate a whl package that matches the version of `python` in shell. If
 you want to build a whl package for a specific python then you have to alias this version
-of python to `python` in shell.
+of python to `python` in shell. See [.github/workflows/build.yml](.github/workflows/build.yml) 
+Auditwheel step for instructions how to do that.
 
 Note the above command is also the command we use when releasing packages for Linux and macOS.
 
-TensorFlow I/O uses both Travis CI and Google CI (Kokoro) for continuous integration.
-Travis CI is used for macOS build and test. Kokoro is used for Linux build and test.
+TensorFlow I/O uses both GitHub Workflows and Google CI (Kokoro) for continuous integration.
+GitHub Workflows is used for macOS build and test. Kokoro is used for Linux build and test.
 Again, because of the manylinux2010 requirement, on Linux whl packages are always
 built with Ubuntu 16.04 + Developer Toolset 7. Tests are done on a variatiy of systems
 with different python version to ensure a good coverage:
