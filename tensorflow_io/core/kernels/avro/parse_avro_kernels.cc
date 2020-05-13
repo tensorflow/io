@@ -347,7 +347,6 @@ Status ParseAvro(const AvroParserConfig& config,
     VLOG(5) << "Creating dense tensor for resolved shape: " << resolved_shape
             << " given the user shape " << dense.shape;
 
-    //(*result).dense_values[i_dense] = Tensor(dense.dtype, resolved_shape);
     result->dense_values.emplace_back(dense.dtype, resolved_shape);
     Tensor* dense_tensor = &result->dense_values.back();
 
@@ -358,12 +357,6 @@ Status ParseAvro(const AvroParserConfig& config,
 
     return Status::OK();
   };
-
-  /*
-  for (size_t d = 0; d < config.dense.size(); ++d) {
-    result->dense_values.push_back(std::move(fixed_len_dense_values[d]));
-  }
-  */
 
   for (size_t d = 0; d < config.sparse.size(); ++d) {
     TF_RETURN_IF_ERROR(MergeSparseMinibatches(d));
@@ -376,6 +369,8 @@ Status ParseAvro(const AvroParserConfig& config,
   return Status::OK();
 }
 
+// Inspired from here
+// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/kernels/example_parsing_ops.cc
 class ParseAvroOp : public OpKernel {
  public:
   explicit ParseAvroOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
@@ -437,8 +432,9 @@ class ParseAvroOp : public OpKernel {
       const Tensor& def_value = dense_defaults[d];
       OP_REQUIRES(ctx, def_value.dtype() == dense_types_[d],
                   errors::InvalidArgument(
-                      "dense_defaults[", d, "].dtype() == ",
-                      DataTypeString(def_value.dtype()), " != dense_types_[", d,
+                      "For key '", dense_keys_[d], "' ", "dense_defaults[", d,
+                      "].dtype() == ", DataTypeString(def_value.dtype()),
+                      " != dense_types_[", d,
                       "] == ", DataTypeString(dense_types_[d])));
     }
 

@@ -121,11 +121,12 @@ class AvroDatasetOp : public DatasetOpKernel {
 
     for (int d = 0; d < dense_keys_.size(); ++d) {
       const Tensor& def_value = dense_defaults[d];
-      OP_REQUIRES(ctx, def_value.dtype() == dense_types_[d],
-                  errors::InvalidArgument(
-                      "dense_defaults[", d, "].dtype() == ",
-                      DataTypeString(def_value.dtype()), " != dense_types_[", d,
-                      "] == ", DataTypeString(dense_types_[d])));
+      OP_REQUIRES(
+          ctx, def_value.dtype() == dense_types_[d],
+          errors::InvalidArgument(
+              "For key '", dense_keys_[d], "' ", "dense_defaults[", d,
+              "].dtype() == ", DataTypeString(def_value.dtype()),
+              " != dense_types[", d, "] == ", DataTypeString(dense_types_[d])));
     }
 
     // first all dense and then all sparse tensors according to their input
@@ -356,7 +357,8 @@ class AvroDatasetOp : public DatasetOpKernel {
               dataset()->key_to_output_index_.at(dataset()->dense_keys_[d]);
           CHECK(avro_result.dense_values[d].dtype() ==
                 dataset()->output_dtypes()[output_index])
-              << "Got wrong type for AvroDataset return value " << d
+              << "Got wrong type for AvroDataset for key '"
+              << dataset()->dense_keys_[d] << "'"
               << " (expected "
               << DataTypeString(dataset()->output_dtypes()[output_index])
               << ", got " << DataTypeString(avro_result.dense_values[d].dtype())
@@ -367,6 +369,7 @@ class AvroDatasetOp : public DatasetOpKernel {
             // Use dense_defaults_ here because it does not include the batch
             // replicate
             CHECK(dataset()->dense_defaults_[d].NumElements() == 1)
+                << "For key '" << dataset()->dense_keys_[d] << "'"
                 << "dense_shape[" << d
                 << "] is a variable length shape: " << dense.shape.DebugString()
                 << ", therefore "
@@ -377,15 +380,16 @@ class AvroDatasetOp : public DatasetOpKernel {
           } else {
             CHECK(dataset()->output_shapes_[output_index].IsCompatibleWith(
                 avro_result.dense_values[d].shape()))
-                << "Got wrong shape for AvroDataset return value " << d
+                << "Got wrong shape for key '" << dataset()->dense_keys_[d]
+                << "' "
                 << " (expected "
                 << dataset()->output_shapes_[output_index].DebugString()
                 << ", got " << avro_result.dense_values[d].shape().DebugString()
                 << ").";
           }
-
-          VLOG(5) << "Dense output tensor for " << dataset()->dense_keys_[d]
-                  << " is " << avro_result.dense_values[d].SummarizeValue(3);
+          VLOG(5) << "Dense output tensor for key '"
+                  << dataset()->dense_keys_[d] << "' is "
+                  << avro_result.dense_values[d].SummarizeValue(3);
           (*out_tensors)[output_index] = avro_result.dense_values[d];
         }
         for (int d = 0; d < dataset()->sparse_keys_.size(); ++d) {
@@ -400,13 +404,14 @@ class AvroDatasetOp : public DatasetOpKernel {
           serialized_sparse_t(2) = avro_result.sparse_shapes[d];
           CHECK(serialized_sparse.dtype() ==
                 dataset()->output_dtypes()[output_index])
-              << "Got wrong type for AvroDataset return value " << d
+              << "Got wrong type for key '" << dataset()->sparse_keys_[d] << "'"
               << " (expected "
               << DataTypeString(dataset()->output_dtypes()[output_index])
               << ", got " << DataTypeString(serialized_sparse.dtype()) << ").";
           CHECK(dataset()->output_shapes_[output_index].IsCompatibleWith(
               serialized_sparse.shape()))
-              << "Got wrong shape for AvroDataset return value " << d
+              << "Got wrong shape for key '" << dataset()->sparse_keys_[d]
+              << "'"
               << " (expected "
               << dataset()->output_shapes_[output_index].DebugString()
               << ", got " << serialized_sparse.shape().DebugString() << ").";
