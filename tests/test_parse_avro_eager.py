@@ -29,7 +29,7 @@ from avro.schema import Parse as parse
 from tensorflow_io.core.python.experimental.parse_avro_ops import VarLenFeatureWithRank
 import tensorflow_io as tfio
 
-#if sys.platform == "darwin":
+# if sys.platform == "darwin":
 #    pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
@@ -423,33 +423,41 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
                         }
                     ]}"""
         record_data = [
-          {"int_list_list": [[1, 2], [3, 4, 5]]},
-          {"int_list_list": [[6]]},
-          {"int_list_list": [[6]]},
+            {"int_list_list": [[1, 2], [3, 4, 5]]},
+            {"int_list_list": [[6]]},
+            {"int_list_list": [[6]]},
         ]
-        features = {
-          'int_list_list[*][*]': VarLenFeatureWithRank(tf.dtypes.int32)
-        }
+        features = {"int_list_list[*][*]": VarLenFeatureWithRank(tf.dtypes.int32)}
         expected_data = [
-          {"int_list_list[*][*]":
-            tf.compat.v1.SparseTensorValue(
-                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0],
-                         [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
-                values=[1, 2, 3, 4, 5, 6, 6],
-                dense_shape=[3, 2, 3]
-            )
-          }
+            {
+                "int_list_list[*][*]": tf.compat.v1.SparseTensorValue(
+                    indices=[
+                        [0, 0, 0],
+                        [0, 0, 1],
+                        [0, 1, 0],
+                        [0, 1, 1],
+                        [0, 1, 2],
+                        [1, 0, 0],
+                        [2, 0, 0],
+                    ],
+                    values=[1, 2, 3, 4, 5, 6, 6],
+                    dense_shape=[3, 2, 3],
+                )
+            }
         ]
         with self.assertRaises(Exception) as context:
-            self._test_pass_dataset(reader_schema=reader_schema,
-                                    record_data=record_data,
-                                    expected_data=expected_data,
-                                    features=features,
-                                    writer_schema=reader_schema,
-                                    batch_size=3,
-                                    num_epochs=1)
-            self.assertTrue('is not compatible with supplied shape'
-                    in context.exception)
+            self._test_pass_dataset(
+                reader_schema=reader_schema,
+                record_data=record_data,
+                expected_data=expected_data,
+                features=features,
+                writer_schema=reader_schema,
+                batch_size=3,
+                num_epochs=1,
+            )
+            self.assertTrue(
+                "is not compatible with supplied shape" in context.exception
+            )
 
     def test_variable_length_passed_with_rank(self):
         """test_variable_length_passed_with_rank"""
@@ -469,30 +477,37 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
                         }
                     ]}"""
         record_data = [
-          {"int_list_list": [[1, 2], [3, 4, 5]]},
-          {"int_list_list": [[6]]},
-          {"int_list_list": [[6]]},
+            {"int_list_list": [[1, 2], [3, 4, 5]]},
+            {"int_list_list": [[6]]},
+            {"int_list_list": [[6]]},
         ]
-        features = {
-          'int_list_list[*][*]': VarLenFeatureWithRank(tf.dtypes.int32, 2)
-        }
+        features = {"int_list_list[*][*]": VarLenFeatureWithRank(tf.dtypes.int32, 2)}
         expected_data = [
-          {"int_list_list[*][*]":
-            tf.compat.v1.SparseTensorValue(
-                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0],
-                         [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
-                values=[1, 2, 3, 4, 5, 6, 6],
-                dense_shape=[3, 2, 3]
-            )
-          }
+            {
+                "int_list_list[*][*]": tf.compat.v1.SparseTensorValue(
+                    indices=[
+                        [0, 0, 0],
+                        [0, 0, 1],
+                        [0, 1, 0],
+                        [0, 1, 1],
+                        [0, 1, 2],
+                        [1, 0, 0],
+                        [2, 0, 0],
+                    ],
+                    values=[1, 2, 3, 4, 5, 6, 6],
+                    dense_shape=[3, 2, 3],
+                )
+            }
         ]
-        self._test_pass_dataset(reader_schema=reader_schema,
-                                record_data=record_data,
-                                expected_data=expected_data,
-                                features=features,
-                                writer_schema=reader_schema,
-                                batch_size=3,
-                                num_epochs=1)
+        self._test_pass_dataset(
+            reader_schema=reader_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            writer_schema=reader_schema,
+            batch_size=3,
+            num_epochs=1,
+        )
 
     def test_batching(self):
         """test_batching"""
