@@ -29,8 +29,8 @@ from avro.schema import Parse as parse
 from tensorflow_io.core.python.experimental.parse_avro_ops import VarLenFeatureWithRank
 import tensorflow_io as tfio
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: skip macOS", allow_module_level=True)
+#if sys.platform == "darwin":
+#    pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
 class AvroRecordsToFile:
@@ -406,6 +406,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         self._verify_output(expected_data=expected_data, actual_dataset=actual_dataset)
 
     def test_variable_length_failed_with_wrong_rank(self):
+        """test_variable_length_failed_with_wrong_rank"""
         reader_schema = """{
                     "type": "record",
                     "name": "row",
@@ -432,7 +433,8 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         expected_data = [
           {"int_list_list[*][*]":
             tf.compat.v1.SparseTensorValue(
-                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
+                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0],
+                         [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
                 values=[1, 2, 3, 4, 5, 6, 6],
                 dense_shape=[3, 2, 3]
             )
@@ -446,9 +448,11 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
                                     writer_schema=reader_schema,
                                     batch_size=3,
                                     num_epochs=1)
-            self.assertEqual('is not compatible with supplied shape' in context.exception)
+            self.assertTrue('is not compatible with supplied shape'
+                    in context.exception)
 
     def test_variable_length_passed_with_rank(self):
+        """test_variable_length_passed_with_rank"""
         reader_schema = """{
                     "type": "record",
                     "name": "row",
@@ -475,7 +479,8 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         expected_data = [
           {"int_list_list[*][*]":
             tf.compat.v1.SparseTensorValue(
-                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
+                indices=[[0, 0, 0], [0, 0, 1], [0, 1, 0],
+                         [0, 1, 1], [0, 1, 2], [1, 0, 0], [2, 0, 0]],
                 values=[1, 2, 3, 4, 5, 6, 6],
                 dense_shape=[3, 2, 3]
             )

@@ -40,9 +40,9 @@ Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
   return Status::OK();
 }
 
-shape_inference::DimensionOrConstant ComputeSparseRank(const ShapeHandle input_shape,
-                                                       int64 rank_delta,
-                                                       shape_inference::InferenceContext* c) {
+shape_inference::DimensionOrConstant ComputeSparseRank(
+    const ShapeHandle input_shape, int64 rank_delta,
+    shape_inference::InferenceContext* c) {
   shape_inference::DimensionOrConstant rank(c->UnknownDim());
   if (c->RankKnown(input_shape)) {
     rank = c->Rank(input_shape) + rank_delta;
@@ -55,17 +55,20 @@ shape_inference::DimensionOrConstant ComputeSparseRank(const ShapeHandle input_s
 // since this is not exposed publicly
 // Adds output shapes for sparse tensors in Parse*Example ops.
 void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
-                           std::vector<int64> sparse_ranks, shape_inference::InferenceContext* c,
+                           std::vector<int64> sparse_ranks,
+                           shape_inference::InferenceContext* c,
                            int* output_idx) {
   for (int i = 0; i < num_sparse; ++i) {  // sparse_indices
-    shape_inference::DimensionOrConstant rank = ComputeSparseRank(input_shape, sparse_ranks[i], c);
+    shape_inference::DimensionOrConstant rank =
+        ComputeSparseRank(input_shape, sparse_ranks[i], c);
     c->set_output((*output_idx)++, c->Matrix(c->UnknownDim(), rank));
   }
   for (int i = 0; i < num_sparse; ++i) {  // sparse_values
     c->set_output((*output_idx)++, c->Vector(c->UnknownDim()));
   }
   for (int i = 0; i < num_sparse; ++i) {  // sparse_dense_shapes
-    shape_inference::DimensionOrConstant rank = ComputeSparseRank(input_shape, sparse_ranks[i], c);
+    shape_inference::DimensionOrConstant rank =
+        ComputeSparseRank(input_shape, sparse_ranks[i], c);
     c->set_output((*output_idx)++, c->Vector(rank));
   }
 }

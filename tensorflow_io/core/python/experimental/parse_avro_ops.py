@@ -23,9 +23,11 @@ from tensorflow_io.core.python.ops import core_ops
 
 class VarLenFeatureWithRank:
     """
-    A class used to represent VarLenFeature with rank. This allows rank to be passed by users,
-    and when parsing, rank will be used to determine the shape of sparse feature. User should
-    use this class as opposed to VarLenFeature when defining features of data.
+    A class used to represent VarLenFeature with rank.
+    This allows rank to be passed by users, and when parsing,
+    rank will be used to determine the shape of sparse feature.
+    User should use this class as opposed to VarLenFeature
+    when defining features of data.
     """
     def __init__(self, dtype, rank=None):
         self.__dtype = dtype
@@ -343,19 +345,14 @@ def _features_to_raw_params(features, types):
         for key in sorted(features.keys()):
             feature = features[key]
             if isinstance(feature, VarLenFeatureWithRank):
-                _handle_varlen_feature(feature, key, sparse_keys, sparse_types, sparse_ranks, types)
+                _handle_varlen_feature(feature, key,
+                        sparse_keys, sparse_types, sparse_ranks, types)
             elif isinstance(feature, tf.io.SparseFeature):
-                _handle_sparse_feature(feature, key, sparse_keys, sparse_types, sparse_ranks, types)
+                _handle_sparse_feature(feature, key,
+                        sparse_keys, sparse_types, sparse_ranks, types)
             elif isinstance(feature, tf.io.FixedLenFeature):
-                _handle_fixedlen_feature(
-                    dense_defaults,
-                    dense_keys,
-                    dense_shapes,
-                    dense_types,
-                    feature,
-                    key,
-                    types,
-                )
+                _handle_fixedlen_feature(dense_defaults, dense_keys,
+                        dense_shapes, dense_types, feature, key, types)
             else:
                 raise ValueError("Invalid feature {}:{}.".format(key, feature))
     return (
@@ -386,7 +383,12 @@ def _handle_fixedlen_feature(
         dense_defaults[key] = feature.default_value
 
 
-def _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types):
+def _handle_sparse_feature(feature,
+        key,
+        sparse_keys,
+        sparse_types,
+        sparse_ranks,
+        types):
     """handle_sparse_feature"""
     if tf.io.SparseFeature not in types:
         raise ValueError("Unsupported SparseFeature {}.".format(feature))
@@ -435,7 +437,12 @@ def _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types):
         sparse_ranks.append(1)
 
 
-def _handle_varlen_feature(feature, key, sparse_keys, sparse_types, sparse_ranks, types):
+def _handle_varlen_feature(feature,
+        key,
+        sparse_keys,
+        sparse_types,
+        sparse_ranks,
+        types):
     """handle_varlen_feature"""
     if VarLenFeatureWithRank not in types:
         raise ValueError("Unsupported VarLenFeatureWithRank {}.".format(feature))
