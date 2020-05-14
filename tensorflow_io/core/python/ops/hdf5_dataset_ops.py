@@ -26,14 +26,14 @@ class HDF5IODataset(tf.data.Dataset):
         with tf.name_scope("HDF5IODataset"):
             assert internal
 
-            columns, shapes, dtypes = core_ops.io_hdf5_readable_info(
+            components, shapes, dtypes = core_ops.io_hdf5_readable_info(
                 filename, shared=filename, container="HDF5IODataset"
             )
-            shape = tf.boolean_mask(shapes, tf.math.equal(columns, dataset))[0]
+            shape = tf.boolean_mask(shapes, tf.math.equal(components, dataset))[0]
             shape = tf.boolean_mask(shape, tf.math.greater_equal(shape, 0))
 
             if tf.executing_eagerly():
-                dtype = tf.boolean_mask(dtypes, tf.math.equal(columns, dataset))[0]
+                dtype = tf.boolean_mask(dtypes, tf.math.equal(components, dataset))[0]
                 dtype = tf.as_dtype(dtype.numpy())
             else:
                 assert spec is not None
