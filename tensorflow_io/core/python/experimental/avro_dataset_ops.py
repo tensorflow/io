@@ -52,15 +52,13 @@ class _AvroDataset(tf.data.Dataset):
         avro_data_buffer_size,
     ):
 
-        self._filenames = tf.ops.convert_to_tensor(
-            filenames, tf.string, name="filenames"
-        )
+        self._filenames = tf.convert_to_tensor(filenames, tf.string, name="filenames")
         self._features = _AvroDataset._build_keys_for_sparse_features(features)
         self._reader_schema = reader_schema
-        self._batch_size = tf.ops.convert_to_tensor(
+        self._batch_size = tf.convert_to_tensor(
             batch_size, dtype=tf.int64, name="batch_size"
         )
-        self._drop_remainder = tf.ops.convert_to_tensor(
+        self._drop_remainder = tf.convert_to_tensor(
             drop_remainder, dtype=tf.bool, name="drop_remainder"
         )
         self._num_parallel_calls = num_parallel_calls
@@ -119,7 +117,7 @@ class _AvroDataset(tf.data.Dataset):
         output_classes = dict(
             zip(
                 self._dense_keys + self._sparse_keys,
-                [tf.ops.Tensor for _ in range(len(self._dense_defaults))]
+                [tf.Tensor for _ in range(len(self._dense_defaults))]
                 + [tf.sparse.SparseTensor for _ in range(len(self._sparse_keys))],
             )
         )
@@ -169,14 +167,17 @@ class _AvroDataset(tf.data.Dataset):
 
         super().__init__(variant_tensor)
 
+    def _inputs(self):
+        return []
+
     @staticmethod
     # copied from https://github.com/tensorflow/tensorflow/blob/
     # 858bd4506a8b390fc5b2dcbeb3057f4a92e8a1e2/tensorflow/python/data/util/structure.py#L119
     def _convert_legacy_structure(output_types, output_shapes, output_classes):
         """convert_legacy_structure"""
-        flat_types = nest.flatten(output_types)
-        flat_shapes = nest.flatten(output_shapes)
-        flat_classes = nest.flatten(output_classes)
+        flat_types = tf.nest.flatten(output_types)
+        flat_shapes = tf.nest.flatten(output_shapes)
+        flat_classes = tf.nest.flatten(output_classes)
         flat_ret = []
         for flat_type, flat_shape, flat_class in zip(
             flat_types, flat_shapes, flat_classes
@@ -207,7 +208,7 @@ class _AvroDataset(tf.data.Dataset):
                     )
                 )
 
-        return nest.pack_sequence_as(output_classes, flat_ret)
+        return tf.nest.pack_sequence_as(output_classes, flat_ret)
 
     @property
     def element_spec(self):
@@ -351,12 +352,12 @@ class _AvroDataset(tf.data.Dataset):
                     default_value = False
                 else:  # Should be numeric type
                     default_value = 0
-                default_value = tf.ops.convert_to_tensor(
+                default_value = tf.convert_to_tensor(
                     default_value, dtype=dense_types[i]
                 )
-            elif not isinstance(default_value, tf.ops.Tensor):
+            elif not isinstance(default_value, tf.Tensor):
                 key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
-                default_value = tf.ops.convert_to_tensor(
+                default_value = tf.convert_to_tensor(
                     default_value, dtype=dense_types[i], name=key_name
                 )
                 # If we have a shape and the first dimension is not None
@@ -379,8 +380,8 @@ class _AvroDataset(tf.data.Dataset):
         )
 
     @staticmethod
-    def __check_none(instance, missing_str, for_str):
-        """if instance is None, raise error """
+    def __check_not_empty(instance, missing_str, for_str):
+        """if instance is empty, raise error """
         if not instance:
             raise ValueError("Missing {} for {}.".format(missing_str, for_str))
 
@@ -468,8 +469,9 @@ class _AvroDataset(tf.data.Dataset):
         """handle_fixedlen_feature"""
         if tf.io.FixedLenFeature not in types:
             raise ValueError("Unsupported FixedLenFeature {}.".format(feature))
-        __check_none(feature.dtype, "type", "feature " + key)
-        __check_none(feature.shape, "shape", "feature " + key)
+        _AvroDataset.__check_not_empty(feature.dtype, "type", "feature " + key)
+        if feature.shape is None:
+            raise ValueError("Missing shape for feature %s." % key)
         dense_keys.append(key)
         dense_shapes.append(feature.shape)
         dense_types.append(feature.dtype)
@@ -483,19 +485,19 @@ class _AvroDataset(tf.data.Dataset):
         """handle_sparse_feature"""
         if tf.io.SparseFeature not in types:
             raise ValueError("Unsupported SparseFeature {}.".format(feature))
-        _AvroDataset.__check_none(
+        _AvroDataset.__check_not_empty(
             feature.index_key, "index_key", "SparseFeature " + key
         )
-        _AvroDataset.__check_none(
+        _AvroDataset.__check_not_empty(
             feature.value_key, "value_key", "SparseFeature " + key
         )
-        _AvroDataset.__check_none(feature.dtype, "type", "feature " + key)
-        _AvroDataset.__check_none(feature.size, "size", "feature " + key)
+        _AvroDataset.__check_not_empty(feature.dtype, "type", "feature " + key)
+        _AvroDataset.__check_not_empty(feature.size, "size", "feature " + key)
         index_keys = feature.index_key
         if isinstance(index_keys, str):
             index_keys = [index_keys]
         elif len(index_keys) > 1:
-            tf.logging.warning(
+            tf.compat.v1.logging.warning(
                 "SparseFeature is a complicated feature config "
                 "and should only be used after careful "
                 "consideration of VarLenFeature."
@@ -531,7 +533,7 @@ class _AvroDataset(tf.data.Dataset):
         """handle_varlen_feature"""
         if tf.io.VarLenFeature not in types:
             raise ValueError("Unsupported VarLenFeature {}.".format(feature))
-        _AvroDataset.__check_none(feature.dtype, "type", "feature " + key)
+        _AvroDataset.__check_not_empty(feature.dtype, "type", "feature " + key)
         sparse_keys.append(key)
         sparse_types.append(feature.dtype)
         sparse_dense_shapes.append(None)
