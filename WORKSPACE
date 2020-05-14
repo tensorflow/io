@@ -913,3 +913,25 @@ http_archive(
         "https://ftp.postgresql.org/pub/source/v12.1/postgresql-12.1.tar.gz",
     ],
 )
+
+http_archive(
+    name = "libavif",
+    build_file = "//third_party:libavif.BUILD",
+    sha256 = "a4ce03649c58ec9f3dc6ab2b7cf7d58474b149acf1e4c563be4081bad60ed2dd",
+    strip_prefix = "libavif-0.7.3",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/AOMediaCodec/libavif/archive/v0.7.3.tar.gz",
+        "https://github.com/AOMediaCodec/libavif/archive/v0.7.3.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "dav1d",
+    build_file = "//third_party:dav1d.BUILD",
+    sha256 = "66c3e831a93f074290a72aad5da907e3763ecb092325f0250a841927b3d30ce3",
+    strip_prefix = "dav1d-0.6.0",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/videolan/dav1d/archive/0.6.0.tar.gz",
+        "https://github.com/videolan/dav1d/archive/0.6.0.tar.gz",
+    ],
+)
