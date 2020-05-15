@@ -191,7 +191,7 @@ Development of tensorflow-io on Linux is similiar to development on macOS. The r
 are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
 versions might be required though.
 For instructions how to configure Visual Studio code to be able to build and debug TensorFlow I/O see
-https://github.com/tensorflow/io/blob/master/docs/tutorials/vscode.md
+https://github.com/tensorflow/io/blob/master/docs/vscode.md
 
 ##### Ubuntu 18.04/20.04
 

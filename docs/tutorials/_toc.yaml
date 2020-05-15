@@ -26,5 +26,3 @@ toc:
   path: /io/tutorials/genome
 - title: "PostgreSQL database"
   path: /io/tutorials/postgresql
-- title: "Configuring Visual Studio Code"
-  path: /io/tutorials/vscode
