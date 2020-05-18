@@ -173,6 +173,7 @@ cc_library(
 cc_library(
     name = "image_ops",
     srcs = [
+        "kernels/image_avif_kernels.cc",
         "kernels/image_bmp_kernels.cc",
         "kernels/image_dicom_kernels.cc",
         "kernels/image_font_kernels.cc",
@@ -194,6 +195,7 @@ cc_library(
         "@easyexif",
         "@fmjpeg2koj",
         "@freetype",
+        "@libavif",
         "@libgeotiff",
         "@libtiff",
         "@libwebp",

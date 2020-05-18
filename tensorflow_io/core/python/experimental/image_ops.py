@@ -179,3 +179,17 @@ def decode_yuy2(contents, size, name=None):
       A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
     """
     return core_ops.io_decode_yuy2(contents, size=size, name=name)
+
+
+def decode_avif(contents, name=None):
+    """
+    Decode a AVIF-encoded image to a uint8 tensor.
+
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The AVIF-encoded image.
+      name: A name for the operation (optional).
+
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
+    """
+    return core_ops.io_decode_avif(contents, name=name)
