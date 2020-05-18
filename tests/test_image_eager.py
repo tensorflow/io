@@ -352,5 +352,26 @@ def test_decode_yuy2():
     assert np.all(rgb == png)
 
 
+def test_decode_avif():
+    """Test case for decode_avif"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "kodim03_yuv420_8bpc.avif",
+    )
+    png_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "kodim03_yuv420_8bpc.png",
+    )
+    png = tf.image.decode_png(tf.io.read_file(png_filename))
+
+    contents = tf.io.read_file(filename)
+    rgb = tfio.experimental.image.decode_avif(contents)
+    assert rgb.dtype == tf.uint8
+    assert rgb.shape == png.shape
+    assert np.all(rgb == png)
+
+
 if __name__ == "__main__":
     test.main()
