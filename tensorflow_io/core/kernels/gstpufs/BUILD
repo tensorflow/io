@@ -13,8 +13,12 @@ cc_library(
     copts = tf_io_copts(),
     visibility = ["//visibility:public"],
     deps = [
-        "@libmemcached",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "@libmemcached",
+        ],
+    }),
 )
 
 cc_library(
@@ -72,9 +76,15 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":gce_memcached_server_list_provider",
-        ":memcached_file_system",
         "@com_google_absl//absl/memory",
         "@local_config_tf//:tf_header_lib",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            ":memcached_file_system",
+        ],
+    }),
+    
     alwayslink = 1,
 )
+
