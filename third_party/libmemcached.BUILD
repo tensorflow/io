@@ -285,6 +285,7 @@ cc_library(
         "-DBUILDING_MEMCACHED",
         "-Dregister=",
     ] + select({
+	"@bazel_tools//src/conditions:darwin": [],	
         "//conditions:default": [
             "-DHAVE_MSG_MORE=1",
             "-DHAVE_MSG_NOSIGNAL=1",
