@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - nightly
   pull_request:
     branches:
       - master
+      - nightly
 
 env:
   BAZEL_VERSION: 3.0.0
@@ -412,7 +414,7 @@ jobs:
 
   release:
     name: Release
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
@@ -488,7 +490,7 @@ jobs:
 
   build-number:
     name: Build Number
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     runs-on: ubuntu-18.04
     steps:
       - run: |
@@ -502,7 +504,7 @@ jobs:
 
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     needs: [build-number, release]
     runs-on: macos-latest
     strategy:
@@ -545,7 +547,7 @@ jobs:
 
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     needs: [build-number, release]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -593,7 +595,7 @@ jobs:
 
   windows-nightly:
     name: Nightly ${{ matrix.python }} Windows
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     needs: [build-number, release]
     runs-on: windows-latest
     strategy:
@@ -628,7 +630,7 @@ jobs:
 
   nightly:
     name: Nightly
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'master'
     needs: [linux-nightly, macos-nightly, windows-nightly]
     runs-on: ubuntu-18.04
     steps:
