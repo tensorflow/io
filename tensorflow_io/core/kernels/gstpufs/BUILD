@@ -76,15 +76,24 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":gce_memcached_server_list_provider",
+        ":memcached_file_system",
         "@com_google_absl//absl/memory",
         "@local_config_tf//:tf_header_lib",
-    ] + select({
-        "@bazel_tools//src/conditions:darwin": [],
-        "//conditions:default": [
-            ":memcached_file_system",
-        ],
-    }),
-    
+    ], 
     alwayslink = 1,
 )
 
+cc_library(
+    name = "my_gs_tpu_file_system",
+    copts = tf_io_copts(),
+    linkstatic = 1,  # Needed since alwayslink is broken in bazel b/27630669
+    visibility = ["//visibility:public"],
+    deps = [
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            ":gs_tpu_file_system",
+        ],
+    }),
+    alwayslink = 1,
+)
