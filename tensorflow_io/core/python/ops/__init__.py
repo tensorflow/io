@@ -68,4 +68,10 @@ def _load_library(filename, lib="op"):
     )
 
 
+# The _pywrap_tensorflow_internal.so is needed for some global variables
+internal = os.path.join(
+    os.path.dirname(tf.__file__), "python", "_pywrap_tensorflow_internal.so"
+)
+internal = ctypes.CDLL(internal, mode=ctypes.RTLD_GLOBAL)
+# The core library of tensorflow/io
 core_ops = _load_library("libtensorflow_io.so")

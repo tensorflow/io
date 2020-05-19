@@ -13,40 +13,58 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/common_runtime/optimization_registry.h"
+#include "mlir/IR/Diagnostics.h"         // from @llvm-project
+#include "mlir/IR/Module.h"              // from @llvm-project
+#include "mlir/Pass/Pass.h"              // from @llvm-project
+#include "mlir/Pass/PassManager.h"       // from @llvm-project
+#include "mlir/Support/LogicalResult.h"  // from @llvm-project
+#include "mlir/Transforms/DialectConversion.h"
+#include "tensorflow/compiler/mlir/mlir_graph_optimization_pass.h"
+#include "tensorflow/compiler/mlir/tensorflow/ir/tf_ops.h"
+#include "tensorflow/compiler/mlir/tensorflow/utils/error_util.h"
 
 namespace tensorflow {
 namespace io {
 namespace {
 
-class IOGraphOptimizationPass : public GraphOptimizationPass {
+class MlirIOGraphOptimizationPass : public ::tensorflow::MlirOptimizationPass {
  public:
-  IOGraphOptimizationPass() {
-    enable_ = (std::getenv("TFIO_GRAPH_DEBUG") != nullptr);
-    if (enable_) {
-      LOG(INFO) << "TFIO_GRAPH_DEBUG: [init]";
+  llvm::StringRef name() const override { return "io_graph_optimization"; }
+
+  bool IsEnabled(const ::tensorflow::ConfigProto& config_proto) const override {
+    if (std::getenv("TFIO_GRAPH_DEBUG") == nullptr) {
+      VLOG(1) << "Skipping MLIR IO Graph Optimization Pass"
+              << ", TFIO_GRAPH_DEBUG not enabled";
+      return false;
     }
+    return true;
   }
-  virtual ~IOGraphOptimizationPass() {
-    if (enable_) {
-      LOG(INFO) << "TFIO_GRAPH_DEBUG: [fini]";
+
+  ::tensorflow::Status Run(const ::tensorflow::ConfigProto& config_proto,
+                           mlir::ModuleOp module) override {
+    if (std::getenv("TFIO_GRAPH_DEBUG") == nullptr) {
+      VLOG(1) << "Skipping MLIR IO Graph Optimization Pass"
+              << ", TFIO_GRAPH_DEBUG not enabled";
+      return Status::OK();
     }
-  }
-  Status Run(const GraphOptimizationPassOptions& options) override {
-    if (enable_) {
-      Graph* graph = options.graph->get();
-      LOG(INFO) << "TFIO_GRAPH_DEBUG: [run]:"
-                << graph->ToGraphDefDebug().DebugString();
-    }
+
+    VLOG(1) << "Run IO MLIR Graph Optimization Passes";
+    mlir::PassManager pm(module.getContext());
+    std::string str;
+    llvm::raw_string_ostream os(str);
+    module.print(os);
+    LOG(INFO) << "IO Graph: " << os.str();
+
+    // pm.addPass(createTODOPass());
+    // mlir::LogicalResult result = pm.run(module);
+
     return Status::OK();
   }
-
- private:
-  bool enable_ = false;
 };
 
-REGISTER_OPTIMIZATION(OptimizationPassRegistry::PRE_PLACEMENT, 15,
-                      IOGraphOptimizationPass);
+static mlir_pass_registration::MlirOptimizationPassRegistration
+    register_mlir_graph_optimization_pass(
+        10, std::make_unique<MlirIOGraphOptimizationPass>());
 
 }  // namespace
 }  // namespace io

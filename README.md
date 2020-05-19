@@ -205,6 +205,9 @@ the shared libraries on Ubuntu 18.04/20.04:
 sudo apt-get -y -qq update
 sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
 
+# Symlink python3 to python, needed until bazel drop python2
+sudo ln -s /usr/bin/python3 /usr/bin/python
+
 # Install Bazel 3.0.0
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-linux-x86_64.sh
 sudo bash -x -e bazel-3.0.0-installer-linux-x86_64.sh
@@ -232,6 +235,9 @@ the shared libraries on CentOS 8:
 ```sh
 # Install gcc/g++, git, unzip/which (for bazel), and python3
 sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
+
+# Symlink python3 to python, needed until bazel drop python2
+sudo ln -s /usr/bin/python3 /usr/bin/python
 
 # Install Bazel 3.0.0
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/3.0.0/bazel-3.0.0-installer-linux-x86_64.sh

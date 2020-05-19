@@ -42,7 +42,7 @@ def write_config():
             + "tf.sysconfig.get_compile_flags(): ",
             include_list,
         )
-        exit(1)
+        sys.exit(1)
 
     library_regex = re.compile("^-l")
     libdir_regex = re.compile("^-L")
@@ -67,7 +67,7 @@ def write_config():
                 library_list,
                 libdir_list,
             )
-            exit(1)
+            sys.exit(1)
 
     try:
 
@@ -100,6 +100,8 @@ def write_config():
             bazel_rc.write(
                 'build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'.format(library_name)
             )
+            # Needed for LLVM build
+            bazel_rc.write('build --host_cxxopt="-std=c++14"\n')
             bazel_rc.write('build --cxxopt="-std=c++14"\n')
             # Needed for GRPC build
             if sys.platform == "darwin":
@@ -121,7 +123,7 @@ def write_config():
             bazel_rc.close()
     except OSError:
         print("ERROR: Writing .bazelrc")
-        exit(1)
+        sys.exit(1)
 
 
 write_config()
