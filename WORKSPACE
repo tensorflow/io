@@ -988,6 +988,9 @@ http_archive(
 http_archive(
     name = "libmemcached",
     build_file = "//third_party:libmemcached.BUILD",
+    patch_cmds = [
+        "sed -i.bak 's/LIBMEMCACHED_WITH_SASL_SUPPORT 1/LIBMEMCACHED_WITH_SASL_SUPPORT 0/' libmemcached-1.0/configure.h",
+    ],
     sha256 = "e22c0bb032fde08f53de9ffbc5a128233041d9f33b5de022c0978a2149885f82",
     strip_prefix = "libmemcached-1.0.18",
     urls = [
