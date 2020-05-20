@@ -69,16 +69,30 @@ cc_library(
 
 cc_library(
     name = "memcached_file_system",
-    srcs = ["memcached_file_system.cc"],
-    hdrs = ["memcached_file_system.h"],
+    srcs = [] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "memcached_file_system.cc",
+        ],
+    }),
+    hdrs = [] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "memcached_file_system.h",
+        ],
+    }),
     copts = tf_io_copts(),
     visibility = ["//visibility:public"],
     deps = [
         ":gce_memcached_server_list_provider",
-        ":memcached_file_block_cache",
         "@com_google_absl//absl/memory",
         "@local_config_tf//:tf_header_lib",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            ":memcached_file_block_cache",
+        ],
+    }),
 )
 
 cc_library(
