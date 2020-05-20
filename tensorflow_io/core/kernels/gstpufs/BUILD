@@ -13,12 +13,8 @@ cc_library(
     copts = tf_io_copts(),
     visibility = ["//visibility:public"],
     deps = [
-    ] + select({
-        "@bazel_tools//src/conditions:darwin": [],
-        "//conditions:default": [
-            "@libmemcached",
-        ],
-    }),
+        "@libmemcached",
+    ],
 )
 
 cc_library(
