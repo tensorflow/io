@@ -325,11 +325,11 @@ http_archive(
 http_archive(
     name = "libpng",
     build_file = "//third_party:libpng.BUILD",
-    sha256 = "ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307",
+    sha256 = "daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4",
     strip_prefix = "libpng-1.6.37",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/glennrp/libpng/archive/v1.6.37.tar.gz",
-        "https://github.com/glennrp/libpng/archive/v1.6.37.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/download.sourceforge.net/libpng/libpng-1.6.37.tar.gz",
+        "https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz",
     ],
 )
 
@@ -841,7 +841,7 @@ load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 
 llvm_toolchain(
     name = "llvm_toolchain",
-    llvm_version = "9.0.0",
+    llvm_version = "10.0.0",
 )
 
 http_archive(
@@ -925,28 +925,6 @@ http_archive(
 )
 
 http_archive(
-    name = "libavif",
-    build_file = "//third_party:libavif.BUILD",
-    sha256 = "a4ce03649c58ec9f3dc6ab2b7cf7d58474b149acf1e4c563be4081bad60ed2dd",
-    strip_prefix = "libavif-0.7.3",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/AOMediaCodec/libavif/archive/v0.7.3.tar.gz",
-        "https://github.com/AOMediaCodec/libavif/archive/v0.7.3.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "dav1d",
-    build_file = "//third_party:dav1d.BUILD",
-    sha256 = "66c3e831a93f074290a72aad5da907e3763ecb092325f0250a841927b3d30ce3",
-    strip_prefix = "dav1d-0.6.0",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/videolan/dav1d/archive/0.6.0.tar.gz",
-        "https://github.com/videolan/dav1d/archive/0.6.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "libmemcached",
     build_file = "//third_party:libmemcached.BUILD",
     sha256 = "e22c0bb032fde08f53de9ffbc5a128233041d9f33b5de022c0978a2149885f82",
@@ -954,5 +932,16 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
         "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "farmhash_archive",
+    build_file = "//third_party:farmhash.BUILD",
+    sha256 = "6560547c63e4af82b0f202cb710ceabb3f21347a4b996db565a411da5b17aba0",
+    strip_prefix = "farmhash-816a4ae622e964763ca0862d9dbd19324a1eaf45",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/farmhash/archive/816a4ae622e964763ca0862d9dbd19324a1eaf45.tar.gz",
+        "https://github.com/google/farmhash/archive/816a4ae622e964763ca0862d9dbd19324a1eaf45.tar.gz",
     ],
 )
