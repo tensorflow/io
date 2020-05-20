@@ -23,17 +23,31 @@ cc_library(
 
 cc_library(
     name = "memcached_file_block_cache",
-    srcs = ["memcached_file_block_cache.cc"],
-    hdrs = ["memcached_file_block_cache.h"],
+    srcs = [] + select ({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "memcached_file_block_cache.cc"
+        ],
+    }),
+    hdrs = [] + select ({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "memcached_file_block_cache.h"
+        ],
+    }),
     copts = tf_io_copts(),
     visibility = ["//visibility:public"],
     deps = [
-        ":memcached_dao_interfaces",
         "@com_google_absl//absl/container:flat_hash_map",
         "@farmhash_archive//:farmhash",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            ":memcached_dao_interfaces",
+        ],
+    }),
 )
 
 cc_library(
@@ -69,34 +83,30 @@ cc_library(
 
 cc_library(
     name = "gs_tpu_file_system",
-    srcs = [
-	#"gs_tpu_file_system.cc"],
-    ] + select({
+    srcs = [] + select({
         "@bazel_tools//src/conditions:darwin": [],
         "//conditions:default": [
-	    "gs_tpu_file_system.cc",
+            "gs_tpu_file_system.cc",
         ],
     }),
-    hdrs = [
-	#"gs_tpu_file_system.h"
-    ] + select({
+    hdrs = [] + select({
         "@bazel_tools//src/conditions:darwin": [],
         "//conditions:default": [
-	    "gs_tpu_file_system.h",
+          "gs_tpu_file_system.h",
         ],
     }),
     copts = tf_io_copts(),
     linkstatic = 1,  # Needed since alwayslink is broken in bazel b/27630669
     visibility = ["//visibility:public"],
     deps = [
+        ":gce_memcached_server_list_provider",
+        "@com_google_absl//absl/memory",
+        "@local_config_tf//:tf_header_lib",
     ] + select({
         "@bazel_tools//src/conditions:darwin": [],
         "//conditions:default": [
-        	":gce_memcached_server_list_provider",
-        	":memcached_file_system",
-        	"@com_google_absl//absl/memory",
-        	"@local_config_tf//:tf_header_lib",
-    	],
+          ":memcached_file_system",
+        ],
     }),
     alwayslink = 1,
 )
