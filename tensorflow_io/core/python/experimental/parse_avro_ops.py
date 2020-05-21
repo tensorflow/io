@@ -18,30 +18,8 @@ import collections
 import re
 
 import tensorflow as tf
+import tensorflow_io
 from tensorflow_io.core.python.ops import core_ops
-
-
-class VarLenFeatureWithRank:
-    """
-    A class used to represent VarLenFeature with rank.
-    This allows rank to be passed by users, and when parsing,
-    rank will be used to determine the shape of sparse feature.
-    User should use this class as opposed to VarLenFeature
-    when defining features of data.
-    """
-
-    def __init__(self, dtype, rank=None):
-        self.__dtype = dtype
-        self.__rank = 1 if rank is None else rank
-
-    @property
-    def rank(self):
-        return self.__rank
-
-    @property
-    def dtype(self):
-        return self.__dtype
-
 
 # Adjusted from
 # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/ops/parsing_ops.py
@@ -114,7 +92,8 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
         dense_defaults,
         dense_shapes,
     ) = _features_to_raw_params(
-        features, [VarLenFeatureWithRank, tf.io.SparseFeature, tf.io.FixedLenFeature]
+        features, [tensorflow_io.experimental.columnar.VarLenFeatureWithRank,
+                   tf.io.SparseFeature, tf.io.FixedLenFeature]
     )
 
     outputs = _parse_avro(
@@ -346,7 +325,8 @@ def _features_to_raw_params(features, types):
         # NOTE: We iterate over sorted keys to keep things deterministic.
         for key in sorted(features.keys()):
             feature = features[key]
-            if isinstance(feature, VarLenFeatureWithRank):
+            if isinstance(feature,
+                          tensorflow_io.experimental.columnar.VarLenFeatureWithRank):
                 _handle_varlen_feature(
                     feature, key, sparse_keys, sparse_types, sparse_ranks, types
                 )
@@ -449,7 +429,7 @@ def _handle_varlen_feature(
     feature, key, sparse_keys, sparse_types, sparse_ranks, types
 ):
     """handle_varlen_feature"""
-    if VarLenFeatureWithRank not in types:
+    if tensorflow_io.experimental.columnar.VarLenFeatureWithRank not in types:
         raise ValueError("Unsupported VarLenFeatureWithRank {}.".format(feature))
     if not feature.dtype:
         raise ValueError("Missing type for VarLenFeatureWithRank %s." % key)
