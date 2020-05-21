@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 """AvroDatasetTest"""
+# pylint: disable=line-too-long
+# see https://github.com/tensorflow/io/pull/962#issuecomment-632346602
 
 import sys
 from functools import reduce
