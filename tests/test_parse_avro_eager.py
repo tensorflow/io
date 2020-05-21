@@ -426,9 +426,10 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
             {"int_list_list": [[6]]},
         ]
-        features = {"int_list_list[*][*]":
-                        tfio.experimental.columnar.VarLenFeatureWithRank(
-                            tf.dtypes.int32)
+        features = {
+            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.int32
+            )
         }
         expected_data = [
             {
@@ -483,9 +484,10 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
             {"int_list_list": [[6]]},
         ]
-        features = {"int_list_list[*][*]":
-                        tfio.experimental.columnar.VarLenFeatureWithRank(
-                            tf.dtypes.int32, 2)
+        features = {
+            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.int32, 2
+            )
         }
         expected_data = [
             {
@@ -1374,9 +1376,11 @@ class AvroDatasetTest(AvroDatasetTestBase):
                   }
               ]}"""
         record_data = [{"int_list": [1, 2]}, {"int_list": [3, 4, 5]}, {"int_list": [6]}]
-        features = {"int_list[*]":
-                        tfio.experimental.columnar.VarLenFeatureWithRank(
-                            tf.dtypes.int32, 1)}
+        features = {
+            "int_list[*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.int32, 1
+            )
+        }
         expected_data = [
             {
                 "int_list[*]": tf.compat.v1.SparseTensorValue(
@@ -1417,9 +1421,11 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
             {"int_list_list": [[6]]},
         ]
-        features = {"int_list_list[*][*]":
-                        tfio.experimental.columnar.VarLenFeatureWithRank(
-                            tf.dtypes.int32, 2)}
+        features = {
+            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.int32, 2
+            )
+        }
         expected_data = [
             {
                 "int_list_list[*][*]": tf.compat.v1.SparseTensorValue(
@@ -1790,10 +1796,12 @@ class AvroDatasetTest(AvroDatasetTestBase):
             },
         ]
         features = {
-            "guests[gender='male'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(tf.dtypes.string),
-            "guests[gender='female'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(tf.dtypes.string),
+            "guests[gender='male'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            ),
+            "guests[gender='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            ),
         }
         expected_data = [
             {
@@ -1861,8 +1869,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
             {"guests": [{"name": "Joel", "gender": "male"}]},
         ]
         features = {
-            "guests[gender='wrong_value'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(tf.dtypes.string)
+            "guests[gender='wrong_value'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            )
         }
         expected_data = [
             {
@@ -1910,8 +1919,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[wrong_key='female'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(tf.dtypes.string)
+            "guests[wrong_key='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            )
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -1944,8 +1954,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[forgot_the_separator].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(tf.dtypes.string)
+            "guests[forgot_the_separator].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            )
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -1978,9 +1989,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[used=too=many=separators].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(
-                    tf.dtypes.string)
+            "guests[used=too=many=separators].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            )
         }
         self._test_fail_dataset(reader_schema, record_data, features, 1)
 
@@ -2057,9 +2068,9 @@ class AvroDatasetTest(AvroDatasetTestBase):
             }
         ]
         features = {
-            "guests[gender='female'].address.street":
-                tfio.experimental.columnar.VarLenFeatureWithRank(
-                tf.dtypes.string)
+            "guests[gender='female'].address.street": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            )
         }
         expected_data = [
             {
@@ -2127,12 +2138,12 @@ class AvroDatasetTest(AvroDatasetTestBase):
             },
         ]
         features = {
-            "guests[gender='male'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(
-                    tf.dtypes.string),
-            "guests[gender='female'].name":
-                tfio.experimental.columnar.VarLenFeatureWithRank(
-                    tf.dtypes.string),
+            "guests[gender='male'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            ),
+            "guests[gender='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+                tf.dtypes.string
+            ),
         }
         expected_data = [
             {

@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 
+
 class VarLenFeatureWithRank:
     """
     A class used to represent VarLenFeature with rank.
