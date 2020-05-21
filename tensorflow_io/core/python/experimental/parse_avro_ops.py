@@ -92,8 +92,12 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
         dense_defaults,
         dense_shapes,
     ) = _features_to_raw_params(
-        features, [tensorflow_io.experimental.columnar.VarLenFeatureWithRank,
-                   tf.io.SparseFeature, tf.io.FixedLenFeature]
+        features,
+        [
+            tensorflow_io.experimental.columnar.VarLenFeatureWithRank,
+            tf.io.SparseFeature,
+            tf.io.FixedLenFeature,
+        ],
     )
 
     outputs = _parse_avro(
@@ -325,8 +329,9 @@ def _features_to_raw_params(features, types):
         # NOTE: We iterate over sorted keys to keep things deterministic.
         for key in sorted(features.keys()):
             feature = features[key]
-            if isinstance(feature,
-                          tensorflow_io.experimental.columnar.VarLenFeatureWithRank):
+            if isinstance(
+                feature, tensorflow_io.experimental.columnar.VarLenFeatureWithRank
+            ):
                 _handle_varlen_feature(
                     feature, key, sparse_keys, sparse_types, sparse_ranks, types
                 )
