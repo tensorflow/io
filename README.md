@@ -141,6 +141,11 @@ Check lint with Black or Pyupgrade for an individual python file could be done w
 bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
 ```
 
+Format individual python file with black and pyupgrade could be done with:
+```
+bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
+```
+
 
 ### Python
 
