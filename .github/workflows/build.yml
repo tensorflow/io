@@ -312,10 +312,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.8.2
+          python-version: 3.8.3
       - name: Bazel on Windows
         env:
-          PYTHON_VERSION: 3.8.2
+          PYTHON_VERSION: 3.8.3
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
         shell: cmd
         run: |
