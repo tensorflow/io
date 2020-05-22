@@ -995,3 +995,14 @@ http_archive(
         "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
     ],
 )
+
+http_archive(
+    name = "farmhash_archive",
+    build_file = "//third_party:farmhash.BUILD",
+    sha256 = "6560547c63e4af82b0f202cb710ceabb3f21347a4b996db565a411da5b17aba0",
+    strip_prefix = "farmhash-816a4ae622e964763ca0862d9dbd19324a1eaf45",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/farmhash/archive/816a4ae622e964763ca0862d9dbd19324a1eaf45.tar.gz",
+        "https://github.com/google/farmhash/archive/816a4ae622e964763ca0862d9dbd19324a1eaf45.tar.gz",
+    ],
+)
