@@ -1,5 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["libmemcached.mem_config.h"])
+
 cc_library(
     name = "openexr",
     srcs = [
