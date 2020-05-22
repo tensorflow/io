@@ -677,6 +677,7 @@ cc_binary(
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
             "//tensorflow_io/core:oss_ops",
+            "//tensorflow_io/core/kernels/gstpufs:gs_tpu_file_system",
         ],
     }),
 )
