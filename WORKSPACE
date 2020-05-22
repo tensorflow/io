@@ -984,3 +984,14 @@ http_archive(
         "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz",
     ],
 )
+
+http_archive(
+    name = "libmemcached",
+    build_file = "//third_party:libmemcached.BUILD",
+    sha256 = "e22c0bb032fde08f53de9ffbc5a128233041d9f33b5de022c0978a2149885f82",
+    strip_prefix = "libmemcached-1.0.18",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
+        "https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-1.0.18.tar.gz",
+    ],
+)
