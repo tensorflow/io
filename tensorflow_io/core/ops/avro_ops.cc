@@ -40,26 +40,35 @@ Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
   return Status::OK();
 }
 
+shape_inference::DimensionOrConstant ComputeSparseRank(
+    const ShapeHandle input_shape, int64 rank_delta,
+    shape_inference::InferenceContext* c) {
+  shape_inference::DimensionOrConstant rank(c->UnknownDim());
+  if (c->RankKnown(input_shape)) {
+    rank = c->Rank(input_shape) + rank_delta;
+  }
+  return rank;
+}
+
 // Copied verbatim from
 // https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/ops/parsing_ops.cc
 // since this is not exposed publicly
 // Adds output shapes for sparse tensors in Parse*Example ops.
 void AddSparseOutputShapes(int num_sparse, const ShapeHandle input_shape,
-                           int64 rank_delta,
+                           std::vector<int64> sparse_ranks,
                            shape_inference::InferenceContext* c,
                            int* output_idx) {
-  // Rank of SparseTensor is rank of input tensor plus rank_delta.
-  shape_inference::DimensionOrConstant rank(c->UnknownDim());
-  if (c->RankKnown(input_shape)) {
-    rank = c->Rank(input_shape) + rank_delta;
-  }
   for (int i = 0; i < num_sparse; ++i) {  // sparse_indices
+    shape_inference::DimensionOrConstant rank =
+        ComputeSparseRank(input_shape, sparse_ranks[i], c);
     c->set_output((*output_idx)++, c->Matrix(c->UnknownDim(), rank));
   }
   for (int i = 0; i < num_sparse; ++i) {  // sparse_values
     c->set_output((*output_idx)++, c->Vector(c->UnknownDim()));
   }
   for (int i = 0; i < num_sparse; ++i) {  // sparse_dense_shapes
+    shape_inference::DimensionOrConstant rank =
+        ComputeSparseRank(input_shape, sparse_ranks[i], c);
     c->set_output((*output_idx)++, c->Vector(rank));
   }
 }
@@ -77,6 +86,7 @@ REGISTER_OP("IO>ParseAvro")
     .Attr("num_sparse: int >= 0")
     .Attr("reader_schema: string")
     .Attr("sparse_keys: list(string) >= 0")
+    .Attr("sparse_ranks: list(int) >= 0")
     .Attr("dense_keys: list(string) >= 0")
     .Attr("sparse_types: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("dense_types: list({float,double,int64,int32,string,bool}) >= 0")
@@ -88,6 +98,7 @@ REGISTER_OP("IO>ParseAvro")
       std::vector<DataType> sparse_types;
       std::vector<DataType> dense_types;
       std::vector<string> sparse_keys;
+      std::vector<int64> sparse_ranks;
       std::vector<string> dense_keys;
 
       std::vector<PartialTensorShape> dense_shapes;
@@ -97,6 +108,7 @@ REGISTER_OP("IO>ParseAvro")
       TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
 
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_keys", &sparse_keys));
+      TF_RETURN_IF_ERROR(c->GetAttr("sparse_ranks", &sparse_ranks));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_keys", &dense_keys));
 
       TF_RETURN_IF_ERROR(c->GetAttr("num_sparse", &num_sparse_from_user));
@@ -110,6 +122,9 @@ REGISTER_OP("IO>ParseAvro")
       }
       if (num_sparse != sparse_keys.size()) {
         return errors::InvalidArgument("len(sparse_types) != len(sparse_keys)");
+      }
+      if (num_sparse != sparse_ranks.size()) {
+        return errors::InvalidArgument("len(sparse_ranks) != num_sparse");
       }
       if (num_dense != dense_keys.size()) {
         return errors::InvalidArgument("len(dense_types) != len(dense_keys)");
@@ -142,7 +157,7 @@ REGISTER_OP("IO>ParseAvro")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &names));
 
       int output_idx = 0;
-      AddSparseOutputShapes(num_sparse, input, 1, c, &output_idx);
+      AddSparseOutputShapes(num_sparse, input, sparse_ranks, c, &output_idx);
       TF_RETURN_IF_ERROR(
           AddDenseOutputShapes(dense_shapes, input, c, &output_idx));
       return Status::OK();
