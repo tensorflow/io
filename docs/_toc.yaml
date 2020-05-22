@@ -16,3 +16,5 @@
 toc:
 - title: Overview
   path: /io/overview
+- title: "Configuring Visual Studio Code"
+  path: /io/vscode
