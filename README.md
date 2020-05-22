@@ -29,7 +29,7 @@ d_train = tfio.IODataset.from_mnist(
     'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
     'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
 
-# By default image data is uint8 so conver to float32.
+# By default image data is uint8 so convert to float32.
 d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
 model = tf.keras.models.Sequential([
