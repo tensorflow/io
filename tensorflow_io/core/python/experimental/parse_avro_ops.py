@@ -18,8 +18,8 @@ import collections
 import re
 
 import tensorflow as tf
+import tensorflow_io
 from tensorflow_io.core.python.ops import core_ops
-
 
 # Adjusted from
 # https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/ops/parsing_ops.py
@@ -86,12 +86,18 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     (
         sparse_keys,
         sparse_types,
+        sparse_ranks,
         dense_keys,
         dense_types,
         dense_defaults,
         dense_shapes,
     ) = _features_to_raw_params(
-        features, [tf.io.VarLenFeature, tf.io.SparseFeature, tf.io.FixedLenFeature]
+        features,
+        [
+            tensorflow_io.experimental.columnar.VarLenFeatureWithRank,
+            tf.io.SparseFeature,
+            tf.io.FixedLenFeature,
+        ],
     )
 
     outputs = _parse_avro(
@@ -100,6 +106,7 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
         avro_names,
         sparse_keys,
         sparse_types,
+        sparse_ranks,
         dense_keys,
         dense_types,
         dense_defaults,
@@ -115,6 +122,7 @@ def _parse_avro(
     names=None,
     sparse_keys=None,
     sparse_types=None,
+    sparse_ranks=None,
     dense_keys=None,
     dense_types=None,
     dense_defaults=None,
@@ -133,6 +141,7 @@ def _parse_avro(
     sparse_types: A list of `DTypes` of the same length as `sparse_keys`.
       Only `tf.float32` (`FloatList`), `tf.int64` (`Int64List`),
       and `tf.string` (`BytesList`) are supported.
+    sparse_ranks: ranks of sparse feature. `tf.int64` (`Int64List`) is supported.
     dense_keys: A list of string keys in the examples' features.
       The results for these keys will be returned as `Tensor`s
     dense_types: A list of DTypes of the same length as `dense_keys`.
@@ -180,6 +189,7 @@ def _parse_avro(
             sparse_keys=sparse_keys,
             sparse_types=sparse_types,
             num_sparse=len(sparse_keys),
+            sparse_ranks=sparse_ranks,
             dense_keys=dense_keys,
             dense_shapes=dense_shapes,
             name=name,
@@ -306,6 +316,7 @@ def _features_to_raw_params(features, types):
     """
     sparse_keys = []
     sparse_types = []
+    sparse_ranks = []
     dense_keys = []
     dense_types = []
     # When the graph is built twice, multiple dense_defaults in a normal dict
@@ -318,10 +329,16 @@ def _features_to_raw_params(features, types):
         # NOTE: We iterate over sorted keys to keep things deterministic.
         for key in sorted(features.keys()):
             feature = features[key]
-            if isinstance(feature, tf.io.VarLenFeature):
-                _handle_varlen_feature(feature, key, sparse_keys, sparse_types, types)
+            if isinstance(
+                feature, tensorflow_io.experimental.columnar.VarLenFeatureWithRank
+            ):
+                _handle_varlen_feature(
+                    feature, key, sparse_keys, sparse_types, sparse_ranks, types
+                )
             elif isinstance(feature, tf.io.SparseFeature):
-                _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types)
+                _handle_sparse_feature(
+                    feature, key, sparse_keys, sparse_types, sparse_ranks, types
+                )
             elif isinstance(feature, tf.io.FixedLenFeature):
                 _handle_fixedlen_feature(
                     dense_defaults,
@@ -337,6 +354,7 @@ def _features_to_raw_params(features, types):
     return (
         sparse_keys,
         sparse_types,
+        sparse_ranks,
         dense_keys,
         dense_types,
         dense_defaults,
@@ -361,7 +379,9 @@ def _handle_fixedlen_feature(
         dense_defaults[key] = feature.default_value
 
 
-def _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types):
+def _handle_sparse_feature(
+    feature, key, sparse_keys, sparse_types, sparse_ranks, types
+):
     """handle_sparse_feature"""
     if tf.io.SparseFeature not in types:
         raise ValueError("Unsupported SparseFeature {}.".format(feature))
@@ -392,6 +412,9 @@ def _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types):
         else:
             sparse_keys.append(index_key)
             sparse_types.append(tf.int64)
+            # sparse features always have rank 1 because they encode the indices separately (one for each component) and then merge these before the user get's them.
+            # setting 1 here is merely achieving the same behavior as before.
+            sparse_ranks.append(1)
     if feature.value_key in sparse_keys:
         dtype = sparse_types[sparse_keys.index(feature.value_key)]
         if dtype != feature.dtype:
@@ -402,16 +425,24 @@ def _handle_sparse_feature(feature, key, sparse_keys, sparse_types, types):
     else:
         sparse_keys.append(feature.value_key)
         sparse_types.append(feature.dtype)
+        # sparse features always have rank 1 because they encode the indices separately (one for each component) and then merge these before the user get's them.
+        # setting 1 here is merely achieving the same behavior as before.
+        sparse_ranks.append(1)
 
 
-def _handle_varlen_feature(feature, key, sparse_keys, sparse_types, types):
+def _handle_varlen_feature(
+    feature, key, sparse_keys, sparse_types, sparse_ranks, types
+):
     """handle_varlen_feature"""
-    if tf.io.VarLenFeature not in types:
-        raise ValueError("Unsupported VarLenFeature {}.".format(feature))
+    if tensorflow_io.experimental.columnar.VarLenFeatureWithRank not in types:
+        raise ValueError("Unsupported VarLenFeatureWithRank {}.".format(feature))
     if not feature.dtype:
-        raise ValueError("Missing type for feature %s." % key)
+        raise ValueError("Missing type for VarLenFeatureWithRank %s." % key)
+    if not feature.rank:
+        raise ValueError("Missing rank for VarLenFeatureWithRank %s." % key)
     sparse_keys.append(key)
     sparse_types.append(feature.dtype)
+    sparse_ranks.append(feature.rank)
 
 
 # Pulled this method from tensorflow/python/ops/parsing_ops.py
