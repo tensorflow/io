@@ -793,7 +793,11 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
     assert np.array_equal(entries, expected)
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "darwin"), reason="no lame for darwin or win32",
+)
 def test_encode_mp3_mono():
+    """test_encode_mp3_mono"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
     )
