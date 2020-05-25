@@ -34,11 +34,26 @@ typedef enum vbr_mode_e {
   vbr_default = vbr_mtrh
 } vbr_mode;
 
+typedef enum MPEG_mode_e {
+  STEREO = 0,
+  JOINT_STEREO,
+  DUAL_CHANNEL,  // LAME doesn't supports this!
+  MONO,
+  NOT_SET,
+  MAX_INDICATOR  // Don't use this! It's used for sanity checks.
+} MPEG_mode;
+
 static lame_t (*lame_init)(void);
+static int (*lame_set_mode)(lame_t, MPEG_mode);
 static int (*lame_set_num_channels)(lame_t, int);
 static int (*lame_set_in_samplerate)(lame_t, int);
 static int (*lame_set_VBR)(lame_t, vbr_mode);
 static int (*lame_init_params)(lame_t);
+static int (*lame_encode_buffer_ieee_float)(lame_t gfp, const float pcm_l[],
+                                            const float pcm_r[],
+                                            const int nsamples,
+                                            unsigned char* mp3buf,
+                                            const int mp3buf_size);
 static int (*lame_encode_buffer_interleaved_ieee_float)(lame_t gfp,
                                                         const float pcm[],
                                                         const int nsamples,
@@ -233,17 +248,21 @@ bool LoadLame() {
   void* lib = dlopen("libmp3lame.so.0", RTLD_NOW);
   if (lib != nullptr) {
     *(void**)(&lame_init) = dlsym(lib, "lame_init");
+    *(void**)(&lame_set_mode) = dlsym(lib, "lame_set_mode");
     *(void**)(&lame_set_num_channels) = dlsym(lib, "lame_set_num_channels");
     *(void**)(&lame_set_in_samplerate) = dlsym(lib, "lame_set_in_samplerate");
     *(void**)(&lame_set_VBR) = dlsym(lib, "lame_set_VBR");
     *(void**)(&lame_init_params) = dlsym(lib, "lame_init_params");
+    *(void**)(&lame_encode_buffer_ieee_float) =
+        dlsym(lib, "lame_encode_buffer_ieee_float");
     *(void**)(&lame_encode_buffer_interleaved_ieee_float) =
         dlsym(lib, "lame_encode_buffer_interleaved_ieee_float");
     *(void**)(&lame_encode_flush) = dlsym(lib, "lame_encode_flush");
     *(void**)(&lame_close) = dlsym(lib, "lame_close");
-    if (lame_init != nullptr && lame_set_num_channels != nullptr &&
-        lame_set_in_samplerate != nullptr && lame_set_VBR != nullptr &&
-        lame_init_params != nullptr &&
+    if (lame_init != nullptr && lame_set_mode != nullptr &&
+        lame_set_num_channels != nullptr && lame_set_in_samplerate != nullptr &&
+        lame_set_VBR != nullptr && lame_init_params != nullptr &&
+        lame_encode_buffer_ieee_float != nullptr &&
         lame_encode_buffer_interleaved_ieee_float != nullptr &&
         lame_encode_flush != nullptr && lame_close != nullptr) {
       return true;
@@ -272,6 +291,9 @@ class AudioEncodeMP3Op : public OpKernel {
     const int64 rate = rate_tensor->scalar<int64>()();
     const int64 samples = input_tensor->shape().dim_size(0);
     const int64 channels = input_tensor->shape().dim_size(1);
+    OP_REQUIRES(
+        context, (channels == 1 || channels == 2),
+        errors::InvalidArgument("only 1 or 2 channles supported: ", channels));
 
     Tensor* output_tensor = nullptr;
     OP_REQUIRES_OK(
@@ -289,6 +311,11 @@ class AudioEncodeMP3Op : public OpKernel {
                 errors::InvalidArgument("unable to initialize lame"));
 
     int status;
+
+    status = lame_set_mode(lame.get(), channels == 1 ? MONO : STEREO);
+    OP_REQUIRES(context, (status == 0),
+                errors::InvalidArgument("unable to set mode: ", status));
+
     status = lame_set_num_channels(lame.get(), channels);
     OP_REQUIRES(context, (status == 0),
                 errors::InvalidArgument("unable to set channels: ", status));
@@ -312,8 +339,13 @@ class AudioEncodeMP3Op : public OpKernel {
     output.resize(samples * 5 / 4 + 7200);
     unsigned char* mp3buf = (unsigned char*)&output[0];
     int mp3buf_size = output.size();
-    status = lame_encode_buffer_interleaved_ieee_float(lame.get(), pcm, samples,
-                                                       mp3buf, mp3buf_size);
+    if (channels == 1) {
+      status = lame_encode_buffer_ieee_float(lame.get(), pcm, nullptr, samples,
+                                             mp3buf, mp3buf_size);
+    } else {
+      status = lame_encode_buffer_interleaved_ieee_float(
+          lame.get(), pcm, samples, mp3buf, mp3buf_size);
+    }
     OP_REQUIRES(context, (status >= 0),
                 errors::InvalidArgument("unable to encode: ", status));
 
