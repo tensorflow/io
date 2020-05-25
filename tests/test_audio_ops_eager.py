@@ -791,3 +791,17 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
     assert len(entries) == 1
     entries = entries[0]
     assert np.array_equal(entries, expected)
+
+
+@pytest.mark.skipif(
+    sys.platform in ("win32", "darwin"), reason="no lame for darwin or win32",
+)
+def test_encode_mp3_mono():
+    """test_encode_mp3_mono"""
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
+    )
+    audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
+    assert audio.shape == [5760, 1]
+    audio = tf.cast(audio, tf.float32) / 32768.0
+    _ = tfio.audio.encode_mp3(audio, rate=8000)
