@@ -5,7 +5,6 @@ def _lint_impl(ctx):
     substitutions = {
         "@@MODE@@": shell.quote(ctx.attr.mode),
         "@@BLACK_PATH@@": shell.quote(ctx.executable._black.short_path),
-        "@@PYLINT_PATH@@": shell.quote(ctx.executable._pylint.short_path),
         "@@BUILDIFIER_PATH@@": shell.quote(ctx.executable._buildifier.short_path),
         "@@CLANG_FORMAT_PATH@@": shell.quote(ctx.executable._clang_format.short_path),
         "@@PYUPGRADE_PATH@@": shell.quote(ctx.executable._pyupgrade.short_path),
@@ -16,7 +15,7 @@ def _lint_impl(ctx):
         substitutions = substitutions,
         is_executable = True,
     )
-    runfiles = ctx.runfiles(files = [ctx.executable._buildifier, ctx.executable._clang_format, ctx.executable._pylint, ctx.executable._black, ctx.executable._pyupgrade])
+    runfiles = ctx.runfiles(files = [ctx.executable._buildifier, ctx.executable._clang_format, ctx.executable._black, ctx.executable._pyupgrade])
     return [DefaultInfo(
         files = depset([bash_file]),
         runfiles = runfiles,
@@ -33,11 +32,6 @@ _lint = rule(
         ),
         "_black": attr.label(
             default = "//tools/lint:black",
-            cfg = "host",
-            executable = True,
-        ),
-        "_pylint": attr.label(
-            default = "//tools/lint:pylint",
             cfg = "host",
             executable = True,
         ),
