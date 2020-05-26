@@ -109,7 +109,7 @@ It will create launch.json file, add following config here:
 
 If everything is configured correctly, you should be able to do Run -> Start Debugging (F5) or Run -> Run Without Debugging (Ctrl + F5). This will run your code under debugger:
 
-![VSCode debugger](./vscode/vscode_debugger.png)
+![VSCode debugger](./images/vscode_debugger.png)
 
 One other thing worth doing to simplify debugging experience is configuting GDB to skip standard C++ libraries, so you don't step into code you don't care about. In order to do this, create ```~/.gdbinit``` file with following content:
 ```
