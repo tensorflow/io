@@ -8,14 +8,12 @@ echo "$MODE: " $@
 RUN_BAZEL=no
 RUN_BLACK=no
 RUN_CLANG=no
-RUN_PYLINT=no
 RUN_PYUPGRADE=no
 RUN_ENTRIES=all
 if [[ $# -eq 0 ]]; then
   RUN_BAZEL=true
   RUN_BLACK=true
   RUN_CLANG=true
-  RUN_PYLINT=true
   RUN_PYUPGRADE=true
 else
   while [[ $# -gt 0 ]]; do
@@ -31,10 +29,6 @@ else
       shift
       echo "$MODE: " clang
       RUN_CLANG=true
-    elif [[ "$1" == "pylint" ]]; then
-      shift
-      echo "$MODE: " pylint
-      RUN_PYLINT=true
     elif [[ "$1" == "pyupgrade" ]]; then
       shift
       echo "$MODE: " pyupgrade
@@ -51,10 +45,9 @@ else
   done
 fi
 
-echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pylint=$RUN_PYLINT Pyupgrade=$RUN_PYUPGRADE [Entries]: $RUN_ENTRIES"
+echo "Selected: Bazel=$RUN_BAZEL Black=$RUN_BLACK Clang=$RUN_CLANG Pyupgrade=$RUN_PYUPGRADE [Entries]: $RUN_ENTRIES"
 
 BLACK_PATH=@@BLACK_PATH@@
-PYLINT_PATH=@@PYLINT_PATH@@
 BUILDIFIER_PATH=@@BUILDIFIER_PATH@@
 CLANG_FORMAT_PATH=@@CLANG_FORMAT_PATH@@
 PYUPGRADE_PATH=@@PYUPGRADE_PATH@@
@@ -62,26 +55,15 @@ PYUPGRADE_PATH=@@PYUPGRADE_PATH@@
 mode="$MODE"
 
 black_path=$(readlink "$BLACK_PATH")
-pylint_path=$(readlink "$PYLINT_PATH")
 buildifier_path=$(readlink "$BUILDIFIER_PATH")
 clang_format_path=$(readlink "$CLANG_FORMAT_PATH")
 pyupgrade_path=$(readlink "$PYUPGRADE_PATH")
 
 echo "mode:" $mode
 echo "black:" $black_path
-echo "pylint:" $pylint_path
 echo "buildifier:" $buildifier_path
 echo "clang-format:" $clang_format_path
 echo "pyupgrade:" $pyupgrade_path
-
-if [[ "$mode" == "lint" ]]; then
-  if [[ "$RUN_PYLINT" == "true" ]]; then
-    echo
-    echo "WARN: pylint does not have lint mode, use check instead"
-    echo
-  fi
-fi
-
 
 black_func() {
   echo $1 $2
@@ -90,16 +72,6 @@ black_func() {
   else
     $black_path --check $2
   fi
-}
-
-pylint_func() {
-  echo $1 $2
-  # Note: --indent-string='    ' to override google 2 spaces and match black
-  # Note: --max-line-length=88 to override default and match black
-  # Note: --disable=bad-continuation to avoid conflict with black
-  # TODO: --disable=abstract-method should be removed eventually
-  # TODO: --disable=abstract-class-instantiated should be removed eventually
-  $pylint_path --indent-string='    ' --max-line-length=88 --disable=bad-continuation --disable=abstract-method --disable=abstract-class-instantiated $2
 }
 
 buildifier_func() {
@@ -156,31 +128,6 @@ fi
 
 fi
 
-
-if [[ "$RUN_PYLINT" == "true" ]]; then
-echo "Run Pylint"
-
-if [[ "$RUN_ENTRIES" == "--" ]]; then
-( \
-    cd "$BUILD_WORKSPACE_DIRECTORY" && \
-    for i in $@ ; do \
-        pylint_func $mode "$i" ; \
-    done \
-)
-else
-( \
-    cd "$BUILD_WORKSPACE_DIRECTORY" && \
-    for i in \
-        $( \
-            find tensorflow_io tests -type f \
-                \( -name '*.py' \) \
-        ) ; do \
-        pylint_func $mode "$i" ; \
-    done \
-)
-fi
-
-fi
 
 if [[ "$RUN_BAZEL" == "true" ]]; then
 echo "Run Bazel Buildifier"
