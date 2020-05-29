@@ -27,8 +27,7 @@ limitations under the License.
 namespace tensorflow {
 
 // GsTpuFileSystem is implemented simply to register "gstpu://" as a file system
-// scheme. It is used to add some file system optimizations for TPU on GCS
-// datasets.
+// scheme. It is used to add some file system optimizations for TPU on GCS datasets.
 class GsTpuFileSystem : public MemcachedGcsFileSystem {
  public:
   struct TimeoutConfig;
