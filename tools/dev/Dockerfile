@@ -1,6 +1,6 @@
 FROM tensorflow/tensorflow:custom-op-ubuntu16
 
-RUN rm /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-get update && \
+RUN rm -f /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-get update && \
     apt-get install -y \
     git \
     gcc \

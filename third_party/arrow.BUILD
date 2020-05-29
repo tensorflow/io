@@ -86,6 +86,7 @@ cc_library(
         "cpp/src/arrow/util/config.h",
         "cpp/src/parquet/parquet_version.h",
     ],
+    copts = ["-std=c++11"],
     defines = [
         "ARROW_WITH_BROTLI",
         "ARROW_WITH_SNAPPY",
