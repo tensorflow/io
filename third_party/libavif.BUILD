@@ -14,7 +14,6 @@ cc_library(
         ],
         exclude = [
             "src/codec_aom.c",
-            "src/codec_libgav1.c",
             "src/codec_rav1e.c",
         ],
     ),
@@ -22,7 +21,7 @@ cc_library(
     defines = [
         #"AVIF_CODEC_AOM=1",
         "AVIF_CODEC_DAV1D=1",
-        #"AVIF_CODEC_LIBGAV1=1",
+        "AVIF_CODEC_LIBGAV1=1",
         #"AVIF_CODEC_RAV1E=1",
     ],
     includes = [
@@ -31,5 +30,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@dav1d",
+        "@libgav1",
     ],
 )

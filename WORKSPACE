@@ -937,3 +937,10 @@ http_archive(
         "https://github.com/videolan/dav1d/archive/0.6.0.tar.gz",
     ],
 )
+
+new_git_repository(
+    name = "libgav1",
+    build_file = "//third_party:libgav1.BUILD",
+    commit = "6ab7d65a68350ed4ec6aaabfa18715b2d76a231c",
+    remote = "https://chromium.googlesource.com/codecs/libgav1",
+)
