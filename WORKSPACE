@@ -167,6 +167,8 @@ http_archive(
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
         "sed -i.bak 's/struct stat/struct_stat/' src/blob/blob_client_wrapper.cpp",
+        "echo '' >> include/base64.h",
+        "echo '#include <stdexcept>' >> include/base64.h",
     ],
     sha256 = "597d9894061f4871a909f1c2c3f56725a69c188ea17784cc71e1e170687faf00",
     strip_prefix = "azure-storage-cpplite-0.2.0",
