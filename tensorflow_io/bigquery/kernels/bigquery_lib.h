@@ -303,6 +303,21 @@ class BigQueryReaderAvroDatasetIterator
         case avro::AVRO_ENUM:
           dtype = DT_STRING;
           break;
+        case avro::AVRO_ARRAY:{
+          auto _vector = field.value<avro::GenericArray>().value();
+          if(_vector.empty()) dtype = output_types[i];
+          else{
+            auto _type = _vector[0].type();
+            if (_type == avro::AVRO_STRING) dtype = DT_STRING;
+            else if (_type == avro::AVRO_FLOAT) dtype = DT_FLOAT;
+            else if (_type == avro::AVRO_DOUBLE) dtype = DT_DOUBLE;
+            else if (_type == avro::AVRO_BOOL) dtype = DT_BOOL;
+            else
+              return errors::InvalidArgument("unsupported data type within AVRO_ARRAY ",
+                                 _type);
+            }
+          }
+          break;
         case avro::AVRO_NULL:
           dtype = output_types[i];
           break;
@@ -352,6 +367,45 @@ class BigQueryReaderAvroDatasetIterator
           ((*out_tensors)[i]).scalar<tstring>()() =
               string((char *)&field_value[0], field_value.size());
         } break;
+        case avro::AVRO_ARRAY:{
+          if (output_types[i] == DT_STRING) {
+            unsigned int size = field.value<avro::GenericArray>().value().size();
+            Tensor output_tensor(ctx->allocator({}), DT_STRING, {size});
+            auto output_flat = output_tensor.flat<tstring>();
+            for (unsigned int idx = 0; idx < size; idx++){
+               output_flat(idx) = field.value<avro::GenericArray>().value()[idx].value<string>();
+            }
+            (*out_tensors)[i] = output_tensor;
+          }
+          if (output_types[i] == DT_FLOAT) {
+            unsigned int size = field.value<avro::GenericArray>().value().size();
+            Tensor output_tensor(ctx->allocator({}), DT_FLOAT, {size});
+            auto output_flat = output_tensor.flat<float>();
+            for (unsigned int idx = 0; idx < size; idx++){
+               output_flat(idx) = field.value<avro::GenericArray>().value()[idx].value<float>();
+            }
+            (*out_tensors)[i] = output_tensor;
+          }
+          else if (output_types[i] == DT_DOUBLE){
+            unsigned int size = field.value<avro::GenericArray>().value().size();
+            Tensor output_tensor(ctx->allocator({}), DT_DOUBLE, {size});
+            auto output_flat = output_tensor.flat<double>();
+            for (unsigned int idx = 0; idx < size; idx++){
+               output_flat(idx) = field.value<avro::GenericArray>().value()[idx].value<double>();
+            }
+            (*out_tensors)[i] = output_tensor;
+          }
+          else if (output_types[i] == DT_BOOL){
+            unsigned int size = field.value<avro::GenericArray>().value().size();
+            Tensor output_tensor(ctx->allocator({}), DT_BOOL, {size});
+            auto output_flat = output_tensor.flat<bool>();
+            for (unsigned int idx = 0; idx < size; idx++){
+               output_flat(idx) = field.value<avro::GenericArray>().value()[idx].value<bool>();
+            }
+            (*out_tensors)[i] = output_tensor;
+          }
+          }
+          break;
         case avro::AVRO_NULL:
           switch (output_types[i]) {
             case DT_BOOL:

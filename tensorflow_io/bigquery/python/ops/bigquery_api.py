@@ -62,6 +62,7 @@ class BigQueryClient:
         table_id,
         dataset_id,
         selected_fields,
+        selected_fields_repeated,
         output_types=None,
         row_restriction="",
         requested_streams=1,
@@ -128,6 +129,9 @@ class BigQueryClient:
                 "length of `selected_fields`"
             )
 
+        if not selected_fields_repeated:
+            selected_fields_repeated = [False] * len(selected_fields)
+
         if not output_types:
             output_types = [dtypes.string] * len(selected_fields)
 
@@ -149,6 +153,7 @@ class BigQueryClient:
             table_id,
             dataset_id,
             selected_fields,
+            selected_fields_repeated,
             output_types,
             row_restriction,
             requested_streams,
@@ -169,6 +174,7 @@ class BigQueryReadSession:
         table_id,
         dataset_id,
         selected_fields,
+        selected_fields_repeated,
         output_types,
         row_restriction,
         requested_streams,
@@ -182,6 +188,7 @@ class BigQueryReadSession:
         self._table_id = table_id
         self._dataset_id = dataset_id
         self._selected_fields = selected_fields
+        self._selected_fields_repeated = selected_fields_repeated
         self._output_types = output_types
         self._row_restriction = row_restriction
         self._requested_streams = requested_streams
@@ -214,6 +221,7 @@ class BigQueryReadSession:
         return _BigQueryDataset(
             self._client_resource,
             self._selected_fields,
+            self._selected_fields_repeated,
             self._output_types,
             self._schema,
             self._data_format,
@@ -289,6 +297,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         self,
         client_resource,
         selected_fields,
+        selected_fields_repeated,
         output_types,
         schema,
         data_format,
@@ -298,16 +307,19 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
-            zip(selected_fields, output_types), key=itemgetter(0)
+            zip(selected_fields, selected_fields_repeated, output_types), key=itemgetter(0)
         )
-        selected_fields, output_types = list(zip(*sorted_fields_with_types))
+        selected_fields, selected_fields_repeated, output_types = list(zip(*sorted_fields_with_types))
         selected_fields = list(selected_fields)
+        selected_fields_repeated = list(selected_fields_repeated)
         output_types = list(output_types)
+
+        tensor_shapes = list([None, ] if repeated else [] for repeated in selected_fields_repeated)
 
         self._element_spec = collections.OrderedDict(
             zip(
                 selected_fields,
-                (tensor_spec.TensorSpec([], dtype) for dtype in output_types),
+                (tensor_spec.TensorSpec(shape, dtype) for (shape, dtype) in zip(tensor_shapes, output_types)),
             )
         )
 
