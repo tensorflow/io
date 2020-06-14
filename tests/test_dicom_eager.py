@@ -190,5 +190,34 @@ def test_dicom_image_concurrency():
         assert np.array_equal(tf.shape(item), [10, 430, 600, 3])
 
 
+def test_dicom_sequence():
+    """test_decode_dicom_sequence"""
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "2.25.304589190180579357564631626197663875025.dcm",
+    )
+    dcm_content = tf.io.read_file(filename=dcm_path)
+
+    tags = tfio.image.decode_dicom_data(
+        dcm_content, tags=["[0x0008,0x1115][0][0x0008,0x1140][0][0x0008,0x1155]"]
+    )
+    assert np.array_equal(tags, [b"2.25.211904290918469145111906856660599393535"])
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "US-PAL-8-10x-echo.dcm",
+    )
+    dcm_content = tf.io.read_file(filename=dcm_path)
+
+    tags = tfio.image.decode_dicom_data(dcm_content, tags=["[0x0020,0x000E]"])
+    assert np.array_equal(tags, [b"999.999.94827453"])
+
+    tags = tfio.image.decode_dicom_data(dcm_content, tags=["0x0020,0x000e"])
+    assert np.array_equal(tags, [b"999.999.94827453"])
+
+
 if __name__ == "__main__":
     test.main()
