@@ -67,10 +67,14 @@ def decode_json(data, specs, name=None):
     named_spec(named)
     named = tf.nest.flatten(named)
     names = [e.named() for e in named]
-    shapes = [e.shape for e in named]
+    shapes = [
+        tf.constant([-1 if d is None else d for d in e.shape.as_list()], tf.int32)
+        for e in named
+    ]
     dtypes = [e.dtype for e in named]
 
-    values = core_ops.io_decode_json(data, names, shapes, dtypes, name=name)
+    values = core_ops.io_decode_json(data, names, dtypes, name=name)
+    values = [tf.reshape(value, shape) for value, shape in zip(values, shapes)]
     return tf.nest.pack_sequence_as(specs, values)
 
 
