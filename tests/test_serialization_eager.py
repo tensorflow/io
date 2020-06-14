@@ -15,6 +15,7 @@
 """Test Serialization"""
 
 import os
+import json
 import numpy as np
 
 import pytest
@@ -185,3 +186,17 @@ def test_serialization_decode_in_dataset(
                 for v, r in zip(tf.nest.flatten(value), tf.nest.flatten(returned))
             ]
         )
+
+
+def test_json_partial_shape():
+    """Test case for partial shape GitHub 918."""
+    r = json.dumps({"foo": [1, 2, 3, 4, 5]})
+
+    @tf.function(autograph=False)
+    def parse_json(json_text):
+        specs = {"foo": tf.TensorSpec(tf.TensorShape([None]), tf.int32)}
+        parsed = tfio.experimental.serialization.decode_json(json_text, specs)
+        return parsed["foo"]
+
+    v = parse_json(r)
+    assert np.array_equal(v, [1, 2, 3, 4, 5])

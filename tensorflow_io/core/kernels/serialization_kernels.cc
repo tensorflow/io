@@ -13,17 +13,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow/core/framework/resource_op_kernel.h"
-
-#include "rapidjson/document.h"
-#include "rapidjson/pointer.h"
-
 #include "api/Compiler.hh"
 #include "api/DataFile.hh"
 #include "api/Generic.hh"
 #include "api/Stream.hh"
 #include "api/Validator.hh"
+#include "rapidjson/document.h"
+#include "rapidjson/pointer.h"
+#include "tensorflow/core/framework/op_kernel.h"
 
 namespace tensorflow {
 namespace data {
@@ -33,7 +30,6 @@ class DecodeJSONOp : public OpKernel {
  public:
   explicit DecodeJSONOp(OpKernelConstruction* context) : OpKernel(context) {
     env_ = context->env();
-    OP_REQUIRES_OK(context, context->GetAttr("shapes", &shapes_));
   }
 
   void Compute(OpKernelContext* context) override {
@@ -45,28 +41,26 @@ class DecodeJSONOp : public OpKernel {
     const Tensor* names_tensor;
     OP_REQUIRES_OK(context, context->input("names", &names_tensor));
 
-    OP_REQUIRES(context, (names_tensor->NumElements() == shapes_.size()),
-                errors::InvalidArgument(
-                    "shapes and names should have same number: ",
-                    shapes_.size(), " vs. ", names_tensor->NumElements()));
+    OP_REQUIRES(
+        context, (names_tensor->NumElements() == context->num_outputs()),
+        errors::InvalidArgument("names should have same number as outputs: ",
+                                names_tensor->NumElements(), " vs. ",
+                                context->num_outputs()));
     rapidjson::Document d;
     d.Parse(input.c_str());
     OP_REQUIRES(context, d.IsObject(),
                 errors::InvalidArgument("not a valid JSON object"));
-    for (size_t i = 0; i < shapes_.size(); i++) {
-      Tensor* value_tensor;
-      OP_REQUIRES_OK(context,
-                     context->allocate_output(i, shapes_[i], &value_tensor));
+    for (size_t i = 0; i < names_tensor->NumElements(); i++) {
       rapidjson::Value* entry =
           rapidjson::Pointer(names_tensor->flat<tstring>()(i).c_str()).Get(d);
       OP_REQUIRES(context, (entry != nullptr),
                   errors::InvalidArgument("no value for ",
                                           names_tensor->flat<tstring>()(i)));
+      Tensor* value_tensor;
       if (entry->IsArray()) {
-        OP_REQUIRES(context, entry->Size() == value_tensor->NumElements(),
-                    errors::InvalidArgument(
-                        "number of elements in JSON does not match spec: ",
-                        entry->Size(), " vs. ", value_tensor->NumElements()));
+        OP_REQUIRES_OK(context,
+                       context->allocate_output(i, TensorShape({entry->Size()}),
+                                                &value_tensor));
 
         switch (value_tensor->dtype()) {
           case DT_INT32:
@@ -103,21 +97,23 @@ class DecodeJSONOp : public OpKernel {
         }
 
       } else {
+        OP_REQUIRES_OK(context, context->allocate_output(i, TensorShape({1}),
+                                                         &value_tensor));
         switch (value_tensor->dtype()) {
           case DT_INT32:
-            value_tensor->scalar<int32>()() = entry->GetInt();
+            value_tensor->flat<int32>()(0) = entry->GetInt();
             break;
           case DT_INT64:
-            value_tensor->scalar<int64>()() = entry->GetInt64();
+            value_tensor->flat<int64>()(0) = entry->GetInt64();
             break;
           case DT_FLOAT:
-            value_tensor->scalar<float>()() = entry->GetDouble();
+            value_tensor->flat<float>()(0) = entry->GetDouble();
             break;
           case DT_DOUBLE:
-            value_tensor->scalar<double>()() = entry->GetDouble();
+            value_tensor->flat<double>()(0) = entry->GetDouble();
             break;
           case DT_STRING:
-            value_tensor->scalar<tstring>()() = entry->GetString();
+            value_tensor->flat<tstring>()(0) = entry->GetString();
             break;
           default:
             OP_REQUIRES(
@@ -133,7 +129,6 @@ class DecodeJSONOp : public OpKernel {
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
-  std::vector<TensorShape> shapes_ TF_GUARDED_BY(mu_);
 };
 
 class DecodeAvroOp : public OpKernel {
