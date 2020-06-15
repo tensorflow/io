@@ -162,7 +162,8 @@ loads a dicom image file and returns its pixel information in the specified outp
 
 REGISTER_OP("IO>DecodeDICOMData")
     .Input("contents: string")
-    .Input("tags: uint32")
+    .Input("tags: dtype")
+    .Attr("dtype: {uint32,string}")
     .Output("tag_values: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->input(1));
