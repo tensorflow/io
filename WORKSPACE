@@ -930,6 +930,14 @@ http_archive(
 http_archive(
     name = "dav1d",
     build_file = "//third_party:dav1d.BUILD",
+    patch_cmds = [
+        "mkdir -p include8/common",
+        "sed 's/define DAV1D_COMMON_BITDEPTH_H/define DAV1D_COMMON_BITDEPTH_H\\'$'\\n''#define BITDEPTH 8/g' include/common/bitdepth.h > include8/common/bitdepth.h",
+        "cat include/common/dump.h > include8/common/dump.h",
+        "mkdir -p include16/common",
+        "sed 's/define DAV1D_COMMON_BITDEPTH_H/define DAV1D_COMMON_BITDEPTH_H\\'$'\\n''#define BITDEPTH 16/g' include/common/bitdepth.h > include16/common/bitdepth.h",
+        "cat include/common/dump.h > include16/common/dump.h",
+    ],
     sha256 = "66c3e831a93f074290a72aad5da907e3763ecb092325f0250a841927b3d30ce3",
     strip_prefix = "dav1d-0.6.0",
     urls = [
