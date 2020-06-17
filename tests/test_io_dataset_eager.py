@@ -1052,15 +1052,7 @@ def fixture_video_mp4():
                 ),
             ],
         ),
-        pytest.param(
-            "kinesis",
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support kinesis",
-                ),
-            ],
-        ),
+        pytest.param("kinesis", marks=[pytest.mark.skip(reason="TODO")],),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
