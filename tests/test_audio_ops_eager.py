@@ -850,3 +850,11 @@ def test_spectrogram():
     # TODO: assert content of dbscale_mel_spectrogram
     assert dbscale_mel_spectrogram.shape == [29, 128]
     assert dbscale_mel_spectrogram.dtype == tf.float32
+
+    spec = dbscale_mel_spectrogram
+
+    # Freq masking
+    spec = tfio.experimental.audio.freq_mask(spec, param=30)
+
+    # Time masking
+    spec = tfio.experimental.audio.time_mask(spec, param=10)

@@ -93,3 +93,53 @@ def dbscale(input, top_db, name=None):
     log_spec = 10.0 * (tf.math.log(power) - tf.math.log(10.0))
     log_spec = tf.math.maximum(log_spec, tf.math.reduce_max(log_spec) - top_db)
     return log_spec
+
+
+def freq_mask(input, param, name=None):
+    """
+    Apply masking to a spectrogram in the freq domain.
+
+    TODO: Support audio with channel > 1.
+
+    Args:
+      input: An audio spectogram.
+      param: Parameter of freq masking.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of spectrogram.
+    """
+    freq_max = tf.shape(input)[1]
+    f = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
+    f0 = tf.random.uniform(
+        shape=(), minval=0, maxval=freq_max - f, dtype=tf.dtypes.int32
+    )
+    indices = tf.reshape(tf.range(freq_max), (1, -1))
+    condition = tf.math.logical_and(
+        tf.math.greater_equal(indices, f0), tf.math.less(indices, f0 + f)
+    )
+    return tf.where(condition, 0, input)
+
+
+def time_mask(input, param, name=None):
+    """
+    Apply masking to a spectrogram in the time domain.
+
+    TODO: Support audio with channel > 1.
+
+    Args:
+      input: An audio spectogram.
+      param: Parameter of time masking.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of spectrogram.
+    """
+    time_max = tf.shape(input)[0]
+    t = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
+    t0 = tf.random.uniform(
+        shape=(), minval=0, maxval=time_max - t, dtype=tf.dtypes.int32
+    )
+    indices = tf.reshape(tf.range(time_max), (-1, 1))
+    condition = tf.math.logical_and(
+        tf.math.greater_equal(indices, t0), tf.math.less(indices, t0 + t)
+    )
+    return tf.where(condition, 0, input)
