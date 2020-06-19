@@ -842,3 +842,11 @@ def test_spectrogram():
     # TODO: assert content of mel_spectrogram
     assert mel_spectrogram.shape == [29, 128]
     assert mel_spectrogram.dtype == tf.float32
+
+    dbscale_mel_spectrogram = tfio.experimental.audio.dbscale(
+        mel_spectrogram, top_db=80
+    )
+
+    # TODO: assert content of dbscale_mel_spectrogram
+    assert dbscale_mel_spectrogram.shape == [29, 128]
+    assert dbscale_mel_spectrogram.dtype == tf.float32

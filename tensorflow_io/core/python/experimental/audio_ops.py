@@ -75,3 +75,21 @@ def melscale(input, rate, mels, fmin, fmax, name=None):
     )
 
     return tf.tensordot(input, matrix, 1)
+
+
+def dbscale(input, top_db, name=None):
+    """
+    Turn spectrogram into db scale
+
+    Args:
+      input: A spectrogram Tensor.
+      top_db: Minimum negative cut-off `max(10 * log10(S)) - top_db`
+      name: A name for the operation (optional).
+
+    Returns:
+      A tensor of mel spectrogram with shape [frames, mels].
+    """
+    power = tf.math.square(input)
+    log_spec = 10.0 * (tf.math.log(power) - tf.math.log(10.0))
+    log_spec = tf.math.maximum(log_spec, tf.math.reduce_max(log_spec) - top_db)
+    return log_spec
