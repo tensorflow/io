@@ -823,8 +823,22 @@ def test_spectrogram():
     nfft = 400
     window = 400
     stride = 200
-    spectrogram = tfio.experimental.audio.spectrogram(audio, nfft, window, stride)
+    spectrogram = tfio.experimental.audio.spectrogram(
+        audio, nfft=nfft, window=window, stride=stride
+    )
 
     # TODO: assert content of spectrogram
     assert spectrogram.shape == [29, 201]
     assert spectrogram.dtype == tf.float32
+
+    rate = 10000
+    mels = 128
+    fmin = 0
+    fmax = 5000
+    mel_spectrogram = tfio.experimental.audio.melscale(
+        spectrogram, rate=rate, mels=mels, fmin=fmin, fmax=fmax
+    )
+
+    # TODO: assert content of mel_spectrogram
+    assert mel_spectrogram.shape == [29, 128]
+    assert mel_spectrogram.dtype == tf.float32

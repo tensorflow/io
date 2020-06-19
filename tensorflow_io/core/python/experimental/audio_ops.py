@@ -46,3 +46,32 @@ def spectrogram(input, nfft, window, stride, name=None):
             pad_end=True,
         )
     )
+
+
+def melscale(input, rate, mels, fmin, fmax, name=None):
+    """
+    Turn spectrogram into mel scale spectrogram
+
+    TODO: Support audio with channel > 1.
+
+    Args:
+      input: A spectrogram Tensor with shape [frames, nfft+1].
+      rate: Sample rate of the audio.
+      mels: Number of mel filterbanks.
+      fmin: Minimum frequency. 
+      fmax: Maximum frequency. 
+      name: A name for the operation (optional).
+
+    Returns:
+      A tensor of mel spectrogram with shape [frames, mels].
+    """
+    nbins = tf.shape(input)[-1]
+    matrix = tf.signal.linear_to_mel_weight_matrix(
+        num_mel_bins=mels,
+        num_spectrogram_bins=nbins,
+        sample_rate=rate,
+        lower_edge_hertz=fmin,
+        upper_edge_hertz=fmax,
+    )
+
+    return tf.tensordot(input, matrix, 1)
