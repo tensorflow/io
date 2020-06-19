@@ -828,7 +828,7 @@ def test_spectrogram():
     )
 
     # TODO: assert content of spectrogram
-    assert spectrogram.shape == [29, 201]
+    assert spectrogram.shape == [29, nfft // 2 + 1]
     assert spectrogram.dtype == tf.float32
 
     rate = 10000
@@ -840,7 +840,7 @@ def test_spectrogram():
     )
 
     # TODO: assert content of mel_spectrogram
-    assert mel_spectrogram.shape == [29, 128]
+    assert mel_spectrogram.shape == [29, mels]
     assert mel_spectrogram.dtype == tf.float32
 
     dbscale_mel_spectrogram = tfio.experimental.audio.dbscale(
@@ -848,7 +848,7 @@ def test_spectrogram():
     )
 
     # TODO: assert content of dbscale_mel_spectrogram
-    assert dbscale_mel_spectrogram.shape == [29, 128]
+    assert dbscale_mel_spectrogram.shape == [29, mels]
     assert dbscale_mel_spectrogram.dtype == tf.float32
 
     spec = dbscale_mel_spectrogram

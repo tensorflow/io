@@ -23,19 +23,18 @@ def spectrogram(input, nfft, window, stride, name=None):
     """
     Create spectrogram from audio.
 
-    TODO: Support audio with channel > 1.
-
     Args:
       input: An 1-D audio signal Tensor.
       nfft: Size of FFT.
-      window: Size of sindow.
-      stride: size of hope between windows.
+      window: Size of window.
+      stride: Size of hops between windows.
       name: A name for the operation (optional).
 
     Returns:
       A tensor of spectrogram.
     """
 
+    # TODO: Support audio with channel > 1.
     return tf.math.abs(
         tf.signal.stft(
             input,
@@ -52,8 +51,6 @@ def melscale(input, rate, mels, fmin, fmax, name=None):
     """
     Turn spectrogram into mel scale spectrogram
 
-    TODO: Support audio with channel > 1.
-
     Args:
       input: A spectrogram Tensor with shape [frames, nfft+1].
       rate: Sample rate of the audio.
@@ -65,6 +62,8 @@ def melscale(input, rate, mels, fmin, fmax, name=None):
     Returns:
       A tensor of mel spectrogram with shape [frames, mels].
     """
+
+    # TODO: Support audio with channel > 1.
     nbins = tf.shape(input)[-1]
     matrix = tf.signal.linear_to_mel_weight_matrix(
         num_mel_bins=mels,
@@ -99,8 +98,6 @@ def freq_mask(input, param, name=None):
     """
     Apply masking to a spectrogram in the freq domain.
 
-    TODO: Support audio with channel > 1.
-
     Args:
       input: An audio spectogram.
       param: Parameter of freq masking.
@@ -108,6 +105,7 @@ def freq_mask(input, param, name=None):
     Returns:
       A tensor of spectrogram.
     """
+    # TODO: Support audio with channel > 1.
     freq_max = tf.shape(input)[1]
     f = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
     f0 = tf.random.uniform(
@@ -124,8 +122,6 @@ def time_mask(input, param, name=None):
     """
     Apply masking to a spectrogram in the time domain.
 
-    TODO: Support audio with channel > 1.
-
     Args:
       input: An audio spectogram.
       param: Parameter of time masking.
@@ -133,6 +129,7 @@ def time_mask(input, param, name=None):
     Returns:
       A tensor of spectrogram.
     """
+    # TODO: Support audio with channel > 1.
     time_max = tf.shape(input)[0]
     t = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
     t0 = tf.random.uniform(
