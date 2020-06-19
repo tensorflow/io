@@ -805,3 +805,26 @@ def test_encode_mp3_mono():
     assert audio.shape == [5760, 1]
     audio = tf.cast(audio, tf.float32) / 32768.0
     _ = tfio.audio.encode_mp3(audio, rate=8000)
+
+
+def test_spectrogram():
+    """test_spectrogram"""
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
+    )
+    audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
+    assert audio.shape == [5760, 1]
+    audio = tf.cast(audio, tf.float32) / 32768.0
+
+    # TODO remove once spectrogram support channel > 1
+    audio = tf.reshape(audio, [-1])
+
+    nfft = 400
+    window = 400
+    stride = 200
+    spectrogram = tfio.experimental.audio.spectrogram(audio, nfft, window, stride)
+
+    # TODO: assert content of spectrogram
+    assert spectrogram.shape == [29, 201]
+    assert spectrogram.dtype == tf.float32
