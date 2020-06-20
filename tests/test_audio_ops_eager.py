@@ -805,3 +805,56 @@ def test_encode_mp3_mono():
     assert audio.shape == [5760, 1]
     audio = tf.cast(audio, tf.float32) / 32768.0
     _ = tfio.audio.encode_mp3(audio, rate=8000)
+
+
+def test_spectrogram():
+    """test_spectrogram"""
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
+    )
+    audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
+    assert audio.shape == [5760, 1]
+    audio = tf.cast(audio, tf.float32) / 32768.0
+
+    # TODO remove once spectrogram support channel > 1
+    audio = tf.reshape(audio, [-1])
+
+    nfft = 400
+    window = 400
+    stride = 200
+    spectrogram = tfio.experimental.audio.spectrogram(
+        audio, nfft=nfft, window=window, stride=stride
+    )
+
+    # TODO: assert content of spectrogram
+    assert spectrogram.shape == [29, nfft // 2 + 1]
+    assert spectrogram.dtype == tf.float32
+
+    rate = 10000
+    mels = 128
+    fmin = 0
+    fmax = 5000
+    mel_spectrogram = tfio.experimental.audio.melscale(
+        spectrogram, rate=rate, mels=mels, fmin=fmin, fmax=fmax
+    )
+
+    # TODO: assert content of mel_spectrogram
+    assert mel_spectrogram.shape == [29, mels]
+    assert mel_spectrogram.dtype == tf.float32
+
+    dbscale_mel_spectrogram = tfio.experimental.audio.dbscale(
+        mel_spectrogram, top_db=80
+    )
+
+    # TODO: assert content of dbscale_mel_spectrogram
+    assert dbscale_mel_spectrogram.shape == [29, mels]
+    assert dbscale_mel_spectrogram.dtype == tf.float32
+
+    spec = dbscale_mel_spectrogram
+
+    # Freq masking
+    spec = tfio.experimental.audio.freq_mask(spec, param=30)
+
+    # Time masking
+    spec = tfio.experimental.audio.time_mask(spec, param=10)
