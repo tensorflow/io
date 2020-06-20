@@ -1026,8 +1026,8 @@ def fixture_video_mp4():
             "prometheus",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1047,8 +1047,8 @@ def fixture_video_mp4():
             "prometheus_scrape",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1140,8 +1140,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             "prometheus",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1161,8 +1161,8 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             "prometheus_scrape",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1273,8 +1273,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
             "prometheus",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1375,8 +1375,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             None,
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1385,8 +1385,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             2,
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
@@ -1547,8 +1547,8 @@ def test_io_dataset_in_dataset_parallel(
             "prometheus",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform == "darwin",
-                    reason="TODO macOS does not support prometheus",
+                    (sys.platform == "darwin") or (sys.platform == "linux"),
+                    reason="TODO: GitHub issue 829",
                 ),
             ],
         ),
