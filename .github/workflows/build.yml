@@ -168,7 +168,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.6', '3.7']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -225,20 +225,10 @@ jobs:
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
     needs: linux-bazel
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
         python: ['3.5', '3.6', '3.7', '3.8']
-        exclude:
-          - os: ubuntu-16.04
-            python: '3.6'
-          - os: ubuntu-16.04
-            python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -270,17 +260,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7']
+        os: [ubuntu-18.04, ubuntu-20.04]
+        python: ['3.6', '3.7']
         exclude:
-          - os: ubuntu-16.04
+          - os: ubuntu-20.04
             python: '3.6'
-          - os: ubuntu-16.04
+          - os: ubuntu-20.04
             python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -370,7 +356,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7']
+        python: ['3.6', '3.7']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
