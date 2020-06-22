@@ -62,11 +62,11 @@ class BigQueryClient:
         table_id,
         dataset_id,
         selected_fields,
-        selected_fields_repeated,
         output_types=None,
         row_restriction="",
         requested_streams=1,
         data_format: DataFormat = DataFormat.AVRO,
+        selected_fields_repeated=None,
     ):
         """Opens a session and returns a `BigQueryReadSession` object.
 
