@@ -307,19 +307,27 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
-            zip(selected_fields, selected_fields_repeated, output_types), key=itemgetter(0)
+            zip(selected_fields, selected_fields_repeated, output_types),
+            key=itemgetter(0),
         )
-        selected_fields, selected_fields_repeated, output_types = list(zip(*sorted_fields_with_types))
+        selected_fields, selected_fields_repeated, output_types = list(
+            zip(*sorted_fields_with_types)
+        )
         selected_fields = list(selected_fields)
         selected_fields_repeated = list(selected_fields_repeated)
         output_types = list(output_types)
 
-        tensor_shapes = list([None, ] if repeated else [] for repeated in selected_fields_repeated)
+        tensor_shapes = list(
+            [None,] if repeated else [] for repeated in selected_fields_repeated
+        )
 
         self._element_spec = collections.OrderedDict(
             zip(
                 selected_fields,
-                (tensor_spec.TensorSpec(shape, dtype) for (shape, dtype) in zip(tensor_shapes, output_types)),
+                (
+                    tensor_spec.TensorSpec(shape, dtype)
+                    for (shape, dtype) in zip(tensor_shapes, output_types)
+                ),
             )
         )
 
