@@ -31,9 +31,8 @@ def fixture_lookup_func(request):
     return _fixture_lookup
 
 
-@pytest.fixture(name="resample", scope="module")
-def fixture_resample():
-    """fixture_resample"""
+def fixture_resample_base():
+    """fixture_resample_base"""
     path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "test_audio",
@@ -57,6 +56,20 @@ def fixture_resample():
     expected = expected_value
 
     return args, func, expected
+
+
+@pytest.fixture(name="resample", scope="module")
+def fixture_resample():
+    """fixture_resample"""
+    args, func, expected = fixture_resample_base()
+    return args, func, expected
+
+
+@pytest.fixture(name="resample_1d", scope="module")
+def fixture_resample_1d():
+    """fixture_resample_1d"""
+    args, func, expected = fixture_resample_base()
+    return args[:, 0], func, expected[:, 0]
 
 
 @pytest.fixture(name="decode_wav", scope="module")
@@ -619,6 +632,7 @@ def fixture_encode_aac():
     ("io_data_fixture"),
     [
         pytest.param("resample"),
+        pytest.param("resample_1d"),
         pytest.param("decode_wav"),
         pytest.param("encode_wav"),
         pytest.param("decode_wav_u8"),
@@ -668,6 +682,7 @@ def fixture_encode_aac():
     ],
     ids=[
         "resample",
+        "resample[1d]",
         "decode_wav",
         "encode_wav",
         "decode_wav|u8",
