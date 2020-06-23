@@ -914,17 +914,19 @@ def test_audio_trim_split_remix():
         tf.int64,
     )
 
-    k0 = tf.boolean_mask(v0, tf.math.greater(v0, 4.95))
+    epsilon = 4.95
+
+    k0 = tf.boolean_mask(v0, tf.math.greater(v0, epsilon))
     k1 = tf.concat(
-        [tf.boolean_mask(v1, tf.math.greater(v1, 4.95)), tf.zeros([25], tf.float32)],
+        [tf.boolean_mask(v1, tf.math.greater(v1, epsilon)), tf.zeros([25], tf.float32)],
         axis=0,
     )
     k2 = tf.concat(
-        [tf.boolean_mask(v2, tf.math.greater(v2, 4.95)), tf.zeros([45], tf.float32)],
+        [tf.boolean_mask(v2, tf.math.greater(v2, epsilon)), tf.zeros([45], tf.float32)],
         axis=0,
     )
     k3 = tf.concat(
-        [tf.boolean_mask(v3, tf.math.greater(v3, 4.95)), tf.zeros([65], tf.float32)],
+        [tf.boolean_mask(v3, tf.math.greater(v3, epsilon)), tf.zeros([65], tf.float32)],
         axis=0,
     )
 
@@ -940,10 +942,10 @@ def test_audio_trim_split_remix():
             tf.reshape(k, [4, 90, 1]),
         ),
     ]:
-        indices = tfio.experimental.audio.trim(value, axis=axis, epsilon=4.95)
+        indices = tfio.experimental.audio.trim(value, axis=axis, epsilon=epsilon)
         assert np.array_equal(ee, indices)
 
-        indices = tfio.experimental.audio.split(value, axis=axis, epsilon=4.95)
+        indices = tfio.experimental.audio.split(value, axis=axis, epsilon=epsilon)
         assert np.array_equal(ei, indices)
 
         result = tfio.experimental.audio.remix(value, axis=axis, indices=indices)
