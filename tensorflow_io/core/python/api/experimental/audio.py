@@ -16,8 +16,9 @@
 
 from tensorflow_io.core.python.experimental.audio_ops import (  # pylint: disable=unused-import
     spectrogram,
-    freq_mask,
-    time_mask,
     melscale,
     dbscale,
+    freq_mask,
+    time_mask,
+    fade,
 )

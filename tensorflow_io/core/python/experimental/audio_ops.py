@@ -139,4 +139,62 @@ def time_mask(input, param, name=None):
     condition = tf.math.logical_and(
         tf.math.greater_equal(indices, t0), tf.math.less(indices, t0 + t)
     )
-    return tf.where(condition, 0, input)
+
+
+def fade(input, fade_in, fade_out, mode, name=None):
+    """
+    Apply fade in/out to audio.
+
+    Args:
+      input: An audio spectogram.
+      fade_in: Length of fade in.
+      fade_out: Length of fade out.
+      mode: Mode of the fade.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of audio.
+    """
+    # TODO length may not be at axis=0, if `batch` (axis=0) is present.
+    axis = 0
+
+    shape = tf.shape(input)
+    length = shape[axis]
+
+    ones_in = tf.ones([length - fade_in])
+    factor_in = tf.linspace(0.0, 1.0, fade_in)
+    if mode == "linear":
+        factor_in = factor_in
+    elif mode == "logarithmic":
+        factor_in = tf.math.log1p(factor_in) / tf.math.log1p(1.0)
+    elif mode == "exponential":
+        factor_in = tf.math.expm1(factor_in) / tf.math.expm1(1.0)
+    else:
+        raise ValueError("{} mode not supported".format(mode))
+
+    factor_in = tf.concat([factor_in, ones_in], axis=0)
+
+    ones_out = tf.ones([length - fade_out])
+    factor_out = 1.0 - tf.linspace(0.0, 1.0, fade_out)
+    if mode == "linear":
+        factor_out = factor_out
+    elif mode == "logarithmic":
+        factor_out = tf.math.log1p(factor_out) / tf.math.log1p(1.0)
+    elif mode == "exponential":
+        factor_out = tf.math.expm1(factor_out) / tf.math.expm1(1.0)
+    else:
+        raise ValueError("{} mode not supported".format(mode))
+
+    factor_out = tf.concat([ones_out, factor_out], axis=0)
+
+    # reshape to get to the same rank, then broadcast to shape
+    rank = tf.cast(tf.rank(input), tf.int64)
+    factor_in = tf.reshape(
+        factor_in, tf.where(tf.math.equal(tf.range(rank), axis), shape, 1)
+    )
+    factor_in = tf.broadcast_to(factor_in, shape)
+    factor_out = tf.reshape(
+        factor_out, tf.where(tf.math.equal(tf.range(rank), axis), shape, 1)
+    )
+    factor_out = tf.broadcast_to(factor_out, shape)
+
+    return factor_in * factor_out * input
