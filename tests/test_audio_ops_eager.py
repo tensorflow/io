@@ -887,3 +887,66 @@ def test_fade():
         # plt.figure()
         # plt.plot(fade.numpy())
         # plt.savefig("{}_fade.png".format(mode))
+
+
+def test_audio_trim_split_remix():
+    """test_audio_trim_split_remix"""
+
+    l = tf.range(0.0, 20.0, 1.0)
+    r = tf.reverse(l, [0])
+    v = tf.concat([l, r], axis=0)
+    v = tf.broadcast_to(v, [3, 40])
+
+    v0 = tf.reshape(v, [-1])
+    v1 = tf.concat([v0[30:], tf.zeros([30], tf.float32)], axis=0)
+    v2 = tf.concat([tf.zeros([60], tf.float32), v0[60:]], axis=0)
+    v3 = tf.concat([tf.zeros([90], tf.float32), v0[90:]], axis=0)
+
+    v = tf.stack([v0, v1, v2, v3])
+    e = tf.constant([[5, 115], [0, 85], [60, 115], [90, 115]], tf.int64)
+    i = tf.constant(
+        [
+            [[5, 35], [45, 75], [85, 115]],
+            [[0, 5], [15, 45], [55, 85]],
+            [[60, 75], [85, 115], [120, 120]],
+            [[90, 115], [120, 120], [120, 120]],
+        ],
+        tf.int64,
+    )
+
+    epsilon = 4.95
+
+    k0 = tf.boolean_mask(v0, tf.math.greater(v0, epsilon))
+    k1 = tf.concat(
+        [tf.boolean_mask(v1, tf.math.greater(v1, epsilon)), tf.zeros([25], tf.float32)],
+        axis=0,
+    )
+    k2 = tf.concat(
+        [tf.boolean_mask(v2, tf.math.greater(v2, epsilon)), tf.zeros([45], tf.float32)],
+        axis=0,
+    )
+    k3 = tf.concat(
+        [tf.boolean_mask(v3, tf.math.greater(v3, epsilon)), tf.zeros([65], tf.float32)],
+        axis=0,
+    )
+
+    k = tf.stack([k0, k1, k2, k3])
+
+    for value, axis, ee, ei, ek in [
+        (v, 1, e, i, k),
+        (
+            tf.reshape(v, [4, 120, 1]),
+            1,
+            tf.reshape(e, [4, 2, 1]),
+            tf.reshape(i, [4, 3, 2, 1]),
+            tf.reshape(k, [4, 90, 1]),
+        ),
+    ]:
+        indices = tfio.experimental.audio.trim(value, axis=axis, epsilon=epsilon)
+        assert np.array_equal(ee, indices)
+
+        indices = tfio.experimental.audio.split(value, axis=axis, epsilon=epsilon)
+        assert np.array_equal(ei, indices)
+
+        result = tfio.experimental.audio.remix(value, axis=axis, indices=indices)
+        assert np.array_equal(ek, result)

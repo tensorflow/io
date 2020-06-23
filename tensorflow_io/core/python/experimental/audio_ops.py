@@ -17,6 +17,7 @@
 import numpy as np
 
 import tensorflow as tf
+from tensorflow_io.core.python.ops import core_ops
 
 
 def spectrogram(input, nfft, window, stride, name=None):
@@ -94,6 +95,173 @@ def dbscale(input, top_db, name=None):
     return log_spec
 
 
+def remix(input, axis, indices, name=None):
+    """
+    Remix the audio from segments indices.
+
+    Args:
+      input: An audio Tensor.
+      axis: The axis to trim.
+      indices: The indices of `start, stop` of each segments.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of remixed audio.
+    """
+    shape = tf.shape(indices, out_type=tf.int64)
+
+    rank = tf.cast(tf.rank(indices), tf.int64)
+    mask = tf.math.equal(tf.range(rank), axis + 1)
+
+    start = tf.slice(
+        indices,
+        tf.where(mask, tf.cast(0, tf.int64), 0),
+        tf.where(mask, tf.cast(1, tf.int64), shape),
+    )
+    stop = tf.slice(
+        indices,
+        tf.where(mask, tf.cast(1, tf.int64), 0),
+        tf.where(mask, tf.cast(1, tf.int64), shape),
+    )
+
+    start = tf.squeeze(start, axis=[axis + 1])
+    stop = tf.squeeze(stop, axis=[axis + 1])
+
+    start = tf.expand_dims(start, axis=axis)
+    stop = tf.expand_dims(stop, axis=axis)
+
+    shape = tf.shape(input, out_type=tf.int64)
+    length = shape[axis]
+
+    rank = tf.cast(tf.rank(input), tf.int64)
+    indices = tf.range(length, dtype=tf.int64)
+    indices = tf.reshape(
+        indices, tf.where(tf.math.equal(tf.range(rank), axis), length, 1)
+    )
+    indices = tf.broadcast_to(indices, shape)
+
+    indices = tf.expand_dims(indices, axis=axis + 1)
+
+    mask = tf.math.logical_and(
+        tf.math.greater_equal(indices, start), tf.math.less(indices, stop)
+    )
+
+    mask = tf.reduce_any(mask, axis=axis + 1)
+
+    # count bool to adjust padding
+    count = tf.reduce_sum(tf.cast(mask, tf.int64), axis=axis, keepdims=True)
+
+    # length after padding
+    length = tf.reduce_max(count)
+
+    # delta
+    delta = count - tf.reduce_min(count)
+    padding = tf.range(tf.constant(1, tf.int64), tf.reduce_max(delta) + 1)
+    padding = tf.reshape(
+        padding, tf.where(tf.math.equal(tf.range(rank), axis), tf.reduce_max(delta), 1)
+    )
+    padding = tf.broadcast_to(
+        padding,
+        tf.where(tf.math.equal(tf.range(rank), axis), tf.reduce_max(delta), shape),
+    )
+    padding = tf.math.greater(padding, delta)
+
+    mask = tf.concat([mask, padding], axis=axis)
+    input = tf.concat([input, tf.zeros(tf.shape(padding), input.dtype)], axis=axis)
+    result = tf.boolean_mask(input, mask)
+    result = tf.reshape(
+        result, tf.where(tf.math.equal(tf.range(rank), axis), length, shape)
+    )
+
+    return result
+
+
+def split(input, axis, epsilon, name=None):
+    """
+    Split the audio by removing the noise smaller than epsilon.
+
+    Args:
+      input: An audio Tensor.
+      axis: The axis to trim.
+      epsilon: The max value to be considered as noise.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of start and stop with shape `[..., 2, ...]`.
+    """
+    shape = tf.shape(input, out_type=tf.int64)
+    length = shape[axis]
+
+    nonzero = tf.math.greater(input, epsilon)
+
+    rank = tf.cast(tf.rank(input), tf.int64)
+    mask = tf.math.equal(tf.range(rank), axis)
+
+    fill = tf.zeros(tf.where(mask, 1, shape), tf.int8)
+
+    curr = tf.cast(nonzero, tf.int8)
+    prev = tf.concat(
+        [
+            fill,
+            tf.slice(
+                curr,
+                tf.where(mask, tf.constant(0, tf.int64), 0),
+                tf.where(mask, length - 1, shape),
+            ),
+        ],
+        axis=axis,
+    )
+    next = tf.concat(
+        [
+            tf.slice(
+                curr,
+                tf.where(mask, tf.constant(1, tf.int64), 0),
+                tf.where(mask, length - 1, shape),
+            ),
+            fill,
+        ],
+        axis=axis,
+    )
+
+    # TODO: validate lower == upper except for axis
+    lower = tf.where(tf.math.equal(curr - prev, 1))
+    upper = tf.where(tf.math.equal(next - curr, -1))
+
+    # Fix values with -1 (where indices is not available)
+    start = core_ops.io_order_indices(lower, shape, axis)
+    start = tf.where(tf.math.greater_equal(start, 0), start, length)
+    stop = core_ops.io_order_indices(upper, shape, axis)
+    stop = tf.where(tf.math.greater_equal(stop, 0), stop + 1, length)
+
+    return tf.stack([start, stop], axis=axis + 1)
+
+
+def trim(input, axis, epsilon, name=None):
+    """
+    Trim the noise from beginning and end of the audio.
+
+    Args:
+      input: An audio Tensor.
+      axis: The axis to trim.
+      epsilon: The max value to be considered as noise.
+      name: A name for the operation (optional).
+    Returns:
+      A tensor of start and stop with shape `[..., 2, ...]`.
+    """
+    shape = tf.shape(input, out_type=tf.int64)
+    length = shape[axis]
+
+    nonzero = tf.math.greater(input, epsilon)
+    check = tf.reduce_any(nonzero, axis=axis)
+
+    forward = tf.cast(nonzero, tf.int8)
+    reverse = tf.reverse(forward, [axis])
+
+    start = tf.where(check, tf.argmax(forward, axis=axis), length)
+    stop = tf.where(check, tf.argmax(reverse, axis=axis), tf.constant(0, tf.int64))
+    stop = length - stop
+
+    return tf.stack([start, stop], axis=axis)
+
+
 def freq_mask(input, param, name=None):
     """
     Apply masking to a spectrogram in the freq domain.
@@ -139,6 +307,7 @@ def time_mask(input, param, name=None):
     condition = tf.math.logical_and(
         tf.math.greater_equal(indices, t0), tf.math.less(indices, t0 + t)
     )
+    return tf.where(condition, 0, input)
 
 
 def fade(input, fade_in, fade_out, mode, name=None):
