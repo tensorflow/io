@@ -19,6 +19,7 @@ import concurrent.futures
 from io import BytesIO
 import json
 import fastavro
+import numpy as np
 import grpc  # pylint: disable=wrong-import-order
 import tensorflow as tf  # pylint: disable=wrong-import-order
 
@@ -180,7 +181,18 @@ class BigqueryOpsTest(test.TestCase):
                   "double"
               ],
               "doc": "nullable double"
+          },
+          {
+              "name": "repeated_string",
+              "type": {"type": "array", "items": "string"},
+              "doc": "repeated string"
+          },
+          {
+              "name": "repeated_double",
+              "type": {"type": "array", "items": "double"},
+              "doc": "repeated string"
           }
+ 
       ]
   }"""
 
@@ -192,6 +204,8 @@ class BigqueryOpsTest(test.TestCase):
             "long": 100,
             "float": 1000.0,
             "double": 10000.0,
+            "repeated_string": ["string1"],
+            "repeated_double": [10000.0],
         },
         {
             "string": "string2",
@@ -200,6 +214,8 @@ class BigqueryOpsTest(test.TestCase):
             "long": 102,
             "float": 1002.0,
             "double": 10002.0,
+            "repeated_string": ["string1", "string2"],
+            "repeated_double": [101.0, 10.1],
         },
     ]
     STREAM_2_ROWS = [
@@ -210,9 +226,13 @@ class BigqueryOpsTest(test.TestCase):
             "long": 200,
             "float": 2000.0,
             "double": 20000.0,
+            "repeated_string": ["string1", "string2", "string3"],
+            "repeated_double": [101.0, 10.1, 0.3],
         },
         {
-            # Empty record, all values are null
+            # Empty record, all values are null except for repeated fields
+            "repeated_string": ["string1", "string2", "string3", "string4"],
+            "repeated_double": [101.0, 10.1, 0.3, 1.4],
         },
     ]
 
@@ -223,6 +243,13 @@ class BigqueryOpsTest(test.TestCase):
         "int": 0,
         "long": 0,
         "string": "",
+        "repeated_string": [
+            "string1",
+            "string2",
+            "string3",
+            "string4",
+        ],  # repeated fields can't be null
+        "repeated_double": [101.0, 10.1, 0.3, 1.4],
     }
 
     @staticmethod
@@ -233,6 +260,11 @@ class BigqueryOpsTest(test.TestCase):
                 # for compartibility with Python 2
                 dictionary[key] = value.numpy()
             value = dictionary[key]
+            if isinstance(value, np.ndarray):
+                lst = value.tolist()
+                dictionary[key] = [
+                    x.decode() if isinstance(x, bytes) else x for x in lst
+                ]
             if isinstance(value, bytes):
                 # because FakeBigQueryServer.serialize_to_avro serializes strings as byte arrays
                 dictionary[key] = value.decode()
@@ -250,6 +282,45 @@ class BigqueryOpsTest(test.TestCase):
     def tearDownClass(cls):  # pylint: disable=invalid-name
         """setUpClass"""
         cls.server.stop()
+
+    def _get_read_session(self, client):
+        return client.read_session(
+            self.PARENT,
+            self.GCP_PROJECT_ID,
+            self.TABLE_ID,
+            self.DATASET_ID,
+            selected_fields=[
+                "string",
+                "boolean",
+                "int",
+                "long",
+                "float",
+                "double",
+                "repeated_string",
+                "repeated_double",
+            ],
+            selected_fields_repeated=[
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                True,
+            ],
+            output_types=[
+                dtypes.string,
+                dtypes.bool,
+                dtypes.int32,
+                dtypes.int64,
+                dtypes.float32,
+                dtypes.float64,
+                dtypes.string,
+                dtypes.float64,
+            ],
+            requested_streams=2,
+        )
 
     def test_fake_server(self):
         """Fake server test."""
@@ -289,24 +360,6 @@ class BigqueryOpsTest(test.TestCase):
             row.avro_rows.serialized_binary_rows,
         )
         self.assertEqual(len(self.STREAM_2_ROWS), row.avro_rows.row_count)
-
-    def _get_read_session(self, client):
-        return client.read_session(
-            self.PARENT,
-            self.GCP_PROJECT_ID,
-            self.TABLE_ID,
-            self.DATASET_ID,
-            ["string", "boolean", "int", "long", "float", "double"],
-            [
-                dtypes.string,
-                dtypes.bool,
-                dtypes.int32,
-                dtypes.int64,
-                dtypes.float32,
-                dtypes.float64,
-            ],
-            requested_streams=2,
-        )
 
     def test_read_rows(self):
         """Test for reading rows."""
