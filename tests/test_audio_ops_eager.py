@@ -858,3 +858,32 @@ def test_spectrogram():
 
     # Time masking
     spec = tfio.experimental.audio.time_mask(spec, param=10)
+
+
+def test_fade():
+    """test_fade"""
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
+    )
+    audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
+    assert audio.shape == [5760, 1]
+    audio = tf.cast(audio, tf.float32) / 32768.0
+
+    audio = audio[2000:4000]
+
+    fade_in = 1000
+    fade_out = 1500
+    for mode in ["linear", "logarithmic", "exponential"]:
+        fade = tfio.experimental.audio.fade(
+            audio, fade_in=fade_in, fade_out=fade_out, mode=mode
+        )
+
+        # TODO: validate fade effect
+        # import matplotlib.pyplot as plt
+        # plt.figure()
+        # plt.plot(audio.numpy())
+        # plt.savefig("{}_data.png".format(mode))
+        # plt.figure()
+        # plt.plot(fade.numpy())
+        # plt.savefig("{}_fade.png".format(mode))
