@@ -39,13 +39,11 @@ class PrefixTreeNode {
   inline std::string GetPrefix() const { return prefix_; };
 
   // Get's the full name using the separator between prefix names of tree nodes
+  // Note, that this excludes the root node which is an auxiliary node
   std::string GetName(char separator) const;
 
   // Is terminal if this node has no children
   inline bool IsTerminal() const { return children_.size() == 0; }
-
-  // A prefix exists if it is not the empty string
-  bool HasPrefix() const { return prefix_.size() > 0; }
 
   // Find the prefix tree for the given child prefix
   PrefixTreeNodeSharedPtr Find(const std::string& child_prefix) const;
@@ -60,7 +58,7 @@ class PrefixTreeNode {
   // The prefix for this tree node
   std::string prefix_;
 
-  // The father of this tree node -- always exists
+  // The father of this tree node -- always exists in memory
   PrefixTreeNode* father_;
 
   // The children of this prefix tree node
@@ -72,10 +70,7 @@ class PrefixTreeNode {
 class OrderedPrefixTree {
  public:
   // Construct a prefix tree with the optional root_name
-  OrderedPrefixTree(const std::string& root_name = "");
-
-  // Get the root prefix
-  inline std::string GetRootPrefix() const { return (*root_).GetPrefix(); }
+  OrderedPrefixTree();
 
   // Get the root of the prefix tree
   inline PrefixTreeNodeSharedPtr GetRoot() const { return root_; }
