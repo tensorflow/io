@@ -401,7 +401,8 @@ class ParseAvroOp : public OpKernel {
                      errors::InvalidArgument("Avro schema error: ", error));
     }
 
-    OP_REQUIRES_OK(ctx, AvroParserTree::Build(&parser_tree_, CreateKeysAndTypes()));
+    OP_REQUIRES_OK(ctx,
+                   AvroParserTree::Build(&parser_tree_, CreateKeysAndTypes()));
   }
 
   void Compute(OpKernelContext* ctx) override {

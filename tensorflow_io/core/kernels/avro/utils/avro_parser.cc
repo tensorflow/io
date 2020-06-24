@@ -524,7 +524,7 @@ string UnionParser::ToString(size_t level) const {
   return ss.str();
 }
 
-RootParser::RootParser() : AvroParser("") { }
+RootParser::RootParser() : AvroParser("") {}
 Status RootParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
                          const avro::GenericDatum& datum) const {
   const std::vector<AvroParserSharedPtr>& children(GetChildren());

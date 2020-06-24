@@ -109,7 +109,8 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   // TODO: Validate filters etc, no nesting, no name conflict in shorthand
   // TODO: Check for nested filters and throw error, e.g. disallow
   // [name[first=last]age=friends.age]
-  // TODO(fraudies): Add to validation that lhs/rhs being a constant won't be possible lhs != rhs
+  // TODO(fraudies): Add to validation that lhs/rhs being a constant won't be
+  // possible lhs != rhs
 
   // Convert to internal names and order names to handle filters properly
   // through parse order
@@ -139,8 +140,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   (*parser_tree).keys_and_types_ = ordered_keys_and_types;
 
   // Use the expected type to decide which value parser node to add
-  (*parser_tree).root_ =
-      std::make_shared<RootParser>();
+  (*parser_tree).root_ = std::make_shared<RootParser>();
 
   // Use the prefix tree to build the parser tree
   TF_RETURN_IF_ERROR((*parser_tree)

@@ -78,9 +78,9 @@ std::string PrefixTreeNode::ToString(int level) const {
 // -------------------------------------------------------------------------------------------------
 // Ordered prefix tree
 // -------------------------------------------------------------------------------------------------
-// Note, the root always has an empty name, it's a placeholder to simplify the code
-OrderedPrefixTree::OrderedPrefixTree()
-  : root_(new PrefixTreeNode("")) { }
+// Note, the root always has an empty name, it's a placeholder to simplify the
+// code
+OrderedPrefixTree::OrderedPrefixTree() : root_(new PrefixTreeNode("")) {}
 
 void OrderedPrefixTree::Insert(const std::vector<std::string>& prefixes) {
   PrefixTreeNodeSharedPtr node = root_;

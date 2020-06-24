@@ -96,7 +96,8 @@ Status AvroFileStreamReader::OnWorkStartup() {
                                                              reader_schema_));
 
   // Create the parser tree
-  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_, CreateKeysAndTypesFromConfig()));
+  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_,
+                                           CreateKeysAndTypesFromConfig()));
 
   return Status::OK();
 }
