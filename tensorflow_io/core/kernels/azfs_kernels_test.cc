@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/core/kernels/azfs_kernels.h"
+
 #include "gtest/gtest.h"
 
 #define EXPECT_OK(val) EXPECT_EQ(val, Status::OK())

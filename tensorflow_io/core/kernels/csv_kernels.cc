@@ -13,38 +13,44 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "arrow/array.h"
+#include "arrow/csv/reader.h"
+#include "arrow/memory_pool.h"
+#include "arrow/table.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
+#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
-#include "arrow/memory_pool.h"
-#include "arrow/csv/reader.h"
-#include "arrow/table.h"
-#include "arrow/array.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 
 namespace tensorflow {
 namespace data {
 
 class CSVReadable : public IOReadableInterface {
  public:
-  CSVReadable(Env* env)
-  : env_(env) {}
+  CSVReadable(Env* env) : env_(env) {}
 
   ~CSVReadable() {}
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+  Status Init(const std::vector<string>& input,
+              const std::vector<string>& metadata, const void* memory_data,
+              const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
     }
     const string& filename = input[0];
-    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    file_.reset(
+        new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
 
     csv_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
 
     ::arrow::Status status;
 
-    status = ::arrow::csv::TableReader::Make(::arrow::default_memory_pool(), csv_file_, ::arrow::csv::ReadOptions::Defaults(), ::arrow::csv::ParseOptions::Defaults(), ::arrow::csv::ConvertOptions::Defaults(), &reader_);
+    status = ::arrow::csv::TableReader::Make(
+        ::arrow::default_memory_pool(), csv_file_,
+        ::arrow::csv::ReadOptions::Defaults(),
+        ::arrow::csv::ParseOptions::Defaults(),
+        ::arrow::csv::ConvertOptions::Defaults(), &reader_);
     if (!status.ok()) {
       return errors::InvalidArgument("unable to make a TableReader: ", status);
     }
@@ -56,61 +62,62 @@ class CSVReadable : public IOReadableInterface {
     for (int i = 0; i < table_->num_columns(); i++) {
       ::tensorflow::DataType dtype;
       switch (table_->column(i)->type()->id()) {
-      case ::arrow::Type::BOOL:
-        dtype = ::tensorflow::DT_BOOL;
-        break;
-      case ::arrow::Type::UINT8:
-        dtype= ::tensorflow::DT_UINT8;
-        break;
-      case ::arrow::Type::INT8:
-        dtype= ::tensorflow::DT_INT8;
-        break;
-      case ::arrow::Type::UINT16:
-        dtype= ::tensorflow::DT_UINT16;
-        break;
-      case ::arrow::Type::INT16:
-        dtype= ::tensorflow::DT_INT16;
-        break;
-      case ::arrow::Type::UINT32:
-        dtype= ::tensorflow::DT_UINT32;
-        break;
-      case ::arrow::Type::INT32:
-        dtype= ::tensorflow::DT_INT32;
-        break;
-      case ::arrow::Type::UINT64:
-        dtype= ::tensorflow::DT_UINT64;
-        break;
-      case ::arrow::Type::INT64:
-        dtype= ::tensorflow::DT_INT64;
-        break;
-      case ::arrow::Type::HALF_FLOAT:
-        dtype= ::tensorflow::DT_HALF;
-        break;
-      case ::arrow::Type::FLOAT:
-        dtype= ::tensorflow::DT_FLOAT;
-        break;
-      case ::arrow::Type::DOUBLE:
-        dtype= ::tensorflow::DT_DOUBLE;
-        break;
-      case ::arrow::Type::STRING:
-        dtype= ::tensorflow::DT_STRING;
-        break;
-      case ::arrow::Type::BINARY:
-      case ::arrow::Type::FIXED_SIZE_BINARY:
-      case ::arrow::Type::DATE32:
-      case ::arrow::Type::DATE64:
-      case ::arrow::Type::TIMESTAMP:
-      case ::arrow::Type::TIME32:
-      case ::arrow::Type::TIME64:
-      case ::arrow::Type::INTERVAL:
-      case ::arrow::Type::DECIMAL:
-      case ::arrow::Type::LIST:
-      case ::arrow::Type::STRUCT:
-      case ::arrow::Type::UNION:
-      case ::arrow::Type::DICTIONARY:
-      case ::arrow::Type::MAP:
-      default:
-        return errors::InvalidArgument("arrow data type is not supported: ", table_->column(i)->type()->ToString());
+        case ::arrow::Type::BOOL:
+          dtype = ::tensorflow::DT_BOOL;
+          break;
+        case ::arrow::Type::UINT8:
+          dtype = ::tensorflow::DT_UINT8;
+          break;
+        case ::arrow::Type::INT8:
+          dtype = ::tensorflow::DT_INT8;
+          break;
+        case ::arrow::Type::UINT16:
+          dtype = ::tensorflow::DT_UINT16;
+          break;
+        case ::arrow::Type::INT16:
+          dtype = ::tensorflow::DT_INT16;
+          break;
+        case ::arrow::Type::UINT32:
+          dtype = ::tensorflow::DT_UINT32;
+          break;
+        case ::arrow::Type::INT32:
+          dtype = ::tensorflow::DT_INT32;
+          break;
+        case ::arrow::Type::UINT64:
+          dtype = ::tensorflow::DT_UINT64;
+          break;
+        case ::arrow::Type::INT64:
+          dtype = ::tensorflow::DT_INT64;
+          break;
+        case ::arrow::Type::HALF_FLOAT:
+          dtype = ::tensorflow::DT_HALF;
+          break;
+        case ::arrow::Type::FLOAT:
+          dtype = ::tensorflow::DT_FLOAT;
+          break;
+        case ::arrow::Type::DOUBLE:
+          dtype = ::tensorflow::DT_DOUBLE;
+          break;
+        case ::arrow::Type::STRING:
+          dtype = ::tensorflow::DT_STRING;
+          break;
+        case ::arrow::Type::BINARY:
+        case ::arrow::Type::FIXED_SIZE_BINARY:
+        case ::arrow::Type::DATE32:
+        case ::arrow::Type::DATE64:
+        case ::arrow::Type::TIMESTAMP:
+        case ::arrow::Type::TIME32:
+        case ::arrow::Type::TIME64:
+        case ::arrow::Type::INTERVAL:
+        case ::arrow::Type::DECIMAL:
+        case ::arrow::Type::LIST:
+        case ::arrow::Type::STRUCT:
+        case ::arrow::Type::UNION:
+        case ::arrow::Type::DICTIONARY:
+        case ::arrow::Type::MAP:
+        default:
+          return errors::InvalidArgument("arrow data type is not supported: ",
+                                         table_->column(i)->type()->ToString());
       }
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       dtypes_.push_back(dtype);
@@ -127,7 +134,8 @@ class CSVReadable : public IOReadableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape,
+              DataType* dtype, bool label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
@@ -141,7 +149,8 @@ class CSVReadable : public IOReadableInterface {
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component,
+              int64* record_read, Tensor* value, Tensor* label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
@@ -152,78 +161,89 @@ class CSVReadable : public IOReadableInterface {
       return Status::OK();
     }
     const string& column = component;
-    int64 element_start = start < shapes_[column_index].dim_size(0) ? start : shapes_[column_index].dim_size(0);
-    int64 element_stop = stop < shapes_[column_index].dim_size(0) ? stop : shapes_[column_index].dim_size(0);
+    int64 element_start = start < shapes_[column_index].dim_size(0)
+                              ? start
+                              : shapes_[column_index].dim_size(0);
+    int64 element_stop = stop < shapes_[column_index].dim_size(0)
+                             ? stop
+                             : shapes_[column_index].dim_size(0);
 
     if (element_start > element_stop) {
-      return errors::InvalidArgument("dataset ", column, " selection is out of boundary");
+      return errors::InvalidArgument("dataset ", column,
+                                     " selection is out of boundary");
     }
     if (element_start == element_stop) {
       return Status::OK();
     }
 
-    std::shared_ptr<::arrow::ChunkedArray> slice = table_->column(column_index)->Slice(element_start, element_stop);
+    std::shared_ptr<::arrow::ChunkedArray> slice =
+        table_->column(column_index)->Slice(element_start, element_stop);
 
-    #define PROCESS_TYPE(TTYPE,ATYPE) { \
-        int64 curr_index = 0; \
-        for (auto chunk : slice->chunks()) { \
-          for (int64_t item = 0; item < chunk->length(); item++) { \
-            value->flat<TTYPE>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->Value(item); \
-            curr_index++; \
-          } \
-        } \
-      }
+#define PROCESS_TYPE(TTYPE, ATYPE)                             \
+  {                                                            \
+    int64 curr_index = 0;                                      \
+    for (auto chunk : slice->chunks()) {                       \
+      for (int64_t item = 0; item < chunk->length(); item++) { \
+        value->flat<TTYPE>()(curr_index) =                     \
+            (dynamic_cast<ATYPE*>(chunk.get()))->Value(item);  \
+        curr_index++;                                          \
+      }                                                        \
+    }                                                          \
+  }
 
-    #define PROCESS_STRING_TYPE(ATYPE) { \
-        int64 curr_index = 0; \
-        for (auto chunk : slice->chunks()) { \
-          for (int64_t item = 0; item < chunk->length(); item++) { \
-            value->flat<tstring>()(curr_index) = (dynamic_cast<ATYPE *>(chunk.get()))->GetString(item); \
-            curr_index++; \
-          } \
-        } \
-      }
+#define PROCESS_STRING_TYPE(ATYPE)                                \
+  {                                                               \
+    int64 curr_index = 0;                                         \
+    for (auto chunk : slice->chunks()) {                          \
+      for (int64_t item = 0; item < chunk->length(); item++) {    \
+        value->flat<tstring>()(curr_index) =                      \
+            (dynamic_cast<ATYPE*>(chunk.get()))->GetString(item); \
+        curr_index++;                                             \
+      }                                                           \
+    }                                                             \
+  }
 
     if (value != nullptr) {
       switch (value->dtype()) {
-      case DT_BOOL:
-        PROCESS_TYPE(bool, ::arrow::BooleanArray);
-        break;
-      case DT_INT8:
-        PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
-        break;
-      case DT_UINT8:
-        PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
-        break;
-      case DT_INT16:
-        PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
-        break;
-      case DT_UINT16:
-        PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
-        break;
-      case DT_INT32:
-        PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
-        break;
-      case DT_UINT32:
-        PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
-        break;
-      case DT_INT64:
-        PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
-        break;
-      case DT_UINT64:
-        PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
-        break;
-      case DT_FLOAT:
-        PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
-        break;
-      case DT_DOUBLE:
-        PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
-        break;
-      case DT_STRING:
-        PROCESS_STRING_TYPE(::arrow::StringArray);
-        break;
-      default:
-        return errors::InvalidArgument("data type is not supported: ", DataTypeString(value->dtype()));
+        case DT_BOOL:
+          PROCESS_TYPE(bool, ::arrow::BooleanArray);
+          break;
+        case DT_INT8:
+          PROCESS_TYPE(int8, ::arrow::NumericArray<::arrow::Int8Type>);
+          break;
+        case DT_UINT8:
+          PROCESS_TYPE(uint8, ::arrow::NumericArray<::arrow::UInt8Type>);
+          break;
+        case DT_INT16:
+          PROCESS_TYPE(int16, ::arrow::NumericArray<::arrow::Int16Type>);
+          break;
+        case DT_UINT16:
+          PROCESS_TYPE(uint16, ::arrow::NumericArray<::arrow::UInt16Type>);
+          break;
+        case DT_INT32:
+          PROCESS_TYPE(int32, ::arrow::NumericArray<::arrow::Int32Type>);
+          break;
+        case DT_UINT32:
+          PROCESS_TYPE(uint32, ::arrow::NumericArray<::arrow::UInt32Type>);
+          break;
+        case DT_INT64:
+          PROCESS_TYPE(int64, ::arrow::NumericArray<::arrow::Int64Type>);
+          break;
+        case DT_UINT64:
+          PROCESS_TYPE(uint64, ::arrow::NumericArray<::arrow::UInt64Type>);
+          break;
+        case DT_FLOAT:
+          PROCESS_TYPE(float, ::arrow::NumericArray<::arrow::FloatType>);
+          break;
+        case DT_DOUBLE:
+          PROCESS_TYPE(double, ::arrow::NumericArray<::arrow::DoubleType>);
+          break;
+        case DT_STRING:
+          PROCESS_STRING_TYPE(::arrow::StringArray);
+          break;
+        default:
+          return errors::InvalidArgument("data type is not supported: ",
+                                         DataTypeString(value->dtype()));
       }
     }
 
@@ -245,6 +265,7 @@ class CSVReadable : public IOReadableInterface {
     mutex_lock l(mu_);
     return strings::StrCat("CSVReadable");
   }
+
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);

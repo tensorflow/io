@@ -14,9 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include <string>
+#include <utility>
 #include <vector>
 
-#include <utility>
 #include "nucleus/io/fastq_reader.h"
 #include "nucleus/platform/types.h"
 #include "nucleus/protos/fastq.pb.h"

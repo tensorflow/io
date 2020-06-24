@@ -16,9 +16,8 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_AZURE_AZFS_OPS_H_
 #define TENSORFLOW_IO_AZURE_AZFS_OPS_H_
 
-#include "tensorflow/core/platform/file_system.h"
-
 #include "blob/blob_client.h"
+#include "tensorflow/core/platform/file_system.h"
 
 namespace tensorflow {
 namespace io {

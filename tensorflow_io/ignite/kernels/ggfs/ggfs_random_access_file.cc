@@ -30,8 +30,7 @@ Status GGFSRandomAccessFile::Read(uint64 offset, size_t n, StringPiece *result,
 
   TF_RETURN_IF_ERROR(client_->ReadFile(file_name_, &data, &length));
 
-  if (offset >= length)
-    return errors::OutOfRange("End of file");
+  if (offset >= length) return errors::OutOfRange("End of file");
 
   int32_t size = n < length - offset ? n : length - offset;
   std::copy(data.get() + offset, data.get() + offset + size, scratch);
@@ -40,4 +39,4 @@ Status GGFSRandomAccessFile::Read(uint64 offset, size_t n, StringPiece *result,
   return Status::OK();
 }
 
-} // namespace tensorflow
+}  // namespace tensorflow

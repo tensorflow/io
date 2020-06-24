@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_writable_file.h"
+
 #include "tensorflow/core/lib/core/errors.h"
 
 namespace tensorflow {
@@ -38,4 +39,4 @@ Status GGFSWritableFile::Flush() { return Status::OK(); }
 
 Status GGFSWritableFile::Sync() { return Status::OK(); }
 
-} // namespace tensorflow
+}  // namespace tensorflow

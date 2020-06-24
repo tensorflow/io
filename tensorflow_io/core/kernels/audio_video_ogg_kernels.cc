@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/core/kernels/audio_kernels.h"
-
 #include "vorbis/codec.h"
 #include "vorbis/vorbisenc.h"
 #include "vorbis/vorbisfile.h"

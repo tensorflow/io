@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "tensorflow_io/ignite/kernels/igfs/igfs.h"
+
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/file_system.h"
 #include "tensorflow/core/platform/file_system_helper.h"
-
-#include "tensorflow_io/ignite/kernels/igfs/igfs.h"
 #include "tensorflow_io/ignite/kernels/igfs/igfs_client.h"
 #include "tensorflow_io/ignite/kernels/igfs/igfs_random_access_file.h"
 #include "tensorflow_io/ignite/kernels/igfs/igfs_writable_file.h"
@@ -64,9 +64,7 @@ IGFS::IGFS()
           return 10500;
         }
       }()),
-      fs_name_(GetEnvOrElse("IGFS_FS_NAME", "default_fs")) {
-
-}
+      fs_name_(GetEnvOrElse("IGFS_FS_NAME", "default_fs")) {}
 
 IGFS::~IGFS() {
   LOG(INFO) << "IGFS destroyed [host=" << host_ << ", port=" << port_

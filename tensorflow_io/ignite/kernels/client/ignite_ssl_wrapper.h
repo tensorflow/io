@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_SSL_WRAPPER_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_SSL_WRAPPER_H_
 
-#include "tensorflow_io/ignite/kernels/client/ignite_client.h"
-
 #include <openssl/ssl.h>
+
+#include "tensorflow_io/ignite/kernels/client/ignite_client.h"
 
 namespace tensorflow {
 

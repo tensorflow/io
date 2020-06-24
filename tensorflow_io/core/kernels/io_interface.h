@@ -23,10 +23,13 @@ namespace data {
 class IOInterface : public ResourceBase {
  public:
   virtual ~IOInterface() {}
-  virtual Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) = 0;
-  virtual Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) = 0;
+  virtual Status Init(const std::vector<string>& input,
+                      const std::vector<string>& metadata,
+                      const void* memory_data, const int64 memory_size) = 0;
+  virtual Status Spec(const string& component, PartialTensorShape* shape,
+                      DataType* dtype, bool label) = 0;
 
-  virtual Status Partitions(std::vector<int64> *partitions) {
+  virtual Status Partitions(std::vector<int64>* partitions) {
     // By default partitions is not implemented: Unimplemented
     return errors::Unimplemented("Patitions");
   }
@@ -35,7 +38,8 @@ class IOInterface : public ResourceBase {
     return errors::Unimplemented("Components");
   }
   virtual Status Extra(const string& component, std::vector<Tensor>* extra) {
-    // This is the chance to provide additional extra information which should be appended to extra.
+    // This is the chance to provide additional extra information which should
+    // be appended to extra.
     return errors::Unimplemented("Extra");
   }
   virtual Status Context(OpKernelContext* context) {
@@ -47,7 +51,9 @@ class IOInterface : public ResourceBase {
 class IOReadableInterface : public IOInterface {
  public:
   // Check value==nullptr or label==nullptr to see which field is needed.
-  virtual Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) = 0;
+  virtual Status Read(const int64 start, const int64 stop,
+                      const string& component, int64* record_read,
+                      Tensor* value, Tensor* label) = 0;
 };
 
 class IOMappingInterface : public IOInterface {
@@ -55,8 +61,7 @@ class IOMappingInterface : public IOInterface {
   virtual Status Read(const Tensor& key, Tensor* value) = 0;
 };
 
-
-template<typename Type>
+template <typename Type>
 class IOInterfaceInitOp : public ResourceOpKernel<Type> {
  public:
   explicit IOInterfaceInitOp<Type>(OpKernelConstruction* context)
@@ -64,6 +69,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     env_ = context->env();
   }
   virtual ~IOInterfaceInitOp<Type>() {}
+
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<Type>::Compute(context);
@@ -77,7 +83,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
     for (int64 i = 0; i < input_tensor->NumElements(); i++) {
-        input.push_back(input_tensor->flat<tstring>()(i));
+      input.push_back(input_tensor->flat<tstring>()(i));
     }
 
     std::vector<string> metadata;
@@ -90,7 +96,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
     }
 
     size_t memory_size = 0;
-    const void *memory_data = nullptr;
+    const void* memory_data = nullptr;
     const Tensor* memory_tensor;
     status = context->input("memory", &memory_tensor);
     if (status.ok()) {
@@ -98,12 +104,14 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
       memory_size = memory_tensor->scalar<tstring>()().size();
     }
 
-    OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data, memory_size));
+    OP_REQUIRES_OK(context, this->resource_->Init(input, metadata, memory_data,
+                                                  memory_size));
     std::vector<string> components;
     status = this->resource_->Components(&components);
     if (!errors::IsUnimplemented(status)) {
       OP_REQUIRES_OK(context, status);
-      Tensor components_tensor(DT_STRING, TensorShape({static_cast<int64>(components.size())}));
+      Tensor components_tensor(
+          DT_STRING, TensorShape({static_cast<int64>(components.size())}));
       for (size_t i = 0; i < components.size(); i++) {
         components_tensor.flat<tstring>()(i) = components[i];
       }
@@ -119,7 +127,7 @@ class IOInterfaceInitOp : public ResourceOpKernel<Type> {
   Env* env_;
 };
 
-template<typename Type>
+template <typename Type>
 class IOInterfaceSpecOp : public OpKernel {
  public:
   explicit IOInterfaceSpecOp<Type>(OpKernelConstruction* ctx)
@@ -134,7 +142,8 @@ class IOInterfaceSpecOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
     PartialTensorShape shape;
@@ -159,15 +168,19 @@ class IOInterfaceSpecOp : public OpKernel {
       }
     }
   }
+
  private:
   string component_;
 };
 
-template<typename Type>
+template <typename Type>
 class IOReadableReadOp : public OpKernel {
  public:
   explicit IOReadableReadOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx), component_(""), value_output_(true), label_output_(false) {
+      : OpKernel(ctx),
+        component_(""),
+        value_output_(true),
+        label_output_(false) {
     std::vector<string> filter;
     Status status = ctx->GetAttr("filter", &filter);
     if (status.ok()) {
@@ -194,7 +207,8 @@ class IOReadableReadOp : public OpKernel {
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
     const Tensor* start_tensor;
@@ -212,7 +226,8 @@ class IOReadableReadOp : public OpKernel {
     if (value_output_) {
       PartialTensorShape shape;
       DataType dtype;
-      OP_REQUIRES_OK(context, resource->Spec(component_, &shape, &dtype, false));
+      OP_REQUIRES_OK(context,
+                     resource->Spec(component_, &shape, &dtype, false));
       gtl::InlinedVector<int64, 4> dims = shape.dim_sizes();
       dims[0] = stop - start;
       TensorShape value_shape(dims);
@@ -232,7 +247,9 @@ class IOReadableReadOp : public OpKernel {
       label_tensor = &label;
     }
     int64 record_read = 0;
-    OP_REQUIRES_OK(context, resource->Read(start, stop, component_, &record_read, value_tensor, label_tensor));
+    OP_REQUIRES_OK(context,
+                   resource->Read(start, stop, component_, &record_read,
+                                  value_tensor, label_tensor));
     int64 output_index = 0;
     if (record_read < stop - start) {
       if (value_output_) {
@@ -254,22 +271,22 @@ class IOReadableReadOp : public OpKernel {
       }
     }
   }
+
  private:
   string component_;
   bool value_output_;
   bool label_output_;
 };
-template<typename Type>
+template <typename Type>
 class IOMappingReadOp : public OpKernel {
  public:
-  explicit IOMappingReadOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx) {
-  }
+  explicit IOMappingReadOp<Type>(OpKernelConstruction* ctx) : OpKernel(ctx) {}
   virtual ~IOMappingReadOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
     const Tensor* key;
@@ -280,23 +297,24 @@ class IOMappingReadOp : public OpKernel {
     context->set_output(0, value);
   }
 };
-template<typename Type>
+template <typename Type>
 class IOReadablePartitionsOp : public OpKernel {
  public:
   explicit IOReadablePartitionsOp<Type>(OpKernelConstruction* ctx)
-      : OpKernel(ctx) {
-  }
+      : OpKernel(ctx) {}
   virtual ~IOReadablePartitionsOp<Type>() {}
 
   void Compute(OpKernelContext* context) override {
     Type* resource;
-    OP_REQUIRES_OK(context, GetResourceFromContext(context, "input", &resource));
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
     core::ScopedUnref unref(resource);
 
     std::vector<int64> partitions;
     OP_REQUIRES_OK(context, resource->Partitions(&partitions));
 
-    Tensor partitions_tensor(DT_INT64, TensorShape({static_cast<int64>(partitions.size())}));
+    Tensor partitions_tensor(
+        DT_INT64, TensorShape({static_cast<int64>(partitions.size())}));
     for (size_t i = 0; i < partitions.size(); i++) {
       partitions_tensor.flat<int64>()(i) = partitions[i];
     }

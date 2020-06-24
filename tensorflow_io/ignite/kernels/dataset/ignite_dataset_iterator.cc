@@ -15,10 +15,10 @@ limitations under the License.
 
 #include "tensorflow_io/ignite/kernels/dataset/ignite_dataset_iterator.h"
 
-#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
-#include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 #include "tensorflow/core/lib/gtl/cleanup.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 
 namespace tensorflow {
 

@@ -14,6 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs.h"
+
+#include <queue>
+
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/lib/io/path.h"
@@ -24,7 +27,6 @@ limitations under the License.
 #include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_random_access_file.h"
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_writable_file.h"
-#include <queue>
 
 namespace tensorflow {
 
@@ -37,28 +39,22 @@ Status GGFS::UpdateConnectionProperties() {
   const char *env_keyfile = std::getenv("IGNITE_KEYFILE");
   const char *env_cert_password = std::getenv("IGNITE_CERT_PASSWORD");
 
-  if (env_host)
-    host = string(env_host);
+  if (env_host) host = string(env_host);
 
   if (env_port && !strings::safe_strto32(env_port, &port)) {
     return errors::Unknown(
         "IGNITE_PORT environment variable is not a valid integer: ", env_port);
   }
 
-  if (env_username)
-    username = string(env_username);
+  if (env_username) username = string(env_username);
 
-  if (env_password)
-    password = string(env_password);
+  if (env_password) password = string(env_password);
 
-  if (env_certfile)
-    certfile = string(env_certfile);
+  if (env_certfile) certfile = string(env_certfile);
 
-  if (env_keyfile)
-    keyfile = string(env_keyfile);
+  if (env_keyfile) keyfile = string(env_keyfile);
 
-  if (env_cert_password)
-    cert_password = string(env_cert_password);
+  if (env_cert_password) cert_password = string(env_cert_password);
 
   return Status::OK();
 }
@@ -204,8 +200,7 @@ Status GGFS::RenameFile(const string &src, const string &dst) {
   TF_RETURN_IF_ERROR(client.Stat(TranslateName(src), &is_directory,
                                  &modification_time, &size));
 
-  if (!is_directory)
-    return client.Move(TranslateName(src), TranslateName(dst));
+  if (!is_directory) return client.Move(TranslateName(src), TranslateName(dst));
 
   std::queue<string> file_queue;
   std::queue<string> dir_queue;
@@ -270,4 +265,4 @@ string GGFS::TranslateName(const string &name) const {
   return res;
 }
 
-} // namespace tensorflow
+}  // namespace tensorflow

@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_RANDOM_ACCESS_FILE_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_IGFS_IGFS_RANDOM_ACCESS_FILE_H_
 
-#include "tensorflow_io/ignite/kernels/igfs/igfs_client.h"
 #include "tensorflow/core/platform/file_system.h"
+#include "tensorflow_io/ignite/kernels/igfs/igfs_client.h"
 
 namespace tensorflow {
 

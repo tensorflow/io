@@ -26,9 +26,9 @@ REGISTER_OP("IO>LMDBInput")
     .Attr("columns: list(string) = []")
     .Attr("schema: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-       return Status::OK();
-     });
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>LMDBDatasetV2")
     .Input("input: T")
@@ -39,54 +39,54 @@ REGISTER_OP("IO>LMDBDatasetV2")
     .Attr("T: {string, variant} = DT_VARIANT")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-       c->set_output(0, c->MakeShape({}));
-       return Status::OK();
-     });
+      c->set_output(0, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>LMDBReadableInit")
-  .Input("input: string")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>LMDBReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("value: dtype")
+    .Attr("shape: shape")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      PartialTensorShape shape;
+      TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+      c->set_output(0, entry);
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>LMDBMappingInit")
-  .Input("input: string")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetIsStateful()
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>LMDBMappingRead")
-  .Input("input: resource")
-  .Input("key: string")
-  .Output("value: string")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->input(1));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("key: string")
+    .Output("value: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->input(1));
+      return Status::OK();
+    });
 
 }  // namespace tensorflow

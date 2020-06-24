@@ -13,8 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
-
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -25,6 +23,7 @@ limitations under the License.
 
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 
 namespace tensorflow {
 

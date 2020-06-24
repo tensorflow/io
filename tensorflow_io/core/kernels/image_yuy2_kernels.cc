@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/core/kernels/io_stream.h"
-
 #include "libyuv/convert_argb.h"
 #include "libyuv/convert_from_argb.h"
+#include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
 namespace io {

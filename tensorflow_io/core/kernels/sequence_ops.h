@@ -12,24 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include <deque>
+
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-
-#include <deque>
 
 namespace tensorflow {
 
 class OutputSequence : public ResourceBase {
  public:
-  OutputSequence(Env* env)
-   : env_(env) {}
+  OutputSequence(Env* env) : env_(env) {}
 
   virtual ~OutputSequence() override {}
   virtual Status Flush() {
     return errors::Unimplemented("flush is not implemented");
   }
   virtual Status Output() = 0;
-  virtual Status SetItem(int64 index, const void *item) {
+  virtual Status SetItem(int64 index, const void* item) {
     mutex_lock l(mu_);
     int64 size = fifo_.size();
     if (index < base_) {
@@ -37,15 +36,16 @@ class OutputSequence : public ResourceBase {
     }
     if (base_ <= index && index < base_ + size) {
       if (fifo_[index - base_].get() != nullptr) {
-        return errors::InvalidArgument("the item has already been add before: ", index);
+        return errors::InvalidArgument("the item has already been add before: ",
+                                       index);
       }
-      fifo_[index - base_].reset(new string((const char *)item));
+      fifo_[index - base_].reset(new string((const char*)item));
     }
     if (base_ + size <= index) {
       for (int64 i = base_ + size; i < index; i++) {
         fifo_.push_back(nullptr);
       }
-      fifo_.push_back(std::unique_ptr<string>(new string((const char *)item)));
+      fifo_.push_back(std::unique_ptr<string>(new string((const char*)item)));
     }
     if (fifo_.front().get() != nullptr) {
       TF_RETURN_IF_ERROR(Output());
@@ -55,6 +55,7 @@ class OutputSequence : public ResourceBase {
   virtual string DebugString() const {
     return strings::StrCat("OutputSequence[]");
   }
+
  protected:
   mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
@@ -62,13 +63,14 @@ class OutputSequence : public ResourceBase {
   std::deque<std::unique_ptr<string>> fifo_ TF_GUARDED_BY(mu_);
 };
 
-template<typename T>
+template <typename T>
 class OutputSequenceOp : public ResourceOpKernel<T> {
  public:
   explicit OutputSequenceOp<T>(OpKernelConstruction* context)
-    : ResourceOpKernel<T>(context) {
+      : ResourceOpKernel<T>(context) {
     env_ = context->env();
   }
+
  protected:
   void Compute(OpKernelContext* context) = 0;
   Status CreateResource(T** sequence)
@@ -80,46 +82,50 @@ class OutputSequenceOp : public ResourceOpKernel<T> {
   mutex mu_;
 };
 
-template<typename T>
+template <typename T>
 class OutputSequenceSetItemOp : public OpKernel {
  public:
   using OpKernel::OpKernel;
   void Compute(OpKernelContext* ctx) override {
     mutex_lock l(mu_);
     T* sequence;
-    OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
+    OP_REQUIRES_OK(ctx,
+                   LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
     core::ScopedUnref unref(sequence);
     const Tensor* index_tensor;
     const Tensor* item_tensor;
     OP_REQUIRES_OK(ctx, ctx->input("index", &index_tensor));
-    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(index_tensor->shape()),
-                errors::InvalidArgument(
-                    "Index tensor must be scalar, but had shape: ",
-                    index_tensor->shape().DebugString()));
+    OP_REQUIRES(
+        ctx, TensorShapeUtils::IsScalar(index_tensor->shape()),
+        errors::InvalidArgument("Index tensor must be scalar, but had shape: ",
+                                index_tensor->shape().DebugString()));
     OP_REQUIRES_OK(ctx, ctx->input("item", &item_tensor));
-    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(item_tensor->shape()),
-                errors::InvalidArgument(
-                    "Item tensor must be scalar, but had shape: ",
-                    item_tensor->shape().DebugString()));
+    OP_REQUIRES(
+        ctx, TensorShapeUtils::IsScalar(item_tensor->shape()),
+        errors::InvalidArgument("Item tensor must be scalar, but had shape: ",
+                                item_tensor->shape().DebugString()));
     const int64 index = index_tensor->scalar<int64>()();
     const string& item = item_tensor->scalar<tstring>()();
     OP_REQUIRES_OK(ctx, sequence->SetItem(index, item.c_str()));
   }
+
  private:
   mutex mu_;
 };
 
-template<typename T>
+template <typename T>
 class OutputSequenceFlushOp : public OpKernel {
  public:
   using OpKernel::OpKernel;
   void Compute(OpKernelContext* ctx) override {
     mutex_lock l(mu_);
     T* sequence;
-    OP_REQUIRES_OK(ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
+    OP_REQUIRES_OK(ctx,
+                   LookupResource(ctx, HandleFromInput(ctx, 0), &sequence));
     core::ScopedUnref unref(sequence);
     OP_REQUIRES_OK(ctx, sequence->Flush());
   }
+
  private:
   mutex mu_;
 };
