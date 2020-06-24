@@ -2177,7 +2177,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
             batch_size=2,
         )
 
-    #@pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+    # @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_ignore_namespace(self):
         """test_namespace"""
         reader_schema = """
@@ -2192,9 +2192,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
                 }
             ]
           }"""
-        features = {
-            "string_value": tf.io.FixedLenFeature([], tf.dtypes.string)
-        }
+        features = {"string_value": tf.io.FixedLenFeature([], tf.dtypes.string)}
         record_data = [{"string_value": "a"}, {"string_value": "bb"}]
         expected_data = [
             {
