@@ -373,5 +373,22 @@ def test_decode_avif():
     assert np.all(rgb == png)
 
 
+def test_decode_tiff_multipage():
+    """Test case for decode_tiff_multipage"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "multipage_tiff_example.tif",
+    )
+    shape, dtype = tfio.experimental.image.decode_tiff_info(tf.io.read_file(filename))
+    assert np.all(shape.shape == [10, 3])
+    assert np.all(dtype.shape == [10])
+    for i in range(10):
+        assert np.array_equal(shape[i], [600, 800, 3])
+        assert dtype[i].numpy() == tf.uint8
+        # TODO: validate content
+        image = tfio.experimental.image.decode_tiff(tf.io.read_file(filename), index=i)
+
+
 if __name__ == "__main__":
     test.main()

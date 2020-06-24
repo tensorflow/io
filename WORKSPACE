@@ -952,3 +952,14 @@ new_git_repository(
     commit = "6ab7d65a68350ed4ec6aaabfa18715b2d76a231c",
     remote = "https://chromium.googlesource.com/codecs/libgav1",
 )
+
+http_archive(
+    name = "libjpeg_turbo",
+    build_file = "//third_party:libjpeg_turbo.BUILD",
+    sha256 = "7777c3c19762940cff42b3ba4d7cd5c52d1671b39a79532050c85efb99079064",
+    strip_prefix = "libjpeg-turbo-2.0.4",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz",
+        "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz",
+    ],
+)
