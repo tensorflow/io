@@ -128,15 +128,28 @@ genrule(
     name = "config_jconfigint_h",
     srcs = ["jconfigint.h.in"],
     outs = ["config/jconfigint.h"],
-    cmd = (
-        "sed " +
-        "-e 's/@BUILD@/20180831/g' " +
-        "-e 's/@INLINE@/inline/g' " +
-        "-e 's/@CMAKE_PROJECT_NAME@/libjpeg-turbo/g' " +
-        "-e 's/@VERSION@/2.0.0/g' " +
-        "-e 's/@SIZE_T@/8/g' " +
-        "-e 's/#cmakedefine HAVE_BUILTIN_CTZL/#define HAVE_BUILTIN_CTZL/g' " +
-        "-e 's/#cmakedefine HAVE_INTRIN_H//g' " +
-        "$< >$@"
-    ),
+    cmd = select({
+        "@bazel_tools//src/conditions:windows": (
+            "sed " +
+            "-e 's/@BUILD@/20180831/g' " +
+            "-e 's/@INLINE@/inline/g' " +
+            "-e 's/@CMAKE_PROJECT_NAME@/libjpeg-turbo/g' " +
+            "-e 's/@VERSION@/2.0.0/g' " +
+            "-e 's/@SIZE_T@/8/g' " +
+            "-e 's/#cmakedefine HAVE_BUILTIN_CTZL//g' " +
+            "-e 's/#cmakedefine HAVE_INTRIN_H//g' " +
+            "$< >$@"
+        ),
+        "//conditions:default": (
+            "sed " +
+            "-e 's/@BUILD@/20180831/g' " +
+            "-e 's/@INLINE@/inline/g' " +
+            "-e 's/@CMAKE_PROJECT_NAME@/libjpeg-turbo/g' " +
+            "-e 's/@VERSION@/2.0.0/g' " +
+            "-e 's/@SIZE_T@/8/g' " +
+            "-e 's/#cmakedefine HAVE_BUILTIN_CTZL/#define HAVE_BUILTIN_CTZL/g' " +
+            "-e 's/#cmakedefine HAVE_INTRIN_H//g' " +
+            "$< >$@"
+        ),
+    }),
 )
