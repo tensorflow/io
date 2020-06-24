@@ -401,14 +401,8 @@ class ParseAvroOp : public OpKernel {
                      errors::InvalidArgument("Avro schema error: ", error));
     }
 
-    // Handle namespace
-    string avro_namespace(reader_schema_.root()->hasName()
-                              ? reader_schema_.root()->name().ns()
-                              : "");
-    VLOG(3) << "Retrieved namespace" << avro_namespace;
-
-    OP_REQUIRES_OK(ctx, AvroParserTree::Build(&parser_tree_, avro_namespace,
-                                              CreateKeysAndTypes()));
+    OP_REQUIRES_OK(ctx,
+                   AvroParserTree::Build(&parser_tree_, CreateKeysAndTypes()));
   }
 
   void Compute(OpKernelContext* ctx) override {

@@ -60,7 +60,7 @@ class AvroParserTree {
  public:
   // Creates all parser nodes with the given namespace and for the given keys
   // with their types
-  static Status Build(AvroParserTree* parser_tree, const string& avro_namespace,
+  static Status Build(AvroParserTree* parser_tree,
                       const std::vector<KeyWithType>& keys_and_types);
 
   // Parses all values in a batch into the map keyed by the user-defined keys
@@ -73,9 +73,6 @@ class AvroParserTree {
   Status ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
                      const std::function<bool(avro::GenericDatum&)> read_value,
                      const avro::ValidSchema& reader_schema) const;
-
-  // Returns the namespace for this parser
-  inline string GetAvroNamespace() const { return avro_namespace_; }
 
   // Returns the root of the parser tree -- exposed for testing
   inline AvroParserSharedPtr getRoot() const { return root_; }
@@ -92,10 +89,6 @@ class AvroParserTree {
   // The constant for all element keys
   static constexpr const char* const kArrayAllElements = "[*]";
 
-  // The constant for the default namespace -- used when the user did not define
-  // a namespace
-  static constexpr const char* const kDefaultNamespace = "default";
-
   // Build the avro parser tree for the parent for the given children from a
   // prefix tree
   Status Build(AvroParser* parent,
@@ -104,11 +97,6 @@ class AvroParserTree {
   // Initialize will compute the final descendents for each node, called after
   // build
   void Initialize();
-
-  // Resolve and set namespace
-  // If no namespace has been provided aka avro_namespace = '', then this method
-  // resolves to the default namespace
-  string ResolveAndSetNamespace(const string& avro_namespace);
 
   // Creates the value parser for the given infix and user name
   // Note, that this method only creates value parsers for non-primitive avro
@@ -156,13 +144,8 @@ class AvroParserTree {
   static string ResolveFilterName(const string& user_name,
                                   const string& side_name,
                                   const string& filter_name);
-
-  // Get all parts of a user name without accounting for the avro namespace
-  static std::vector<string> GetPartsWithoutAvroNamespace(
-      const string& user_name, const string& avro_namespace);
-
-  // Removes the default avro namespace from the name -- if it is present
-  static string RemoveDefaultAvroNamespace(const string& name);
+  // Get all parts of a user name
+  static std::vector<string> GetParts(const string& user_name);
 
   // Removes additional dots that would not be part of the user name
   // These are the dots in front of the symbols `[` and `:`
@@ -200,14 +183,6 @@ class AvroParserTree {
   // Is this infix a branch? -- must be
   // [:boolean|:int|:long|:float|:double|:bytes|:string]
   static bool IsBranch(const string& infix);
-
-  // Is the given namespace the default namespace
-  static bool IsDefaultNamespace(const string& avro_namespace) {
-    return avro_namespace == kDefaultNamespace;
-  };
-
-  // The avro namespace
-  string avro_namespace_;
 
   // The parser root
   AvroParserSharedPtr root_;

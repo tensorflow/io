@@ -95,14 +95,8 @@ Status AvroFileStreamReader::OnWorkStartup() {
   reader_.reset(new avro::DataFileReader<avro::GenericDatum>(std::move(stream),
                                                              reader_schema_));
 
-  // Get the namespace
-  string avro_namespace(reader_schema_.root()->hasName()
-                            ? reader_schema_.root()->name().ns()
-                            : "");
-  VLOG(3) << "Retrieved namespace" << avro_namespace;
-
   // Create the parser tree
-  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_, avro_namespace,
+  TF_RETURN_IF_ERROR(AvroParserTree::Build(&avro_parser_tree_,
                                            CreateKeysAndTypesFromConfig()));
 
   return Status::OK();

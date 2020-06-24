@@ -282,12 +282,9 @@ class UnionParser : public AvroParser {
 };
 
 // Parses the namespace
-class NamespaceParser : public AvroParser {
+class RootParser : public AvroParser {
  public:
-  NamespaceParser(const string& name);
-  // checks namespace of value against given namespace
-  // - if matches passes avro value to all it's child parsers
-  // - if does not match returns error with actual and expected namespace
+  RootParser();
   Status Parse(std::map<string, ValueStoreUniquePtr>* values,
                const avro::GenericDatum& datum) const override;
   virtual string ToString(size_t level = 0) const;
@@ -295,9 +292,6 @@ class NamespaceParser : public AvroParser {
   inline std::set<avro::Type> GetSupportedTypes() const override {
     return {avro::AVRO_UNKNOWN};
   }
-
- private:
-  string name_;
 };
 
 }  // namespace data

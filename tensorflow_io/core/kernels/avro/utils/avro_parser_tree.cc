@@ -24,9 +24,7 @@ namespace tensorflow {
 namespace data {
 
 /* static */ constexpr const char* const AvroParserTree::kArrayAllElements;
-/* static */ constexpr const char* const AvroParserTree::kDefaultNamespace;
 
-// TODO(fraudies): Change log level from INFO to DEBUG for most items
 Status AvroParserTree::ParseValues(
     std::map<string, ValueStoreUniquePtr>* key_to_value,
     const std::function<bool(avro::GenericDatum&)> read_value,
@@ -103,7 +101,6 @@ Status AvroParserTree::ParseValues(
 }
 
 Status AvroParserTree::Build(AvroParserTree* parser_tree,
-                             const string& avro_namespace,
                              const std::vector<KeyWithType>& keys_and_types) {
   // Check unique keys
   VLOG(7) << "Validate keys";
@@ -114,8 +111,6 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   // [name[first=last]age=friends.age]
   // TODO(fraudies): Add to validation that lhs/rhs being a constant won't be
   // possible lhs != rhs
-  const string& resolved_avro_namespace =
-      (*parser_tree).ResolveAndSetNamespace(avro_namespace);
 
   // Convert to internal names and order names to handle filters properly
   // through parse order
@@ -129,8 +124,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
     VLOG(7) << "Add key prefix: " << key_and_type.first;
 
     // Built prefixes
-    std::vector<string> key_prefixes = GetPartsWithoutAvroNamespace(
-        key_and_type.first, resolved_avro_namespace);
+    std::vector<string> key_prefixes = GetParts(key_and_type.first);
     prefixes.push_back(key_prefixes);
 
     // Built map from key to type
@@ -138,7 +132,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   }
 
   VLOG(7) << "Build prefix tree";
-  OrderedPrefixTree prefix_tree(resolved_avro_namespace);
+  OrderedPrefixTree prefix_tree;
   OrderedPrefixTree::Build(&prefix_tree, prefixes);
 
   VLOG(7) << "Prefix tree\n" << prefix_tree.ToString();
@@ -146,8 +140,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   (*parser_tree).keys_and_types_ = ordered_keys_and_types;
 
   // Use the expected type to decide which value parser node to add
-  (*parser_tree).root_ =
-      std::make_shared<NamespaceParser>(prefix_tree.GetRootPrefix());
+  (*parser_tree).root_ = std::make_shared<RootParser>();
 
   // Use the prefix tree to build the parser tree
   TF_RETURN_IF_ERROR((*parser_tree)
@@ -164,15 +157,6 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
   return Status::OK();
 }
 
-string AvroParserTree::ResolveAndSetNamespace(const string& avro_namespace) {
-  if (avro_namespace.size() > 0) {
-    avro_namespace_ = avro_namespace;
-  } else {
-    avro_namespace_ = kDefaultNamespace;
-  }
-  return avro_namespace_;
-}
-
 Status AvroParserTree::Build(
     AvroParser* parent, const std::vector<PrefixTreeNodeSharedPtr>& children) {
   for (PrefixTreeNodeSharedPtr child : children) {
@@ -181,8 +165,7 @@ Status AvroParserTree::Build(
     AvroParserUniquePtr avro_parser(nullptr);
 
     // Create a parser and add it to the parent
-    const string& user_name(RemoveAddedDots(
-        RemoveDefaultAvroNamespace((*child).GetName(kSeparator))));
+    const string& user_name(RemoveAddedDots((*child).GetName(kSeparator)));
 
     TF_RETURN_IF_ERROR(
         CreateValueParser(avro_parser, (*child).GetPrefix(), user_name));
@@ -557,29 +540,13 @@ string AvroParserTree::ResolveFilterName(const string& user_name,
   }
 }
 
-std::vector<string> AvroParserTree::GetPartsWithoutAvroNamespace(
-    const string& user_name, const string& avro_namespace) {
+std::vector<string> AvroParserTree::GetParts(const string& user_name) {
   string name = user_name;
-  if (str_util::StartsWith(name, avro_namespace)) {
-    name = name.substr(avro_namespace.size() + 1,
-                       string::npos);  // +1 to remove separator
-  }
   RE2::GlobalReplace(&name, RE2("\\["), ".[");  // [ -> .[
   RE2::GlobalReplace(&name, RE2(":"), ".:");    // : -> .:
   std::vector<string> parts =
       SplitOnDelimiterButNotInsideSquareBrackets(name, kSeparator);
   return parts;
-}
-
-// Will remove the default avro namespace if it exists; otherwise the value
-// won't change
-string AvroParserTree::RemoveDefaultAvroNamespace(const string& name) {
-  if (str_util::StartsWith(name, kDefaultNamespace)) {
-    return name.substr(strlen(kDefaultNamespace) + 1,
-                       string::npos);  // +1 to remove separator
-  } else {
-    return name;
-  }
 }
 
 string AvroParserTree::RemoveAddedDots(const string& name) {

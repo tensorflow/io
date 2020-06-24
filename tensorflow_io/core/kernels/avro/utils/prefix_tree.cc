@@ -23,10 +23,15 @@ PrefixTreeNode::PrefixTreeNode(const std::string& prefix,
 std::string PrefixTreeNode::GetName(char separator) const {
   std::string name;
   name += prefix_;
-  PrefixTreeNode* father = father_;
-  while (father != nullptr) {
-    name = father->prefix_ + separator + name;
-    father = father->father_;
+  PrefixTreeNode* current = father_;
+  // Root has empty name
+  if (current == nullptr) {
+    return name;
+  }
+  // Exclude the root from the name
+  while (current->father_ != nullptr) {
+    name = current->prefix_ + separator + name;
+    current = current->father_;
   }
   return name;
 }
@@ -73,8 +78,9 @@ std::string PrefixTreeNode::ToString(int level) const {
 // -------------------------------------------------------------------------------------------------
 // Ordered prefix tree
 // -------------------------------------------------------------------------------------------------
-OrderedPrefixTree::OrderedPrefixTree(const std::string& root_name)
-    : root_(new PrefixTreeNode(root_name)) {}
+// Note, the root always has an empty name, it's a placeholder to simplify the
+// code
+OrderedPrefixTree::OrderedPrefixTree() : root_(new PrefixTreeNode("")) {}
 
 void OrderedPrefixTree::Insert(const std::vector<std::string>& prefixes) {
   PrefixTreeNodeSharedPtr node = root_;
@@ -99,21 +105,6 @@ PrefixTreeNodeSharedPtr OrderedPrefixTree::FindNearest(
   *remaining = prefixes;
   // If the root has a prefix
   auto prefix = (*remaining).begin();
-  if ((*root_).HasPrefix()) {
-    // If we dont have any prefixes then we can't match the root
-    if (prefix == (*remaining).end()) {
-      return nullptr;
-    } else {
-      std::string root_prefix(GetRootPrefix());
-      // If the root prefix does not match we can't find the node
-      if (root_prefix.compare(*prefix) != 0) {
-        return nullptr;
-      }
-      // We matched
-      prefix = (*remaining).erase(prefix);
-    }
-  }
-
   PrefixTreeNodeSharedPtr node(root_);
   PrefixTreeNodeSharedPtr next_node;
   // We don't have a root with prefix, then start with the children
