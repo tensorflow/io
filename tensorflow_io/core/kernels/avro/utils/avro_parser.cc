@@ -524,21 +524,18 @@ string UnionParser::ToString(size_t level) const {
   return ss.str();
 }
 
-NamespaceParser::NamespaceParser(const string& name)
-    : AvroParser(""), name_(name) {}
-Status NamespaceParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                              const avro::GenericDatum& datum) const {
-  // TODO(fraudies): Check namespace match
+RootParser::RootParser() : AvroParser("") {}
+Status RootParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
+                         const avro::GenericDatum& datum) const {
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
     TF_RETURN_IF_ERROR((*child).Parse(values, datum));
   }
   return Status::OK();
 }
-string NamespaceParser::ToString(size_t level) const {
+string RootParser::ToString(size_t level) const {
   std::stringstream ss;
-  ss << LevelToString(level) << "|---NamespaceParser(" << name_ << ")"
-     << std::endl;
+  ss << LevelToString(level) << "|---RootParser()" << std::endl;
   ss << ChildrenToString(level);
   return ss.str();
 }
