@@ -88,6 +88,7 @@ cc_library(
     }),
     defines = [
         "HAVE_CONFIG_H",
+        "LZMA_API_STATIC",
     ],
     includes = [
         ".",
