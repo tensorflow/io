@@ -639,7 +639,7 @@ class NumpyReadOp : public OpKernel {
         context->allocate_output(0, output_shape, &output_tensor));           \
     void* p = output_tensor->flat<TYPE>().data();                             \
     if (bytes_stop > bytes_start) {                                           \
-      tstring buffer;                                                          \
+      tstring buffer;                                                         \
       TF_RETURN_IF_ERROR(                                                     \
           stream->ReadNBytes(bytes_stop - bytes_start, &buffer));             \
       memcpy(p, buffer.data(), bytes_stop - bytes_start);                     \

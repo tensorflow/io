@@ -13,21 +13,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 #include "tensorflow_io/core/kernels/azfs_kernels.h"
-#include "tensorflow/core/lib/io/path.h"
-#include "tensorflow/core/lib/strings/str_util.h"
-#include "tensorflow/core/platform/env.h"
-
-#include "blob/blob_client.h"
-#include "logging.h"
-#include "storage_account.h"
-#include "storage_credential.h"
-#include "storage_errno.h"
 
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <ostream>
 #include <sstream>
+
+#include "blob/blob_client.h"
+#include "logging.h"
+#include "storage_account.h"
+#include "storage_credential.h"
+#include "storage_errno.h"
+#include "tensorflow/core/lib/io/path.h"
+#include "tensorflow/core/lib/strings/str_util.h"
+#include "tensorflow/core/platform/env.h"
 
 namespace tensorflow {
 namespace io {

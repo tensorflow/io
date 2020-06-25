@@ -20,7 +20,6 @@ limitations under the License.
 
 #include "arrow/api.h"
 #include "arrow/io/api.h"
-
 #include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
@@ -30,7 +29,7 @@ namespace tensorflow {
 namespace data {
 
 ArrowStreamClient::ArrowStreamClient(const std::string& endpoint)
-  : endpoint_(endpoint), sock_(-1), pos_(0) {}
+    : endpoint_(endpoint), sock_(-1), pos_(0) {}
 
 ArrowStreamClient::~ArrowStreamClient() {
   if (sock_ != -1) {
@@ -45,8 +44,8 @@ arrow::Status ArrowStreamClient::Connect() {
 
   status = ArrowUtil::ParseEndpoint(endpoint_, &socket_family, &host);
   if (!status.ok()) {
-    return arrow::Status::Invalid(
-        "Error parsing endpoint string: " + endpoint_);
+    return arrow::Status::Invalid("Error parsing endpoint string: " +
+                                  endpoint_);
   }
 
   if (socket_family.empty() || socket_family == "tcp") {
@@ -76,7 +75,6 @@ arrow::Status ArrowStreamClient::Connect() {
     }
 
   } else if (socket_family == "unix") {
-
     if (sock_ == -1) {
       if ((sock_ = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         return arrow::Status::IOError("Socket creation error");
@@ -84,7 +82,7 @@ arrow::Status ArrowStreamClient::Connect() {
     }
 
     struct sockaddr_un serv_addr;
-    bzero((char *)&serv_addr,sizeof(serv_addr));
+    bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sun_family = AF_UNIX;
     strcpy(serv_addr.sun_path, host.c_str());
 
@@ -93,8 +91,8 @@ arrow::Status ArrowStreamClient::Connect() {
     }
 
   } else {
-    return arrow::Status::Invalid(
-        "Unsupported socket family: " + socket_family);
+    return arrow::Status::Invalid("Unsupported socket family: " +
+                                  socket_family);
   }
 
   return arrow::Status::OK();
@@ -111,13 +109,9 @@ arrow::Status ArrowStreamClient::Close() {
   return arrow::Status::OK();
 }
 
-bool ArrowStreamClient::closed() const {
-  return sock_ == -1;
-}
+bool ArrowStreamClient::closed() const { return sock_ == -1; }
 
-arrow::Result<int64_t> ArrowStreamClient::Tell() const {
-  return pos_;
-}
+arrow::Result<int64_t> ArrowStreamClient::Tell() const { return pos_; }
 
 arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes, void* out) {
   // TODO: 0 bytes requested when message body length == 0
@@ -136,7 +130,8 @@ arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes, void* out) {
   return nbytes;
 }
 
-arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(int64_t nbytes) {
+arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(
+    int64_t nbytes) {
   std::shared_ptr<arrow::ResizableBuffer> buffer;
   ARROW_RETURN_NOT_OK(arrow::AllocateResizableBuffer(nbytes, &buffer));
   int64_t bytes_read;

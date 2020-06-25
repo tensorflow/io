@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/ignite/kernels/dataset/ignite_dataset_iterator.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/ignite/kernels/dataset/ignite_dataset_iterator.h"
 
 namespace tensorflow {
 

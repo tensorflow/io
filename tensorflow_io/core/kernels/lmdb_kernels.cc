@@ -13,20 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include "lmdb.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "lmdb.h"
 
 namespace tensorflow {
 namespace data {
 
 class LMDBReadable : public IOReadableInterface {
  public:
-  LMDBReadable(Env* env)
-  : env_(env) {}
+  LMDBReadable(Env* env) : env_(env) {}
 
   ~LMDBReadable() {
     if (mdb_env_ != nullptr) {
@@ -42,7 +42,9 @@ class LMDBReadable : public IOReadableInterface {
       mdb_env_ = nullptr;
     }
   }
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+  Status Init(const std::vector<string>& input,
+              const std::vector<string>& metadata, const void* memory_data,
+              const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
     }
@@ -61,7 +63,8 @@ class LMDBReadable : public IOReadableInterface {
     }
     status = mdb_env_open(mdb_env_, filename.c_str(), flags, 0664);
     if (status != MDB_SUCCESS) {
-      return errors::InvalidArgument("error on mdb_env_open ", filename, ": ", status);
+      return errors::InvalidArgument("error on mdb_env_open ", filename, ": ",
+                                     status);
     }
     status = mdb_txn_begin(mdb_env_, nullptr, MDB_RDONLY, &mdb_txn_);
     if (status != MDB_SUCCESS) {
@@ -77,7 +80,8 @@ class LMDBReadable : public IOReadableInterface {
     }
     return Status::OK();
   }
-  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component,
+              int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
     while (start + (*record_read) < stop) {
       MDB_val mdb_key;
@@ -86,12 +90,14 @@ class LMDBReadable : public IOReadableInterface {
       if (status != MDB_SUCCESS) {
         break;
       }
-      value->flat<tstring>()((*record_read)) = std::move(string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
+      value->flat<tstring>()((*record_read)) = std::move(
+          string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
       (*record_read)++;
     }
     return Status::OK();
   }
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape,
+              DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
@@ -101,6 +107,7 @@ class LMDBReadable : public IOReadableInterface {
     mutex_lock l(mu_);
     return strings::StrCat("LMDBReadable[]");
   }
+
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
@@ -114,8 +121,7 @@ class LMDBReadable : public IOReadableInterface {
 
 class LMDBMapping : public IOMappingInterface {
  public:
-  LMDBMapping(Env* env)
-  : env_(env) {}
+  LMDBMapping(Env* env) : env_(env) {}
 
   ~LMDBMapping() {
     if (mdb_env_ != nullptr) {
@@ -127,7 +133,9 @@ class LMDBMapping : public IOMappingInterface {
       mdb_env_ = nullptr;
     }
   }
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+  Status Init(const std::vector<string>& input,
+              const std::vector<string>& metadata, const void* memory_data,
+              const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
     }
@@ -146,7 +154,8 @@ class LMDBMapping : public IOMappingInterface {
     }
     status = mdb_env_open(mdb_env_, filename.c_str(), flags, 0664);
     if (status != MDB_SUCCESS) {
-      return errors::InvalidArgument("error on mdb_env_open ", filename, ": ", status);
+      return errors::InvalidArgument("error on mdb_env_open ", filename, ": ",
+                                     status);
     }
     status = mdb_txn_begin(mdb_env_, nullptr, MDB_RDONLY, &mdb_txn_);
     if (status != MDB_SUCCESS) {
@@ -160,7 +169,8 @@ class LMDBMapping : public IOMappingInterface {
     return Status::OK();
   }
 
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape,
+              DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
     return Status::OK();
@@ -170,13 +180,15 @@ class LMDBMapping : public IOMappingInterface {
     for (int64 i = 0; i < key.NumElements(); i++) {
       MDB_val mdb_key;
       MDB_val mdb_data;
-      mdb_key.mv_data = (void *)key.flat<tstring>()(i).data();
+      mdb_key.mv_data = (void*)key.flat<tstring>()(i).data();
       mdb_key.mv_size = key.flat<tstring>()(i).size();
       int status = mdb_get(mdb_txn_, mdb_dbi_, &mdb_key, &mdb_data);
       if (status != MDB_SUCCESS) {
-        return errors::InvalidArgument("unable to get value from key(", key.flat<tstring>()(i), "): ", status);
+        return errors::InvalidArgument("unable to get value from key(",
+                                       key.flat<tstring>()(i), "): ", status);
       }
-      value->flat<tstring>()(i) = std::move(string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
+      value->flat<tstring>()(i) = std::move(
+          string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
     }
     return Status::OK();
   }
@@ -185,6 +197,7 @@ class LMDBMapping : public IOMappingInterface {
     mutex_lock l(mu_);
     return strings::StrCat("LMDBMapping");
   }
+
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);

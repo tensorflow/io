@@ -25,9 +25,9 @@ limitations under the License.
 // OpenSans Regular font, Apache License 2.0
 // Generated through xxd -i.
 // OpenSans_Regular_ttf and  OpenSans_Regular_ttf_len
-#include "third_party/font/font_opensans_regular.h"
-
 #include <ft2build.h>
+
+#include "third_party/font/font_opensans_regular.h"
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 

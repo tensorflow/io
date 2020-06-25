@@ -13,19 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <deque>
+
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
-#include  <deque>
 
 extern "C" {
+
+#include <dlfcn.h>
 
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavutil/imgutils.h"
 #include "libswscale/swscale.h"
-#include <dlfcn.h>
-
 }
 
 namespace tensorflow {
@@ -38,21 +39,20 @@ void FFmpegInit() {
   count++;
   if (count == 1) {
     // Set log level if needed
-    static const struct { const char *name; int level; } log_levels[] = {
-        { "quiet"  , AV_LOG_QUIET   },
-        { "panic"  , AV_LOG_PANIC   },
-        { "fatal"  , AV_LOG_FATAL   },
-        { "error"  , AV_LOG_ERROR   },
-        { "warning", AV_LOG_WARNING },
-        { "info"   , AV_LOG_INFO    },
-        { "verbose", AV_LOG_VERBOSE },
-        { "debug"  , AV_LOG_DEBUG   },
+    static const struct {
+      const char* name;
+      int level;
+    } log_levels[] = {
+        {"quiet", AV_LOG_QUIET},     {"panic", AV_LOG_PANIC},
+        {"fatal", AV_LOG_FATAL},     {"error", AV_LOG_ERROR},
+        {"warning", AV_LOG_WARNING}, {"info", AV_LOG_INFO},
+        {"verbose", AV_LOG_VERBOSE}, {"debug", AV_LOG_DEBUG},
         // { "trace"  , AV_LOG_TRACE   },
     };
     const char* log_level_name = getenv("FFMPEG_LOG_LEVEL");
     if (log_level_name != nullptr) {
       string log_level = log_level_name;
-      for (size_t i = 0; i < sizeof(log_levels)/sizeof(log_levels[0]); i++) {
+      for (size_t i = 0; i < sizeof(log_levels) / sizeof(log_levels[0]); i++) {
         if (log_level == log_levels[i].name) {
           LOG(INFO) << "FFmpeg log level: " << log_level;
           av_log_set_level(log_levels[i].level);
@@ -68,22 +68,33 @@ void FFmpegInit() {
 
 class FFmpegReadStream {
  public:
-  FFmpegReadStream(const string& filename, SizedRandomAccessFile* file, uint64 file_size)
-  : filename_(filename)
-  , file_(file)
-  , file_size_(file_size)
-  , offset_(0)
-  , format_context_(nullptr, [](AVFormatContext* p) { if (p != nullptr) { avformat_close_input(&p); av_free(p); } })
-  , io_context_(nullptr, [](AVIOContext* p) { if (p != nullptr) { av_free(p); } })
-  , stream_index_(-1) { }
+  FFmpegReadStream(const string& filename, SizedRandomAccessFile* file,
+                   uint64 file_size)
+      : filename_(filename),
+        file_(file),
+        file_size_(file_size),
+        offset_(0),
+        format_context_(nullptr,
+                        [](AVFormatContext* p) {
+                          if (p != nullptr) {
+                            avformat_close_input(&p);
+                            av_free(p);
+                          }
+                        }),
+        io_context_(nullptr,
+                    [](AVIOContext* p) {
+                      if (p != nullptr) {
+                        av_free(p);
+                      }
+                    }),
+        stream_index_(-1) {}
   virtual ~FFmpegReadStream() {}
 
-  int64 Streams() {
-    return format_context_.get()->nb_streams;
-  }
+  int64 Streams() { return format_context_.get()->nb_streams; }
   int64 StreamType(int64 stream_index) {
 #if LIBAVCODEC_VERSION_MAJOR > 56
-    int media_type = format_context_->streams[stream_index]->codecpar->codec_type;
+    int media_type =
+        format_context_->streams[stream_index]->codecpar->codec_type;
 #else
     int media_type = format_context_->streams[stream_index]->codec->codec_type;
 #endif
@@ -91,12 +102,15 @@ class FFmpegReadStream {
   }
   virtual Status Open(int64 stream_index) {
     offset_ = 0;
-    AVFormatContext *format_context; 
+    AVFormatContext* format_context;
     if ((format_context = avformat_alloc_context()) != NULL) {
-      AVIOContext *io_context;
-      if ((io_context = avio_alloc_context(NULL, 0, 0, this, FFmpegReadStream::ReadPacket, NULL, FFmpegReadStream::Seek)) != NULL) {
+      AVIOContext* io_context;
+      if ((io_context = avio_alloc_context(NULL, 0, 0, this,
+                                           FFmpegReadStream::ReadPacket, NULL,
+                                           FFmpegReadStream::Seek)) != NULL) {
         format_context->pb = io_context;
-        if (avformat_open_input(&format_context, filename_.c_str(), NULL, NULL) >= 0) {
+        if (avformat_open_input(&format_context, filename_.c_str(), NULL,
+                                NULL) >= 0) {
           if (avformat_find_stream_info(format_context, NULL) >= 0) {
             // No plan to read any other stream frame
             for (int64 i = 0; i < format_context->nb_streams; i++) {
@@ -115,12 +129,12 @@ class FFmpegReadStream {
       av_free(format_context);
     }
     return errors::InvalidArgument("unable to open file: ", filename_);
-   }
+  }
 
-  static int ReadPacket(void *opaque, uint8_t *buf, int buf_size) {
-    FFmpegReadStream *r = (FFmpegReadStream *)opaque;
+  static int ReadPacket(void* opaque, uint8_t* buf, int buf_size) {
+    FFmpegReadStream* r = (FFmpegReadStream*)opaque;
     StringPiece result;
-    Status status = r->file_->Read(r->offset_, buf_size, &result, (char *)buf);
+    Status status = r->file_->Read(r->offset_, buf_size, &result, (char*)buf);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
       return -1;
     }
@@ -128,56 +142,66 @@ class FFmpegReadStream {
     return result.size();
   }
 
-  static int64_t Seek(void *opaque, int64_t offset, int whence) {
-    FFmpegReadStream *r = (FFmpegReadStream *)opaque;
-    switch (whence)
-    {
-    case SEEK_SET:
-      if (offset > r->file_size_) {
-        return -1;
-      }
-      r->offset_ = offset;
-      return r->offset_;
-    case SEEK_CUR:
-      if (r->offset_ + offset > r->file_size_) {
-        return -1;
-      }
-      r->offset_ += offset;
-      return r->offset_;
-    case SEEK_END:
-      if (offset > r->file_size_) {
-        return -1;
-      }
-      r->offset_ = r->file_size_ - offset;
-      return r->offset_;
-    case AVSEEK_SIZE:
-      return r->file_size_;
-    default:
-      break;
+  static int64_t Seek(void* opaque, int64_t offset, int whence) {
+    FFmpegReadStream* r = (FFmpegReadStream*)opaque;
+    switch (whence) {
+      case SEEK_SET:
+        if (offset > r->file_size_) {
+          return -1;
+        }
+        r->offset_ = offset;
+        return r->offset_;
+      case SEEK_CUR:
+        if (r->offset_ + offset > r->file_size_) {
+          return -1;
+        }
+        r->offset_ += offset;
+        return r->offset_;
+      case SEEK_END:
+        if (offset > r->file_size_) {
+          return -1;
+        }
+        r->offset_ = r->file_size_ - offset;
+        return r->offset_;
+      case AVSEEK_SIZE:
+        return r->file_size_;
+      default:
+        break;
     }
     return -1;
   }
 
  public:
   string filename_;
-  SizedRandomAccessFile *file_ = nullptr;
+  SizedRandomAccessFile* file_ = nullptr;
   uint64 file_size_ = 0;
   uint64 offset_ = 0;
-  std::unique_ptr<AVFormatContext, void(*)(AVFormatContext*)> format_context_;
-  std::unique_ptr<AVIOContext, void(*)(AVIOContext*)> io_context_;
+  std::unique_ptr<AVFormatContext, void (*)(AVFormatContext*)> format_context_;
+  std::unique_ptr<AVIOContext, void (*)(AVIOContext*)> io_context_;
   int64 stream_index_;
 };
 class FFmpegReadStreamMeta : public FFmpegReadStream {
  public:
-  FFmpegReadStreamMeta(const string& filename, SizedRandomAccessFile* file, uint64 file_size, int64 media_type)
-  : FFmpegReadStream(filename, file, file_size)
-  , media_type_(media_type)
-  , record_index_(0)
-  , nb_frames_(-1)
-  , dtype_(DT_INVALID)
-  , packet_scope_(nullptr, [](AVPacket* p) { if (p != nullptr) { av_packet_unref(p); }})
-  , codec_context_scope_(nullptr, [](AVCodecContext* p) { if (p != nullptr) { avcodec_free_context(&p); }})
-  , initialized_(false) {}
+  FFmpegReadStreamMeta(const string& filename, SizedRandomAccessFile* file,
+                       uint64 file_size, int64 media_type)
+      : FFmpegReadStream(filename, file, file_size),
+        media_type_(media_type),
+        record_index_(0),
+        nb_frames_(-1),
+        dtype_(DT_INVALID),
+        packet_scope_(nullptr,
+                      [](AVPacket* p) {
+                        if (p != nullptr) {
+                          av_packet_unref(p);
+                        }
+                      }),
+        codec_context_scope_(nullptr,
+                             [](AVCodecContext* p) {
+                               if (p != nullptr) {
+                                 avcodec_free_context(&p);
+                               }
+                             }),
+        initialized_(false) {}
 
   virtual ~FFmpegReadStreamMeta() {}
 
@@ -186,7 +210,8 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     initialized_ = false;
     TF_RETURN_IF_ERROR(FFmpegReadStream::Open(stream_index));
     if (StreamType(stream_index) != media_type_) {
-      return errors::Internal("type mismatch: ", StreamType(stream_index), " vs. ", media_type_);
+      return errors::Internal("type mismatch: ", StreamType(stream_index),
+                              " vs. ", media_type_);
     }
 #if LIBAVCODEC_VERSION_MAJOR > 56
     int codec_id = format_context_->streams[stream_index]->codecpar->codec_id;
@@ -194,7 +219,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     int codec_id = format_context_->streams[stream_index]->codec->codec_id;
 #endif
     // Find decoder for the stream
-    AVCodec *codec = avcodec_find_decoder((enum AVCodecID)codec_id);
+    AVCodec* codec = avcodec_find_decoder((enum AVCodecID)codec_id);
     if (codec == NULL) {
       return errors::InvalidArgument("unable to find codec id: ", codec_id);
     }
@@ -206,14 +231,18 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     }
     codec_context_scope_.reset(codec_context_);
     // Copy codec parameters from input stream to output codec context
-    if (avcodec_parameters_to_context(codec_context_, format_context_->streams[stream_index]->codecpar) < 0) {
-      return errors::Internal("could not copy codec parameters from input stream to output codec context");
+    if (avcodec_parameters_to_context(
+            codec_context_, format_context_->streams[stream_index]->codecpar) <
+        0) {
+      return errors::Internal(
+          "could not copy codec parameters from input stream to output codec "
+          "context");
     }
 #else
     codec_context_ = format_context_->streams[stream_index]->codec;
 #endif
     // TODO (yongtang): avcodec_open2 is not thread-safe
-    AVDictionary *opts = NULL;
+    AVDictionary* opts = NULL;
     if (avcodec_open2(codec_context_, codec, &opts) < 0) {
       return errors::Internal("could not open codec");
     }
@@ -270,11 +299,12 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
     } while (got_frame);
     packet_scope_.reset(nullptr);
-    
+
     return Status::OK();
   }
   virtual Status DecodeFrame(int* got_frame) = 0;
-  virtual Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) = 0;
+  virtual Status ReadDecoded(int64 record_to_read, int64* record_read,
+                             Tensor* value) = 0;
   virtual Status Read(int64 record_to_read, int64* record_read, Tensor* value) {
     if (!initialized_) {
       TF_RETURN_IF_ERROR(InitializeDecoder());
@@ -295,6 +325,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     record_index_ += (*record_read);
     return Status::OK();
   }
+
  protected:
   int64 media_type_;
   int64 record_index_;
@@ -303,31 +334,41 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
   DataType dtype_;
   string codec_;
   AVPacket packet_;
-  std::unique_ptr<AVPacket, void(*)(AVPacket*)> packet_scope_;
+  std::unique_ptr<AVPacket, void (*)(AVPacket*)> packet_scope_;
   AVCodecContext* codec_context_;
-  std::unique_ptr<AVCodecContext, void(*)(AVCodecContext*)> codec_context_scope_;
-  std::deque<std::unique_ptr<AVFrame, void(*)(AVFrame*)>> frames_;
+  std::unique_ptr<AVCodecContext, void (*)(AVCodecContext*)>
+      codec_context_scope_;
+  std::deque<std::unique_ptr<AVFrame, void (*)(AVFrame*)>> frames_;
   bool initialized_ = false;
   int got_frame_;
   int64 samples_index_;
 };
 class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegVideoReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_VIDEO)
-  , height_(-1)
-  , width_(-1)
-  , num_bytes_(-1)
-  , sws_context_(nullptr, [](SwsContext* p) { if (p != nullptr) { sws_freeContext(p); }}) {}
+  FFmpegVideoReadStreamMeta(const string& filename, SizedRandomAccessFile* file,
+                            uint64 file_size)
+      : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_VIDEO),
+        height_(-1),
+        width_(-1),
+        num_bytes_(-1),
+        sws_context_(nullptr, [](SwsContext* p) {
+          if (p != nullptr) {
+            sws_freeContext(p);
+          }
+        }) {}
   virtual ~FFmpegVideoReadStreamMeta() {}
   virtual Status Open(int64 stream_index) override {
     TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
 
     height_ = codec_context_->height;
     width_ = codec_context_->width;
-    num_bytes_ = av_image_get_buffer_size(AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height, 1);
+    num_bytes_ = av_image_get_buffer_size(
+        AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height, 1);
 
-    SwsContext* sws_context = sws_getContext(codec_context_->width, codec_context_->height, codec_context_->pix_fmt, codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24, 0, NULL, NULL, NULL);
+    SwsContext* sws_context = sws_getContext(
+        codec_context_->width, codec_context_->height, codec_context_->pix_fmt,
+        codec_context_->width, codec_context_->height, AV_PIX_FMT_RGB24, 0,
+        NULL, NULL, NULL);
     if (!sws_context) {
       return errors::Internal("could not allocate sws context");
     }
@@ -337,33 +378,56 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
     dtype_ = DT_UINT8;
     return Status::OK();
   }
-  Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) override {
+  Status ReadDecoded(int64 record_to_read, int64* record_read,
+                     Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (frames_.empty()) {
         return Status::OK();
       }
       int64 offset = (*record_read) * height_ * width_ * 3;
-      memcpy(reinterpret_cast<char*>(&value->flat<uint8>().data()[offset]), reinterpret_cast<char*>(frames_buffer_.front().get()), num_bytes_ * sizeof(uint8_t));
+      memcpy(reinterpret_cast<char*>(&value->flat<uint8>().data()[offset]),
+             reinterpret_cast<char*>(frames_buffer_.front().get()),
+             num_bytes_ * sizeof(uint8_t));
       frames_.pop_front();
       frames_buffer_.pop_front();
       (*record_read)++;
     }
     return Status::OK();
   }
-  Status DecodeFrame(int *got_frame) override {
-    std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
-    int decoded = avcodec_decode_video2(codec_context_, frame.get(), got_frame, &packet_);
+  Status DecodeFrame(int* got_frame) override {
+    std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
+                                                       [](AVFrame* p) {
+                                                         if (p != nullptr) {
+                                                           av_frame_free(&p);
+                                                         }
+                                                       });
+    int decoded =
+        avcodec_decode_video2(codec_context_, frame.get(), got_frame, &packet_);
     if (decoded < 0) {
-      return errors::InvalidArgument("error decoding video frame (", decoded, ")");
+      return errors::InvalidArgument("error decoding video frame (", decoded,
+                                     ")");
     }
-    decoded = FFMIN(decoded, packet_.size);      
+    decoded = FFMIN(decoded, packet_.size);
     packet_.data += decoded;
     packet_.size -= decoded;
     if (*got_frame) {
-      std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame_rgb(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
-      std::unique_ptr<uint8_t, void(*)(uint8_t*)> buffer_rgb((uint8_t*)av_malloc(num_bytes_ * sizeof(uint8_t)), [](uint8_t* p) { if (p != nullptr) { av_free(p); } });
-      avpicture_fill((AVPicture *)frame_rgb.get(), buffer_rgb.get(), AV_PIX_FMT_RGB24, codec_context_->width, codec_context_->height);
-      sws_scale(sws_context_.get(), frame->data, frame->linesize, 0, codec_context_->height, frame_rgb->data, frame_rgb->linesize);
+      std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame_rgb(
+          av_frame_alloc(), [](AVFrame* p) {
+            if (p != nullptr) {
+              av_frame_free(&p);
+            }
+          });
+      std::unique_ptr<uint8_t, void (*)(uint8_t*)> buffer_rgb(
+          (uint8_t*)av_malloc(num_bytes_ * sizeof(uint8_t)), [](uint8_t* p) {
+            if (p != nullptr) {
+              av_free(p);
+            }
+          });
+      avpicture_fill((AVPicture*)frame_rgb.get(), buffer_rgb.get(),
+                     AV_PIX_FMT_RGB24, codec_context_->width,
+                     codec_context_->height);
+      sws_scale(sws_context_.get(), frame->data, frame->linesize, 0,
+                codec_context_->height, frame_rgb->data, frame_rgb->linesize);
 
       frames_.push_back(std::move(frame_rgb));
       frames_buffer_.push_back(std::move(buffer_rgb));
@@ -383,7 +447,7 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
     *record_to_read = frames_.size();
     return Status::OK();
   }
-  
+
   int64 Height() { return height_; }
   int64 Width() { return width_; }
 
@@ -391,16 +455,17 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
   int64 height_;
   int64 width_;
   int64 num_bytes_;
-  std::deque<std::unique_ptr<uint8_t, void(*)(uint8_t*)>> frames_buffer_;
-  std::unique_ptr<SwsContext, void(*)(SwsContext*)> sws_context_;
+  std::deque<std::unique_ptr<uint8_t, void (*)(uint8_t*)>> frames_buffer_;
+  std::unique_ptr<SwsContext, void (*)(SwsContext*)> sws_context_;
 };
 
 class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegAudioReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_AUDIO)
-  , channels_(-1)
-  , rate_(-1) {}
+  FFmpegAudioReadStreamMeta(const string& filename, SizedRandomAccessFile* file,
+                            uint64 file_size)
+      : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_AUDIO),
+        channels_(-1),
+        rate_(-1) {}
   virtual ~FFmpegAudioReadStreamMeta() {}
 
   virtual Status Open(int64 stream_index) override {
@@ -415,64 +480,69 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
     rate_ = format_context_->streams[stream_index]->codec->sample_rate;
 #endif
     shape_ = PartialTensorShape({-1, channels_});
-    switch (format)
-    {
-    case AV_SAMPLE_FMT_U8:          ///< unsigned 8 bits
-      dtype_ = DT_UINT8;
-      break;
-    case AV_SAMPLE_FMT_S16:         ///< signed 16 bits
-      dtype_ = DT_INT16;
-      break;
-    case AV_SAMPLE_FMT_S32:         ///< signed 32 bits
-      dtype_ = DT_INT32;
-      break;
-    case AV_SAMPLE_FMT_FLT:         ///< float
-      dtype_ = DT_FLOAT;
-      break;
-    case AV_SAMPLE_FMT_DBL:         ///< double
-      dtype_ = DT_DOUBLE;
-      break;
+    switch (format) {
+      case AV_SAMPLE_FMT_U8:  ///< unsigned 8 bits
+        dtype_ = DT_UINT8;
+        break;
+      case AV_SAMPLE_FMT_S16:  ///< signed 16 bits
+        dtype_ = DT_INT16;
+        break;
+      case AV_SAMPLE_FMT_S32:  ///< signed 32 bits
+        dtype_ = DT_INT32;
+        break;
+      case AV_SAMPLE_FMT_FLT:  ///< float
+        dtype_ = DT_FLOAT;
+        break;
+      case AV_SAMPLE_FMT_DBL:  ///< double
+        dtype_ = DT_DOUBLE;
+        break;
 
-    case AV_SAMPLE_FMT_U8P:         ///< unsigned 8 bits, planar
-      dtype_ = DT_UINT8;
-      break;
-    case AV_SAMPLE_FMT_S16P:        ///< signed 16 bits, planar
-      dtype_ = DT_INT16;
-      break;
-    case AV_SAMPLE_FMT_S32P:        ///< signed 32 bits, planar
-      dtype_ = DT_INT32;
-      break;
-    case AV_SAMPLE_FMT_FLTP:        ///< float, planar
-      dtype_ = DT_FLOAT;
-      break;
-    case AV_SAMPLE_FMT_DBLP:        ///< double, planar
-      dtype_ = DT_DOUBLE;
-      break;
-    // case AV_SAMPLE_FMT_S64:         ///< signed 64 bits
-    // case AV_SAMPLE_FMT_S64P:        ///< signed 64 bits, planar
-    default:
-      return errors::InvalidArgument("invalid audio (", stream_index, ") format: ", format);
+      case AV_SAMPLE_FMT_U8P:  ///< unsigned 8 bits, planar
+        dtype_ = DT_UINT8;
+        break;
+      case AV_SAMPLE_FMT_S16P:  ///< signed 16 bits, planar
+        dtype_ = DT_INT16;
+        break;
+      case AV_SAMPLE_FMT_S32P:  ///< signed 32 bits, planar
+        dtype_ = DT_INT32;
+        break;
+      case AV_SAMPLE_FMT_FLTP:  ///< float, planar
+        dtype_ = DT_FLOAT;
+        break;
+      case AV_SAMPLE_FMT_DBLP:  ///< double, planar
+        dtype_ = DT_DOUBLE;
+        break;
+      // case AV_SAMPLE_FMT_S64:         ///< signed 64 bits
+      // case AV_SAMPLE_FMT_S64P:        ///< signed 64 bits, planar
+      default:
+        return errors::InvalidArgument("invalid audio (", stream_index,
+                                       ") format: ", format);
     }
 
     return Status::OK();
   }
-  Status ReadDecodedRecord(int64 record_to_read, int64* record_read, Tensor* value) {
+  Status ReadDecodedRecord(int64 record_to_read, int64* record_read,
+                           Tensor* value) {
     int64 datasize = av_get_bytes_per_sample(codec_context_->sample_fmt);
     if (datasize != DataTypeSize(dtype_)) {
       return errors::InvalidArgument("failed to calculate data size");
     }
-    char *base;
+    char* base;
     switch (dtype_) {
-    case DT_INT16:
-      base = ((char *)(value->flat<int16>().data()));
-      break;
-    default:
-      return errors::InvalidArgument("data type not supported: ", DataTypeString(dtype_));
+      case DT_INT16:
+        base = ((char*)(value->flat<int16>().data()));
+        break;
+      default:
+        return errors::InvalidArgument("data type not supported: ",
+                                       DataTypeString(dtype_));
     }
     while (samples_index_ < frames_.front()->nb_samples) {
       for (int64 channel = 0; channel < codec_context_->channels; channel++) {
-        char *data = base + datasize * ((*record_read) * codec_context_->channels + channel);
-        char *copy = ((char *)(frames_.front()->data[channel])) + datasize * samples_index_;
+        char* data =
+            base +
+            datasize * ((*record_read) * codec_context_->channels + channel);
+        char* copy = ((char*)(frames_.front()->data[channel])) +
+                     datasize * samples_index_;
         memcpy(data, copy, datasize);
       }
       (*record_read)++;
@@ -483,13 +553,15 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
     }
     return Status::OK();
   }
-  Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) override {
+  Status ReadDecoded(int64 record_to_read, int64* record_read,
+                     Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (frames_.empty()) {
         return Status::OK();
       }
       if (samples_index_ < frames_.front()->nb_samples) {
-        TF_RETURN_IF_ERROR(ReadDecodedRecord(record_to_read, record_read, value));
+        TF_RETURN_IF_ERROR(
+            ReadDecodedRecord(record_to_read, record_read, value));
       }
       if (!frames_.empty() && samples_index_ >= frames_.front()->nb_samples) {
         frames_.pop_front();
@@ -499,12 +571,19 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
     return Status::OK();
   }
   Status DecodeFrame(int* got_frame) override {
-    std::unique_ptr<AVFrame, void(*)(AVFrame*)> frame(av_frame_alloc(), [](AVFrame* p) { if (p != nullptr) { av_frame_free(&p); } });
-    int decoded = avcodec_decode_audio4(codec_context_, frame.get(), got_frame, &packet_);
+    std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
+                                                       [](AVFrame* p) {
+                                                         if (p != nullptr) {
+                                                           av_frame_free(&p);
+                                                         }
+                                                       });
+    int decoded =
+        avcodec_decode_audio4(codec_context_, frame.get(), got_frame, &packet_);
     if (decoded < 0) {
-      return errors::InvalidArgument("error decoding audio frame (", decoded, ")");
+      return errors::InvalidArgument("error decoding audio frame (", decoded,
+                                     ")");
     }
-    decoded = FFMIN(decoded, packet_.size);      
+    decoded = FFMIN(decoded, packet_.size);
     packet_.data += decoded;
     packet_.size -= decoded;
     if (*got_frame) {
@@ -514,6 +593,7 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
   }
   int64 Channels() { return channels_; }
   int64 Rate() { return rate_; }
+
  private:
   int64 channels_;
   int64 rate_;
@@ -521,8 +601,10 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
 
 class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
  public:
-  FFmpegSubtitleReadStreamMeta(const string&filename, SizedRandomAccessFile* file, uint64 file_size)
-  : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_SUBTITLE) {}
+  FFmpegSubtitleReadStreamMeta(const string& filename,
+                               SizedRandomAccessFile* file, uint64 file_size)
+      : FFmpegReadStreamMeta(filename, file, file_size, AVMEDIA_TYPE_SUBTITLE) {
+  }
   virtual ~FFmpegSubtitleReadStreamMeta() {}
   virtual Status Open(int64 stream_index) override {
     TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
@@ -530,8 +612,10 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
     dtype_ = DT_STRING;
     return Status::OK();
   }
+
  private:
-  Status ReadDecoded(int64 record_to_read, int64* record_read, Tensor* value) override {
+  Status ReadDecoded(int64 record_to_read, int64* record_read,
+                     Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (subtitles_.empty()) {
         return Status::OK();
@@ -544,9 +628,11 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
   }
   Status DecodeFrame(int* got_frame) override {
     AVSubtitle subtitle;
-    int decoded = avcodec_decode_subtitle2(codec_context_, &subtitle, got_frame, &packet_);
+    int decoded = avcodec_decode_subtitle2(codec_context_, &subtitle, got_frame,
+                                           &packet_);
     if (decoded < 0) {
-      return errors::InvalidArgument("error decoding subtitle frame (", decoded, ")");
+      return errors::InvalidArgument("error decoding subtitle frame (", decoded,
+                                     ")");
     }
     decoded = FFMIN(decoded, packet_.size);
     packet_.data += decoded;
@@ -554,32 +640,34 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
     if (*got_frame) {
       // We expect one rect
       if (subtitle.num_rects != 1) {
-        return errors::InvalidArgument("number of rects has to be 1, received: ", subtitle.num_rects);
+        return errors::InvalidArgument(
+            "number of rects has to be 1, received: ", subtitle.num_rects);
       }
-      switch (subtitle.rects[0]->type)
-      {
-      case SUBTITLE_ASS:
-        if (!strncmp(subtitle.rects[0]->ass, "Dialogue: ", 10)) {
-          string buffer = string(subtitle.rects[0]->ass);
-          // find after 9th ","
-          size_t position = 0;
-          for (int64 i = 0; i < 9; i++) {
-            position = buffer.find(",", position);
-            if (position == string::npos) {
-              return errors::InvalidArgument("invalid libass format: ", buffer);
+      switch (subtitle.rects[0]->type) {
+        case SUBTITLE_ASS:
+          if (!strncmp(subtitle.rects[0]->ass, "Dialogue: ", 10)) {
+            string buffer = string(subtitle.rects[0]->ass);
+            // find after 9th ","
+            size_t position = 0;
+            for (int64 i = 0; i < 9; i++) {
+              position = buffer.find(",", position);
+              if (position == string::npos) {
+                return errors::InvalidArgument("invalid libass format: ",
+                                               buffer);
+              }
+              position++;
             }
-            position++;
+            subtitles_.push_back(buffer.substr(position));
+          } else {
+            subtitles_.push_back(string(subtitle.rects[0]->ass));
           }
-          subtitles_.push_back(buffer.substr(position));
-        } else {
-          subtitles_.push_back(string(subtitle.rects[0]->ass));
-        }
-        break;
-      case SUBTITLE_TEXT:
-        subtitles_.push_back(string(subtitle.rects[0]->text));
-        break;
-      default:
-        return errors::InvalidArgument("unsupported subtitle type: ", subtitle.rects[0]->type);
+          break;
+        case SUBTITLE_TEXT:
+          subtitles_.push_back(string(subtitle.rects[0]->text));
+          break;
+        default:
+          return errors::InvalidArgument("unsupported subtitle type: ",
+                                         subtitle.rects[0]->type);
       }
     }
     return Status::OK();
@@ -588,16 +676,18 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
 };
 class FFmpegReadable : public IOReadableInterface {
  public:
-  FFmpegReadable(Env* env)
-  : env_(env) {}
+  FFmpegReadable(Env* env) : env_(env) {}
 
   virtual ~FFmpegReadable() {}
-  Status Init(const std::vector<string>& input, const std::vector<string>& metadata, const void* memory_data, const int64 memory_size) override {
+  Status Init(const std::vector<string>& input,
+              const std::vector<string>& metadata, const void* memory_data,
+              const int64 memory_size) override {
     if (input.size() > 1) {
       return errors::InvalidArgument("more than 1 filename is not supported");
     }
     const string& filename = input[0];
-    file_.reset(new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
+    file_.reset(
+        new SizedRandomAccessFile(env_, filename, memory_data, memory_size));
     TF_RETURN_IF_ERROR(env_->GetFileSize(filename, &file_size_));
     ffmpeg_file_.reset(new FFmpegReadStream(filename, file_.get(), file_size_));
 
@@ -606,36 +696,43 @@ class FFmpegReadable : public IOReadableInterface {
 
     int64 audio_index = 0, video_index = 0, subtitle_index = 0;
     for (int64 i = 0; i < ffmpeg_file_->Streams(); i++) {
-      switch(ffmpeg_file_->StreamType(i)) {
-      case AVMEDIA_TYPE_VIDEO:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegVideoReadStreamMeta(filename, file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
-        shapes_.push_back(columns_meta_[i]->Shape());
-        dtypes_.push_back(columns_meta_[i]->DType());
-        columns_.push_back(absl::StrCat("v:", video_index));
-        columns_index_[columns_.back()] = i;
-        video_index++;
-        break;    
-      case AVMEDIA_TYPE_AUDIO:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegAudioReadStreamMeta(filename, file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
-        shapes_.push_back(columns_meta_[i]->Shape());
-        dtypes_.push_back(columns_meta_[i]->DType());
-        columns_.push_back(absl::StrCat("a:", audio_index));
-        columns_index_[columns_.back()] = i;
-        audio_index++;
-        break;
-      case AVMEDIA_TYPE_SUBTITLE:
-        columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(new FFmpegSubtitleReadStreamMeta(filename, file_.get(), file_size_)));
-        TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
-        shapes_.push_back(columns_meta_[i]->Shape());
-        dtypes_.push_back(columns_meta_[i]->DType());
-        columns_.push_back(absl::StrCat("s:", subtitle_index));
-        columns_index_[columns_.back()] = i;
-        subtitle_index++;
-        break;
-      default:
-        return errors::InvalidArgument("invalid steam (", i, ") type: ", ffmpeg_file_->StreamType(i));
+      switch (ffmpeg_file_->StreamType(i)) {
+        case AVMEDIA_TYPE_VIDEO:
+          columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(
+              new FFmpegVideoReadStreamMeta(filename, file_.get(),
+                                            file_size_)));
+          TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
+          shapes_.push_back(columns_meta_[i]->Shape());
+          dtypes_.push_back(columns_meta_[i]->DType());
+          columns_.push_back(absl::StrCat("v:", video_index));
+          columns_index_[columns_.back()] = i;
+          video_index++;
+          break;
+        case AVMEDIA_TYPE_AUDIO:
+          columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(
+              new FFmpegAudioReadStreamMeta(filename, file_.get(),
+                                            file_size_)));
+          TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
+          shapes_.push_back(columns_meta_[i]->Shape());
+          dtypes_.push_back(columns_meta_[i]->DType());
+          columns_.push_back(absl::StrCat("a:", audio_index));
+          columns_index_[columns_.back()] = i;
+          audio_index++;
+          break;
+        case AVMEDIA_TYPE_SUBTITLE:
+          columns_meta_.push_back(std::unique_ptr<FFmpegReadStreamMeta>(
+              new FFmpegSubtitleReadStreamMeta(filename, file_.get(),
+                                               file_size_)));
+          TF_RETURN_IF_ERROR(columns_meta_[i]->Open(i));
+          shapes_.push_back(columns_meta_[i]->Shape());
+          dtypes_.push_back(columns_meta_[i]->DType());
+          columns_.push_back(absl::StrCat("s:", subtitle_index));
+          columns_index_[columns_.back()] = i;
+          subtitle_index++;
+          break;
+        default:
+          return errors::InvalidArgument(
+              "invalid steam (", i, ") type: ", ffmpeg_file_->StreamType(i));
       }
     }
     return Status::OK();
@@ -647,7 +744,8 @@ class FFmpegReadable : public IOReadableInterface {
     }
     return Status::OK();
   }
-  Status Spec(const string& component, PartialTensorShape* shape, DataType* dtype, bool label) override {
+  Status Spec(const string& component, PartialTensorShape* shape,
+              DataType* dtype, bool label) override {
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
     }
@@ -663,14 +761,16 @@ class FFmpegReadable : public IOReadableInterface {
     }
     int64 column_index = columns_index_[component];
     // Expose a sample `rate`
-    FFmpegAudioReadStreamMeta *meta = dynamic_cast<FFmpegAudioReadStreamMeta *>(columns_meta_[column_index].get());
+    FFmpegAudioReadStreamMeta* meta = dynamic_cast<FFmpegAudioReadStreamMeta*>(
+        columns_meta_[column_index].get());
     Tensor rate(DT_INT64, TensorShape({}));
     rate.scalar<int64>()() = (meta != nullptr) ? meta->Rate() : 0;
     extra->push_back(rate);
     return Status::OK();
   }
 
-  Status Read(const int64 start, const int64 stop, const string& component, int64* record_read, Tensor* value, Tensor* label) override {
+  Status Read(const int64 start, const int64 stop, const string& component,
+              int64* record_read, Tensor* value, Tensor* label) override {
     *record_read = 0;
     if (columns_index_.find(component) == columns_index_.end()) {
       return errors::InvalidArgument("component ", component, " is invalid");
@@ -682,7 +782,8 @@ class FFmpegReadable : public IOReadableInterface {
         return Status::OK();
       }
       if (start != 0) {
-        return errors::InvalidArgument("ffmepg dataset could not seek to a random location");
+        return errors::InvalidArgument(
+            "ffmepg dataset could not seek to a random location");
       }
       // Else we will recreate the meta.
       TF_RETURN_IF_ERROR(columns_meta_[column_index]->Open(column_index));
@@ -694,6 +795,7 @@ class FFmpegReadable : public IOReadableInterface {
     mutex_lock l(mu_);
     return strings::StrCat("FFmpegReadable");
   }
+
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
@@ -717,7 +819,8 @@ REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableRead").Device(DEVICE_CPU),
 
 class FFmpegDecodeVideoOp : public OpKernel {
  public:
-  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context) : OpKernel(context) {
+  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context)
+      : OpKernel(context) {
     env_ = context->env();
   }
 
@@ -739,12 +842,21 @@ class FFmpegDecodeVideoOp : public OpKernel {
     OP_REQUIRES_OK(context, video_meta.Peek(&record_to_read));
 
     Tensor* video_tensor = nullptr;
-    OP_REQUIRES_OK(context, context->allocate_output(0, TensorShape({record_to_read, video_meta.Height(), video_meta.Width(), channels_}), &video_tensor));
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(
+                       0,
+                       TensorShape({record_to_read, video_meta.Height(),
+                                    video_meta.Width(), channels_}),
+                       &video_tensor));
 
     int64 record_read = 0;
-    OP_REQUIRES_OK(context, video_meta.Read(record_to_read, &record_read, video_tensor));
-    OP_REQUIRES(context, (record_read == record_to_read), errors::InvalidArgument("unable to read expected frames ", record_to_read, " vs. ", record_read));
+    OP_REQUIRES_OK(context,
+                   video_meta.Read(record_to_read, &record_read, video_tensor));
+    OP_REQUIRES(context, (record_read == record_to_read),
+                errors::InvalidArgument("unable to read expected frames ",
+                                        record_to_read, " vs. ", record_read));
   }
+
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);

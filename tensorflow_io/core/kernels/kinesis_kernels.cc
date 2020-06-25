@@ -13,12 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow/core/framework/resource_op_kernel.h"
-
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-
 #include <aws/core/Aws.h>
 #include <aws/core/config/AWSProfileConfigLoader.h>
 #include <aws/core/utils/Outcome.h>
@@ -32,6 +26,11 @@ limitations under the License.
 #include <aws/kinesis/model/GetShardIteratorRequest.h>
 #include <aws/kinesis/model/PutRecordsRequest.h>
 #include <aws/kinesis/model/ShardIteratorType.h>
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+
+#include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/framework/resource_op_kernel.h"
 
 namespace tensorflow {
 namespace data {

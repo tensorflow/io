@@ -22,18 +22,18 @@ limitations under the License.
 namespace tensorflow {
 
 class GGFSRandomAccessFile : public RandomAccessFile {
-public:
+ public:
   GGFSRandomAccessFile(const string &file_name,
                        std::unique_ptr<GGFSClient> &&client);
   ~GGFSRandomAccessFile() override;
   Status Read(uint64 offset, size_t n, StringPiece *result,
               char *scratch) const override;
 
-private:
+ private:
   const string file_name_;
   std::unique_ptr<GGFSClient> client_;
 };
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_RANDOM_ACCESS_FILE_H_
+#endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_RANDOM_ACCESS_FILE_H_

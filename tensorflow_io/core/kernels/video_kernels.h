@@ -19,11 +19,10 @@ limitations under the License.
 #if defined(__linux__)
 
 #include <fcntl.h>
+#include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <linux/videodev2.h>
 
 static int xioctl(int fh, int request, void* arg) {
   int r;

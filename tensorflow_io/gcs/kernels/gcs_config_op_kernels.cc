@@ -84,7 +84,8 @@ class GcsCredentialsOpKernel : public OpKernel {
     OP_REQUIRES_OK(ctx, RetrieveGcsFs(ctx, &gcs));
 
     tstring json_string;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "json", &json_string));
+    OP_REQUIRES_OK(ctx,
+                   ParseScalarArgument<tstring>(ctx, "json", &json_string));
 
     Json::Value json;
     Json::Reader reader;

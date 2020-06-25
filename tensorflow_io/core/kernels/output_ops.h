@@ -22,7 +22,7 @@ limitations under the License.
 namespace tensorflow {
 namespace data {
 
-template<typename T>
+template <typename T>
 class DatasetOutputOp : public AsyncOpKernel {
  public:
   explicit DatasetOutputOp<T>(OpKernelConstruction* ctx)
@@ -52,7 +52,8 @@ class DatasetOutputOp : public AsyncOpKernel {
 
       OP_REQUIRES_OK_ASYNC(
           ctx,
-          dataset->MakeIterator(&iter_ctx, "TextDatasetOutputOpIterator", &iterator),
+          dataset->MakeIterator(&iter_ctx, "TextDatasetOutputOpIterator",
+                                &iterator),
           done);
       std::vector<Tensor> components;
       components.reserve(dataset->output_dtypes().size());
@@ -64,13 +65,12 @@ class DatasetOutputOp : public AsyncOpKernel {
             done);
 
         if (!end_of_sequence) {
-          OP_REQUIRES_OK_ASYNC(
-              ctx, output.get()->Write(file.get(), components), done);
+          OP_REQUIRES_OK_ASYNC(ctx, output.get()->Write(file.get(), components),
+                               done);
         }
         components.clear();
       } while (!end_of_sequence);
-      OP_REQUIRES_OK_ASYNC(
-          ctx, output.get()->Final(file.get()), done);
+      OP_REQUIRES_OK_ASYNC(ctx, output.get()->Final(file.get()), done);
       done();
     });
   }

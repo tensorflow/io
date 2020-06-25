@@ -13,31 +13,38 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "arrow/api.h"
+#include "tensorflow_io/arrow/kernels/arrow_util.h"
+
 #include "arrow/adapters/tensorflow/convert.h"
+#include "arrow/api.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
 namespace data {
 namespace ArrowUtil {
 
-Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype, ::tensorflow::DataType* out) {
-  ::arrow::Status status = ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
+Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
+                         ::tensorflow::DataType* out) {
+  ::arrow::Status status =
+      ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
   if (!status.ok()) {
-    return errors::InvalidArgument("arrow data type ", dtype, " is not supported: ", status);
+    return errors::InvalidArgument("arrow data type ", dtype,
+                                   " is not supported: ", status);
   }
   return Status::OK();
 }
 
-Status GetArrowType(::tensorflow::DataType dtype, std::shared_ptr<::arrow::DataType>* out) {
-  ::arrow::Status status = ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
+Status GetArrowType(::tensorflow::DataType dtype,
+                    std::shared_ptr<::arrow::DataType>* out) {
+  ::arrow::Status status =
+      ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
   if (!status.ok()) {
-    return errors::InvalidArgument("tensorflow data type ", dtype, " is not supported: ", status);
+    return errors::InvalidArgument("tensorflow data type ", dtype,
+                                   " is not supported: ", status);
   }
   return Status::OK();
 }
@@ -46,19 +53,21 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
  public:
   ArrowAssignSpecImpl() : i_(0), batch_size_(0) {}
 
-  Status AssignDataType(std::shared_ptr<arrow::Array> array, ::tensorflow::DataType* out_dtype) {
+  Status AssignDataType(std::shared_ptr<arrow::Array> array,
+                        ::tensorflow::DataType* out_dtype) {
     return AssignSpec(array, 0, 0, out_dtype, nullptr);
   }
 
-  Status AssignShape(std::shared_ptr<arrow::Array> array, int64 i, int64 batch_size,
-                     TensorShape* out_shape) {
+  Status AssignShape(std::shared_ptr<arrow::Array> array, int64 i,
+                     int64 batch_size, TensorShape* out_shape) {
     return AssignSpec(array, i, batch_size, nullptr, out_shape);
   }
 
   // Get the DataType and equivalent TensorShape for a given Array, taking into
   // account possible batch size
-  Status AssignSpec(std::shared_ptr<arrow::Array> array, int64 i, int64 batch_size,
-                     ::tensorflow::DataType* out_dtype, TensorShape* out_shape) {
+  Status AssignSpec(std::shared_ptr<arrow::Array> array, int64 i,
+                    int64 batch_size, ::tensorflow::DataType* out_dtype,
+                    TensorShape* out_shape) {
     i_ = i;
     batch_size_ = batch_size;
     out_shape_ = out_shape;
@@ -67,7 +76,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
     // batch_size of 0 indicates 1 record at a time, no batching
     if (batch_size_ > 0) {
       out_shape_->AddDim(batch_size_);
-   }
+    }
 
     CHECK_ARROW(array->Accept(this));
     return Status::OK();
@@ -77,7 +86,8 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   template <typename ArrayType>
   arrow::Status VisitPrimitive(const ArrayType& array) {
     if (out_dtype_ != nullptr) {
-      return ::arrow::adapters::tensorflow::GetTensorFlowType(array.type(), out_dtype_);
+      return ::arrow::adapters::tensorflow::GetTensorFlowType(array.type(),
+                                                              out_dtype_);
     }
     return arrow::Status::OK();
   }
@@ -136,14 +146,17 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   TensorShape* out_shape_;
 };
 
-Status AssignShape(std::shared_ptr<arrow::Array> array, int64 i, int64 batch_size, TensorShape* out_shape) {
+Status AssignShape(std::shared_ptr<arrow::Array> array, int64 i,
+                   int64 batch_size, TensorShape* out_shape) {
   ArrowAssignSpecImpl visitor;
   return visitor.AssignShape(array, i, batch_size, out_shape);
 }
 
-Status AssignSpec(std::shared_ptr<arrow::Array> array, int64 i, int64 batch_size, ::tensorflow::DataType* out_dtype, TensorShape* out_shape) {
-    ArrowAssignSpecImpl visitor;
-    return visitor.AssignSpec(array, i, batch_size, out_dtype, out_shape);
+Status AssignSpec(std::shared_ptr<arrow::Array> array, int64 i,
+                  int64 batch_size, ::tensorflow::DataType* out_dtype,
+                  TensorShape* out_shape) {
+  ArrowAssignSpecImpl visitor;
+  return visitor.AssignSpec(array, i, batch_size, out_dtype, out_shape);
 }
 
 // Assign elements of an Arrow Array to a Tensor
@@ -151,11 +164,13 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
  public:
   ArrowAssignTensorImpl() : i_(0), out_tensor_(nullptr) {}
 
-  Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i, Tensor* out_tensor) {
+  Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i,
+                      Tensor* out_tensor) {
     i_ = i;
     out_tensor_ = out_tensor;
     if (array->null_count() != 0) {
-      return errors::Internal("Arrow arrays with null values not currently supported");
+      return errors::Internal(
+          "Arrow arrays with null values not currently supported");
     }
     CHECK_ARROW(array->Accept(this));
     return Status::OK();
@@ -163,13 +178,13 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
 
  protected:
   virtual arrow::Status Visit(const arrow::BooleanArray& array) {
-
     // Must copy one value at a time because Arrow stores values as bits
     auto shape = out_tensor_->shape();
     for (int64 j = 0; j < shape.num_elements(); ++j) {
       // NOTE: for Array ListArray, curr_row_idx_ is 0 for element array
       bool value = array.Value(i_ + j);
-      void* dst = const_cast<char*>(out_tensor_->tensor_data().data()) + j * sizeof(value);
+      void* dst = const_cast<char*>(out_tensor_->tensor_data().data()) +
+                  j * sizeof(value);
       memcpy(dst, &value, sizeof(value));
     }
 
@@ -193,8 +208,8 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
           "Received an Arrow array with a NULL value buffer");
     }
 
-    const void* src = (values->data() + array.data()->offset * type_width) +
-                      i_ * type_width;
+    const void* src =
+        (values->data() + array.data()->offset * type_width) + i_ * type_width;
     void* dst = const_cast<char*>(out_tensor_->tensor_data().data());
     std::memcpy(dst, src, out_tensor_->NumElements() * type_width);
 
@@ -257,7 +272,8 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   Tensor* out_tensor_;
 };
 
-Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i, Tensor* out_tensor) {
+Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i,
+                    Tensor* out_tensor) {
   ArrowAssignTensorImpl visitor;
   return visitor.AssignTensor(array, i, out_tensor);
 }
@@ -288,15 +304,16 @@ class ArrowArrayTypeCheckerImpl : public arrow::TypeVisitor {
   // Check scalar types with arrow::adapters::tensorflow
   arrow::Status CheckScalarType(std::shared_ptr<arrow::DataType> scalar_type) {
     DataType converted_type;
-    ::tensorflow::Status status = GetTensorFlowType(scalar_type, &converted_type);
+    ::tensorflow::Status status =
+        GetTensorFlowType(scalar_type, &converted_type);
     if (!status.ok()) {
       return ::arrow::Status::Invalid(status);
     }
     if (converted_type != expected_type_) {
       return arrow::Status::TypeError(
           "Arrow type mismatch: expected dtype=" +
-          std::to_string(expected_type_) + ", but got dtype=" +
-          std::to_string(converted_type));
+          std::to_string(expected_type_) +
+          ", but got dtype=" + std::to_string(converted_type));
     }
     return arrow::Status::OK();
   }
@@ -329,11 +346,12 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
   template <typename DataTypeType>
   arrow::Status VisitPrimitive(const DataTypeType& type) {
     // TODO null count == 0
-    *out_data_ = arrow::ArrayData::Make(type_, lengths_[0], std::move(buffers_), 0);
+    *out_data_ =
+        arrow::ArrayData::Make(type_, lengths_[0], std::move(buffers_), 0);
     return arrow::Status::OK();
   }
 
-#define VISIT_PRIMITIVE(TYPE)                             \
+#define VISIT_PRIMITIVE(TYPE)                              \
   virtual arrow::Status Visit(const TYPE& type) override { \
     return VisitPrimitive(type);                           \
   }
@@ -353,11 +371,11 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
 #undef VISIT_PRIMITIVE
 
   virtual arrow::Status Visit(const arrow::ListType& type) override {
-
     // TODO assert buffers and lengths size
 
     // Copy first 2 buffers, which are validity and offset buffers for the list
-    std::vector<std::shared_ptr<arrow::Buffer>> list_bufs(buffers_.begin(), buffers_.begin() + 2);
+    std::vector<std::shared_ptr<arrow::Buffer>> list_bufs(buffers_.begin(),
+                                                          buffers_.begin() + 2);
     buffers_.erase(buffers_.begin(), buffers_.begin() + 2);
 
     // Copy first array length for length of list
@@ -371,8 +389,8 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
 
     // Make array data for the list TODO null count == 0
     auto list_type = std::make_shared<arrow::ListType>(type.value_type());
-    *out_data_ = arrow::ArrayData::Make(
-        list_type, list_length, std::move(list_bufs), {child_data}, 0);
+    *out_data_ = arrow::ArrayData::Make(list_type, list_length,
+                                        std::move(list_bufs), {child_data}, 0);
 
     return arrow::Status::OK();
   }
@@ -384,7 +402,6 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
   std::shared_ptr<arrow::ArrayData>* out_data_;
 };
 
-
 Status MakeArrayData(std::shared_ptr<arrow::DataType> type,
                      std::vector<int64> array_lengths,
                      std::vector<std::shared_ptr<arrow::Buffer>> buffers,
@@ -392,7 +409,6 @@ Status MakeArrayData(std::shared_ptr<arrow::DataType> type,
   ArrowMakeArrayDataImpl visitor;
   return visitor.Make(type, array_lengths, buffers, out_data);
 }
-
 
 Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
                      std::string* endpoint_value) {
@@ -402,7 +418,8 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
   if (sep_pos == std::string::npos) {
     return errors::InvalidArgument(
         "Expected endpoint to be in format <endpoint_type>://<endpoint_value> "
-        "or <host>:<port> for tcp IPv4, but got: " + endpoint);
+        "or <host>:<port> for tcp IPv4, but got: " +
+        endpoint);
   }
 
   // If IPv4 and no endpoint type specified, descriptor is entire endpoint
@@ -419,7 +436,8 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
   return Status::OK();
 }
 
-Status ParseHost(std::string host, std::string* host_address, std::string* host_port) {
+Status ParseHost(std::string host, std::string* host_address,
+                 std::string* host_port) {
   size_t sep_pos = host.find(':');
   if (sep_pos == std::string::npos || sep_pos == host.length()) {
     return errors::InvalidArgument(

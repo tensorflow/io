@@ -13,17 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "tensorflow/core/platform/cloud/curl_http_request.h"
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/file_system.h"
-#include "tensorflow/core/platform/cloud/curl_http_request.h"
 
 namespace tensorflow {
 
 class HTTPRandomAccessFile : public RandomAccessFile {
  public:
-  HTTPRandomAccessFile(const std::string& uri, HttpRequest::Factory* http_request_factory)
-   : uri_(uri)
-   , http_request_factory_(http_request_factory) {}
+  HTTPRandomAccessFile(const std::string& uri,
+                       HttpRequest::Factory* http_request_factory)
+      : uri_(uri), http_request_factory_(http_request_factory) {}
 
   Status Read(uint64 offset, size_t n, StringPiece* result,
               char* scratch) const override {
@@ -70,14 +70,14 @@ class HTTPFileSystem : public FileSystem {
     return errors::Unimplemented("NewAppendableFile");
   }
   Status NewReadOnlyMemoryRegionFromFile(
-      const string& fname, std::unique_ptr<ReadOnlyMemoryRegion>* result) override {
+      const string& fname,
+      std::unique_ptr<ReadOnlyMemoryRegion>* result) override {
     return errors::Unimplemented("NewReadOnlyMemoryRegionFromFile");
   }
   Status FileExists(const string& fname) override {
     return errors::Unimplemented("FileExists");
   }
-  Status GetChildren(const string& dir,
-                     std::vector<string>* result) override {
+  Status GetChildren(const string& dir, std::vector<string>* result) override {
     return errors::Unimplemented("GetChildren");
   }
   Status GetMatchingPaths(const string& pattern,
@@ -90,11 +90,14 @@ class HTTPFileSystem : public FileSystem {
     TF_RETURN_IF_ERROR(request->Send());
     string length_string = request->GetResponseHeader("Content-Length");
     if (length_string == "") {
-      return errors::InvalidArgument("unable to check the Content-Length of the url: ", fname);
+      return errors::InvalidArgument(
+          "unable to check the Content-Length of the url: ", fname);
     }
     int64 length = 0;
     if (!strings::safe_strto64(length_string, &length)) {
-      return errors::InvalidArgument("unable to parse the Content-Length of the url: ", fname, " [", length_string, "]");
+      return errors::InvalidArgument(
+          "unable to parse the Content-Length of the url: ", fname, " [",
+          length_string, "]");
     }
 
     string last_modified_string = request->GetResponseHeader("Last-Modified");
@@ -124,6 +127,7 @@ class HTTPFileSystem : public FileSystem {
   Status RenameFile(const string& src, const string& target) override {
     return errors::Unimplemented("RenameFile");
   }
+
  private:
   mutex mu_;
   std::shared_ptr<HttpRequest::Factory> http_request_factory_;

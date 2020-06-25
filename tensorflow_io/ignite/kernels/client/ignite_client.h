@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_CLIENT_H_
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_CLIENT_H_
 
-#include "tensorflow_io/ignite/kernels/client/ignite_byte_swapper.h"
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
+#include "tensorflow_io/ignite/kernels/client/ignite_byte_swapper.h"
 
 namespace tensorflow {
 

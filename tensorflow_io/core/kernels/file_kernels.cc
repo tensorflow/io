@@ -15,7 +15,6 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-
 #include "tensorflow/core/lib/io/zlib_inputstream.h"
 #include "tensorflow/core/platform/file_system.h"
 #include "tensorflow_io/core/kernels/io_stream.h"

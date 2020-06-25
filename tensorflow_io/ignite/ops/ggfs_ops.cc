@@ -14,7 +14,6 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/platform/env.h"
-
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs.h"
 
 namespace tensorflow {

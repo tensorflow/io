@@ -20,97 +20,98 @@ limitations under the License.
 namespace tensorflow {
 
 REGISTER_OP("IO>FfmpegReadableInit")
-  .Input("input: string")
-  .Output("resource: resource")
-  .Output("components: string")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    c->set_output(1, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Output("resource: resource")
+    .Output("components: string")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegReadableSpec")
-  .Input("input: resource")
-  .Output("shape: int64")
-  .Output("dtype: int64")
-  .Output("rate: int64")
-  .Attr("component: string")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim()}));
-    c->set_output(1, c->MakeShape({}));
-    c->set_output(2, c->MakeShape({}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Output("shape: int64")
+    .Output("dtype: int64")
+    .Output("rate: int64")
+    .Attr("component: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({}));
+      c->set_output(2, c->MakeShape({}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegReadableRead")
-  .Input("input: resource")
-  .Input("start: int64")
-  .Input("stop: int64")
-  .Output("value: dtype")
-  .Attr("component: string")
-  .Attr("shape: shape")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    PartialTensorShape shape;
-    TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
-    shape_inference::ShapeHandle entry;
-    TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
-    c->set_output(0, entry);
-    return Status::OK();
-  });
+    .Input("input: resource")
+    .Input("start: int64")
+    .Input("stop: int64")
+    .Output("value: dtype")
+    .Attr("component: string")
+    .Attr("shape: shape")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      PartialTensorShape shape;
+      TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
+      shape_inference::ShapeHandle entry;
+      TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
+      c->set_output(0, entry);
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegDecodeVideo")
-  .Input("input: string")
-  .Input("index: int64")
-  .Output("value: uint8")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), 3}));
-    return Status::OK();
-  });
+    .Input("input: string")
+    .Input("index: int64")
+    .Output("value: uint8")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
+                                     c->UnknownDim(), 3}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegAudioReadableInit")
-  .Input("input: string")
-  .Input("index: int64")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Input("index: int64")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegAudioReadableNext")
-  .Input("input: resource")
-  .Input("reset: bool")
-  .Output("value: dtype")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-    return Status::OK();
-   });
-
+    .Input("input: resource")
+    .Input("reset: bool")
+    .Output("value: dtype")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegVideoReadableInit")
-  .Input("input: string")
-  .Input("index: int64")
-  .Output("resource: resource")
-  .Attr("container: string = ''")
-  .Attr("shared_name: string = ''")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->Scalar());
-    return Status::OK();
-   });
+    .Input("input: string")
+    .Input("index: int64")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
 
 REGISTER_OP("IO>FfmpegVideoReadableNext")
-  .Input("input: resource")
-  .Input("reset: bool")
-  .Output("value: dtype")
-  .Attr("dtype: type")
-  .SetShapeFn([](shape_inference::InferenceContext* c) {
-    c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-    return Status::OK();
-   });
+    .Input("input: resource")
+    .Input("reset: bool")
+    .Output("value: dtype")
+    .Attr("dtype: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
+                                     c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
 
 }  // namespace tensorflow

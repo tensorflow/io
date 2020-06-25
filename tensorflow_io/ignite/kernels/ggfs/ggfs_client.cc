@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow_io/ignite/kernels/ggfs/ggfs_client.h"
+
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_plain_client.h"
 #include "tensorflow_io/ignite/kernels/client/ignite_ssl_wrapper.h"
@@ -21,8 +22,7 @@ limitations under the License.
 namespace tensorflow {
 
 string GGFSClient::MakeRelative(const string &a, const string &b) {
-  if (a == b)
-    return "";
+  if (a == b) return "";
 
   string max = a;
   string min = b;
@@ -147,8 +147,7 @@ Status GGFSClient::Exists(const string &path) {
   uint8_t res;
   TF_RETURN_IF_ERROR(client_->ReadByte(&res));
 
-  if (!res)
-    return errors::NotFound("File ", path, " not found");
+  if (!res) return errors::NotFound("File ", path, " not found");
 
   return Status::OK();
 }
@@ -227,7 +226,8 @@ Status GGFSClient::ListFiles(const string &path,
     TF_RETURN_IF_ERROR(client_->ReadData((uint8_t *)(&str[0]), str_length));
 
     out_files->push_back(MakeRelative(
-        string(reinterpret_cast<const char *>(&str[0]), str_length), path + "/"));
+        string(reinterpret_cast<const char *>(&str[0]), str_length),
+        path + "/"));
 
     length--;
   }
@@ -267,7 +267,8 @@ Status GGFSClient::ReceiveCommonResponseHeader() {
       int32_t err_msg_length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&err_msg_length));
 
-      std::unique_ptr<uint8_t[]> err_msg_c = std::unique_ptr<uint8_t[]>(new uint8_t[err_msg_length]);
+      std::unique_ptr<uint8_t[]> err_msg_c =
+          std::unique_ptr<uint8_t[]>(new uint8_t[err_msg_length]);
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), err_msg_length));
       string err_msg(reinterpret_cast<char *>(err_msg_c.get()), err_msg_length);
 
@@ -287,8 +288,7 @@ Status GGFSClient::EstablishConnection() {
     Status status = Handshake();
     if (!status.ok()) {
       Status disconnect_status = client_->Disconnect();
-      if (!disconnect_status.ok())
-        LOG(ERROR) << disconnect_status.ToString();
+      if (!disconnect_status.ok()) LOG(ERROR) << disconnect_status.ToString();
 
       return status;
     }
@@ -303,12 +303,12 @@ Status GGFSClient::Handshake() {
   if (username_.empty())
     msg_len += 1;
   else
-    msg_len += 5 + username_.length(); // 1 byte header, 4 bytes length.
+    msg_len += 5 + username_.length();  // 1 byte header, 4 bytes length.
 
   if (password_.empty())
     msg_len += 1;
   else
-    msg_len += 5 + password_.length(); // 1 byte header, 4 bytes length.
+    msg_len += 5 + password_.length();  // 1 byte header, 4 bytes length.
 
   TF_RETURN_IF_ERROR(client_->WriteInt(msg_len));
   TF_RETURN_IF_ERROR(client_->WriteByte(1));
@@ -355,7 +355,8 @@ Status GGFSClient::Handshake() {
       int32_t length;
       TF_RETURN_IF_ERROR(client_->ReadInt(&length));
 
-      std::unique_ptr<uint8_t[]> err_msg_c = std::unique_ptr<uint8_t[]>(new uint8_t[length]);
+      std::unique_ptr<uint8_t[]> err_msg_c =
+          std::unique_ptr<uint8_t[]>(new uint8_t[length]);
       TF_RETURN_IF_ERROR(client_->ReadData(err_msg_c.get(), length));
       string err_msg(reinterpret_cast<char *>(err_msg_c.get()), length);
 
@@ -376,4 +377,4 @@ Status GGFSClient::Handshake() {
   return Status::OK();
 }
 
-} // namespace tensorflow
+}  // namespace tensorflow

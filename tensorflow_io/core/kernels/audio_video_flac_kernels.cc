@@ -13,10 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/audio_kernels.h"
-
 #include "FLAC/stream_decoder.h"
 #include "FLAC/stream_encoder.h"
+#include "tensorflow_io/core/kernels/audio_kernels.h"
 
 namespace tensorflow {
 namespace data {
