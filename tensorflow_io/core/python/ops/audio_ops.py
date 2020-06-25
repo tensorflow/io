@@ -25,7 +25,8 @@ def resample(input, rate_in, rate_out, name=None):  # pylint: disable=redefined-
     """Resample audio.
 
     Args:
-      input: A 2-D `Tensor` of type `int16` or `float`. Audio input.
+      input: A 1-D (`[samples]`) or 2-D (`[samples, channels]`) `Tensor` of
+        type `int16` or `float`. Audio input.
       rate_in: The rate of the audio input.
       rate_out: The rate of the audio output.
       name: A name for the operation (optional).
@@ -33,8 +34,16 @@ def resample(input, rate_in, rate_out, name=None):  # pylint: disable=redefined-
     Returns:
       output: Resampled audio.
     """
-    return core_ops.io_audio_resample(
+    rank = tf.rank(input)
+
+    input = tf.cond(
+        tf.math.equal(rank, 1), lambda: tf.expand_dims(input, -1), lambda: input
+    )
+    value = core_ops.io_audio_resample(
         input, rate_in=rate_in, rate_out=rate_out, name=name
+    )
+    return tf.cond(
+        tf.math.equal(rank, 1), lambda: tf.squeeze(value, [-1]), lambda: value
     )
 
 
