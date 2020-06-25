@@ -395,7 +395,7 @@ def _handle_sparse_feature(
     if isinstance(index_keys, str):
         index_keys = [index_keys]
     elif len(index_keys) > 1:
-        tf.logging.warning(
+        tf.get_logger().warning(
             "SparseFeature is a complicated feature config "
             "and should only be used after careful "
             "consideration of VarLenFeature."
