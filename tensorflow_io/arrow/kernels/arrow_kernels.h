@@ -20,6 +20,7 @@ limitations under the License.
 #include "arrow/io/api.h"
 #include "arrow/type.h"
 #include "parquet/windows_compatibility.h"
+#include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {

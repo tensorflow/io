@@ -16,6 +16,13 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_ARROW_UTIL_H_
 #define TENSORFLOW_IO_ARROW_UTIL_H_
 
+#include "arrow/api.h"
+#include "arrow/ipc/api.h"
+#include "arrow/util/io_util.h"
+#include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/lib/core/errors.h"
+#include "tensorflow/core/lib/core/status.h"
+
 namespace tensorflow {
 
 // Forward declaration
