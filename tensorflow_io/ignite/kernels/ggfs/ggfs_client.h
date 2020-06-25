@@ -22,7 +22,7 @@ limitations under the License.
 namespace tensorflow {
 
 class GGFSClient {
-public:
+ public:
   GGFSClient(const string &host, const int32_t port, const string &username,
              const string &password, const string &certfile,
              const string &keyfile, const string &cert_password);
@@ -41,7 +41,7 @@ public:
   Status ListFiles(const string &path, std::vector<string> *out_files);
   string MakeRelative(const string &a, const string &b);
 
-private:
+ private:
   std::shared_ptr<Client> client_;
 
   const string username_;
@@ -76,6 +76,6 @@ constexpr int32_t kCloseConnectionReqLength = 18;
 constexpr int32_t kHandshakeReqDefaultLength = 8;
 constexpr int32_t kMinResLength = 12;
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_CLIENT_H_
+#endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_CLIENT_H_

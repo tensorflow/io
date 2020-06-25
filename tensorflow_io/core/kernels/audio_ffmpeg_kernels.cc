@@ -19,6 +19,7 @@ limitations under the License.
 extern "C" {
 
 #include <dlfcn.h>
+
 #include "libavcodec/avcodec.h"
 }
 

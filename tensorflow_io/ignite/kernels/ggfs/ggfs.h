@@ -22,10 +22,10 @@ limitations under the License.
 namespace tensorflow {
 
 class GGFS : public FileSystem {
-public:
-  Status
-  NewRandomAccessFile(const string &file_name,
-                      std::unique_ptr<RandomAccessFile> *result) override;
+ public:
+  Status NewRandomAccessFile(
+      const string &file_name,
+      std::unique_ptr<RandomAccessFile> *result) override;
   Status NewWritableFile(const string &fname,
                          std::unique_ptr<WritableFile> *result) override;
   Status NewAppendableFile(const string &fname,
@@ -45,7 +45,7 @@ public:
   Status Stat(const string &fname, FileStatistics *stat) override;
   string TranslateName(const string &name) const override;
 
-private:
+ private:
   string host = "localhost";
   int32 port = 10800;
   string username = "";
@@ -57,6 +57,6 @@ private:
   Status UpdateConnectionProperties();
 };
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_H_
+#endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_H_

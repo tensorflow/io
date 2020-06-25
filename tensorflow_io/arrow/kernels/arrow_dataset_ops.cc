@@ -14,14 +14,14 @@ limitations under the License.
 ==============================================================================*/
 
 #include "arrow/api.h"
-#include "arrow/util/io_util.h"
 #include "arrow/ipc/api.h"
+#include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
-#include "tensorflow_io/core/kernels/io_stream.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {
 namespace data {
@@ -50,7 +50,7 @@ Status GetBatchModeStr(ArrowBatchMode batch_mode, tstring* batch_mode_str) {
   return Status::OK();
 }
 
-Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode ) {
+Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode) {
   if (batch_mode_str == "keep_remainder") {
     *batch_mode = ArrowBatchMode::BATCH_KEEP_REMAINDER;
   } else if (batch_mode_str == "drop_remainder") {
@@ -63,15 +63,12 @@ Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode ) {
   return Status::OK();
 }
 
-
 // Base class for defining a Dataset over Arrow record batches with an
 // iterator that iterates over rows of the batch to get Tensors
 class ArrowDatasetBase : public DatasetBase {
  public:
-  ArrowDatasetBase(OpKernelContext* ctx,
-                   const std::vector<int32>& columns,
-                   const int64 batch_size,
-                   const ArrowBatchMode batch_mode,
+  ArrowDatasetBase(OpKernelContext* ctx, const std::vector<int32>& columns,
+                   const int64 batch_size, const ArrowBatchMode batch_mode,
                    const DataTypeVector& output_types,
                    const std::vector<PartialTensorShape>& output_shapes)
       : DatasetBase(DatasetContext(ctx)),
@@ -116,85 +113,88 @@ class ArrowDatasetBase : public DatasetBase {
 
       // Loop until have_result or end_of_sequence
       do {
-
-      // Try to go to next batch if consumed all rows in current batch
-      if (current_batch_ != nullptr &&
-          current_row_idx_ >= current_batch_->num_rows()) {
-        TF_RETURN_IF_ERROR(NextStreamLocked(ctx->env()));
-      }
-
-      // Check if reached end of stream
-      if (current_batch_ == nullptr) {
-
-        // Finalize the iterator state
-        ResetStreamsLocked();
-
-        // Return partial batch if drop_remainder flag not set
-        if (partial_batch_size > 0 && this->dataset()->batch_mode_ !=
-            ArrowBatchMode::BATCH_DROP_REMAINDER) {
-          // Copy partial batched tensors to output tensors
-          TF_RETURN_IF_ERROR(AppendPartialTensors(ctx, partial_batch_size,
-              partial_batches, out_tensors));
-          have_result = true;
-        // No more results, so end the sequence
-        }  else {
-          *end_of_sequence = true;
-        }
-      } else {
-
-        // Calc the batch size, will be 0 if not batching
-        int64 batch_size =
-            this->dataset()->batch_mode_ == ArrowBatchMode::BATCH_AUTO ?
-                // Auto batch size is number of rows in current record batch
-                current_batch_->num_rows() :
-                // Use set batch size minus any partials already read
-                this->dataset()->batch_size_ - partial_batch_size;
-
-        // Prepare a partial batch to save, either current record batch is too
-        // small or continuing to fill previous partial batch
-        if (batch_size != 0 && (partial_batch_size > 0 ||
-            current_row_idx_ + batch_size > current_batch_->num_rows())) {
-          int64 rows_remaining = current_batch_->num_rows() - current_row_idx_;
-          batch_size = std::min(batch_size, rows_remaining);
-          partial_batches.push_back(std::make_shared<std::vector<Tensor>>());
-          result_tensors = partial_batches.back().get();
-          partial_batch_size += batch_size;
+        // Try to go to next batch if consumed all rows in current batch
+        if (current_batch_ != nullptr &&
+            current_row_idx_ >= current_batch_->num_rows()) {
+          TF_RETURN_IF_ERROR(NextStreamLocked(ctx->env()));
         }
 
-        // Assign Tensors for each column in the current row
-        for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
-          int32 col = this->dataset()->columns_[i];
-          DataType output_type = this->dataset()->output_types_[i];
-          std::shared_ptr<arrow::Array> arr = current_batch_->column(col);
+        // Check if reached end of stream
+        if (current_batch_ == nullptr) {
+          // Finalize the iterator state
+          ResetStreamsLocked();
 
-          // Get the TensorShape for the column batch
-          TensorShape output_shape = TensorShape({});
-          TF_RETURN_IF_ERROR(
-              ArrowUtil::AssignShape(arr, current_row_idx_, batch_size, &output_shape));
-
-          // Allocate a new tensor and assign Arrow data to it
-          Tensor tensor(ctx->allocator({}), output_type, output_shape);
-          TF_RETURN_IF_ERROR(ArrowUtil::AssignTensor(arr, current_row_idx_, &tensor));
-
-          result_tensors->emplace_back(std::move(tensor));
-        }
-
-        // If not batching or have a full batch, then have a result to return
-        if (partial_batch_size == 0 ||
-            partial_batch_size == this->dataset()->batch_size_) {
-          have_result = true;
-
-          // If have partial batches, copy partial tensors to output tensors
-          if (!partial_batches.empty()) {
-            TF_RETURN_IF_ERROR(AppendPartialTensors(ctx, partial_batch_size,
-                  partial_batches, out_tensors));
+          // Return partial batch if drop_remainder flag not set
+          if (partial_batch_size > 0 &&
+              this->dataset()->batch_mode_ !=
+                  ArrowBatchMode::BATCH_DROP_REMAINDER) {
+            // Copy partial batched tensors to output tensors
+            TF_RETURN_IF_ERROR(AppendPartialTensors(
+                ctx, partial_batch_size, partial_batches, out_tensors));
+            have_result = true;
+            // No more results, so end the sequence
+          } else {
+            *end_of_sequence = true;
           }
-        }
+        } else {
+          // Calc the batch size, will be 0 if not batching
+          int64 batch_size =
+              this->dataset()->batch_mode_ == ArrowBatchMode::BATCH_AUTO
+                  ?
+                  // Auto batch size is number of rows in current record batch
+                  current_batch_->num_rows()
+                  :
+                  // Use set batch size minus any partials already read
+                  this->dataset()->batch_size_ - partial_batch_size;
 
-        // Increment to next row or batch
-        current_row_idx_ += batch_size == 0 ? 1 : batch_size;
-        *end_of_sequence = false;
-      }
+          // Prepare a partial batch to save, either current record batch is too
+          // small or continuing to fill previous partial batch
+          if (batch_size != 0 &&
+              (partial_batch_size > 0 ||
+               current_row_idx_ + batch_size > current_batch_->num_rows())) {
+            int64 rows_remaining =
+                current_batch_->num_rows() - current_row_idx_;
+            batch_size = std::min(batch_size, rows_remaining);
+            partial_batches.push_back(std::make_shared<std::vector<Tensor>>());
+            result_tensors = partial_batches.back().get();
+            partial_batch_size += batch_size;
+          }
+
+          // Assign Tensors for each column in the current row
+          for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
+            int32 col = this->dataset()->columns_[i];
+            DataType output_type = this->dataset()->output_types_[i];
+            std::shared_ptr<arrow::Array> arr = current_batch_->column(col);
+
+            // Get the TensorShape for the column batch
+            TensorShape output_shape = TensorShape({});
+            TF_RETURN_IF_ERROR(ArrowUtil::AssignShape(
+                arr, current_row_idx_, batch_size, &output_shape));
+
+            // Allocate a new tensor and assign Arrow data to it
+            Tensor tensor(ctx->allocator({}), output_type, output_shape);
+            TF_RETURN_IF_ERROR(
+                ArrowUtil::AssignTensor(arr, current_row_idx_, &tensor));
+
+            result_tensors->emplace_back(std::move(tensor));
+          }
+
+          // If not batching or have a full batch, then have a result to return
+          if (partial_batch_size == 0 ||
+              partial_batch_size == this->dataset()->batch_size_) {
+            have_result = true;
+
+            // If have partial batches, copy partial tensors to output tensors
+            if (!partial_batches.empty()) {
+              TF_RETURN_IF_ERROR(AppendPartialTensors(
+                  ctx, partial_batch_size, partial_batches, out_tensors));
+            }
+          }
+
+          // Increment to next row or batch
+          current_row_idx_ += batch_size == 0 ? 1 : batch_size;
+          *end_of_sequence = false;
+        }
 
       } while (!(have_result || *end_of_sequence));
 
@@ -203,8 +203,7 @@ class ArrowDatasetBase : public DatasetBase {
 
    private:
     Status AppendPartialTensors(
-        IteratorContext* ctx,
-        int64 batch_size,
+        IteratorContext* ctx, int64 batch_size,
         const std::vector<std::shared_ptr<std::vector<Tensor>>>& partials,
         std::vector<Tensor>* out_tensors) {
       int64 batch_index = 0;
@@ -217,10 +216,10 @@ class ArrowDatasetBase : public DatasetBase {
 
       // Copy all partial tensors to a single output tensor
       for (auto it_partial = partials.begin(); it_partial != partials.end();
-          it_partial++) {
+           it_partial++) {
         int64 partial_batch_size = 0;
         for (size_t i = 0; i < (*it_partial)->size(); ++i) {
-          const Tensor &element = (*it_partial)->at(i);
+          const Tensor& element = (*it_partial)->at(i);
           partial_batch_size = element.dim_size(0);
 
           // Allocate tensor sized to batch on first iteration
@@ -241,8 +240,8 @@ class ArrowDatasetBase : public DatasetBase {
     }
 
     template <typename T>
-    Status HandleElementsToParent(
-        const Tensor& element, Tensor* parent, int64 index) {
+    Status HandleElementsToParent(const Tensor& element, Tensor* parent,
+                                  int64 index) {
       // TODO: look into removing this loop, move tensor instead of copy
       for (int64 i = 0; i < element.dim_size(0); ++i) {
         parent->flat_outer_dims<T>().chip(index + i, 0) =
@@ -251,14 +250,12 @@ class ArrowDatasetBase : public DatasetBase {
       return Status::OK();
     }
 
-    Status CopyElementsToParent(
-        const Tensor& element,
-        Tensor *parent,
-        int64 index) {
-#define HANDLE_TYPE(T)                                                       \
-      case DataTypeToEnum<T>::value: {                                       \
-        return HandleElementsToParent<T>(std::move(element), parent, index); \
-      }
+    Status CopyElementsToParent(const Tensor& element, Tensor* parent,
+                                int64 index) {
+#define HANDLE_TYPE(T)                                                   \
+  case DataTypeToEnum<T>::value: {                                       \
+    return HandleElementsToParent<T>(std::move(element), parent, index); \
+  }
 
       switch (element.dtype()) {
         TF_CALL_ALL_TYPES(HANDLE_TYPE);
@@ -367,29 +364,21 @@ class ArrowOpKernelBase : public DatasetOpKernel {
 
     tstring batch_mode_str;
     OP_REQUIRES_OK(ctx,
-        ParseScalarArgument(ctx, "batch_mode", &batch_mode_str));
+                   ParseScalarArgument(ctx, "batch_mode", &batch_mode_str));
     ArrowBatchMode batch_mode;
     OP_REQUIRES_OK(ctx, GetBatchMode(batch_mode_str, &batch_mode));
 
     ArrowDatasetBase* arrow_output;
-    MakeArrowDataset(
-        ctx,
-        columns,
-        batch_size,
-        batch_mode,
-        output_types_,
-        output_shapes_,
-        &arrow_output);
+    MakeArrowDataset(ctx, columns, batch_size, batch_mode, output_types_,
+                     output_shapes_, &arrow_output);
     *output = arrow_output;
   }
 
  protected:
   // Define to construct an implementation of ArrowDatasetBase
   virtual void MakeArrowDataset(
-      OpKernelContext* ctx,
-      const std::vector<int32>& columns,
-      const int64 batch_size,
-      const ArrowBatchMode batch_mode,
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) = 0;
@@ -406,48 +395,35 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
-      OpKernelContext* ctx,
-      const std::vector<int32>& columns,
-      const int64 batch_size,
-      const ArrowBatchMode batch_mode,
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
     uintptr_t buffer_address;
-    OP_REQUIRES_OK(
-        ctx,
-        ParseScalarArgument<uintptr_t>(ctx, "buffer_address", &buffer_address));
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<uintptr_t>(ctx, "buffer_address",
+                                                       &buffer_address));
     const uint8_t* buffer = reinterpret_cast<const uint8_t*>(buffer_address);
 
     int64_t buffer_size;
     OP_REQUIRES_OK(
-        ctx,
-        ParseScalarArgument<int64_t>(ctx, "buffer_size", &buffer_size));
-    *output = new Dataset(
-        ctx,
-        buffer,
-        buffer_size,
-        columns,
-        batch_size,
-        batch_mode,
-        output_types_,
-        output_shapes_);
+        ctx, ParseScalarArgument<int64_t>(ctx, "buffer_size", &buffer_size));
+    *output = new Dataset(ctx, buffer, buffer_size, columns, batch_size,
+                          batch_mode, output_types_, output_shapes_);
   }
 
  private:
   class Dataset : public ArrowDatasetBase {
    public:
-    Dataset(OpKernelContext* ctx,
-            const uint8_t* buffer_ptr,
-            const int64 buffer_size,
-            const std::vector<int32>& columns,
-            const int64 batch_size,
-            const ArrowBatchMode batch_mode,
+    Dataset(OpKernelContext* ctx, const uint8_t* buffer_ptr,
+            const int64 buffer_size, const std::vector<int32>& columns,
+            const int64 batch_size, const ArrowBatchMode batch_mode,
             const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
-        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
-              output_types, output_shapes),
-          buffer_ptr_(buffer_ptr), buffer_size_(buffer_size) {}
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
+          buffer_ptr_(buffer_ptr),
+          buffer_size_(buffer_size) {}
 
     string DebugString() const override {
       return "ArrowZeroCopyDatasetOp::Dataset";
@@ -462,8 +438,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       uint64 buffer_address = buffer_temp;
       TF_RETURN_IF_ERROR(b->AddScalar(buffer_address, &buffer));
       Node* size = nullptr;
-      TF_RETURN_IF_ERROR(
-          b->AddScalar(static_cast<int64>(buffer_size_), &size));
+      TF_RETURN_IF_ERROR(b->AddScalar(static_cast<int64>(buffer_size_), &size));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;
@@ -472,11 +447,8 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
-      TF_RETURN_IF_ERROR(
-          b->AddDataset(
-            this,
-            {buffer, size, columns, batch_size, batch_mode},
-            output));
+      TF_RETURN_IF_ERROR(b->AddDataset(
+          this, {buffer, size, columns, batch_size, batch_mode}, output));
       return Status::OK();
     }
 
@@ -495,15 +467,11 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env* env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        buffer_ = std::make_shared<arrow::Buffer>(
-            dataset()->buffer_ptr_,
-            dataset()->buffer_size_);
+        buffer_ = std::make_shared<arrow::Buffer>(dataset()->buffer_ptr_,
+                                                  dataset()->buffer_size_);
         buffer_reader_ = std::make_shared<arrow::io::BufferReader>(buffer_);
-        CHECK_ARROW(
-            arrow::ipc::RecordBatchFileReader::Open(
-              buffer_reader_.get(),
-              buffer_->size(),
-              &reader_));
+        CHECK_ARROW(arrow::ipc::RecordBatchFileReader::Open(
+            buffer_reader_.get(), buffer_->size(), &reader_));
         num_batches_ = reader_->num_record_batches();
         if (num_batches_ > 0) {
           CHECK_ARROW(
@@ -531,7 +499,8 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       }
 
       std::shared_ptr<arrow::Buffer> buffer_ TF_GUARDED_BY(mu_);
-      std::shared_ptr<arrow::io::BufferReader> buffer_reader_ TF_GUARDED_BY(mu_);
+      std::shared_ptr<arrow::io::BufferReader> buffer_reader_
+          TF_GUARDED_BY(mu_);
       std::shared_ptr<arrow::ipc::RecordBatchFileReader> reader_
           TF_GUARDED_BY(mu_);
       int current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
@@ -551,26 +520,17 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
-      OpKernelContext* ctx,
-      const std::vector<int32>& columns,
-      const int64 batch_size,
-      const ArrowBatchMode batch_mode,
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
     const Tensor* batches_tensor;
     OP_REQUIRES_OK(ctx, ctx->input("serialized_batches", &batches_tensor));
-    OP_REQUIRES(
-        ctx, TensorShapeUtils::IsScalar(batches_tensor->shape()),
-        errors::InvalidArgument("serialized_batches must be a scalar"));
-    *output = new Dataset(
-        ctx,
-        *batches_tensor,
-        columns,
-        batch_size,
-        batch_mode,
-        output_types_,
-        output_shapes_);
+    OP_REQUIRES(ctx, TensorShapeUtils::IsScalar(batches_tensor->shape()),
+                errors::InvalidArgument("serialized_batches must be a scalar"));
+    *output = new Dataset(ctx, *batches_tensor, columns, batch_size, batch_mode,
+                          output_types_, output_shapes_);
   }
 
  private:
@@ -578,17 +538,13 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
    public:
     // Construct a Dataset that consumed Arrow batches from serialized bytes
     // in a string. Record batches should be serialized in Arrow File format.
-    Dataset(OpKernelContext* ctx,
-            const Tensor batches_tensor,
-            const std::vector<int32>& columns,
-            const int64 batch_size,
-            const ArrowBatchMode batch_mode,
-            const DataTypeVector& output_types,
+    Dataset(OpKernelContext* ctx, const Tensor batches_tensor,
+            const std::vector<int32>& columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
-        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
-              output_types, output_shapes),
-          batches_(std::move(batches_tensor)) {
-    }
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
+          batches_(std::move(batches_tensor)) {}
 
     string DebugString() const override {
       return "ArrowSerializedDatasetOp::Dataset";
@@ -601,7 +557,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       Node* batches = nullptr;
       // optimization_only has been removed in
       // https://github.com/tensorflow/tensorflow/commit/6d8f05acd72df61e5f4e5b4c72837b7caed3e942#diff-5eac6c133a3a701a696767960e796bd3
-      //if (ctx->optimization_only()) {
+      // if (ctx->optimization_only()) {
       //  TF_RETURN_IF_ERROR(b->AddPlaceholder(batches_, &batches));
       //  DCHECK_NE(ctx->input_list(), nullptr);
       //  ctx->input_list()->emplace_back(batches->name(), batches_);
@@ -617,11 +573,8 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
-      TF_RETURN_IF_ERROR(
-          b->AddDataset(
-            this,
-            {batches, columns, batch_size, batch_mode},
-            output));
+      TF_RETURN_IF_ERROR(b->AddDataset(
+          this, {batches, columns, batch_size, batch_mode}, output));
       return Status::OK();
     }
 
@@ -690,10 +643,8 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
-      OpKernelContext* ctx,
-      const std::vector<int32>& columns,
-      const int64 batch_size,
-      const ArrowBatchMode batch_mode,
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
@@ -708,28 +659,19 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       filenames.push_back(filenames_tensor->flat<tstring>()(i));
     }
 
-    *output = new Dataset(
-        ctx,
-        filenames,
-        columns,
-        batch_size,
-        batch_mode,
-        output_types_,
-        output_shapes_);
+    *output = new Dataset(ctx, filenames, columns, batch_size, batch_mode,
+                          output_types_, output_shapes_);
   }
 
  private:
   class Dataset : public ArrowDatasetBase {
    public:
-    Dataset(OpKernelContext* ctx,
-            const std::vector<string>& filenames,
-            const std::vector<int32>& columns,
-            const int64 batch_size,
-            const ArrowBatchMode batch_mode,
-            const DataTypeVector& output_types,
+    Dataset(OpKernelContext* ctx, const std::vector<string>& filenames,
+            const std::vector<int32>& columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
-        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
-              output_types, output_shapes),
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
           filenames_(filenames) {}
 
     string DebugString() const override {
@@ -750,11 +692,8 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
-      TF_RETURN_IF_ERROR(
-          b->AddDataset(
-            this,
-            {filenames, columns, batch_size, batch_mode},
-            output));
+      TF_RETURN_IF_ERROR(b->AddDataset(
+          this, {filenames, columns, batch_size, batch_mode}, output));
       return Status::OK();
     }
 
@@ -848,10 +787,8 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
-      OpKernelContext* ctx,
-      const std::vector<int32>& columns,
-      const int64 batch_size,
-      const ArrowBatchMode batch_mode,
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
       const DataTypeVector& output_types,
       const std::vector<PartialTensorShape>& output_shapes,
       ArrowDatasetBase** output) override {
@@ -866,28 +803,19 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       endpoints.push_back(endpoints_tensor->flat<tstring>()(i));
     }
 
-    *output = new Dataset(
-        ctx,
-        endpoints,
-        columns,
-        batch_size,
-        batch_mode,
-        output_types_,
-        output_shapes_);
+    *output = new Dataset(ctx, endpoints, columns, batch_size, batch_mode,
+                          output_types_, output_shapes_);
   }
 
  private:
   class Dataset : public ArrowDatasetBase {
    public:
-    Dataset(OpKernelContext* ctx,
-            const std::vector<string>& endpoints,
-            const std::vector<int32>& columns,
-            const int64 batch_size,
-            const ArrowBatchMode batch_mode,
-            const DataTypeVector& output_types,
+    Dataset(OpKernelContext* ctx, const std::vector<string>& endpoints,
+            const std::vector<int32>& columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
-        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode,
-              output_types, output_shapes),
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
           endpoints_(endpoints) {}
 
     string DebugString() const override {
@@ -908,11 +836,8 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       tstring batch_mode_str;
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
-      TF_RETURN_IF_ERROR(
-          b->AddDataset(
-            this,
-            {endpoints, columns, batch_size, batch_mode},
-            output));
+      TF_RETURN_IF_ERROR(b->AddDataset(
+          this, {endpoints, columns, batch_size, batch_mode}, output));
       return Status::OK();
     }
 
@@ -934,12 +859,12 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         const string& endpoint = dataset()->endpoints_[current_endpoint_idx_];
         string endpoint_type;
         string endpoint_value;
-        TF_RETURN_IF_ERROR(
-            ArrowUtil::ParseEndpoint(endpoint, &endpoint_type, &endpoint_value));
+        TF_RETURN_IF_ERROR(ArrowUtil::ParseEndpoint(endpoint, &endpoint_type,
+                                                    &endpoint_value));
 
         // Check if endpoint is STDIN
-        if (endpoint_type == "fd" && (endpoint_value == "0" ||
-                                      endpoint_value == "-")) {
+        if (endpoint_type == "fd" &&
+            (endpoint_value == "0" || endpoint_value == "-")) {
           in_stream_ = std::make_shared<arrow::io::StdinStream>();
         } else {
           // Endpoint is a socket, make a client connection

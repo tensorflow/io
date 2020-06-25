@@ -387,7 +387,8 @@ class BigQueryReaderAvroDatasetIterator
   }
 
  private:
-  std::unique_ptr<avro::InputStream> memory_input_stream_ TF_GUARDED_BY(this->mu_);
+  std::unique_ptr<avro::InputStream> memory_input_stream_
+      TF_GUARDED_BY(this->mu_);
   avro::DecoderPtr decoder_ TF_GUARDED_BY(this->mu_);
 };
 

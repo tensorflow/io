@@ -15,10 +15,10 @@ limitations under the License.
 
 #include <stdlib.h>
 
-#include "tensorflow_io/ignite/kernels/dataset/ignite_binary_object_parser.h"
-#include "tensorflow_io/ignite/kernels/dataset/ignite_dataset.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/lib/strings/numbers.h"
+#include "tensorflow_io/ignite/kernels/dataset/ignite_binary_object_parser.h"
+#include "tensorflow_io/ignite/kernels/dataset/ignite_dataset.h"
 
 namespace tensorflow {
 namespace data {

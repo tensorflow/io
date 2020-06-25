@@ -15,10 +15,11 @@ limitations under the License.
 
 #include <fstream>
 #include <iostream>
+
+#include "arrow/array.h"
 #include "arrow/json/reader.h"
 #include "arrow/memory_pool.h"
 #include "arrow/table.h"
-#include "arrow/array.h"
 #include "rapidjson/document.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
@@ -124,7 +125,8 @@ class JSONReadable : public IOReadableInterface {
     for (int i = 0; i < table_->num_columns(); i++) {
       shapes_.push_back(TensorShape({static_cast<int64>(table_->num_rows())}));
       ::tensorflow::DataType dtype;
-      TF_RETURN_IF_ERROR(ArrowUtil::GetTensorFlowType(table_->column(i)->type(), &dtype));
+      TF_RETURN_IF_ERROR(
+          ArrowUtil::GetTensorFlowType(table_->column(i)->type(), &dtype));
       dtypes_.push_back(dtype);
       columns_.push_back(table_->ColumnNames()[i]);
       columns_index_[table_->ColumnNames()[i]] = i;
@@ -201,7 +203,7 @@ class JSONReadable : public IOReadableInterface {
 #define PROCESS_TYPE(TTYPE, ATYPE)                             \
   {                                                            \
     int64 curr_index = 0;                                      \
-    for (auto chunk : slice->chunks()) {               \
+    for (auto chunk : slice->chunks()) {                       \
       for (int64_t item = 0; item < chunk->length(); item++) { \
         value->flat<TTYPE>()(curr_index) =                     \
             (dynamic_cast<ATYPE*>(chunk.get()))->Value(item);  \

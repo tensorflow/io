@@ -13,19 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <deque>
+
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow/core/public/version.h"
 #include "tensorflow_io/core/kernels/sequence_ops.h"
 
-#include <deque>
-
 namespace tensorflow {
 
 class TextOutputSequence : public OutputSequence {
  public:
-  TextOutputSequence(Env* env)
-   : OutputSequence(env) {}
+  TextOutputSequence(Env* env) : OutputSequence(env) {}
 
   virtual ~TextOutputSequence() override {}
   virtual Status Output() override {
@@ -33,7 +32,8 @@ class TextOutputSequence : public OutputSequence {
       std::unique_ptr<WritableFile> file;
       TF_RETURN_IF_ERROR(env_->NewAppendableFile(destination_[0], &file));
       while (fifo_.size() != 0 && fifo_.front().get() != nullptr) {
-	TF_RETURN_IF_ERROR(file->Append(strings::StrCat(fifo_.front().get()->c_str(), "\n")));
+        TF_RETURN_IF_ERROR(
+            file->Append(strings::StrCat(fifo_.front().get()->c_str(), "\n")));
         fifo_.pop_front();
         base_++;
       }
@@ -41,7 +41,7 @@ class TextOutputSequence : public OutputSequence {
     }
     return Status::OK();
   }
-#if TF_MAJOR_VERSION==1&&TF_MINOR_VERSION==13
+#if TF_MAJOR_VERSION == 1 && TF_MINOR_VERSION == 13
   virtual string DebugString() {
 #else
   virtual string DebugString() const {
@@ -51,10 +51,12 @@ class TextOutputSequence : public OutputSequence {
   Status Initialize(const std::vector<string>& destination) {
     destination_ = destination;
     if (destination_.size() != 1) {
-      return errors::Unimplemented("only one file is supported: ", destination_.size());
+      return errors::Unimplemented("only one file is supported: ",
+                                   destination_.size());
     }
     return Status::OK();
   }
+
  private:
   std::vector<string> destination_ TF_GUARDED_BY(mu_);
 };
@@ -62,8 +64,8 @@ class TextOutputSequence : public OutputSequence {
 class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {
  public:
   explicit TextOutputSequenceOp(OpKernelConstruction* context)
-    : OutputSequenceOp<TextOutputSequence>(context) {
-  }
+      : OutputSequenceOp<TextOutputSequence>(context) {}
+
  private:
   void Compute(OpKernelContext* context) override {
     ResourceOpKernel<TextOutputSequence>::Compute(context);
@@ -86,7 +88,6 @@ class TextOutputSequenceOp : public OutputSequenceOp<TextOutputSequence> {
 
 REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequence").Device(DEVICE_CPU),
                         TextOutputSequenceOp);
-
 
 REGISTER_KERNEL_BUILDER(Name("IO>TextOutputSequenceSetItem").Device(DEVICE_CPU),
                         OutputSequenceSetItemOp<TextOutputSequence>);

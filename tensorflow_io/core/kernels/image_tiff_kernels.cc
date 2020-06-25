@@ -13,12 +13,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/op_kernel.h"
-
 #include <tiffio.h>
 #include <xtiffio.h>
+
 #include <tiffio.hxx>
+
 #include "geotiff.h"
+#include "tensorflow/core/framework/op_kernel.h"
 
 // Repackge XTIFFStreamOpen from TIFFStreamOpen in libtiff/tif_stream.cxx
 extern "C" {

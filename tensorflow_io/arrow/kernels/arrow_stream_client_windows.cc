@@ -26,9 +26,8 @@ limitations under the License.
 
 #include "arrow/api.h"
 #include "arrow/io/api.h"
-
-#include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/framework/types.h"
+#include "tensorflow/core/lib/core/status.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
@@ -51,12 +50,12 @@ arrow::Status ArrowStreamClient::Connect() {
 
   status = ArrowUtil::ParseEndpoint(endpoint_, &socket_family, &host);
   if (!status.ok()) {
-    return arrow::Status::Invalid(
-        "Error parsing endpoint string: " + endpoint_);
+    return arrow::Status::Invalid("Error parsing endpoint string: " +
+                                  endpoint_);
   }
   if (socket_family == "unix") {
-    return arrow::Status::Invalid(
-        "Unsupported socket family: " + socket_family);
+    return arrow::Status::Invalid("Unsupported socket family: " +
+                                  socket_family);
   }
 
   string addr_str;
@@ -80,22 +79,25 @@ arrow::Status ArrowStreamClient::Connect() {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
 
-  res = getaddrinfo(addr_str.c_str(), port_str.c_str(), &hints,
-                    &result);
+  res = getaddrinfo(addr_str.c_str(), port_str.c_str(), &hints, &result);
   if (res != 0) {
     return arrow::Status::IOError("Getaddrinfo failed with error: ",
                                   std::to_string(res));
   }
 
   std::unique_ptr<addrinfo, void (*)(addrinfo*)> result_scope(
-        result, [](addrinfo* p) { if (p != nullptr) { freeaddrinfo(p); } });
+      result, [](addrinfo* p) {
+        if (p != nullptr) {
+          freeaddrinfo(p);
+        }
+      });
 
   for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
     sock_ = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
     if (sock_ == INVALID_SOCKET) {
       WSACleanup();
       return arrow::Status::IOError("Socket failed with error: ",
-                              std::to_string(WSAGetLastError()));
+                                    std::to_string(WSAGetLastError()));
     }
 
     res = connect(sock_, ptr->ai_addr, (int)ptr->ai_addrlen);
@@ -129,23 +131,17 @@ arrow::Status ArrowStreamClient::Close() {
   return arrow::Status::OK();
 }
 
+bool ArrowStreamClient::closed() const { return sock_ == -1; }
 
-bool ArrowStreamClient::closed() const {
-  return sock_ == -1;
-}
+arrow::Result<int64_t> ArrowStreamClient::Tell() const { return pos_; }
 
-arrow::Result<int64_t> ArrowStreamClient::Tell() const {
-  return pos_;
-}
-
-arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes,
-                                      void* out) {
+arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes, void* out) {
   // TODO: look into why 0 bytes are requested
   if (nbytes == 0) {
     return 0;
   }
 
-  int status = recv(sock_, (char *)out, nbytes, 0);
+  int status = recv(sock_, (char*)out, nbytes, 0);
   if (status == 0) {
     return arrow::Status::IOError("connection closed unexpectedly");
   } else if (status < 0) {
@@ -156,7 +152,8 @@ arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes,
   return nbytes;
 }
 
-arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(int64_t nbytes) {
+arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(
+    int64_t nbytes) {
   std::shared_ptr<arrow::ResizableBuffer> buffer;
   ARROW_RETURN_NOT_OK(arrow::AllocateResizableBuffer(nbytes, &buffer));
   int64_t bytes_read;

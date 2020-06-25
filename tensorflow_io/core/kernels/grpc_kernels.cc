@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <grpc++/grpc++.h>
+
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow_io/core/grpc/endpoint.grpc.pb.h"
-
-#include <grpc++/grpc++.h>
 
 namespace tensorflow {
 namespace data {

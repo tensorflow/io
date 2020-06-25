@@ -22,7 +22,7 @@ limitations under the License.
 namespace tensorflow {
 
 class GGFSWritableFile : public WritableFile {
-public:
+ public:
   GGFSWritableFile(const string &file_name,
                    std::unique_ptr<GGFSClient> &&client);
   ~GGFSWritableFile() override;
@@ -31,11 +31,11 @@ public:
   Status Flush() override;
   Status Sync() override;
 
-private:
+ private:
   const string file_name_;
   std::unique_ptr<GGFSClient> client_;
 };
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
-#endif // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_WRITABLE_FILE_H_
+#endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_GGFS_GGFS_WRITABLE_FILE_H_

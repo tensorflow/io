@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/platform/logging.h"
-#include "tensorflow_io/core/kernels/cpu_info.h"
-
 #include <iostream>
 #include <mutex>
 #include <string>
+
+#include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/core/kernels/cpu_info.h"
 
 namespace tensorflow {
 namespace io {

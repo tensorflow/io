@@ -13,12 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/core/framework/dataset.h"
-#include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow/core/framework/resource_op_kernel.h"
-#include "tensorflow/core/platform/logging.h"
-#include "tensorflow_io/core/kernels/io_interface.h"
-#include "tensorflow_io/core/kernels/sequence_ops.h"
+#include <deque>
+#include <unordered_map>
 
 #include "api/Compiler.hh"
 #include "api/DataFile.hh"
@@ -26,10 +22,12 @@ limitations under the License.
 #include "api/Stream.hh"
 #include "api/Validator.hh"
 #include "rdkafkacpp.h"
-
-#include <deque>
-#include <unordered_map>
-#include "rdkafkacpp.h"
+#include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/framework/resource_mgr.h"
+#include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow/core/platform/logging.h"
+#include "tensorflow_io/core/kernels/io_interface.h"
+#include "tensorflow_io/core/kernels/sequence_ops.h"
 
 namespace tensorflow {
 
@@ -54,8 +52,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
     OP_REQUIRES_OK(
         ctx, data::ParseScalarArgument<tstring>(ctx, "servers", &servers));
     tstring group = "";
-    OP_REQUIRES_OK(
-        ctx, data::ParseScalarArgument<tstring>(ctx, "group", &group));
+    OP_REQUIRES_OK(ctx,
+                   data::ParseScalarArgument<tstring>(ctx, "group", &group));
     bool eof = false;
     OP_REQUIRES_OK(ctx, data::ParseScalarArgument<bool>(ctx, "eof", &eof));
     int64 timeout = -1;
@@ -487,7 +485,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
       size_t current_topic_index_ TF_GUARDED_BY(mu_) = 0;
       int64 offset_ TF_GUARDED_BY(mu_) = 0;
       int64 limit_ TF_GUARDED_BY(mu_) = -1;
-      std::unique_ptr<RdKafka::TopicPartition> topic_partition_ TF_GUARDED_BY(mu_);
+      std::unique_ptr<RdKafka::TopicPartition> topic_partition_
+          TF_GUARDED_BY(mu_);
       std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
       KafkaEventCb kafka_event_cb = KafkaEventCb(run_);
     };

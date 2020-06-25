@@ -17,6 +17,7 @@ limitations under the License.
 #define TENSORFLOW_CONTRIB_IGNITE_KERNELS_CLIENT_IGNITE_BYTE_SWAPPER_H_
 
 #include <stdint.h>
+
 #include "tensorflow/core/platform/byte_order.h"
 
 namespace tensorflow {
