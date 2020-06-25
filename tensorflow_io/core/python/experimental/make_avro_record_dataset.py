@@ -41,41 +41,56 @@ def make_avro_record_dataset(
     drop_final_batch=False,
 ):
     """Reads and (optionally) parses avro files into a dataset.
+
     Provides common functionality such as batching, optional parsing, shuffling,
     and performing defaults.
+
     Args:
       file_pattern: List of files or patterns of avro file paths.
         See `tf.io.gfile.glob` for pattern rules.
+
       features: A map of feature names mapped to feature information.
+
       batch_size: An int representing the number of records to combine
         in a single batch.
+
       reader_schema: The reader schema.
+
       reader_buffer_size: (Optional.) An int specifying the readers buffer
         size in By. If None (the default) will use the default value from
         AvroRecordDataset.
+
       num_epochs: (Optional.) An int specifying the number of times this
         dataset is repeated.  If None (the default), cycles through the
         dataset forever. If set to None drops final batch.
+
       shuffle: (Optional.) A bool that indicates whether the input
         should be shuffled. Defaults to `True`.
+
       shuffle_buffer_size: (Optional.) Buffer size to use for
         shuffling. A large buffer size ensures better shuffling, but
         increases memory usage and startup time. If not provided
         assumes default value of 10,000 records. Note that the shuffle
         size is measured in records.
+
       shuffle_seed: (Optional.) Randomization seed to use for shuffling.
         By default uses a pseudo-random seed.
+
       prefetch_buffer_size: (Optional.) An int specifying the number of
         feature batches to prefetch for performance improvement.
         Defaults to auto-tune. Set to 0 to disable prefetching.
+
       num_parallel_reads: (Optional.) Number of threads used to read
         records from files. By default or if set to a value >1, the
         results will be interleaved.
+
       num_parallel_parser_calls: (Optional.) Number of parallel
         records to parse in parallel. Defaults to an automatic selection.
+
       drop_final_batch: (Optional.) Whether the last batch should be
         dropped in case its size is smaller than `batch_size`; the
         default behavior is not to drop the smaller batch.
+
     Returns:
       A dataset, where each element matches the output of `parser_fn`
       except it will have an additional leading `batch-size` dimension,
