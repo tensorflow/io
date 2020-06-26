@@ -837,6 +837,17 @@ llvm_toolchain(
 )
 
 http_archive(
+    name = "nasm",
+    build_file = "//third_party:nasm.BUILD",
+    sha256 = "34fd26c70a277a9fdd54cb5ecf389badedaf48047b269d1008fbc819b24e80bc",
+    strip_prefix = "nasm-2.14.02",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.bz2",
+        "http://www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.bz2",
+    ],
+)
+
+http_archive(
     name = "vorbis",
     build_file = "//third_party:vorbis.BUILD",
     sha256 = "43fc4bc34f13da15b8acfa72fd594678e214d1cab35fc51d3a54969a725464eb",
