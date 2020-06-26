@@ -390,5 +390,22 @@ def test_decode_tiff_multipage():
         image = tfio.experimental.image.decode_tiff(tf.io.read_file(filename), index=i)
 
 
+def test_decode_jp2():
+    """Test case for decode_jp2"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.jp2",
+    )
+    png_filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.jp2.png",
+    )
+    png = tf.image.decode_png(tf.io.read_file(png_filename))
+
+    contents = tf.io.read_file(filename)
+    rgb = tfio.experimental.image.decode_jp2(contents)
+    assert rgb.dtype == tf.uint8
+    assert rgb.shape == png.shape
+    assert np.all(rgb == png)
+
+
 if __name__ == "__main__":
     test.main()
