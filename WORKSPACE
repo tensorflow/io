@@ -502,11 +502,11 @@ http_archive(
         """sed -i.bak 's/"python",/"python3",/g' third_party/py/python_configure.bzl""",
         """sed -i.bak 's/PYTHONHASHSEED=0/PYTHONHASHSEED=0 python3/g' bazel/cython_library.bzl""",
     ],
-    sha256 = "2fcb7f1ab160d6fd3aaade64520be3e5446fc4c6fa7ba6581afdc4e26094bd81",
-    strip_prefix = "grpc-1.26.0",
+    sha256 = "b956598d8cbe168b5ee717b5dafa56563eb5201a947856a6688bbeac9cac4e1f",
+    strip_prefix = "grpc-b54a5b338637f92bfcf4b0bc05e0f57a5fd8fadd",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/v1.26.0.tar.gz",
-        "https://github.com/grpc/grpc/archive/v1.26.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/b54a5b338637f92bfcf4b0bc05e0f57a5fd8fadd.tar.gz",
+        "https://github.com/grpc/grpc/archive/b54a5b338637f92bfcf4b0bc05e0f57a5fd8fadd.tar.gz",
     ],
 )
 
