@@ -133,9 +133,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
 
     string DebugString() const override { return "KafkaDatasetOp::Dataset"; }
 
-    Status CheckExternalState() const override {
-      return Status::OK();
-    }
+    Status CheckExternalState() const override { return Status::OK(); }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
@@ -287,26 +285,27 @@ class KafkaDatasetOp : public DatasetOpKernel {
       }
 
      protected:
-      Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
+      Status SaveInternal(SerializationContext* ctx,
+                          IteratorStateWriter* writer) override {
         mutex_lock l(mu_);
         return errors::Unimplemented("SaveInternal");
-/*
-        TF_RETURN_IF_ERROR(writer->WriteScalar(full_name("current_topic_index"),
-                                               current_topic_index_));
+        /*
+                TF_RETURN_IF_ERROR(writer->WriteScalar(full_name("current_topic_index"),
+                                                       current_topic_index_));
 
-        // `consumer_` is empty if
-        // 1. GetNext has not been called even once.
-        // 2. All topics have been read and iterator has been exhausted.
-        if (consumer_.get()) {
-          TF_RETURN_IF_ERROR(
-              writer->WriteScalar(full_name("current_pos"), offset_));
+                // `consumer_` is empty if
+                // 1. GetNext has not been called even once.
+                // 2. All topics have been read and iterator has been exhausted.
+                if (consumer_.get()) {
+                  TF_RETURN_IF_ERROR(
+                      writer->WriteScalar(full_name("current_pos"), offset_));
 
-          LOG(INFO) << "Save current topic: "
-                    << dataset()->topics_[current_topic_index_]
-                    << ", current offset: " << offset_;
-        }
-        return Status::OK();
-*/
+                  LOG(INFO) << "Save current topic: "
+                            << dataset()->topics_[current_topic_index_]
+                            << ", current offset: " << offset_;
+                }
+                return Status::OK();
+        */
       }
 
       Status RestoreInternal(IteratorContext* ctx,

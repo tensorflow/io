@@ -76,7 +76,8 @@ Status IgniteDatasetIterator::GetNextInternal(IteratorContext* ctx,
   return errors::Unknown("Iterator is invalid");
 }
 
-Status IgniteDatasetIterator::SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) {
+Status IgniteDatasetIterator::SaveInternal(SerializationContext* ctx,
+                                           IteratorStateWriter* writer) {
   return errors::Unimplemented(
       "Iterator for IgniteDataset does not support 'SaveInternal'");
 }
