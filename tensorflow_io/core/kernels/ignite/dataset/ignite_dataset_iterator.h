@@ -36,7 +36,8 @@ class IgniteDatasetIterator : public DatasetIterator<IgniteDataset> {
                          bool* end_of_sequence) override;
 
  protected:
-  Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override;
+  Status SaveInternal(SerializationContext* ctx,
+                      IteratorStateWriter* writer) override;
   Status RestoreInternal(IteratorContext* ctx,
                          IteratorStateReader* reader) override;
 

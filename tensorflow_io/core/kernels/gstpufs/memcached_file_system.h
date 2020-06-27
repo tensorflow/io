@@ -21,9 +21,9 @@ limitations under the License.
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "tensorflow/core/platform/cloud/gcs_file_system.h"
 #include "tensorflow_io/core/kernels/gstpufs/gce_memcached_server_list_provider.h"
 #include "tensorflow_io/core/kernels/gstpufs/memcached_file_block_cache.h"
-#include "tensorflow/core/platform/cloud/gcs_file_system.h"
 
 namespace tensorflow {
 

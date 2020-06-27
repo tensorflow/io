@@ -77,9 +77,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     return name_utils::DatasetDebugString(kDatasetType);
   }
 
-  Status CheckExternalState() const override {
-    return Status::OK();
-  }
+  Status CheckExternalState() const override { return Status::OK(); }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
@@ -138,13 +136,15 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
       } while (true);
     }
+
    protected:
     std::shared_ptr<model::Node> CreateNode(
         IteratorContext* ctx, model::Node::Args args) const override {
       return model::MakeSourceNode(std::move(args));
     }
 
-    Status SaveInternal(SerializationContext* ctx, IteratorStateWriter* writer) override {
+    Status SaveInternal(SerializationContext* ctx,
+                        IteratorStateWriter* writer) override {
       return errors::Unimplemented("SaveInternal");
     }
 
@@ -162,8 +162,10 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     }
     */
 
-    Status RestoreInternal(IteratorContext* ctx, IteratorStateReader* reader) override {
-      return errors::Unimplemented("Iterator does not support 'RestoreInternal')");
+    Status RestoreInternal(IteratorContext* ctx,
+                           IteratorStateReader* reader) override {
+      return errors::Unimplemented(
+          "Iterator does not support 'RestoreInternal')");
     }
 
     /*
