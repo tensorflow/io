@@ -93,14 +93,11 @@ def _genrule(genrule_name, command, outs):
     """
     return (
         "genrule(\n" +
-        '    name = "' +
-        genrule_name + '",\n' +
+        '    name = "' + genrule_name + '",\n' +
         "    outs = [\n" +
-        outs +
-        "\n    ],\n" +
-        '    cmd = """\n' +
-        command +
-        '\n   """,\n' +
+        "{}\n".format(outs) +
+        "    ],\n" +
+        '    cmd = """ {} """,\n'.format(command) +
         ")\n"
     )
 
@@ -145,6 +142,8 @@ def _symlink_genrule_for_dir(
     if tf_pip_dir_rename_pair_len != 0 and tf_pip_dir_rename_pair_len != 2:
         _fail("The size of argument tf_pip_dir_rename_pair should be either 0 or 2, but %d is given." % tf_pip_dir_rename_pair_len)
 
+    outs = []
+    command = []
     if src_dir != None:
         src_dir = _norm_path(src_dir)
         dest_dir = _norm_path(dest_dir)
@@ -156,26 +155,17 @@ def _symlink_genrule_for_dir(
         else:
             dest_files = files.replace(src_dir, "").splitlines()
         src_files = files.splitlines()
-    command = []
-    outs = []
 
-    for i in range(len(dest_files)):
-        if dest_files[i] != "":
-            # If we have only one file to link we do not want to use the dest_dir, as
-            # $(@D) will include the full path to the file.
-            dest = "$(@D)/" + dest_dir + dest_files[i] if len(dest_files) != 1 else "$(@D)/" + dest_files[i]
-
+        for i in range(len(dest_files)):
             # Copy the headers to create a sandboxable setup.
-            cmd = "cp -f"
-            command.append(cmd + ' "%s" "%s"' % (src_files[i], dest))
-            outs.append('        "' + dest_dir + dest_files[i] + '",')
-    dest_dir = "abc"
-    genrule = _genrule(
-        genrule_name,
-        " && ".join(command),
-        "\n".join(outs),
-    )
-    return genrule
+            outs.append('        "{}",'.format(dest_dir + dest_files[i]))
+        command.append('rm -rf "{}"'.format("$(@D)/" + dest_dir))
+        command.append('cp -r "{}" "{}"'.format(src_dir, "$(@D)/" + dest_dir))
+    else:
+        for i in range(len(dest_files)):
+            outs.append('        "{}",'.format(dest_files[i]))
+            command.append('cp -r "{}" "{}"'.format(src_files[i], "$(@D)/" + dest_files[i]))
+    return _genrule(genrule_name, " && ".join(command), "\n".join(outs))
 
 def _tf_pip_impl(repository_ctx):
     tf_header_dir = repository_ctx.os.environ[_TF_HEADER_DIR]
@@ -196,8 +186,8 @@ def _tf_pip_impl(repository_ctx):
         None,
         "",
         "libtensorflow_framework.so",
-        [tf_shared_library_path],
-        ["_pywrap_tensorflow_internal.lib" if _is_windows(repository_ctx) else "libtensorflow_framework.so"],
+        src_files = [tf_shared_library_path],
+        dest_files = ["_pywrap_tensorflow_internal.lib" if _is_windows(repository_ctx) else "libtensorflow_framework.so"],
     )
 
     _tpl(repository_ctx, "BUILD", {
