@@ -208,6 +208,10 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//third_party:font",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/types:variant",
         "@easyexif",
         "@fmjpeg2koj",
         "@freetype",
@@ -394,6 +398,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/time",
         "@com_google_googleapis//google/pubsub/v1:pubsub_cc_grpc",
     ],
     alwayslink = 1,
