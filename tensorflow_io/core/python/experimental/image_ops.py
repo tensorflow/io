@@ -195,15 +195,16 @@ def decode_avif(contents, name=None):
     return core_ops.io_decode_avif(contents, name=name)
 
 
-def decode_jp2(contents, name=None):
+def decode_jp2(contents, dtype=tf.uint8, name=None):
     """
     Decode a JPEG2000-encoded image to a uint8 tensor.
 
     Args:
       contents: A `Tensor` of type `string`. 0-D.  The JPEG200-encoded image.
+      dtype: Data type of the decoded image. Default `tf.uint8`.
       name: A name for the operation (optional).
 
     Returns:
       A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
     """
-    return core_ops.io_decode_jpeg2k(contents, name=name)
+    return core_ops.io_decode_jpeg2k(contents, dtype=dtype, name=name)
