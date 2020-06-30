@@ -407,5 +407,26 @@ def test_decode_jp2():
     assert np.all(rgb == png)
 
 
+def test_decode_jp2_uint16():
+    """Test case for decode_jp2_uint16"""
+    # The image is generated from:
+    # data = np.asarray(range(512), np.uint16)
+    # data = np.broadcast_to(data, [512, 512]) * 128
+    # jp2 = glymur.Jp2k('img.jp2', data=data, cratios=[20, 10, 1])
+    data = np.asarray(range(512), np.uint16)
+    data = np.broadcast_to(data, [512, 512]) * 128
+    data = np.reshape(data, [512, 512, 1])
+
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "img.jp2",
+    )
+
+    contents = tf.io.read_file(filename)
+    rgb = tfio.experimental.image.decode_jp2(contents, dtype=tf.uint16)
+    assert rgb.dtype == tf.uint16
+    assert rgb.shape == data.shape
+    assert np.array_equal(rgb, data)
+
+
 if __name__ == "__main__":
     test.main()
