@@ -209,7 +209,8 @@ REGISTER_OP("IO>DecodeAVIF")
 
 REGISTER_OP("IO>DecodeJPEG2K")
     .Input("contents: string")
-    .Output("image: uint8")
+    .Output("image: dtype")
+    .Attr("dtype: {uint8, uint16}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));

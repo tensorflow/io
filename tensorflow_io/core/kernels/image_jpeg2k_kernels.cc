@@ -161,13 +161,31 @@ class DecodeJPEG2K : public OpKernel {
     OP_REQUIRES(context, ((p_image->numcomps * p_image->x1 * p_image->y1) != 0),
                 errors::InvalidArgument("invalid raw image parameters"));
 
+    int prec = 0;
     for (int i = 0; i < p_image->numcomps; i++) {
-      OP_REQUIRES(context, (p_image->comps[i].prec == 8),
-                  errors::InvalidArgument(
-                      "only 8 bit images supported, received image[", i,
-                      "] = ", p_image->comps[i].prec));
+      if (prec == 0) {
+        prec = p_image->comps[i].prec;
+      }
+      OP_REQUIRES(
+          context, (prec == p_image->comps[i].prec),
+          errors::InvalidArgument("precision mismatch for component ", i, ": ",
+                                  prec, " vs. ", p_image->comps[i].prec));
+
+      switch (prec) {
+        case 8:
+        case 16:
+          break;
+        default:
+          OP_REQUIRES(
+              context, false,
+              errors::InvalidArgument(
+                  "only 8 and 16 bit images supported, received component ", i,
+                  " = ", prec));
+      }
     }
+
     switch (p_image->numcomps) {
+      case 1:
       case 3:
       case 4:
         break;
@@ -213,13 +231,29 @@ class DecodeJPEG2K : public OpKernel {
     OP_REQUIRES_OK(
         context, context->allocate_output(
                      0, TensorShape({height, width, channels}), &image_tensor));
-    auto image = image_tensor->shaped<uint8, 3>({height, width, channels});
+    switch (prec) {
+      case 8:
+        FillTensor<uint8>(image_tensor, p_image, height, width, channels,
+                          signed_offsets);
+        break;
+      case 16:
+        FillTensor<uint16>(image_tensor, p_image, height, width, channels,
+                           signed_offsets);
+        break;
+    }
+  }
+
+ private:
+  template <typename T>
+  void FillTensor(Tensor* image_tensor, opj_image_t* p_image, int64 height,
+                  int64 width, int64 channels, long* signed_offsets) {
+    auto image = image_tensor->shaped<T, 3>({height, width, channels});
 
     for (int64 i = 0; i < height; i++) {
       for (int64 j = 0; j < width; j++) {
         for (int64 k = 0; k < channels; k++) {
-          uint8 value =
-              p_image->comps[k].data[i * width + j] + signed_offsets[k];
+          T value = p_image->comps[k].data[i * width + j];
+          value += signed_offsets[k];
           image(i, j, k) = value;
         }
       }
