@@ -26,3 +26,5 @@ toc:
   path: /io/tutorials/genome
 - title: "PostgreSQL database"
   path: /io/tutorials/postgresql
+- title: "Audio"
+  path: /io/tutorials/audio
