@@ -183,16 +183,36 @@ class BigqueryOpsTest(test.TestCase):
               "doc": "nullable double"
           },
           {
-              "name": "repeated_string",
-              "type": {"type": "array", "items": "string"},
+              "name": "repeated_bool",
+              "type": {"type": "array", "items": "boolean"},
+              "doc": "repeated string"
+          },
+          {
+              "name": "repeated_int",
+              "type": {"type": "array", "items": "int"},
+              "doc": "repeated string"
+          },
+          {
+              "name": "repeated_long",
+              "type": {"type": "array", "items": "long"},
+              "doc": "repeated string"
+          },
+          {
+              "name": "repeated_float",
+              "type": {"type": "array", "items": "float"},
               "doc": "repeated string"
           },
           {
               "name": "repeated_double",
               "type": {"type": "array", "items": "double"},
+              "doc": "repeated double"
+          },
+          {
+              "name": "repeated_string",
+              "type": {"type": "array", "items": "string"},
               "doc": "repeated string"
           }
- 
+
       ]
   }"""
 
@@ -204,8 +224,12 @@ class BigqueryOpsTest(test.TestCase):
             "long": 100,
             "float": 1000.0,
             "double": 10000.0,
-            "repeated_string": ["string1"],
+            "repeated_bool": [True],
+            "repeated_int": [20],
+            "repeated_long": [200],
+            "repeated_float": [1000.0],
             "repeated_double": [10000.0],
+            "repeated_string": ["string1"],
         },
         {
             "string": "string2",
@@ -214,8 +238,12 @@ class BigqueryOpsTest(test.TestCase):
             "long": 102,
             "float": 1002.0,
             "double": 10002.0,
-            "repeated_string": ["string1", "string2"],
+            "repeated_bool": [True, False],
+            "repeated_int": [20, 40],
+            "repeated_long": [200, 400],
+            "repeated_float": [1000.0, 800.0],
             "repeated_double": [101.0, 10.1],
+            "repeated_string": ["string1", "string2"],
         },
     ]
     STREAM_2_ROWS = [
@@ -226,13 +254,21 @@ class BigqueryOpsTest(test.TestCase):
             "long": 200,
             "float": 2000.0,
             "double": 20000.0,
+            "repeated_bool": [True, False, True],
+            "repeated_int": [20, 40, 30],
+            "repeated_long": [200, 400, 700],
+            "repeated_float": [1000.0, 800.0, 1100.0],
+            "repeated_double": [101.0, 10.1, 0.3, 20.0],
             "repeated_string": ["string1", "string2", "string3"],
-            "repeated_double": [101.0, 10.1, 0.3],
         },
         {
             # Empty record, all values are null except for repeated fields
-            "repeated_string": ["string1", "string2", "string3", "string4"],
+            "repeated_bool": [False, True, True],
+            "repeated_int": [30, 40, 20],
+            "repeated_long": [200, 300, 900],
+            "repeated_float": [1000.0, 700.0, 1200.0],
             "repeated_double": [101.0, 10.1, 0.3, 1.4],
+            "repeated_string": ["string1", "string2", "string3", "string4"],
         },
     ]
 
@@ -243,12 +279,18 @@ class BigqueryOpsTest(test.TestCase):
         "int": 0,
         "long": 0,
         "string": "",
+        "repeated_bool": [False, True, True],
+        "repeated_int": [30, 40, 20],
+        "repeated_long": [200, 300, 900],
+        "repeated_float": [1000.0, 700.0, 1200.0],
+        "repeated_double": [101.0, 10.1, 0.3, 1.4],
+            "repeated_string": ["string1", "string2", "string3", "string4"],
         "repeated_string": [
             "string1",
             "string2",
             "string3",
             "string4",
-        ],  # repeated fields can't be null
+        ], 
         "repeated_double": [101.0, 10.1, 0.3, 1.4],
     }
 
@@ -289,36 +331,20 @@ class BigqueryOpsTest(test.TestCase):
             self.GCP_PROJECT_ID,
             self.TABLE_ID,
             self.DATASET_ID,
-            selected_fields=[
-                "string",
-                "boolean",
-                "int",
-                "long",
-                "float",
-                "double",
-                "repeated_string",
-                "repeated_double",
-            ],
-            selected_fields_repeated=[
-                False,
-                False,
-                False,
-                False,
-                False,
-                False,
-                True,
-                True,
-            ],
-            output_types=[
-                dtypes.string,
-                dtypes.bool,
-                dtypes.int32,
-                dtypes.int64,
-                dtypes.float32,
-                dtypes.float64,
-                dtypes.string,
-                dtypes.float64,
-            ],
+            selected_fields={
+                "string": {"output_type": dtypes.string},
+                "boolean": {"output_type": dtypes.bool},
+                "int": {"output_type": dtypes.int32},
+                "long": {"output_type": dtypes.int64},
+                "float": {"output_type": dtypes.float32},
+                "double": {"output_type": dtypes.float64},
+                "repeated_bool": {"mode": "repeated", "output_type": dtypes.bool},
+                "repeated_int": {"mode": "repeated", "output_type": dtypes.int32},
+                "repeated_long": {"mode": "repeated", "output_type": dtypes.int64},
+                "repeated_float": {"mode": "repeated", "output_type": dtypes.float32},
+                "repeated_double": {"mode": "repeated", "output_type": dtypes.float64},
+                "repeated_string": {"mode": "repeated", "output_type": dtypes.string},
+            },
             requested_streams=2,
         )
 

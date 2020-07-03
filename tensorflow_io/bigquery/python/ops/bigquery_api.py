@@ -77,11 +77,22 @@ class BigQueryClient:
       project_id: The assigned project ID of the project.
       table_id: The ID of the table in the dataset.
       dataset_id: The ID of the dataset in the project.
-      selected_fields: Names of the fields in the table that should be read.
+      selected_fields: This can be a list or a dict. If a list, it has
+        names of the fields in the table that should be read. If a dict,
+        it should be in a form like, i.e:
+        { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
+          "field_b_name": {"mode": "nullable", output_type: dtypes.string},
+          ...
+          "field_x_name": {"mode": "repeated", output_type: dtypes.string}
+        }
+        "mode" is BigQuery column attribute, it can be 'repeated', 'nullable' or 'required'.
         The output field order is unrelated to the order of fields in
-        selected_fields.
+        selected_fields. If "mode" not specified, defaults to "nullable".
+        If "output_type" not specified, DT_STRING is implied for all Tensors.
       output_types: Types for the output tensor in the same sequence as
-        selected_fields.
+        selected_fields. This is only needed when selected_fields is a list,
+        if selected_fields is a dictionary, this output_types information is
+        included in selected_fields as described above.
         If not specified, DT_STRING is implied for all Tensors.
       row_restriction: Optional. SQL text filtering statement, similar to a
         WHERE clause in a query.
@@ -116,24 +127,40 @@ class BigQueryClient:
         if not dataset_id:
             raise ValueError("`dataset_id` must be a set")
 
-        if not isinstance(selected_fields, list):
-            raise ValueError("`selected_fields` must be a list")
-        if not selected_fields:
-            raise ValueError("`selected_fields` must be a set")
-
-        if not isinstance(output_types, list):
-            raise ValueError("`output_types` must be a list")
-        if output_types and len(output_types) != len(selected_fields):
-            raise ValueError(
-                "lengths of `output_types` must be a same as the "
-                "length of `selected_fields`"
-            )
-
-        if not selected_fields_repeated:
+        if isinstance(selected_fields, list):
+            if not isinstance(output_types, list):
+                raise ValueError(
+                    "`output_types` must be a list if selected_fields is list"
+                )
+            if output_types and len(output_types) != len(selected_fields):
+                raise ValueError(
+                    "lengths of `output_types` must be a same as the "
+                    "length of `selected_fields`"
+                )
+            if not output_types:
+                output_types = [dtypes.string] * len(selected_fields)
+            # Repeated field is not supported if selected_fields is list
             selected_fields_repeated = [False] * len(selected_fields)
 
-        if not output_types:
-            output_types = [dtypes.string] * len(selected_fields)
+        elif isinstance(selected_fields, dict):
+            _selected_fields = []
+            selected_fields_repeated = []
+            output_types = []
+            for field in selected_fields:
+                _selected_fields.append(field)
+                mode = selected_fields[field].get("mode", "nullable")
+                if mode == "repeated":
+                    selected_fields_repeated.append(True)
+                elif mode == "nullable" or mode == "required":
+                    selected_fields_repeated.append(False)
+                else:
+                    raise ValueError("mode needs be nullable, required or repeated")
+                output_types.append(
+                    selected_fields[field].get("output_type", dtypes.string)
+                )
+            selected_fields = _selected_fields
+        else:
+            raise ValueError("`selected_fields` must be a list or dict.")
 
         (streams, schema) = core_ops.io_big_query_read_session(
             client=self._client_resource,
