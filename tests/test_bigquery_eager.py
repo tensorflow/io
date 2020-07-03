@@ -284,13 +284,8 @@ class BigqueryOpsTest(test.TestCase):
         "repeated_long": [200, 300, 900],
         "repeated_float": [1000.0, 700.0, 1200.0],
         "repeated_double": [101.0, 10.1, 0.3, 1.4],
-            "repeated_string": ["string1", "string2", "string3", "string4"],
-        "repeated_string": [
-            "string1",
-            "string2",
-            "string3",
-            "string4",
-        ], 
+        "repeated_string": ["string1", "string2", "string3", "string4"],
+        "repeated_string": ["string1", "string2", "string3", "string4",],
         "repeated_double": [101.0, 10.1, 0.3, 1.4],
     }
 
