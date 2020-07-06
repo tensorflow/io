@@ -307,6 +307,14 @@ class BigqueryOpsTest(test.TestCase):
                 dictionary[key] = value.decode()
         return dict(dictionary)
 
+    @staticmethod
+    def _get_nonrepeated_only_fields(dictionary):
+        nonrepeated_only_dict = {}
+        for key, value in dictionary.items():
+            if not key.startswith("repeated"):
+                nonrepeated_only_dict[key] = value
+        return nonrepeated_only_dict
+
     @classmethod
     def setUpClass(cls):  # pylint: disable=invalid-name
         """setUpClass"""
@@ -320,28 +328,53 @@ class BigqueryOpsTest(test.TestCase):
         """setUpClass"""
         cls.server.stop()
 
-    def _get_read_session(self, client):
-        return client.read_session(
-            self.PARENT,
-            self.GCP_PROJECT_ID,
-            self.TABLE_ID,
-            self.DATASET_ID,
-            selected_fields={
-                "string": {"output_type": dtypes.string},
-                "boolean": {"output_type": dtypes.bool},
-                "int": {"output_type": dtypes.int32},
-                "long": {"output_type": dtypes.int64},
-                "float": {"output_type": dtypes.float32},
-                "double": {"output_type": dtypes.float64},
-                "repeated_bool": {"mode": "repeated", "output_type": dtypes.bool},
-                "repeated_int": {"mode": "repeated", "output_type": dtypes.int32},
-                "repeated_long": {"mode": "repeated", "output_type": dtypes.int64},
-                "repeated_float": {"mode": "repeated", "output_type": dtypes.float32},
-                "repeated_double": {"mode": "repeated", "output_type": dtypes.float64},
-                "repeated_string": {"mode": "repeated", "output_type": dtypes.string},
-            },
-            requested_streams=2,
-        )
+    def _get_read_session(self, client, nonrepeated_only=False):
+        if nonrepeated_only:
+            return client.read_session(
+                self.PARENT,
+                self.GCP_PROJECT_ID,
+                self.TABLE_ID,
+                self.DATASET_ID,
+                selected_fields=[
+                    "string",
+                    "boolean",
+                    "int",
+                    "long",
+                    "float",
+                    "double",
+                ],
+                output_types=[
+                    dtypes.string,
+                    dtypes.bool,
+                    dtypes.int32,
+                    dtypes.int64,
+                    dtypes.float32,
+                    dtypes.float64
+                 ],
+                requested_streams=2,
+            )
+        else:
+            return client.read_session(
+                self.PARENT,
+                self.GCP_PROJECT_ID,
+                self.TABLE_ID,
+                self.DATASET_ID,
+                selected_fields={
+                    "string": {"output_type": dtypes.string},
+                    "boolean": {"output_type": dtypes.bool},
+                    "int": {"output_type": dtypes.int32},
+                    "long": {"output_type": dtypes.int64},
+                    "float": {"output_type": dtypes.float32},
+                    "double": {"output_type": dtypes.float64},
+                    "repeated_bool": {"mode": "repeated", "output_type": dtypes.bool},
+                    "repeated_int": {"mode": "repeated", "output_type": dtypes.int32},
+                    "repeated_long": {"mode": "repeated", "output_type": dtypes.int64},
+                    "repeated_float": {"mode": "repeated", "output_type": dtypes.float32},
+                    "repeated_double": {"mode": "repeated", "output_type": dtypes.float64},
+                    "repeated_string": {"mode": "repeated", "output_type": dtypes.string},
+                },
+                requested_streams=2,
+            )
 
     def test_fake_server(self):
         """Fake server test."""
@@ -407,6 +440,35 @@ class BigqueryOpsTest(test.TestCase):
         )
         self.assertEqual(
             self.DEFAULT_VALUES, self._normalize_dictionary(itr2.get_next())
+        )
+        with self.assertRaises(errors.OutOfRangeError):
+            itr2.get_next()
+
+    def test_read_rows_nonrepeated_only(self):
+        """Test for reading rows with non-repeated fields only, then selected_fields and output_types are list (backward compatible)."""
+        client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
+        read_session = self._get_read_session(client,nonrepeated_only=True)
+
+        streams_list = read_session.get_streams()
+        self.assertEqual(len(streams_list), 2)
+        dataset1 = read_session.read_rows(streams_list[0])
+        itr1 = iter(dataset1)
+        self.assertEqual(
+            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[0]), self._normalize_dictionary(itr1.get_next())
+        )
+        self.assertEqual(
+            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[1]), self._normalize_dictionary(itr1.get_next())
+        )
+        with self.assertRaises(errors.OutOfRangeError):
+            itr1.get_next()
+
+        dataset2 = read_session.read_rows(streams_list[1])
+        itr2 = iter(dataset2)
+        self.assertEqual(
+            self._get_nonrepeated_only_fields(self.STREAM_2_ROWS[0]), self._normalize_dictionary(itr2.get_next())
+        )
+        self.assertEqual(
+            self._get_nonrepeated_only_fields(self.DEFAULT_VALUES), self._normalize_dictionary(itr2.get_next())
         )
         with self.assertRaises(errors.OutOfRangeError):
             itr2.get_next()
