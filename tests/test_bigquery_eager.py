@@ -349,8 +349,8 @@ class BigqueryOpsTest(test.TestCase):
                     dtypes.int32,
                     dtypes.int64,
                     dtypes.float32,
-                    dtypes.float64
-                 ],
+                    dtypes.float64,
+                ],
                 requested_streams=2,
             )
         else:
@@ -369,9 +369,18 @@ class BigqueryOpsTest(test.TestCase):
                     "repeated_bool": {"mode": "repeated", "output_type": dtypes.bool},
                     "repeated_int": {"mode": "repeated", "output_type": dtypes.int32},
                     "repeated_long": {"mode": "repeated", "output_type": dtypes.int64},
-                    "repeated_float": {"mode": "repeated", "output_type": dtypes.float32},
-                    "repeated_double": {"mode": "repeated", "output_type": dtypes.float64},
-                    "repeated_string": {"mode": "repeated", "output_type": dtypes.string},
+                    "repeated_float": {
+                        "mode": "repeated",
+                        "output_type": dtypes.float32,
+                    },
+                    "repeated_double": {
+                        "mode": "repeated",
+                        "output_type": dtypes.float64,
+                    },
+                    "repeated_string": {
+                        "mode": "repeated",
+                        "output_type": dtypes.string,
+                    },
                 },
                 requested_streams=2,
             )
@@ -447,17 +456,19 @@ class BigqueryOpsTest(test.TestCase):
     def test_read_rows_nonrepeated_only(self):
         """Test for reading rows with non-repeated fields only, then selected_fields and output_types are list (backward compatible)."""
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
-        read_session = self._get_read_session(client,nonrepeated_only=True)
+        read_session = self._get_read_session(client, nonrepeated_only=True)
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
         dataset1 = read_session.read_rows(streams_list[0])
         itr1 = iter(dataset1)
         self.assertEqual(
-            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[0]), self._normalize_dictionary(itr1.get_next())
+            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[0]),
+            self._normalize_dictionary(itr1.get_next()),
         )
         self.assertEqual(
-            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[1]), self._normalize_dictionary(itr1.get_next())
+            self._get_nonrepeated_only_fields(self.STREAM_1_ROWS[1]),
+            self._normalize_dictionary(itr1.get_next()),
         )
         with self.assertRaises(errors.OutOfRangeError):
             itr1.get_next()
@@ -465,10 +476,12 @@ class BigqueryOpsTest(test.TestCase):
         dataset2 = read_session.read_rows(streams_list[1])
         itr2 = iter(dataset2)
         self.assertEqual(
-            self._get_nonrepeated_only_fields(self.STREAM_2_ROWS[0]), self._normalize_dictionary(itr2.get_next())
+            self._get_nonrepeated_only_fields(self.STREAM_2_ROWS[0]),
+            self._normalize_dictionary(itr2.get_next()),
         )
         self.assertEqual(
-            self._get_nonrepeated_only_fields(self.DEFAULT_VALUES), self._normalize_dictionary(itr2.get_next())
+            self._get_nonrepeated_only_fields(self.DEFAULT_VALUES),
+            self._normalize_dictionary(itr2.get_next()),
         )
         with self.assertRaises(errors.OutOfRangeError):
             itr2.get_next()
