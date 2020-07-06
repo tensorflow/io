@@ -142,7 +142,7 @@ work that Tensor with dataset.batch, then you can use code like
 dataset = read_session.parallel_read_rows()
 def sparse_dataset_map(features, sparse_column_names):
   """
-  Map sparse repeated columns to tf.SparseTensor.
+  Map repeated columns to tf.SparseTensor.
   This matches how VarLenFeature is decoded from tf.Example datasets.
   """
   for col_name in sparse_column_names:

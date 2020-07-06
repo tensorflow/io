@@ -66,7 +66,6 @@ class BigQueryClient:
         row_restriction="",
         requested_streams=1,
         data_format: DataFormat = DataFormat.AVRO,
-        selected_fields_repeated=None,
     ):
         """Opens a session and returns a `BigQueryReadSession` object.
 
