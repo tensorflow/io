@@ -1,3 +1,24 @@
+# Release 0.14.0
+
+## Major Features
+* Add `decode_avif` for AVIF image format support.
+* Add `decode_jp3` for JPEG2000 image format support.
+* Add `JPEG compression support for decoding TIFF images.
+* Add audio spectrogram transform support.
+* Add operations to trim/split/remix audio signals.
+* Add Fade in/out audio augmentation support.
+* Add frequency/time masking audio augmentation support.
+* Add repeated field support in BigQuery API.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Cheng Ren, Dio Gado, Ruhua Jiang, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.13.0
 
 ## Major Features
