@@ -49,6 +49,14 @@ class BigQueryClient:
         AVRO = "AVRO"
         ARROW = "ARROW"
 
+    class FieldMode(enum.Enum):
+        """BigQuery column mode.
+        """
+
+        NULLABLE = "NULLABLE"
+        REQUIRED = "REQUIRED"
+        REPEATED = "REPEATED"
+
     def __init__(self):
         """Creates a BigQueryClient to start BigQuery read sessions.
 
@@ -147,13 +155,15 @@ class BigQueryClient:
             output_types = []
             for field in selected_fields:
                 _selected_fields.append(field)
-                mode = selected_fields[field].get("mode", "nullable")
-                if mode == "repeated":
+                mode = selected_fields[field].get("mode", self.FieldMode.NULLABLE)
+                if mode == self.FieldMode.REPEATED:
                     selected_fields_repeated.append(True)
-                elif mode == "nullable" or mode == "required":
+                elif mode == self.FieldMode.NULLABLE or mode == self.FieldMode.REQUIRED:
                     selected_fields_repeated.append(False)
                 else:
-                    raise ValueError("mode needs be nullable, required or repeated")
+                    raise ValueError(
+                        "mode needs be BigQueryClient.FieldMode.NULLABLE, FieldMode.REQUIRED or FieldMode.REPEATED"
+                    )
                 output_types.append(
                     selected_fields[field].get("output_type", dtypes.string)
                 )

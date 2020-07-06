@@ -29,6 +29,7 @@ from tensorflow.python.framework import ops  # pylint: disable=wrong-import-orde
 from tensorflow import test  # pylint: disable=wrong-import-order
 from tensorflow_io.bigquery import (
     BigQueryTestClient,
+    BigQueryClient,
 )  # pylint: disable=wrong-import-order
 
 import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc  # pylint: disable=wrong-import-order
@@ -366,19 +367,28 @@ class BigqueryOpsTest(test.TestCase):
                     "long": {"output_type": dtypes.int64},
                     "float": {"output_type": dtypes.float32},
                     "double": {"output_type": dtypes.float64},
-                    "repeated_bool": {"mode": "repeated", "output_type": dtypes.bool},
-                    "repeated_int": {"mode": "repeated", "output_type": dtypes.int32},
-                    "repeated_long": {"mode": "repeated", "output_type": dtypes.int64},
+                    "repeated_bool": {
+                        "mode": BigQueryClient.FieldMode.REPEATED,
+                        "output_type": dtypes.bool,
+                    },
+                    "repeated_int": {
+                        "mode": BigQueryClient.FieldMode.REPEATED,
+                        "output_type": dtypes.int32,
+                    },
+                    "repeated_long": {
+                        "mode": BigQueryClient.FieldMode.REPEATED,
+                        "output_type": dtypes.int64,
+                    },
                     "repeated_float": {
-                        "mode": "repeated",
+                        "mode": BigQueryClient.FieldMode.REPEATED,
                         "output_type": dtypes.float32,
                     },
                     "repeated_double": {
-                        "mode": "repeated",
+                        "mode": BigQueryClient.FieldMode.REPEATED,
                         "output_type": dtypes.float64,
                     },
                     "repeated_string": {
-                        "mode": "repeated",
+                        "mode": BigQueryClient.FieldMode.REPEATED,
                         "output_type": dtypes.string,
                     },
                 },

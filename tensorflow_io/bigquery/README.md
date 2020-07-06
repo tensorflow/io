@@ -89,15 +89,17 @@ It also supports reading repeated mode BigQuery column (each field contains arra
 form like
 
 ```
-        { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
-          "field_b_name": {"mode": "nullable", output_type: dtypes.string},
+        { "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.int64},
+          "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, output_type: dtypes.string},
           ...
-          "field_x_name": {"mode": "repeated", output_type: dtypes.string}
+          "field_x_name": {"mode": BigQueryClient.FieldMode.REQUIRED, output_type: dtypes.string}
         }
 
 ```
-"mode" is BigQuery column attribute concept, it can be 'repeated', 'nullable' or 'required'.The output field order is unrelated to the order of fields in
-selected_fields. If "mode" not specified, defaults to "nullable". If "output_type" not specified, DT_STRING is implied for all Tensors.
+"mode" is BigQuery column attribute concept, it can be 'repeated', 'nullable' or 'required' (enum BigQueryClient.FieldMode.REPEATED, NULLABLE, REQUIRED).The output field order is unrelated to the order of fields in
+selected_fields. If "mode" not specified, defaults to "nullable". If "output_type" not specified, DT_STRING is implied for all Tensors. 
+
+'repeated' is currently only supported when data_format = BigQueryClient.DataFormat.AVRO (which is default).
 
 ```
 from tensorflow.python.framework import ops
@@ -117,9 +119,10 @@ def main():
       "projects/" + GCP_PROJECT_ID,
       DATASET_GCP_PROJECT_ID, TABLE_ID, DATASET_ID,
       selected_fiels={
-          "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
-          "field_b_name": {"mode": "nullable", output_type: dtypes.string},
-          "field_c_name": {"mode": "repeated", output_type: dtypes.string}
+          "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.int64},
+          "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, output_type: dtypes.string},
+          "field_c_name": {"mode": BigQueryClient.FieldMode.REQUIRED, output_type: dtypes.string}
+          "field_d_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.string}
         }
       requested_streams=2,
       row_restriction="num_characters > 1000",
@@ -151,7 +154,7 @@ def sparse_dataset_map(features, sparse_column_names):
     features[col_name] = tf.SparseTensor(indices=indices,
                                          values=features[col_name],
                                          dense_shape=[l])
-dataset_can_be_batched = dataset.map(lambda features: sparse_dataset_map(features, ["field_a_name", "field_b_name", "field_c_name"]))
+dataset_can_be_batched = dataset.map(lambda features: sparse_dataset_map(features, ["field_a_name", "field_d_name"]))
 
 ```
 to map that that as a SparseTensor first, then dataset.batch can work. The behavior of returning this kind of SparseTensor is exactly aligned with how to decode tf.example tf.io.VarLenFeature,
