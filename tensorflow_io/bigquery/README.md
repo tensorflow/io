@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
 ```
 
-It also supports reading repeated mode BigQuery column (each field contains array of values). In this case, selected_fields needs be a dictionary in a
+It also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a
 form like
 
 ```
