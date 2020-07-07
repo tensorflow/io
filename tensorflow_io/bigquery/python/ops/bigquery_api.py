@@ -49,6 +49,14 @@ class BigQueryClient:
         AVRO = "AVRO"
         ARROW = "ARROW"
 
+    class FieldMode(enum.Enum):
+        """BigQuery column mode.
+        """
+
+        NULLABLE = "NULLABLE"
+        REQUIRED = "REQUIRED"
+        REPEATED = "REPEATED"
+
     def __init__(self):
         """Creates a BigQueryClient to start BigQuery read sessions.
 
@@ -76,11 +84,22 @@ class BigQueryClient:
       project_id: The assigned project ID of the project.
       table_id: The ID of the table in the dataset.
       dataset_id: The ID of the dataset in the project.
-      selected_fields: Names of the fields in the table that should be read.
+      selected_fields: This can be a list or a dict. If a list, it has
+        names of the fields in the table that should be read. If a dict,
+        it should be in a form like, i.e:
+        { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
+          "field_b_name": {"mode": "nullable", output_type: dtypes.string},
+          ...
+          "field_x_name": {"mode": "repeated", output_type: dtypes.string}
+        }
+        "mode" is BigQuery column attribute, it can be 'repeated', 'nullable' or 'required'.
         The output field order is unrelated to the order of fields in
-        selected_fields.
+        selected_fields. If "mode" not specified, defaults to "nullable".
+        If "output_type" not specified, DT_STRING is implied for all Tensors.
       output_types: Types for the output tensor in the same sequence as
-        selected_fields.
+        selected_fields. This is only needed when selected_fields is a list,
+        if selected_fields is a dictionary, this output_types information is
+        included in selected_fields as described above.
         If not specified, DT_STRING is implied for all Tensors.
       row_restriction: Optional. SQL text filtering statement, similar to a
         WHERE clause in a query.
@@ -115,21 +134,42 @@ class BigQueryClient:
         if not dataset_id:
             raise ValueError("`dataset_id` must be a set")
 
-        if not isinstance(selected_fields, list):
-            raise ValueError("`selected_fields` must be a list")
-        if not selected_fields:
-            raise ValueError("`selected_fields` must be a set")
+        if isinstance(selected_fields, list):
+            if not isinstance(output_types, list):
+                raise ValueError(
+                    "`output_types` must be a list if selected_fields is list"
+                )
+            if output_types and len(output_types) != len(selected_fields):
+                raise ValueError(
+                    "lengths of `output_types` must be a same as the "
+                    "length of `selected_fields`"
+                )
+            if not output_types:
+                output_types = [dtypes.string] * len(selected_fields)
+            # Repeated field is not supported if selected_fields is list
+            selected_fields_repeated = [False] * len(selected_fields)
 
-        if not isinstance(output_types, list):
-            raise ValueError("`output_types` must be a list")
-        if output_types and len(output_types) != len(selected_fields):
-            raise ValueError(
-                "lengths of `output_types` must be a same as the "
-                "length of `selected_fields`"
-            )
-
-        if not output_types:
-            output_types = [dtypes.string] * len(selected_fields)
+        elif isinstance(selected_fields, dict):
+            _selected_fields = []
+            selected_fields_repeated = []
+            output_types = []
+            for field in selected_fields:
+                _selected_fields.append(field)
+                mode = selected_fields[field].get("mode", self.FieldMode.NULLABLE)
+                if mode == self.FieldMode.REPEATED:
+                    selected_fields_repeated.append(True)
+                elif mode == self.FieldMode.NULLABLE or mode == self.FieldMode.REQUIRED:
+                    selected_fields_repeated.append(False)
+                else:
+                    raise ValueError(
+                        "mode needs be BigQueryClient.FieldMode.NULLABLE, FieldMode.REQUIRED or FieldMode.REPEATED"
+                    )
+                output_types.append(
+                    selected_fields[field].get("output_type", dtypes.string)
+                )
+            selected_fields = _selected_fields
+        else:
+            raise ValueError("`selected_fields` must be a list or dict.")
 
         (streams, schema) = core_ops.io_big_query_read_session(
             client=self._client_resource,
@@ -149,6 +189,7 @@ class BigQueryClient:
             table_id,
             dataset_id,
             selected_fields,
+            selected_fields_repeated,
             output_types,
             row_restriction,
             requested_streams,
@@ -169,6 +210,7 @@ class BigQueryReadSession:
         table_id,
         dataset_id,
         selected_fields,
+        selected_fields_repeated,
         output_types,
         row_restriction,
         requested_streams,
@@ -182,6 +224,7 @@ class BigQueryReadSession:
         self._table_id = table_id
         self._dataset_id = dataset_id
         self._selected_fields = selected_fields
+        self._selected_fields_repeated = selected_fields_repeated
         self._output_types = output_types
         self._row_restriction = row_restriction
         self._requested_streams = requested_streams
@@ -214,6 +257,7 @@ class BigQueryReadSession:
         return _BigQueryDataset(
             self._client_resource,
             self._selected_fields,
+            self._selected_fields_repeated,
             self._output_types,
             self._schema,
             self._data_format,
@@ -289,6 +333,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         self,
         client_resource,
         selected_fields,
+        selected_fields_repeated,
         output_types,
         schema,
         data_format,
@@ -298,16 +343,27 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
-            zip(selected_fields, output_types), key=itemgetter(0)
+            zip(selected_fields, selected_fields_repeated, output_types),
+            key=itemgetter(0),
         )
-        selected_fields, output_types = list(zip(*sorted_fields_with_types))
+        selected_fields, selected_fields_repeated, output_types = list(
+            zip(*sorted_fields_with_types)
+        )
         selected_fields = list(selected_fields)
+        selected_fields_repeated = list(selected_fields_repeated)
         output_types = list(output_types)
+
+        tensor_shapes = list(
+            [None,] if repeated else [] for repeated in selected_fields_repeated
+        )
 
         self._element_spec = collections.OrderedDict(
             zip(
                 selected_fields,
-                (tensor_spec.TensorSpec([], dtype) for dtype in output_types),
+                (
+                    tensor_spec.TensorSpec(shape, dtype)
+                    for (shape, dtype) in zip(tensor_shapes, output_types)
+                ),
             )
         )
 
