@@ -540,13 +540,7 @@ def _process_raw_parameters(
 
         # ************* START difference: This part is different from the originally copied code ***************
         if default_value is None:
-            if dense_types[i] == tf.string:
-                default_value = ""
-            elif dense_types[i] == tf.bool:
-                default_value = False
-            else:  # Should be numeric type
-                default_value = 0
-            default_value = tf.convert_to_tensor(default_value, dtype=dense_types[i])
+            default_value = tf.constant([], dtype=dense_types[i])
         elif not isinstance(default_value, tf.Tensor):
             key_name = "key_" + re.sub("[^A-Za-z0-9_.\\-/]", "_", key)
             default_value = tf.convert_to_tensor(
