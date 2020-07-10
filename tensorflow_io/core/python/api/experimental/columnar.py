@@ -26,10 +26,6 @@ from tensorflow_io.core.python.experimental.parse_avro_ops import (  # pylint: d
     parse_avro,
 )
 
-from tensorflow_io.core.python.experimental.avro_dataset_ops import (  # pylint: disable=unused-import
-    make_avro_dataset,
-)
-
 from tensorflow_io.core.python.experimental.varlen_feature_with_rank import (  # pylint: disable=unused-import
     VarLenFeatureWithRank,
 )
