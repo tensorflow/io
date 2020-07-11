@@ -28,9 +28,6 @@ import re
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from tensorflow_io.core.python.experimental.parse_avro_ops import (
-    construct_tensors_for_composite_features,
-)
 
 # Note: I've hidden the dataset because it does not apply the mapping for
 # sparse tensors
