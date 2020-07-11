@@ -61,7 +61,7 @@ Status AvroParserTree::ParseValues(
       return errors::InvalidArgument("Error reading value: ", e.what());
     }
     if (has_value) {
-      TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum,  defaults));
+      TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum, defaults));
       values_read++;
     } else {
       break;
@@ -79,7 +79,8 @@ Status AvroParserTree::ParseValues(
 Status AvroParserTree::ParseValues(
     std::map<string, ValueStoreUniquePtr>* key_to_value,
     const std::function<bool(avro::GenericDatum&)> read_value,
-    const avro::ValidSchema& reader_schema, const std::map<string, Tensor>& defaults) const {
+    const avro::ValidSchema& reader_schema,
+    const std::map<string, Tensor>& defaults) const {
   // new assignment of all buffers
   TF_RETURN_IF_ERROR(InitializeValueBuffers(key_to_value));
 

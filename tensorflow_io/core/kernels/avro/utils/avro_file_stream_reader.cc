@@ -65,8 +65,6 @@ class AvroDataInputStream : public avro::InputStream {
 
 }  // namespace
 
-
-
 namespace tensorflow {
 namespace data {
 
@@ -105,11 +103,11 @@ Status AvroFileStreamReader::OnWorkStartup() {
 }
 
 std::map<string, Tensor> CreateTensorDefaults(const AvroParseConfig& config) {
-    std::map<string, Tensor> defaults;
-    for (const AvroParseConfig::Dense& dense : config.dense) {
-        defaults[dense.feature_name] = dense.default_value;
-    }
-    return defaults;
+  std::map<string, Tensor> defaults;
+  for (const AvroParseConfig::Dense& dense : config.dense) {
+    defaults[dense.feature_name] = dense.default_value;
+  }
+  return defaults;
 }
 
 Status AvroFileStreamReader::Read(AvroResult* result) {
