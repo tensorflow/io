@@ -31,7 +31,7 @@ from avro.schema import Parse as parse
 import tensorflow_io as tfio
 
 if sys.platform == "darwin":
-   pytest.skip("TODO: skip macOS", allow_module_level=True)
+    pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
 class AvroRecordsToFile:
