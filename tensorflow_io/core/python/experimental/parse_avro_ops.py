@@ -32,11 +32,14 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     Parses `avro` records into a `dict` of tensors.
 
     :param serialized: The batched, serialized string tensors.
+
     :param reader_schema: The reader schema. Note, this MUST match the reader
                           schema from the avro_record_dataset. Otherwise,
                           this op will segfault!
+
     :param features: A map of feature names mapped to feature
                      information.
+
     :param avro_names: (Optional.) may contain descriptive names
                        for the corresponding serialized avro parts. These may
                        be useful for debugging purposes, but they have no
