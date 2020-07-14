@@ -898,125 +898,151 @@ class AvroDatasetTest(AvroDatasetTestBase):
             batch_size=2,
         )
 
-    # TODO(fraudies): Need to rethink on how we should solve union handling
-    # Currently, this changes the batch size dynamically which I disallowed
-    # It may also cause problems when TF assumes a fixed batch size
-    # def test_null_union_primitive_type(self):
-    #    """test_null_union_primitive_type"""
-    #     reader_schema = """{
-    #          "type":"record",
-    #          "name":"data_row",
-    #          "fields":[
-    #             {
-    #                "name":"multi_type",
-    #                "type":[
-    #                   "null",
-    #                   "boolean",
-    #                   "int",
-    #                   "long",
-    #                   "float",
-    #                   "double",
-    #                   "string"
-    #                ]
-    #             }
-    #          ]
-    #       }
-    #       """
-    #     record_data = [
-    #         {
-    #             "multi_type": 1.0
-    #         },
-    #         {
-    #             "multi_type": 2.0
-    #         },
-    #         {
-    #             "multi_type": 3.0
-    #         },
-    #         {
-    #             "multi_type": True  # converted by py avro implementation into 1
-    #         },
-    #         {
-    #             "multi_type": "abc"
-    #         },
-    #         {
-    #             "multi_type": None
-    #         }
-    #     ]
-    #     features = {
-    #         "multi_type:boolean": tf.io.FixedLenFeature([], tf.dtypes.bool),
-    #         "multi_type:int": tf.io.FixedLenFeature([], tf.dtypes.int32),
-    #         "multi_type:long": tf.io.FixedLenFeature([], tf.dtypes.int64),
-    #         "multi_type:float": tf.io.FixedLenFeature([], tf.dtypes.float32),
-    #         "multi_type:double": tf.io.FixedLenFeature([], tf.dtypes.float64),
-    #         "multi_type:string": tf.io.FixedLenFeature([], tf.dtypes.string)
-    #     }
-    #     expected_data = [
-    #         {
-    #             "multi_type:boolean":
-    #                 tf.convert_to_tensor([]),
-    #             "multi_type:int":
-    #                 tf.convert_to_tensor([]),
-    #             "multi_type:long":
-    #                 tf.convert_to_tensor([]),
-    #             "multi_type:float":
-    #                 tf.convert_to_tensor([]),
-    #             "multi_type:double":
-    #                 tf.convert_to_tensor([1.0, 2.0, 3.0, 1.0]),
-    #             "multi_type:string":
-    #                 tf.convert_to_tensor([tf.compat.as_bytes("abc")])
-    #         }
-    #     ]
-    #     self._test_pass_dataset(reader_schema=reader_schema,
-    #                             record_data=record_data,
-    #                             expected_data=expected_data,
-    #                             features=features,
-    #                             batch_size=6)
+    def test_union_with_null(self):
+        reader_schema = """{
+             "type": "record",
+             "name": "data_row",
+             "fields": [
+                {
+                   "name": "possible_float_type",
+                   "type": [
+                      "null",
+                      "float"
+                   ]
+                }
+             ]
+          }
+          """
+        record_data = [
+            {"possible_float_type": 1.0},
+            {"possible_float_type": None},
+            {"possible_float_type": -1.0},
+        ]
+        features = {
+            "possible_float_type:float": tf.io.FixedLenFeature(
+                [], tf.dtypes.float32, default_value=0.0
+            )
+        }
+        # If we have a default, then we use that in the place of the None
+        expected_data = [
+            {"possible_float_type:float": tf.convert_to_tensor([1.0, 0.0, -1.0])}
+        ]
+        self._test_pass_dataset(
+            reader_schema=reader_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            batch_size=3,
+        )
 
-    # TODO(fraudies): Provide proper handling of default value aka use default when null
-    # If no default is provided fail there
-    # def test_union_with_null(self):
-    #    """test_union_with_null"""
-    #     reader_schema = """{
-    #          "type": "record",
-    #          "name": "data_row",
-    #          "fields": [
-    #             {
-    #                "name": "possible_float_type",
-    #                "type": [
-    #                   "null",
-    #                   "float"
-    #                ]
-    #             }
-    #          ]
-    #       }
-    #       """
-    #     record_data = [
-    #         {
-    #             "possible_float_type": 1.0
-    #         },
-    #         {
-    #             "possible_float_type": None
-    #         },
-    #         {
-    #             "possible_float_type": -1.0
-    #         }
-    #     ]
-    #     features = {
-    #         "possible_float_type:float": tf.io.FixedLenFeature([],
-    #                                                                  tf.dtypes.float32)
-    #     }
-    #     # TODO(fraudies): If we have a default, then we use that in the place of
-    #     #  the None
-    #     expected_data = [
-    #         {
-    #             "possible_float_type:float": tf.convert_to_tensor([1.0, -1.0])
-    #         }
-    #     ]
-    #     self._test_pass_dataset(reader_schema=reader_schema,
-    #                             record_data=record_data,
-    #                             expected_data=expected_data,
-    #                             features=features,
-    #                             batch_size=3)
+    def test_null_union_primitive_type(self):
+        reader_schema = """{
+             "type":"record",
+             "name":"data_row",
+             "fields":[
+                {
+                   "name":"multi_type",
+                   "type":[
+                      "null",
+                      "boolean",
+                      "int",
+                      "long",
+                      "float",
+                      "double",
+                      "string"
+                   ]
+                }
+             ]
+          }
+          """
+        record_data = [
+            {"multi_type": None},
+            {"multi_type": True},  # written as double(1.0)
+            {"multi_type": int(1)},  # written as double(1.0)
+            {"multi_type": 2},  # written as double(2.0)
+            {"multi_type": float(3.0)},  # written as double(3.0)
+            {"multi_type": 4.0},  # written as double (4.0)
+            {"multi_type": "abc"},
+        ]
+        features = {
+            "multi_type:boolean": tf.io.FixedLenFeature(
+                [], tf.dtypes.bool, default_value=False
+            ),
+            "multi_type:int": tf.io.FixedLenFeature(
+                [], tf.dtypes.int32, default_value=int(0)
+            ),
+            "multi_type:long": tf.io.FixedLenFeature(
+                [], tf.dtypes.int64, default_value=0
+            ),
+            "multi_type:float": tf.io.FixedLenFeature(
+                [], tf.dtypes.float32, default_value=float(0.0)
+            ),
+            "multi_type:double": tf.io.FixedLenFeature(
+                [], tf.dtypes.float64, default_value=0.0
+            ),
+            "multi_type:string": tf.io.FixedLenFeature(
+                [], tf.dtypes.string, default_value=""
+            ),
+        }
+        expected_data = [
+            {
+                "multi_type:boolean": tf.convert_to_tensor(
+                    [False, False, False, False, False, False, False],
+                    dtype=tf.dtypes.bool,
+                ),
+                "multi_type:int": tf.convert_to_tensor(
+                    [0, 0, 0, 0, 0, 0, 0], dtype=tf.dtypes.int32
+                ),
+                "multi_type:long": tf.convert_to_tensor(
+                    [0, 0, 0, 0, 0, 0, 0], dtype=tf.dtypes.int64
+                ),
+                "multi_type:float": tf.convert_to_tensor(
+                    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=tf.dtypes.float32
+                ),
+                "multi_type:double": tf.convert_to_tensor(
+                    [0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 0.0], dtype=tf.dtypes.float64
+                ),
+                "multi_type:string": tf.convert_to_tensor(
+                    [
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes(""),
+                        tf.compat.as_bytes("abc"),
+                    ]
+                ),
+            }
+        ]
+        self._test_pass_dataset(
+            reader_schema=reader_schema,
+            record_data=record_data,
+            expected_data=expected_data,
+            features=features,
+            batch_size=7,
+        )
+
+    def test_union_without_default(self):
+        reader_schema = """{
+             "type": "record",
+             "name": "data_row",
+             "fields": [
+                {
+                   "name": "possible_float_type",
+                   "type": [
+                      "null",
+                      "float"
+                   ]
+                }
+             ]
+          }
+          """
+        record_data = [{"possible_float_type": None}]
+        features = {
+            "possible_float_type:float": tf.io.FixedLenFeature([], tf.dtypes.float32)
+        }
+        self._test_fail_dataset(reader_schema, record_data, features, 1)
 
     @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_fixed_length_list(self):

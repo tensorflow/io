@@ -102,14 +102,23 @@ Status AvroFileStreamReader::OnWorkStartup() {
   return Status::OK();
 }
 
+std::map<string, Tensor> CreateTensorDefaults(const AvroParseConfig& config) {
+  std::map<string, Tensor> defaults;
+  for (const AvroParseConfig::Dense& dense : config.dense) {
+    defaults[dense.feature_name] = dense.default_value;
+  }
+  return defaults;
+}
+
 Status AvroFileStreamReader::Read(AvroResult* result) {
   std::map<string, ValueStoreUniquePtr> key_to_value;
+  const std::map<string, Tensor>& defaults = CreateTensorDefaults(config_);
 
   auto read_value = [&](avro::GenericDatum& d) { return reader_->read(d); };
   uint64 batch_size = 0;
   TF_RETURN_IF_ERROR(
       avro_parser_tree_.ParseValues(&key_to_value, read_value, reader_schema_,
-                                    config_.batch_size, &batch_size));
+                                    config_.batch_size, &batch_size, defaults));
   VLOG(5) << "Read and parsed " << batch_size << " elements";
 
   // Drop reminder if batch size is not the requested batch size

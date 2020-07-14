@@ -29,7 +29,7 @@ Status AvroParserTree::ParseValues(
     std::map<string, ValueStoreUniquePtr>* key_to_value,
     const std::function<bool(avro::GenericDatum&)> read_value,
     const avro::ValidSchema& reader_schema, uint64 values_to_parse,
-    uint64* values_parsed) const {
+    uint64* values_parsed, const std::map<string, Tensor>& defaults) const {
   // See if we have any data in this batch
   avro::GenericDatum datum(reader_schema);
   bool has_value = false;
@@ -51,7 +51,7 @@ Status AvroParserTree::ParseValues(
   TF_RETURN_IF_ERROR(AddBeginMarks(key_to_value));
 
   // Parse first value
-  TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+  TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum, defaults));
   uint64 values_read = 1;
   // Increment before compare because we already read one value
   while (values_read < values_to_parse) {
@@ -61,7 +61,7 @@ Status AvroParserTree::ParseValues(
       return errors::InvalidArgument("Error reading value: ", e.what());
     }
     if (has_value) {
-      TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+      TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum, defaults));
       values_read++;
     } else {
       break;
@@ -79,7 +79,8 @@ Status AvroParserTree::ParseValues(
 Status AvroParserTree::ParseValues(
     std::map<string, ValueStoreUniquePtr>* key_to_value,
     const std::function<bool(avro::GenericDatum&)> read_value,
-    const avro::ValidSchema& reader_schema) const {
+    const avro::ValidSchema& reader_schema,
+    const std::map<string, Tensor>& defaults) const {
   // new assignment of all buffers
   TF_RETURN_IF_ERROR(InitializeValueBuffers(key_to_value));
 
@@ -91,7 +92,7 @@ Status AvroParserTree::ParseValues(
   bool has_value = false;
 
   while ((has_value = read_value(datum))) {
-    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum));
+    TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum, defaults));
   }
 
   // add end marks to all buffers for batch
