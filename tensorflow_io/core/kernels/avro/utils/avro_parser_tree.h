@@ -68,11 +68,13 @@ class AvroParserTree {
   Status ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
                      const std::function<bool(avro::GenericDatum&)> read_value,
                      const avro::ValidSchema& reader_schema,
-                     uint64 values_to_parse, uint64* values_parsed) const;
+                     uint64 values_to_parse, uint64* values_parsed,
+                     const std::map<string, Tensor>& defaults) const;
 
   Status ParseValues(std::map<string, ValueStoreUniquePtr>* key_to_value,
                      const std::function<bool(avro::GenericDatum&)> read_value,
-                     const avro::ValidSchema& reader_schema) const;
+                     const avro::ValidSchema& reader_schema,
+                     const std::map<string, Tensor>& defaults) const;
 
   // Returns the root of the parser tree -- exposed for testing
   inline AvroParserSharedPtr getRoot() const { return root_; }

@@ -68,45 +68,64 @@ string AvroParser::LevelToString(size_t level) const {
   return ss.str();
 }
 
-string AvroParser::SupportedTypesToString(char separator) const {
-  std::stringstream ss;
-  for (avro::Type t : GetSupportedTypes()) {
-    ss << toString(t) << separator << " ";
+// Null will only resolve if
+// -- the null appears in a union with a primitive type -- by construction
+// (otherwise no default)
+// -- the user supplied a scalar default tensor
+// -- the user supplied a type that matches the primitive type
+// For sparse tensors will null entries in their values or indices
+// this will fail which is the correct behavior.
+Status CheckValidDefault(const string& key,
+                         const std::map<string, Tensor>& defaults,
+                         DataType expected) {
+  if (defaults.find(key) == defaults.end()) {
+    return errors::InvalidArgument("For key '", key,
+                                   "' cannot find a default value.");
   }
-  const string supported_types = ss.str();
-  // strip off the last 2 chars from string
-  return supported_types.substr(0, supported_types.size() - 2);
-}
-
-// ------------------------------------------------------------
-// Concrete implementations of avro value parsers
-// ------------------------------------------------------------
-/*
-NullValueParser::NullValueParser(const string& key) : AvroParser(key) { }
-Status NullValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                          const avro_value_t& value) const {
-  // Do nothing, means default will be used for dense tensors and for sparse
-  // tensors no entry is created
+  const Tensor& default_value = defaults.at(key);
+  if (!TensorShapeUtils::IsScalar(default_value.shape())) {
+    return errors::InvalidArgument(
+        "For key '", key,
+        "' expected scalar default but got tensor with shape ",
+        default_value.shape());
+  }
+  if (expected != default_value.dtype()) {
+    return errors::InvalidArgument("For key '", key, "' expected data type ",
+                                   expected, "' but got data type '",
+                                   default_value.dtype(), "'.");
+  }
   return Status::OK();
 }
-string NullValueParser::ToString(size_t level) const {
-  return LevelToString(level) + "|---NullValue(" + key_ + ")\n";
+
+// This implementation assumes there is at least one expected type
+string TypeErrorMessage(const std::set<avro::Type>& expected,
+                        avro::Type actual) {
+  string message = "";
+  for (avro::Type t : expected) {
+    message += ", '" + toString(t) + "'";
+  }
+  // Remove 2 for leading comma and blank -- here we assume there is at least
+  // one
+  return "Expected types: " + message.substr(2) + " but got type " +
+         toString(actual) + ".";
 }
-*/
 
 BoolValueParser::BoolValueParser(const string& key) : AvroParser(key) {}
 Status BoolValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                              const avro::GenericDatum& datum) const {
-  if (datum.type() != avro::AVRO_BOOL) {
-    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_BOOL),
-                                   "' but got type '", toString(datum.type()),
-                                   "'.");
+                              const avro::GenericDatum& datum,
+                              const std::map<string, Tensor>& defaults) const {
+  bool value;
+  if (datum.type() == avro::AVRO_BOOL) {
+    value = datum.value<bool>();
+  } else if (datum.type() == avro::AVRO_NULL) {
+    TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_BOOL));
+    value = defaults.at(key_).flat<bool>()(0);
+  } else {
+    return errors::InvalidArgument(
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
-  // Assumes the key exists
-  (*reinterpret_cast<BoolValueBuffer*>((*values)[key_].get()))
-      .Add(datum.value<bool>());
-
+  (*reinterpret_cast<BoolValueBuffer*>((*values).at(key_).get())).Add(value);
   return Status::OK();
 }
 string BoolValueParser::ToString(size_t level) const {
@@ -115,76 +134,98 @@ string BoolValueParser::ToString(size_t level) const {
 
 LongValueParser::LongValueParser(const string& key) : AvroParser(key) {}
 Status LongValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                              const avro::GenericDatum& datum) const {
-  if (datum.type() != avro::AVRO_LONG) {
-    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_LONG),
-                                   "' but got type '", toString(datum.type()),
-                                   "'.");
+                              const avro::GenericDatum& datum,
+                              const std::map<string, Tensor>& defaults) const {
+  long value;
+  if (datum.type() == avro::AVRO_LONG) {
+    value = datum.value<long>();
+  } else if (datum.type() == avro::AVRO_NULL) {
+    TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_INT64));
+    value = defaults.at(key_).flat<int64>()(0);
+  } else {
+    return errors::InvalidArgument(
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<LongValueBuffer*>((*values)[key_].get()))
-      .Add(datum.value<long>());
+  (*reinterpret_cast<LongValueBuffer*>((*values).at(key_).get())).Add(value);
 
   return Status::OK();
 }
+
 string LongValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---LongValue(" + key_ + ")\n";
 }
 
 IntValueParser::IntValueParser(const string& key) : AvroParser(key) {}
 Status IntValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                             const avro::GenericDatum& datum) const {
-  if (datum.type() != avro::AVRO_INT) {
-    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_INT),
-                                   "' but got type '", toString(datum.type()),
-                                   "'.");
+                             const avro::GenericDatum& datum,
+                             const std::map<string, Tensor>& defaults) const {
+  int value;
+  if (datum.type() == avro::AVRO_INT) {
+    value = datum.value<int>();
+  } else if (datum.type() == avro::AVRO_NULL) {
+    TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_INT32));
+    value = defaults.at(key_).flat<int32>()(0);
+  } else {
+    return errors::InvalidArgument(
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
-
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<IntValueBuffer*>((*values)[key_].get()))
-      .Add(datum.value<int>());
+  (*reinterpret_cast<IntValueBuffer*>((*values).at(key_).get())).Add(value);
 
   return Status::OK();
 }
+
 string IntValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---IntValue(" + key_ + ")\n";
 }
 
 DoubleValueParser::DoubleValueParser(const string& key) : AvroParser(key) {}
-Status DoubleValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                                const avro::GenericDatum& datum) const {
-  if (datum.type() != avro::AVRO_DOUBLE) {
+Status DoubleValueParser::Parse(
+    std::map<string, ValueStoreUniquePtr>* values,
+    const avro::GenericDatum& datum,
+    const std::map<string, Tensor>& defaults) const {
+  double value;
+  if (datum.type() == avro::AVRO_DOUBLE) {
+    value = datum.value<double>();
+  } else if (datum.type() == avro::AVRO_NULL) {
+    TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_DOUBLE));
+    value = defaults.at(key_).flat<double>()(0);
+  } else {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_DOUBLE), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
-
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<DoubleValueBuffer*>((*values)[key_].get()))
-      .Add(datum.value<double>());
+  (*reinterpret_cast<DoubleValueBuffer*>((*values)[key_].get())).Add(value);
 
   return Status::OK();
 }
+
 string DoubleValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---DoubleValue(" + key_ + ")\n";
 }
 
 FloatValueParser::FloatValueParser(const string& key) : AvroParser(key) {}
 Status FloatValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                               const avro::GenericDatum& datum) const {
-  if (datum.type() != avro::AVRO_FLOAT) {
+                               const avro::GenericDatum& datum,
+                               const std::map<string, Tensor>& defaults) const {
+  float value;
+  if (datum.type() == avro::AVRO_FLOAT) {
+    value = datum.value<float>();
+  } else if (datum.type() == avro::AVRO_NULL) {
+    TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_FLOAT));
+    value = defaults.at(key_).flat<float>()(0);
+  } else {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_FLOAT), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
-
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<FloatValueBuffer*>((*values)[key_].get()))
-      .Add(datum.value<float>());
+  (*reinterpret_cast<FloatValueBuffer*>((*values)[key_].get())).Add(value);
 
   return Status::OK();
 }
+
 string FloatValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---FloatValue(" + key_ + ")\n";
 }
@@ -194,38 +235,41 @@ StringBytesEnumFixedValueParser::StringBytesEnumFixedValueParser(
     : AvroParser(key) {}
 Status StringBytesEnumFixedValueParser::Parse(
     std::map<string, ValueStoreUniquePtr>* values,
-    const avro::GenericDatum& datum) const {
-  string v;
+    const avro::GenericDatum& datum,
+    const std::map<string, Tensor>& defaults) const {
+  string value;
   switch (datum.type()) {
     case avro::AVRO_STRING:
-      v = datum.value<string>();
+      value = datum.value<string>();
       break;
     case avro::AVRO_BYTES: {
-      const std::vector<uint8_t>& value = datum.value<std::vector<uint8_t>>();
-      if (value.size() > 0) {
-        v.resize(value.size());
-        memcpy(&v[0], &value[0], value.size());
+      const std::vector<uint8_t>& v = datum.value<std::vector<uint8_t>>();
+      if (v.size() > 0) {
+        value.resize(v.size());
+        memcpy(&value[0], &v[0], v.size());
       }
     } break;
     case avro::AVRO_ENUM:
-      v = datum.value<avro::GenericEnum>().symbol();
+      value = datum.value<avro::GenericEnum>().symbol();
       break;
     case avro::AVRO_FIXED: {
-      const std::vector<uint8_t>& value =
-          datum.value<avro::GenericFixed>().value();
-      if (value.size() > 0) {
-        v.resize(value.size());
-        memcpy(&v[0], &value[0], value.size());
+      const std::vector<uint8_t>& v = datum.value<avro::GenericFixed>().value();
+      if (v.size() > 0) {
+        value.resize(v.size());
+        memcpy(&value[0], &v[0], v.size());
       }
     } break;
+    case avro::AVRO_NULL:
+      TF_RETURN_IF_ERROR(CheckValidDefault(key_, defaults, DT_STRING));
+      value = defaults.at(key_).flat<tstring>()(0);
+      break;
     default:
-      return errors::Internal("Expected one of these types ",
-                              SupportedTypesToString(','), " but got type '",
-                              datum.type(), "'.");
+      return errors::InvalidArgument(
+          TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
-
   // Assume the key exists and cast is possible
-  (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get())).AddByRef(v);
+  (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get()))
+      .AddByRef(value);
 
   return Status::OK();
 }
@@ -238,11 +282,11 @@ string StringBytesEnumFixedValueParser::ToString(size_t level) const {
 // ------------------------------------------------------------
 ArrayAllParser::ArrayAllParser() : AvroParser("") {}
 Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                             const avro::GenericDatum& datum) const {
+                             const avro::GenericDatum& datum,
+                             const std::map<string, Tensor>& defaults) const {
   if (datum.type() != avro::AVRO_ARRAY) {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_ARRAY), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   std::vector<avro::GenericDatum> data =
@@ -262,7 +306,7 @@ Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   for (const avro::GenericDatum& d : data) {
     // For all children
     for (const AvroParserSharedPtr& child : children) {
-      TF_RETURN_IF_ERROR((*child).Parse(values, d));
+      TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
     }
   }
 
@@ -284,11 +328,11 @@ string ArrayAllParser::ToString(size_t level) const {
 ArrayIndexParser::ArrayIndexParser(size_t index)
     : AvroParser(""), index_(index) {}
 Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                               const avro::GenericDatum& datum) const {
+                               const avro::GenericDatum& datum,
+                               const std::map<string, Tensor>& defaults) const {
   if (datum.type() != avro::AVRO_ARRAY) {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_ARRAY), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   // Check for valid index
@@ -307,22 +351,10 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   const std::vector<AvroParserSharedPtr>& final_descendents(
       GetFinalDescendents());
 
-  /*  // Add a begin mark to all value buffers under this array
-    for (const AvroParserSharedPtr& value_parser : final_descendents) {
-      // Assumes the key exists in the map
-      (*(*values)[(*value_parser).GetKey()]).BeginMark();
-    }*/
-
   // For all children same datum
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, d));
+    TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
   }
-
-  /*  // Add a finish mark to all value buffers under this array
-    for (const AvroParserSharedPtr& value_parser : final_descendents) {
-      // Assumes the key exists in the map
-      (*(*values)[(*value_parser).GetKey()]).FinishMark();
-    }*/
 
   return Status::OK();
 }
@@ -351,12 +383,13 @@ ArrayFilterParser::ArrayFilterType ArrayFilterParser::ToArrayFilterType(
   return kNoConstant;
 }
 
-Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                                const avro::GenericDatum& datum) const {
+Status ArrayFilterParser::Parse(
+    std::map<string, ValueStoreUniquePtr>* values,
+    const avro::GenericDatum& datum,
+    const std::map<string, Tensor>& defaults) const {
   if (datum.type() != avro::AVRO_ARRAY) {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_ARRAY), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   const std::vector<AvroParserSharedPtr>& final_descendents =
@@ -396,7 +429,7 @@ Status ArrayFilterParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
       const avro::GenericDatum& d = data[i_elements];
       // For all children
       for (const AvroParserSharedPtr& child : children) {
-        TF_RETURN_IF_ERROR((*child).Parse(values, d));
+        TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
       }
     }
   }
@@ -419,11 +452,11 @@ string ArrayFilterParser::ToString(size_t level) const {
 
 MapKeyParser::MapKeyParser(const string& key) : AvroParser(""), key_(key) {}
 Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                           const avro::GenericDatum& datum) const {
+                           const avro::GenericDatum& datum,
+                           const std::map<string, Tensor>& defaults) const {
   if (datum.type() != avro::AVRO_MAP) {
-    return errors::InvalidArgument("Expected type '", toString(avro::AVRO_MAP),
-                                   "' but got type '", toString(datum.type()),
-                                   "'.");
+    return errors::InvalidArgument(
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   std::vector<std::pair<std::string, avro::GenericDatum>> data =
@@ -439,7 +472,7 @@ Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
       // For all children
       const std::vector<AvroParserSharedPtr>& children(GetChildren());
       for (const AvroParserSharedPtr& child : children) {
-        TF_RETURN_IF_ERROR((*child).Parse(values, keyValue.second));
+        TF_RETURN_IF_ERROR((*child).Parse(values, keyValue.second, defaults));
       }
     }
   }
@@ -459,11 +492,11 @@ string MapKeyParser::ToString(size_t level) const {
 
 RecordParser::RecordParser(const string& name) : AvroParser(""), name_(name) {}
 Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                           const avro::GenericDatum& datum) const {
+                           const avro::GenericDatum& datum,
+                           const std::map<string, Tensor>& defaults) const {
   if (datum.type() != avro::AVRO_RECORD) {
     return errors::InvalidArgument(
-        "Expected type '", toString(avro::AVRO_RECORD), "' but got type '",
-        toString(datum.type()), "'.");
+        TypeErrorMessage(GetSupportedTypes(), datum.type()));
   }
 
   // Convert to record
@@ -480,7 +513,7 @@ Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Parse all children with this datum
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, d));
+    TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
   }
 
   return Status::OK();
@@ -496,7 +529,8 @@ string RecordParser::ToString(size_t level) const {
 UnionParser::UnionParser(const string& type_name)
     : AvroParser(""), type_name_(type_name) {}
 Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                          const avro::GenericDatum& datum) const {
+                          const avro::GenericDatum& datum,
+                          const std::map<string, Tensor>& defaults) const {
   // Note, in this case we don't know the type
   // 2nd note, we don't need to resolve the branch, it's done already by the
   // read datum
@@ -505,11 +539,17 @@ Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Find the right child for this type
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    // Check if the child parser supports the data type
     const std::set<avro::Type>& supported_types = (*child).GetSupportedTypes();
+    // The child parser supports the data type, could be Null as well
     if (supported_types.find(datum_type) != supported_types.end()) {
-      TF_RETURN_IF_ERROR((*child).Parse(values, datum));
-      return Status::OK();
+      VLOG(5) << "For key '" << child->GetKey() << "' parse datum type '"
+              << toString(datum_type) << "'.";
+      TF_RETURN_IF_ERROR((*child).Parse(values, datum, defaults));
+      // For any other type that is part of the branch resolve the null type
+    } else if (supported_types.find(avro::AVRO_NULL) != supported_types.end()) {
+      VLOG(5) << "For key '" << child->GetKey() << "' parse by using default";
+      TF_RETURN_IF_ERROR(
+          (*child).Parse(values, avro::GenericDatum(), defaults));
     }
   }
   // We could not find the right child, log a warning since this datum is lost
@@ -526,10 +566,11 @@ string UnionParser::ToString(size_t level) const {
 
 RootParser::RootParser() : AvroParser("") {}
 Status RootParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
-                         const avro::GenericDatum& datum) const {
+                         const avro::GenericDatum& datum,
+                         const std::map<string, Tensor>& defaults) const {
   const std::vector<AvroParserSharedPtr>& children(GetChildren());
   for (const AvroParserSharedPtr& child : children) {
-    TF_RETURN_IF_ERROR((*child).Parse(values, datum));
+    TF_RETURN_IF_ERROR((*child).Parse(values, datum, defaults));
   }
   return Status::OK();
 }

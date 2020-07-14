@@ -125,6 +125,14 @@ int ResolveDefaultShape(TensorShape* resolved,
   return full_shape.AsTensorShape(resolved);
 }
 
+std::map<string, Tensor> CreateTensorDefaults(const AvroParserConfig& config) {
+  std::map<string, Tensor> defaults;
+  for (const AvroParserConfig::Dense& dense : config.dense) {
+    defaults[dense.feature_name] = dense.default_value;
+  }
+  return defaults;
+}
+
 class StringDatumRangeReader {
  public:
   StringDatumRangeReader(const gtl::ArraySlice<tstring>& serialized,
@@ -228,6 +236,8 @@ Status ParseAvro(const AvroParserConfig& config,
 
   std::vector<Status> status_of_minibatch(num_minibatches);
 
+  const std::map<string, Tensor>& defaults = CreateTensorDefaults(config);
+
   auto ProcessMiniBatch = [&](size_t minibatch) {
     size_t start = first_of_minibatch(minibatch);
     size_t end = first_of_minibatch(minibatch + 1);
@@ -236,8 +246,8 @@ Status ParseAvro(const AvroParserConfig& config,
       return range_reader.read(d);
     };
 
-    status_of_minibatch[minibatch] =
-        parser_tree.ParseValues(&buffers[minibatch], read_value, reader_schema);
+    status_of_minibatch[minibatch] = parser_tree.ParseValues(
+        &buffers[minibatch], read_value, reader_schema, defaults);
   };
 
   ParallelFor(ProcessMiniBatch, num_minibatches, thread_pool);
