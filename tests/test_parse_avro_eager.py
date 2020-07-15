@@ -577,7 +577,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         )
 
 
-class AvroDatasetTest(AvroDatasetTestBase):
+class ParseAvroDatasetTest(AvroDatasetTestBase):
     """AvroDatasetTest"""
 
     def assert_data_equal(self, expected, actual):
@@ -599,7 +599,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
         # explicit here
         serializer = AvroSerializer(reader_schema)
         for expected_datum, actual_records in zip(
-            expected_data, AvroDatasetTest._batcher(record_data, batch_size)
+            expected_data, ParseAvroDatasetTest._batcher(record_data, batch_size)
         ):
             # Get any key out of expected datum
             actual_datum = tfio.experimental.columnar.parse_avro(
@@ -617,7 +617,7 @@ class AvroDatasetTest(AvroDatasetTestBase):
     ):
         parser_schema = kwargs.get("parser_schema", reader_schema)
         serializer = AvroSerializer(reader_schema)
-        for actual_records in AvroDatasetTest._batcher(record_data, batch_size):
+        for actual_records in ParseAvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(tf.errors.OpError):
                 _ = tfio.experimental.columnar.parse_avro(
