@@ -6,7 +6,7 @@ run_test() {
   entry=$1
   CPYTHON_VERSION=$($entry -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
   (cd wheelhouse && $entry -m pip install tensorflow_io-*-cp${CPYTHON_VERSION}-*.whl)
-  $entry -m pip install -q pytest pytest-benchmark boto3 python-dateutil==2.8.0 google-cloud-pubsub==0.39.1 pyarrow==0.16.0 pandas==0.24.2 scikit-learn==0.20.4 google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro avro-python3
+  $entry -m pip install -q pytest pytest-benchmark boto3 python-dateutil==2.8.0 google-cloud-pubsub==0.39.1 pyarrow==0.16.0 pandas==0.24.2 scikit-learn==0.20.4 google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro avro-python3 scikit-image
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_eager.py" \) \)))
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append $(find . -type f \( -iname "test_*_eager.py" ! \( -iname "test_bigquery_eager.py" \) \)))
   # GRPC and test_bigquery_eager tests have to be executed separately because of https://github.com/grpc/grpc/issues/20034
