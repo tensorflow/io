@@ -90,7 +90,7 @@ def dbscale(input, top_db, name=None):
       A tensor of mel spectrogram with shape [frames, mels].
     """
     power = tf.math.square(input)
-    log_spec = 10.0 * (tf.math.log(power) - tf.math.log(10.0))
+    log_spec = 10.0 * (tf.math.log(power) / tf.math.log(10.0))
     log_spec = tf.math.maximum(log_spec, tf.math.reduce_max(log_spec) - top_db)
     return log_spec
 
