@@ -25,6 +25,13 @@ from tensorflow_io.core.python.experimental.color_ops import (  # pylint: disabl
     ypbpr_to_rgb,
     rgb_to_ydbdr,
     ydbdr_to_rgb,
+    rgb_to_hsv,
+    hsv_to_rgb,
+    rgb_to_yiq,
+    yiq_to_rgb,
+    rgb_to_yuv,
+    yuv_to_rgb,
     rgb_to_xyz,
     xyz_to_rgb,
+    rgb_to_grayscale,
 )

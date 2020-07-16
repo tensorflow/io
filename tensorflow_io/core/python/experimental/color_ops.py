@@ -234,6 +234,102 @@ def ydbdr_to_rgb(input, name=None):
     return tf.tensordot(input, tf.transpose(kernel), axes=((-1,), (0,)))
 
 
+def rgb_to_hsv(input, name=None):
+    """
+    Convert a RGB image to HSV.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.rgb_to_hsv for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.rgb_to_hsv(input)
+
+
+def hsv_to_rgb(input, name=None):
+    """
+    Convert a HSV image to RGB.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.hsv_to_rgb for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.hsv_to_rgb(input)
+
+
+def rgb_to_yiq(input, name=None):
+    """
+    Convert a RGB image to YIQ.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.rgb_to_yiq for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.rgb_to_yiq(input)
+
+
+def yiq_to_rgb(input, name=None):
+    """
+    Convert a YIQ image to RGB.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.yiq_to_rgb for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.yiq_to_rgb(input)
+
+
+def rgb_to_yuv(input, name=None):
+    """
+    Convert a RGB image to YUV.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.rgb_to_yuv for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.rgb_to_yuv(input)
+
+
+def yuv_to_rgb(input, name=None):
+    """
+    Convert a YUV image to RGB.
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: Alias to tf.image.yuv_to_rgb for completeness
+    input = tf.convert_to_tensor(input)
+    return tf.image.yuv_to_rgb(input)
+
+
 def rgb_to_xyz(input, name=None):
     """
     Convert a RGB image to CIE XYZ.
@@ -297,3 +393,25 @@ def xyz_to_rgb(input, name=None):
         value * 12.92,
     )
     return tf.clip_by_value(value, 0, 1)
+
+
+def rgb_to_grayscale(input, name=None):
+    """
+    Convert a RGB image to Grayscale (ITU-R).
+
+    Args:
+      input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
+    """
+    # Note: This rgb_to_grayscale conforms to skimage.color.rgb2gray
+    # and is different from tf.image.rgb_to_grayscale
+    input = tf.convert_to_tensor(input)
+
+    value = tf.image.convert_image_dtype(input, tf.float32)
+    coeff = [0.2125, 0.7154, 0.0721]
+    value = tf.tensordot(value, coeff, (-1, -1))
+    value = tf.expand_dims(value, -1)
+    return tf.image.convert_image_dtype(value, input.dtype)
