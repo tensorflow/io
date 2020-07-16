@@ -83,6 +83,36 @@ import tensorflow_io as tfio
         ),
         pytest.param(
             lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.rgb_to_hsv,
+            skimage.color.rgb2hsv,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.hsv_to_rgb,
+            skimage.color.hsv2rgb,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.rgb_to_yiq,
+            skimage.color.rgb2yiq,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.yiq_to_rgb,
+            skimage.color.yiq2rgb,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.rgb_to_yuv,
+            skimage.color.rgb2yuv,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.yuv_to_rgb,
+            skimage.color.yuv2rgb,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
             tfio.experimental.color.rgb_to_xyz,
             skimage.color.rgb2xyz,
         ),
@@ -90,6 +120,11 @@ import tensorflow_io as tfio
             lambda: (np.random.random((10, 20, 3))).astype(np.float32),
             tfio.experimental.color.xyz_to_rgb,
             skimage.color.xyz2rgb,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.rgb_to_grayscale,
+            lambda e: tf.expand_dims(skimage.color.rgb2gray(e), axis=-1),
         ),
     ],
     ids=[
@@ -103,8 +138,15 @@ import tensorflow_io as tfio
         "ypbpr_to_rgb",
         "rgb_to_ydbdr",
         "ydbdr_to_rgb",
+        "rgb_to_hsv",
+        "hsv_to_rgb",
+        "rgb_to_yiq",
+        "yiq_to_rgb",
+        "rgb_to_yuv",
+        "yuv_to_rgb",
         "rgb_to_xyz",
         "xyz_to_rgb",
+        "rgb_to_grayscale",
     ],
 )
 def test_color(data, func, check):
@@ -115,7 +157,7 @@ def test_color(data, func, check):
 
     output_3d = func(input_3d)
     if input_3d.dtype == np.float32:
-        assert np.allclose(output_3d, expected_3d, rtol=0.005)
+        assert np.allclose(output_3d, expected_3d, rtol=0.03)
     else:
         assert np.array_equal(output_3d, expected_3d)
 
@@ -124,6 +166,6 @@ def test_color(data, func, check):
 
     output_4d = func(input_4d)
     if input_4d.dtype == np.float32:
-        assert np.allclose(output_4d, expected_4d, rtol=0.005)
+        assert np.allclose(output_4d, expected_4d, rtol=0.03)
     else:
         assert np.array_equal(output_4d, expected_4d)
