@@ -301,7 +301,6 @@ cc_library(
 cc_library(
     name = "avro_ops",
     srcs = [
-        "kernels/avro/avro_dataset_kernels.cc",
         "kernels/avro/avro_record_dataset_kernels.cc",
         "kernels/avro/parse_avro_kernels.cc",
         "kernels/avro_kernels.cc",

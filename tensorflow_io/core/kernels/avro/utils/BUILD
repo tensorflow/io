@@ -11,7 +11,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 cc_library(
     name = "avro_utils_api",
     hdrs = [
-        "avro_file_stream_reader.h",
         "avro_parser.h",
         "avro_parser_tree.h",
         "avro_record_reader.h",
@@ -29,7 +28,6 @@ cc_library(
 cc_library(
     name = "avro_utils",
     srcs = [
-        "avro_file_stream_reader.cc",
         "avro_parser.cc",
         "avro_parser_tree.cc",
         "avro_record_reader.cc",
