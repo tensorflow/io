@@ -157,7 +157,7 @@ def test_color(data, func, check):
 
     output_3d = func(input_3d)
     if input_3d.dtype == np.float32:
-        assert np.allclose(output_3d, expected_3d, rtol=0.02)
+        assert np.allclose(output_3d, expected_3d, rtol=0.03)
     else:
         assert np.array_equal(output_3d, expected_3d)
 
@@ -166,6 +166,6 @@ def test_color(data, func, check):
 
     output_4d = func(input_4d)
     if input_4d.dtype == np.float32:
-        assert np.allclose(output_4d, expected_4d, rtol=0.02)
+        assert np.allclose(output_4d, expected_4d, rtol=0.03)
     else:
         assert np.array_equal(output_4d, expected_4d)
