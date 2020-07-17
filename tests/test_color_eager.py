@@ -123,6 +123,16 @@ import tensorflow_io as tfio
         ),
         pytest.param(
             lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.rgb_to_lab,
+            skimage.color.rgb2lab,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
+            tfio.experimental.color.lab_to_rgb,
+            skimage.color.lab2rgb,
+        ),
+        pytest.param(
+            lambda: (np.random.random((10, 20, 3))).astype(np.float32),
             tfio.experimental.color.rgb_to_grayscale,
             lambda e: tf.expand_dims(skimage.color.rgb2gray(e), axis=-1),
         ),
@@ -146,11 +156,15 @@ import tensorflow_io as tfio
         "yuv_to_rgb",
         "rgb_to_xyz",
         "xyz_to_rgb",
+        "rgb_to_lab",
+        "lab_to_rgb",
         "rgb_to_grayscale",
     ],
 )
 def test_color(data, func, check):
     """test_io_color"""
+
+    np.random.seed(1000)
 
     input_3d = data()
     expected_3d = check(input_3d)
