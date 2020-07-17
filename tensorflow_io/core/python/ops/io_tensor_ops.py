@@ -190,18 +190,18 @@ class _IOTensor:
 class BaseIOTensor(_IOTensor):
     """BaseIOTensor
 
-  A `BaseIOTensor` is a basic `IOTensor` with only one component.
-  It is associated with a `Tensor` of `shape` and `dtype`, with
-  data backed by IO. It is the building block for `IOTensor`.
-  For example, a `CSVIOTensor` consists of multiple `BaseIOTensor`
-  where each one is a column of the CSV.
+    A `BaseIOTensor` is a basic `IOTensor` with only one component.
+    It is associated with a `Tensor` of `shape` and `dtype`, with
+    data backed by IO. It is the building block for `IOTensor`.
+    For example, a `CSVIOTensor` consists of multiple `BaseIOTensor`
+    where each one is a column of the CSV.
 
-  All `IOTensor` types are either a subclass of `BaseIOTensor`,
-  or are a composite of a collection of `BaseIOTensor`.
+    All `IOTensor` types are either a subclass of `BaseIOTensor`,
+    or are a composite of a collection of `BaseIOTensor`.
 
-  The additional properties exposed by `BaseIOTensor` are `shape`
-  and `dtype` associated with counterparts in `Tensor`.
-  """
+    The additional properties exposed by `BaseIOTensor` are `shape`
+    and `dtype` associated with counterparts in `Tensor`.
+    """
 
     def __init__(self, spec, function, internal=False):
         # function used for dataset should not be partitioned.
@@ -283,17 +283,17 @@ class BaseIOTensor(_IOTensor):
     def to_tensor(self, **kwargs):
         """Converts this `IOTensor` into a `tf.Tensor`.
 
-    Example:
+        Example:
 
-    ```python
-    ```
+        ```python
+        ```
 
-    Args:
-      name: A name prefix for the returned tensors (optional).
+        Args:
+            name: A name prefix for the returned tensors (optional).
 
-    Returns:
-      A `Tensor` with value obtained from this `IOTensor`.
-    """
+        Returns:
+            A `Tensor` with value obtained from this `IOTensor`.
+        """
         with tf.name_scope(kwargs.get("name", "IOToTensor")):
             return self.__getitem__(slice(None, None))
 
@@ -301,8 +301,8 @@ class BaseIOTensor(_IOTensor):
 class ScalarIOTensor(BaseIOTensor):
     """ScalarIOTensor
 
-  A `ScalarIOTensor` is an `IOTensor` from a scalar `Tensor`.
-  """
+    A `ScalarIOTensor` is an `IOTensor` from a scalar `Tensor`.
+    """
 
     def __init__(self, spec, tensor, internal=False):
         tensor = tf.convert_to_tensor(tensor)
@@ -317,17 +317,17 @@ class ScalarIOTensor(BaseIOTensor):
     def to_tensor(self, **kwargs):
         """Converts this `IOTensor` into a `tf.Tensor`.
 
-    Example:
+        Example:
 
-    ```python
-    ```
+        ```python
+        ```
 
-    Args:
-      name: A name prefix for the returned tensors (optional).
+        Args:
+            name: A name prefix for the returned tensors (optional).
 
-    Returns:
-      A `Tensor` with value obtained from this `IOTensor`.
-    """
+        Returns:
+            A `Tensor` with value obtained from this `IOTensor`.
+        """
         with tf.name_scope(kwargs.get("name", "IOToTensor")):
             return self._tensor
 
@@ -335,8 +335,8 @@ class ScalarIOTensor(BaseIOTensor):
 class TensorIOTensor(BaseIOTensor):
     """TensorIOTensor
 
-  A `TensorIOTensor` is an `IOTensor` from a regular `Tensor`.
-  """
+    A `TensorIOTensor` is an `IOTensor` from a regular `Tensor`.
+    """
 
     def __init__(self, tensor, internal=False):
         tensor = tf.convert_to_tensor(tensor)
@@ -379,17 +379,17 @@ class TensorIOTensor(BaseIOTensor):
     def to_tensor(self, **kwargs):
         """Converts this `IOTensor` into a `tf.Tensor`.
 
-    Example:
+        Example:
 
-    ```python
-    ```
+        ```python
+        ```
 
-    Args:
-      name: A name prefix for the returned tensors (optional).
+        Args:
+            name: A name prefix for the returned tensors (optional).
 
-    Returns:
-      A `Tensor` with value obtained from this `IOTensor`.
-    """
+        Returns:
+            A `Tensor` with value obtained from this `IOTensor`.
+        """
         with tf.name_scope(kwargs.get("name", "IOToTensor")):
             return self._tensor
 
@@ -420,14 +420,14 @@ class _TableIOTensor(_IOTensor):
 class _CollectionIOTensor(_IOTensor):
     """_CollectionIOTensor
 
-  `CollectionIOTensor` is differnt from `TableIOTensor` in that each
-  component could have different shapes. While additional table-wide
-  operations are planned to be supported for `TableIOTensor` so that
-  the same operations could be applied to every column, there is no plan
-  to support the same in `CollectionIOTensor`. In other words,
-  `CollectionIOTensor` is only a dictionary with values consisting
-  of `BaseIOTensor`.
-  """
+    `CollectionIOTensor` is different from `TableIOTensor` in that each
+    component could have different shapes. While additional table-wide
+    operations are planned to be supported for `TableIOTensor` so that
+    the same operations could be applied to every column, there is no plan
+    to support the same in `CollectionIOTensor`. In other words,
+    `CollectionIOTensor` is only a dictionary with values consisting
+    of `BaseIOTensor`.
+    """
 
     def __init__(self, spec, keys, values, internal=False):
         self._keys = keys

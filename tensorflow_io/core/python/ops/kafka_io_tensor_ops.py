@@ -67,12 +67,12 @@ class KafkaIOTensor:
     def to_tensor(self):
         """Converts this `IOTensor` into a `tf.Tensor`.
 
-    Args:
-      name: A name prefix for the returned tensors (optional).
+        Args:
+            name: A name prefix for the returned tensors (optional).
 
-    Returns:
-      A `Tensor` with value obtained from this `IOTensor`.
-    """
+        Returns:
+            A `Tensor` with value obtained from this `IOTensor`.
+        """
         item, _ = core_ops.io_kafka_readable_read(self._resource, start=0, stop=-1)
         return item
 
