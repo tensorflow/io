@@ -193,7 +193,7 @@ be located by python.
 
 #### Linux
 
-Development of tensorflow-io on Linux is similiar to development on macOS. The required packages
+Development of tensorflow-io on Linux is similar to development on macOS. The required packages
 are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
 versions might be required though.
 For instructions how to configure Visual Studio code to be able to build and debug TensorFlow I/O see
@@ -475,7 +475,7 @@ level of coverage as live systems or emulators.
 | Google BigTable/BigQuery |   | to be added | | |
 
 Note:
-- Offical [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
+- Official [PubSub Emulator](https://cloud.google.com/sdk/gcloud/reference/beta/emulators/pubsub/) by Google Cloud for Cloud PubSub.
 - Official [Azurite Emulator](https://github.com/Azure/Azurite) by Azure for Azure Storage.
 - None-official [LocalStack emulator](https://github.com/localstack/localstack) by LocalStack for AWS Kinesis.
 
