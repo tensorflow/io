@@ -33,5 +33,7 @@ from tensorflow_io.core.python.experimental.color_ops import (  # pylint: disabl
     yuv_to_rgb,
     rgb_to_xyz,
     xyz_to_rgb,
+    rgb_to_lab,
+    lab_to_rgb,
     rgb_to_grayscale,
 )
