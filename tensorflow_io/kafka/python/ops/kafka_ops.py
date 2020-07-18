@@ -22,7 +22,18 @@ class KafkaOutputSequence:
 
     def __init__(self, topic, servers="localhost", configuration=None):
         """Create a `KafkaOutputSequence`.
-    """
+
+        Args:
+            topic: A `tf.string` tensor containing one subscription,
+                in the format of topic:partition.
+            servers: A list of bootstrap servers.
+            configuration: A `tf.string` tensor containing global configuration
+                            properties in [Key=Value] format,
+                            eg. ["enable.auto.commit=false",
+                                "heartbeat.interval.ms=2000"],
+                            please refer to 'Global configuration properties'
+                            in librdkafka doc.
+        """
         self._topic = topic
         metadata = list(configuration or [])
         if servers is not None:
@@ -32,7 +43,15 @@ class KafkaOutputSequence:
         )
 
     def setitem(self, index, item):
+        """Set an indexed item in the `KafkaOutputSequence`.
+
+        Args:
+            index: An index in the sequence. The index tensor must be a scalar.
+            item: the item which is associated with the index in the output sequence.
+                    The item tensor must be a scalar.
+        """
         core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
 
     def flush(self):
+        """Flush the `KafkaOutputSequence`."""
         core_ops.io_kafka_output_sequence_flush(self._resource)
