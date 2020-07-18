@@ -19,27 +19,27 @@ from tensorflow_io.core.python.ops import core_ops
 
 def decode_webp(contents, name=None):
     """
-  Decode a WebP-encoded image to a uint8 tensor.
+    Decode a WebP-encoded image to a uint8 tensor.
 
-  Args:
-    contents: A `Tensor` of type `string`. 0-D.  The WebP-encoded image.
-    name: A name for the operation (optional).
+    Args:
+      contents: A `Tensor` of type `string`. 0-D.  The WebP-encoded image.
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
-  """
+    Returns:
+      A `Tensor` of type `uint8` and shape of `[height, width, 4]` (RGBA).
+    """
     return core_ops.io_decode_web_p(contents, name=name)
 
 
 def encode_bmp(image, name=None):
     """
-  Encode a uint8 tensor to bmp image.
+    Encode a uint8 tensor to bmp image.
 
-  Args:
-    image: A Tensor. 3-D uint8 with shape [height, width, channels].
-    name: A name for the operation (optional).
+    Args:
+      image: A Tensor. 3-D uint8 with shape [height, width, channels].
+      name: A name for the operation (optional).
 
-  Returns:
-    A `Tensor` of type `string`.
-  """
+    Returns:
+      A `Tensor` of type `string`.
+    """
     return core_ops.io_encode_bmp(image, name=name)

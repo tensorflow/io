@@ -63,12 +63,12 @@ class BaseHDF5GraphIOTensor:
     def to_tensor(self):
         """Converts this `IOTensor` into a `tf.Tensor`.
 
-    Args:
-      name: A name prefix for the returned tensors (optional).
+        Args:
+            name: A name prefix for the returned tensors (optional).
 
-    Returns:
-      A `Tensor` with value obtained from this `IOTensor`.
-    """
+        Returns:
+            A `Tensor` with value obtained from this `IOTensor`.
+        """
         return core_ops.io_hdf5_readable_read(
             input=self._filename,
             shared=self._filename,

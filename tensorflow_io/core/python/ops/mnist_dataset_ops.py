@@ -23,9 +23,10 @@ class MNISTLabelIODataset(tf.data.Dataset):
 
     def __init__(self, filename):
         """Create a MNISTLabelDataset.
-    Args:
-      filename: A `tf.string` tensor containing filename.
-    """
+        
+        Args:
+            filename: A `tf.string` tensor containing filename.
+        """
         _, compression = core_ops.io_file_info(filename)
         dataset = tf.data.FixedLengthRecordDataset(
             filename, 1, header_bytes=8, compression_type=compression
@@ -52,9 +53,10 @@ class MNISTImageIODataset(tf.data.Dataset):
 
     def __init__(self, filename):
         """Create a MNISTImageDataset.
-    Args:
-      filename: A `tf.string` tensor containing filename.
-    """
+        
+        Args:
+            filename: A `tf.string` tensor containing filename.
+        """
         _, compression = core_ops.io_file_info(filename)
         rows = tf.io.decode_raw(
             core_ops.io_file_read(filename, 8, 4, compression=compression),
