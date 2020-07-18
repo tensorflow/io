@@ -284,7 +284,7 @@ class AudioIOTensor:
 
         Returns:
           A `Tensor` with value obtained from this `IOTensor`.
-        1"""
+        """
         return core_ops.io_audio_readable_read(self._resource, 0, -1, dtype=self._dtype)
 
     # =============================================================================

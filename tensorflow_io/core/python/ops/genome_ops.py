@@ -21,14 +21,14 @@ from tensorflow_io.core.python.ops import core_ops
 def read_fastq(filename, name=None):
     """Read FastQ file into Tensor
 
-  Args:
-    filename: Filename of the FastQ file.
-    name: A name for the operation (optional).
+    Args:
+        filename: Filename of the FastQ file.
+        name: A name for the operation (optional).
 
-  Returns:
-    sequences: A string `Tensor`.
-    raw_quality: A string `Tensor`.
-  """
+    Returns:
+        sequences: A string `Tensor`.
+        raw_quality: A string `Tensor`.
+    """
     return core_ops.io_read_fastq(filename, name=name)
 
 
@@ -58,21 +58,21 @@ def _nucleotide_to_onehot(nucleotide):
 def sequences_to_onehot(sequences):
     """Convert DNA sequences into a one hot nucleotide encoding.
 
-  Each nucleotide in each sequence is mapped as follows:
-  A -> [1, 0, 0, 0]
-  C -> [0, 1, 0, 0]
-  G -> [0 ,0 ,1, 0]
-  T -> [0, 0, 0, 1]
+    Each nucleotide in each sequence is mapped as follows:
+    A -> [1, 0, 0, 0]
+    C -> [0, 1, 0, 0]
+    G -> [0 ,0 ,1, 0]
+    T -> [0, 0, 0, 1]
 
-  If for some reason a non (A, T, C, G) character exists in the string, it is
-  currently mapped to a error one hot encoding [1, 1, 1, 1].
+    If for some reason a non (A, T, C, G) character exists in the string, it is
+    currently mapped to a error one hot encoding [1, 1, 1, 1].
 
-  Args:
-    sequences: A tf.string tensor where each string represents a DNA sequence
+    Args:
+        sequences: A tf.string tensor where each string represents a DNA sequence
 
-  Returns:
-    tf.RaggedTensor: The output sequences with nucleotides one hot encoded.
-  """
+    Returns:
+        tf.RaggedTensor: The output sequences with nucleotides one hot encoded.
+    """
     all_onehot_nucleotides = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
     sequence_splits = tf.TensorArray(dtype=tf.int32, size=0, dynamic_size=True)
 
@@ -115,28 +115,28 @@ def _phred_sequence_to_probability(seq_quality):
 def phred_sequences_to_probability(phred_qualities):
     """Converts raw phred quality scores into base-calling error probabilities.
 
-  For each ASCII encoded phred quality score (X), the probability that there
-  was an error calling that base is computed by:
+    For each ASCII encoded phred quality score (X), the probability that there
+    was an error calling that base is computed by:
 
-  P = 10 ^ (-(X - 33) / 10)
+    P = 10 ^ (-(X - 33) / 10)
 
-  This is assuming an "ASCII base" of 33.
+    This is assuming an "ASCII base" of 33.
 
-  The input is a tf.string tensor of ASCII encoded phred qualities,
-  one string per DNA sequence, with each character representing the quality
-  of a nucelotide.
+    The input is a tf.string tensor of ASCII encoded phred qualities,
+    one string per DNA sequence, with each character representing the quality
+    of a nucelotide.
 
-  For example:
-  phred_qualities = [["BB<"], ["BBBB"]]
+    For example:
+    phred_qualities = [["BB<"], ["BBBB"]]
 
-  Args:
-    phred_qualities: A tf.string tensor where each string represents the phred
-                     quality of a DNA sequence. Each character in the string
-                     is the ASCII representation of the phred quality number.
+    Args:
+        phred_qualities: A tf.string tensor where each string represents the phred
+                        quality of a DNA sequence. Each character in the string
+                        is the ASCII representation of the phred quality number.
 
-  Returns:
-    tf.RaggedTensor: The quality scores for each base in each sequence provided.
-  """
+    Returns:
+        tf.RaggedTensor: The quality scores for each base in each sequence provided.
+    """
     return tf.ragged.map_flat_values(
         _phred_sequence_to_probability, tf.strings.bytes_split(phred_qualities)
     )

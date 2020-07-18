@@ -23,16 +23,16 @@ from tensorflow_io.core.python.ops import core_ops
 
 def _extract_table_arrays(table):
     """Get buffer info from arrays in table, outputs are padded so dim sizes
-     are rectangular.
+       are rectangular.
 
-     Args:
-       table: A pyarrow.Table
-     Return:
-       tuple of:
-         array_buffer_addrs: 3-dim list of buffer addresses where dims are
+    Args:
+        table: A pyarrow.Table
+    Return:
+        tuple of:
+        array_buffer_addrs: 3-dim list of buffer addresses where dims are
                              columns, chunks, buffer addresses
-         array_buffer_sizes: 3-dim list of buffer sizes, follows addrs layout
-         array_lengths: 3-dim list of array lengths where dims are columns,
+        array_buffer_sizes: 3-dim list of buffer sizes, follows addrs layout
+        array_lengths: 3-dim list of array lengths where dims are columns,
                         chunks, length of array followed by child array lengths
     """
     array_buffer_addrs = []
