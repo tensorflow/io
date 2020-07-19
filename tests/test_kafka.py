@@ -408,7 +408,7 @@ class KafkaDatasetTest(test.TestCase):
             )
             for i in range(5):
                 self.assertEqual(
-                    (("D" + str(i * 2)).encode(), ("K0").encode()), sess.run(get_next),
+                    (("D" + str(i * 2)).encode(), ("K0")), sess.run(get_next),
                 )
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
@@ -420,8 +420,7 @@ class KafkaDatasetTest(test.TestCase):
             )
             for i in range(5):
                 self.assertEqual(
-                    (("D" + str(i * 2 + 1)).encode(), ("K1").encode()),
-                    sess.run(get_next),
+                    (("D" + str(i * 2 + 1)).encode(), (b"K1")), sess.run(get_next),
                 )
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
