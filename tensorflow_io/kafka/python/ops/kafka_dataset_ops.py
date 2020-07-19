@@ -54,7 +54,11 @@ class KafkaDataset(data.Dataset):
             topics: A `tf.string` tensor containing one or more subscriptions,
                     in the format of [topic:partition:offset:length],
                     by default length is -1 for unlimited.
-                    eg. ["sampleTopic:0:0:10"]
+                    eg. ["sampleTopic:0:0:10"] will fetch the first 10 messages from
+                    the 0th partition of sampleTopic.
+                    eg. ["sampleTopic:0:0:10","sampleTopic:1:0:10"] will fetch
+                    the first 10 messages from the 0th partition followed
+                    by the first 10 messages from the 1st partition of sampleTopic.
             servers: A list of bootstrap servers.
             group: The consumer group id.
             eof: If True, the kafka reader will stop on EOF.

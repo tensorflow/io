@@ -34,3 +34,6 @@ tfio_*.tar.gz
 # Prometheus
 .coredns
 .prometheus
+
+# Kafka
+/confluent*
