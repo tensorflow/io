@@ -35,8 +35,7 @@ warnings.warn(
 
 
 class KafkaDataset(data.Dataset):
-    """A Kafka Dataset that consumes the message.
-  """
+    """A Kafka Dataset that consumes the messages."""
 
     def __init__(
         self,
@@ -51,28 +50,29 @@ class KafkaDataset(data.Dataset):
     ):
         """Create a KafkaReader.
 
-    Args:
-      topics: A `tf.string` tensor containing one or more subscriptions,
-              in the format of [topic:partition:offset:length],
-              by default length is -1 for unlimited.
-      servers: A list of bootstrap servers.
-      group: The consumer group id.
-      eof: If True, the kafka reader will stop on EOF.
-      timeout: The timeout value for the Kafka Consumer to wait
-               (in millisecond).
-      config_global: A `tf.string` tensor containing global configuration
-                     properties in [Key=Value] format,
-                     eg. ["enable.auto.commit=false",
-                          "heartbeat.interval.ms=2000"],
-                     please refer to 'Global configuration properties'
-                     in librdkafka doc.
-      config_topic: A `tf.string` tensor containing topic configuration
-                    properties in [Key=Value] format,
-                    eg. ["auto.offset.reset=earliest"],
-                    please refer to 'Topic configuration properties'
-                    in librdkafka doc.
-      message_key: If True, the kafka will output both message value and key.
-    """
+        Args:
+            topics: A `tf.string` tensor containing one or more subscriptions,
+                    in the format of [topic:partition:offset:length],
+                    by default length is -1 for unlimited.
+                    eg. ["sampleTopic:0:0:10"]
+            servers: A list of bootstrap servers.
+            group: The consumer group id.
+            eof: If True, the kafka reader will stop on EOF.
+            timeout: The timeout value for the Kafka Consumer to wait
+                    (in milliseconds).
+            config_global: A `tf.string` tensor containing global configuration
+                            properties in [Key=Value] format,
+                            eg. ["enable.auto.commit=false",
+                                "heartbeat.interval.ms=2000"],
+                            please refer to 'Global configuration properties'
+                            in librdkafka doc.
+            config_topic: A `tf.string` tensor containing topic configuration
+                            properties in [Key=Value] format,
+                            eg. ["auto.offset.reset=earliest"],
+                            please refer to 'Topic configuration properties'
+                            in librdkafka doc.
+            message_key: If True, the kafka will output both message value and key.
+        """
         self._topics = tf.convert_to_tensor(topics, dtype=dtypes.string, name="topics")
         self._servers = tf.convert_to_tensor(
             servers, dtype=dtypes.string, name="servers"
@@ -128,16 +128,18 @@ class KafkaDataset(data.Dataset):
 
 
 def write_kafka(message, topic, servers="localhost", name=None):
+    """Write messages to the kafka topic
+
+    Args:
+        message: The `tf.string` tensor containing the message
+            to be written into the topic.
+        topic: A `tf.string` tensor containing one subscription,
+            in the format of topic:partition.
+        servers: A list of bootstrap servers.
+        name: A name for the operation (optional).
+    Returns:
+        A `Tensor` of type `string`. 0-D.
     """
-  Args:
-      message: A `Tensor` of type `string`. 0-D.
-      topic: A `tf.string` tensor containing one subscription,
-        in the format of topic:partition.
-      servers: A list of bootstrap servers.
-      name: A name for the operation (optional).
-  Returns:
-      A `Tensor` of type `string`. 0-D.
-  """
     return core_ops.io_write_kafka(
         message=message, topic=topic, servers=servers, name=name
     )
