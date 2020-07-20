@@ -24,7 +24,27 @@ class KafkaIODataset(tf.data.Dataset):
     def __init__(
         self, topic, partition, start, stop, servers, configuration, internal=True
     ):
-        """KafkaIODataset."""
+        """Creates a `KafkaIODataset` from kafka server with an offset range.
+
+        Args:
+          topic: A `tf.string` tensor containing topic subscription.
+          partition: A `tf.int64` tensor containing the partition, by default 0.
+          start: A `tf.int64` tensor containing the start offset, by default 0.
+          stop: A `tf.int64` tensor containing the end offset, by default -1.
+          servers: An optional list of bootstrap servers, by default
+             `localhost:9092`.
+          configuration: An optional `tf.string` tensor containing
+            configurations in [Key=Value] format.
+            Global configuration: please refer to 'Global configuration properties'
+              in librdkafka doc. Examples include
+              ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
+            Topic configuration: please refer to 'Topic configuration properties'
+              in librdkafka doc. Note all topic configurations should be
+              prefixed with `configuration.topic.`. Examples include
+              ["conf.topic.auto.offset.reset=earliest"]
+          internal: Whether the dataset is being created from within the named scope.
+            Default: True
+        """
         with tf.name_scope("KafkaIODataset"):
             assert internal
 
@@ -71,7 +91,26 @@ class KafkaStreamIODataset(tf.data.Dataset):
     """KafkaStreamIODataset"""
 
     def __init__(self, topic, partition, offset, servers, configuration, internal=True):
-        """KafkaStreamIODataset."""
+        """Creates a `StreamIODataset` from kafka server with only a start offset.
+
+        Args:
+          topic: A `tf.string` tensor containing topic subscription.
+          partition: A `tf.int64` tensor containing the partition, by default 0.
+          offset: A `tf.int64` tensor containing the start offset, by default 0.
+          servers: An optional list of bootstrap servers, by default
+             `localhost:9092`.
+          configuration: An optional `tf.string` tensor containing
+            configurations in [Key=Value] format.
+            Global configuration: please refer to 'Global configuration properties'
+              in librdkafka doc. Examples include
+              ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
+            Topic configuration: please refer to 'Topic configuration properties'
+              in librdkafka doc. Note all topic configurations should be
+              prefixed with `configuration.topic.`. Examples include
+              ["conf.topic.auto.offset.reset=earliest"]
+          internal: Whether the dataset is being created from within the named scope.
+            Default: True
+        """
         with tf.name_scope("KafkaStreamIODataset"):
             assert internal
 

@@ -345,7 +345,7 @@ class StreamIODataset(
     def from_kafka(
         cls, topic, partition=0, offset=0, servers=None, configuration=None, **kwargs
     ):
-        """Creates an `IODataset` from kafka server with only a start offset.
+        """Creates a `StreamIODataset` from kafka server with only a start offset.
 
         Args:
           topic: A `tf.string` tensor containing topic subscription.
