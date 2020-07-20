@@ -428,5 +428,26 @@ def test_decode_jp2_uint16():
     assert np.array_equal(rgb, data)
 
 
+def test_encode_gif():
+    """Test case for encode_gif."""
+
+    # Image is taken from WIKI (Newton's Cradle: Newtons_cradle_animation_book_2.gif):
+    # https://en.wikipedia.org/wiki/GIF
+    batch = 36
+    height = 360
+    width = 480
+    channel = 3
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "cradle.gif"
+    )
+
+    image = tf.image.decode_gif(tf.io.read_file(path))
+    assert image.shape == (batch, height, width, channel)
+    gif = tfio.image.encode_gif(image)
+    encoded = tf.image.decode_gif(gif)
+    assert np.allclose(image, encoded, atol=8.0)
+
+
 if __name__ == "__main__":
     test.main()

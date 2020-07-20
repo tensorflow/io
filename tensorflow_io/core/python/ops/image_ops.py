@@ -43,3 +43,17 @@ def encode_bmp(image, name=None):
       A `Tensor` of type `string`.
     """
     return core_ops.io_encode_bmp(image, name=name)
+
+
+def encode_gif(image, name=None):
+    """
+    Encode a uint8 tensor to gif image.
+
+    Args:
+      image: A Tensor. 3-D uint8 with shape [N, H, W, C].
+      name: A name for the operation (optional).
+
+    Returns:
+      A `Tensor` of type `string`.
+    """
+    return core_ops.io_encode_gif(image, name=name)
