@@ -221,6 +221,16 @@ REGISTER_OP("IO>DecodeJPEG2K")
       return Status::OK();
     });
 
+REGISTER_OP("IO>EncodeGif")
+    .Input("input: uint8")
+    .Output("output: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 4, &unused));
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
