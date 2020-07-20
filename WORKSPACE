@@ -1009,3 +1009,14 @@ http_archive(
         "https://github.com/google/farmhash/archive/816a4ae622e964763ca0862d9dbd19324a1eaf45.tar.gz",
     ],
 )
+
+http_archive(
+    name = "giflib",
+    build_file = "//third_party:giflib.BUILD",
+    sha256 = "31da5562f44c5f15d63340a09a4fd62b48c45620cd302f77a6d9acf0077879bd",
+    strip_prefix = "giflib-5.2.1",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
+        "https://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
+    ],
+)

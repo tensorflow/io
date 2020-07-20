@@ -17,6 +17,7 @@
 from tensorflow_io.core.python.ops.image_ops import (  # pylint: disable=unused-import
     decode_webp,
     encode_bmp,
+    encode_gif,
 )
 from tensorflow_io.core.python.ops.dicom_ops import (  # pylint: disable=unused-import
     decode_dicom_data,
