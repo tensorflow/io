@@ -40,11 +40,12 @@ class KafkaDatasetTest(test.TestCase):
     # To setup the Kafka server:
     # $ bash kafka_test.sh start kafka
     #
-    # To team down the Kafka server:
+    # To tear down the Kafka server:
     # $ bash kafka_test.sh stop kafka
 
     def test_kafka_dataset(self):
-        """Tests for KafkaDataset."""
+        """Tests for KafkaDataset when reading non-keyed messages
+        from a single-partitioned topic"""
         topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
         num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
         batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
@@ -60,21 +61,21 @@ class KafkaDatasetTest(test.TestCase):
         get_next = iterator.get_next()
 
         with self.cached_session() as sess:
-            # Basic test: read from topic 0.
+            # Basic test: read a limited number of messages from the topic.
             sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
 
-            # Basic test: read from topic 1.
+            # Basic test: read all the messages from the topic from offset 5.
             sess.run(init_op, feed_dict={topics: ["test:0:5:-1"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(("D" + str(i + 5)).encode(), sess.run(get_next))
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
 
-            # Basic test: read from both topics.
+            # Basic test: read from different subscriptions of the same topic.
             sess.run(
                 init_op,
                 feed_dict={topics: ["test:0:0:4", "test:0:5:-1"], num_epochs: 1},
@@ -87,7 +88,7 @@ class KafkaDatasetTest(test.TestCase):
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
 
-            # Test repeated iteration through both files.
+            # Test repeated iteration through both subscriptions.
             sess.run(
                 init_op,
                 feed_dict={topics: ["test:0:0:4", "test:0:5:-1"], num_epochs: 10},
@@ -101,7 +102,7 @@ class KafkaDatasetTest(test.TestCase):
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
 
-            # Test batched and repeated iteration through both files.
+            # Test batched and repeated iteration through both subscriptions.
             sess.run(
                 init_batch_op,
                 feed_dict={
@@ -276,7 +277,8 @@ class KafkaDatasetTest(test.TestCase):
                 sess.run(get_next)
 
     def test_kafka_dataset_with_key(self):
-        """Tests for KafkaDataset."""
+        """Tests for KafkaDataset when reading keyed-messages
+        from a single-partitioned topic"""
         topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
         num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
         batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
@@ -288,10 +290,11 @@ class KafkaDatasetTest(test.TestCase):
 
         iterator = data.Iterator.from_structure(batch_dataset.output_types)
         init_op = iterator.make_initializer(repeat_dataset)
+        init_batch_op = iterator.make_initializer(batch_dataset)
         get_next = iterator.get_next()
 
         with self.cached_session() as sess:
-            # Basic test: read from topic 0.
+            # Basic test: read a limited number of keyed messages from the topic.
             sess.run(init_op, feed_dict={topics: ["key-test:0:0:4"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(
@@ -300,6 +303,181 @@ class KafkaDatasetTest(test.TestCase):
                 )
             with self.assertRaises(errors.OutOfRangeError):
                 sess.run(get_next)
+
+            # Basic test: read all the keyed messages from the topic from offset 5.
+            sess.run(init_op, feed_dict={topics: ["key-test:0:5:-1"], num_epochs: 1})
+            for i in range(5):
+                self.assertEqual(
+                    (("D" + str(i + 5)).encode(), ("K" + str((i + 5) % 2)).encode()),
+                    sess.run(get_next),
+                )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Basic test: read from different subscriptions of the same topic.
+            sess.run(
+                init_op,
+                feed_dict={
+                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
+                    num_epochs: 1,
+                },
+            )
+            for j in range(2):
+                for i in range(5):
+                    self.assertEqual(
+                        (
+                            ("D" + str(i + j * 5)).encode(),
+                            ("K" + str((i + j * 5) % 2)).encode(),
+                        ),
+                        sess.run(get_next),
+                    )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Test repeated iteration through both subscriptions.
+            sess.run(
+                init_op,
+                feed_dict={
+                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
+                    num_epochs: 10,
+                },
+            )
+            for _ in range(10):
+                for j in range(2):
+                    for i in range(5):
+                        self.assertEqual(
+                            (
+                                ("D" + str(i + j * 5)).encode(),
+                                ("K" + str((i + j * 5) % 2)).encode(),
+                            ),
+                            sess.run(get_next),
+                        )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Test batched and repeated iteration through both subscriptions.
+            sess.run(
+                init_batch_op,
+                feed_dict={
+                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
+                    num_epochs: 10,
+                    batch_size: 5,
+                },
+            )
+            for _ in range(10):
+                self.assertAllEqual(
+                    [
+                        [("D" + str(i)).encode() for i in range(5)],
+                        [("K" + str(i % 2)).encode() for i in range(5)],
+                    ],
+                    sess.run(get_next),
+                )
+                self.assertAllEqual(
+                    [
+                        [("D" + str(i + 5)).encode() for i in range(5)],
+                        [("K" + str((i + 5) % 2)).encode() for i in range(5)],
+                    ],
+                    sess.run(get_next),
+                )
+
+    def test_kafka_dataset_with_partitioned_key(self):
+        """Tests for KafkaDataset when reading keyed-messages
+        from a multi-partitioned topic"""
+        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+
+        repeat_dataset = kafka_io.KafkaDataset(
+            topics, group="test", eof=True, message_key=True
+        ).repeat(num_epochs)
+        batch_dataset = repeat_dataset.batch(batch_size)
+
+        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        init_op = iterator.make_initializer(repeat_dataset)
+        init_batch_op = iterator.make_initializer(batch_dataset)
+        get_next = iterator.get_next()
+
+        with self.cached_session() as sess:
+            # Basic test: read first 5 messages from the first partition of the topic.
+            # NOTE: The key-partition mapping occurs based on the order in which the data
+            # is being stored in kafka. Please check kafka_test.sh for the sample data.
+
+            sess.run(
+                init_op,
+                feed_dict={topics: ["key-partition-test:0:0:5"], num_epochs: 1},
+            )
+            for i in range(5):
+                self.assertEqual(
+                    (("D" + str(i * 2)).encode(), (b"K0")), sess.run(get_next),
+                )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Basic test: read first 5 messages from the second partition of the topic.
+            sess.run(
+                init_op,
+                feed_dict={topics: ["key-partition-test:1:0:5"], num_epochs: 1},
+            )
+            for i in range(5):
+                self.assertEqual(
+                    (("D" + str(i * 2 + 1)).encode(), (b"K1")), sess.run(get_next),
+                )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Basic test: read from different subscriptions to the same topic.
+            sess.run(
+                init_op,
+                feed_dict={
+                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
+                    num_epochs: 1,
+                },
+            )
+            for j in range(2):
+                for i in range(5):
+                    self.assertEqual(
+                        (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
+                        sess.run(get_next),
+                    )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Test repeated iteration through both subscriptions.
+            sess.run(
+                init_op,
+                feed_dict={
+                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
+                    num_epochs: 10,
+                },
+            )
+            for _ in range(10):
+                for j in range(2):
+                    for i in range(5):
+                        self.assertEqual(
+                            (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
+                            sess.run(get_next),
+                        )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
+            # Test batched and repeated iteration through both subscriptions.
+            sess.run(
+                init_batch_op,
+                feed_dict={
+                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
+                    num_epochs: 10,
+                    batch_size: 5,
+                },
+            )
+            for _ in range(10):
+                for j in range(2):
+                    self.assertAllEqual(
+                        [
+                            [("D" + str(i * 2 + j)).encode() for i in range(5)],
+                            [("K" + str(j)).encode() for i in range(5)],
+                        ],
+                        sess.run(get_next),
+                    )
 
 
 if __name__ == "__main__":
