@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - name: Run Lint Script
+      - name: Run Lint Script for Bazel/Pyupgrade/Black/Clang
         run: |
           set -x -e
           git log --pretty -1
@@ -26,6 +26,20 @@ jobs:
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           bazel run -s --verbose_failures //tools/lint:check -- bazel pyupgrade black clang
+      - name: Run Lint Script for Docs
+        run: |
+          set -x -e
+          git log --pretty -1
+          sudo python3 -m pip install setuptools
+          sudo python3 -m pip install -U git+https://github.com/tensorflow/docs
+          find docs -name '*.ipynb' | xargs python3 -m tensorflow_docs.tools.nbfmt
+          echo "Check for failed fmt: "
+          git status --untracked-files=no --porcelain
+          [ -z "$(git status --untracked-files=no --porcelain)" ] || exit 1
+          find docs -name '*.ipynb' | xargs python3 -m tensorflow_docs.tools.nblint --arg=repo:tensorflow/io
+          echo "Check for failed lint: "
+          git status --untracked-files=no --porcelain
+          [ -z "$(git status --untracked-files=no --porcelain)" ] || exit 1
 
   macos:
     name: macOS
