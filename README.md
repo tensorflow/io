@@ -16,9 +16,9 @@ TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support. A full list of supported file systems
 and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
-The use of tensorflow-io is straightforward with keras. Below is the example
-of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
-data processing replaced by tensorflow-io:
+The use of tensorflow-io is straightforward with keras. Below is an example
+to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+the data processing aspect replaced by tensorflow-io:
 
 ```python
 import tensorflow as tf
@@ -48,10 +48,10 @@ model.fit(d_train, epochs=5, steps_per_epoch=10000)
 In the above [MNIST](http://yann.lecun.com/exdb/mnist/) example, the URL's
 to access the dataset files are passed directly to the `tfio.IODataset.from_mnist` API call.
 This is due to the inherent support that `tensorflow-io` provides for the `HTTP` file system,
-thus eliminating the need for downloading and saving datasets to a local directory.
+thus eliminating the need for downloading and saving datasets on a local directory.
 
-NOTE: Since `tensorflow-io` is able to detect and uncompress automatically for MNIST dataset if needed,
-we can pass the URL's for the compressed files (gzip) as is.
+NOTE: Since `tensorflow-io` is able to detect and uncompress the MNIST dataset automatically if needed,
+we can pass the URL's for the compressed files (gzip) to the API call as is.
 
 Please check the official [documentation](https://www.tensorflow.org/io) for more
 detailed and interesting usages of the package.
