@@ -91,7 +91,7 @@ class BigQueryClientOp : public OpKernel {
     }
     OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
                             ctx, 0, cinfo_.container(), cinfo_.name(),
-                            MakeTypeIndex<BigQueryClientResource>()));
+                            TypeIndex::Make<BigQueryClientResource>()));
   }
 
  private:
