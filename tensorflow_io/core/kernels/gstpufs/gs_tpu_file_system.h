@@ -30,7 +30,6 @@ namespace tensorflow {
 // scheme. It is used to add some file system optimizations for TPU on GCS datasets.
 class GsTpuFileSystem : public MemcachedGcsFileSystem {
  public:
-  struct TimeoutConfig;
 
   GsTpuFileSystem() : MemcachedGcsFileSystem() {}
 
