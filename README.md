@@ -16,9 +16,9 @@ TensorFlow I/O is a collection of file systems and file formats that are not
 available in TensorFlow's built-in support. A full list of supported file systems
 and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
-The use of tensorflow-io is straightforward with keras. Below is the example
-of [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
-data processing replaced by tensorflow-io:
+The use of tensorflow-io is straightforward with keras. Below is an example
+to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+the data processing aspect replaced by tensorflow-io:
 
 ```python
 import tensorflow as tf
@@ -45,22 +45,22 @@ model.compile(optimizer='adam',
 model.fit(d_train, epochs=5, steps_per_epoch=10000)
 ```
 
-Note that in the above example, [MNIST](http://yann.lecun.com/exdb/mnist/) database
-files' URL address are directly passes to `tfio.IODataset.from_mnist`, the API
-used to create MNIST Dataset. We are able to do that because `tensorflow-io`
-support `HTTP` file system out of the box. There is no need to download and
-save files to local directory any more. Note we are also passing the compressed
-files (gzip) as is, since `tensorflow-io` is able to detect and uncompress
-automatically for MNIST dataset if needed.
+In the above [MNIST](http://yann.lecun.com/exdb/mnist/) example, the URL's
+to access the dataset files are passed directly to the `tfio.IODataset.from_mnist` API call.
+This is due to the inherent support that `tensorflow-io` provides for the `HTTP` file system,
+thus eliminating the need for downloading and saving datasets on a local directory.
+
+NOTE: Since `tensorflow-io` is able to detect and uncompress the MNIST dataset automatically if needed,
+we can pass the URL's for the compressed files (gzip) to the API call as is.
 
 Please check the official [documentation](https://www.tensorflow.org/io) for more
-detailed usages.
+detailed and interesting usages of the package.
 
 ## Installation
 
 ### Python Package
 
-The `tensorflow-io` Python package could be installed with pip directly:
+The `tensorflow-io` Python package can be installed with pip directly using:
 ```sh
 $ pip install tensorflow-io
 ```
@@ -72,7 +72,7 @@ $ pip install tensorflow-io-nightly
 
 ### R Package
 
-Once the `tensorflow-io` Python package has beem successfully installed, you
+Once the `tensorflow-io` Python package has been successfully installed, you
 can then install the latest stable release of the R package via:
 
 ```r
@@ -113,38 +113,46 @@ version of TensorFlow I/O according to the table below:
 
 ## Development
 
+### IDE Setup
+
+For instructions on how to configure Visual Studio Code for developing TensorFlow I/O, please refer to
+https://github.com/tensorflow/io/blob/master/docs/vscode.md
+
 ### Lint
 
-TensorFlow I/O's code conforms through Bazel Buildifier, Clang Format, Black, and Pyupgrade. The following will check the source code and report any lint issues:
-```sh
-bazel run //tools/lint:check
+TensorFlow I/O's code conforms to Bazel Buildifier, Clang Format, Black, and Pyupgrade.
+Please use the following command to check the source code and identify lint issues:
+```
+$ bazel run //tools/lint:check
 ```
 
-For Bazel Buildifier and Clang Format, the following will automatically fix and lint errors:
-```sh
-bazel run //tools/lint:lint
+For Bazel Buildifier and Clang Format, the following command will automatically identify
+and fix any lint errors:
+```
+$ bazel run //tools/lint:lint
 ```
 
-Alternatively, if you only want to perform one lint check individually, then you can selectively pass `black`, `pyupgrade`, `bazel`, or `clang` from the above commands.
+Alternatively, if you only want to perform lint check using individual linters,
+then you can selectively pass `black`, `pyupgrade`, `bazel`, or `clang` to the above commands.
 
-For example, check with `black` only could be done with:
+For example, a `black` specific lint check can be done using:
 ```
-bazel run //tools/lint:check -- black
-```
-
-Fix with Bazel Buildifier or Clang Format could be done with:
-```
-bazel run //tools/lint:lint -- bazel clang
+$ bazel run //tools/lint:check -- black
 ```
 
-Check lint with Black or Pyupgrade for an individual python file could be done with:
+Lint fix using Bazel Buildifier and Clang Format can be done using:
 ```
-bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
+$ bazel run //tools/lint:lint -- bazel clang
 ```
 
-Format individual python file with black and pyupgrade could be done with:
+Lint check using `black` and `pyupgrade` for an individual python file can be done using:
 ```
-bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
+$ bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
+```
+
+Lint fix an individual python file with black and pyupgrade using:
+```
+$ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
 ```
 
 
@@ -155,13 +163,13 @@ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops
 On macOS Catalina or higher, it is possible to build tensorflow-io with
 system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
 
-Note Xcode installation is needed as tensorflow-io requires Swift for accessing
-Apple's native AVFoundation APIs.
-
-Note also there is a bug in macOS's native python 3.7.3 that could be fixed
-with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+NOTE: Xcode installation is needed as tensorflow-io requires Swift for accessing
+Apple's native AVFoundation APIs. Also there is a bug in macOS's native python 3.7.3
+that could be fixed with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
 
 ```sh
+#!/usr/bin/env bash
+
 # Use following command to check if Xcode is correctly installed:
 xcodebuild -version
 
@@ -185,25 +193,38 @@ sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
 ```
 
-If Xcode is installed, but `xcodebuild -version` is not showing so, you might need to enable Xcode command line with the command `xcode-select -s /Applications/Xcode.app/Contents/Developer`. Restart terminal might be required to make the above change effective.
+NOTE: When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed so that python can utilize the generated shared libraries after the build process.
 
-Note from the above the generated shared libraries (.so) are located in bazel-bin directory.
-When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed for shared libraries to
-be located by python.
+##### Troubleshoot
+
+If Xcode is installed, but `$ xcodebuild -version` is not displaying the expected output, you might need to enable Xcode command line with the command:
+
+`$ xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+
+A terminal restart might be required for the changes to take effect.
+
+Sample output:
+
+```
+$ xcodebuild -version
+Xcode 11.6
+Build version 11E708
+```
+
 
 #### Linux
 
-Development of tensorflow-io on Linux is similar to development on macOS. The required packages
-are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python than default system installed
+Development of tensorflow-io on Linux is similar to macOS. The required packages
+are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python, other than the default system installed
 versions might be required though.
-For instructions how to configure Visual Studio code to be able to build and debug TensorFlow I/O see
-https://github.com/tensorflow/io/blob/master/docs/vscode.md
 
 ##### Ubuntu 18.04/20.04
 
 Ubuntu 18.04/20.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
 the shared libraries on Ubuntu 18.04/20.04:
 ```sh
+#!/usr/bin/env bash
+
 # Install gcc/g++, git, unzip/curl (for bazel), and python3
 sudo apt-get -y -qq update
 sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
@@ -233,6 +254,8 @@ TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.p
 CentOS 8 requires gcc/g++, git, and python 3. The following will install dependencies and build
 the shared libraries on CentOS 8:
 ```sh
+#!/usr/bin/env bash
+
 # Install gcc/g++, git, unzip/which (for bazel), and python3
 sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
 
@@ -265,6 +288,8 @@ CentOS vs. newer gcc version by devtoolset.
 
 The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
 ```sh
+#!/usr/bin/env bash
+
 # Install centos-release-scl, then install gcc/g++ (devtoolset), git, and python 3
 sudo yum install -y centos-release-scl
 sudo yum install -y devtoolset-9 git rh-python36
@@ -291,6 +316,7 @@ BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstd
 # to run tests with `pytest`, e.g.:
 scl enable rh-python36 devtoolset-9 \
     'python3 -m pip install pytest'
+
 TFIO_DATAPATH=bazel-bin \
   scl enable rh-python36 devtoolset-9 \
     'python3 -m pytest -s -v tests/test_serialization_eager.py'
@@ -300,28 +326,29 @@ TFIO_DATAPATH=bazel-bin \
 
 It is possible to build python wheels after bazel build is complete with the following command:
 ```
-python3 setup.py bdist_wheel --data bazel-bin
+$ python3 setup.py bdist_wheel --data bazel-bin
 ```
-The whl file is will be available in dist directory. Note the bazel binary directory `bazel-bin`
+The .whl file will be available in dist directory. Note the bazel binary directory `bazel-bin`
 has to be passed with `--data` args in order for setup.py to locate the necessary share objects,
 as `bazel-bin` is outside of the `tensorflow_io` package directory.
 
 Alternatively, source install could be done with:
 ```
-TFIO_DATAPATH=bazel-bin python3 -m pip install .
+$ TFIO_DATAPATH=bazel-bin python3 -m pip install .
 ```
-with `TFIO_DATAPATH=bazel-bin` passed for the same readon.
+with `TFIO_DATAPATH=bazel-bin` passed for the same reason.
 
 Note installing with `-e` is different from the above. The
 ```
-TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
+$ TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
 ```
 will not install shared object automatically even with `TFIO_DATAPATH=bazel-bin`. Instead,
 `TFIO_DATAPATH=bazel-bin` has to be passed everytime the program is run after the install:
 ```
-TFIO_DATAPATH=bazel-bin python3
-# import tensorflow_io as tfio
-# ...
+$ TFIO_DATAPATH=bazel-bin python3
+
+>>> import tensorflow_io as tfio
+>>> ...
 ```
 
 #### Docker
@@ -329,17 +356,20 @@ TFIO_DATAPATH=bazel-bin python3
 For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
-$ # Build and run the Docker image
+# Build and run the Docker image
 $ docker build -f tools/dev/Dockerfile -t tfio-dev .
 $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
-$ # In Docker, configure will install TensorFlow or use existing install
-$ ./configure.sh
-$ # Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options)
-$ bazel build -c opt --copt=-march=native --copt=-fPIC -s --verbose_failures //tensorflow_io/...
-$ # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
-$ pytest -s -v tests/
-$ # Build the TensorFlow I/O package
-$ python setup.py bdist_wheel
+
+# Inside the docker container, ./configure.sh will install TensorFlow or use existing install
+(tfio-dev) root@docker-desktop:/v$ ./configure.sh
+
+# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options)
+(tfio-dev) root@docker-desktop:/v$ bazel build -c opt --copt=-march=native --copt=-fPIC -s --verbose_failures //tensorflow_io/...
+
+# Run tests with PyTest, note: some tests require launching additional containers to run (see below)
+(tfio-dev) root@docker-desktop:/v$ pytest -s -v tests/
+ # Build the TensorFlow I/O package
+(tfio-dev) root@docker-desktop:/v$ python setup.py bdist_wheel
 ```
 
 A package file `dist/tensorflow_io-*.whl` will be generated after a build is successful.
@@ -371,7 +401,7 @@ $ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
 We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
 so that you can use the R package directly for testing. You can build it via:
 ```sh
-docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
+$ docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
 ```
 
 Inside the container, you can start your R session, instantiate a `SequenceFileDataset`
@@ -416,6 +446,8 @@ If the system have docker installed, then the following command
 will automatically build manylinux2010 compatible whl package:
 
 ```sh
+#!/usr/bin/env bash
+
 ls dist/*
 for f in dist/*.whl; do
   docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
@@ -431,7 +463,7 @@ directory.
 On macOS, the same command could be used though the script expect `python` in shell
 and will only generate a whl package that matches the version of `python` in shell. If
 you want to build a whl package for a specific python then you have to alias this version
-of python to `python` in shell. See [.github/workflows/build.yml](.github/workflows/build.yml) 
+of python to `python` in shell. See [.github/workflows/build.yml](.github/workflows/build.yml)
 Auditwheel step for instructions how to do that.
 
 Note the above command is also the command we use when releasing packages for Linux and macOS.
@@ -456,7 +488,7 @@ Microsoft Azure Storage, Alibaba Cloud OSS etc.
 
 We tried our best to test against those systems in our continuous integration
 whenever possible. Some tests such as Prometheus, Kafka, and Ignite
-are done with live systems, meaning we install Prometheus/Kafka/Inite on CI machine before
+are done with live systems, meaning we install Prometheus/Kafka/Ignite on CI machine before
 the test is run. Some tests such as Kinesis, PubSub, and Azure Storage are done
 through official or non-official emulators. Offline tests are also performed whenever
 possible, though systems covered through offine tests may not have the same
