@@ -26,5 +26,7 @@ toc:
   path: /io/tutorials/genome
 - title: "PostgreSQL database"
   path: /io/tutorials/postgresql
+- title: "Color Space Conversions"
+  path: /io/tutorials/colorspace
 - title: "Audio"
   path: /io/tutorials/audio
