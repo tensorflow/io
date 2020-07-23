@@ -18,6 +18,7 @@ limitations under the License.
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
+#include "tensorflow/core/public/version.h"
 #include "tensorflow_io/arrow/kernels/arrow_kernels.h"
 #include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
@@ -260,8 +261,10 @@ class ArrowDatasetBase : public DatasetBase {
       switch (element.dtype()) {
         TF_CALL_ALL_TYPES(HANDLE_TYPE);
         TF_CALL_QUANTIZED_TYPES(HANDLE_TYPE);
+#if TF_MAJOR_VERSION == 2 && TF_MINOR_VERSION == 3
         TF_CALL_uint32(HANDLE_TYPE);
         TF_CALL_uint64(HANDLE_TYPE);
+#endif
 #undef HANDLE_TYPE
         default:
           return errors::Unimplemented(
