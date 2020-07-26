@@ -38,13 +38,13 @@ class KafkaGroupIODataset(tf.data.Dataset):
         can be changed to `7000ms`. However, the value for `session.timeout.ms` should be
         according to the following relation:
 
-        `group.max.session.timeout.ms` in server.properties > `session.timeout.ms` in the
+        - `group.max.session.timeout.ms` in server.properties > `session.timeout.ms` in the
         consumer.properties.
-        `group.min.session.timeout.ms` in server.properties < `session.timeout.ms` in the
+        - `group.min.session.timeout.ms` in server.properties < `session.timeout.ms` in the
         consumer.properties
 
         Args:
-          topic: A `tf.string` tensor containing topic names in [topic] format.
+          topics: A `tf.string` tensor containing topic names in [topic] format.
             For example: ["topic1"]
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
