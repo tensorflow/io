@@ -103,6 +103,28 @@ REGISTER_OP("IO>LayerKafkaSync")
     .Input("resource: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
+REGISTER_OP("IO>KafkaGroupReadableInit")
+    .Input("topics: string")
+    .Input("metadata: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>KafkaGroupReadableNext")
+    .Input("input: resource")
+    .Input("index: int64")
+    .Output("message: string")
+    .Output("key: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

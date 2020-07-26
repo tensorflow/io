@@ -761,6 +761,295 @@ class LayerKafkaSyncOp : public OpKernel {
   Env* env_ TF_GUARDED_BY(mu_);
 };
 
+static int64 partition_count = 0;
+static int64 eof_count = 0;
+class KafkaRebalanceCb : public RdKafka::RebalanceCb {
+ public:
+  KafkaRebalanceCb() : run_(true) {}
+
+  bool run() { return run_; }
+
+  void rebalance_cb(RdKafka::KafkaConsumer* consumer, RdKafka::ErrorCode err,
+                    std::vector<RdKafka::TopicPartition*>& partitions) {
+    LOG(ERROR) << "REBALANCE: " << RdKafka::err2str(err);
+    for (int partition = 0; partition < partitions.size(); partition++) {
+      partitions[partition]->set_offset(RdKafka::Topic::OFFSET_STORED);
+      LOG(INFO) << "REBALANCE: " << partitions[partition]->topic() << "["
+                << partitions[partition]->partition() << "], "
+                << partitions[partition]->offset() << " "
+                << partitions[partition]->err();
+    }
+    if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
+      LOG(INFO) << "REBALANCE: Assigning partitions";
+      consumer->assign(partitions);
+      partition_count = (int)partitions.size();
+    } else {
+      LOG(INFO) << "REBALANCE: Unassigning partitions";
+      consumer->unassign();
+      partition_count = 0;
+    }
+    eof_count = 0;
+  }
+
+ private:
+  mutable mutex mu_;
+  bool run_ TF_GUARDED_BY(mu_) = true;
+};
+
+class KafkaGroupReadableResource : public ResourceBase {
+ public:
+  KafkaGroupReadableResource(Env* env) : env_(env) {}
+  virtual ~KafkaGroupReadableResource() {
+    if (consumer_.get()) {
+      consumer_->unassign();
+      consumer_->close();
+      consumer_.reset(nullptr);
+    }
+  }
+
+  virtual Status Init(const std::vector<std::string>& topics,
+                      const std::vector<std::string>& metadata) {
+    mutex_lock l(mu_);
+
+    std::unique_ptr<RdKafka::Conf> conf(
+        RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
+    std::unique_ptr<RdKafka::Conf> conf_topic(
+        RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
+
+    string errstr;
+    RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i].find("conf.topic.") == 0) {
+        std::vector<string> parts = str_util::Split(metadata[i], "=");
+        if (parts.size() != 2) {
+          return errors::InvalidArgument("invalid topic configuration: ",
+                                         metadata[i]);
+        }
+        result = conf_topic->set(parts[0].substr(11), parts[1], errstr);
+        if (result != RdKafka::Conf::CONF_OK) {
+          return errors::Internal("failed to do topic configuration:",
+                                  metadata[i], "error:", errstr);
+        }
+      } else if (metadata[i] != "" &&
+                 metadata[i].find("conf.") == string::npos) {
+        std::vector<string> parts = str_util::Split(metadata[i], "=");
+        if (parts.size() != 2) {
+          return errors::InvalidArgument("invalid topic configuration: ",
+                                         metadata[i]);
+        }
+        if ((result = conf->set(parts[0], parts[1], errstr)) !=
+            RdKafka::Conf::CONF_OK) {
+          return errors::Internal("failed to do global configuration: ",
+                                  metadata[i], "error:", errstr);
+        }
+      }
+      LOG(INFO) << "Kafka configuration: " << metadata[i];
+    }
+    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) !=
+        RdKafka::Conf::CONF_OK) {
+      return errors::Internal("failed to set default_topic_conf:", errstr);
+    }
+
+    // default consumer.properties:
+    //   bootstrap.servers=localhost:9092
+    //   group.id=test-consumer-group
+
+    string bootstrap_servers;
+    if ((result = conf->get("bootstrap.servers", bootstrap_servers)) !=
+        RdKafka::Conf::CONF_OK) {
+      bootstrap_servers = "localhost:9092";
+      if ((result = conf->set("bootstrap.servers", bootstrap_servers,
+                              errstr)) != RdKafka::Conf::CONF_OK) {
+        return errors::Internal("failed to set bootstrap.servers [",
+                                bootstrap_servers, "]:", errstr);
+      }
+    }
+    string group_id;
+    if ((result = conf->get("group.id", group_id)) != RdKafka::Conf::CONF_OK) {
+      group_id = "test-consumer-group";
+      if ((result = conf->set("group.id", group_id, errstr)) !=
+          RdKafka::Conf::CONF_OK) {
+        return errors::Internal("failed to set group.id [", group_id,
+                                "]:", errstr);
+      }
+    }
+
+    // Always set enable.partition.eof=true
+    if ((result = conf->set("enable.partition.eof", "true", errstr)) !=
+        RdKafka::Conf::CONF_OK) {
+      return errors::Internal("Failed to set enable.partition.eof=true :",
+                              errstr);
+    }
+
+    if ((result = conf->set("event_cb", &kafka_event_cb_, errstr)) !=
+        RdKafka::Conf::CONF_OK) {
+      return errors::Internal("failed to set event_cb:", errstr);
+    }
+
+    if ((result = conf->set("rebalance_cb", &kafka_rebalance_cb_, errstr)) !=
+        RdKafka::Conf::CONF_OK) {
+      return errors::Internal("failed to set rebalance_cb:", errstr);
+    }
+
+    LOG(INFO) << "cpp: Creating the kafka consumer";
+    consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
+    if (!consumer_.get()) {
+      return errors::Internal("failed to create consumer:", errstr);
+    }
+
+    for (int i = 0; i < topics.size(); i++) {
+      LOG(INFO) << "cpp: Subscribing to the kafka topic: " << topics[i];
+    }
+    RdKafka::ErrorCode err = consumer_->subscribe(topics);
+    if (err != RdKafka::ERR_NO_ERROR) {
+      return errors::Internal("failed to subscribe to topics: ",
+                              RdKafka::err2str(err));
+    }
+
+    return Status::OK();
+  }
+  Status Next(const int64 index,
+              std::function<Status(const TensorShape& shape, Tensor** message,
+                                   Tensor** key)>
+                  allocate_func) {
+    mutex_lock l(mu_);
+    int64 total = 1024;
+    std::vector<string> message_value, key_value;
+    message_value.reserve(total);
+    key_value.reserve(total);
+
+    std::unique_ptr<RdKafka::Message> message;
+    int64 count = 0;
+    int64 run = 1;
+    while (consumer_.get() != nullptr && count < total && run == 1) {
+      if (!kafka_event_cb_.run()) {
+        return errors::Internal(
+            "failed to consume messages due to broker issue");
+      }
+      message.reset(consumer_->consume(timeout_));
+      if (message->err() == RdKafka::ERR_NO_ERROR) {
+        // Produce the line as output.
+        message_value.emplace_back(string(
+            static_cast<const char*>(message->payload()), message->len()));
+        key_value.emplace_back(
+            (message->key() != nullptr) ? string(*message->key()) : "");
+        count++;
+        continue;
+      } else if (message->err() == RdKafka::ERR__TRANSPORT) {
+        // Not return error here because consumer will try re-connect.
+        LOG(ERROR) << "Broker transport failure: " << message->errstr();
+      } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
+        if (++eof_count == partition_count) {
+          LOG(INFO) << "%% EOF reached for all " << partition_count
+                    << " partition(s)";
+          run = 0;
+        }
+      } else if (message->err() != RdKafka::ERR__TIMED_OUT) {
+        LOG(ERROR) << "Failed to consume: " << message->errstr();
+        break;
+      } else {
+        LOG(ERROR) << "Error: " << message->errstr();
+        run = 0;
+      }
+    }
+
+    // Prepare the outputs
+    TensorShape shape({static_cast<int64>(message_value.size())});
+    Tensor* message_tensor;
+    Tensor* key_tensor;
+    TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor));
+    for (size_t i = 0; i < message_value.size(); i++) {
+      message_tensor->flat<tstring>()(i) = message_value[i];
+      key_tensor->flat<tstring>()(i) = key_value[i];
+    }
+
+    return Status::OK();
+  }
+
+  string DebugString() const override { return "KafkaBaseResource"; }
+
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+  // std::unique_ptr<RdKafka::TopicPartition> subscription_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
+  KafkaEventCb kafka_event_cb_ = KafkaEventCb();
+  KafkaRebalanceCb kafka_rebalance_cb_ = KafkaRebalanceCb();
+  static const int timeout_ = 15000;
+};
+
+class KafkaGroupReadableInitOp
+    : public ResourceOpKernel<KafkaGroupReadableResource> {
+ public:
+  explicit KafkaGroupReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<KafkaGroupReadableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<KafkaGroupReadableResource>::Compute(context);
+
+    const Tensor* topics_tensor;
+    OP_REQUIRES_OK(context, context->input("topics", &topics_tensor));
+    std::vector<string> topics;
+    for (int64 i = 0; i < topics_tensor->NumElements(); i++) {
+      topics.push_back(topics_tensor->flat<tstring>()(i));
+    }
+
+    const Tensor* metadata_tensor;
+    OP_REQUIRES_OK(context, context->input("metadata", &metadata_tensor));
+    std::vector<string> metadata;
+    for (int64 i = 0; i < metadata_tensor->NumElements(); i++) {
+      metadata.push_back(metadata_tensor->flat<tstring>()(i));
+    }
+
+    OP_REQUIRES_OK(context, resource_->Init(topics, metadata));
+  }
+  Status CreateResource(KafkaGroupReadableResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new KafkaGroupReadableResource(env_);
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+};
+
+class KafkaGroupReadableNextOp : public OpKernel {
+ public:
+  explicit KafkaGroupReadableNextOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    KafkaGroupReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* index_tensor;
+    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
+    const int64 index = index_tensor->scalar<int64>()();
+
+    OP_REQUIRES_OK(
+        context,
+        resource->Next(
+            index,
+            [&](const TensorShape& shape, Tensor** message,
+                Tensor** key) -> Status {
+              TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
+              TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
+              return Status::OK();
+            }));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableInit").Device(DEVICE_CPU),
                         KafkaReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>KafkaReadableNext").Device(DEVICE_CPU),
@@ -775,6 +1064,10 @@ REGISTER_KERNEL_BUILDER(Name("IO>LayerKafkaCall").Device(DEVICE_CPU),
                         LayerKafkaCallOp);
 REGISTER_KERNEL_BUILDER(Name("IO>LayerKafkaSync").Device(DEVICE_CPU),
                         LayerKafkaSyncOp);
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaGroupReadableInit").Device(DEVICE_CPU),
+                        KafkaGroupReadableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>KafkaGroupReadableNext").Device(DEVICE_CPU),
+                        KafkaGroupReadableNextOp);
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
