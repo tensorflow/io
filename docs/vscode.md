@@ -1,7 +1,6 @@
 # Configuring Visual Studio Code
 
-Visual Studio is a free code editor, which runs on the macOS, Linux, and Windows operating systems.
-
+Visual Studio Code is a free code editor, which runs on the macOS, Linux, and Windows operating systems.
 It has nice tooling for Python and C++ development, visual debugger, git integration, and many more
 useful features. It is a great editor to use for TensorFlow IO development, but it takes some effort
 to configure it properly. VSCode configuration is very flexible, it allows compiling project using
@@ -10,6 +9,7 @@ might have specifics, but approach should be similar.
 
 
 ## Extensions
+
 To install an extension click the extensions view icon (Extensions) on the Sidebar, or use the shortcut Ctrl+Shift+X.
 Then searh for keyword below.
 
@@ -18,6 +18,7 @@ Then searh for keyword below.
 - [Python Extension Pack](https://marketplace.visualstudio.com/items?itemName=donjayamanne.python-extension-pack) - another useful extension for Python development
 
 ## Compiling projects
+
 TensorFlow IO is compiled using bazel build command:
 
 ```sh
@@ -119,6 +120,7 @@ skip -gfi /usr/include/c++/*
 ```
 
 ## Formatting files
+
 You can always reformat C++ or Python file by Right Click -> Format Document (Ctrl + Shift + I), but VSCode uses different style conention. Luckily it is easy to change.
 
 For Python formatting, see https://donjayamanne.github.io/pythonVSCodeDocs/docs/formatting/
