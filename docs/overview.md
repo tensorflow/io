@@ -13,6 +13,7 @@ Integrations with many systems and cloud vendors include (but not limited to):
 - Prometheus
 - Apache Kafka
 - Apache Ignite
+- Google Cloud BigQuery
 - Google Cloud PubSub
 - AWS Kinesis
 - Microsoft Azure Storage
