@@ -31,22 +31,6 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     """
     Parses `avro` records into a `dict` of tensors.
 
-    :param serialized: The batched, serialized string tensors.
-    :param reader_schema: The reader schema. Note, this MUST match the reader
-                          schema from the avro_record_dataset. Otherwise,
-                          this op will segfault!
-    :param features: A map of feature names mapped to feature
-                     information.
-    :param avro_names: (Optional.) may contain descriptive names
-                       for the corresponding serialized avro parts. These may
-                       be useful for debugging purposes, but they have no
-                       effect on the output. If not `None`, `avro_names`
-                       must be the same length as `serialized`.
-
-    :param name: The name of the op.
-
-    :return: A map of feature names to tensors.
-
     This op parses serialized avro records into a dictionary mapping keys to
     `Tensor`, and `SparseTensor` objects. `features` is a dict from keys to
     `VarLenFeature`, `SparseFeature`, `RaggedFeature`, and `FixedLenFeature`
@@ -79,6 +63,24 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     Use this within the dataset.map(parser_fn=parse_avro).
 
     Only works for batched serialized input!
+
+    Args:
+      serialized: The batched, serialized string tensors.
+
+      reader_schema: The reader schema. Note, this MUST match the reader schema
+        from the avro_record_dataset. Otherwise, this op will segfault!
+
+      features: A map of feature names mapped to feature information.
+
+      avro_names: (Optional.) may contain descriptive names for the
+        corresponding serialized avro parts. These may be useful for debugging
+        purposes, but they have no effect on the output. If not `None`,
+        `avro_names` must be the same length as `serialized`.
+
+      name: The name of the op.
+
+    Returns:
+      A map of feature names to tensors.
     """
     if not features:
         raise ValueError("Missing: features was %s." % features)
