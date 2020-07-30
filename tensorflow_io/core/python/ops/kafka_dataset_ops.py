@@ -95,10 +95,10 @@ class KafkaStreamIODataset(tf.data.Dataset):
 
         Args:
           topic: A `tf.string` tensor containing topic subscription.
-          partition: A `tf.int64` tensor containing the partition, by default 0.
-          offset: A `tf.int64` tensor containing the start offset, by default 0.
-          servers: An optional list of bootstrap servers, by default
-             `localhost:9092`.
+          partition: A `tf.int64` tensor containing the partition.
+          offset: A `tf.int64` tensor containing the start offset.
+          servers: An optional list of bootstrap servers.
+             For example: `localhost:9092`.
           configuration: An optional `tf.string` tensor containing
             configurations in [Key=Value] format.
             Global configuration: please refer to 'Global configuration properties'
