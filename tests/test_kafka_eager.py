@@ -184,3 +184,32 @@ def test_avro_encode_decode():
     entries = tfio.experimental.serialization.decode_avro(message, schema=schema)
     assert np.all(entries["f1"].numpy() == f1.numpy())
     assert np.all(entries["f2"].numpy() == f2.numpy())
+
+
+def test_kafka_group_io_dataset_new_cg():
+    """Test the functionality of the KafkaGroupIODataset when the consumer group
+    is being newly created.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtest",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i % 10)).encode() for i in range(10)])
+    )
+
+
+def test_kafka_group_io_dataset_no_lag():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer group has read all the messages and committed the offsets.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtest",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
