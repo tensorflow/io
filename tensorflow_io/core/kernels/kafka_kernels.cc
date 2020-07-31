@@ -772,8 +772,15 @@ class KafkaRebalanceCb : public RdKafka::RebalanceCb {
   void rebalance_cb(RdKafka::KafkaConsumer* consumer, RdKafka::ErrorCode err,
                     std::vector<RdKafka::TopicPartition*>& partitions) {
     LOG(ERROR) << "REBALANCE: " << RdKafka::err2str(err);
+    LOG(ERROR) << "Retrieved committed offsets with status code: "
+               << consumer->committed(partitions, 5000);
+
     for (int partition = 0; partition < partitions.size(); partition++) {
-      partitions[partition]->set_offset(RdKafka::Topic::OFFSET_STORED);
+      if (partitions[partition]->offset() == -1001) {
+        LOG(INFO)
+            << "The consumer group was newly created, reading from beginning";
+        partitions[partition]->set_offset(RdKafka::Topic::OFFSET_BEGINNING);
+      }
       LOG(INFO) << "REBALANCE: " << partitions[partition]->topic() << "["
                 << partitions[partition]->partition() << "], "
                 << partitions[partition]->offset() << " "
