@@ -253,7 +253,7 @@ def test_kafka_group_io_dataset_resume_primary_cg():
 
     # Write new messages to the topic
     for i in range(10, 100):
-        message = "D{0}".format(i)
+        message = "D{}".format(i)
         kafka_io.write_kafka(message=message, topic="key-partition-test")
 
     # Read only the newly sent 100 messages
@@ -277,7 +277,7 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
 
     # Write new messages to the topic
     for i in range(10, 100):
-        message = "D{0}".format(i)
+        message = "D{}".format(i)
         kafka_io.write_kafka(message=message, topic="key-test")
 
     # Read only the newly sent 100 messages
@@ -326,4 +326,3 @@ def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(100)] * 2)
     )
-
