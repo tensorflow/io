@@ -267,4 +267,3 @@ def test_kafka_group_io_dataset_secondary_cg():
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(100)])
     )
-
