@@ -190,9 +190,11 @@ def test_kafka_group_io_dataset_primary_cg():
     """Test the functionality of the KafkaGroupIODataset when the consumer group
     is being newly created.
 
-    NOTE: After the kafka cluster is setup during the testing phase, 10 messages are written
-    to the 'key-partition-test' topic with 5 in each partition. (topic created with 2 partitions)
-    The messages are split based on the keys.
+    NOTE: After the kafka cluster is setup during the testing phase, 10 messages
+    are written to the 'key-partition-test' topic with 5 in each partition
+    (topic created with 2 partitions, the messages are split based on the keys).
+    And the same 10 messages are written into the 'key-test' topic (topic created
+    with 1 partition, so no splitting of the messages based on the keys).
 
     K0:D0, K1:D1, K0:D2, K1:D3, K0:D4, K1:D5, K0:D6, K1:D7, K0:D8, K1:D9.
 
@@ -204,7 +206,7 @@ def test_kafka_group_io_dataset_primary_cg():
     """
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtest",
+        group_id="cgtestprimary",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -214,23 +216,39 @@ def test_kafka_group_io_dataset_primary_cg():
     )
 
 
-def test_kafka_group_io_dataset_no_lag():
+def test_kafka_group_io_dataset_primary_cg_no_lag():
     """Test the functionality of the KafkaGroupIODataset when the
     consumer group has read all the messages and committed the offsets.
     """
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtest",
+        group_id="cgtestprimary",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
     assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
 
 
-def test_kafka_group_io_dataset_resume_cg():
+def test_kafka_group_io_dataset_primary_cg_new_topic():
+    """Test the functionality of the KafkaGroupIODataset when the existing
+    consumer group reads data from a new topic.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10)])
+    )
+
+
+def test_kafka_group_io_dataset_resume_primary_cg():
     """Test the functionality of the KafkaGroupIODataset when the
-    consumer group is yet to catch up with the newly added messages only.
-    Instead of reading from the beginning.
+    consumer group is yet to catch up with the newly added messages only
+    (Instead of reading from the beginning).
     """
 
     # Write new messages to the topic
@@ -241,7 +259,31 @@ def test_kafka_group_io_dataset_resume_cg():
     # Read only the newly sent 100 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtest",
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10, 100)])
+    )
+
+
+def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer group is yet to catch up with the newly added messages only
+    (Instead of reading from the beginning) from the new topic.
+    """
+
+    # Write new messages to the topic
+    for i in range(10, 100):
+        message = "D{0}".format(i)
+        kafka_io.write_kafka(message=message, topic="key-test")
+
+    # Read only the newly sent 100 messages
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-test"],
+        group_id="cgtestprimary",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -259,7 +301,7 @@ def test_kafka_group_io_dataset_secondary_cg():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtestsec",
+        group_id="cgtestsecondary",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -267,3 +309,21 @@ def test_kafka_group_io_dataset_secondary_cg():
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(100)])
     )
+
+
+def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
+    """Test the functionality of the KafkaGroupIODataset when a new
+    consumer group reads data from multiple topics from the beginning.
+    """
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test", "key-test"],
+        group_id="cgtesttertiary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)] * 2)
+    )
+
