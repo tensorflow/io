@@ -927,8 +927,10 @@ class KafkaGroupReadableResource : public ResourceBase {
 
     std::unique_ptr<RdKafka::Message> message;
     int64 count = 0;
-    int64 run = 1;
-    while (consumer_.get() != nullptr && count < total && run == 1) {
+    int64 fetch = 1;
+    int64 max_timeout_runs = 15000 / timeout_;
+    int64 timeout_run = 0;
+    while (consumer_.get() != nullptr && count < total && fetch == 1) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal(
             "failed to consume messages due to broker issue");
@@ -948,15 +950,29 @@ class KafkaGroupReadableResource : public ResourceBase {
       } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
         if (++eof_count == partition_count) {
           LOG(INFO) << "%% EOF reached for all " << partition_count
-                    << " partition(s)";
-          run = 0;
+                    << " partition(s). Waiting for new messages !";
+          if (timeout_run < max_timeout_runs) {
+            LOG(INFO) << "Sleeping for timeout_ seconds";
+            sleep(timeout_ / 1000);
+            LOG(INFO) << "Slept for timeout_ seconds";
+            timeout_run++;
+          } else {
+            fetch = 0;
+          }
         }
       } else if (message->err() != RdKafka::ERR__TIMED_OUT) {
         LOG(ERROR) << "Failed to consume: " << message->errstr();
         break;
       } else {
         LOG(ERROR) << "Error: " << message->errstr();
-        run = 0;
+        if (timeout_run < max_timeout_runs) {
+          LOG(INFO) << "Sleeping for timeout_ seconds";
+          sleep(timeout_ / 1000);
+          LOG(INFO) << "Slept for timeout_ seconds";
+          timeout_run++;
+        } else {
+          fetch = 0;
+        }
       }
     }
 
@@ -981,7 +997,7 @@ class KafkaGroupReadableResource : public ResourceBase {
   std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
   KafkaEventCb kafka_event_cb_ = KafkaEventCb();
   KafkaRebalanceCb kafka_rebalance_cb_ = KafkaRebalanceCb();
-  static const int timeout_ = 15000;
+  static const int timeout_ = 5000;
 };
 
 class KafkaGroupReadableInitOp
