@@ -74,7 +74,9 @@ class KafkaGroupIODataset(tf.data.Dataset):
             self._resource = resource
             dataset = tf.data.experimental.Counter()
             dataset = dataset.map(
-                lambda i: core_ops.io_kafka_group_readable_next(self._resource, i)
+                lambda i: core_ops.io_kafka_group_readable_next(
+                    self._resource, i, message_timeout=5000, stream_timeout=15000
+                )
             )
             dataset = dataset.apply(
                 tf.data.experimental.take_while(
