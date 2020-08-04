@@ -61,7 +61,7 @@ class KafkaGroupIODataset(tf.data.Dataset):
           message_timeout: An optional timeout value (in milliseconds) for retrieving messages
             from kafka. Default value is 5000.
           stream_timeout: An optional timeout value (in milliseconds) to wait for the new messages
-            from kafka to be retrieved by the consumers. Default value in 5000.
+            from kafka to be retrieved by the consumers. Default value is 5000.
             NOTE: The stream_timeout value should always be greater than or equal to the message_timeout
             value.
           configuration: An optional `tf.string` tensor containing
