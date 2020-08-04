@@ -81,7 +81,7 @@ class KafkaGroupIODataset(tf.data.Dataset):
 
             if stream_timeout < message_timeout:
                 raise ValueError(
-                    "stream_timeout {0} is less than the message_timeout {1}".format(
+                    "stream_timeout {} is less than the message_timeout {}".format(
                         stream_timeout, message_timeout
                     )
                 )

@@ -383,4 +383,3 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(200)])
     )
-
