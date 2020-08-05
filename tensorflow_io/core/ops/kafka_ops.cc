@@ -117,6 +117,8 @@ REGISTER_OP("IO>KafkaGroupReadableInit")
 REGISTER_OP("IO>KafkaGroupReadableNext")
     .Input("input: resource")
     .Input("index: int64")
+    .Input("message_timeout: int64")
+    .Input("stream_timeout: int64")
     .Output("message: string")
     .Output("key: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
