@@ -21,7 +21,16 @@ from tensorflow_io.core.python.ops import core_ops
 class KafkaGroupIODataset(tf.data.Dataset):
     """KafkaGroupIODataset"""
 
-    def __init__(self, topics, group_id, servers, configuration, internal=True):
+    def __init__(
+        self,
+        topics,
+        group_id,
+        servers,
+        message_timeout=5000,
+        stream_timeout=5000,
+        configuration=None,
+        internal=True,
+    ):
         """Creates an `IODataset` from kafka server by joining a consumer group
         and maintaining offsets of all the partitions without explicit initialization.
         If the consumer joins an existing consumer group, it will start fetching
@@ -49,6 +58,12 @@ class KafkaGroupIODataset(tf.data.Dataset):
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
             For example: `localhost:9092`.
+          message_timeout: An optional timeout value (in milliseconds) for retrieving messages
+            from kafka. Default value is 5000.
+          stream_timeout: An optional timeout value (in milliseconds) to wait for the new messages
+            from kafka to be retrieved by the consumers. Default value is 5000.
+            NOTE: The `stream_timeout` value should always be greater than or equal to the `message_timeout`.
+            value.
           configuration: An optional `tf.string` tensor containing
             configurations in [Key=Value] format.
             Global configuration: please refer to 'Global configuration properties'
@@ -64,17 +79,30 @@ class KafkaGroupIODataset(tf.data.Dataset):
         with tf.name_scope("KafkaGroupIODataset"):
             assert internal
 
+            if stream_timeout < message_timeout:
+                raise ValueError(
+                    "stream_timeout {} is less than the message_timeout {}".format(
+                        stream_timeout, message_timeout
+                    )
+                )
             metadata = list(configuration or [])
             if group_id is not None:
                 metadata.append("group.id=%s" % group_id)
             if servers is not None:
                 metadata.append("bootstrap.servers=%s" % servers)
-            resource = core_ops.io_kafka_group_readable_init(topics, metadata=metadata)
+            resource = core_ops.io_kafka_group_readable_init(
+                topics=topics, metadata=metadata
+            )
 
             self._resource = resource
             dataset = tf.data.experimental.Counter()
             dataset = dataset.map(
-                lambda i: core_ops.io_kafka_group_readable_next(self._resource, i)
+                lambda i: core_ops.io_kafka_group_readable_next(
+                    input=self._resource,
+                    index=i,
+                    message_timeout=message_timeout,
+                    stream_timeout=stream_timeout,
+                )
             )
             dataset = dataset.apply(
                 tf.data.experimental.take_while(
