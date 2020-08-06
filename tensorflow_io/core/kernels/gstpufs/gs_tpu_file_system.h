@@ -31,8 +31,6 @@ namespace tensorflow {
 // datasets.
 class GsTpuFileSystem : public MemcachedGcsFileSystem {
  public:
-  struct TimeoutConfig;
-
   GsTpuFileSystem() : MemcachedGcsFileSystem() {}
 
  protected:
