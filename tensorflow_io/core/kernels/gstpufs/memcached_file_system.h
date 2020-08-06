@@ -40,8 +40,6 @@ constexpr size_t kDefaultMemcachedClientPoolSize = 64;
 // which adds retry logic to GCS operations.
 class MemcachedGcsFileSystem : public GcsFileSystem {
  public:
-  struct TimeoutConfig;
-
   // Main constructor used (via RetryingFileSystem) throughout Tensorflow.
   MemcachedGcsFileSystem();
 
