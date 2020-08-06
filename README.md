@@ -8,7 +8,6 @@
 
 [![GitHub CI](https://github.com/tensorflow/io/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tensorflow/io/actions?query=branch%3Amaster)
 [![PyPI](https://badge.fury.io/py/tensorflow-io.svg)](https://pypi.org/project/tensorflow-io/)
-[![CRAN](https://www.r-pkg.org/badges/version/tfio)](https://cran.r-project.org/package=tfio)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/tensorflow/io/blob/master/LICENSE)
 [![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.tensorflow.org/io)
 
@@ -73,13 +72,7 @@ $ pip install tensorflow-io-nightly
 ### R Package
 
 Once the `tensorflow-io` Python package has been successfully installed, you
-can then install the latest stable release of the R package via:
-
-```r
-install.packages('tfio')
-```
-
-You can also install the development version from Github via:
+can install the development version of the R package from GitHub via the following:
 ```r
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("tensorflow/io", subdir = "R-package")
