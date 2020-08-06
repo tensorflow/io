@@ -26,17 +26,17 @@ limitations under the License.
 
 namespace tensorflow {
 
-// GsTpuFileSystem is implemented simply to register "gstpu://" as a file system
+// GsMemcachedFileSystem is implemented simply to register "gsmemcached://" as a file system
 // scheme. It is used to add some file system optimizations for TPU on GCS
 // datasets.
-class GsTpuFileSystem : public MemcachedGcsFileSystem {
+class GsMemcachedFileSystem : public MemcachedGcsFileSystem {
  public:
-  GsTpuFileSystem() : MemcachedGcsFileSystem() {}
+  GsMemcachedFileSystem() : MemcachedGcsFileSystem() {}
 
  protected:
   /// \brief Splits a GCS path to a bucket and an object.
   ///
-  /// For example, "gstpu://bucket-name/path/to/file.txt" gets split into
+  /// For example, "gsmemcached://bucket-name/path/to/file.txt" gets split into
   /// "bucket-name" and "path/to/file.txt".
   /// If fname only contains the bucket and empty_object_ok = true, the returned
   /// object is empty.
@@ -45,10 +45,10 @@ class GsTpuFileSystem : public MemcachedGcsFileSystem {
 };
 
 /// Google Cloud Storage implementation of a file system with retry on failures.
-class RetryingGsTpuFileSystem : public RetryingFileSystem<GsTpuFileSystem> {
+class RetryingGsMemcachedFileSystem : public RetryingFileSystem<GsMemcachedFileSystem> {
  public:
-  RetryingGsTpuFileSystem()
-      : RetryingFileSystem(absl::make_unique<GsTpuFileSystem>(),
+  RetryingGsMemcachedFileSystem()
+      : RetryingFileSystem(absl::make_unique<GsMemcachedFileSystem>(),
                            RetryConfig(100000 /* init_delay_time_us */)) {}
 };
 

@@ -88,7 +88,7 @@ MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
   // system.
   if (GetEnvVar(kClientCacheType, StringPieceIdentity, &client_cache_type) &&
       client_cache_type == kMemcachedFileBlockCache) {
-    make_tpu_gcs_fs_cache_ = true;
+    make_memcached_gcs_fs_cache_ = true;
     size_t block_size = kDefaultBlockSize;
     size_t max_bytes = kDefaultMaxCacheSize;
     uint64 max_staleness = kDefaultMaxStaleness;
@@ -122,7 +122,7 @@ std::unique_ptr<FileBlockCache> MemcachedGcsFileSystem::MakeFileBlockCache(
     size_t block_size, size_t max_bytes, uint64 max_staleness) {
   StringPiece client_cache_type;
   if (!GetEnvVar(kClientCacheType, StringPieceIdentity, &client_cache_type) ||
-      !make_tpu_gcs_fs_cache_) {
+      !make_memcached_gcs_fs_cache_) {
     // If no cache type is specified, the RamFileBlockCache will be used
     // by default.
     client_cache_type = kRamFileBlockCache;
