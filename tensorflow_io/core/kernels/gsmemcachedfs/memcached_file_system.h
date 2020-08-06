@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
-#define TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
+#ifndef TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_
+#define TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_
 
 #include <string>
 #include <utility>
@@ -34,7 +34,7 @@ constexpr char kMemcachedClientPoolSize[] = "MEMCACHED_CLIENT_POOL_SIZE";
 constexpr size_t kDefaultMemcachedClientPoolSize = 64;
 
 // Google Cloud Storage implementation of a file system that contains a default
-// block-cache that is useful for TPU platform reads of GCS data.
+// block-cache based on memcached on top of a GCS data store.
 //
 // The clients should use MemcachedGcsFileSystem defined below,
 // which adds retry logic to GCS operations.
@@ -48,7 +48,7 @@ class MemcachedGcsFileSystem : public GcsFileSystem {
       size_t block_size, size_t max_bytes, uint64 max_staleness) override;
 
   // If the distributed cache is not specified for use in the env variables
-  // the TPU GCS File System will simply be a wrapper on top of GCS File System
+  // the MEMCACHED GCS File System will simply be a wrapper on top of GCS File System
   // that changes no behavior in the file system.
   bool make_memcached_gcs_fs_cache_ = false;
 
@@ -67,4 +67,4 @@ class MemcachedGcsFileSystem : public GcsFileSystem {
 
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
+#endif  // TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_

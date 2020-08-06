@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
-#define TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#ifndef TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#define TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_
 
 #include <functional>
 #include <list>
@@ -385,4 +385,4 @@ class MemcachedFileBlockCache : public FileBlockCache {
 
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#endif  // TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_

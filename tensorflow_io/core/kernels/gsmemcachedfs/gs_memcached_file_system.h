@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
-#define TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
+#ifndef TENSORFLOW_IO_GSMEMCACHEDFS_GS_MEMCACHED_FILE_SYSTEM_H_
+#define TENSORFLOW_IO_GSMEMCACHEDFS_GS_MEMCACHED_FILE_SYSTEM_H_
 
 #include <string>
 #include <utility>
@@ -27,7 +27,7 @@ limitations under the License.
 namespace tensorflow {
 
 // GsMemcachedFileSystem is implemented simply to register "gsmemcached://" as a file system
-// scheme. It is used to add some file system optimizations for TPU on GCS
+// scheme. It is used to add some file system optimizations for MEMCACHED on GCS
 // datasets.
 class GsMemcachedFileSystem : public MemcachedGcsFileSystem {
  public:
@@ -54,4 +54,4 @@ class RetryingGsMemcachedFileSystem : public RetryingFileSystem<GsMemcachedFileS
 
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_GSTPUFS_GS_TPU_FILE_SYSTEM_H_
+#endif  // TENSORFLOW_IO_GSMEMCACHEDFS_GS_MEMCACHED_FILE_SYSTEM_H_

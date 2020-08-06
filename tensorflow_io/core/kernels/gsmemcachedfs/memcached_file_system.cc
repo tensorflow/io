@@ -83,8 +83,8 @@ bool StringPieceIdentity(StringPiece str, StringPiece* value) {
 MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
   VLOG(1) << "Entering MemcachedGcsFileSystem::MemcachedGcsFileSystem";
   StringPiece client_cache_type;
-  // We only bother with TPU GCS File System logic if we are set to use the
-  // distributed cache. Otherwise skip TPU GCS FS and go straight to GCS file
+  // We only bother with MEMCACHED GCS File System logic if we are set to use the
+  // distributed cache. Otherwise skip MEMCACHED GCS FS and go straight to GCS file
   // system.
   if (GetEnvVar(kClientCacheType, StringPieceIdentity, &client_cache_type) &&
       client_cache_type == kMemcachedFileBlockCache) {
@@ -109,7 +109,7 @@ MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
     server_list_provider_ = absl::make_unique<GceMemcachedServerListProvider>(
         compute_engine_metadata_client_);
 
-    VLOG(1) << "Reseting TPU-GCS cache with params: max_bytes = " << max_bytes
+    VLOG(1) << "Reseting MEMCACHED-GCS cache with params: max_bytes = " << max_bytes
             << " ; "
             << "block_size = " << block_size << " ; "
             << "max_staleness = " << max_staleness;
