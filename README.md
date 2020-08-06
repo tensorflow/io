@@ -88,7 +88,8 @@ remotes::install_github("tensorflow/io", subdir = "R-package")
 ### TensorFlow Version Compatibility
 
 To ensure compatibility with TensorFlow, it is recommended to install a matching
-version of TensorFlow I/O according to the table below:
+version of TensorFlow I/O according to the table below. You can find the list
+of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
