@@ -26,7 +26,7 @@ limitations under the License.
 
 #include "absl/container/flat_hash_map.h"
 #include "tensorflow/core/platform/cloud/file_block_cache.h"
-#include "tensorflow_io/core/kernels/gstpufs/memcached_dao_interface.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_dao_interface.h"
 
 namespace tensorflow {
 

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/gstpufs/gs_tpu_file_system.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/gs_tpu_file_system.h"
 
 namespace tensorflow {
 
