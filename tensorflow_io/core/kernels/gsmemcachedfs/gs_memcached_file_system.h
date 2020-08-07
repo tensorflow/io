@@ -26,9 +26,9 @@ limitations under the License.
 
 namespace tensorflow {
 
-// GsMemcachedFileSystem is implemented simply to register "gsmemcached://" as a file system
-// scheme. It is used to add some file system optimizations for MEMCACHED on GCS
-// datasets.
+// GsMemcachedFileSystem is implemented simply to register "gsmemcached://" as a
+// file system scheme. It is used to add some file system optimizations for
+// MEMCACHED on GCS datasets.
 class GsMemcachedFileSystem : public MemcachedGcsFileSystem {
  public:
   GsMemcachedFileSystem() : MemcachedGcsFileSystem() {}
@@ -45,7 +45,8 @@ class GsMemcachedFileSystem : public MemcachedGcsFileSystem {
 };
 
 /// Google Cloud Storage implementation of a file system with retry on failures.
-class RetryingGsMemcachedFileSystem : public RetryingFileSystem<GsMemcachedFileSystem> {
+class RetryingGsMemcachedFileSystem
+    : public RetryingFileSystem<GsMemcachedFileSystem> {
  public:
   RetryingGsMemcachedFileSystem()
       : RetryingFileSystem(absl::make_unique<GsMemcachedFileSystem>(),
