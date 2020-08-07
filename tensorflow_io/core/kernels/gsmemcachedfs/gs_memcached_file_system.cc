@@ -17,11 +17,14 @@ limitations under the License.
 
 namespace tensorflow {
 
-Status GsMemcachedFileSystem::ParseGcsPath(StringPiece fname, bool empty_object_ok,
-                                     string* bucket, string* object) {
-  return ParseGcsPathForScheme(fname, "gsmemcached", empty_object_ok, bucket, object);
+Status GsMemcachedFileSystem::ParseGcsPath(StringPiece fname,
+                                           bool empty_object_ok, string* bucket,
+                                           string* object) {
+  return ParseGcsPathForScheme(fname, "gsmemcached", empty_object_ok, bucket,
+                               object);
 }
 
 }  // namespace tensorflow
 
-REGISTER_FILE_SYSTEM("gsmemcached", ::tensorflow::RetryingGsMemcachedFileSystem);
+REGISTER_FILE_SYSTEM("gsmemcached",
+                     ::tensorflow::RetryingGsMemcachedFileSystem);		
