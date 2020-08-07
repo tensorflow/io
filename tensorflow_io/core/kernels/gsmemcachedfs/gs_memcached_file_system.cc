@@ -27,4 +27,4 @@ Status GsMemcachedFileSystem::ParseGcsPath(StringPiece fname,
 }  // namespace tensorflow
 
 REGISTER_FILE_SYSTEM("gsmemcached",
-                     ::tensorflow::RetryingGsMemcachedFileSystem);		
+                     ::tensorflow::RetryingGsMemcachedFileSystem);
