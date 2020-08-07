@@ -64,9 +64,9 @@ cc_library(
 )
 
 cc_library(
-    name = "gs_tpu_file_system",
-    srcs = ["gs_tpu_file_system.cc"],
-    hdrs = ["gs_tpu_file_system.h"],
+    name = "gs_memcached_file_system",
+    srcs = ["gs_memcached_file_system.cc"],
+    hdrs = ["gs_memcached_file_system.h"],
     copts = tf_io_copts(),
     linkstatic = 1,  # Needed since alwayslink is broken in bazel b/27630669
     visibility = ["//visibility:public"],

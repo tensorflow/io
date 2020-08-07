@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/gstpufs/memcached_file_system.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_file_system.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -83,12 +83,12 @@ bool StringPieceIdentity(StringPiece str, StringPiece* value) {
 MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
   VLOG(1) << "Entering MemcachedGcsFileSystem::MemcachedGcsFileSystem";
   StringPiece client_cache_type;
-  // We only bother with TPU GCS File System logic if we are set to use the
-  // distributed cache. Otherwise skip TPU GCS FS and go straight to GCS file
-  // system.
+  // We only run MEMCACHED GCS File System logic if we are set to use the
+  // distributed cache. Otherwise skip MEMCACHED GCS FS and go straight to
+  // the GCS file system.
   if (GetEnvVar(kClientCacheType, StringPieceIdentity, &client_cache_type) &&
       client_cache_type == kMemcachedFileBlockCache) {
-    make_tpu_gcs_fs_cache_ = true;
+    make_memcached_gcs_fs_cache_ = true;
     size_t block_size = kDefaultBlockSize;
     size_t max_bytes = kDefaultMaxCacheSize;
     uint64 max_staleness = kDefaultMaxStaleness;
@@ -109,8 +109,8 @@ MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
     server_list_provider_ = absl::make_unique<GceMemcachedServerListProvider>(
         compute_engine_metadata_client_);
 
-    VLOG(1) << "Reseting TPU-GCS cache with params: max_bytes = " << max_bytes
-            << " ; "
+    VLOG(1) << "Reseting MEMCACHED-GCS cache with params: max_bytes = "
+            << max_bytes << " ; "
             << "block_size = " << block_size << " ; "
             << "max_staleness = " << max_staleness;
     ResetFileBlockCache(block_size, max_bytes, max_staleness);
@@ -122,7 +122,7 @@ std::unique_ptr<FileBlockCache> MemcachedGcsFileSystem::MakeFileBlockCache(
     size_t block_size, size_t max_bytes, uint64 max_staleness) {
   StringPiece client_cache_type;
   if (!GetEnvVar(kClientCacheType, StringPieceIdentity, &client_cache_type) ||
-      !make_tpu_gcs_fs_cache_) {
+      !make_memcached_gcs_fs_cache_) {
     // If no cache type is specified, the RamFileBlockCache will be used
     // by default.
     client_cache_type = kRamFileBlockCache;

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
-#define TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#ifndef TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#define TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_
 
 #include <functional>
 #include <list>
@@ -26,7 +26,7 @@ limitations under the License.
 
 #include "absl/container/flat_hash_map.h"
 #include "tensorflow/core/platform/cloud/file_block_cache.h"
-#include "tensorflow_io/core/kernels/gstpufs/memcached_dao_interface.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_dao_interface.h"
 
 namespace tensorflow {
 
@@ -385,4 +385,4 @@ class MemcachedFileBlockCache : public FileBlockCache {
 
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_BLOCK_CACHE_H_
+#endif  // TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_BLOCK_CACHE_H_

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
-#define TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
+#ifndef TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_
+#define TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_
 
 #include <string>
 #include <utility>
@@ -22,8 +22,8 @@ limitations under the License.
 
 #include "absl/memory/memory.h"
 #include "tensorflow/core/platform/cloud/gcs_file_system.h"
-#include "tensorflow_io/core/kernels/gstpufs/gce_memcached_server_list_provider.h"
-#include "tensorflow_io/core/kernels/gstpufs/memcached_file_block_cache.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/gce_memcached_server_list_provider.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_file_block_cache.h"
 
 namespace tensorflow {
 
@@ -34,7 +34,7 @@ constexpr char kMemcachedClientPoolSize[] = "MEMCACHED_CLIENT_POOL_SIZE";
 constexpr size_t kDefaultMemcachedClientPoolSize = 64;
 
 // Google Cloud Storage implementation of a file system that contains a default
-// block-cache that is useful for TPU platform reads of GCS data.
+// block-cache based on memcached on top of a GCS data store.
 //
 // The clients should use MemcachedGcsFileSystem defined below,
 // which adds retry logic to GCS operations.
@@ -48,9 +48,9 @@ class MemcachedGcsFileSystem : public GcsFileSystem {
       size_t block_size, size_t max_bytes, uint64 max_staleness) override;
 
   // If the distributed cache is not specified for use in the env variables
-  // the TPU GCS File System will simply be a wrapper on top of GCS File System
-  // that changes no behavior in the file system.
-  bool make_tpu_gcs_fs_cache_ = false;
+  // the MEMCACHED GCS File System will simply be a thin noop wrapper on
+  // top of GCS File System that changes no behavior in the file system.
+  bool make_memcached_gcs_fs_cache_ = false;
 
   // Vector of pointers to the Memcached DAO objects, which is passed to the
   // distributed cached object has pointers to the clients.
@@ -67,4 +67,4 @@ class MemcachedGcsFileSystem : public GcsFileSystem {
 
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_GSTPUFS_MEMCACHED_FILE_SYSTEM_H_
+#endif  // TENSORFLOW_IO_GSMEMCACHEDFS_MEMCACHED_FILE_SYSTEM_H_

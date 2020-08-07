@@ -1,4 +1,4 @@
-#include "tensorflow_io/core/kernels/gstpufs/gce_memcached_server_list_provider.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/gce_memcached_server_list_provider.h"
 
 namespace tensorflow {
 

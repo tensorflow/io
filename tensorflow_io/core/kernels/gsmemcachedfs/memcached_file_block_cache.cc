@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/gstpufs/memcached_file_block_cache.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_file_block_cache.h"
 
 #include <random>
 

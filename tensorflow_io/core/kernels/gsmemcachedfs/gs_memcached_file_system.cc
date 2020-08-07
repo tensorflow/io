@@ -13,15 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/gstpufs/gs_tpu_file_system.h"
+#include "tensorflow_io/core/kernels/gsmemcachedfs/gs_memcached_file_system.h"
 
 namespace tensorflow {
 
-Status GsTpuFileSystem::ParseGcsPath(StringPiece fname, bool empty_object_ok,
-                                     string* bucket, string* object) {
-  return ParseGcsPathForScheme(fname, "gstpu", empty_object_ok, bucket, object);
+Status GsMemcachedFileSystem::ParseGcsPath(StringPiece fname,
+                                           bool empty_object_ok, string* bucket,
+                                           string* object) {
+  return ParseGcsPathForScheme(fname, "gsmemcached", empty_object_ok, bucket,
+                               object);
 }
 
 }  // namespace tensorflow
 
-REGISTER_FILE_SYSTEM("gstpu", ::tensorflow::RetryingGsTpuFileSystem);
+REGISTER_FILE_SYSTEM("gsmemcached",
+                     ::tensorflow::RetryingGsMemcachedFileSystem);
