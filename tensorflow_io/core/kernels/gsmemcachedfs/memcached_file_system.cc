@@ -110,8 +110,7 @@ MemcachedGcsFileSystem::MemcachedGcsFileSystem() : GcsFileSystem() {
         compute_engine_metadata_client_);
 
     VLOG(1) << "Reseting MEMCACHED-GCS cache with params: max_bytes = "
-	    << max_bytes
-            << " ; "
+	    << max_bytes << " ; "
             << "block_size = " << block_size << " ; "
             << "max_staleness = " << max_staleness;
     ResetFileBlockCache(block_size, max_bytes, max_staleness);
