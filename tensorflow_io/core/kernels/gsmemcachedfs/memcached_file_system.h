@@ -48,8 +48,8 @@ class MemcachedGcsFileSystem : public GcsFileSystem {
       size_t block_size, size_t max_bytes, uint64 max_staleness) override;
 
   // If the distributed cache is not specified for use in the env variables
-  // the MEMCACHED GCS File System will simply be a wrapper on top of GCS File
-  // System that changes no behavior in the file system. 
+  // the MEMCACHED GCS File System will simply be a thin noop wrapper on
+  // top of GCS File System that changes no behavior in the file system. 
   bool make_memcached_gcs_fs_cache_ = false;
 
   // Vector of pointers to the Memcached DAO objects, which is passed to the
