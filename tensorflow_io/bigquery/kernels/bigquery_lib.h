@@ -172,7 +172,7 @@ class BigQueryReaderArrowDatasetIterator
     this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
     if (!this->reader_->Read(this->response_.get())) {
       *end_of_sequence = true;
-      return Status::OK();
+      return this->reader_->Finish();
     }
 
     this->current_row_index_ = 0;
@@ -253,7 +253,7 @@ class BigQueryReaderAvroDatasetIterator
     if (!this->reader_->Read(this->response_.get())) {
       VLOG(3) << "no data";
       *end_of_sequence = true;
-      return Status::OK();
+      return this->reader_->Finish();
     }
     this->current_row_index_ = 0;
     this->decoder_ = avro::binaryDecoder();
