@@ -23,25 +23,35 @@ the data processing aspect replaced by tensorflow-io:
 import tensorflow as tf
 import tensorflow_io as tfio
 
-# Read MNIST into Dataset
+# Read the MNIST data into the IODataset.
 d_train = tfio.IODataset.from_mnist(
     'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
+    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz')
 
-# By default image data is uint8 so convert to float32.
+# Shuffle the elements of the dataset.
+d_train = d_train.shuffle(buffer_size=1024)
+
+# By default image data is uint8, so convert to float32 using map().
 d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
+# prepare batches the data just like any other tf.data.Dataset
+d_train = d_train.batch(32)
+
+# Build the model.
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
   tf.keras.layers.Dense(512, activation=tf.nn.relu),
   tf.keras.layers.Dropout(0.2),
   tf.keras.layers.Dense(10, activation=tf.nn.softmax)
 ])
+
+# Compile the model.
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(d_train, epochs=5, steps_per_epoch=10000)
+# Fit the model.
+model.fit(d_train, epochs=5, steps_per_epoch=200)
 ```
 
 In the above [MNIST](http://yann.lecun.com/exdb/mnist/) example, the URL's
