@@ -30,5 +30,5 @@ toc:
   path: /io/tutorials/colorspace
 - title: "Audio"
   path: /io/tutorials/audio
-  - title: "Kafka"
+- title: "Kafka"
   path: /io/tutorials/kafka
