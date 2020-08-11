@@ -33,11 +33,11 @@ namespace tensorflow {
 namespace data {
 
 static mutex mu(LINKER_INITIALIZED);
-static unsigned count(0);
+static bool initialized(false);
+
 void FFmpegInit() {
   mutex_lock lock(mu);
-  count++;
-  if (count == 1) {
+  if (!initialized) {
     // Set log level if needed
     static const struct {
       const char* name;
@@ -63,6 +63,7 @@ void FFmpegInit() {
 
     // Register all formats and codecs
     av_register_all();
+    initialized = true;
   }
 }
 

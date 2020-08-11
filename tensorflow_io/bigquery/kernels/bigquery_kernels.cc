@@ -189,21 +189,21 @@ class BigQueryReadSessionOp : public OpKernel {
     for (int i = 0; i < readSessionResponse->streams_size(); i++) {
       streams_vec(i) = readSessionResponse->streams(i).name();
     }
-    Tensor* avro_schema_t = nullptr;
-    OP_REQUIRES_OK(ctx, ctx->allocate_output("schema", {}, &avro_schema_t));
+    Tensor* schema_t = nullptr;
+    OP_REQUIRES_OK(ctx, ctx->allocate_output("schema", {}, &schema_t));
 
     if (data_format_ == apiv1beta1::DataFormat::AVRO) {
       OP_REQUIRES(ctx, readSessionResponse->has_avro_schema(),
                   errors::InvalidArgument("AVRO schema is missing"));
       VLOG(3) << "avro schema:" << readSessionResponse->avro_schema().schema();
-      avro_schema_t->scalar<tstring>()() =
+      schema_t->scalar<tstring>()() =
           readSessionResponse->avro_schema().schema();
     } else if (data_format_ == apiv1beta1::DataFormat::ARROW) {
       OP_REQUIRES(ctx, readSessionResponse->has_arrow_schema(),
-                  errors::InvalidArgument("AVRO schema is missing"));
+                  errors::InvalidArgument("ARROW schema is missing"));
       VLOG(3) << "arrow schema:"
               << readSessionResponse->arrow_schema().serialized_schema();
-      avro_schema_t->scalar<tstring>()() =
+      schema_t->scalar<tstring>()() =
           readSessionResponse->arrow_schema().serialized_schema();
     } else {
       ctx->CtxFailure(errors::InvalidArgument("Invalid data_format"));

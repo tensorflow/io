@@ -8,7 +8,6 @@
 
 [![GitHub CI](https://github.com/tensorflow/io/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tensorflow/io/actions?query=branch%3Amaster)
 [![PyPI](https://badge.fury.io/py/tensorflow-io.svg)](https://pypi.org/project/tensorflow-io/)
-[![CRAN](https://www.r-pkg.org/badges/version/tfio)](https://cran.r-project.org/package=tfio)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/tensorflow/io/blob/master/LICENSE)
 [![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://www.tensorflow.org/io)
 
@@ -24,25 +23,35 @@ the data processing aspect replaced by tensorflow-io:
 import tensorflow as tf
 import tensorflow_io as tfio
 
-# Read MNIST into Dataset
+# Read the MNIST data into the IODataset.
 d_train = tfio.IODataset.from_mnist(
     'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz').batch(1)
+    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz')
 
-# By default image data is uint8 so convert to float32.
+# Shuffle the elements of the dataset.
+d_train = d_train.shuffle(buffer_size=1024)
+
+# By default image data is uint8, so convert to float32 using map().
 d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32), y))
 
+# prepare batches the data just like any other tf.data.Dataset
+d_train = d_train.batch(32)
+
+# Build the model.
 model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
   tf.keras.layers.Dense(512, activation=tf.nn.relu),
   tf.keras.layers.Dropout(0.2),
   tf.keras.layers.Dense(10, activation=tf.nn.softmax)
 ])
+
+# Compile the model.
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(d_train, epochs=5, steps_per_epoch=10000)
+# Fit the model.
+model.fit(d_train, epochs=5, steps_per_epoch=200)
 ```
 
 In the above [MNIST](http://yann.lecun.com/exdb/mnist/) example, the URL's
@@ -73,13 +82,7 @@ $ pip install tensorflow-io-nightly
 ### R Package
 
 Once the `tensorflow-io` Python package has been successfully installed, you
-can then install the latest stable release of the R package via:
-
-```r
-install.packages('tfio')
-```
-
-You can also install the development version from Github via:
+can install the development version of the R package from GitHub via the following:
 ```r
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("tensorflow/io", subdir = "R-package")
@@ -88,7 +91,8 @@ remotes::install_github("tensorflow/io", subdir = "R-package")
 ### TensorFlow Version Compatibility
 
 To ensure compatibility with TensorFlow, it is recommended to install a matching
-version of TensorFlow I/O according to the table below:
+version of TensorFlow I/O according to the table below. You can find the list
+of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
