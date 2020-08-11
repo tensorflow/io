@@ -427,4 +427,3 @@ def test_kafka_batch_io_dataset():
         assert issubclass(type(mini_d), tf.data.Dataset)
         # Fits the model as long as the data keeps on streaming
         model.fit(mini_d, epochs=5)
-
