@@ -60,15 +60,13 @@ class BigQueryClientOp : public OpKernel {
       ResourceMgr* mgr = ctx->resource_manager();
       OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
       BigQueryClientResource* resource;
-      OP_REQUIRES_OK(
-          ctx,
-          mgr->LookupOrCreate<BigQueryClientResource>(
-              cinfo_.container(), cinfo_.name(), &resource,
-              [this, ctx](BigQueryClientResource** ret)
-                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                    *ret = new BigQueryClientResource();
-                    return Status::OK();
-                  }));
+      OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigQueryClientResource>(
+                              cinfo_.container(), cinfo_.name(), &resource,
+                              [this, ctx](BigQueryClientResource** ret)
+                                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                                    *ret = new BigQueryClientResource();
+                                    return Status::OK();
+                                  }));
       core::ScopedUnref resource_cleanup(resource);
       initialized_ = true;
     }

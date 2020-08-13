@@ -52,29 +52,27 @@ Status GetDataFormat(string data_format_str,
 class BigQueryClientResource : public ResourceBase {
  public:
   explicit BigQueryClientResource(
-      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()> stub_factory)
-      : stub_factory_(stub_factory) {
-  }
+      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()>
+          stub_factory)
+      : stub_factory_(stub_factory) {}
 
-  explicit BigQueryClientResource() : BigQueryClientResource([]()
-  {
-      string server_name =
-          "dns:///bigquerystorage.googleapis.com";
-      auto creds = ::grpc::GoogleDefaultCredentials();
-      grpc::ChannelArguments args;
-      args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
-      args.SetUserAgentPrefix(
-          strings::StrCat("tensorflow-", TF_VERSION_STRING));
-      args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
-      args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
-      auto channel =
-          ::grpc::CreateCustomChannel(server_name, creds, args);
-      VLOG(3) << "Creating GRPC channel";
-      return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(channel);
-  }) {}
+  explicit BigQueryClientResource()
+      : BigQueryClientResource([]() {
+          string server_name = "dns:///bigquerystorage.googleapis.com";
+          auto creds = ::grpc::GoogleDefaultCredentials();
+          grpc::ChannelArguments args;
+          args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
+          args.SetUserAgentPrefix(
+              strings::StrCat("tensorflow-", TF_VERSION_STRING));
+          args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
+          args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
+          auto channel = ::grpc::CreateCustomChannel(server_name, creds, args);
+          VLOG(3) << "Creating GRPC channel";
+          return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(channel);
+        }) {}
 
-  apiv1beta1::BigQueryStorage::Stub* GetStub(const string& read_stream)
-    TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  apiv1beta1::BigQueryStorage::Stub *GetStub(const string &read_stream)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (stubs_.find(read_stream) == stubs_.end()) {
       auto stub = stub_factory_();
       stubs_.emplace(read_stream, std::move(stub));
@@ -84,11 +82,12 @@ class BigQueryClientResource : public ResourceBase {
 
   string DebugString() const override { return "BigQueryClientResource"; }
 
-private:
-  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()> stub_factory_;
+ private:
+  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()>
+      stub_factory_;
   mutex mu_;
-  std::unordered_map<string, std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>> stubs_
-    TF_GUARDED_BY(mu_);
+  std::unordered_map<string, std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>>
+      stubs_ TF_GUARDED_BY(mu_);
 };
 
 namespace data {
@@ -157,8 +156,10 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
 
     VLOG(3) << "getting reader, stream: "
             << readRowsRequest.read_position().stream().DebugString();
-    reader_ = this->dataset()->client_resource()->GetStub(readRowsRequest.read_position().stream().name())->ReadRows(
-        read_rows_context_.get(), readRowsRequest);
+    reader_ = this->dataset()
+                  ->client_resource()
+                  ->GetStub(readRowsRequest.read_position().stream().name())
+                  ->ReadRows(read_rows_context_.get(), readRowsRequest);
 
     return Status::OK();
   }
@@ -290,7 +291,8 @@ class BigQueryReaderAvroDatasetIterator
             &this->response_->avro_rows().serialized_binary_rows()[0]),
         this->response_->avro_rows().serialized_binary_rows().size());
     this->decoder_->init(*memory_input_stream_);
-    this->datum_ = absl::make_unique<avro::GenericDatum>(*this->dataset()->avro_schema());
+    this->datum_ =
+        absl::make_unique<avro::GenericDatum>(*this->dataset()->avro_schema());
     return Status::OK();
   }
 
@@ -302,7 +304,8 @@ class BigQueryReaderAvroDatasetIterator
     if (this->datum_->type() != avro::AVRO_RECORD) {
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
-    const avro::GenericRecord &record = this->datum_->value<avro::GenericRecord>();
+    const avro::GenericRecord &record =
+        this->datum_->value<avro::GenericRecord>();
 
     if (this->column_indices_.size() == 0) {
       this->column_indices_.reserve(columns.size());
@@ -371,7 +374,7 @@ class BigQueryReaderAvroDatasetIterator
             break;
           default:
             return errors::InvalidArgument("unsupported data type: ",
-                                          field.type());
+                                           field.type());
         }
         if (dtype != output_types[i]) {
           return errors::InvalidArgument(
@@ -387,7 +390,8 @@ class BigQueryReaderAvroDatasetIterator
     for (size_t i = 0; i < columns.size(); i++) {
       Tensor tensor(ctx->allocator({}), output_types[i], {});
       out_tensors->emplace_back(std::move(tensor));
-      const avro::GenericDatum &field = record.fieldAt(this->column_indices_[i]);
+      const avro::GenericDatum &field =
+          record.fieldAt(this->column_indices_[i]);
       switch (field.type()) {
         case avro::AVRO_BOOL:
           ((*out_tensors)[i]).scalar<bool>()() = field.value<bool>();
