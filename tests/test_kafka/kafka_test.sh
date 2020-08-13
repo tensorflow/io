@@ -35,6 +35,7 @@ sleep 10
 echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
 echo -e "K0:D0\nK1:D1\nK0:D2\nK1:D3\nK0:D4\nK1:D5\nK0:D6\nK1:D7\nK0:D8\nK1:D9" > confluent-$VERSION/key-test
 echo -e "K0:D0\nK1:D1\nK0:D2\nK1:D3\nK0:D4\nK1:D5\nK0:D6\nK1:D7\nK0:D8\nK1:D9" > confluent-$VERSION/key-partition-test
+echo -e "0:0\n1:1\n0:2\n1:3\n0:4\n1:5\n0:6\n1:7\n0:8\n1:9" > confluent-$VERSION/mini-batch-test
 echo "Waiting for 15 secs until schema registry is ready and other services are up and running"
 sleep 15
 
@@ -49,6 +50,10 @@ sudo confluent-$VERSION/bin/kafka-console-producer --topic key-test --property "
 echo "Creating and populating 'key-partition-test' multi-partition topic with sample keyed messages"
 sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 2 --topic key-partition-test
 sudo confluent-$VERSION/bin/kafka-console-producer --topic key-partition-test --property "parse.key=true" --property "key.separator=:" --broker-list 127.0.0.1:9092 < confluent-$VERSION/key-partition-test
+
+echo "Creating and populating 'mini-batch-test' multi-partition topic with sample keyed messages"
+sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 2 --topic mini-batch-test
+sudo confluent-$VERSION/bin/kafka-console-producer --topic mini-batch-test --property "parse.key=true" --property "key.separator=:" --broker-list 127.0.0.1:9092 < confluent-$VERSION/mini-batch-test
 
 echo "Creating and populating 'avro-test' topic with sample messages."
 sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic avro-test

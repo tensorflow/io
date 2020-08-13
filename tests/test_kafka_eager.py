@@ -383,3 +383,47 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(200)])
     )
+
+
+def test_kafka_batch_io_dataset():
+    """Test the functionality of the KafkaBatchIODataset by training a model
+    directly on the incoming kafka message batch(of type tf.data.Dataset), in an
+    online-training fashion.
+
+    NOTE: This kind of dataset is suitable in scenarios where the 'keys' of 'messages'
+        act as labels.
+    """
+
+    dataset = tfio.experimental.streaming.KafkaBatchIODataset(
+        topics=["mini-batch-test"],
+        group_id="cgminibatch",
+        servers=None,
+        stream_timeout=5000,
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+
+    NUM_COLUMNS = 1
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Input(shape=(NUM_COLUMNS,)),
+            tf.keras.layers.Dense(4, activation="relu"),
+            tf.keras.layers.Dropout(0.1),
+            tf.keras.layers.Dense(1, activation="sigmoid"),
+        ]
+    )
+    model.compile(
+        optimizer="adam",
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
+    assert issubclass(type(dataset), tf.data.Dataset)
+    for mini_d in dataset:
+        mini_d = mini_d.map(
+            lambda m, k: (
+                tf.strings.to_number(m, out_type=tf.float32),
+                tf.strings.to_number(k, out_type=tf.float32),
+            )
+        ).batch(2)
+        assert issubclass(type(mini_d), tf.data.Dataset)
+        # Fits the model as long as the data keeps on streaming
+        model.fit(mini_d, epochs=5)
