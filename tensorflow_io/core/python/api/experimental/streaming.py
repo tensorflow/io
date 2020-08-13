@@ -17,3 +17,6 @@
 from tensorflow_io.core.python.experimental.kafka_group_io_dataset_ops import (  # pylint: disable=unused-import
     KafkaGroupIODataset,
 )
+from tensorflow_io.core.python.experimental.kafka_batch_io_dataset_ops import (  # pylint: disable=unused-import
+    KafkaBatchIODataset,
+)
