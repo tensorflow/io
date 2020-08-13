@@ -305,7 +305,7 @@ class BigQueryReaderAvroDatasetIterator
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
     const avro::GenericRecord &record =
-        this->datum_->value<avro::GenericRecord>();
+        this->datum_->template value<avro::GenericRecord>();
 
     if (this->column_indices_.size() == 0) {
       this->column_indices_.reserve(columns.size());
