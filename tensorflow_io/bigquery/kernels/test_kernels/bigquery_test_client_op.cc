@@ -70,7 +70,8 @@ class BigQueryTestClientOp : public OpKernel {
               cinfo_.container(), cinfo_.name(), &resource,
               [this](BigQueryClientResource** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(
                   mu_) {
-                *ret = new BigQueryClientResource([this]() {
+                *ret = new BigQueryClientResource([this](const string&
+                                                             read_stream) {
                   LOG(INFO) << "Connecting BigQueryTestClientOp Fake client to:"
                             << fake_server_address_;
                   std::shared_ptr<grpc::Channel> channel =

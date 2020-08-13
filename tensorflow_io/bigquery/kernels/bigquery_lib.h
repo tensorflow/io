@@ -52,12 +52,13 @@ Status GetDataFormat(string data_format_str,
 class BigQueryClientResource : public ResourceBase {
  public:
   explicit BigQueryClientResource(
-      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()>
+      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+          const string &read_stream)>
           stub_factory)
       : stub_factory_(stub_factory) {}
 
   explicit BigQueryClientResource()
-      : BigQueryClientResource([]() {
+      : BigQueryClientResource([](const string &read_stream) {
           string server_name = "dns:///bigquerystorage.googleapis.com";
           auto creds = ::grpc::GoogleDefaultCredentials();
           grpc::ChannelArguments args;
@@ -66,6 +67,8 @@ class BigQueryClientResource : public ResourceBase {
               strings::StrCat("tensorflow-", TF_VERSION_STRING));
           args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
           args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
+          // To prevent gRPC from reusing channel
+          args.SetString("read_stream", read_stream);
           auto channel = ::grpc::CreateCustomChannel(server_name, creds, args);
           VLOG(3) << "Creating GRPC channel";
           return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(channel);
@@ -74,7 +77,7 @@ class BigQueryClientResource : public ResourceBase {
   apiv1beta1::BigQueryStorage::Stub *GetStub(const string &read_stream)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (stubs_.find(read_stream) == stubs_.end()) {
-      auto stub = stub_factory_();
+      auto stub = stub_factory_(read_stream);
       stubs_.emplace(read_stream, std::move(stub));
     }
     return stubs_[read_stream].get();
@@ -83,7 +86,8 @@ class BigQueryClientResource : public ResourceBase {
   string DebugString() const override { return "BigQueryClientResource"; }
 
  private:
-  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>()>
+  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+      const string &)>
       stub_factory_;
   mutex mu_;
   std::unordered_map<string, std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>>
