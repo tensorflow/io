@@ -60,32 +60,13 @@ class BigQueryClientOp : public OpKernel {
       ResourceMgr* mgr = ctx->resource_manager();
       OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
       BigQueryClientResource* resource;
-      OP_REQUIRES_OK(
-          ctx,
-          mgr->LookupOrCreate<BigQueryClientResource>(
-              cinfo_.container(), cinfo_.name(), &resource,
-              [this, ctx](BigQueryClientResource** ret)
-                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                    std::string server_name =
-                        "dns:///bigquerystorage.googleapis.com";
-                    auto creds = ::grpc::GoogleDefaultCredentials();
-                    grpc::ChannelArguments args;
-                    args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
-                    args.SetUserAgentPrefix(
-                        strings::StrCat("tensorflow-", TF_VERSION_STRING));
-                    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
-                    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
-                    auto channel =
-                        ::grpc::CreateCustomChannel(server_name, creds, args);
-                    VLOG(3) << "Creating GRPC channel";
-                    auto stub =
-                        absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
-                            channel);
-                    VLOG(3) << "Done creating GRPC channel";
-
-                    *ret = new BigQueryClientResource(std::move(stub));
-                    return Status::OK();
-                  }));
+      OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigQueryClientResource>(
+                              cinfo_.container(), cinfo_.name(), &resource,
+                              [this, ctx](BigQueryClientResource** ret)
+                                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                                    *ret = new BigQueryClientResource();
+                                    return Status::OK();
+                                  }));
       core::ScopedUnref resource_cleanup(resource);
       initialized_ = true;
     }
@@ -172,7 +153,7 @@ class BigQueryReadSessionOp : public OpKernel {
     std::shared_ptr<apiv1beta1::ReadSession> readSessionResponse =
         std::make_shared<apiv1beta1::ReadSession>();
     VLOG(3) << "calling readSession";
-    ::grpc::Status status = client_resource->get_stub()->CreateReadSession(
+    ::grpc::Status status = client_resource->GetStub("")->CreateReadSession(
         &context, createReadSessionRequest, readSessionResponse.get());
     if (!status.ok()) {
       VLOG(3) << "readSession status:" << GrpcStatusToString(status);

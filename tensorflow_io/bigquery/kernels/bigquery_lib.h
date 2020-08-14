@@ -36,11 +36,13 @@ limitations under the License.
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/logging.h"
+#include "tensorflow/core/public/version.h"
 #include "tensorflow_io/arrow/kernels/arrow_util.h"
 
 namespace tensorflow {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
+static constexpr int kMaxReceiveMessageSize = 1 << 24;  // 16 MBytes
 
 Status GrpcStatusToTfStatus(const ::grpc::Status &status);
 string GrpcStatusToString(const ::grpc::Status &status);
@@ -50,17 +52,46 @@ Status GetDataFormat(string data_format_str,
 class BigQueryClientResource : public ResourceBase {
  public:
   explicit BigQueryClientResource(
-      std::shared_ptr<apiv1beta1::BigQueryStorage::Stub> stub)
-      : stub_(std::move(stub)) {}
+      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+          const string &read_stream)>
+          stub_factory)
+      : stub_factory_(stub_factory) {}
 
-  std::shared_ptr<apiv1beta1::BigQueryStorage::Stub> get_stub() {
-    return stub_;
+  explicit BigQueryClientResource()
+      : BigQueryClientResource([](const string &read_stream) {
+          string server_name = "dns:///bigquerystorage.googleapis.com";
+          auto creds = ::grpc::GoogleDefaultCredentials();
+          grpc::ChannelArguments args;
+          args.SetMaxReceiveMessageSize(kMaxReceiveMessageSize);
+          args.SetUserAgentPrefix(
+              strings::StrCat("tensorflow-", TF_VERSION_STRING));
+          args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 0);
+          args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 60 * 1000);
+          // To prevent gRPC from reusing channel
+          args.SetString("read_stream", read_stream);
+          auto channel = ::grpc::CreateCustomChannel(server_name, creds, args);
+          VLOG(3) << "Creating GRPC channel";
+          return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(channel);
+        }) {}
+
+  apiv1beta1::BigQueryStorage::Stub *GetStub(const string &read_stream)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    if (stubs_.find(read_stream) == stubs_.end()) {
+      auto stub = stub_factory_(read_stream);
+      stubs_.emplace(read_stream, std::move(stub));
+    }
+    return stubs_[read_stream].get();
   }
 
   string DebugString() const override { return "BigQueryClientResource"; }
 
  private:
-  std::shared_ptr<apiv1beta1::BigQueryStorage::Stub> stub_;
+  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+      const string &)>
+      stub_factory_;
+  mutex mu_;
+  std::unordered_map<string, std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>>
+      stubs_ TF_GUARDED_BY(mu_);
 };
 
 namespace data {
@@ -129,8 +160,10 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
 
     VLOG(3) << "getting reader, stream: "
             << readRowsRequest.read_position().stream().DebugString();
-    reader_ = this->dataset()->client_resource()->get_stub()->ReadRows(
-        read_rows_context_.get(), readRowsRequest);
+    reader_ = this->dataset()
+                  ->client_resource()
+                  ->GetStub(readRowsRequest.read_position().stream().name())
+                  ->ReadRows(read_rows_context_.get(), readRowsRequest);
 
     return Status::OK();
   }
@@ -262,6 +295,8 @@ class BigQueryReaderAvroDatasetIterator
             &this->response_->avro_rows().serialized_binary_rows()[0]),
         this->response_->avro_rows().serialized_binary_rows().size());
     this->decoder_->init(*memory_input_stream_);
+    this->datum_ =
+        absl::make_unique<avro::GenericDatum>(*this->dataset()->avro_schema());
     return Status::OK();
   }
 
@@ -269,92 +304,98 @@ class BigQueryReaderAvroDatasetIterator
                     const std::vector<string> &columns,
                     const std::vector<DataType> &output_types)
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
-    avro::GenericDatum datum =
-        avro::GenericDatum(*this->dataset()->avro_schema());
-    avro::decode(*this->decoder_, datum);
-    if (datum.type() != avro::AVRO_RECORD) {
+    avro::decode(*this->decoder_, *this->datum_);
+    if (this->datum_->type() != avro::AVRO_RECORD) {
       return errors::Unknown("record is not of AVRO_RECORD type");
     }
-    const avro::GenericRecord &record = datum.value<avro::GenericRecord>();
-    out_tensors->clear();
-    // Let's allocate enough space for Tensor, if more than read then slice.
-    std::vector<DataType> expected_output_types;
-    expected_output_types.reserve(output_types.size());
-    for (size_t i = 0; i < columns.size(); i++) {
-      const string &column = columns[i];
-      const avro::GenericDatum &field = record.field(column);
-      DataType dtype;
-      switch (field.type()) {
-        case avro::AVRO_BOOL:
-          dtype = DT_BOOL;
-          break;
-        case avro::AVRO_INT:
-          dtype = DT_INT32;
-          break;
-        case avro::AVRO_LONG:
-          dtype = DT_INT64;
-          break;
-        case avro::AVRO_FLOAT:
-          dtype = DT_FLOAT;
-          break;
-        case avro::AVRO_DOUBLE:
-          dtype = DT_DOUBLE;
-          break;
-        case avro::AVRO_STRING:
-          dtype = DT_STRING;
-          break;
-        case avro::AVRO_BYTES:
-          dtype = DT_STRING;
-          break;
-        case avro::AVRO_FIXED:
-          dtype = DT_STRING;
-          break;
-        case avro::AVRO_ENUM:
-          dtype = DT_STRING;
-          break;
-        case avro::AVRO_ARRAY: {
-          auto values_vector = field.value<avro::GenericArray>().value();
-          if (values_vector.empty())
+    const avro::GenericRecord &record =
+        this->datum_->template value<avro::GenericRecord>();
+
+    if (this->column_indices_.size() == 0) {
+      this->column_indices_.reserve(columns.size());
+      std::vector<DataType> expected_output_types;
+      expected_output_types.reserve(output_types.size());
+      for (size_t i = 0; i < columns.size(); i++) {
+        const string &column = columns[i];
+        size_t column_index = record.fieldIndex(column);
+        this->column_indices_.emplace_back(column_index);
+
+        const avro::GenericDatum &field = record.fieldAt(column_index);
+        DataType dtype;
+        switch (field.type()) {
+          case avro::AVRO_BOOL:
+            dtype = DT_BOOL;
+            break;
+          case avro::AVRO_INT:
+            dtype = DT_INT32;
+            break;
+          case avro::AVRO_LONG:
+            dtype = DT_INT64;
+            break;
+          case avro::AVRO_FLOAT:
+            dtype = DT_FLOAT;
+            break;
+          case avro::AVRO_DOUBLE:
+            dtype = DT_DOUBLE;
+            break;
+          case avro::AVRO_STRING:
+            dtype = DT_STRING;
+            break;
+          case avro::AVRO_BYTES:
+            dtype = DT_STRING;
+            break;
+          case avro::AVRO_FIXED:
+            dtype = DT_STRING;
+            break;
+          case avro::AVRO_ENUM:
+            dtype = DT_STRING;
+            break;
+          case avro::AVRO_ARRAY: {
+            auto values_vector = field.value<avro::GenericArray>().value();
+            if (values_vector.empty())
+              dtype = output_types[i];
+            else {
+              auto value_type = values_vector[0].type();
+              if (value_type == avro::AVRO_BOOL)
+                dtype = DT_BOOL;
+              else if (value_type == avro::AVRO_INT)
+                dtype = DT_INT32;
+              else if (value_type == avro::AVRO_LONG)
+                dtype = DT_INT64;
+              else if (value_type == avro::AVRO_FLOAT)
+                dtype = DT_FLOAT;
+              else if (value_type == avro::AVRO_DOUBLE)
+                dtype = DT_DOUBLE;
+              else if (value_type == avro::AVRO_STRING)
+                dtype = DT_STRING;
+              else
+                return errors::InvalidArgument(
+                    "unsupported data type within AVRO_ARRAY ", value_type);
+            }
+          } break;
+          case avro::AVRO_NULL:
             dtype = output_types[i];
-          else {
-            auto value_type = values_vector[0].type();
-            if (value_type == avro::AVRO_BOOL)
-              dtype = DT_BOOL;
-            else if (value_type == avro::AVRO_INT)
-              dtype = DT_INT32;
-            else if (value_type == avro::AVRO_LONG)
-              dtype = DT_INT64;
-            else if (value_type == avro::AVRO_FLOAT)
-              dtype = DT_FLOAT;
-            else if (value_type == avro::AVRO_DOUBLE)
-              dtype = DT_DOUBLE;
-            else if (value_type == avro::AVRO_STRING)
-              dtype = DT_STRING;
-            else
-              return errors::InvalidArgument(
-                  "unsupported data type within AVRO_ARRAY ", value_type);
-          }
-        } break;
-        case avro::AVRO_NULL:
-          dtype = output_types[i];
-          break;
-        default:
-          return errors::InvalidArgument("unsupported data type: ",
-                                         field.type());
+            break;
+          default:
+            return errors::InvalidArgument("unsupported data type: ",
+                                           field.type());
+        }
+        if (dtype != output_types[i]) {
+          return errors::InvalidArgument(
+              "output type mismatch for column: ", columns[i],
+              " expected type: ", DataType_Name(dtype),
+              " actual type: ", DataType_Name(output_types[i]));
+        }
+        expected_output_types.emplace_back(dtype);
       }
-      if (dtype != output_types[i]) {
-        return errors::InvalidArgument(
-            "output type mismatch for column: ", columns[i],
-            " expected type: ", DataType_Name(dtype),
-            " actual type: ", DataType_Name(output_types[i]));
-      }
-      expected_output_types.emplace_back(dtype);
+    }
+
+    out_tensors->clear();
+    for (size_t i = 0; i < columns.size(); i++) {
       Tensor tensor(ctx->allocator({}), output_types[i], {});
       out_tensors->emplace_back(std::move(tensor));
-    }
-    for (size_t i = 0; i < columns.size(); i++) {
-      const string &column = columns[i];
-      const avro::GenericDatum &field = record.field(column);
+      const avro::GenericDatum &field =
+          record.fieldAt(this->column_indices_[i]);
       switch (field.type()) {
         case avro::AVRO_BOOL:
           ((*out_tensors)[i]).scalar<bool>()() = field.value<bool>();
@@ -478,7 +519,9 @@ class BigQueryReaderAvroDatasetIterator
  private:
   std::unique_ptr<avro::InputStream> memory_input_stream_
       TF_GUARDED_BY(this->mu_);
+  std::unique_ptr<avro::GenericDatum> datum_ TF_GUARDED_BY(this->mu_);
   avro::DecoderPtr decoder_ TF_GUARDED_BY(this->mu_);
+  std::vector<size_t> column_indices_ TF_GUARDED_BY(this->mu_);
 };
 
 }  // namespace data
