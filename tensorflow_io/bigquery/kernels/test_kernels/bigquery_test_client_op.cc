@@ -70,17 +70,22 @@ class BigQueryTestClientOp : public OpKernel {
               cinfo_.container(), cinfo_.name(), &resource,
               [this](BigQueryClientResource** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(
                   mu_) {
-                LOG(INFO) << "Connecting BigQueryTestClientOp Fake client to:"
-                          << fake_server_address_;
-                std::shared_ptr<grpc::Channel> channel = ::grpc::CreateChannel(
-                    fake_server_address_, grpc::InsecureChannelCredentials());
-                auto stub = apiv1beta1::BigQueryStorage::NewStub(channel);
-                LOG(INFO) << "BigQueryTestClientOp waiting for connections";
-                channel->WaitForConnected(
-                    gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(15, GPR_TIMESPAN)));
-                LOG(INFO) << "Done creating BigQueryTestClientOp Fake client";
-                *ret = new BigQueryClientResource(std::move(stub));
+                *ret = new BigQueryClientResource([this](const string&
+                                                             read_stream) {
+                  LOG(INFO) << "Connecting BigQueryTestClientOp Fake client to:"
+                            << fake_server_address_;
+                  std::shared_ptr<grpc::Channel> channel =
+                      ::grpc::CreateChannel(this->fake_server_address_,
+                                            grpc::InsecureChannelCredentials());
+                  auto stub = apiv1beta1::BigQueryStorage::NewStub(channel);
+                  LOG(INFO) << "BigQueryTestClientOp waiting for connections";
+                  channel->WaitForConnected(
+                      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_seconds(15, GPR_TIMESPAN)));
+                  LOG(INFO) << "Done creating BigQueryTestClientOp Fake client";
+                  return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
+                      channel);
+                });
                 return Status::OK();
               }));
 
