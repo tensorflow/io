@@ -4,16 +4,18 @@ This directory maintains the Dockerfiles needed to build the tensorflow-io image
 
 ## Building
 
-Each `.Dockerfile` has its own set of available `--build-arg`s which are documented
-in the file itself. For example:
+To build a `tensorflow-io` image with CPU support:
 
 ```bash
 $ docker build -f ./cpu.Dockerfile -t tfio-cpu .
 ```
 
+**NOTE:** Each `.Dockerfile` has its own set of available `--build-arg`s which are documented
+in the file itself.
+
 ## Running Locally Built Images
 
-Note for new Docker users: the `-v` and `-u` flags share directories and
+**Note for new Docker users:** the `-v` and `-u` flags share directories and
 permissions between the Docker container and your machine. Without `-v`, your
 work will be wiped once the container quits, and without `-u`, files created by
 the container will have the wrong file permissions on your host machine. Check
