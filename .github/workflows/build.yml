@@ -213,6 +213,11 @@ jobs:
           set -x -e
           python --version
           bash -x -e .github/workflows/build.wheel.sh python
+      - name: Test docker images on macOS
+        run: |
+          set -x -e
+          bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
+          bash -x -e tools/docker/tests/dockerfile_devel_test.sh
 
   linux-bazel:
     name: Bazel Linux
@@ -304,6 +309,11 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
+      - name: Test docker images on Linux
+        run: |
+          set -x -e
+          bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
+          bash -x -e tools/docker/tests/dockerfile_devel_test.sh
 
   windows-bazel:
     name: Bazel Windows
@@ -409,6 +419,13 @@ jobs:
           (python -m pytest -s -v test_bigquery_eager.py)
           (python -m pytest -s -v test_dicom_eager.py)
           (python -m pytest -s -v test_dicom.py)
+      - name: Test docker images on Windows
+        shell: cmd
+        run: |
+          @echo on
+          set -x -e
+          bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
+          bash -x -e tools/docker/tests/dockerfile_devel_test.sh
 
   release:
     name: Release
