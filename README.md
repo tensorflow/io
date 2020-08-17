@@ -358,11 +358,11 @@ $ TFIO_DATAPATH=bazel-bin python3
 
 #### Docker
 
-For Python development, a reference Dockerfile [here](tools/dev/Dockerfile) can be
+For Python development, a reference Dockerfile [here](tools/docker/devel.Dockerfile) can be
 used to build the TensorFlow I/O package (`tensorflow-io`) from source:
 ```sh
 # Build and run the Docker image
-$ docker build -f tools/dev/Dockerfile -t tfio-dev .
+$ docker build -f tools/docker/devel.Dockerfile -t tfio-dev .
 $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 
 # Inside the docker container, ./configure.sh will install TensorFlow or use existing install
