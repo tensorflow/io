@@ -156,9 +156,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
     const int64 offset() const { return offset_; }
 
-    string DebugString() const override {
-      return "BigQueryScanDatasetOp::Dataset";
-    }
+    string DebugString() const override { return "BigQueryDatasetOp::Dataset"; }
 
     Status CheckExternalState() const override { return Status::OK(); }
 

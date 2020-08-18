@@ -236,16 +236,37 @@ class BigQueryReaderArrowDatasetIterator
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     out_tensors->clear();
 
-    // Assign Tensors for each column in the current row
-    for (size_t i = 0; i < columns.size(); ++i) {
-      DataType output_type = output_types[i];
-      std::shared_ptr<arrow::Array> arr = this->record_batch_->column(i);
+    if (this->current_row_index_ == 0) {
+      this->column_indices_.clear();
+      this->column_indices_.resize(columns.size());
+      for (size_t i = 0; i < columns.size(); ++i) {
+        DataType output_type = output_types[i];
+        auto column_name = this->record_batch_->column_name(i);
+        auto it = std::find(columns.begin(), columns.end(), column_name);
+        if (it == columns.end()) {
+          return errors::InvalidArgument("can't find column", column_name,
+                                         "in the Arrow batch");
+        }
+        auto arrow_column_index = it - columns.begin();
+        this->column_indices_[arrow_column_index] = i;
+      }
 
-      if (this->current_row_index_ == 0) {
-        // Array structure is not going to change, so it is sufficient to check
-        // it once.
+      // Array structure is not going to change, so it is sufficient to check
+      // it once.
+      for (size_t i = 0; i < columns.size(); ++i) {
+        DataType output_type = output_types[i];
+        size_t arrow_column_index = this->column_indices_[i];
+        std::shared_ptr<arrow::Array> arr =
+            this->record_batch_->column(arrow_column_index);
         TF_RETURN_IF_ERROR(ArrowUtil::CheckArrayType(arr->type(), output_type));
       }
+    }
+
+    for (size_t i = 0; i < columns.size(); ++i) {
+      DataType output_type = output_types[i];
+      size_t arrow_column_index = this->column_indices_[i];
+      std::shared_ptr<arrow::Array> arr =
+          this->record_batch_->column(arrow_column_index);
 
       // Allocate a new tensor and assign Arrow data to it
       Tensor tensor(ctx->allocator({}), output_type, {});
@@ -260,6 +281,7 @@ class BigQueryReaderArrowDatasetIterator
 
  private:
   std::shared_ptr<arrow::RecordBatch> record_batch_ TF_GUARDED_BY(this->mu_);
+  std::vector<size_t> column_indices_ TF_GUARDED_BY(this->mu_);
 };
 
 template <typename Dataset>
