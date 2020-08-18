@@ -65,6 +65,8 @@ def arrow_to_tensor_type(pa_t):
         tf_t = dtypes.float32
     elif pa.types.is_float64(pa_t):
         tf_t = dtypes.float64
+    elif pa.types.is_string(pa_t):
+        tf_t = dtypes.string
     elif pa.types.is_list(pa_t):
         if pa.types.is_list(pa_t.value_type):
             raise TypeError("Nested arrays are not currently supported: " + str(pa_t))
