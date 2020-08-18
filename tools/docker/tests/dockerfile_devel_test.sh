@@ -21,4 +21,4 @@ echo "Build the docker image ..."
 docker build -f tools/docker/devel.Dockerfile -t ${IMAGE_NAME} .
 
 echo "Starting the docker container from image: ${IMAGE_NAME} and building the package ..."
-docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev bash tools/docker/tests/bazel_build.sh
+docker run -t --rm --net=host -v ${PWD}:/v -w /v tfio-dev bash tools/docker/tests/bazel_build.sh

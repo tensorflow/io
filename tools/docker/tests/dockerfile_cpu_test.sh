@@ -21,4 +21,4 @@ echo "Build the docker image ..."
 docker build -f tools/docker/cpu.Dockerfile -t ${IMAGE_NAME} .
 
 echo "Starting the docker container from image: ${IMAGE_NAME} and validating import ..."
-docker run -it --rm ${IMAGE_NAME} python -c "import tensorflow_io as tfio; print(tfio.__version__)"
+docker run -t --rm ${IMAGE_NAME} python -c "import tensorflow_io as tfio; print(tfio.__version__)"
