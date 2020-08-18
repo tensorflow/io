@@ -29,6 +29,10 @@ namespace ArrowUtil {
 
 Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
                          ::tensorflow::DataType* out) {
+  if (dtype->id() == ::arrow::Type::STRING) {
+    *out = ::tensorflow::DT_STRING;
+    return Status::OK();
+  }
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
   if (!status.ok()) {
@@ -40,6 +44,10 @@ Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
 
 Status GetArrowType(::tensorflow::DataType dtype,
                     std::shared_ptr<::arrow::DataType>* out) {
+  if (dtype == ::tensorflow::DT_STRING) {
+    *out = ::arrow::utf8();
+    return Status::OK();
+  }
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
   if (!status.ok()) {
@@ -109,6 +117,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   VISIT_PRIMITIVE(arrow::HalfFloatArray)
   VISIT_PRIMITIVE(arrow::FloatArray)
   VISIT_PRIMITIVE(arrow::DoubleArray)
+  VISIT_PRIMITIVE(arrow::StringArray)
 #undef VISIT_PRIMITIVE
 
   virtual arrow::Status Visit(const arrow::ListArray& array) override {
@@ -264,6 +273,15 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
     // Reset state variables for next time
     i_ = tmp_index;
     return result;
+  }
+
+  virtual arrow::Status Visit(const arrow::StringArray& array) override {
+    if (!array.IsNull(i_)) {
+      out_tensor_->scalar<tstring>()() = array.GetString(i_);
+    } else {
+      out_tensor_->scalar<tstring>()() = "";
+    }
+    return arrow::Status::OK();
   }
 
  private:

@@ -132,6 +132,8 @@ class ArrowTestBase(test.TestCase):
             arrow_type = pa.float32()
         elif dt == dtypes.float64:
             arrow_type = pa.float64()
+        elif dt == dtypes.string:
+            arrow_type = pa.string()
         else:
             raise TypeError("Unsupported dtype for Arrow" + str(dt))
         if is_list:
@@ -440,6 +442,23 @@ class ArrowDatasetTest(ArrowTestBase):
         # test construction from pd.DataFrame
         df = batch.to_pandas()
         dataset = arrow_io.ArrowDataset.from_pandas(df, preserve_index=False)
+        self.run_test_case(dataset, truth_data)
+
+    def test_arrow_dataset_with_strings(self):
+        """test_arrow_dataset"""
+        scalar_data = [
+            [b"1.1", b"2.2", b"3.3", b"4.4"],
+        ]
+        scalar_dtypes = (dtypes.string,)
+        scalar_shapes = tuple([tf.TensorShape([]) for _ in scalar_dtypes])
+        truth_data = TruthData(scalar_data, scalar_dtypes, scalar_shapes)
+
+        batch = self.make_record_batch(truth_data)
+
+        # test all columns selected
+        dataset = arrow_io.ArrowDataset.from_record_batches(
+            batch, truth_data.output_types, truth_data.output_shapes
+        )
         self.run_test_case(dataset, truth_data)
 
     def test_from_pandas_preserve_index(self):
