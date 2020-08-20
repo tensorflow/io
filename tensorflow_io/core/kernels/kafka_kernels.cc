@@ -898,14 +898,14 @@ class KafkaGroupReadableResource : public ResourceBase {
       return errors::Internal("failed to set rebalance_cb:", errstr);
     }
 
-    LOG(INFO) << "cpp: Creating the kafka consumer";
+    LOG(INFO) << "Creating the kafka consumer";
     consumer_.reset(RdKafka::KafkaConsumer::create(conf.get(), errstr));
     if (!consumer_.get()) {
       return errors::Internal("failed to create consumer:", errstr);
     }
 
     for (int i = 0; i < topics.size(); i++) {
-      LOG(INFO) << "cpp: Subscribing to the kafka topic: " << topics[i];
+      LOG(INFO) << "Subscribing to the kafka topic: " << topics[i];
     }
     RdKafka::ErrorCode err = consumer_->subscribe(topics);
     if (err != RdKafka::ERR_NO_ERROR) {
@@ -952,7 +952,7 @@ class KafkaGroupReadableResource : public ResourceBase {
         LOG(ERROR) << "Broker transport failure: " << message->errstr();
       } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
         if (++eof_count == partition_count) {
-          LOG(INFO) << "%% EOF reached for all " << partition_count
+          LOG(INFO) << "EOF reached for all " << partition_count
                     << " partition(s)";
           if (wait_count < max_wait_count) {
             LOG(INFO) << "Waiting for the next message";
@@ -966,7 +966,6 @@ class KafkaGroupReadableResource : public ResourceBase {
         LOG(ERROR) << "Failed to consume: " << message->errstr();
         break;
       } else {
-        LOG(ERROR) << "Error: " << message->errstr();
         if (wait_count < max_wait_count) {
           LOG(INFO) << "Waiting for the next message";
           sleep(message_timeout / 1000);

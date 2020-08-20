@@ -19,7 +19,74 @@ from tensorflow_io.core.python.ops import core_ops
 
 
 class KafkaGroupIODataset(tf.data.Dataset):
-    """KafkaGroupIODataset"""
+    """Represents a streaming dataset from kafka using consumer groups.
+
+    The dataset is created by fetching messages from kafka using consumer clients
+    which are part of a consumer group. Owing to the offset management capability of
+    the kafka brokers, the dataset can maintain offsets of all the partitions
+    without explicit initialization. If the consumer client joins an existing
+    consumer group, it will start fetching messages from the already committed offsets.
+    To start fetching the messages from the beginning, please join a different consumer group.
+    The dataset will be prepared from the committed/start offset until the last offset.
+
+    The dataset can be prepared and iterated in the following manner:
+
+    >>> import tensorflow_io as tfio
+    >>> dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+                        topics=["topic1"],
+                        group_id="cg",
+                        servers="localhost:9092"
+                    )
+
+    >>> for (message, key) in dataset:
+    ...     print(message)
+
+    Cases may arise where the consumer read time out issues arise due to
+    the consumer group being in a rebalancing state. In order to address that, please
+    set `session.timeout.ms` and `max.poll.interval.ms` values in the configuration tensor
+    and try again after the group rebalances. For example: considering the kafka cluster
+    has been setup with the default settings, `max.poll.interval.ms` would be `300000ms`.
+    It can be changed to `8000ms` to reduce the time between pools. Also, the `session.timeout.ms`
+    can be changed to `7000ms`. However, the value for `session.timeout.ms` should be
+    according to the following relation:
+
+    - `group.max.session.timeout.ms` in server.properties > `session.timeout.ms` in the
+    consumer.properties.
+    - `group.min.session.timeout.ms` in server.properties < `session.timeout.ms` in the
+    consumer.properties
+
+    >>> dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+                        topics=["topic1"],
+                        group_id="cg",
+                        servers="localhost:9092",
+                        configuration=[
+                            "session.timeout.ms=7000",
+                            "max.poll.interval.ms=8000",
+                        ],
+                    )
+
+    In addition to the standard streaming functionality, there is added support for a timeout
+    based stream.
+
+    >>> dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+                        topics=["topic1"],
+                        group_id="cg",
+                        servers="localhost:9092",
+                        message_timeout=5000,
+                        stream_timeout=15000,
+                        configuration=[
+                            "session.timeout.ms=7000",
+                            "max.poll.interval.ms=8000",
+                        ],
+                    )
+    >>> for (message, key) in dataset:
+    ...     print(message)
+
+    The above loop will run as long as the consumer clients are able to fetch messages
+    from the topic(s). However, since we set the `stream_timeout` value to `15000` milliseconds,
+    the dataset will wait for any new messages that might be added to the topic for that duration.
+    The topics will be polled at `message_timeout` intervals.
+    """
 
     def __init__(
         self,
@@ -31,27 +98,7 @@ class KafkaGroupIODataset(tf.data.Dataset):
         configuration=None,
         internal=True,
     ):
-        """Creates an `IODataset` from kafka server by joining a consumer group
-        and maintaining offsets of all the partitions without explicit initialization.
-        If the consumer joins an existing consumer group, it will start fetching
-        messages based on the already committed offsets. To start fetching the messages
-        from the beginning, please join a different consumer group. The dataset will be prepared
-        from the committed/start offset until the last offset.
-
-        NOTE: Cases may arise where the consumer read time out issues arise due to
-        the consumer group being in a rebalancing state. In order to address that, please
-        set `session.timeout.ms` and `max.poll.interval.ms` values in the configuration tensor
-        and try again after the group rebalances. For example: considering your kafka cluster
-        has been setup with the default settings, `max.poll.interval.ms` would be `300000ms`.
-        It can be changed to `8000ms` to reduce the time between pools. Also, the `session.timeout.ms`
-        can be changed to `7000ms`. However, the value for `session.timeout.ms` should be
-        according to the following relation:
-
-        - `group.max.session.timeout.ms` in server.properties > `session.timeout.ms` in the
-        consumer.properties.
-        - `group.min.session.timeout.ms` in server.properties < `session.timeout.ms` in the
-        consumer.properties
-
+        """
         Args:
           topics: A `tf.string` tensor containing topic names in [topic] format.
             For example: ["topic1"]
