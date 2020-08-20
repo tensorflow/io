@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/api.h"
+#include "arrow/visitor_inline.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -101,7 +102,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   }
 
 #define VISIT_PRIMITIVE(TYPE)                               \
-  virtual arrow::Status Visit(const TYPE& array) override { \
+  arrow::Status Visit(const TYPE& array) {                  \
     return VisitPrimitive(array);                           \
   }
 
@@ -120,7 +121,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   VISIT_PRIMITIVE(arrow::StringArray)
 #undef VISIT_PRIMITIVE
 
-  virtual arrow::Status Visit(const arrow::ListArray& array) override {
+  arrow::Status Visit(const arrow::ListArray& array) {
     int32 values_offset = array.value_offset(i_);
     int32 array_length = array.value_length(i_);
     int32 num_arrays = 1;
@@ -136,7 +137,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
       }
     }
 
-    // Add diminsion for array
+    // Add dimension for array
     if (out_shape_ != nullptr) {
       out_shape_->AddDim(array_length);
     }
@@ -169,11 +170,11 @@ Status AssignSpec(std::shared_ptr<arrow::Array> array, int64 i,
 }
 
 // Assign elements of an Arrow Array to a Tensor
-class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
+class ArrowAssignTensorImpl {
  public:
   ArrowAssignTensorImpl() : i_(0), out_tensor_(nullptr) {}
 
-  Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i,
+  Status AssignTensor(const arrow::Array& array, int64 i,
                       Tensor* out_tensor) {
     i_ = i;
     out_tensor_ = out_tensor;
@@ -181,7 +182,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       return errors::Internal(
           "Arrow arrays with null values not currently supported");
     }
-    CHECK_ARROW(array->Accept(this));
+    CHECK_ARROW(::arrow::VisitArrayInline(array, this);
     return Status::OK();
   }
 
@@ -226,7 +227,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   }
 
 #define VISIT_FIXED_WIDTH(TYPE)                             \
-  virtual arrow::Status Visit(const TYPE& array) override { \
+  arrow::Status Visit(const TYPE& array){                   \
     return VisitFixedWidth(array);                          \
   }
 
@@ -243,7 +244,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   VISIT_FIXED_WIDTH(arrow::DoubleArray)
 #undef VISIT_FIXED_WITH
 
-  virtual arrow::Status Visit(const arrow::ListArray& array) override {
+  arrow::Status Visit(const arrow::ListArray& array) {
     int32 values_offset = array.value_offset(i_);
     int32 curr_array_length = array.value_length(i_);
     int32 num_arrays = 1;
@@ -275,7 +276,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
     return result;
   }
 
-  virtual arrow::Status Visit(const arrow::StringArray& array) override {
+  arrow::Status Visit(const arrow::StringArray& array) {
     if (!array.IsNull(i_)) {
       out_tensor_->scalar<tstring>()() = array.GetString(i_);
     } else {
@@ -290,7 +291,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   Tensor* out_tensor_;
 };
 
-Status AssignTensor(std::shared_ptr<arrow::Array> array, int64 i,
+Status AssignTensor(const arrow::Array& array, int64 i,
                     Tensor* out_tensor) {
   ArrowAssignTensorImpl visitor;
   return visitor.AssignTensor(array, i, out_tensor);
