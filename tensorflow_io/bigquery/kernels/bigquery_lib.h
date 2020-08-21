@@ -235,6 +235,7 @@ class BigQueryReaderArrowDatasetIterator
                     const std::vector<DataType> &output_types)
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     out_tensors->clear();
+    out_tensors->reserve(columns.size());
 
     if (this->current_row_index_ == 0) {
       this->column_indices_.clear();
@@ -413,6 +414,7 @@ class BigQueryReaderAvroDatasetIterator
     }
 
     out_tensors->clear();
+    out_tensors->reserve(columns.size());
     for (size_t i = 0; i < columns.size(); i++) {
       Tensor tensor(ctx->allocator({}), output_types[i], {});
       out_tensors->emplace_back(std::move(tensor));
