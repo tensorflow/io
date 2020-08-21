@@ -169,7 +169,6 @@ cc_library(
     alwayslink = 1,
 )
 
-
 cc_library(
     name = "elasticsearch_ops",
     srcs = [
@@ -179,7 +178,6 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@rapidjson",
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:sequence_ops",
         "@com_google_absl//absl/algorithm",
@@ -191,10 +189,10 @@ cc_library(
         "@com_google_absl//absl/types:variant",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
+        "@rapidjson",
     ],
     alwayslink = 1,
 )
-
 
 cc_library(
     name = "pcap_ops",
