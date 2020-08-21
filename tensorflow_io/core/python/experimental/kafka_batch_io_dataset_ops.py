@@ -19,7 +19,43 @@ from tensorflow_io.core.python.ops import core_ops
 
 
 class KafkaBatchIODataset(tf.data.Dataset):
-    """KafkaBatchIODataset"""
+    """Represents a streaming batch dataset from kafka using consumer groups.
+
+    The dataset is created by fetching batches of messages from kafka using consumer clients
+    which are part of a consumer group. Each batch of messages is of type `tf.data.Dataset`.
+    This dataset is suitable in scenarios where the 'keys' and 'messages' in kafka topics
+    are synonimous with 'labels' and 'data' items respectively. Thus, enabling the user
+    to train their model in an online learning fashion.
+
+    The dataset is similar to the `tfio.experimental.streaming.KafkaGroupIODataset` in it's
+    consumer client configuration as it utilizes the consumer groups for retrieving messages
+    from the topics.
+
+    The dataset can be prepared and iterated in the following manner:
+
+    >>> import tensorflow_io as tfio
+    >>> dataset = tfio.experimental.streaming.KafkaBatchIODataset(
+                        topics=["topic1"],
+                        group_id="cg",
+                        servers="localhost:9092"
+                    )
+
+    >>> for mini_batch in dataset:
+    ...     mini_batch = mini_batch.map(
+    ...            lambda m, k: (tf.cast(m, tf.float32), tf.cast(k, tf.float32)))
+
+    Since `mini_batch` is of type `tf.data.Dataset` we can perform all the operations that it
+    inherits from `tf.data.Dataset`.
+
+    To train a keras model on this stream of incoming data:
+
+    >>> for mini_batch in dataset:
+    ...     mini_batch = mini_batch.map(
+    ...            lambda m, k: (tf.cast(m, tf.float32), tf.cast(k, tf.float32)))
+    ...     model.fit(mini_batch, epochs=10)
+
+    The `mini_batch` can be directly passed into the `tf.keras` model for training.
+    """
 
     def __init__(
         self,
@@ -31,32 +67,7 @@ class KafkaBatchIODataset(tf.data.Dataset):
         configuration=None,
         internal=True,
     ):
-        """Creates an `IODataset` which contains elements that are of type`tf.data.Dataset`.
-
-        NOTE: This kind of dataset is suitable in scenarios where the 'keys' of 'messages'
-        act as labels for the data elements.
-
-        It reads from kafka server by joining a consumer group
-        and maintaining offsets of all the partitions without explicit initialization.
-        If the consumer joins an existing consumer group, it will start fetching
-        messages based on the already committed offsets. To start fetching the messages
-        from the beginning, please join a different consumer group. The dataset will be prepared
-        from the committed/start offset until the last offset.
-
-        NOTE: Cases may arise where the consumer read time out issues arise due to
-        the consumer group being in a rebalancing state. In order to address that, please
-        set `session.timeout.ms` and `max.poll.interval.ms` values in the configuration tensor
-        and try again after the group rebalances. For example: considering your kafka cluster
-        has been setup with the default settings, `max.poll.interval.ms` would be `300000ms`.
-        It can be changed to `8000ms` to reduce the time between pools. Also, the `session.timeout.ms`
-        can be changed to `7000ms`. However, the value for `session.timeout.ms` should be
-        according to the following relation:
-
-        - `group.max.session.timeout.ms` in server.properties > `session.timeout.ms` in the
-        consumer.properties.
-        - `group.min.session.timeout.ms` in server.properties < `session.timeout.ms` in the
-        consumer.properties
-
+        """
         Args:
           topics: A `tf.string` tensor containing topic names in [topic] format.
             For example: ["topic1"]
