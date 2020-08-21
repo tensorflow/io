@@ -683,7 +683,6 @@ cc_binary(
         "//tensorflow_io/core:avro_ops",
         "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
-        "//tensorflow_io/core:elasticsearch_ops",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
         "//tensorflow_io/core:hdf5_ops",
@@ -707,6 +706,7 @@ cc_binary(
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "//tensorflow_io/core:core_ops",
+            "//tensorflow_io/core:elasticsearch_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
             "//tensorflow_io/core:oss_ops",
