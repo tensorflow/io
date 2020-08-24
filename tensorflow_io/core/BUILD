@@ -170,6 +170,32 @@ cc_library(
 )
 
 cc_library(
+    name = "elasticsearch_ops",
+    srcs = [
+        "kernels/elasticsearch_kernels.cc",
+        "ops/elasticsearch_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "//tensorflow_io/core:sequence_ops",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:inlined_vector",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+        "@com_google_absl//absl/types:variant",
+        "@curl",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+        "@rapidjson",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "pcap_ops",
     srcs = [
         "kernels/pcap_kernels.cc",
@@ -680,6 +706,7 @@ cc_binary(
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "//tensorflow_io/core:core_ops",
+            "//tensorflow_io/core:elasticsearch_ops",
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
             "//tensorflow_io/core:oss_ops",
