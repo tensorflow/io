@@ -22,13 +22,30 @@ namespace io {
 namespace {
 
 REGISTER_OP("IO>ElasticsearchReadableInit")
-    .Input("url: string")
+    .Input("healthcheck_url: string")
     .Input("healthcheck_field: string")
+    .Input("request_url: string")
     .Output("resource: resource")
+    .Output("columns: string")
+    .Output("dtypes: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
+      c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>ElasticsearchReadableNext")
+    .Input("resource: resource")
+    .Input("request_url: string")
+    .Input("scroll_request_url: string")
+    .Output("column_values: dtypes")
+    .Attr("dtypes: list(type)")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      for (size_t i = 0; i < c->num_outputs(); ++i) {
+        c->set_output(static_cast<int64>(i), c->MakeShape({c->UnknownDim()}));
+      }
       return Status::OK();
     });
 
