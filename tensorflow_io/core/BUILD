@@ -180,13 +180,6 @@ cc_library(
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:sequence_ops",
-        "@com_google_absl//absl/algorithm",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/container:inlined_vector",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
-        "@com_google_absl//absl/types:span",
-        "@com_google_absl//absl/types:variant",
         "@curl",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",

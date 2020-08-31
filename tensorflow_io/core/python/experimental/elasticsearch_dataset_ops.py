@@ -19,18 +19,166 @@ import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
 
-class ElasticsearchIODataset(tf.data.Dataset):
+class _ElasticsearchHandler:
+    """Utility class to facilitate API queries and state management of
+        session data.
+    """
+
+    def __init__(self, nodes, index, doc_type):
+        self.nodes = nodes
+        self.index = index
+        self.doc_type = doc_type
+        self.prepare_base_urls()
+        self.prepare_connection_data()
+
+    def prepare_base_urls(self):
+        """Prepares the base url for establish connection with the elasticsearch master
+
+        Returns:
+            A list of base_url's, each of type tf.string for establishing the connection pool
+        """
+
+        if self.nodes is None:
+            self.nodes = ["http://localhost:9200"]
+
+        elif isinstance(self.nodes, str):
+            self.nodes = [self.nodes]
+
+        self.base_urls = []
+        for node in self.nodes:
+            if "//" not in node:
+                raise ValueError(
+                    "Please provide the list of nodes in 'protocol://host:port' format."
+                )
+
+            # Additional sanity check
+            url_obj = urlparse(node)
+            base_url = "{}://{}".format(url_obj.scheme, url_obj.netloc)
+            self.base_urls.append(base_url)
+
+        return self.base_urls
+
+    def prepare_connection_data(self):
+        """Prepares the healthcheck and resource urls from the base_urls"""
+
+        self.healthcheck_urls = [
+            "{}/_cluster/health".format(base_url) for base_url in self.base_urls
+        ]
+        self.request_urls = []
+        for base_url in self.base_urls:
+            if self.doc_type is None:
+                request_url = "{}/{}/_search?scroll=1m".format(base_url, self.index)
+            else:
+                request_url = "{}/{}/{}/_search?scroll=1m".format(
+                    base_url, self.index, self.doc_type
+                )
+            self.request_urls.append(request_url)
+
+        return self.healthcheck_urls, self.request_urls
+
+    def get_healthy_resource(self):
+        """Retrieve the resource which is connected to a healthy node"""
+
+        for healthcheck_url, request_url in zip(
+            self.healthcheck_urls, self.request_urls
+        ):
+            try:
+                resource, columns, raw_dtypes = core_ops.io_elasticsearch_readable_init(
+                    healthcheck_url=healthcheck_url,
+                    healthcheck_field="status",
+                    request_url=request_url,
+                )
+                print("Connection successful: {}".format(healthcheck_url))
+                dtypes = []
+                for dtype in raw_dtypes:
+                    if dtype == "DT_INT32":
+                        dtypes.append(tf.int32)
+                    elif dtype == "DT_INT64":
+                        dtypes.append(tf.int64)
+                    elif dtype == "DT_DOUBLE":
+                        dtypes.append(tf.double)
+                    elif dtype == "DT_STRING":
+                        dtypes.append(tf.string)
+                return resource, columns, dtypes, request_url
+            except Exception:
+                print("Skipping host: {}".format(healthcheck_url))
+                continue
+        else:
+            raise ConnectionError(
+                "No healthy node available for this index, check the cluster status and index"
+            )
+
+    def prepare_next_batch(self, resource, columns, dtypes, request_url):
+        """Prepares the next batch of data based on the request url and
+        the counter index.
+
+        Args:
+            resource: the init op resource.
+            columns: list of columns to prepare the structured data.
+            dtypes: tf.dtypes of the columns.
+            request_url: The request url to fetch the data
+        Returns:
+            Structured data which columns as keys and the corresponding tensors as values.
+        """
+
+        url_obj = urlparse(request_url)
+        scroll_request_url = "{}://{}/_search/scroll".format(
+            url_obj.scheme, url_obj.netloc
+        )
+
+        values = core_ops.io_elasticsearch_readable_next(
+            resource=resource,
+            request_url=request_url,
+            scroll_request_url=scroll_request_url,
+            dtypes=dtypes,
+        )
+        data = {}
+        for i, column in enumerate(columns.numpy()):
+            data[column.decode("utf-8")] = values[i]
+        return data
+
+
+class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
     """Represents an elasticsearch based tf.data.Dataset"""
 
-    def __init__(self, hosts=None, protocol="http", internal=True):
+    def __init__(self, nodes, index, doc_type=None, internal=True):
+        """Prepare the ElasticsearchIODataset.
+
+        Args:
+            nodes: A `tf.string` tensor containing the hostnames of nodes
+                in [protocol://hostname:port] format.
+                For example: ["http://localhost:9200"]
+            index: A `tf.string` representing the elasticsearch index to query.
+            doc_type: A `tf.string` representing the type of documents in the index
+                to query.
+        """
         with tf.name_scope("ElasticsearchIODataset"):
             assert internal
 
-            base_urls = prepare_base_urls(hosts=hosts, protocol=protocol)
-            healthcheck_urls = prepare_healthcheck_urls(base_urls=base_urls)
-            resource = get_healthy_resource(healthcheck_urls=healthcheck_urls)
+            handler = _ElasticsearchHandler(nodes=nodes, index=index, doc_type=doc_type)
+            resource, columns, dtypes, request_url = handler.get_healthy_resource()
 
-            # TODO (kvignesh1420): Read data from the cluster
+            dataset = tf.data.experimental.Counter()
+            dataset = dataset.map(
+                lambda i: handler.prepare_next_batch(
+                    resource=resource,
+                    columns=columns,
+                    dtypes=dtypes,
+                    request_url=request_url,
+                )
+            )
+            dataset = dataset.apply(
+                tf.data.experimental.take_while(
+                    lambda v: tf.greater(
+                        tf.shape(v[columns.numpy()[0].decode("utf-8")])[0], 0
+                    )
+                )
+            )
+            self._dataset = dataset
+
+            super().__init__(
+                self._dataset._variant_tensor
+            )  # pylint: disable=protected-access
 
     def _inputs(self):
         return []
@@ -38,53 +186,3 @@ class ElasticsearchIODataset(tf.data.Dataset):
     @property
     def element_spec(self):
         return self._dataset.element_spec
-
-
-def prepare_base_urls(hosts, protocol):
-    """Prepares the base url for establish connection with the elasticsearch master
-    
-    Args:
-        hosts: A list of tf.strings in the host:port format.
-        protocol: The protocol to be used to connect to the elasticsearch cluster.
-    Returns:
-        A list of base_url's, each of type tf.string for establishing the connection pool
-    """
-
-    if hosts is None:
-        hosts = ["localhost:9200"]
-
-    elif isinstance(hosts, str):
-        hosts = [hosts]
-
-    base_urls = []
-    for host in hosts:
-        if "//" in host:
-            raise ValueError("Please provide the list of hosts in 'host:port' format.")
-
-        base_url = "{}://{}".format(protocol, host)
-        base_urls.append(base_url)
-
-    return base_urls
-
-
-def prepare_healthcheck_urls(base_urls):
-    """Appends the healthcheck path to all the base_urls"""
-
-    return ["{}/_cluster/health".format(base_url) for base_url in base_urls]
-
-
-def get_healthy_resource(healthcheck_urls):
-    """Retrieve the resource which is connected to a healthy node"""
-
-    for url in healthcheck_urls:
-        try:
-            resource = core_ops.io_elasticsearch_readable_init(
-                url=url, healthcheck_field="status"
-            )
-            print("Connection successful:{}".format(url))
-            return resource
-        except:
-            print("Skipping host:{}".format(url))
-            continue
-    else:
-        raise Exception("No healthy node available, please check your cluster status")
