@@ -24,38 +24,36 @@ class _ElasticsearchHandler:
         session data.
     """
 
-    def __init__(self, nodes, index, doc_type, protocol):
+    def __init__(self, nodes, index, doc_type):
         self.nodes = nodes
         self.index = index
         self.doc_type = doc_type
-        self.protocol = protocol
         self.prepare_base_urls()
         self.prepare_connection_data()
 
     def prepare_base_urls(self):
         """Prepares the base url for establish connection with the elasticsearch master
 
-        Args:
-            nodes: A list of tf.strings in the host:port format.
-            protocol: The protocol to be used to connect to the elasticsearch cluster.
         Returns:
             A list of base_url's, each of type tf.string for establishing the connection pool
         """
 
         if self.nodes is None:
-            self.nodes = ["localhost:9200"]
+            self.nodes = ["http://localhost:9200"]
 
         elif isinstance(self.nodes, str):
             self.nodes = [self.nodes]
 
         self.base_urls = []
         for node in self.nodes:
-            if "//" in node:
+            if "//" not in node:
                 raise ValueError(
-                    "Please provide the list of nodes in 'host:port' format."
+                    "Please provide the list of nodes in 'protocol://host:port' format."
                 )
 
-            base_url = "{}://{}".format(self.protocol, node)
+            # Additional sanity check
+            url_obj = urlparse(node)
+            base_url = "{}://{}".format(url_obj.scheme, url_obj.netloc)
             self.base_urls.append(base_url)
 
         return self.base_urls
@@ -143,24 +141,21 @@ class _ElasticsearchHandler:
 class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
     """Represents an elasticsearch based tf.data.Dataset"""
 
-    def __init__(self, nodes, index, doc_type=None, protocol="http", internal=True):
+    def __init__(self, nodes, index, doc_type=None, internal=True):
         """Prepare the ElasticsearchIODataset.
 
         Args:
             nodes: A `tf.string` tensor containing the hostnames of nodes
-                in [hostname:port] format. For example: ["localhost:9200"]
+                in [protocol://hostname:port] format.
+                For example: ["http://localhost:9200"]
             index: A `tf.string` representing the elasticsearch index to query.
             doc_type: A `tf.string` representing the type of documents in the index
                 to query.
-            protocol: An optional `tf.string` representing the protocol to
-                use for querying the API. Defaults to "http".
         """
         with tf.name_scope("ElasticsearchIODataset"):
             assert internal
 
-            handler = _ElasticsearchHandler(
-                nodes=nodes, index=index, doc_type=doc_type, protocol=protocol,
-            )
+            handler = _ElasticsearchHandler(nodes=nodes, index=index, doc_type=doc_type)
             resource, columns, dtypes, request_url = handler.get_healthy_resource()
 
             dataset = tf.data.experimental.Counter()
