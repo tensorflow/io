@@ -181,7 +181,7 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
             dataset = dataset.apply(
                 tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
             )
-            dataset = dataset.unbatch()
+            dataset = dataset.flat_map(lambda x: tf.data.Dataset.from_tensor_slices(x))
             dataset = dataset.map(
                 lambda v: handler.parse_json(v, columns=columns, dtypes=dtypes),
                 num_parallel_calls=tf.data.experimental.AUTOTUNE,
