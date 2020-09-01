@@ -14,7 +14,6 @@
 # ==============================================================================
 """ElasticsearchIODatasets"""
 
-import multiprocessing
 from urllib.parse import urlparse
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
@@ -185,7 +184,7 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
             dataset = dataset.unbatch()
             dataset = dataset.map(
                 lambda v: handler.parse_json(v, columns=columns, dtypes=dtypes),
-                num_parallel_calls=multiprocessing.cpu_count(),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
             self._dataset = dataset
 
