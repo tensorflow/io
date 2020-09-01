@@ -153,7 +153,7 @@ def decode_avro(data, schema, name=None):
 
 def encode_avro(data, schema, name=None):
     """
-    Encode Tendsors into Avro string.
+    Encode Tensors into Avro string.
 
     Args:
         data: A list of Tensors to encode.
