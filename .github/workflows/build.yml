@@ -9,7 +9,6 @@ on:
       - master
 
 env:
-  BAZEL_VERSION: 3.0.0
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
@@ -23,6 +22,7 @@ jobs:
           set -x -e
           git log --pretty -1
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           bazel run -s --verbose_failures //tools/lint:check -- bazel pyupgrade black clang
@@ -120,6 +120,7 @@ jobs:
         run: |
           set -x -e
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo python3 -m pip install $(python3 setup.py --package-version)
@@ -224,6 +225,7 @@ jobs:
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+          BAZEL_VERSION=$(cat .bazelversion)
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             -e BAZEL_VERSION=${BAZEL_VERSION} \
             -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
@@ -326,6 +328,8 @@ jobs:
         shell: cmd
         run: |
           @echo on
+          set /P BAZEL_VERSION=< .bazelversion
+          BAZEL_VERSION=$(cat .bazelversion)
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
           bazel version
           cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
