@@ -40,12 +40,9 @@ REGISTER_OP("IO>ElasticsearchReadableNext")
     .Input("resource: resource")
     .Input("request_url: string")
     .Input("scroll_request_url: string")
-    .Output("column_values: dtypes")
-    .Attr("dtypes: list(type)")
+    .Output("items: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
-      for (size_t i = 0; i < c->num_outputs(); ++i) {
-        c->set_output(static_cast<int64>(i), c->MakeShape({c->UnknownDim()}));
-      }
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
       return Status::OK();
     });
 

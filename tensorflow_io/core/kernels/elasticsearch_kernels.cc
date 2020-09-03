@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow/core/platform/cloud/curl_http_request.h"
@@ -113,11 +115,10 @@ class ElasticsearchReadableResource : public ResourceBase {
     return Status::OK();
   }
 
-  Status Next(const std::string& request_url,
-              const std::string& scroll_request_url,
-              std::function<Status(int index, const TensorShape& values_shape,
-                                   Tensor** column_values)>
-                  data_allocate_func) {
+  Status Next(
+      const std::string& request_url, const std::string& scroll_request_url,
+      std::function<Status(const TensorShape& tensor_shape, Tensor** items)>
+          data_allocate_func) {
     rapidjson::Document response_json;
     if (scroll_id == "") {
       MakeAPICall(request_url, &response_json);
@@ -134,41 +135,34 @@ class ElasticsearchReadableResource : public ResourceBase {
     if (response_json.HasMember("hits")) {
       const rapidjson::Value& hits = response_json["hits"]["hits"].GetArray();
       // LOG(INFO) << "Response has hits= " << hits.MemberCount();
-      // Throw an error if empty list is returned by the cluster.
       if (hits.MemberCount() > 0) {
-        for (int column_idx = 0; column_idx < base_columns_.size();
-             ++column_idx) {
-          TensorShape values_shape({static_cast<int64>(hits.MemberCount())});
-          Tensor* column_values;
-          TF_RETURN_IF_ERROR(
-              data_allocate_func(column_idx, values_shape, &column_values));
+        TensorShape tensor_shape({static_cast<int64>(hits.MemberCount())});
+        Tensor* items;
+        TF_RETURN_IF_ERROR(data_allocate_func(tensor_shape, &items));
 
-          for (size_t item_idx = 0; item_idx < hits.MemberCount(); ++item_idx) {
-            const rapidjson::Value& value =
-                hits[item_idx]["_source"][base_columns_[column_idx].c_str()];
-
-            if (base_dtypes_[column_idx] == DT_INT64) {
-              column_values->flat<int64>()(item_idx) = value.GetInt64();
-            } else if (base_dtypes_[column_idx] == DT_INT32) {
-              column_values->flat<int32>()(item_idx) = value.GetInt();
-            } else if (base_dtypes_[column_idx] == DT_DOUBLE) {
-              column_values->flat<double>()(item_idx) = value.GetDouble();
-            } else if (base_dtypes_[column_idx] == DT_STRING) {
-              column_values->flat<tstring>()(item_idx) = value.GetString();
-            }
-          }
+        for (size_t item_idx = 0; item_idx < hits.MemberCount(); ++item_idx) {
+          const rapidjson::Value& value = hits[item_idx]["_source"];
+          rapidjson::StringBuffer item_buffer;
+          item_buffer.Clear();
+          rapidjson::Writer<rapidjson::StringBuffer> item_writer(item_buffer);
+          value.Accept(item_writer);
+          items->flat<tstring>()(item_idx) = item_buffer.GetString();
         }
+
       } else {
-        for (int column_idx = 0; column_idx < base_columns_.size();
-             ++column_idx) {
-          TensorShape values_shape({static_cast<int64>(hits.MemberCount())});
-          Tensor* column_values;
-          TF_RETURN_IF_ERROR(
-              data_allocate_func(column_idx, values_shape, &column_values));
-        }
+        scroll_id = "";
+        TensorShape tensor_shape({static_cast<int64>(hits.MemberCount())});
+        Tensor* items;
+        TF_RETURN_IF_ERROR(data_allocate_func(tensor_shape, &items));
       }
     } else {
-      return errors::FailedPrecondition("Corrupted response from the server");
+      rapidjson::StringBuffer error_buffer;
+      error_buffer.Clear();
+      rapidjson::Writer<rapidjson::StringBuffer> error_writer(error_buffer);
+      response_json.Accept(error_writer);
+      std::string error_response = error_buffer.GetString();
+      return errors::FailedPrecondition("Corrupted response from the server " +
+                                        error_response);
     }
 
     return Status::OK();
@@ -324,14 +318,14 @@ class ElasticsearchReadableNextOp : public OpKernel {
     const string& scroll_request_url =
         scroll_request_url_tensor->scalar<tstring>()();
 
-    OP_REQUIRES_OK(
-        context, resource->Next(request_url, scroll_request_url,
-                                [&](int index, const TensorShape& values_shape,
-                                    Tensor** column_values) -> Status {
-                                  TF_RETURN_IF_ERROR(context->allocate_output(
-                                      index, values_shape, column_values));
-                                  return Status::OK();
-                                }));
+    OP_REQUIRES_OK(context,
+                   resource->Next(request_url, scroll_request_url,
+                                  [&](const TensorShape& tensor_shape,
+                                      Tensor** items) -> Status {
+                                    TF_RETURN_IF_ERROR(context->allocate_output(
+                                        0, tensor_shape, items));
+                                    return Status::OK();
+                                  }));
   }
 
  private:
