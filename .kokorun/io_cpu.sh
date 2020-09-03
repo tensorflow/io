@@ -47,7 +47,7 @@ docker  --version
 
 export PYTHON_VERSION=3.7
 
-export BAZEL_VERSION=3.0.0
+export BAZEL_VERSION=$(cat .bazelversion)
 export BAZEL_OPTIMIZATION="--copt=-msse4.2 --copt=-mavx --compilation_mode=opt"
 export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 
