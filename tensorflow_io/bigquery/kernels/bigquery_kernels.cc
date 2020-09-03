@@ -37,7 +37,6 @@ namespace tensorflow {
 namespace {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
-static constexpr int kMaxReceiveMessageSize = 1 << 24;  // 16 MBytes
 
 class BigQueryClientOp : public OpKernel {
  public:

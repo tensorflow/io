@@ -42,7 +42,7 @@ limitations under the License.
 namespace tensorflow {
 
 namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
-static constexpr int kMaxReceiveMessageSize = 1 << 24;  // 16 MBytes
+static constexpr int kMaxReceiveMessageSize = -1;  // Disabled
 
 Status GrpcStatusToTfStatus(const ::grpc::Status &status);
 string GrpcStatusToString(const ::grpc::Status &status);
