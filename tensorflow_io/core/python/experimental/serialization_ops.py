@@ -49,19 +49,18 @@ def named_spec(specs, name=""):
 
 def decode_json(data, specs, name=None):
     """
-  Decode JSON string into Tensors.
+    Decode JSON string into Tensors.
 
-  TODO: support batch (1-D) input
+    Args:
+        data: A String Tensor. The JSON strings to decode.
+        specs: A structured TensorSpecs describing the signature
+        of the JSON elements.
+        name: A name for the operation (optional).
 
-  Args:
-    data: A String Tensor. The JSON strings to decode.
-    specs: A structured TensorSpecs describing the signature
-      of the JSON elements.
-    name: A name for the operation (optional).
-
-  Returns:
-    A structured Tensors.
-  """
+    Returns:
+        A structured Tensors.
+    """
+    # TODO: support batch (1-D) input
     # Make a copy of specs to keep the original specs
     named = tf.nest.map_structure(lambda e: _NamedTensorSpec(e.shape, e.dtype), specs)
     named_spec(named)
@@ -128,16 +127,16 @@ def process_entry(data, name):
 
 def decode_avro(data, schema, name=None):
     """
-  Decode Avro string into Tensors.
+    Decode Avro string into Tensors.
 
-  Args:
-    data: A String Tensor. The Avro strings to decode.
-    schema: A string of the Avro schema.
-    name: A name for the operation (optional).
+    Args:
+        data: A String Tensor. The Avro strings to decode.
+        schema: A string of the Avro schema.
+        name: A name for the operation (optional).
 
-  Returns:
-    A structured Tensors.
-  """
+    Returns:
+        A structured Tensors.
+    """
     # TODO: Use resource to reuse schema initialization
     specs = process_entry(
         json.loads(schema.decode() if isinstance(schema, bytes) else schema), ""
@@ -154,16 +153,16 @@ def decode_avro(data, schema, name=None):
 
 def encode_avro(data, schema, name=None):
     """
-  Encode Tendsors into Avro string.
+    Encode Tensors into Avro string.
 
-  Args:
-    data: A list of Tensors to encode.
-    schema: A string of the Avro schema.
-    name: A name for the operation (optional).
+    Args:
+        data: A list of Tensors to encode.
+        schema: A string of the Avro schema.
+        name: A name for the operation (optional).
 
-  Returns:
-    An Avro-encoded string Tensor.
-  """
+    Returns:
+        An Avro-encoded string Tensor.
+    """
     # TODO: Use resource to reuse schema initialization
     specs = process_entry(
         json.loads(schema.decode() if isinstance(schema, bytes) else schema), ""

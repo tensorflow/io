@@ -17,6 +17,7 @@
 from urllib.parse import urlparse
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
+from tensorflow_io.core.python.experimental import serialization_ops
 
 
 class _ElasticsearchHandler:
@@ -99,7 +100,7 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.double)
                     elif dtype == "DT_STRING":
                         dtypes.append(tf.string)
-                return resource, columns, dtypes, request_url
+                return resource, columns.numpy(), dtypes, request_url
             except Exception:
                 print("Skipping host: {}".format(healthcheck_url))
                 continue
@@ -108,7 +109,7 @@ class _ElasticsearchHandler:
                 "No healthy node available for this index, check the cluster status and index"
             )
 
-    def prepare_next_batch(self, resource, columns, dtypes, request_url):
+    def get_next_batch(self, resource, request_url):
         """Prepares the next batch of data based on the request url and
         the counter index.
 
@@ -118,7 +119,7 @@ class _ElasticsearchHandler:
             dtypes: tf.dtypes of the columns.
             request_url: The request url to fetch the data
         Returns:
-            Structured data which columns as keys and the corresponding tensors as values.
+            A Tensor containing serialized JSON records.
         """
 
         url_obj = urlparse(request_url)
@@ -130,12 +131,25 @@ class _ElasticsearchHandler:
             resource=resource,
             request_url=request_url,
             scroll_request_url=scroll_request_url,
-            dtypes=dtypes,
         )
-        data = {}
-        for i, column in enumerate(columns.numpy()):
-            data[column.decode("utf-8")] = values[i]
-        return data
+        return values
+
+    def parse_json(self, raw_item, columns, dtypes):
+        """Prepares the next batch of data based on the request url and
+        the counter index.
+
+        Args:
+            raw_value: A serialized JSON record in tf.string format.
+            columns: list of columns to prepare the structured data.
+            dtypes: tf.dtypes of the columns.
+        Returns:
+            Structured data with columns as keys and the corresponding tensors as values.
+        """
+        specs = {}
+        for column, dtype in zip(columns, dtypes):
+            specs[column.decode("utf-8")] = tf.TensorSpec(tf.TensorShape([]), dtype)
+        parsed_item = serialization_ops.decode_json(data=raw_item, specs=specs)
+        return parsed_item
 
 
 class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
@@ -160,19 +174,17 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
 
             dataset = tf.data.experimental.Counter()
             dataset = dataset.map(
-                lambda i: handler.prepare_next_batch(
-                    resource=resource,
-                    columns=columns,
-                    dtypes=dtypes,
-                    request_url=request_url,
+                lambda i: handler.get_next_batch(
+                    resource=resource, request_url=request_url
                 )
             )
             dataset = dataset.apply(
-                tf.data.experimental.take_while(
-                    lambda v: tf.greater(
-                        tf.shape(v[columns.numpy()[0].decode("utf-8")])[0], 0
-                    )
-                )
+                tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+            )
+            dataset = dataset.flat_map(lambda x: tf.data.Dataset.from_tensor_slices(x))
+            dataset = dataset.map(
+                lambda v: handler.parse_json(v, columns=columns, dtypes=dtypes),
+                num_parallel_calls=tf.data.experimental.AUTOTUNE,
             )
             self._dataset = dataset
 
