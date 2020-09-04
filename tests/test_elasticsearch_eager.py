@@ -18,8 +18,7 @@
 import time
 import json
 import pytest
-import docker
-from docker.errors import NotFound
+import socket
 import requests
 import tensorflow as tf
 import tensorflow_io as tfio
@@ -31,18 +30,19 @@ NODE = "http://localhost:9200"
 INDEX = "people"
 DOC_TYPE = "survivors"
 HEADERS = {"Content-Type": "application/json"}
+ATTRS = ["name", "gender", "age", "fare", "survived"]
 
 
 def is_container_running():
-    """Check whether the elasticsearh container is up and running"""
+    """Check whether the elasticsearch container is up and running
+    with the correct port being exposed.
+    """
 
-    client = docker.from_env()
-    try:
-        es_container = client.containers.get(ES_CONTAINER_NAME)
-        if es_container.status == "running":
-            return True
-        return False
-    except NotFound:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    status = sock.connect_ex(("127.0.0.1", 9200))
+    if status == 0:
+        return True
+    else:
         return False
 
 
@@ -56,26 +56,22 @@ def test_create_index():
 
 
 @pytest.mark.parametrize(
-    "name,gender,age,fare,survived",
+    "record",
     [
-        ("person1", "Male", 20, 80.52, 1),
-        ("person2", "Female", 30, 40.88, 0),
-        ("person3", "Male", 40, 20.73, 0),
-        ("person4", "Female", 50, 100.99, 1),
+        (("person1", "Male", 20, 80.52, 1)),
+        (("person2", "Female", 30, 40.88, 0)),
+        (("person3", "Male", 40, 20.73, 0)),
+        (("person4", "Female", 50, 100.99, 1)),
     ],
 )
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
-def test_populate_data(name, gender, age, fare, survived):
+def test_populate_data(record):
     """Populate the index with data"""
 
     put_item_url = "{}/{}/{}".format(NODE, INDEX, DOC_TYPE)
-    data = {
-        "name": name,
-        "gender": gender,
-        "age": age,
-        "fare": fare,
-        "survived": survived,
-    }
+    data = {}
+    for idx, attr in enumerate(ATTRS):
+        data[attr] = record[idx]
 
     res = requests.post(put_item_url, json=data, headers=HEADERS)
 
@@ -97,7 +93,7 @@ def test_elasticsearch_io_dataset():
     assert issubclass(type(dataset), tf.data.Dataset)
 
     for item in dataset:
-        for attr in ["name", "gender", "age", "fare", "survived"]:
+        for attr in ATTRS:
             assert attr in item
 
 
@@ -113,7 +109,7 @@ def test_elasticsearch_io_dataset_batch():
     assert issubclass(type(dataset), tf.data.Dataset)
 
     for item in dataset:
-        for attr in ["name", "gender", "age", "fare", "survived"]:
+        for attr in ATTRS:
             assert attr in item
             assert len(item[attr]) == BATCH_SIZE
 
