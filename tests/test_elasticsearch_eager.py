@@ -102,7 +102,9 @@ def test_elasticsearch_io_dataset():
 
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
 def test_elasticsearch_io_dataset_no_auth():
-    """Test the functionality of the ElasticsearchIODataset"""
+    """Test the functionality of the ElasticsearchIODataset when basic auth is
+    required but the associated header is not passed.
+    """
 
     try:
         dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
