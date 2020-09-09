@@ -112,11 +112,13 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.string)
                 return resource, columns.numpy(), dtypes, request_url
             except Exception:
-                print("Skipping host: {}".format(healthcheck_url))
+                print("Skipping node: {}".format(healthcheck_url))
                 continue
         else:
             raise ConnectionError(
-                "No healthy node available for this index, please check the cluster config"
+                "No healthy node available for the index: {}, please check the cluster config".format(
+                    self.index
+                )
             )
 
     def get_next_batch(self, resource, request_url):

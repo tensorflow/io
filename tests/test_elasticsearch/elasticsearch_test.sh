@@ -51,6 +51,8 @@ sleep 20
 echo ""
 echo "Checking the base REST-API endpoint..."
 echo ""
+# The Authorization header contains the base64 encoded value of "elastic:default_password"
+# As per the environment variable set while starting the container.
 curl -X GET localhost:9200/ --header 'Authorization: Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk'
 
 echo ""
