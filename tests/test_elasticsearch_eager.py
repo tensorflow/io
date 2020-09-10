@@ -111,8 +111,11 @@ def test_elasticsearch_io_dataset_no_auth():
             nodes=[NODE], index=INDEX, doc_type=DOC_TYPE
         )
     except ConnectionError as e:
-        assert str(e) == "No healthy node available for the index: {}, please check the cluster config".format(
-            INDEX)
+        assert str(
+            e
+        ) == "No healthy node available for the index: {}, please check the cluster config".format(
+            INDEX
+        )
 
 
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
