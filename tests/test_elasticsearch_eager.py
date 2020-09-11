@@ -29,7 +29,10 @@ ES_CONTAINER_NAME = "tfio-elasticsearch"
 NODE = "http://localhost:9200"
 INDEX = "people"
 DOC_TYPE = "survivors"
-HEADERS = {"Content-Type": "application/json"}
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk",
+}
 ATTRS = ["name", "gender", "age", "fare", "survived"]
 
 
@@ -51,7 +54,7 @@ def test_create_index():
     """Create an index in the cluster"""
 
     create_index_url = "{}/{}".format(NODE, INDEX)
-    res = requests.put(create_index_url)
+    res = requests.put(create_index_url, headers=HEADERS)
     assert res.status_code == 200
 
 
@@ -87,7 +90,7 @@ def test_elasticsearch_io_dataset():
     """Test the functionality of the ElasticsearchIODataset"""
 
     dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
-        nodes=[NODE], index=INDEX, doc_type=DOC_TYPE
+        nodes=[NODE], index=INDEX, doc_type=DOC_TYPE, headers=HEADERS
     )
 
     assert issubclass(type(dataset), tf.data.Dataset)
@@ -98,12 +101,30 @@ def test_elasticsearch_io_dataset():
 
 
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
+def test_elasticsearch_io_dataset_no_auth():
+    """Test the functionality of the ElasticsearchIODataset when basic auth is
+    required but the associated header is not passed.
+    """
+
+    try:
+        dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
+            nodes=[NODE], index=INDEX, doc_type=DOC_TYPE
+        )
+    except ConnectionError as e:
+        assert str(
+            e
+        ) == "No healthy node available for the index: {}, please check the cluster config".format(
+            INDEX
+        )
+
+
+@pytest.mark.skipif(not is_container_running(), reason="The container is not running")
 def test_elasticsearch_io_dataset_batch():
     """Test the functionality of the ElasticsearchIODataset"""
 
     BATCH_SIZE = 2
     dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
-        nodes=[NODE], index=INDEX, doc_type=DOC_TYPE
+        nodes=[NODE], index=INDEX, doc_type=DOC_TYPE, headers=HEADERS
     ).batch(BATCH_SIZE)
 
     assert issubclass(type(dataset), tf.data.Dataset)
@@ -119,5 +140,5 @@ def test_cleanup():
     """Clean up the index"""
 
     delete_index_url = "{}/{}".format(NODE, INDEX)
-    res = requests.delete(delete_index_url)
+    res = requests.delete(delete_index_url, headers=HEADERS)
     assert res.status_code == 200

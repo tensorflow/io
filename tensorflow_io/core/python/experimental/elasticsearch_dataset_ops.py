@@ -25,10 +25,11 @@ class _ElasticsearchHandler:
         session data.
     """
 
-    def __init__(self, nodes, index, doc_type):
+    def __init__(self, nodes, index, doc_type, headers_dict):
         self.nodes = nodes
         self.index = index
         self.doc_type = doc_type
+        self.headers_dict = headers_dict
         self.prepare_base_urls()
         self.prepare_connection_data()
 
@@ -57,8 +58,6 @@ class _ElasticsearchHandler:
             base_url = "{}://{}".format(url_obj.scheme, url_obj.netloc)
             self.base_urls.append(base_url)
 
-        return self.base_urls
-
     def prepare_connection_data(self):
         """Prepares the healthcheck and resource urls from the base_urls"""
 
@@ -75,7 +74,17 @@ class _ElasticsearchHandler:
                 )
             self.request_urls.append(request_url)
 
-        return self.healthcheck_urls, self.request_urls
+        self.headers = ["Content-Type=application/json"]
+        if self.headers_dict is not None:
+            if isinstance(self.headers_dict, dict):
+                for key, value in self.headers_dict.items():
+                    if key.lower() == "content-type":
+                        continue
+                    self.headers.append("{}={}".format(key, value))
+            else:
+                raise ValueError(
+                    "Headers should be a dict of key:value pairs. Got: ", self.headers
+                )
 
     def get_healthy_resource(self):
         """Retrieve the resource which is connected to a healthy node"""
@@ -88,6 +97,7 @@ class _ElasticsearchHandler:
                     healthcheck_url=healthcheck_url,
                     healthcheck_field="status",
                     request_url=request_url,
+                    headers=self.headers,
                 )
                 print("Connection successful: {}".format(healthcheck_url))
                 dtypes = []
@@ -102,11 +112,13 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.string)
                 return resource, columns.numpy(), dtypes, request_url
             except Exception:
-                print("Skipping host: {}".format(healthcheck_url))
+                print("Skipping node: {}".format(healthcheck_url))
                 continue
         else:
             raise ConnectionError(
-                "No healthy node available for this index, check the cluster status and index"
+                "No healthy node available for the index: {}, please check the cluster config".format(
+                    self.index
+                )
             )
 
     def get_next_batch(self, resource, request_url):
@@ -155,7 +167,7 @@ class _ElasticsearchHandler:
 class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
     """Represents an elasticsearch based tf.data.Dataset"""
 
-    def __init__(self, nodes, index, doc_type=None, internal=True):
+    def __init__(self, nodes, index, doc_type=None, headers=None, internal=True):
         """Prepare the ElasticsearchIODataset.
 
         Args:
@@ -163,13 +175,17 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
                 in [protocol://hostname:port] format.
                 For example: ["http://localhost:9200"]
             index: A `tf.string` representing the elasticsearch index to query.
-            doc_type: A `tf.string` representing the type of documents in the index
+            doc_type: (Optional) A `tf.string` representing the type of documents in the index
                 to query.
+            headers: (Optional) A dict of headers. For example:
+                {'Content-Type': 'application/json'}    
         """
         with tf.name_scope("ElasticsearchIODataset"):
             assert internal
 
-            handler = _ElasticsearchHandler(nodes=nodes, index=index, doc_type=doc_type)
+            handler = _ElasticsearchHandler(
+                nodes=nodes, index=index, doc_type=doc_type, headers_dict=headers
+            )
             resource, columns, dtypes, request_url = handler.get_healthy_resource()
 
             dataset = tf.data.experimental.Counter()
