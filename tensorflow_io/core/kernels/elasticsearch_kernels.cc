@@ -33,11 +33,12 @@ class ElasticsearchReadableResource : public ResourceBase {
   Status Init(const std::string& healthcheck_url,
               const std::string& healthcheck_field,
               const std::string& request_url,
+              const std::vector<string>& headers,
               std::function<Status(const TensorShape& columns_shape,
                                    Tensor** columns, Tensor** dtypes)>
                   allocate_func) {
     // Perform healthcheck before proceeding
-    Healthcheck(healthcheck_url, healthcheck_field);
+    Healthcheck(healthcheck_url, healthcheck_field, headers);
 
     // Make the request API call and set the metadata based on a sample of
     // data returned. The request_url will have the "scroll" param set with
@@ -46,7 +47,7 @@ class ElasticsearchReadableResource : public ResourceBase {
     base_dtypes_.clear();
     base_columns_.clear();
     rapidjson::Document response_json;
-    MakeAPICall(request_url, &response_json);
+    MakeAPICall(request_url, &response_json, headers);
 
     // Validate the presence of the _scroll_id in the response.
     // The _scroll_id keeps might change in subsequent calls, thus not
@@ -121,9 +122,9 @@ class ElasticsearchReadableResource : public ResourceBase {
           data_allocate_func) {
     rapidjson::Document response_json;
     if (scroll_id == "") {
-      MakeAPICall(request_url, &response_json);
+      MakeAPICall(request_url, &response_json, headers_);
     } else {
-      MakeAPICall(scroll_request_url, &response_json);
+      MakeAPICall(scroll_request_url, &response_json, headers_);
     }
 
     if (response_json.HasMember("_scroll_id")) {
@@ -172,10 +173,11 @@ class ElasticsearchReadableResource : public ResourceBase {
 
  protected:
   Status Healthcheck(const std::string& healthcheck_url,
-                     const std::string& healthcheck_field) {
+                     const std::string& healthcheck_field,
+                     const std::vector<string>& headers) {
     // Make the healthcheck API call and get the response json
     rapidjson::Document response_json;
-    MakeAPICall(healthcheck_url, &response_json);
+    MakeAPICall(healthcheck_url, &response_json, headers);
 
     if (response_json.HasMember(healthcheck_field.c_str())) {
       // LOG(INFO) << "cluster health: "
@@ -186,8 +188,8 @@ class ElasticsearchReadableResource : public ResourceBase {
     return Status::OK();
   }
 
-  Status MakeAPICall(const std::string& url,
-                     rapidjson::Document* response_json) {
+  Status MakeAPICall(const std::string& url, rapidjson::Document* response_json,
+                     const std::vector<string>& headers) {
     HttpRequest* request = http_request_factory_.Create();
 
     if (scroll_id != "") {
@@ -200,7 +202,15 @@ class ElasticsearchReadableResource : public ResourceBase {
     }
 
     // LOG(INFO) << "Setting the headers";
-    request->AddHeader("Content-Type", "application/json; charset=utf-8");
+    for (size_t i = 0; i < headers.size(); ++i) {
+      std::string header = headers[i];
+      std::vector<string> parts = str_util::Split(header, "=");
+      if (parts.size() != 2) {
+        return errors::InvalidArgument("invalid header configuration: ",
+                                       header);
+      }
+      request->AddHeader(parts[0], parts[1]);
+    }
 
     // LOG(INFO) << "Setting the response buffer";
     std::vector<char> response;
@@ -231,6 +241,9 @@ class ElasticsearchReadableResource : public ResourceBase {
           "Invalid JSON response. The response should be an object");
     }
 
+    // Store the default headers if the response is valid
+    headers_ = headers;
+
     return Status::OK();
   }
 
@@ -242,6 +255,7 @@ class ElasticsearchReadableResource : public ResourceBase {
   std::vector<DataType> base_dtypes_;
   std::vector<string> base_columns_;
   std::string scroll_id = "";
+  std::vector<string> headers_;
 };
 
 class ElasticsearchReadableInitOp
@@ -271,17 +285,24 @@ class ElasticsearchReadableInitOp
     OP_REQUIRES_OK(context, context->input("request_url", &request_url_tensor));
     const string& request_url = request_url_tensor->scalar<tstring>()();
 
+    const Tensor* headers_tensor;
+    OP_REQUIRES_OK(context, context->input("headers", &headers_tensor));
+    std::vector<string> headers;
+    for (int64 i = 0; i < headers_tensor->NumElements(); i++) {
+      headers.push_back(headers_tensor->flat<tstring>()(i));
+    }
+
     OP_REQUIRES_OK(
-        context,
-        resource_->Init(healthcheck_url, healthcheck_field, request_url,
-                        [&](const TensorShape& columns_shape, Tensor** columns,
-                            Tensor** dtypes) -> Status {
-                          TF_RETURN_IF_ERROR(context->allocate_output(
-                              1, columns_shape, columns));
-                          TF_RETURN_IF_ERROR(context->allocate_output(
-                              2, columns_shape, dtypes));
-                          return Status::OK();
-                        }));
+        context, resource_->Init(
+                     healthcheck_url, healthcheck_field, request_url, headers,
+                     [&](const TensorShape& columns_shape, Tensor** columns,
+                         Tensor** dtypes) -> Status {
+                       TF_RETURN_IF_ERROR(
+                           context->allocate_output(1, columns_shape, columns));
+                       TF_RETURN_IF_ERROR(
+                           context->allocate_output(2, columns_shape, dtypes));
+                       return Status::OK();
+                     }));
   }
 
   Status CreateResource(ElasticsearchReadableResource** resource)
