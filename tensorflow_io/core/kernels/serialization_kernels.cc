@@ -56,44 +56,108 @@ class DecodeJSONOp : public OpKernel {
       OP_REQUIRES(context, (entry != nullptr),
                   errors::InvalidArgument("no value for ",
                                           names_tensor->flat<tstring>()(i)));
+
       Tensor* value_tensor;
       if (entry->IsArray()) {
-        OP_REQUIRES_OK(context,
-                       context->allocate_output(i, TensorShape({entry->Size()}),
+        if (entry->Size() > 0 && (*entry)[0].IsArray()) {
+          int64 dim0 = entry->Size();
+          int64 dim1 = 0;
+          for (int64 j = 0; j < entry->Size(); j++) {
+            if (dim1 < (*entry)[j].Size()) {
+              dim1 = (*entry)[j].Size();
+            }
+          }
+          OP_REQUIRES_OK(context,
+                         context->allocate_output(i, TensorShape({dim0, dim1}),
+                                                  &value_tensor));
+
+          switch (value_tensor->dtype()) {
+            case DT_INT32:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
+                  value_tensor->tensor<int32, 2>()(j, k) =
+                      (*entry)[j][k].GetInt();
+                }
+              }
+              break;
+            case DT_INT64:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
+                  value_tensor->tensor<int64, 2>()(j, k) =
+                      (*entry)[j][k].GetInt64();
+                }
+              }
+              break;
+            case DT_FLOAT:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
+                  value_tensor->tensor<float, 2>()(j, k) =
+                      (*entry)[j][k].GetDouble();
+                }
+              }
+              break;
+            case DT_DOUBLE:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
+                  value_tensor->tensor<double, 2>()(j, k) =
+                      (*entry)[j][k].GetDouble();
+                }
+              }
+              break;
+            case DT_STRING:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
+                  value_tensor->tensor<tstring, 2>()(j, k) =
+                      (*entry)[j][k].GetString();
+                }
+              }
+              break;
+            default:
+              OP_REQUIRES(context, false,
+                          errors::InvalidArgument(
+                              "data type not supported: ",
+                              DataTypeString(value_tensor->dtype())));
+              break;
+          }
+
+        } else {
+          OP_REQUIRES_OK(
+              context, context->allocate_output(i, TensorShape({entry->Size()}),
                                                 &value_tensor));
 
-        switch (value_tensor->dtype()) {
-          case DT_INT32:
-            for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<int32>()(j) = (*entry)[j].GetInt();
-            }
-            break;
-          case DT_INT64:
-            for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<int64>()(j) = (*entry)[j].GetInt64();
-            }
-            break;
-          case DT_FLOAT:
-            for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<float>()(j) = (*entry)[j].GetDouble();
-            }
-            break;
-          case DT_DOUBLE:
-            for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<double>()(j) = (*entry)[j].GetDouble();
-            }
-            break;
-          case DT_STRING:
-            for (int64 j = 0; j < entry->Size(); j++) {
-              value_tensor->flat<tstring>()(j) = (*entry)[j].GetString();
-            }
-            break;
-          default:
-            OP_REQUIRES(
-                context, false,
-                errors::InvalidArgument("data type not supported: ",
-                                        DataTypeString(value_tensor->dtype())));
-            break;
+          switch (value_tensor->dtype()) {
+            case DT_INT32:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                value_tensor->flat<int32>()(j) = (*entry)[j].GetInt();
+              }
+              break;
+            case DT_INT64:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                value_tensor->flat<int64>()(j) = (*entry)[j].GetInt64();
+              }
+              break;
+            case DT_FLOAT:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                value_tensor->flat<float>()(j) = (*entry)[j].GetDouble();
+              }
+              break;
+            case DT_DOUBLE:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                value_tensor->flat<double>()(j) = (*entry)[j].GetDouble();
+              }
+              break;
+            case DT_STRING:
+              for (int64 j = 0; j < entry->Size(); j++) {
+                value_tensor->flat<tstring>()(j) = (*entry)[j].GetString();
+              }
+              break;
+            default:
+              OP_REQUIRES(context, false,
+                          errors::InvalidArgument(
+                              "data type not supported: ",
+                              DataTypeString(value_tensor->dtype())));
+              break;
+          }
         }
 
       } else {
