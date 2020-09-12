@@ -200,3 +200,21 @@ def test_json_partial_shape():
 
     v = parse_json(r)
     assert np.array_equal(v, [1, 2, 3, 4, 5])
+
+
+def test_json_multiple_dimension_tensor():
+
+    # Test case is to resolve the issue where multiple dimension tensor
+    # was not supported for decode_json.
+    # The issue was initially raised in:
+    # https://github.com/tensorflow/io/pull/695#issuecomment-683270751
+    r = '{"x": [[1.0]]}'
+
+    @tf.function(autograph=False)
+    def parse_json(json_text):
+        specs = {"x": tf.TensorSpec(tf.TensorShape([1, 1]), tf.float32)}
+        parsed = tfio.experimental.serialization.decode_json(json_text, specs)
+        return parsed["x"]
+
+    v = parse_json(r)
+    assert np.array_equal(v, [[1.0]])
