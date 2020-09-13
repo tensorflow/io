@@ -63,8 +63,46 @@ import tensorflow_io as tfio
                 [1, 5, 5, 1],
             ),
         ),
+        pytest.param(
+            lambda: (np.reshape(np.arange(25) / 25, [1, 5, 5, 1])),
+            lambda e: tfio.experimental.filter.prewitt(e),
+            lambda e: np.reshape(
+                np.sqrt(
+                    np.square(
+                        scipy.ndimage.prewitt(
+                            np.reshape(e, [5, 5]), axis=0, mode="constant"
+                        )
+                    )
+                    + np.square(
+                        scipy.ndimage.prewitt(
+                            np.reshape(e, [5, 5]), axis=1, mode="constant"
+                        )
+                    )
+                ),
+                [1, 5, 5, 1],
+            ),
+        ),
+        pytest.param(
+            lambda: (np.reshape(np.arange(25) / 25, [1, 5, 5, 1])),
+            lambda e: tfio.experimental.filter.sobel(e),
+            lambda e: np.reshape(
+                np.sqrt(
+                    np.square(
+                        scipy.ndimage.sobel(
+                            np.reshape(e, [5, 5]), axis=0, mode="constant"
+                        )
+                    )
+                    + np.square(
+                        scipy.ndimage.sobel(
+                            np.reshape(e, [5, 5]), axis=1, mode="constant"
+                        )
+                    )
+                ),
+                [1, 5, 5, 1],
+            ),
+        ),
     ],
-    ids=["gaussian", "laplacian", "gabor"],
+    ids=["gaussian", "laplacian", "gabor", "prewitt", "sobel"],
 )
 def test_filter(data, func, check):
     """test_filter"""
