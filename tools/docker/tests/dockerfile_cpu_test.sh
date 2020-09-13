@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-IMAGE_NAME="tfio-cpu"
-export PYTHON_BIN_PATH=$(which python3.7)
+IMAGE_NAME="tfsigio/tfio"
+IMAGE_TAG="latest"
+export PYTHON_BIN_PATH=$(which python3)
 
 echo "Build the docker image ..."
-docker build -f tools/docker/cpu.Dockerfile -t ${IMAGE_NAME} .
+docker build -f tools/docker/cpu.Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .
 
-echo "Starting the docker container from image: ${IMAGE_NAME} and validating import ..."
-docker run -t --rm ${IMAGE_NAME} python -c "import tensorflow_io as tfio; print(tfio.__version__)"
+echo "Starting the docker container from image: ${IMAGE_NAME}:${IMAGE_TAG} and validating import ..."
+docker run -t --rm ${IMAGE_NAME}:${IMAGE_TAG} python -c "import tensorflow_io as tfio; print(tfio.__version__)"
