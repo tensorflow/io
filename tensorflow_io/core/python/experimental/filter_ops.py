@@ -243,3 +243,83 @@ def gabor(
         input, tf.cast(tf.math.imag(g), input.dtype), [1, 1, 1, 1], padding="VALID"
     )
     return tf.complex(real, imag)
+
+
+def prewitt(input, mode=None, constant_values=None, name=None):
+    """
+    Apply Prewitt filter to image.
+
+    Args:
+      input: A 4-D (`[N, H, W, C]`) Tensor.
+      mode: A `string`. One of "CONSTANT", "REFLECT", or "SYMMETRIC"
+        (case-insensitive). Default "CONSTANT".
+      constant_values: A `scalar`, the pad value to use in "CONSTANT"
+        padding mode. Must be same type as input. Default 0.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 4-D (`[N, H, W, C]`) Tensor.
+    """
+
+    input = tf.convert_to_tensor(input)
+
+    gx = tf.cast([[1, 0, -1], [1, 0, -1], [1, 0, -1]], input.dtype)
+    gy = tf.cast([[1, 1, 1], [0, 0, 0], [-1, -1, -1]], input.dtype)
+
+    ksize = tf.constant([3, 3])
+
+    input = pad(input, ksize, mode, constant_values)
+
+    channel = tf.shape(input)[-1]
+    shape = tf.concat([ksize, tf.constant([1, 1], ksize.dtype)], axis=0)
+    gx, gy = tf.reshape(gx, shape), tf.reshape(gy, shape)
+    shape = tf.concat([ksize, [channel], tf.constant([1], ksize.dtype)], axis=0)
+    gx, gy = tf.broadcast_to(gx, shape), tf.broadcast_to(gy, shape)
+
+    x = tf.nn.depthwise_conv2d(
+        input, tf.cast(gx, input.dtype), [1, 1, 1, 1], padding="VALID"
+    )
+    y = tf.nn.depthwise_conv2d(
+        input, tf.cast(gy, input.dtype), [1, 1, 1, 1], padding="VALID"
+    )
+    return tf.math.sqrt(x * x + y * y)
+
+
+def sobel(input, mode=None, constant_values=None, name=None):
+    """
+    Apply Sobel filter to image.
+
+    Args:
+      input: A 4-D (`[N, H, W, C]`) Tensor.
+      mode: A `string`. One of "CONSTANT", "REFLECT", or "SYMMETRIC"
+        (case-insensitive). Default "CONSTANT".
+      constant_values: A `scalar`, the pad value to use in "CONSTANT"
+        padding mode. Must be same type as input. Default 0.
+      name: A name for the operation (optional).
+
+    Returns:
+      A 4-D (`[N, H, W, C]`) Tensor.
+    """
+
+    input = tf.convert_to_tensor(input)
+
+    gx = tf.cast([[1, 0, -1], [2, 0, -2], [1, 0, -1]], input.dtype)
+    gy = tf.cast([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], input.dtype)
+
+    ksize = tf.constant([3, 3])
+
+    input = pad(input, ksize, mode, constant_values)
+
+    channel = tf.shape(input)[-1]
+    shape = tf.concat([ksize, tf.constant([1, 1], ksize.dtype)], axis=0)
+    gx, gy = tf.reshape(gx, shape), tf.reshape(gy, shape)
+    shape = tf.concat([ksize, [channel], tf.constant([1], ksize.dtype)], axis=0)
+    gx, gy = tf.broadcast_to(gx, shape), tf.broadcast_to(gy, shape)
+
+    x = tf.nn.depthwise_conv2d(
+        input, tf.cast(gx, input.dtype), [1, 1, 1, 1], padding="VALID"
+    )
+    y = tf.nn.depthwise_conv2d(
+        input, tf.cast(gy, input.dtype), [1, 1, 1, 1], padding="VALID"
+    )
+    return tf.math.sqrt(x * x + y * y)
