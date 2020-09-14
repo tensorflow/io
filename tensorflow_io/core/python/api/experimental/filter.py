@@ -17,5 +17,7 @@
 from tensorflow_io.core.python.experimental.filter_ops import (  # pylint: disable=unused-import
     gaussian,
     laplacian,
+    prewitt,
+    sobel,
     gabor,
 )
