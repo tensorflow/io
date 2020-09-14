@@ -499,7 +499,7 @@ jobs:
     steps:
       - run: |
           set -e -x
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
           bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
           docker push tfsigio/tfio:latest
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
