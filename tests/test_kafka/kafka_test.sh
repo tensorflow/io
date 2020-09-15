@@ -36,8 +36,8 @@ echo -e "D0\nD1\nD2\nD3\nD4\nD5\nD6\nD7\nD8\nD9" > confluent-$VERSION/test
 echo -e "K0:D0\nK1:D1\nK0:D2\nK1:D3\nK0:D4\nK1:D5\nK0:D6\nK1:D7\nK0:D8\nK1:D9" > confluent-$VERSION/key-test
 echo -e "K0:D0\nK1:D1\nK0:D2\nK1:D3\nK0:D4\nK1:D5\nK0:D6\nK1:D7\nK0:D8\nK1:D9" > confluent-$VERSION/key-partition-test
 echo -e "0:0\n1:1\n0:2\n1:3\n0:4\n1:5\n0:6\n1:7\n0:8\n1:9" > confluent-$VERSION/mini-batch-test
-echo "Waiting for 15 secs until schema registry is ready and other services are up and running"
-sleep 15
+echo "Waiting for 30 secs until schema registry is ready and other services are up and running"
+sleep 30
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
 sudo confluent-$VERSION/bin/kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
