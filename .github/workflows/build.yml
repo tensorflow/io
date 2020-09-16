@@ -497,6 +497,7 @@ jobs:
     needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
+      - uses: actions/checkout@v2
       - run: |
           set -e -x
           docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
