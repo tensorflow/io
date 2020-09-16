@@ -117,13 +117,15 @@ REGISTER_OP("IO>KafkaGroupReadableInit")
 REGISTER_OP("IO>KafkaGroupReadableNext")
     .Input("input: resource")
     .Input("index: int64")
-    .Input("message_timeout: int64")
+    .Input("message_poll_timeout: int64")
     .Input("stream_timeout: int64")
     .Output("message: string")
     .Output("key: string")
+    .Output("continue_fetch: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
+      c->set_output(2, c->Scalar());
       return Status::OK();
     });
 
