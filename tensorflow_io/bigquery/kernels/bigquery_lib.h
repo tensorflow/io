@@ -334,7 +334,7 @@ class BigQueryReaderAvroDatasetIterator
     const avro::GenericRecord &record =
         this->datum_->template value<avro::GenericRecord>();
 
-    if (this->column_indices_.size() == 0 && !this->column_indices_.empty()) {
+    if (this->column_indices_.size() == 0) {
       this->column_indices_.reserve(columns.size());
       std::vector<DataType> expected_output_types;
       expected_output_types.reserve(output_types.size());
