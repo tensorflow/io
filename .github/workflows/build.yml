@@ -415,81 +415,81 @@ jobs:
   #         (python -m pytest -s -v test_dicom_eager.py)
   #         (python -m pytest -s -v test_dicom.py)
 
-  release:
-    name: Release
-    if: github.event_name == 'push'
-    needs: [lint, linux-test, macos-test, windows-test]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.5-wheel
-          path: macOS-3.5-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.6-wheel
-          path: macOS-3.6-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.7-wheel
-          path: macOS-3.7-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.8-wheel
-          path: macOS-3.8-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.5-wheel
-          path: Linux-3.5-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.6-wheel
-          path: Linux-3.6-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.7-wheel
-          path: Linux-3.7-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.8-wheel
-          path: Linux-3.8-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.5-wheel
-          path: Windows-3.5-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.6-wheel
-          path: Windows-3.6-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.7-wheel
-          path: Windows-3.7-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.8-wheel
-          path: Windows-3.8-wheel
-      - run: |
-          set -e -x
-          mkdir -p wheelhouse
-          cp macOS-3.5-wheel/*.whl wheelhouse/
-          cp macOS-3.6-wheel/*.whl wheelhouse/
-          cp macOS-3.7-wheel/*.whl wheelhouse/
-          cp macOS-3.8-wheel/*.whl wheelhouse/
-          cp Linux-3.5-wheel/*.whl wheelhouse/
-          cp Linux-3.6-wheel/*.whl wheelhouse/
-          cp Linux-3.7-wheel/*.whl wheelhouse/
-          cp Linux-3.8-wheel/*.whl wheelhouse/
-          cp Windows-3.5-wheel/*.whl wheelhouse/
-          cp Windows-3.6-wheel/*.whl wheelhouse/
-          cp Windows-3.7-wheel/*.whl wheelhouse/
-          cp Windows-3.8-wheel/*.whl wheelhouse/
-          ls -la wheelhouse/
-          sha256sum wheelhouse/*.whl
-      - uses: actions/upload-artifact@v1
-        with:
-          name: tensorflow-io-release
-          path: wheelhouse
+  # release:
+  #   name: Release
+  #   if: github.event_name == 'push'
+  #   needs: [lint, linux-test, macos-test, windows-test]
+  #   runs-on: ubuntu-18.04
+  #   steps:
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.5-wheel
+  #         path: macOS-3.5-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.6-wheel
+  #         path: macOS-3.6-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.7-wheel
+  #         path: macOS-3.7-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.8-wheel
+  #         path: macOS-3.8-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.5-wheel
+  #         path: Linux-3.5-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.6-wheel
+  #         path: Linux-3.6-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.7-wheel
+  #         path: Linux-3.7-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.8-wheel
+  #         path: Linux-3.8-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.5-wheel
+  #         path: Windows-3.5-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.6-wheel
+  #         path: Windows-3.6-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.7-wheel
+  #         path: Windows-3.7-wheel
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.8-wheel
+  #         path: Windows-3.8-wheel
+  #     - run: |
+  #         set -e -x
+  #         mkdir -p wheelhouse
+  #         cp macOS-3.5-wheel/*.whl wheelhouse/
+  #         cp macOS-3.6-wheel/*.whl wheelhouse/
+  #         cp macOS-3.7-wheel/*.whl wheelhouse/
+  #         cp macOS-3.8-wheel/*.whl wheelhouse/
+  #         cp Linux-3.5-wheel/*.whl wheelhouse/
+  #         cp Linux-3.6-wheel/*.whl wheelhouse/
+  #         cp Linux-3.7-wheel/*.whl wheelhouse/
+  #         cp Linux-3.8-wheel/*.whl wheelhouse/
+  #         cp Windows-3.5-wheel/*.whl wheelhouse/
+  #         cp Windows-3.6-wheel/*.whl wheelhouse/
+  #         cp Windows-3.7-wheel/*.whl wheelhouse/
+  #         cp Windows-3.8-wheel/*.whl wheelhouse/
+  #         ls -la wheelhouse/
+  #         sha256sum wheelhouse/*.whl
+  #     - uses: actions/upload-artifact@v1
+  #       with:
+  #         name: tensorflow-io-release
+  #         path: wheelhouse
 
   docker-release:
     name: Docker Release
@@ -520,204 +520,204 @@ jobs:
           name: BUILD_NUMBER
           path: BUILD_NUMBER
 
-  macos-nightly:
-    name: Nightly ${{ matrix.python }} macOS
-    if: github.event_name == 'push'
-    needs: [build-number, release]
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Wheel ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          python -m pip install -U wheel setuptools
-          python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_13_x86_64 --nightly $BUILD_NUMBER
-      - name: Auditwheel ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          python -m pip install twine delocate
-          delocate-wheel --version
-          ls dist/*
-          for f in dist/*.whl; do
-            delocate-wheel -w wheelhouse  $f
-          done
-          ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-nightly
-          path: wheelhouse
+  # macos-nightly:
+  #   name: Nightly ${{ matrix.python }} macOS
+  #   if: github.event_name == 'push'
+  #   needs: [build-number, release]
+  #   runs-on: macos-latest
+  #   strategy:
+  #     matrix:
+  #       python: ['3.5', '3.6', '3.7', '3.8']
+  #   steps:
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: BUILD_NUMBER
+  #     - uses: einaregilsson/build-number@v2
+  #     - run: echo "Build number is $BUILD_NUMBER"
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-bazel-bin
+  #         path: bazel-bin/tensorflow_io
+  #     - uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #     - name: Wheel ${{ matrix.python }} macOS
+  #       run: |
+  #         set -x -e
+  #         python -m pip install -U wheel setuptools
+  #         python --version
+  #         python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_13_x86_64 --nightly $BUILD_NUMBER
+  #     - name: Auditwheel ${{ matrix.python }} macOS
+  #       run: |
+  #         set -x -e
+  #         python -m pip install twine delocate
+  #         delocate-wheel --version
+  #         ls dist/*
+  #         for f in dist/*.whl; do
+  #           delocate-wheel -w wheelhouse  $f
+  #         done
+  #         ls wheelhouse/*
+  #     - uses: actions/upload-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-${{ matrix.python }}-nightly
+  #         path: wheelhouse
 
-  linux-nightly:
-    name: Nightly ${{ matrix.python }} Linux
-    if: github.event_name == 'push'
-    needs: [build-number, release]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
-        exclude:
-          - os: ubuntu-16.04
-            python: '3.6'
-          - os: ubuntu-16.04
-            python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - name: Wheel ${{ matrix.python }} Linux
-        run: |
-          set -x -e
-          mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
-      - name: Auditwheel ${{ matrix.python }} Linux
-        run: |
-          set -x -e
-          ls dist/*
-          for f in dist/*.whl; do
-            docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
-          done
-          sudo chown -R $(id -nu):$(id -ng) .
-          ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-nightly
-          path: wheelhouse
+  # linux-nightly:
+  #   name: Nightly ${{ matrix.python }} Linux
+  #   if: github.event_name == 'push'
+  #   needs: [build-number, release]
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-16.04, ubuntu-18.04]
+  #       python: ['3.5', '3.6', '3.7', '3.8']
+  #       exclude:
+  #         - os: ubuntu-16.04
+  #           python: '3.6'
+  #         - os: ubuntu-16.04
+  #           python: '3.7'
+  #         - os: ubuntu-16.04
+  #           python: '3.8'
+  #         - os: ubuntu-18.04
+  #           python: '3.5'
+  #   steps:
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: BUILD_NUMBER
+  #     - uses: einaregilsson/build-number@v2
+  #     - run: echo "Build number is $BUILD_NUMBER"
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-bazel-bin
+  #         path: bazel-bin/tensorflow_io
+  #     - name: Wheel ${{ matrix.python }} Linux
+  #       run: |
+  #         set -x -e
+  #         mv bazel-bin/tensorflow_io/.bazelrc .
+  #         docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+  #     - name: Auditwheel ${{ matrix.python }} Linux
+  #       run: |
+  #         set -x -e
+  #         ls dist/*
+  #         for f in dist/*.whl; do
+  #           docker run -i --rm -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2010_x86_64 bash -x -e /v/tools/build/auditwheel repair --plat manylinux2010_x86_64 $f
+  #         done
+  #         sudo chown -R $(id -nu):$(id -ng) .
+  #         ls wheelhouse/*
+  #     - uses: actions/upload-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-${{ matrix.python }}-nightly
+  #         path: wheelhouse
 
-  windows-nightly:
-    name: Nightly ${{ matrix.python }} Windows
-    if: github.event_name == 'push'
-    needs: [build-number, release]
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python: ['3.5', '3.6', '3.7', 3.8]
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
-      - run: echo "Build number is $BUILD_NUMBER"
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
-        with:
-          name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Wheel ${{ matrix.python }} Windows
-        shell: cmd
-        run: |
-          @echo on
-          python --version
-          python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
-          ls -la dist
-      - uses: actions/upload-artifact@v1
-        with:
-          name: ${{ runner.os }}-${{ matrix.python }}-nightly
-          path: dist
+  # windows-nightly:
+  #   name: Nightly ${{ matrix.python }} Windows
+  #   if: github.event_name == 'push'
+  #   needs: [build-number, release]
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       python: ['3.5', '3.6', '3.7', 3.8]
+  #   steps:
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: BUILD_NUMBER
+  #     - uses: einaregilsson/build-number@v2
+  #     - run: echo "Build number is $BUILD_NUMBER"
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-bazel-bin
+  #         path: bazel-bin/tensorflow_io
+  #     - uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #     - name: Wheel ${{ matrix.python }} Windows
+  #       shell: cmd
+  #       run: |
+  #         @echo on
+  #         python --version
+  #         python -m pip install -U wheel setuptools
+  #         python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+  #         ls -la dist
+  #     - uses: actions/upload-artifact@v1
+  #       with:
+  #         name: ${{ runner.os }}-${{ matrix.python }}-nightly
+  #         path: dist
 
-  nightly:
-    name: Nightly
-    if: github.event_name == 'push'
-    needs: [linux-nightly, macos-nightly, windows-nightly]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.5-nightly
-          path: macOS-3.5-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.6-nightly
-          path: macOS-3.6-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.7-nightly
-          path: macOS-3.7-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.8-nightly
-          path: macOS-3.8-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.5-nightly
-          path: Linux-3.5-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.6-nightly
-          path: Linux-3.6-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.7-nightly
-          path: Linux-3.7-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Linux-3.8-nightly
-          path: Linux-3.8-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.5-nightly
-          path: Windows-3.5-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.6-nightly
-          path: Windows-3.6-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.7-nightly
-          path: Windows-3.7-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.8-nightly
-          path: Windows-3.8-nightly
-      - run: |
-          set -e -x
-          mkdir -p dist
-          cp macOS-3.5-nightly/*.whl dist/
-          cp macOS-3.6-nightly/*.whl dist/
-          cp macOS-3.7-nightly/*.whl dist/
-          cp macOS-3.8-nightly/*.whl dist/
-          cp Linux-3.5-nightly/*.whl dist/
-          cp Linux-3.6-nightly/*.whl dist/
-          cp Linux-3.7-nightly/*.whl dist/
-          cp Linux-3.8-nightly/*.whl dist/
-          cp Windows-3.5-nightly/*.whl dist/
-          cp Windows-3.6-nightly/*.whl dist/
-          cp Windows-3.7-nightly/*.whl dist/
-          cp Windows-3.8-nightly/*.whl dist/
-          ls -la dist/
-          sha256sum dist/*.whl
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.github_tensorflow_io_nightly }}
+  # nightly:
+  #   name: Nightly
+  #   if: github.event_name == 'push'
+  #   needs: [linux-nightly, macos-nightly, windows-nightly]
+  #   runs-on: ubuntu-18.04
+  #   steps:
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.5-nightly
+  #         path: macOS-3.5-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.6-nightly
+  #         path: macOS-3.6-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.7-nightly
+  #         path: macOS-3.7-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: macOS-3.8-nightly
+  #         path: macOS-3.8-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.5-nightly
+  #         path: Linux-3.5-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.6-nightly
+  #         path: Linux-3.6-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.7-nightly
+  #         path: Linux-3.7-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Linux-3.8-nightly
+  #         path: Linux-3.8-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.5-nightly
+  #         path: Windows-3.5-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.6-nightly
+  #         path: Windows-3.6-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.7-nightly
+  #         path: Windows-3.7-nightly
+  #     - uses: actions/download-artifact@v1
+  #       with:
+  #         name: Windows-3.8-nightly
+  #         path: Windows-3.8-nightly
+  #     - run: |
+  #         set -e -x
+  #         mkdir -p dist
+  #         cp macOS-3.5-nightly/*.whl dist/
+  #         cp macOS-3.6-nightly/*.whl dist/
+  #         cp macOS-3.7-nightly/*.whl dist/
+  #         cp macOS-3.8-nightly/*.whl dist/
+  #         cp Linux-3.5-nightly/*.whl dist/
+  #         cp Linux-3.6-nightly/*.whl dist/
+  #         cp Linux-3.7-nightly/*.whl dist/
+  #         cp Linux-3.8-nightly/*.whl dist/
+  #         cp Windows-3.5-nightly/*.whl dist/
+  #         cp Windows-3.6-nightly/*.whl dist/
+  #         cp Windows-3.7-nightly/*.whl dist/
+  #         cp Windows-3.8-nightly/*.whl dist/
+  #         ls -la dist/
+  #         sha256sum dist/*.whl
+  #     - uses: pypa/gh-action-pypi-publish@master
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.github_tensorflow_io_nightly }}
