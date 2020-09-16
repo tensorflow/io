@@ -237,7 +237,7 @@ class BigQueryReaderArrowDatasetIterator
     out_tensors->clear();
     out_tensors->reserve(columns.size());
 
-    if (this->current_row_index_ == 0) {
+    if (this->current_row_index_ == 0 && !this->column_indices_.empty()) {
       this->column_indices_.clear();
       this->column_indices_.resize(columns.size());
       for (size_t i = 0; i < columns.size(); ++i) {
@@ -334,7 +334,7 @@ class BigQueryReaderAvroDatasetIterator
     const avro::GenericRecord &record =
         this->datum_->template value<avro::GenericRecord>();
 
-    if (this->column_indices_.size() == 0) {
+    if (this->column_indices_.size() == 0 && !this->column_indices_.empty()) {
       this->column_indices_.reserve(columns.size());
       std::vector<DataType> expected_output_types;
       expected_output_types.reserve(output_types.size());
