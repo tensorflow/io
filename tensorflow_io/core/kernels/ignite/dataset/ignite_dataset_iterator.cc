@@ -21,6 +21,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/ignite/client/ignite_ssl_wrapper.h"
 
 namespace tensorflow {
+namespace data {
 
 IgniteDatasetIterator::IgniteDatasetIterator(
     const Params& params, string host, int32 port, string cache_name,
@@ -420,4 +421,5 @@ int32_t IgniteDatasetIterator::JavaHashCode(string str) const {
   return h;
 }
 
+}  // namespace data
 }  // namespace tensorflow
