@@ -307,11 +307,6 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
-      - name: Test docker images on Linux
-        run: |
-          set -x -e
-          bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
-          bash -x -e tools/docker/tests/dockerfile_devel_test.sh
 
   windows-bazel:
     name: Bazel Windows
@@ -495,6 +490,20 @@ jobs:
         with:
           name: tensorflow-io-release
           path: wheelhouse
+
+  docker-release:
+    name: Docker Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [lint, linux-test, macos-test, windows-test]
+    runs-on: ubuntu-18.04
+    steps:
+      - run: |
+          set -e -x
+          docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
+          bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
+          docker push tfsigio/tfio:latest
+          bash -x -e tools/docker/tests/dockerfile_devel_test.sh
+          docker push tfsigio/tfio:latest-devel
 
   build-number:
     name: Build Number

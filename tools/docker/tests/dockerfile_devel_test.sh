@@ -14,11 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-IMAGE_NAME="tfio-dev"
+IMAGE_NAME="tfsigio/tfio"
+IMAGE_TAG="latest-devel"
 export PYTHON_BIN_PATH=$(which python3)
 
 echo "Build the docker image ..."
-docker build -f tools/docker/devel.Dockerfile -t ${IMAGE_NAME} .
+docker build -f tools/docker/devel.Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .
 
-echo "Starting the docker container from image: ${IMAGE_NAME} and building the package ..."
-docker run -t --rm --net=host -v ${PWD}:/v -w /v tfio-dev bash tools/docker/tests/bazel_build.sh
+echo "Starting the docker container from image: ${IMAGE_NAME}:${IMAGE_TAG} and building the package ..."
+docker run -t --rm --net=host -v ${PWD}:/v -w /v ${IMAGE_NAME}:${IMAGE_TAG} bash tools/docker/tests/bazel_build.sh
