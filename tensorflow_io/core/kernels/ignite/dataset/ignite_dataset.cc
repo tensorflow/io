@@ -17,6 +17,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/ignite/dataset/ignite_dataset_iterator.h"
 
 namespace tensorflow {
+namespace data {
 
 IgniteDataset::IgniteDataset(OpKernelContext* ctx, string cache_name,
                              string host, int32 port, bool local, int32 part,
@@ -78,4 +79,5 @@ Status IgniteDataset::AsGraphDefInternal(SerializationContext* ctx,
       "IgniteDataset does not support 'AsGraphDefInternal'");
 }
 
+}  // namespace data
 }  // namespace tensorflow
