@@ -237,8 +237,7 @@ class BigQueryReaderArrowDatasetIterator
     out_tensors->clear();
     out_tensors->reserve(columns.size());
 
-    if (this->current_row_index_ == 0) {
-      this->column_indices_.clear();
+    if (this->current_row_index_ == 0 && this->column_indices_.empty()) {
       this->column_indices_.resize(columns.size());
       for (size_t i = 0; i < columns.size(); ++i) {
         DataType output_type = output_types[i];
