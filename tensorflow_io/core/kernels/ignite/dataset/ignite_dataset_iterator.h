@@ -22,6 +22,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/ignite/dataset/ignite_dataset.h"
 
 namespace tensorflow {
+namespace data {
 
 class IgniteDatasetIterator : public DatasetIterator<IgniteDataset> {
  public:
@@ -95,6 +96,7 @@ constexpr int32_t kCloseConnectionReqLength = 18;
 constexpr int32_t kHandshakeReqDefaultLength = 8;
 constexpr int32_t kMinResLength = 12;
 
+}  // namespace data
 }  // namespace tensorflow
 
 #endif  // TENSORFLOW_CONTRIB_IGNITE_KERNELS_DATASET_IGNITE_DATASET_ITERATOR_H_

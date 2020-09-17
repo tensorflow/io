@@ -30,6 +30,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/sequence_ops.h"
 
 namespace tensorflow {
+namespace data {
 
 class KafkaDatasetOp : public DatasetOpKernel {
  public:
@@ -750,8 +751,6 @@ class KafkaOutputSequenceOp : public OutputSequenceOp<KafkaOutputSequence> {
                    resource_->Initialize(topic_str, partition, metadata));
   }
 };
-
-namespace data {
 
 class KafkaEventCb : public RdKafka::EventCb {
  public:
