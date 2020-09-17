@@ -57,11 +57,11 @@ class DecodeJSONOp : public OpKernel {
                                           names_tensor->flat<tstring>()(i)));
 
       Tensor* value_tensor;
-      std::vector <int64> tensor_shape_vector;
+      std::vector<int64> tensor_shape_vector;
       getTensorShape(entry, tensor_shape_vector);
-      OP_REQUIRES_OK(context,
-                     context->allocate_output(i, TensorShape(tensor_shape_vector),
-                                              &value_tensor));
+      OP_REQUIRES_OK(
+          context, context->allocate_output(i, TensorShape(tensor_shape_vector),
+                                            &value_tensor));
       int64 flat_index;
       flat_index = 0;
       switch (value_tensor->dtype()) {
@@ -81,10 +81,10 @@ class DecodeJSONOp : public OpKernel {
           writeToTensor(entry, value_tensor, flat_index, writeString);
           break;
         default:
-          OP_REQUIRES(context, false,
-                      errors::InvalidArgument(
-                          "data type not supported: ",
-                          DataTypeString(value_tensor->dtype())));
+          OP_REQUIRES(
+              context, false,
+              errors::InvalidArgument("data type not supported: ",
+                                      DataTypeString(value_tensor->dtype())));
           break;
       }
     }
@@ -96,7 +96,8 @@ class DecodeJSONOp : public OpKernel {
 
   // Tensor Shape
 
-  static void getTensorShape(rapidjson::Value *entry, std::vector <int64> &tensor_shape_vector) {
+  static void getTensorShape(rapidjson::Value* entry,
+                             std::vector<int64>& tensor_shape_vector) {
     if (entry->IsArray()) {
       tensor_shape_vector.push_back(entry->Size());
       getTensorShape(&(*entry)[0], tensor_shape_vector);
@@ -105,31 +106,36 @@ class DecodeJSONOp : public OpKernel {
 
   // Single Entry Tensor Writes
 
-  static void writeInt32(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index) {
+  static void writeInt32(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
     value_tensor->flat<int32>()(flat_index) = (*entry).GetInt();
   }
 
-  static void writeInt64(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index) {
+  static void writeInt64(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
     value_tensor->flat<int64>()(flat_index) = (*entry).GetInt64();
   }
 
-  static void writeFloat(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index) {
+  static void writeFloat(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
     value_tensor->flat<float>()(flat_index) = (*entry).GetDouble();
   }
 
-  static void writeDouble(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index) {
+  static void writeDouble(rapidjson::Value* entry, Tensor* value_tensor,
+                          int64& flat_index) {
     value_tensor->flat<double>()(flat_index) = (*entry).GetDouble();
   }
 
-  static void writeString(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index) {
+  static void writeString(rapidjson::Value* entry, Tensor* value_tensor,
+                          int64& flat_index) {
     value_tensor->flat<tstring>()(flat_index) = (*entry).GetString();
   }
 
   // Full Tensor Write
 
-  template<class T>
-  static void
-  writeToTensor(rapidjson::Value *entry, Tensor *value_tensor, int64 &flat_index, T write_func) {
+  template <class T>
+  static void writeToTensor(rapidjson::Value* entry, Tensor* value_tensor,
+                            int64& flat_index, T write_func) {
     if (entry->IsArray()) {
       for (int64 i = 0; i < entry->Size(); i++) {
         writeToTensor(&(*entry)[i], value_tensor, flat_index, write_func);
@@ -139,7 +145,6 @@ class DecodeJSONOp : public OpKernel {
       flat_index++;
     }
   }
-
 };
 
 class DecodeAvroOp : public OpKernel {
@@ -507,4 +512,3 @@ REGISTER_KERNEL_BUILDER(Name("IO>EncodeAvro").Device(DEVICE_CPU), EncodeAvroOp);
 }  // namespace
 }  // namespace data
 }  // namespace tensorflow
-

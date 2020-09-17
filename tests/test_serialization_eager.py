@@ -218,4 +218,3 @@ def test_json_multiple_dimension_tensor():
 
     v = parse_json(r)
     assert np.array_equal(v, [[[1.0], [2.0]]])
-
