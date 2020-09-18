@@ -18,13 +18,13 @@
 def decode_video(content, index=0, name=None):
     """Decode video stream from a video file.
 
-  Args:
-    content: A `Tensor` of type `string`.
-    index: The stream index.
+    Args:
+      content: A `Tensor` of type `string`.
+      index: The stream index.
 
-  Returns:
-    value: A `uint8` Tensor.
-  """
+    Returns:
+      value: A `uint8` Tensor.
+    """
     from tensorflow_io.core.python.ops import (  # pylint: disable=import-outside-toplevel
         ffmpeg_ops,
     )

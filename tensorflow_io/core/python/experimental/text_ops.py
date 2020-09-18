@@ -20,16 +20,18 @@ from tensorflow_io.core.python.ops import core_ops
 
 def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
     """Convert Libsvm records to a tensor of label and a tensor of feature.
-  Args:
-    content: A `Tensor` of type `string`. Each string is a record/row in
-      the Libsvm format.
-    num_features: The number of features.
-    dtype: The type of the output feature tensor. Default to tf.float32.
-    label_dtype: The type of the output label tensor. Default to tf.int64.
-  Returns:
-    features: A `SparseTensor` of the shape `[input_shape, num_features]`.
-    labels: A `Tensor` of the same shape as content.
-  """
+
+    Args:
+      content: A `Tensor` of type `string`. Each string is a record/row in
+        the Libsvm format.
+      num_features: The number of features.
+      dtype: The type of the output feature tensor. Default to tf.float32.
+      label_dtype: The type of the output label tensor. Default to tf.int64.
+
+    Returns:
+      features: A `SparseTensor` of the shape `[input_shape, num_features]`.
+      labels: A `Tensor` of the same shape as content.
+    """
     labels, indices, values, shape = core_ops.io_decode_libsvm(
         content, num_features, dtype=dtype, label_dtype=label_dtype
     )
@@ -39,10 +41,10 @@ def decode_libsvm(content, num_features, dtype=None, label_dtype=None):
 def re2_full_match(input, pattern):  # pylint: disable=redefined-builtin
     """Extract regex groups
 
-  Args:
-    input: A `tf.string` tensor
-    pattern: A pattern string.
-  """
+    Args:
+      input: A `tf.string` tensor
+      pattern: A pattern string.
+    """
     return core_ops.io_re2_full_match(input, pattern)
 
 
@@ -58,8 +60,7 @@ class TextOutputSequence:
     """TextOutputSequence"""
 
     def __init__(self, filenames):
-        """Create a `TextOutputSequence`.
-    """
+        """Create a `TextOutputSequence`."""
         self._filenames = filenames
         self._resource = core_ops.io_text_output_sequence(destination=filenames)
 

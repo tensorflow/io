@@ -75,6 +75,7 @@ class _AvroRecordDataset(tf.data.Dataset):
 
     def __init__(self, filenames, buffer_size=None, reader_schema=None):
         """Creates a `AvroRecordDataset`.
+
         Args:
           filenames: A `tf.string` tensor containing one or more filenames.
           buffer_size: (Optional.) A `tf.int64` scalar representing the number of
@@ -130,6 +131,7 @@ class AvroRecordDataset(tf.data.Dataset):
         self, filenames, buffer_size=None, num_parallel_reads=None, reader_schema=None
     ):
         """Creates a `AvroRecordDataset` to read one or more AvroRecord files.
+
         Args:
           filenames: A `tf.string` tensor or `tf.data.Dataset` containing one or
             more filenames.
@@ -145,6 +147,7 @@ class AvroRecordDataset(tf.data.Dataset):
             read sequentially.
           reader_schema: (Optional.) A `tf.string` scalar representing the reader
             schema or None.
+
         Raises:
           TypeError: If any argument does not have the expected type.
           ValueError: If any argument does not have the expected shape.

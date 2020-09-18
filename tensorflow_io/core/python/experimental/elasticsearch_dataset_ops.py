@@ -34,10 +34,12 @@ class _ElasticsearchHandler:
         self.prepare_connection_data()
 
     def prepare_base_urls(self):
-        """Prepares the base url for establish connection with the elasticsearch master
+        """Prepares the base url for establish connection with the
+        elasticsearch master.
 
         Returns:
-            A list of base_url's, each of type tf.string for establishing the connection pool
+            A list of base_url's, each of type tf.string for establishing
+            the connection pool.
         """
 
         if self.nodes is None:
@@ -175,10 +177,10 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
                 in [protocol://hostname:port] format.
                 For example: ["http://localhost:9200"]
             index: A `tf.string` representing the elasticsearch index to query.
-            doc_type: (Optional) A `tf.string` representing the type of documents in the index
-                to query.
+            doc_type: (Optional) A `tf.string` representing the type of documents
+                in the index to query.
             headers: (Optional) A dict of headers. For example:
-                {'Content-Type': 'application/json'}    
+                {'Content-Type': 'application/json'}
         """
         with tf.name_scope("ElasticsearchIODataset"):
             assert internal

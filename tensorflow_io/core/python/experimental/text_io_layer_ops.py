@@ -19,9 +19,7 @@ from tensorflow_io.core.python.ops import core_ops
 
 
 class TextIOLayer(tf.keras.layers.Layer):
-    """TextIOLayer
-
-  """
+    """TextIOLayer"""
 
     # =============================================================================
     # TextIOLayer
