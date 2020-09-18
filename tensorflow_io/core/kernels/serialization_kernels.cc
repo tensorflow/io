@@ -58,7 +58,11 @@ class DecodeJSONOp : public OpKernel {
 
       Tensor* value_tensor;
       std::vector<int64> tensor_shape_vector;
-      getTensorShape(entry, tensor_shape_vector);
+      if (entry->IsArray()) {
+        getTensorShape(entry, tensor_shape_vector);
+      } else {
+        tensor_shape_vector.push_back(1);
+      }
       OP_REQUIRES_OK(
           context, context->allocate_output(i, TensorShape(tensor_shape_vector),
                                             &value_tensor));
