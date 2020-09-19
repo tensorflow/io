@@ -38,29 +38,25 @@ from tensorflow_io.core.python.ops import core_ops
 class BigQueryClient:
     """BigQueryClient is the entrypoint for interacting with Cloud BigQuery in TF.
 
-  BigQueryClient encapsulates a connection to Cloud BigQuery, and exposes the
-  `readSession` method to initiate a BigQuery read session.
-  """
+    BigQueryClient encapsulates a connection to Cloud BigQuery, and exposes the
+    `readSession` method to initiate a BigQuery read session.
+    """
 
     class DataFormat(enum.Enum):
-        """Data serialization format to use when reading from BigQuery.
-        """
+        """Data serialization format to use when reading from BigQuery."""
 
         AVRO = "AVRO"
         ARROW = "ARROW"
 
     class FieldMode(enum.Enum):
-        """BigQuery column mode.
-        """
+        """BigQuery column mode."""
 
         NULLABLE = "NULLABLE"
         REQUIRED = "REQUIRED"
         REPEATED = "REPEATED"
 
     def __init__(self):
-        """Creates a BigQueryClient to start BigQuery read sessions.
-
-    """
+        """Creates a BigQueryClient to start BigQuery read sessions."""
         self._client_resource = core_ops.io_big_query_client()
 
     def read_session(
@@ -77,43 +73,43 @@ class BigQueryClient:
     ):
         """Opens a session and returns a `BigQueryReadSession` object.
 
-    Args:
-      parent: String of the form projects/{project_id} indicating the project
-        this ReadSession is associated with. This is the project that will be
-        billed for usage.
-      project_id: The assigned project ID of the project.
-      table_id: The ID of the table in the dataset.
-      dataset_id: The ID of the dataset in the project.
-      selected_fields: This can be a list or a dict. If a list, it has
-        names of the fields in the table that should be read. If a dict,
-        it should be in a form like, i.e:
-        { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
-          "field_b_name": {"mode": "nullable", output_type: dtypes.string},
-          ...
-          "field_x_name": {"mode": "repeated", output_type: dtypes.string}
-        }
-        "mode" is BigQuery column attribute, it can be 'repeated', 'nullable' or 'required'.
-        The output field order is unrelated to the order of fields in
-        selected_fields. If "mode" not specified, defaults to "nullable".
-        If "output_type" not specified, DT_STRING is implied for all Tensors.
-      output_types: Types for the output tensor in the same sequence as
-        selected_fields. This is only needed when selected_fields is a list,
-        if selected_fields is a dictionary, this output_types information is
-        included in selected_fields as described above.
-        If not specified, DT_STRING is implied for all Tensors.
-      row_restriction: Optional. SQL text filtering statement, similar to a
-        WHERE clause in a query.
-      requested_streams: Initial number of streams. If unset or 0, we will
-        provide a value of streams so as to produce reasonable throughput.
-        Must be non-negative. The number of streams may be lower than the
-        requested number, depending on the amount parallelism that is reasonable
-        for the table and the maximum amount of parallelism allowed by the
-        system.
+        Args:
+            parent: String of the form projects/{project_id} indicating the project
+                this ReadSession is associated with. This is the project that will be
+                billed for usage.
+            project_id: The assigned project ID of the project.
+            table_id: The ID of the table in the dataset.
+            dataset_id: The ID of the dataset in the project.
+            selected_fields: This can be a list or a dict. If a list, it has
+                names of the fields in the table that should be read. If a dict,
+                it should be in a form like, i.e:
+                { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
+                "field_b_name": {"mode": "nullable", output_type: dtypes.string},
+                ...
+                "field_x_name": {"mode": "repeated", output_type: dtypes.string}
+                }
+                "mode" is BigQuery column attribute, it can be 'repeated', 'nullable' or 'required'.
+                The output field order is unrelated to the order of fields in
+                selected_fields. If "mode" not specified, defaults to "nullable".
+                If "output_type" not specified, DT_STRING is implied for all Tensors.
+            output_types: Types for the output tensor in the same sequence as
+                selected_fields. This is only needed when selected_fields is a list,
+                if selected_fields is a dictionary, this output_types information is
+                included in selected_fields as described above.
+                If not specified, DT_STRING is implied for all Tensors.
+            row_restriction: Optional. SQL text filtering statement, similar to a
+                WHERE clause in a query.
+            requested_streams: Initial number of streams. If unset or 0, we will
+                provide a value of streams so as to produce reasonable throughput.
+                Must be non-negative. The number of streams may be lower than the
+                requested number, depending on the amount parallelism that is reasonable
+                for the table and the maximum amount of parallelism allowed by the
+                system.
 
-    Returns:
-      A `BigQueryReadSession` Python object representing the
-      operations available on the table.
-    """
+        Returns:
+            A `BigQueryReadSession` Python object representing the
+            operations available on the table.
+        """
         if not isinstance(parent, str):
             raise ValueError("`parent` must be a string")
         if not parent:
@@ -236,24 +232,24 @@ class BigQueryReadSession:
     def get_streams(self):
         """Returns Tensor with stream names for reading data from BigQuery.
 
-    Returns:
-      Tensor with stream names.
-    """
+        Returns:
+            Tensor with stream names.
+        """
         return self._streams
 
     def read_rows(self, stream, offset=0):
         """Retrieves rows (including values) from the BigQuery service.
 
-    Args:
-      stream: name of the stream to read from.
-      offset: Position in the stream.
+        Args:
+            stream: name of the stream to read from.
+            offset: Position in the stream.
 
-    Returns:
-      A `tf.data.Dataset` returning the row keys and the cell contents.
+        Returns:
+            A `tf.data.Dataset` returning the row keys and the cell contents.
 
-    Raises:
-      ValueError: If the configured probability is unexpected.
-    """
+        Raises:
+            ValueError: If the configured probability is unexpected.
+        """
         return _BigQueryDataset(
             self._client_resource,
             self._selected_fields,
@@ -276,37 +272,36 @@ class BigQueryReadSession:
     ):
         """Retrieves rows from the BigQuery service in parallel streams.
 
-    ```
-    bq_client = BigQueryClient()
-    bq_read_session = bq_client.read_session(...)
-    ds1 = bq_read_session.parallel_read_rows(...)
-    ```
-    Args:
-      cycle_length: number of threads to run in parallel. If not specified, it
-        is defaulted to the number of streams in a read session.
-      sloppy: If false, elements are produced in deterministic order. If true,
-        the implementation is allowed, for the sake of expediency, to produce
-        elements in a non-deterministic order. Otherwise, whether the order is
-        deterministic or non-deterministic depends on the
-        `tf.data.Options.experimental_deterministic` value.
-      block_length: The number of consecutive elements to pull from an input
-        `Dataset` before advancing to the next input `Dataset`.
-      block_length: The number of consecutive elements to pull from an input
-        `Dataset` before advancing to the next input `Dataset`.
-      num_parallel_calls: If specified, the implementation creates a threadpool,
-        which is used to fetch inputs from cycle elements asynchronously and in
-        parallel. The default behavior is to fetch inputs from cycle elements
-        synchronously with no parallelism.
-        If the value `tf.data.experimental.AUTOTUNE` is used, then the number of
-        parallel calls is set dynamically based on available CPU.
+        ```
+        bq_client = BigQueryClient()
+        bq_read_session = bq_client.read_session(...)
+        ds1 = bq_read_session.parallel_read_rows(...)
+        ```
+        Args:
+            cycle_length: number of threads to run in parallel. If not specified, it
+                is defaulted to the number of streams in a read session.
+            sloppy: If false, elements are produced in deterministic order. If true,
+                the implementation is allowed, for the sake of expediency, to produce
+                elements in a non-deterministic order. Otherwise, whether the order is
+                deterministic or non-deterministic depends on the
+                `tf.data.Options.experimental_deterministic` value.
+            block_length: The number of consecutive elements to pull from an input
+                `Dataset` before advancing to the next input `Dataset`.
+            block_length: The number of consecutive elements to pull from an input
+                `Dataset` before advancing to the next input `Dataset`.
+            num_parallel_calls: If specified, the implementation creates a threadpool,
+                which is used to fetch inputs from cycle elements asynchronously and in
+                parallel. The default behavior is to fetch inputs from cycle elements
+                synchronously with no parallelism.
+                If the value `tf.data.experimental.AUTOTUNE` is used, then the number of
+                parallel calls is set dynamically based on available CPU.
 
-    Returns:
-      A `tf.data.Dataset` returning the row keys and the cell contents.
+        Returns:
+            A `tf.data.Dataset` returning the row keys and the cell contents.
 
-    Raises:
-      ValueError: If the configured probability is unexpected.
-
-    """
+        Raises:
+            ValueError: If the configured probability is unexpected.
+        """
         if cycle_length is None:
             cycle_length = self._requested_streams
         streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
@@ -390,8 +385,8 @@ class BigQueryTestClient(BigQueryClient):
     def __init__(self, fake_server_address):
         """Creates a BigQueryTestClient to start BigQuery read sessions.
 
-    Args:
-      fake_server_address: url for service faking Cloud BigQuery Storage API.
-    """
+        Args:
+            fake_server_address: url for service faking Cloud BigQuery Storage API.
+        """
 
         self._client_resource = core_ops.io_big_query_test_client(fake_server_address)
