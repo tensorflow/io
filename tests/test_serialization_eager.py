@@ -208,13 +208,19 @@ def test_json_multiple_dimension_tensor():
     # was not supported for decode_json.
     # The issue was initially raised in:
     # https://github.com/tensorflow/io/pull/695#issuecomment-683270751
-    r = '{"x": [[1.0]]}'
+    r = '{"x": [[[1.0], [2.0]]], "y": ["index", "count"], "z": 0.5}'
 
     @tf.function(autograph=False)
     def parse_json(json_text):
-        specs = {"x": tf.TensorSpec(tf.TensorShape([1, 1]), tf.float32)}
+        specs = {
+            "x": tf.TensorSpec(tf.TensorShape([1, 2, 1]), tf.float32),
+            "y": tf.TensorSpec(tf.TensorShape([2]), tf.string),
+            "z": tf.TensorSpec(tf.TensorShape([]), tf.float32),
+        }
         parsed = tfio.experimental.serialization.decode_json(json_text, specs)
-        return parsed["x"]
+        return parsed
 
     v = parse_json(r)
-    assert np.array_equal(v, [[1.0]])
+    assert np.array_equal(v["x"], [[[1.0], [2.0]]])
+    assert np.array_equal(v["y"], [b"index", b"count"])
+    assert np.array_equal(v["z"], 0.5)
