@@ -14,6 +14,7 @@
 # ==============================================================================
 """KafkaBatchIODatasets"""
 
+import sys
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -62,8 +63,8 @@ class KafkaBatchIODataset(tf.data.Dataset):
         topics,
         group_id,
         servers,
-        message_timeout=5000,
-        stream_timeout=5000,
+        stream_timeout=-1,
+        message_poll_timeout=10000,
         configuration=None,
         internal=True,
     ):
@@ -74,12 +75,13 @@ class KafkaBatchIODataset(tf.data.Dataset):
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
             For example: `localhost:9092`.
-          message_timeout: An optional timeout value (in milliseconds) for retrieving messages
-            from kafka. Default value is 5000.
-          stream_timeout: An optional timeout value (in milliseconds) to wait for the new messages
-            from kafka to be retrieved by the consumers. Default value is 5000.
-            NOTE: The `stream_timeout` value should always be greater than or equal to the `message_timeout`.
-            value.
+          stream_timeout: An optional timeout value (in milliseconds) to wait for 
+            the new messages from kafka to be retrieved by the consumers.
+            By default it is set to -1 to block indefinitely.
+          message_poll_timeout: An optional timeout duration (in milliseconds)
+            after which the kafka consumer throws a timeout error while fetching
+            a single message. This value also represents the intervals at which
+            the kafka topic(s) are polled for new messages while using the `stream_timeout`.  
           configuration: An optional `tf.string` tensor containing
             configurations in [Key=Value] format.
             Global configuration: please refer to 'Global configuration properties'
@@ -95,10 +97,17 @@ class KafkaBatchIODataset(tf.data.Dataset):
         with tf.name_scope("KafkaBatchIODataset"):
             assert internal
 
-            if stream_timeout < message_timeout:
+            if stream_timeout == -1:
+                stream_timeout = sys.maxsize
+            elif stream_timeout >= 0:
+                # Taking the max of `stream_timeout` and `message_poll_timeout`
+                # to prevent the user from bothering about the underlying polling
+                # mechanism.
+                stream_timeout = max(stream_timeout, message_poll_timeout)
+            else:
                 raise ValueError(
-                    "stream_timeout {} is less than the message_timeout {}".format(
-                        stream_timeout, message_timeout
+                    "Invalid stream_timeout value: {} ,set it to -1 to block indefinitely.".format(
+                        stream_timeout
                     )
                 )
             metadata = list(configuration or [])
@@ -116,13 +125,13 @@ class KafkaBatchIODataset(tf.data.Dataset):
                 lambda i: core_ops.io_kafka_group_readable_next(
                     input=self._resource,
                     index=i,
-                    message_timeout=message_timeout,
+                    message_poll_timeout=message_poll_timeout,
                     stream_timeout=stream_timeout,
                 )
             )
             dataset = dataset.apply(
                 tf.data.experimental.take_while(
-                    lambda v: tf.greater(tf.shape(v.message)[0], 0)
+                    lambda v: tf.greater(v.continue_fetch, 0)
                 )
             )
             dataset = dataset.map(

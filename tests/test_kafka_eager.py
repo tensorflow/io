@@ -256,8 +256,7 @@ def test_kafka_group_io_dataset_resume_primary_cg():
     for i in range(10, 100):
         message = "D{}".format(i)
         kafka_io.write_kafka(message=message, topic="key-partition-test")
-
-    # Read only the newly sent 100 messages
+    # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
         group_id="cgtestprimary",
@@ -280,8 +279,7 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
     for i in range(10, 100):
         message = "D{}".format(i)
         kafka_io.write_kafka(message=message, topic="key-test")
-
-    # Read only the newly sent 100 messages
+    # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-test"],
         group_id="cgtestprimary",
@@ -336,16 +334,21 @@ def test_kafka_group_io_dataset_invalid_stream_timeout():
     NOTE: The default value for message_timeout=5000
     """
 
+    STREAM_TIMEOUT = -20
     try:
         tfio.experimental.streaming.KafkaGroupIODataset(
             topics=["key-partition-test", "key-test"],
             group_id="cgteststreaminvalid",
             servers="localhost:9092",
-            stream_timeout=1000,
+            stream_timeout=STREAM_TIMEOUT,
             configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
         )
     except ValueError as e:
-        assert str(e) == "stream_timeout 1000 is less than the message_timeout 5000"
+        assert str(
+            e
+        ) == "Invalid stream_timeout value: {} ,set it to -1 to block indefinitely.".format(
+            STREAM_TIMEOUT
+        )
 
 
 def test_kafka_group_io_dataset_stream_timeout_check():
@@ -366,12 +369,12 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         topics=["key-partition-test"],
         group_id="cgteststreamvalid",
         servers="localhost:9092",
-        stream_timeout=10000,
+        stream_timeout=20000,
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
 
     # start writing the new messages to kafka using the background job.
-    # the job sleep's for some time (< stream_timeout) and then writes the
+    # the job sleeps for some time (< stream_timeout) and then writes the
     # messages into the topic.
     thread = threading.Thread(target=write_messages_background, args=())
     thread.daemon = True
