@@ -772,10 +772,17 @@ class KafkaRebalanceCb : public RdKafka::RebalanceCb {
   void rebalance_cb(RdKafka::KafkaConsumer* consumer, RdKafka::ErrorCode err,
                     std::vector<RdKafka::TopicPartition*>& partitions) {
     LOG(ERROR) << "REBALANCE: " << RdKafka::err2str(err);
+    int timeout = 5000;  // milliseconds
     LOG(ERROR) << "Retrieved committed offsets with status code: "
-               << consumer->committed(partitions, 5000);
+               << consumer->committed(partitions, timeout);
 
     for (int partition = 0; partition < partitions.size(); partition++) {
+      // OFFSET MAPPINGS:
+      //
+      // RD_KAFKA_OFFSET_BEGINNING      -2
+      // RD_KAFKA_OFFSET_END            -1
+      // RD_KAFKA_OFFSET_STORED         -1000
+      // RD_KAFKA_OFFSET_INVALID        -1001
       if (partitions[partition]->offset() == -1001) {
         LOG(INFO)
             << "The consumer group was newly created, reading from beginning";
@@ -915,64 +922,56 @@ class KafkaGroupReadableResource : public ResourceBase {
 
     return Status::OK();
   }
-  Status Next(const int64 index, const int64 message_timeout,
+  Status Next(const int64 index, const int64 message_poll_timeout,
               const int64 stream_timeout,
               std::function<Status(const TensorShape& shape, Tensor** message,
-                                   Tensor** key)>
+                                   Tensor** key, Tensor** continue_fetch)>
                   allocate_func) {
     mutex_lock l(mu_);
-    int64 total = 1024;
+
+    // Initialize necessary variables
+    int64 num_messages = 0;
+    int64 max_num_messages = 1024;
+    max_stream_timeout_polls_ = stream_timeout / message_poll_timeout;
+
+    // Allocate memory for message_value and key_value vectors
     std::vector<string> message_value, key_value;
-    message_value.reserve(total);
-    key_value.reserve(total);
+    message_value.reserve(max_num_messages);
+    key_value.reserve(max_num_messages);
 
     std::unique_ptr<RdKafka::Message> message;
-    int64 count = 0;
-    int64 fetch = 1;
-    // The number of times we sleep for "message_timeout" seconds before
-    // exiting.
-    int64 max_wait_count = stream_timeout / message_timeout;
-    int64 wait_count = 0;
-    while (consumer_.get() != nullptr && count < total && fetch == 1) {
+    while (consumer_.get() != nullptr && num_messages < max_num_messages) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal(
             "failed to consume messages due to broker issue");
       }
-      message.reset(consumer_->consume(message_timeout));
+      message.reset(consumer_->consume(message_poll_timeout));
       if (message->err() == RdKafka::ERR_NO_ERROR) {
         // Produce the line as output.
         message_value.emplace_back(string(
             static_cast<const char*>(message->payload()), message->len()));
         key_value.emplace_back(
             (message->key() != nullptr) ? string(*message->key()) : "");
-        count++;
-        continue;
+        num_messages++;
+        // Once a message has been successfully retrieved, the
+        // `stream_timeout_polls_` is reset to 0. This allows the dataset
+        // to wait for the entire `stream_timeout` duration when a data
+        // slump occurs in the future.
+        stream_timeout_polls_ = 0;
       } else if (message->err() == RdKafka::ERR__TRANSPORT) {
-        // Not return error here because consumer will try re-connect.
+        // Not returning an error here as the consumer will try to re-connect.
         LOG(ERROR) << "Broker transport failure: " << message->errstr();
+
       } else if (message->err() == RdKafka::ERR__PARTITION_EOF) {
         if (++eof_count == partition_count) {
           LOG(INFO) << "EOF reached for all " << partition_count
                     << " partition(s)";
-          if (wait_count < max_wait_count) {
-            LOG(INFO) << "Waiting for the next message";
-            sleep(message_timeout / 1000);
-            wait_count++;
-          } else {
-            fetch = 0;
-          }
+          break;
         }
-      } else if (message->err() != RdKafka::ERR__TIMED_OUT) {
-        LOG(ERROR) << "Failed to consume: " << message->errstr();
+      } else if (message->err() == RdKafka::ERR__TIMED_OUT) {
+        LOG(ERROR) << message->errstr();
+        stream_timeout_polls_++;
         break;
-      } else {
-        if (wait_count < max_wait_count) {
-          LOG(INFO) << "Waiting for the next message";
-          sleep(message_timeout / 1000);
-          wait_count++;
-        } else {
-          fetch = 0;
-        }
       }
     }
 
@@ -980,7 +979,15 @@ class KafkaGroupReadableResource : public ResourceBase {
     TensorShape shape({static_cast<int64>(message_value.size())});
     Tensor* message_tensor;
     Tensor* key_tensor;
-    TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor));
+    Tensor* continue_fetch_tensor;
+    TF_RETURN_IF_ERROR(allocate_func(shape, &message_tensor, &key_tensor,
+                                     &continue_fetch_tensor));
+
+    if (stream_timeout_polls_ < max_stream_timeout_polls_) {
+      continue_fetch_tensor->scalar<int64>()() = 1;
+    } else {
+      continue_fetch_tensor->scalar<int64>()() = 0;
+    }
     for (size_t i = 0; i < message_value.size(); i++) {
       message_tensor->flat<tstring>()(i) = message_value[i];
       key_tensor->flat<tstring>()(i) = key_value[i];
@@ -997,6 +1004,8 @@ class KafkaGroupReadableResource : public ResourceBase {
   std::unique_ptr<RdKafka::KafkaConsumer> consumer_ TF_GUARDED_BY(mu_);
   KafkaEventCb kafka_event_cb_ = KafkaEventCb();
   KafkaRebalanceCb kafka_rebalance_cb_ = KafkaRebalanceCb();
+  int max_stream_timeout_polls_ = -1;
+  int stream_timeout_polls_ = -1;
 };
 
 class KafkaGroupReadableInitOp
@@ -1055,10 +1064,11 @@ class KafkaGroupReadableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
     const int64 index = index_tensor->scalar<int64>()();
 
-    const Tensor* message_timeout_tensor;
-    OP_REQUIRES_OK(context,
-                   context->input("message_timeout", &message_timeout_tensor));
-    const int64 message_timeout = message_timeout_tensor->scalar<int64>()();
+    const Tensor* message_poll_timeout_tensor;
+    OP_REQUIRES_OK(context, context->input("message_poll_timeout",
+                                           &message_poll_timeout_tensor));
+    const int64 message_poll_timeout =
+        message_poll_timeout_tensor->scalar<int64>()();
 
     const Tensor* stream_timeout_tensor;
     OP_REQUIRES_OK(context,
@@ -1068,11 +1078,13 @@ class KafkaGroupReadableNextOp : public OpKernel {
     OP_REQUIRES_OK(
         context,
         resource->Next(
-            index, message_timeout, stream_timeout,
-            [&](const TensorShape& shape, Tensor** message,
-                Tensor** key) -> Status {
+            index, message_poll_timeout, stream_timeout,
+            [&](const TensorShape& shape, Tensor** message, Tensor** key,
+                Tensor** continue_fetch) -> Status {
               TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
+              TF_RETURN_IF_ERROR(
+                  context->allocate_output(2, TensorShape({}), continue_fetch));
               return Status::OK();
             }));
   }
