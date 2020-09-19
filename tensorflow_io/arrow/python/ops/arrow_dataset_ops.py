@@ -36,8 +36,8 @@ else:
 
 def arrow_to_tensor_type(pa_t):
     """Convert Arrow type to tuple of (Tensor dtype, shape dims).
-  This function requires pyarrow to be installed.
-  """
+    This function requires pyarrow to be installed.
+    """
     import pyarrow as pa  # pylint: disable=import-outside-toplevel
 
     shape_dims = []  # initialize shape as scalar
@@ -79,8 +79,8 @@ def arrow_to_tensor_type(pa_t):
 
 def arrow_schema_to_tensor_types(schema):
     """Convert an Arrow schema to tuple of (Tensor dtypes, TensorShapes).
-  This function requires pyarrow to be installed.
-  """
+    This function requires pyarrow to be installed.
+    """
     type_shape_list = [arrow_to_tensor_type(field.type) for field in schema]
     tensor_types, shape_dims = zip(*type_shape_list)
     tensor_shapes = tuple(tf.TensorShape(s) for s in shape_dims)
@@ -89,8 +89,8 @@ def arrow_schema_to_tensor_types(schema):
 
 class ArrowBaseDataset(dataset_ops.DatasetV2):
     """Base class for Arrow Datasets to provide columns used in record batches
-  and corresponding output tensor types, shapes and classes.
-  """
+    and corresponding output tensor types, shapes and classes.
+    """
 
     batch_modes_supported = ("keep_remainder", "drop_remainder", "auto")
 
@@ -158,8 +158,7 @@ class ArrowBaseDataset(dataset_ops.DatasetV2):
 
 
 class ArrowDataset(ArrowBaseDataset):
-    """An Arrow Dataset from record batches in memory, or a Pandas DataFrame.
-  """
+    """An Arrow Dataset from record batches in memory, or a Pandas DataFrame."""
 
     def __init__(
         self,
@@ -172,29 +171,29 @@ class ArrowDataset(ArrowBaseDataset):
         arrow_buffer=None,
     ):
         """Create an ArrowDataset from a Tensor of serialized batches.
-    This constructor requires pyarrow to be installed.
+        This constructor requires pyarrow to be installed.
 
-    Args:
-      serialized_batches: A string Tensor as a serialized buffer containing
-                          Arrow record batches in Arrow File format
-      columns: A list of column indices to be used in the Dataset
-      output_types: Tensor dtypes of the output tensors
-      output_shapes: TensorShapes of the output tensors or None to
-                     infer partial
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched Tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-      arrow_buffer: Optional Arrow Buffer containing Arrow record batches in
-                    Arrow File format. This will share the Arrow buffer with
-                    the C++ kernel by address for zero-copy. Only supported if
-                    the kernel process is local, with TensorFlow in eager mode.
-                    If this is used, set `serialized_batches` to `None`.
-    """
+        Args:
+            serialized_batches: A string Tensor as a serialized buffer containing
+                                Arrow record batches in Arrow File format
+            columns: A list of column indices to be used in the Dataset
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                        infer partial
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched Tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+            arrow_buffer: Optional Arrow Buffer containing Arrow record batches in
+                        Arrow File format. This will share the Arrow buffer with
+                        the C++ kernel by address for zero-copy. Only supported if
+                        the kernel process is local, with TensorFlow in eager mode.
+                        If this is used, set `serialized_batches` to `None`.
+        """
         if serialized_batches is not None:
             make_variant_fn = partial(
                 core_ops.io_arrow_serialized_dataset, serialized_batches
@@ -239,23 +238,23 @@ class ArrowDataset(ArrowBaseDataset):
         batch_mode="keep_remainder",
     ):
         """Create an ArrowDataset directly from Arrow record batches.
-    This constructor requires pyarrow to be installed.
+        This constructor requires pyarrow to be installed.
 
-    Args:
-      record_batches: An Arrow record batch or sequence of record batches
-      output_types: Tensor dtypes of the output tensors
-      output_shapes: TensorShapes of the output tensors or None to
-                     infer partial
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-      columns: A list of column indices to be used in the Dataset
-    """
+        Args:
+            record_batches: An Arrow record batch or sequence of record batches
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                            infer partial
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+            columns: A list of column indices to be used in the Dataset
+        """
         import pyarrow as pa  # pylint: disable=import-outside-toplevel
 
         if isinstance(record_batches, pa.RecordBatch):
@@ -301,23 +300,23 @@ class ArrowDataset(ArrowBaseDataset):
         batch_mode="keep_remainder",
     ):
         """Create an ArrowDataset from a given Pandas DataFrame. Output types
-    and shapes are inferred from the Arrow schema after DataFrame conversion.
-    If preserve_index is True, the DataFrame index will be the last column.
-    This method requires pyarrow to be installed.
+        and shapes are inferred from the Arrow schema after DataFrame conversion.
+        If preserve_index is True, the DataFrame index will be the last column.
+        This method requires pyarrow to be installed.
 
-    Args:
-      df: a Pandas DataFrame
-      columns: Optional column indices to use, if None all are used
-      preserve_index: Flag to include the DataFrame index as the last column
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-    """
+        Args:
+            df: a Pandas DataFrame
+            columns: Optional column indices to use, if None all are used
+            preserve_index: Flag to include the DataFrame index as the last column
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+        """
         import pyarrow as pa  # pylint: disable=import-outside-toplevel
 
         if columns is not None:
@@ -337,10 +336,10 @@ class ArrowDataset(ArrowBaseDataset):
 
 class ArrowFeatherDataset(ArrowBaseDataset):
     """An Arrow Dataset for reading record batches from Arrow feather files.
-  Feather is a light-weight columnar format ideal for simple writing of
-  Pandas DataFrames. Pyarrow can be used for reading/writing Feather files,
-  see https://arrow.apache.org/docs/python/ipc.html#feather-format
-  """
+    Feather is a light-weight columnar format ideal for simple writing of
+    Pandas DataFrames. Pyarrow can be used for reading/writing Feather files,
+    see https://arrow.apache.org/docs/python/ipc.html#feather-format
+    """
 
     def __init__(
         self,
@@ -353,22 +352,22 @@ class ArrowFeatherDataset(ArrowBaseDataset):
     ):
         """Create an ArrowDataset from one or more Feather file names.
 
-    Args:
-      filenames: A `tf.string` tensor, Python list or scalar containing files
-                 in Arrow Feather format
-      columns: A list of column indices to be used in the Dataset
-      output_types: Tensor dtypes of the output tensors
-      output_shapes: TensorShapes of the output tensors or None to
-                     infer partial
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-    """
+        Args:
+            filenames: A `tf.string` tensor, Python list or scalar containing files
+                        in Arrow Feather format
+            columns: A list of column indices to be used in the Dataset
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                        infer partial
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+        """
         filenames = tf.convert_to_tensor(
             filenames, dtype=dtypes.string, name="filenames"
         )
@@ -391,23 +390,23 @@ class ArrowFeatherDataset(ArrowBaseDataset):
         batch_mode="keep_remainder",
     ):
         """Create an Arrow Dataset for reading record batches from Arrow feather
-    files, inferring output types and shapes from the given Arrow schema.
-    This method requires pyarrow to be installed.
+        files, inferring output types and shapes from the given Arrow schema.
+        This method requires pyarrow to be installed.
 
-    Args:
-      filenames: A `tf.string` tensor, Python list or scalar containing files
-                 in Arrow Feather format
-      schema: Arrow schema defining the record batch data in the stream
-      columns: A list of column indicies to use from the schema, None for all
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-    """
+        Args:
+            filenames: A `tf.string` tensor, Python list or scalar containing files
+                        in Arrow Feather format
+            schema: Arrow schema defining the record batch data in the stream
+            columns: A list of column indicies to use from the schema, None for all
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+        """
         if columns is None:
             columns = list(range(len(schema)))
         output_types, output_shapes = arrow_schema_to_tensor_types(schema)
@@ -418,8 +417,8 @@ class ArrowFeatherDataset(ArrowBaseDataset):
 
 class ArrowStreamDataset(ArrowBaseDataset):
     """An Arrow Dataset for reading record batches from an input stream.
-  Currently supported input streams are a socket client or stdin.
-  """
+    Currently supported input streams are a socket client or stdin.
+    """
 
     def __init__(
         self,
@@ -432,28 +431,28 @@ class ArrowStreamDataset(ArrowBaseDataset):
     ):
         """Create an ArrowDataset from an input stream.
 
-    Args:
-      endpoints: A `tf.string` tensor, Python list or scalar string defining the
-                 input stream.
-                 `endpoints` supports the following formats:
-                   - "host:port": IPv4 address (default)
-                   - "tcp://<host:port>": IPv4 address,
-                   - "unix://<path>": local path as unix socket address,
-                   - "fd://<number>": STDIN or file descriptor number. For
-                     STDIN, use "fd://0" or "fd://-".
-      columns: A list of column indices to be used in the Dataset
-      output_types: Tensor dtypes of the output tensors
-      output_shapes: TensorShapes of the output tensors or None to
-                     infer partial
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-    """
+        Args:
+            endpoints: A `tf.string` tensor, Python list or scalar string defining the
+                        input stream.
+                        `endpoints` supports the following formats:
+                        - "host:port": IPv4 address (default)
+                        - "tcp://<host:port>": IPv4 address,
+                        - "unix://<path>": local path as unix socket address,
+                        - "fd://<number>": STDIN or file descriptor number. For
+                            STDIN, use "fd://0" or "fd://-".
+            columns: A list of column indices to be used in the Dataset
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                            infer partial
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+        """
         endpoints = tf.convert_to_tensor(
             endpoints, dtype=dtypes.string, name="endpoints"
         )
@@ -476,29 +475,29 @@ class ArrowStreamDataset(ArrowBaseDataset):
         batch_mode="keep_remainder",
     ):
         """Create an Arrow Dataset from an input stream, inferring output types
-    and shapes from the given Arrow schema.
-    This method requires pyarrow to be installed.
+        and shapes from the given Arrow schema.
+        This method requires pyarrow to be installed.
 
-    Args:
-      endpoints: A `tf.string` tensor, Python list or scalar string defining the
-                 input stream.
-                 `endpoints` supports the following formats:
-                   - "host:port": IPv4 address (default)
-                   - "tcp://<host:port>": IPv4 address,
-                   - "unix://<path>": local path as unix socket address,
-                   - "fd://<number>": STDIN or file descriptor number. For
-                     STDIN, use "fd://0" or "fd://-".
-      schema: Arrow schema defining the record batch data in the stream
-      columns: A list of column indicies to use from the schema, None for all
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-    """
+        Args:
+            endpoints: A `tf.string` tensor, Python list or scalar string defining the
+                        input stream.
+                        `endpoints` supports the following formats:
+                        - "host:port": IPv4 address (default)
+                        - "tcp://<host:port>": IPv4 address,
+                        - "unix://<path>": local path as unix socket address,
+                        - "fd://<number>": STDIN or file descriptor number. For
+                            STDIN, use "fd://0" or "fd://-".
+            schema: Arrow schema defining the record batch data in the stream
+            columns: A list of column indicies to use from the schema, None for all
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+        """
         if columns is None:
             columns = list(range(len(schema)))
         output_types, output_shapes = arrow_schema_to_tensor_types(schema)
@@ -518,26 +517,26 @@ class ArrowStreamDataset(ArrowBaseDataset):
         record_batch_iter_factory=None,
     ):
         """Create an ArrowStreamDataset by serving a sequence of Arrow record
-    batches in a background thread.
-    This constructor requires pyarrow to be installed.
+        batches in a background thread. This constructor requires pyarrow to
+        be installed.
 
-    Args:
-      record_batch_iter: A sequence or iterator of Arrow record batches
-      output_types: Tensor dtypes of the output tensors
-      output_shapes: TensorShapes of the output tensors or None to
-                     infer partial
-      columns: Optional list of column indices to be used, if None all are used
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: batch_size does not need to be set if batch_mode='auto'
-      batch_mode: Mode of batching, supported strings:
-                  "keep_remainder" (default, keeps partial batch data),
-                  "drop_remainder" (discard partial batch data),
-                  "auto" (size to number of records in Arrow record batch)
-      record_batch_iter_factory: Optional factory to create additional record
-                                 batch iterators for multiple iterations.
-    """
+        Args:
+            record_batch_iter: A sequence or iterator of Arrow record batches
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                            infer partial
+            columns: Optional list of column indices to be used, if None all are used
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+            record_batch_iter_factory: Optional factory to create additional record
+                                        batch iterators for multiple iterations.
+        """
         import pyarrow as pa  # pylint: disable=import-outside-toplevel
 
         # Create a UDS server by default if not Windows
@@ -597,18 +596,18 @@ class ArrowStreamDataset(ArrowBaseDataset):
         cls, data_frames, columns=None, preserve_index=True, batch_size=None
     ):
         """Create an ArrowStreamDataset by serving a DataFrame, or batches of a
-    DataFrame in a background thread.
-    This constructor requires pandas and pyarrow to be installed.
+        DataFrame in a background thread. This constructor requires pandas and
+        pyarrow to be installed.
 
-    Args:
-      data_frames: A Pandas DataFrame or sequence of DataFrames
-      columns: Optional column indices to use, if None all are used
-      preserve_index: Flag to include the DataFrame index as the last column
-      batch_size: Batch size of output tensors, setting a batch size here
-                  will create batched tensors from Arrow memory and can be more
-                  efficient than using tf.data.Dataset.batch().
-                  NOTE: Currently, only 'keep_remainder' batch mode supported
-    """
+        Args:
+            data_frames: A Pandas DataFrame or sequence of DataFrames
+            columns: Optional column indices to use, if None all are used
+            preserve_index: Flag to include the DataFrame index as the last column
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: Currently, only 'keep_remainder' batch mode supported
+        """
         import pandas as pd  # pylint: disable=import-outside-toplevel
         import pyarrow as pa  # pylint: disable=import-outside-toplevel
 

@@ -28,9 +28,8 @@ from tensorflow_io.core.python.ops import core_ops as ignite_ops
 
 class Readable(metaclass=abc.ABCMeta):
     """Readable abstract class that exposes methods to do reading-related
-
-     operations.
-  """
+    operations.
+    """
 
     @abc.abstractmethod
     def __init__(self):
@@ -73,9 +72,9 @@ class DataBuffer(Readable):
     def __init__(self, data_buffer):
         """Constructs a new instance based on the specified byte  buffer.
 
-    Args:
-      data_buffer: Buffer to be read.
-    """
+        Args:
+            data_buffer: Buffer to be read.
+        """
         Readable.__init__(self)
         self.buffer = data_buffer
         self.ptr = 0
@@ -93,20 +92,20 @@ class TcpClient(Readable):
     def __init__(self, host, port, certfile=None, keyfile=None, password=None):
         """Constructs a new instance based on the specified host and port.
 
-    Args:
-      host: Host to be connected.
-      port: Port to be connected.
-      certfile: File in PEM format containing the certificate as well as any
-        number of CA certificates needed to establish the certificate's
-        authenticity.
-      keyfile: File containing the private key (otherwise the private key will
-        be taken from certfile as well).
-      password: Password to be used if the private key is encrypted and a
-        password is necessary.
+        Args:
+            host: Host to be connected.
+            port: Port to be connected.
+            certfile: File in PEM format containing the certificate as well as any
+                number of CA certificates needed to establish the certificate's
+                authenticity.
+            keyfile: File containing the private key (otherwise the private key will
+                be taken from certfile as well).
+            password: Password to be used if the private key is encrypted and a
+            password is necessary.
 
-    Raises:
-      ValueError: If the wrong combination of arguments is provided.
-    """
+        Raises:
+            ValueError: If the wrong combination of arguments is provided.
+        """
         Readable.__init__(self)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -225,19 +224,18 @@ types = {
 
 class TypeTreeNode:  # pylint: disable=useless-object-inheritance
     """TypeTreeNode class exposes methods to format object tree structure
-
-     data.
-  """
+    data.
+    """
 
     def __init__(self, name, type_id, fields=None, permutation=None):
         """Constructs a new instance of TypeTreeNode.
 
-    Args:
-      name: Name of the object tree node.
-      type_id: Type id of the object tree node.
-      fields: List of fields (children of the object tree node).
-      permutation: Permutation that should be applied to order object children.
-    """
+        Args:
+            name: Name of the object tree node.
+            type_id: Type id of the object tree node.
+            fields: List of fields (children of the object tree node).
+            permutation: Permutation that should be applied to order object children.
+        """
         self.name = name
         self.type_id = type_id
         self.fields = fields
@@ -323,10 +321,10 @@ class TypeTreeNode:  # pylint: disable=useless-object-inheritance
 class IgniteClient(TcpClient):
     """IgniteClient enables working with Apache Ignite using a thin client.
 
-  This client works with assumption that all object in the cache
-  have the same structure (homogeneous objects) and the cache contains at
-  least one object.
-  """
+    This client works with assumption that all object in the cache
+    have the same structure (homogeneous objects) and the cache contains at
+    least one object.
+    """
 
     def __init__(
         self,
@@ -340,19 +338,19 @@ class IgniteClient(TcpClient):
     ):
         """Constructs a new instance of IgniteClient.
 
-    Args:
-      host: Apache Ignite Thin client host to be connected.
-      port: Apache Ignite Thin client port to be connected.
-      username: Apache Ignite Thin Client authentication username.
-      password: Apache Ignite Thin Client authentication password.
-      certfile: File in PEM format containing the certificate as well as any
-        number of CA certificates needed to establish the certificate's
-        authenticity.
-      keyfile: File containing the private key (otherwise the private key will
-        be taken from certfile as well).
-      cert_password: Password to be used if the private key is encrypted and a
-        password is necessary.
-    """
+        Args:
+            host: Apache Ignite Thin client host to be connected.
+            port: Apache Ignite Thin client port to be connected.
+            username: Apache Ignite Thin Client authentication username.
+            password: Apache Ignite Thin Client authentication password.
+            certfile: File in PEM format containing the certificate as well as any
+                number of CA certificates needed to establish the certificate's
+                authenticity.
+            keyfile: File containing the private key (otherwise the private key will
+                be taken from certfile as well).
+            cert_password: Password to be used if the private key is encrypted and a
+                password is necessary.
+        """
         TcpClient.__init__(self, host, port, certfile, keyfile, cert_password)
         self.username = username
         self.password = password
@@ -699,16 +697,15 @@ class IgniteClient(TcpClient):
 
 class IgniteDataset(data.Dataset):
     """Apache Ignite is a memory-centric distributed database, caching, and
-
-     processing platform for transactional, analytical, and streaming workloads,
-     delivering in-memory speeds at petabyte scale. This contrib package
-     contains an integration between Apache Ignite and TensorFlow. The
-     integration is based on tf.data from TensorFlow side and Binary Client
-     Protocol from Apache Ignite side. It allows to use Apache Ignite as a
-     datasource for neural network training, inference and all other
-     computations supported by TensorFlow. Ignite Dataset is based on Apache
-     Ignite Binary Client Protocol.
-  """
+    processing platform for transactional, analytical, and streaming workloads,
+    delivering in-memory speeds at petabyte scale. This contrib package
+    contains an integration between Apache Ignite and TensorFlow. The
+    integration is based on tf.data from TensorFlow side and Binary Client
+    Protocol from Apache Ignite side. It allows to use Apache Ignite as a
+    datasource for neural network training, inference and all other
+    computations supported by TensorFlow. Ignite Dataset is based on Apache
+    Ignite Binary Client Protocol.
+    """
 
     def __init__(
         self,
@@ -728,25 +725,25 @@ class IgniteDataset(data.Dataset):
     ):
         """Create a IgniteDataset.
 
-    Args:
-      cache_name: Cache name to be used as datasource.
-      host: Apache Ignite Thin Client host to be connected.
-      port: Apache Ignite Thin Client port to be connected.
-      schema_host: Host to be connected to retrieve cache schema.
-      schema_port: Port to be connected to retrieve cache schema.
-      local: Local flag that defines to query only local data.
-      part: Number of partitions to be queried.
-      page_size: Apache Ignite Thin Client page size.
-      username: Apache Ignite Thin Client authentication username.
-      password: Apache Ignite Thin Client authentication password.
-      certfile: File in PEM format containing the certificate as well as any
-        number of CA certificates needed to establish the certificate's
-        authenticity.
-      keyfile: File containing the private key (otherwise the private key will
-        be taken from certfile as well).
-      cert_password: Password to be used if the private key is encrypted and a
-        password is necessary.
-    """
+        Args:
+            cache_name: Cache name to be used as datasource.
+            host: Apache Ignite Thin Client host to be connected.
+            port: Apache Ignite Thin Client port to be connected.
+            schema_host: Host to be connected to retrieve cache schema.
+            schema_port: Port to be connected to retrieve cache schema.
+            local: Local flag that defines to query only local data.
+            part: Number of partitions to be queried.
+            page_size: Apache Ignite Thin Client page size.
+            username: Apache Ignite Thin Client authentication username.
+            password: Apache Ignite Thin Client authentication password.
+            certfile: File in PEM format containing the certificate as well as any
+                number of CA certificates needed to establish the certificate's
+                authenticity.
+            keyfile: File containing the private key (otherwise the private key will
+                be taken from certfile as well).
+            cert_password: Password to be used if the private key is encrypted and a
+                password is necessary.
+        """
         if not schema_host:
             schema_host = host
         if not schema_port:
