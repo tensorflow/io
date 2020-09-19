@@ -20,9 +20,7 @@ from tensorflow_io.core.python.experimental import kafka_io_layer_ops
 
 
 class IOLayer(tf.keras.layers.Layer):
-    """IOLayer
-
-  """
+    """IOLayer"""
 
     # =============================================================================
     # IOLayer (identity)
@@ -42,12 +40,12 @@ class IOLayer(tf.keras.layers.Layer):
     def text(cls, filename):
         """Obtain a TextIOLayer to be used with tf.keras.
 
-    Args:
-      filename: A `string` Tensor of the filename.
+        Args:
+          filename: A `string` Tensor of the filename.
 
-    Returns:
-      A class of `TextIOLayer`.
-    """
+        Returns:
+          A class of `TextIOLayer`.
+        """
         return text_io_layer_ops.TextIOLayer(filename)
 
     # =============================================================================
@@ -58,17 +56,17 @@ class IOLayer(tf.keras.layers.Layer):
     def kafka(cls, topic, partition=0, servers=None, configuration=None):
         """Obtain a KafkaIOLayer to be used with tf.keras.
 
-    Args:
-      topic: A `tf.string` tensor containing topic.
-      partition: A `tf.int32` tensor containing partition.
-      servers: A list of bootstrap servers.
-      configurations: A `tf.string` tensor containing global configuration
-        properties in [Key=Value] format,eg.
-        ["enable.auto.commit=false", "heartbeat.interval.ms=2000"],
-        please refer to 'Global configuration properties'
-        in librdkafka doc.
+        Args:
+          topic: A `tf.string` tensor containing topic.
+          partition: A `tf.int32` tensor containing partition.
+          servers: A list of bootstrap servers.
+          configurations: A `tf.string` tensor containing global configuration
+            properties in [Key=Value] format,eg.
+            ["enable.auto.commit=false", "heartbeat.interval.ms=2000"],
+            please refer to 'Global configuration properties'
+            in librdkafka doc.
 
-    Returns:
-      A class of `KafkaIOLayer`.
-    """
+        Returns:
+          A class of `KafkaIOLayer`.
+        """
         return kafka_io_layer_ops.KafkaIOLayer(topic, partition, servers, configuration)

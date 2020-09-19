@@ -24,9 +24,9 @@ class GRPCStreamIODataset(tf.data.Dataset):
     def __init__(self, endpoint, shape, dtype):
         """Create a GRPC Reader.
 
-    Args:
-      endpoint: A `tf.string` tensor containing one or more endpoints.
-    """
+        Args:
+            endpoint: A `tf.string` tensor containing one or more endpoints.
+        """
         with tf.name_scope("GRPCStreamIODataset"):
             shape = tf.cast(shape, tf.int64)
 

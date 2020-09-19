@@ -30,13 +30,13 @@ class IOTensor(io_tensor.IOTensor):
     def from_exr(cls, filename, **kwargs):
         """Creates an `IOTensor` from a OpenEXR file.
 
-    Args:
-      filename: A string, the filename of a OpenEXR file.
-      name: A name prefix for the IOTensor (optional).
+        Args:
+          filename: A string, the filename of a OpenEXR file.
+          name: A name prefix for the IOTensor (optional).
 
-    Returns:
-      A `IOTensor`.
+        Returns:
+          A `IOTensor`.
 
-    """
+        """
         with tf.name_scope(kwargs.get("name", "IOFromOpenEXR")):
             return openexr_io_tensor_ops.EXRIOTensor(filename, internal=True)

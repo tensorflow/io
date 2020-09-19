@@ -19,9 +19,7 @@ from tensorflow_io.core.python.ops import core_ops
 
 
 class KafkaIOLayer(tf.keras.layers.Layer):
-    """KafkaIOLayer
-
-  """
+    """KafkaIOLayer"""
 
     # =============================================================================
     # KafkaIOLayer
