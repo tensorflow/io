@@ -210,6 +210,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
           : DatasetIterator<Dataset>(params) {}
       
       virtual ~Iterator() {
+          // destruction is needed to release rdkafka resources
           ResetStreamsLocked();
       }
       
