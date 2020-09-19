@@ -33,7 +33,6 @@ class DecodeJSONOp : public OpKernel {
   }
 
   void Compute(OpKernelContext* context) override {
-    // TODO: support batch (1-D) input
     const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
     const string& input = input_tensor->scalar<tstring>()();
@@ -58,134 +57,39 @@ class DecodeJSONOp : public OpKernel {
                                           names_tensor->flat<tstring>()(i)));
 
       Tensor* value_tensor;
+      std::vector<int64> tensor_shape_vector;
       if (entry->IsArray()) {
-        if (entry->Size() > 0 && (*entry)[0].IsArray()) {
-          int64 dim0 = entry->Size();
-          int64 dim1 = 0;
-          for (int64 j = 0; j < entry->Size(); j++) {
-            if (dim1 < (*entry)[j].Size()) {
-              dim1 = (*entry)[j].Size();
-            }
-          }
-          OP_REQUIRES_OK(context,
-                         context->allocate_output(i, TensorShape({dim0, dim1}),
-                                                  &value_tensor));
-
-          switch (value_tensor->dtype()) {
-            case DT_INT32:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
-                  value_tensor->tensor<int32, 2>()(j, k) =
-                      (*entry)[j][k].GetInt();
-                }
-              }
-              break;
-            case DT_INT64:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
-                  value_tensor->tensor<int64, 2>()(j, k) =
-                      (*entry)[j][k].GetInt64();
-                }
-              }
-              break;
-            case DT_FLOAT:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
-                  value_tensor->tensor<float, 2>()(j, k) =
-                      (*entry)[j][k].GetDouble();
-                }
-              }
-              break;
-            case DT_DOUBLE:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
-                  value_tensor->tensor<double, 2>()(j, k) =
-                      (*entry)[j][k].GetDouble();
-                }
-              }
-              break;
-            case DT_STRING:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                for (int64 k = 0; k < (*entry)[j].Size(); k++) {
-                  value_tensor->tensor<tstring, 2>()(j, k) =
-                      (*entry)[j][k].GetString();
-                }
-              }
-              break;
-            default:
-              OP_REQUIRES(context, false,
-                          errors::InvalidArgument(
-                              "data type not supported: ",
-                              DataTypeString(value_tensor->dtype())));
-              break;
-          }
-
-        } else {
-          OP_REQUIRES_OK(
-              context, context->allocate_output(i, TensorShape({entry->Size()}),
-                                                &value_tensor));
-
-          switch (value_tensor->dtype()) {
-            case DT_INT32:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                value_tensor->flat<int32>()(j) = (*entry)[j].GetInt();
-              }
-              break;
-            case DT_INT64:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                value_tensor->flat<int64>()(j) = (*entry)[j].GetInt64();
-              }
-              break;
-            case DT_FLOAT:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                value_tensor->flat<float>()(j) = (*entry)[j].GetDouble();
-              }
-              break;
-            case DT_DOUBLE:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                value_tensor->flat<double>()(j) = (*entry)[j].GetDouble();
-              }
-              break;
-            case DT_STRING:
-              for (int64 j = 0; j < entry->Size(); j++) {
-                value_tensor->flat<tstring>()(j) = (*entry)[j].GetString();
-              }
-              break;
-            default:
-              OP_REQUIRES(context, false,
-                          errors::InvalidArgument(
-                              "data type not supported: ",
-                              DataTypeString(value_tensor->dtype())));
-              break;
-          }
-        }
-
+        getTensorShape(entry, tensor_shape_vector);
       } else {
-        OP_REQUIRES_OK(context, context->allocate_output(i, TensorShape({1}),
-                                                         &value_tensor));
-        switch (value_tensor->dtype()) {
-          case DT_INT32:
-            value_tensor->flat<int32>()(0) = entry->GetInt();
-            break;
-          case DT_INT64:
-            value_tensor->flat<int64>()(0) = entry->GetInt64();
-            break;
-          case DT_FLOAT:
-            value_tensor->flat<float>()(0) = entry->GetDouble();
-            break;
-          case DT_DOUBLE:
-            value_tensor->flat<double>()(0) = entry->GetDouble();
-            break;
-          case DT_STRING:
-            value_tensor->flat<tstring>()(0) = entry->GetString();
-            break;
-          default:
-            OP_REQUIRES(
-                context, false,
-                errors::InvalidArgument("data type not supported: ",
-                                        DataTypeString(value_tensor->dtype())));
-            break;
-        }
+        tensor_shape_vector.push_back(1);
+      }
+      OP_REQUIRES_OK(
+          context, context->allocate_output(i, TensorShape(tensor_shape_vector),
+                                            &value_tensor));
+      int64 flat_index;
+      flat_index = 0;
+      switch (value_tensor->dtype()) {
+        case DT_INT32:
+          writeToTensor(entry, value_tensor, flat_index, writeInt32);
+          break;
+        case DT_INT64:
+          writeToTensor(entry, value_tensor, flat_index, writeInt64);
+          break;
+        case DT_FLOAT:
+          writeToTensor(entry, value_tensor, flat_index, writeFloat);
+          break;
+        case DT_DOUBLE:
+          writeToTensor(entry, value_tensor, flat_index, writeDouble);
+          break;
+        case DT_STRING:
+          writeToTensor(entry, value_tensor, flat_index, writeString);
+          break;
+        default:
+          OP_REQUIRES(
+              context, false,
+              errors::InvalidArgument("data type not supported: ",
+                                      DataTypeString(value_tensor->dtype())));
+          break;
       }
     }
   }
@@ -193,6 +97,58 @@ class DecodeJSONOp : public OpKernel {
  private:
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
+
+  // Tensor Shape
+
+  static void getTensorShape(rapidjson::Value* entry,
+                             std::vector<int64>& tensor_shape_vector) {
+    if (entry->IsArray()) {
+      tensor_shape_vector.push_back(entry->Size());
+      getTensorShape(&(*entry)[0], tensor_shape_vector);
+    }
+  }
+
+  // Single Entry Tensor Writes
+
+  static void writeInt32(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
+    value_tensor->flat<int32>()(flat_index) = (*entry).GetInt();
+  }
+
+  static void writeInt64(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
+    value_tensor->flat<int64>()(flat_index) = (*entry).GetInt64();
+  }
+
+  static void writeFloat(rapidjson::Value* entry, Tensor* value_tensor,
+                         int64& flat_index) {
+    value_tensor->flat<float>()(flat_index) = (*entry).GetDouble();
+  }
+
+  static void writeDouble(rapidjson::Value* entry, Tensor* value_tensor,
+                          int64& flat_index) {
+    value_tensor->flat<double>()(flat_index) = (*entry).GetDouble();
+  }
+
+  static void writeString(rapidjson::Value* entry, Tensor* value_tensor,
+                          int64& flat_index) {
+    value_tensor->flat<tstring>()(flat_index) = (*entry).GetString();
+  }
+
+  // Full Tensor Write
+
+  template <class T>
+  static void writeToTensor(rapidjson::Value* entry, Tensor* value_tensor,
+                            int64& flat_index, T write_func) {
+    if (entry->IsArray()) {
+      for (int64 i = 0; i < entry->Size(); i++) {
+        writeToTensor(&(*entry)[i], value_tensor, flat_index, write_func);
+      }
+    } else {
+      write_func(entry, value_tensor, flat_index);
+      flat_index++;
+    }
+  }
 };
 
 class DecodeAvroOp : public OpKernel {
