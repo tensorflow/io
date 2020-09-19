@@ -21,10 +21,11 @@ import tensorflow_io.core.python.ops  # pylint: disable=unused-import
 
 def authenticate_with_device_code(account_name):
     """Setup storage tokens by authenticating with device code
-  and use management APIs
-  Args:
-    account_name (str): The storage account name for which to authenticate
-  """
+    and use management APIs.
+
+    Args:
+        account_name (str): The storage account name for which to authenticate
+    """
 
     import urllib  # pylint: disable=import-outside-toplevel
     import json  # pylint: disable=import-outside-toplevel

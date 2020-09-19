@@ -65,22 +65,22 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     Only works for batched serialized input!
 
     Args:
-      serialized: The batched, serialized string tensors.
+        serialized: The batched, serialized string tensors.
 
-      reader_schema: The reader schema. Note, this MUST match the reader schema
+        reader_schema: The reader schema. Note, this MUST match the reader schema
         from the avro_record_dataset. Otherwise, this op will segfault!
 
-      features: A map of feature names mapped to feature information.
+        features: A map of feature names mapped to feature information.
 
-      avro_names: (Optional.) may contain descriptive names for the
+        avro_names: (Optional.) may contain descriptive names for the
         corresponding serialized avro parts. These may be useful for debugging
         purposes, but they have no effect on the output. If not `None`,
         `avro_names` must be the same length as `serialized`.
 
-      name: The name of the op.
+        name: The name of the op.
 
     Returns:
-      A map of feature names to tensors.
+        A map of feature names to tensors.
     """
     if not features:
         raise ValueError("Missing: features was %s." % features)
@@ -132,37 +132,38 @@ def _parse_avro(
     name=None,
 ):
     """Parses Avro records.
+
     Args:
-    serialized: A vector (1-D Tensor) of strings, a batch of binary
-      serialized `Example` protos.
-    reader_schema: A scalar string representing the reader schema.
-    names: A vector (1-D Tensor) of strings (optional), the names of
-      the serialized protos.
-    sparse_keys: A list of string keys in the examples' features.
-      The results for these keys will be returned as `SparseTensor` objects.
-    sparse_types: A list of `DTypes` of the same length as `sparse_keys`.
-      Only `tf.float32` (`FloatList`), `tf.int64` (`Int64List`),
-      and `tf.string` (`BytesList`) are supported.
-    sparse_ranks: ranks of sparse feature. `tf.int64` (`Int64List`) is supported.
-    dense_keys: A list of string keys in the examples' features.
-      The results for these keys will be returned as `Tensor`s
-    dense_types: A list of DTypes of the same length as `dense_keys`.
-      Only `tf.float32` (`FloatList`), `tf.int64` (`Int64List`),
-      and `tf.string` (`BytesList`) are supported.
-    dense_defaults: A dict mapping string keys to `Tensor`s.
-      The keys of the dict must match the dense_keys of the feature.
-    dense_shapes: A list of tuples with the same length as `dense_keys`.
-      The shape of the data for each dense feature referenced by `dense_keys`.
-      Required for any input tensors identified by `dense_keys`.  Must be
-      either fully defined, or may contain an unknown first dimension.
-      An unknown first dimension means the feature is treated as having
-      a variable number of blocks, and the output shape along this dimension
-      is considered unknown at graph build time.  Padding is applied for
-      minibatch elements smaller than the maximum number of blocks for the
-      given feature along this dimension.
-    name: A name for this operation (optional).
+        serialized: A vector (1-D Tensor) of strings, a batch of binary
+        serialized `Example` protos.
+        reader_schema: A scalar string representing the reader schema.
+        names: A vector (1-D Tensor) of strings (optional), the names of
+        the serialized protos.
+        sparse_keys: A list of string keys in the examples' features.
+        The results for these keys will be returned as `SparseTensor` objects.
+        sparse_types: A list of `DTypes` of the same length as `sparse_keys`.
+        Only `tf.float32` (`FloatList`), `tf.int64` (`Int64List`),
+        and `tf.string` (`BytesList`) are supported.
+        sparse_ranks: ranks of sparse feature. `tf.int64` (`Int64List`) is supported.
+        dense_keys: A list of string keys in the examples' features.
+        The results for these keys will be returned as `Tensor`s
+        dense_types: A list of DTypes of the same length as `dense_keys`.
+        Only `tf.float32` (`FloatList`), `tf.int64` (`Int64List`),
+        and `tf.string` (`BytesList`) are supported.
+        dense_defaults: A dict mapping string keys to `Tensor`s.
+        The keys of the dict must match the dense_keys of the feature.
+        dense_shapes: A list of tuples with the same length as `dense_keys`.
+        The shape of the data for each dense feature referenced by `dense_keys`.
+        Required for any input tensors identified by `dense_keys`.  Must be
+        either fully defined, or may contain an unknown first dimension.
+        An unknown first dimension means the feature is treated as having
+        a variable number of blocks, and the output shape along this dimension
+        is considered unknown at graph build time.  Padding is applied for
+        minibatch elements smaller than the maximum number of blocks for the
+        given feature along this dimension.
+        name: A name for this operation (optional).
     Returns:
-      A `dict` mapping keys to `Tensor`s and `SparseTensor`s.
+        A `dict` mapping keys to `Tensor`s and `SparseTensor`s.
     """
     with tf.name_scope(name or "ParseAvro"):
         (
@@ -229,11 +230,13 @@ def _build_keys_for_sparse_features(features):
     """
     Builds the fully qualified names for keys of sparse features.
 
-    :param features:  A map of features with keys to TensorFlow features.
+    Args:
+        features:  A map of features with keys to TensorFlow features.
 
-    :return: A map of features where for the sparse feature
-             the 'index_key' and the 'value_key' have been expanded
-             properly for the parser in the native code.
+    Returns:
+        A map of features where for the sparse feature
+        the 'index_key' and the 'value_key' have been expanded
+        properly for the parser in the native code.
     """
 
     def resolve_key(parser_key, index_or_value_key):
@@ -304,17 +307,17 @@ def _features_to_raw_params(features, types):
     """Split feature tuples into raw params used by `gen_parsing_ops`.
 
     Args:
-      features: A `dict` mapping feature keys to objects of a type in `types`.
-      types: Type of features to allow, among `FixedLenFeature`, `VarLenFeature`,
-        `SparseFeature`, and `FixedLenSequenceFeature`.
+        features: A `dict` mapping feature keys to objects of a type in `types`.
+        types: Type of features to allow, among `FixedLenFeature`, `VarLenFeature`,
+            `SparseFeature`, and `FixedLenSequenceFeature`.
 
     Returns:
-      Tuple of `sparse_keys`, `sparse_types`, `dense_keys`, `dense_types`,
+        Tuple of `sparse_keys`, `sparse_types`, `dense_keys`, `dense_types`,
         `dense_defaults`, `dense_shapes`.
 
     Raises:
-      ValueError: if `features` contains an item not in `types`, or an invalid
-          feature.
+        ValueError: if `features` contains an item not in `types`, or an invalid
+        feature.
     """
     sparse_keys = []
     sparse_types = []
@@ -463,6 +466,7 @@ def _process_raw_parameters(
     dense_shapes,
 ):
     """Process raw parameters to params used by `gen_parsing_ops`.
+
     Args:
       names: A vector (1-D Tensor) of strings (optional), the names of
         the serialized protos.
@@ -487,9 +491,11 @@ def _process_raw_parameters(
         is considered unknown at graph build time.  Padding is applied for
         minibatch elements smaller than the maximum number of blocks for the
         given feature along this dimension.
+
     Returns:
       Tuple of `names`, `dense_defaults_vec`, `sparse_keys`, `sparse_types`,
       `dense_keys`, `dense_shapes`.
+
     Raises:
       ValueError: If sparse and dense key sets intersect, or input lengths do not
         match up.
