@@ -16,7 +16,7 @@ available in TensorFlow's built-in support. A full list of supported file system
 and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
 The use of tensorflow-io is straightforward with keras. Below is an example
-to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials/quickstart/beginner) with
 the data processing aspect replaced by tensorflow-io:
 
 ```python
