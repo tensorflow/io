@@ -22,6 +22,16 @@ authentication, please make sure that GOOGLE_APPLICATION_CREDENTIALS
 environment variable is initialized with a path pointing to JSON file that
 contains your service account key.
 4. [Enable BigQuery Storage API.](https://cloud.google.com/bigquery/docs/reference/storage/#enabling_the_api)
+5. If you see some errors related to roots.pem file in logs, you can solve it via either of the following approaches:
+
+* copy the [gRPC `roots.pem` file][grpcPem] to
+  `/usr/share/grpc/roots.pem` on your local machine, which is the default
+  location where gRPC will look for this file
+* export the environment variable `GRPC_DEFAULT_SSL_ROOTS_FILE_PATH` to point to
+  the full path of the gRPC `roots.pem` file on your file system if it's in a
+  different location
+
+[grpcPem]: https://github.com/grpc/grpc/blob/master/etc/roots.pem
 
 ## Sample Use
 
