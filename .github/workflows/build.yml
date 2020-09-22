@@ -503,6 +503,8 @@ jobs:
           docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
           bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
           docker push tfsigio/tfio:latest
+          bash -x -e tools/docker/tests/dockerfile_nightly_test.sh
+          docker push tfsigio/tfio:nightly
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
           docker push tfsigio/tfio:latest-devel
 

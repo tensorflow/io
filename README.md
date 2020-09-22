@@ -16,7 +16,7 @@ available in TensorFlow's built-in support. A full list of supported file system
 and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
 The use of tensorflow-io is straightforward with keras. Below is an example
-to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials/quickstart/beginner) with
 the data processing aspect replaced by tensorflow-io:
 
 ```python
@@ -77,6 +77,20 @@ $ pip install tensorflow-io
 People who are a little more adventurous can also try our nightly binaries:
 ```sh
 $ pip install tensorflow-io-nightly
+```
+
+In addition to the pip packages, the docker images can be used to quickly get started.
+
+For stable builds:
+```sh
+$ docker pull tfsigio/tfio:latest
+$ docker run -it --rm --name tfio-latest tfsigio/tfio:latest
+```
+
+For nightly builds:
+```sh
+$ docker pull tfsigio/tfio:nightly
+$ docker run -it --rm --name tfio-nightly tfsigio/tfio:nightly
 ```
 
 ### R Package
@@ -359,11 +373,11 @@ $ TFIO_DATAPATH=bazel-bin python3
 #### Docker
 
 For Python development, a reference Dockerfile [here](tools/docker/devel.Dockerfile) can be
-used to build the TensorFlow I/O package (`tensorflow-io`) from source:
+used to build the TensorFlow I/O package (`tensorflow-io`) from source. Additionally, the
+pre-built devel images can be used as well:
 ```sh
-# Build and run the Docker image
-$ docker build -f tools/docker/devel.Dockerfile -t tfio-dev .
-$ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
+# Pull (if necessary) and start the devel container
+$ docker run -it --rm --name tfio-dev --net=host -v ${PWD}:/v -w /v tfsigio/tfio:latest-devel bash
 
 # Inside the docker container, ./configure.sh will install TensorFlow or use existing install
 (tfio-dev) root@docker-desktop:/v$ ./configure.sh
@@ -371,14 +385,19 @@ $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 # Clean up exisiting bazel build's (if any)
 (tfio-dev) root@docker-desktop:/v$ rm -rf bazel-*
 
-# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options). NOTE: Based on the available resources, please change the number of job workers to -j 4/8/16 to prevent bazel server terminations and resource oriented build errors.
+# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native)
+# optimizes the generated code for your machine's CPU type.
+# Reference: https://www.tensorflow.orginstall/source#configuration_options).
+
+# NOTE: Based on the available resources, please change the number of job workers to:
+# -j 4/8/16 to prevent bazel server terminations and resource oriented build errors.
 
 (tfio-dev) root@docker-desktop:/v$ bazel build -j 8 --copt=-msse4.2 --copt=-mavx --compilation_mode=opt --verbose_failures --test_output=errors --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain //tensorflow_io/...
 
 
 # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
 (tfio-dev) root@docker-desktop:/v$ pytest -s -v tests/
- # Build the TensorFlow I/O package
+# Build the TensorFlow I/O package
 (tfio-dev) root@docker-desktop:/v$ python setup.py bdist_wheel
 ```
 
@@ -391,7 +410,7 @@ libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
 `python setup.py --data bazel-bin bdist_wheel`.
 
 NOTE: While the tfio-dev container gives developers an easy to work with
-environment, the released whl packages are build differently due to manylinux2010
+environment, the released whl packages are built differently due to manylinux2010
 requirements. Please check [Build Status and CI] section for more details
 on how the released whl packages are generated.
 
@@ -402,8 +421,8 @@ to run all tests, execute the following commands:
 
 ```sh
 $ bash -x -e tests/test_ignite/start_ignite.sh
-$ bash -x -e tests/test_kafka/kafka_test.sh start kafka
-$ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+$ bash -x -e tests/test_kafka/kafka_test.sh
+$ bash -x -e tests/test_kinesis/kinesis_test.sh
 ```
 
 ### R
