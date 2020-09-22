@@ -26,6 +26,7 @@ For background on Cloud BigQuery, see: https://cloud.google.com/bigquery .
 
 import collections
 import enum
+import tensorflow as tf
 from operator import itemgetter
 
 from tensorflow.python.data.ops import dataset_ops
@@ -261,12 +262,6 @@ class BigQueryReadSession:
             offset,
         )
 
-    @deprecation.deprecated_args(
-        None,
-        "If sloppy execution is desired,"
-        "use `tf.data.Options.experimental_deterministic`.",
-        "sloppy",
-    )
     def parallel_read_rows(
         self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None,
     ):
@@ -278,23 +273,19 @@ class BigQueryReadSession:
         ds1 = bq_read_session.parallel_read_rows(...)
         ```
         Args:
-            cycle_length: number of threads to run in parallel. If not specified, it
-                is defaulted to the number of streams in a read session.
+            cycle_length: number of streams to process in parallel. If not specified, it
+                is defaulted to the number of streams in the read session.
             sloppy: If false, elements are produced in deterministic order. If true,
                 the implementation is allowed, for the sake of expediency, to produce
-                elements in a non-deterministic order. Otherwise, whether the order is
-                deterministic or non-deterministic depends on the
-                `tf.data.Options.experimental_deterministic` value.
-            block_length: The number of consecutive elements to pull from an input
-                `Dataset` before advancing to the next input `Dataset`.
-            block_length: The number of consecutive elements to pull from an input
-                `Dataset` before advancing to the next input `Dataset`.
-            num_parallel_calls: If specified, the implementation creates a threadpool,
-                which is used to fetch inputs from cycle elements asynchronously and in
-                parallel. The default behavior is to fetch inputs from cycle elements
-                synchronously with no parallelism.
+                elements in a non-deterministic order.
+                When reading from multiple BigQuery streams, setting sloppy=True usually
+                yields a better performance.
+            block_length: The number of consecutive elements to pull from a session stream
+                before advancing to the next one.
+            num_parallel_calls: Number of threads to use for processing input streams.
                 If the value `tf.data.experimental.AUTOTUNE` is used, then the number of
                 parallel calls is set dynamically based on available CPU.
+                Defaulted to the number of streams in the read session.
 
         Returns:
             A `tf.data.Dataset` returning the row keys and the cell contents.
@@ -302,22 +293,19 @@ class BigQueryReadSession:
         Raises:
             ValueError: If the configured probability is unexpected.
         """
-        if cycle_length is None:
-            cycle_length = self._requested_streams
         streams_ds = dataset_ops.Dataset.from_tensor_slices(self._streams)
-        option = streams_ds.options()
-        if sloppy is True:
-            option.experimental_deterministic = False
-            streams_ds = streams_ds.with_options(option)
-        elif sloppy is False:
-            option.experimental_deterministic = True
-            streams_ds = streams_ds.with_options(option)
+        streams_count = tf.cast(tf.size(self._streams), dtype=tf.int64)
+        if cycle_length is None:
+            cycle_length = streams_count
+        if num_parallel_calls is None:
+            num_parallel_calls = streams_count
 
         return streams_ds.interleave(
             map_func=self.read_rows,
             cycle_length=cycle_length,
             block_length=block_length,
             num_parallel_calls=num_parallel_calls,
+            deterministic=not (sloppy),
         )
 
 
