@@ -50,6 +50,8 @@ def _load_library(filename, lib="op"):
         load_fn = tf.load_op_library
     elif lib == "dependency":
         load_fn = lambda f: ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
+    elif lib == "fs":
+        load_fn = lambda f: tf.experimental.register_filesystem_plugin(f) is None
     else:
         load_fn = lambda f: tf.compat.v1.load_file_system_library(f) is None
 
@@ -69,3 +71,4 @@ def _load_library(filename, lib="op"):
 
 
 core_ops = _load_library("libtensorflow_io.so")
+azfs_ops = _load_library("libtensorflow_io.so", "fs")

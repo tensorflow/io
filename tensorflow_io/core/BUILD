@@ -562,7 +562,7 @@ cc_library(
 )
 
 cc_library(
-    name = "azfs_ops",
+    name = "file_system_plugins",
     srcs = [
         "kernels/azfs_kernels.cc",
         "kernels/azfs_kernels.h",
@@ -571,6 +571,9 @@ cc_library(
     linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
@@ -674,7 +677,6 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
-        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -705,7 +707,9 @@ cc_binary(
             "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
         ],
-    }),
+    }) + [
+        "//tensorflow_io/core:file_system_plugins",
+    ],
 )
 
 cc_binary(

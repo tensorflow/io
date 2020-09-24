@@ -25,6 +25,7 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
+#include "tensorflow/c/experimental/filesystem/filesystem_interface.h"
 #include "tensorflow/core/lib/io/path.h"
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow/core/platform/env.h"
@@ -33,7 +34,7 @@ namespace tensorflow {
 namespace io {
 namespace {
 // TODO: DO NOT use a hardcoded path
-Status GetTmpFilename(std::string *filename) {
+Status GetTmpFilename(std::string* filename) {
   if (!filename) {
     return errors::Internal("'filename' cannot be nullptr.");
   }
@@ -45,7 +46,7 @@ Status GetTmpFilename(std::string *filename) {
   }
 #else
   char buffer[] = "/tmp/az_blob_filesystem_XXXXXX";
-  char *ret = _mktemp(buffer);
+  char* ret = _mktemp(buffer);
   if (ret == nullptr) {
     return errors::Internal("Failed to create a temporary file.");
   }
@@ -62,8 +63,8 @@ constexpr char kAzBlobEndpoint[] = ".blob.core.windows.net";
 /// "az://account-name.blob.core.windows.net/container/path/to/file.txt" gets
 /// split into "account-name", "container" and "path/to/file.txt".
 Status ParseAzBlobPath(StringPiece fname, bool empty_object_ok,
-                       std::string *account, std::string *container,
-                       std::string *object) {
+                       std::string* account, std::string* container,
+                       std::string* object) {
   if (!account || !object) {
     return errors::Internal("account and object cannot be null.");
   }
@@ -144,7 +145,7 @@ std::string errno_to_string() {
 }
 
 std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
-    const std::string &account) {
+    const std::string& account) {
   const auto key = std::getenv("TF_AZURE_STORAGE_KEY");
   if (key != nullptr) {
     return std::make_shared<azure::storage_lite::shared_key_credential>(account,
@@ -155,9 +156,9 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
 }
 
 azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
-    const std::string &account) {
+    const std::string& account) {
   azure::storage_lite::logger::set_logger(
-      [](azure::storage_lite::log_level level, const std::string &log_msg) {
+      [](azure::storage_lite::log_level level, const std::string& log_msg) {
         switch (level) {
           case azure::storage_lite::log_level::info:
             _TF_LOG_INFO << log_msg;
@@ -204,13 +205,13 @@ azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
 
 class AzBlobRandomAccessFile : public RandomAccessFile {
  public:
-  AzBlobRandomAccessFile(const std::string &account,
-                         const std::string &container,
-                         const std::string &object)
+  AzBlobRandomAccessFile(const std::string& account,
+                         const std::string& container,
+                         const std::string& object)
       : account_(account), container_(container), object_(object) {}
   ~AzBlobRandomAccessFile() {}
-  Status Read(uint64 offset, size_t n, StringPiece *result,
-              char *scratch) const override {
+  Status Read(uint64 offset, size_t n, StringPiece* result,
+              char* scratch) const override {
     // If n == 0, then return Status::OK()
     // otherwise, if bytes_read < n then return OutofRange
     if (n == 0) {
@@ -274,8 +275,8 @@ class AzBlobRandomAccessFile : public RandomAccessFile {
 
 class AzBlobWritableFile : public WritableFile {
  public:
-  AzBlobWritableFile(const std::string &account, const std::string &container,
-                     const std::string &object)
+  AzBlobWritableFile(const std::string& account, const std::string& container,
+                     const std::string& object)
       : account_(account),
         container_(container),
         object_(object),
@@ -360,7 +361,7 @@ class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
  public:
   AzBlobReadOnlyMemoryRegion(std::unique_ptr<char[]> data, uint64 length)
       : data_(std::move(data)), length_(length) {}
-  const void *data() override { return reinterpret_cast<void *>(data_.get()); }
+  const void* data() override { return reinterpret_cast<void*>(data_.get()); }
   uint64 length() override { return length_; }
 
  private:
@@ -371,7 +372,7 @@ class AzBlobReadOnlyMemoryRegion : public ReadOnlyMemoryRegion {
 }  // namespace
 
 Status AzBlobFileSystem::NewRandomAccessFile(
-    const std::string &filename, std::unique_ptr<RandomAccessFile> *result) {
+    const std::string& filename, std::unique_ptr<RandomAccessFile>* result) {
   string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(filename, false, &account, &container, &object));
@@ -380,7 +381,7 @@ Status AzBlobFileSystem::NewRandomAccessFile(
 }
 
 Status AzBlobFileSystem::NewWritableFile(
-    const std::string &fname, std::unique_ptr<WritableFile> *result) {
+    const std::string& fname, std::unique_ptr<WritableFile>* result) {
   string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(fname, false, &account, &container, &object));
@@ -389,7 +390,7 @@ Status AzBlobFileSystem::NewWritableFile(
 }
 
 Status AzBlobFileSystem::NewAppendableFile(
-    const std::string &fname, std::unique_ptr<WritableFile> *result) {
+    const std::string& fname, std::unique_ptr<WritableFile>* result) {
   string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(fname, false, &account, &container, &object));
@@ -398,8 +399,8 @@ Status AzBlobFileSystem::NewAppendableFile(
 }
 
 Status AzBlobFileSystem::NewReadOnlyMemoryRegionFromFile(
-    const std::string &filename,
-    std::unique_ptr<ReadOnlyMemoryRegion> *result) {
+    const std::string& filename,
+    std::unique_ptr<ReadOnlyMemoryRegion>* result) {
   uint64 size;
   TF_RETURN_IF_ERROR(GetFileSize(filename, &size));
   std::unique_ptr<char[]> data(new char[size]);
@@ -414,7 +415,7 @@ Status AzBlobFileSystem::NewReadOnlyMemoryRegionFromFile(
   return Status::OK();
 }
 
-Status AzBlobFileSystem::FileExists(const std::string &fname) {
+Status AzBlobFileSystem::FileExists(const std::string& fname) {
   std::string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(fname, false, &account, &container, &object));
@@ -430,7 +431,7 @@ Status AzBlobFileSystem::FileExists(const std::string &fname) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::Stat(const std::string &fname, FileStatistics *stat) {
+Status AzBlobFileSystem::Stat(const std::string& fname, FileStatistics* stat) {
   using namespace std::chrono;
 
   std::string account, container, object;
@@ -463,8 +464,8 @@ Status AzBlobFileSystem::Stat(const std::string &fname, FileStatistics *stat) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::GetChildren(const std::string &dir,
-                                     std::vector<std::string> *result) {
+Status AzBlobFileSystem::GetChildren(const std::string& dir,
+                                     std::vector<std::string>* result) {
   std::string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(dir, false, &account, &container, &object));
@@ -514,9 +515,9 @@ Status AzBlobFileSystem::GetChildren(const std::string &dir,
   return Status::OK();
 }
 
-Status AzBlobFileSystem::GetMatchingPaths(const std::string &pattern,
-                                          std::vector<std::string> *results) {
-  const std::string &fixed_prefix =
+Status AzBlobFileSystem::GetMatchingPaths(const std::string& pattern,
+                                          std::vector<std::string>* results) {
+  const std::string& fixed_prefix =
       pattern.substr(0, pattern.find_first_of("*?[\\"));
 
   std::string account, container, object;
@@ -537,19 +538,19 @@ Status AzBlobFileSystem::GetMatchingPaths(const std::string &pattern,
   }
 
   std::transform(std::begin(blobs), std::end(blobs), std::begin(blobs),
-                 [&container_path](const std::string &path) {
+                 [&container_path](const std::string& path) {
                    return io::JoinPath(container_path, path);
                  });
 
   std::copy_if(std::begin(blobs), std::end(blobs), std::back_inserter(*results),
-               [&pattern](const std::string &full_path) {
+               [&pattern](const std::string& full_path) {
                  return Env::Default()->MatchPath(full_path, pattern);
                });
 
   return Status::OK();
 }
 
-Status AzBlobFileSystem::DeleteFile(const std::string &fname) {
+Status AzBlobFileSystem::DeleteFile(const std::string& fname) {
   std::string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(fname, false, &account, &container, &object));
@@ -564,7 +565,7 @@ Status AzBlobFileSystem::DeleteFile(const std::string &fname) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::CreateDir(const std::string &dirname) {
+Status AzBlobFileSystem::CreateDir(const std::string& dirname) {
   std::string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(dirname, true, &account, &container, &object));
@@ -587,7 +588,7 @@ Status AzBlobFileSystem::CreateDir(const std::string &dirname) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::DeleteDir(const std::string &dirname) {
+Status AzBlobFileSystem::DeleteDir(const std::string& dirname) {
   // Doesn't support file delete - call GetChildren (without delimiter) and then
   // loop and delete
 
@@ -616,7 +617,7 @@ Status AzBlobFileSystem::DeleteDir(const std::string &dirname) {
     std::vector<std::string> children;
     TF_RETURN_IF_ERROR(ListResources(dirname, "", blob_client, &children));
 
-    for (const auto &child : children) {
+    for (const auto& child : children) {
       blob_client.delete_blob(container, child);
       if (errno != 0) {
         return errors::Internal("Failed to delete ", child, " (",
@@ -628,8 +629,8 @@ Status AzBlobFileSystem::DeleteDir(const std::string &dirname) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::GetFileSize(const std::string &fname,
-                                     uint64 *file_size) {
+Status AzBlobFileSystem::GetFileSize(const std::string& fname,
+                                     uint64* file_size) {
   std::string account, container, object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(fname, false, &account, &container, &object));
@@ -645,8 +646,8 @@ Status AzBlobFileSystem::GetFileSize(const std::string &fname,
   return Status::OK();
 }
 
-Status AzBlobFileSystem::RenameFile(const std::string &src,
-                                    const std::string &target) {
+Status AzBlobFileSystem::RenameFile(const std::string& src,
+                                    const std::string& target) {
   std::string src_account, src_container, src_object;
   TF_RETURN_IF_ERROR(
       ParseAzBlobPath(src, false, &src_account, &src_container, &src_object));
@@ -693,11 +694,11 @@ Status AzBlobFileSystem::RenameFile(const std::string &src,
   return Status::OK();
 }
 
-Status AzBlobFileSystem::RecursivelyCreateDir(const string &dirname) {
+Status AzBlobFileSystem::RecursivelyCreateDir(const string& dirname) {
   return CreateDir(dirname);
 }
 
-Status AzBlobFileSystem::IsDirectory(const std::string &fname) {
+Status AzBlobFileSystem::IsDirectory(const std::string& fname) {
   // Should check that account and container exist and that fname isn't a file
   // Azure storage file system is virtual and is created with path compenents in
   // blobs name so no need to check further
@@ -738,9 +739,9 @@ Status AzBlobFileSystem::IsDirectory(const std::string &fname) {
   return Status::OK();
 }
 
-Status AzBlobFileSystem::DeleteRecursively(const std::string &dirname,
-                                           int64 *undeleted_files,
-                                           int64 *undeleted_dirs) {
+Status AzBlobFileSystem::DeleteRecursively(const std::string& dirname,
+                                           int64* undeleted_files,
+                                           int64* undeleted_dirs) {
   TF_RETURN_IF_ERROR(DeleteDir(dirname));
   *undeleted_dirs = 0;
   *undeleted_files = 0;
@@ -751,9 +752,9 @@ Status AzBlobFileSystem::DeleteRecursively(const std::string &dirname,
 void AzBlobFileSystem::FlushCaches() {}
 
 Status AzBlobFileSystem::ListResources(
-    const std::string &dir, const std::string &delimiter,
-    azure::storage_lite::blob_client_wrapper &blob_client,
-    std::vector<std::string> *results) const {
+    const std::string& dir, const std::string& delimiter,
+    azure::storage_lite::blob_client_wrapper& blob_client,
+    std::vector<std::string>* results) const {
   if (!results) {
     return errors::Internal("results cannot be null");
   }
@@ -808,8 +809,374 @@ Status AzBlobFileSystem::ListResources(
 
   return Status::OK();
 }
-namespace {
-REGISTER_FILE_SYSTEM("az", io::AzBlobFileSystem);
-}  // namespace
 }  // namespace io
 }  // namespace tensorflow
+
+namespace tensorflow {
+namespace io {
+namespace azfs {
+
+static void* plugin_memory_allocate(size_t size) { return calloc(1, size); }
+static void plugin_memory_free(void* ptr) { free(ptr); }
+
+// SECTION 1. Implementation for `TF_RandomAccessFile`
+// ----------------------------------------------------------------------------
+namespace tf_random_access_file {
+
+static void Cleanup(TF_RandomAccessFile* file) {
+  auto az_file = static_cast<AzBlobRandomAccessFile*>(file->plugin_file);
+  delete az_file;
+}
+
+static int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
+                    char* buffer, TF_Status* status) {
+  auto az_file = static_cast<AzBlobRandomAccessFile*>(file->plugin_file);
+  StringPiece result;
+  Status s = az_file->Read(offset, n, &result, buffer);
+  if (!(s.ok() || errors::IsOutOfRange(s))) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+  } else if (errors::IsOutOfRange(s)) {
+    TF_SetStatus(status, TF_OUT_OF_RANGE, "Read fewer bytes than requested");
+  } else {
+    TF_SetStatus(status, TF_OK, "");
+  }
+  return result.size();
+}
+
+}  // namespace tf_random_access_file
+
+// SECTION 2. Implementation for `TF_WritableFile`
+// ----------------------------------------------------------------------------
+namespace tf_writable_file {
+
+static void Cleanup(TF_WritableFile* file) {
+  auto az_file = static_cast<AzBlobWritableFile*>(file->plugin_file);
+  delete az_file;
+}
+
+static void Append(const TF_WritableFile* file, const char* buffer, size_t n,
+                   TF_Status* status) {
+  auto az_file = static_cast<AzBlobWritableFile*>(file->plugin_file);
+  StringPiece data(buffer, n);
+  Status s = az_file->Append(data);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static int64_t Tell(const TF_WritableFile* file, TF_Status* status) {
+  TF_SetStatus(status, TF_UNIMPLEMENTED, "Stat not implemented");
+  return -1;
+}
+
+static void Flush(const TF_WritableFile* file, TF_Status* status) {
+  auto az_file = static_cast<AzBlobWritableFile*>(file->plugin_file);
+  Status s = az_file->Flush();
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void Sync(const TF_WritableFile* file, TF_Status* status) {
+  auto az_file = static_cast<AzBlobWritableFile*>(file->plugin_file);
+  Status s = az_file->Flush();
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void Close(const TF_WritableFile* file, TF_Status* status) {
+  auto az_file = static_cast<AzBlobWritableFile*>(file->plugin_file);
+  Status s = az_file->Flush();
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+}  // namespace tf_writable_file
+
+// SECTION 3. Implementation for `TF_ReadOnlyMemoryRegion`
+// ----------------------------------------------------------------------------
+namespace tf_read_only_memory_region {
+void Cleanup(TF_ReadOnlyMemoryRegion* region) {}
+
+const void* Data(const TF_ReadOnlyMemoryRegion* region) { return nullptr; }
+
+uint64_t Length(const TF_ReadOnlyMemoryRegion* region) { return 0; }
+
+}  // namespace tf_read_only_memory_region
+
+// SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
+// ----------------------------------------------------------------------------
+namespace tf_azfs_filesystem {
+
+static AzBlobFileSystem azfs;
+
+static void Init(TF_Filesystem* filesystem, TF_Status* status) {
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void Cleanup(TF_Filesystem* filesystem) {}
+
+static void NewRandomAccessFile(const TF_Filesystem* filesystem,
+                                const char* path, TF_RandomAccessFile* file,
+                                TF_Status* status) {
+  std::unique_ptr<RandomAccessFile> result;
+  Status s = azfs.NewRandomAccessFile(path, &result);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  file->plugin_file = result.release();
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
+                            TF_WritableFile* file, TF_Status* status) {
+  std::unique_ptr<WritableFile> result;
+  Status s = azfs.NewWritableFile(path, &result);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  file->plugin_file = result.release();
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
+                              TF_WritableFile* file, TF_Status* status) {
+  std::unique_ptr<WritableFile> result;
+  Status s = azfs.NewAppendableFile(path, &result);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  file->plugin_file = result.release();
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void NewReadOnlyMemoryRegionFromFile(const TF_Filesystem* filesystem,
+                                            const char* path,
+                                            TF_ReadOnlyMemoryRegion* region,
+                                            TF_Status* status) {
+  TF_SetStatus(status, TF_UNIMPLEMENTED,
+               "NewReadOnlyMemoryRegionFromFile not implemented");
+}
+
+static void CreateDir(const TF_Filesystem* filesystem, const char* path,
+                      TF_Status* status) {
+  Status s = azfs.CreateDir(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void RecursivelyCreateDir(const TF_Filesystem* filesystem,
+                                 const char* path, TF_Status* status) {
+  Status s = azfs.RecursivelyCreateDir(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void DeleteFile(const TF_Filesystem* filesystem, const char* path,
+                       TF_Status* status) {
+  Status s = azfs.DeleteFile(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void DeleteRecursively(const TF_Filesystem* filesystem, const char* path,
+                              uint64_t* undeleted_files,
+                              uint64_t* undeleted_dirs, TF_Status* status) {
+  int64 undeleted_files_value, undeleted_dirs_value;
+  Status s = azfs.DeleteRecursively(path, &undeleted_files_value,
+                                    &undeleted_dirs_value);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  *undeleted_files = undeleted_files_value;
+  *undeleted_dirs = undeleted_dirs_value;
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
+                      TF_Status* status) {
+  Status s = azfs.DeleteDir(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void RenameFile(const TF_Filesystem* filesystem, const char* src,
+                       const char* dst, TF_Status* status) {
+  Status s = azfs.RenameFile(src, dst);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void CopyFile(const TF_Filesystem* filesystem, const char* src,
+                     const char* dst, TF_Status* status) {
+  Status s = azfs.CopyFile(src, dst);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void PathExists(const TF_Filesystem* filesystem, const char* path,
+                       TF_Status* status) {
+  Status s = azfs.FileExists(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_NOT_FOUND, s.error_message().c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void Stat(const TF_Filesystem* filesystem, const char* path,
+                 TF_FileStatistics* stats, TF_Status* status) {
+  FileStatistics stats_value;
+  Status s = azfs.Stat(path, &stats_value);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return;
+  }
+  stats->length = stats_value.length;
+  stats->mtime_nsec = stats_value.mtime_nsec;
+  stats->is_directory = stats_value.is_directory;
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static int GetChildren(const TF_Filesystem* filesystem, const char* path,
+                       char*** entries, TF_Status* status) {
+  std::vector<string> result;
+  Status s = azfs.GetChildren(path, &result);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return false;
+  }
+  int num_entries = result.size();
+  *entries = static_cast<char**>(
+      plugin_memory_allocate(num_entries * sizeof((*entries)[0])));
+  for (int i = 0; i < num_entries; i++) {
+    (*entries)[i] = static_cast<char*>(
+        plugin_memory_allocate(strlen(result[i].c_str()) + 1));
+    memcpy((*entries)[i], result[i].c_str(), strlen(result[i].c_str()) + 1);
+  }
+  TF_SetStatus(status, TF_OK, "");
+  return num_entries;
+}
+
+static int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
+                           TF_Status* status) {
+  TF_SetStatus(status, TF_UNIMPLEMENTED, "GetFileSize not implemented");
+  return -1;
+}
+
+static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
+                        TF_Status* status) {
+  Status s = azfs.IsDirectory(path);
+  if (!s.ok()) {
+    TF_SetStatus(status, TF_INTERNAL, s.error_message().c_str());
+    return false;
+  }
+  TF_SetStatus(status, TF_OK, "");
+  return true;
+}
+
+static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
+  return strdup(uri);
+}
+
+}  // namespace tf_azfs_filesystem
+
+static void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops,
+                                        const char* uri) {
+  TF_SetFilesystemVersionMetadata(ops);
+  ops->scheme = strdup(uri);
+
+  ops->random_access_file_ops = static_cast<TF_RandomAccessFileOps*>(
+      plugin_memory_allocate(TF_RANDOM_ACCESS_FILE_OPS_SIZE));
+  ops->random_access_file_ops->cleanup = tf_random_access_file::Cleanup;
+  ops->random_access_file_ops->read = tf_random_access_file::Read;
+
+  ops->writable_file_ops = static_cast<TF_WritableFileOps*>(
+      plugin_memory_allocate(TF_WRITABLE_FILE_OPS_SIZE));
+  ops->writable_file_ops->cleanup = tf_writable_file::Cleanup;
+  ops->writable_file_ops->append = tf_writable_file::Append;
+  ops->writable_file_ops->tell = tf_writable_file::Tell;
+  ops->writable_file_ops->flush = tf_writable_file::Flush;
+  ops->writable_file_ops->sync = tf_writable_file::Sync;
+  ops->writable_file_ops->close = tf_writable_file::Close;
+
+  ops->read_only_memory_region_ops = static_cast<TF_ReadOnlyMemoryRegionOps*>(
+      plugin_memory_allocate(TF_READ_ONLY_MEMORY_REGION_OPS_SIZE));
+  ops->read_only_memory_region_ops->cleanup =
+      tf_read_only_memory_region::Cleanup;
+  ops->read_only_memory_region_ops->data = tf_read_only_memory_region::Data;
+  ops->read_only_memory_region_ops->length = tf_read_only_memory_region::Length;
+
+  ops->filesystem_ops = static_cast<TF_FilesystemOps*>(
+      plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
+  ops->filesystem_ops->init = tf_azfs_filesystem::Init;
+  ops->filesystem_ops->cleanup = tf_azfs_filesystem::Cleanup;
+  ops->filesystem_ops->new_random_access_file =
+      tf_azfs_filesystem::NewRandomAccessFile;
+  ops->filesystem_ops->new_writable_file = tf_azfs_filesystem::NewWritableFile;
+  ops->filesystem_ops->new_appendable_file =
+      tf_azfs_filesystem::NewAppendableFile;
+  ops->filesystem_ops->new_read_only_memory_region_from_file =
+      tf_azfs_filesystem::NewReadOnlyMemoryRegionFromFile;
+  ops->filesystem_ops->create_dir = tf_azfs_filesystem::CreateDir;
+  ops->filesystem_ops->recursively_create_dir =
+      tf_azfs_filesystem::RecursivelyCreateDir;
+  ops->filesystem_ops->delete_file = tf_azfs_filesystem::DeleteFile;
+  ops->filesystem_ops->delete_recursively =
+      tf_azfs_filesystem::DeleteRecursively;
+  ops->filesystem_ops->delete_dir = tf_azfs_filesystem::DeleteDir;
+  ops->filesystem_ops->copy_file = tf_azfs_filesystem::CopyFile;
+  ops->filesystem_ops->rename_file = tf_azfs_filesystem::RenameFile;
+  ops->filesystem_ops->path_exists = tf_azfs_filesystem::PathExists;
+  ops->filesystem_ops->stat = tf_azfs_filesystem::Stat;
+  ops->filesystem_ops->is_directory = tf_azfs_filesystem::IsDirectory;
+  ops->filesystem_ops->get_file_size = tf_azfs_filesystem::GetFileSize;
+  ops->filesystem_ops->get_children = tf_azfs_filesystem::GetChildren;
+  ops->filesystem_ops->translate_name = tf_azfs_filesystem::TranslateName;
+}
+
+}  // namespace azfs
+}  // namespace io
+}  // namespace tensorflow
+
+void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
+  info->plugin_memory_allocate = tensorflow::io::azfs::plugin_memory_allocate;
+  info->plugin_memory_free = tensorflow::io::azfs::plugin_memory_free;
+  info->num_schemes = 1;
+  info->ops = static_cast<TF_FilesystemPluginOps*>(
+      tensorflow::io::azfs::plugin_memory_allocate(info->num_schemes *
+                                                   sizeof(info->ops[0])));
+  tensorflow::io::azfs::ProvideFilesystemSupportFor(&info->ops[0], "az");
+}
