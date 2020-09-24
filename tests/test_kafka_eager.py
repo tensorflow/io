@@ -209,7 +209,11 @@ def test_kafka_group_io_dataset_primary_cg():
         topics=["key-partition-test"],
         group_id="cgtestprimary",
         servers="localhost:9092",
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
     assert np.all(
         sorted([k.numpy() for (k, _) in dataset])
@@ -238,7 +242,11 @@ def test_kafka_group_io_dataset_primary_cg_new_topic():
         topics=["key-test"],
         group_id="cgtestprimary",
         servers="localhost:9092",
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
     assert np.all(
         sorted([k.numpy() for (k, _) in dataset])
@@ -302,7 +310,11 @@ def test_kafka_group_io_dataset_secondary_cg():
         topics=["key-partition-test"],
         group_id="cgtestsecondary",
         servers="localhost:9092",
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
     assert np.all(
         sorted([k.numpy() for (k, _) in dataset])
@@ -319,12 +331,75 @@ def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
         topics=["key-partition-test", "key-test"],
         group_id="cgtesttertiary",
         servers="localhost:9092",
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
     assert np.all(
         sorted([k.numpy() for (k, _) in dataset])
         == sorted([("D" + str(i)).encode() for i in range(100)] * 2)
     )
+
+
+def test_kafka_group_io_dataset_auto_offset_reset():
+    """Test the functionality of the `auto.offset.reset` configuration
+    at global and topic level"""
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgglobaloffsetearliest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)])
+    )
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgglobaloffsetlatest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=latest",
+        ],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtopicoffsetearliest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "conf.topic.auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)])
+    )
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtopicoffsetlatest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "conf.topic.auto.offset.reset=latest",
+        ],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
 
 
 def test_kafka_group_io_dataset_invalid_stream_timeout():
@@ -370,7 +445,11 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         group_id="cgteststreamvalid",
         servers="localhost:9092",
         stream_timeout=20000,
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
 
     # start writing the new messages to kafka using the background job.
@@ -394,7 +473,7 @@ def test_kafka_batch_io_dataset():
     online-training fashion.
 
     NOTE: This kind of dataset is suitable in scenarios where the 'keys' of 'messages'
-        act as labels.
+        act as labels. If not, additional transformations are required.
     """
 
     dataset = tfio.experimental.streaming.KafkaBatchIODataset(
@@ -402,7 +481,11 @@ def test_kafka_batch_io_dataset():
         group_id="cgminibatch",
         servers=None,
         stream_timeout=5000,
-        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
     )
 
     NUM_COLUMNS = 1

@@ -38,7 +38,12 @@ class KafkaBatchIODataset(tf.data.Dataset):
     >>> dataset = tfio.experimental.streaming.KafkaBatchIODataset(
                         topics=["topic1"],
                         group_id="cg",
-                        servers="localhost:9092"
+                        servers="localhost:9092",
+                        configuration=[
+                            "session.timeout.ms=7000",
+                            "max.poll.interval.ms=8000",
+                            "auto.offset.reset=earliest",
+                        ],
                     )
 
     >>> for mini_batch in dataset:
@@ -46,7 +51,11 @@ class KafkaBatchIODataset(tf.data.Dataset):
     ...            lambda m, k: (tf.cast(m, tf.float32), tf.cast(k, tf.float32)))
 
     Since `mini_batch` is of type `tf.data.Dataset` we can perform all the operations that it
-    inherits from `tf.data.Dataset`.
+    inherits from `tf.data.Dataset`. Also, the `auto.offset.reset` configuration is set to
+    `earliest` so that in case the consumer group is being newly created, it will start
+    reading the messages from the beginning. If it is not set, it defaults to `latest`.
+    For additional configurations, please refer the librdkafka's configurations:
+    https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 
     To train a keras model on this stream of incoming data:
 
@@ -89,8 +98,9 @@ class KafkaBatchIODataset(tf.data.Dataset):
               ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
             Topic configuration: please refer to 'Topic configuration properties'
               in librdkafka doc. Note all topic configurations should be
-              prefixed with `configuration.topic.`. Examples include
+              prefixed with `conf.topic.`. Examples include
               ["conf.topic.auto.offset.reset=earliest"]
+            Reference: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
           internal: Whether the dataset is being created from within the named scope.
             Default: True
         """
