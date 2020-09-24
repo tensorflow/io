@@ -84,13 +84,13 @@ class KafkaBatchIODataset(tf.data.Dataset):
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
             For example: `localhost:9092`.
-          stream_timeout: An optional timeout value (in milliseconds) to wait for 
+          stream_timeout: An optional timeout value (in milliseconds) to wait for
             the new messages from kafka to be retrieved by the consumers.
             By default it is set to -1 to block indefinitely.
           message_poll_timeout: An optional timeout duration (in milliseconds)
             after which the kafka consumer throws a timeout error while fetching
             a single message. This value also represents the intervals at which
-            the kafka topic(s) are polled for new messages while using the `stream_timeout`.  
+            the kafka topic(s) are polled for new messages while using the `stream_timeout`.
           configuration: An optional `tf.string` tensor containing
             configurations in [Key=Value] format.
             Global configuration: please refer to 'Global configuration properties'
