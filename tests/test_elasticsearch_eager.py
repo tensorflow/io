@@ -21,6 +21,8 @@ import pytest
 import socket
 import requests
 import tensorflow as tf
+from tensorflow import feature_column
+from tensorflow.keras import layers
 import tensorflow_io as tfio
 
 # COMMON VARIABLES
@@ -133,6 +135,64 @@ def test_elasticsearch_io_dataset_batch():
         for attr in ATTRS:
             assert attr in item
             assert len(item[attr]) == BATCH_SIZE
+
+
+@pytest.mark.skipif(not is_container_running(), reason="The container is not running")
+def test_elasticsearch_io_dataset_training():
+    """Test the functionality of the ElasticsearchIODataset by training a
+    tf.keras model on the structured data.
+    """
+
+    BATCH_SIZE = 2
+    dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
+        nodes=[NODE], index=INDEX, doc_type=DOC_TYPE, headers=HEADERS
+    )
+    dataset = dataset.map(lambda v: (v, v.pop("survived")))
+    dataset = dataset.batch(BATCH_SIZE)
+
+    assert issubclass(type(dataset), tf.data.Dataset)
+
+    feature_columns = []
+
+    # Numeric column
+    fare_column = feature_column.numeric_column("fare")
+    feature_columns.append(fare_column)
+
+    # Bucketized column
+    age = feature_column.numeric_column("age")
+    age_buckets = feature_column.bucketized_column(age, boundaries=[10, 30])
+    feature_columns.append(age_buckets)
+
+    # Categorical column
+    gender = feature_column.categorical_column_with_vocabulary_list(
+        "gender", ["Male", "Female"]
+    )
+    gender_indicator = feature_column.indicator_column(gender)
+    feature_columns.append(gender_indicator)
+
+    # Convert the feature columns into a tf.keras layer
+    feature_layer = tf.keras.layers.DenseFeatures(feature_columns)
+
+    # Build the model
+    model = tf.keras.Sequential(
+        [
+            feature_layer,
+            layers.Dense(128, activation="relu"),
+            layers.Dense(128, activation="relu"),
+            layers.Dropout(0.1),
+            layers.Dense(1),
+        ]
+    )
+
+    # Compile the model
+    model.compile(
+        optimizer="adam",
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
+
+    # train the model
+    model.fit(dataset, epochs=5)
 
 
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
