@@ -783,17 +783,22 @@ class KafkaRebalanceCb : public RdKafka::RebalanceCb {
       // RD_KAFKA_OFFSET_END            -1
       // RD_KAFKA_OFFSET_STORED         -1000
       // RD_KAFKA_OFFSET_INVALID        -1001
-      if (partitions[partition]->offset() == -1001) {
-        LOG(INFO)
-            << "The consumer group was newly created, reading from beginning";
-        partitions[partition]->set_offset(RdKafka::Topic::OFFSET_BEGINNING);
-      }
+
       LOG(INFO) << "REBALANCE: " << partitions[partition]->topic() << "["
                 << partitions[partition]->partition() << "], "
                 << partitions[partition]->offset() << " "
                 << partitions[partition]->err();
     }
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
+      // librdkafka does not actually look up the stored offsets before
+      // calling your rebalance callback, the partition offsets are set to
+      // RD_KAFKA_OFFSET_INVALID at this point to allow us to change it to use
+      // some sort of external offset store. But calling assign() with offset
+      // RD_KAFKA_OFFSET_INVALID will cause librdkafka to look up the stored
+      // offset on the broker.
+      // If there was no stored offset it will fall back to `auto.offset.reset`
+      // configuration parameter.
+
       LOG(INFO) << "REBALANCE: Assigning partitions";
       consumer->assign(partitions);
       partition_count = (int)partitions.size();
@@ -832,6 +837,9 @@ class KafkaGroupReadableResource : public ResourceBase {
 
     string errstr;
     RdKafka::Conf::ConfResult result = RdKafka::Conf::CONF_UNKNOWN;
+
+    // The default kafka topic configurations are set first before
+    // setting the global confs
     for (size_t i = 0; i < metadata.size(); i++) {
       if (metadata[i].find("conf.topic.") == 0) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
@@ -844,8 +852,20 @@ class KafkaGroupReadableResource : public ResourceBase {
           return errors::Internal("failed to do topic configuration:",
                                   metadata[i], "error:", errstr);
         }
-      } else if (metadata[i] != "" &&
-                 metadata[i].find("conf.") == string::npos) {
+        LOG(INFO) << "Kafka configuration: " << metadata[i];
+      }
+    }
+    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) !=
+        RdKafka::Conf::CONF_OK) {
+      return errors::Internal("failed to set default_topic_conf:", errstr);
+    }
+
+    // Once the `default_topic_conf` is set, the global confs can now be set
+    // without any risk of being overwritten.
+    // Setting the global confs before setting the `default_topic_conf`
+    // results in erratic behaviour.
+    for (size_t i = 0; i < metadata.size(); i++) {
+      if (metadata[i] != "" && metadata[i].find("conf.") == string::npos) {
         std::vector<string> parts = str_util::Split(metadata[i], "=");
         if (parts.size() != 2) {
           return errors::InvalidArgument("invalid topic configuration: ",
@@ -856,12 +876,8 @@ class KafkaGroupReadableResource : public ResourceBase {
           return errors::Internal("failed to do global configuration: ",
                                   metadata[i], "error:", errstr);
         }
+        LOG(INFO) << "Kafka configuration: " << metadata[i];
       }
-      LOG(INFO) << "Kafka configuration: " << metadata[i];
-    }
-    if ((result = conf->set("default_topic_conf", conf_topic.get(), errstr)) !=
-        RdKafka::Conf::CONF_OK) {
-      return errors::Internal("failed to set default_topic_conf:", errstr);
     }
 
     // default consumer.properties:

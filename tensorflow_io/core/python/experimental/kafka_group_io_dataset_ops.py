@@ -63,8 +63,15 @@ class KafkaGroupIODataset(tf.data.Dataset):
                         configuration=[
                             "session.timeout.ms=7000",
                             "max.poll.interval.ms=8000",
+                            "auto.offset.reset=earliest",
                         ],
                     )
+
+    In the above example, the `auto.offset.reset` configuration is set to `earliest` so that
+    in case the consumer group is being newly created, it will start reading the messages from
+    the beginning. If it is not set, it defaults to `latest`. For additional configurations,
+    please refer the librdkafka's configurations:
+    https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
 
     In addition to the standard streaming functionality, there is added support for a timeout
     based stream. Once the existing data has been fetched, this dataset will block for
@@ -78,6 +85,7 @@ class KafkaGroupIODataset(tf.data.Dataset):
                         configuration=[
                             "session.timeout.ms=7000",
                             "max.poll.interval.ms=8000",
+                            "auto.offset.reset=earliest",
                         ],
                     )
     >>> for (message, key) in dataset:
@@ -90,7 +98,7 @@ class KafkaGroupIODataset(tf.data.Dataset):
     As the kafka deployments vary in configuration as per various use-cases, the time required for
     the consumers to fetch a single message might also vary. This timeout value can be adjusted
     using the `message_poll_timeout` parameter.
-    
+
     The `message_poll_timeout` value represents the duration which the consumers
     have to wait while fetching a new message. However, even if we receive a new message
     before the `message_poll_timeout` interval finishes, the consumer doesn't resume the
@@ -115,11 +123,11 @@ class KafkaGroupIODataset(tf.data.Dataset):
         """
         Args:
           topics: A `tf.string` tensor containing topic names in [topic] format.
-            For example: ["topic1"]
+            For example: ["topic1", "topic2"]
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
             For example: `localhost:9092`.
-          stream_timeout: An optional timeout duration (in milliseconds) to block until 
+          stream_timeout: An optional timeout duration (in milliseconds) to block until
             the new messages from kafka are fetched.
             By default it is set to 0 milliseconds and doesn't block for new messages.
             To block indefinitely, set it to -1.
@@ -134,8 +142,9 @@ class KafkaGroupIODataset(tf.data.Dataset):
               ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
             Topic configuration: please refer to 'Topic configuration properties'
               in librdkafka doc. Note all topic configurations should be
-              prefixed with `configuration.topic.`. Examples include
+              prefixed with `conf.topic.`. Examples include
               ["conf.topic.auto.offset.reset=earliest"]
+            Reference: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
           internal: Whether the dataset is being created from within the named scope.
             Default: True
         """
