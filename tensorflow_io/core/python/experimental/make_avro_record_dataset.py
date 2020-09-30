@@ -37,7 +37,6 @@ def make_avro_record_dataset(
     shuffle_seed=None,
     prefetch_buffer_size=tf.data.experimental.AUTOTUNE,
     num_parallel_reads=None,
-    num_parallel_parser_calls=None,
     drop_final_batch=False,
 ):
     """Reads and (optionally) parses avro files into a dataset.
@@ -79,14 +78,26 @@ def make_avro_record_dataset(
       prefetch_buffer_size: (Optional.) An int specifying the number of
         feature batches to prefetch for performance improvement.
         Defaults to auto-tune. Set to 0 to disable prefetching.
+<<<<<<< HEAD
+<<<<<<< HEAD
 
       num_parallel_reads: (Optional.) Number of threads used to read
         records from files. By default or if set to a value >1, the
         results will be interleaved.
 
       num_parallel_parser_calls: (Optional.) Number of parallel
+=======
+      num_parallel_calls: (Optional.) Number of threads used to read
+        records from files. By default or if set to a value >1, the
+        results will be interleaved.
+      num_parallel_reads: (Optional.) Number of parallel
+>>>>>>> f7032e3... Exposed num_parallel_reads as well as num_parallel_calls
         records to parse in parallel. Defaults to an automatic selection.
 
+=======
+      num_parallel_reads: (Optional.) Number of parallel
+        records to parse in parallel. Defaults to None(no parallelization).
+>>>>>>> d41d946... Added parameter constraints
       drop_final_batch: (Optional.) Whether the last batch should be
         dropped in case its size is smaller than `batch_size`; the
         default behavior is not to drop the smaller batch.
@@ -99,20 +110,15 @@ def make_avro_record_dataset(
     """
     files = tf.data.Dataset.list_files(file_pattern, shuffle=shuffle, seed=shuffle_seed)
 
-    if num_parallel_reads is None:
-        # Note: We considered auto-tuning this value, but there is a concern
-        # that this affects the mixing of records from different files, which
-        # could affect training convergence/accuracy, so we are defaulting to
-        # a constant for now.
-        num_parallel_reads = 24
-
     if reader_buffer_size is None:
         reader_buffer_size = 1024 * 1024
-
+    num_parallel_calls = num_parallel_reads
     dataset = AvroRecordDataset(
         files,
         buffer_size=reader_buffer_size,
         num_parallel_reads=num_parallel_reads,
+        num_parallel_calls=num_parallel_calls,
+        block_length=num_parallel_calls,
         reader_schema=reader_schema,
     )
 
@@ -131,14 +137,11 @@ def make_avro_record_dataset(
 
     dataset = dataset.batch(batch_size, drop_remainder=drop_final_batch)
 
-    if num_parallel_parser_calls is None:
-        num_parallel_parser_calls = tf.data.experimental.AUTOTUNE
-
     dataset = dataset.map(
         lambda data: parse_avro(
             serialized=data, reader_schema=reader_schema, features=features
         ),
-        num_parallel_calls=num_parallel_parser_calls,
+        num_parallel_calls=num_parallel_calls,
     )
 
     if prefetch_buffer_size == 0:
