@@ -36,25 +36,27 @@ def fixture_lookup_func(request):
 def fixture_json():
     """fixture_json"""
     data = """{
-    "R": {
-      "Foo": 208.82240295410156,
-      "Bar": 93
-    },
-    "Background": [
-      "~/0109.jpg",
-      "~/0110.jpg"
-    ],
-    "Focal Length": 36.9439697265625,
-    "Location": [
-      7.8685874938964844,
-      -4.7373886108398438,
-      -0.038147926330566406],
-    "Rotation": [
-      -4.592592716217041,
-      -4.4698805809020996,
-      -6.9197754859924316]
-   }
-  """
+        "R": {
+            "Foo": 208.82240295410156,
+            "Bar": 93
+            },
+        "Background": [
+            "~/0109.jpg",
+            "~/0110.jpg"
+            ],
+        "Focal Length": 36.9439697265625,
+        "Location": [
+            7.8685874938964844,
+            -4.7373886108398438,
+            -0.038147926330566406],
+        "Rotation": [
+            -4.592592716217041,
+            -4.4698805809020996,
+            -6.9197754859924316],
+        "Valid": true,
+        "Boundary": [[10, 20],[30, 40]]    
+    }
+    """
     value = {
         "R": {
             "Foo": tf.constant(208.82240295410156, tf.float64),
@@ -70,6 +72,8 @@ def fixture_json():
         "Rotation": tf.constant(
             [-4.592592716217041, -4.4698805809020996, -6.9197754859924316], tf.float64
         ),
+        "Valid": tf.constant(True, tf.bool),
+        "Boundary": tf.constant([[10, 20], [30, 40]], tf.int64),
     }
     specs = {
         "R": {
@@ -82,6 +86,8 @@ def fixture_json():
         ),
         "Location": tf.TensorSpec(tf.TensorShape([3]), tf.float64),
         "Rotation": tf.TensorSpec(tf.TensorShape([3]), tf.float64),
+        "Valid": tf.TensorSpec(tf.TensorShape([]), tf.bool),
+        "Boundary": tf.TensorSpec(tf.TensorShape([2, 2]), tf.int64),
     }
 
     return data, value, specs
@@ -188,7 +194,7 @@ def test_serialization_decode_in_dataset(
         )
 
 
-def test_json_partial_shape():
+def test_decode_json_partial_shape():
     """Test case for partial shape GitHub 918."""
     r = json.dumps({"foo": [1, 2, 3, 4, 5]})
 
@@ -200,27 +206,3 @@ def test_json_partial_shape():
 
     v = parse_json(r)
     assert np.array_equal(v, [1, 2, 3, 4, 5])
-
-
-def test_json_multiple_dimension_tensor():
-
-    # Test case is to resolve the issue where multiple dimension tensor
-    # was not supported for decode_json.
-    # The issue was initially raised in:
-    # https://github.com/tensorflow/io/pull/695#issuecomment-683270751
-    r = '{"x": [[[1.0], [2.0]]], "y": ["index", "count"], "z": 0.5}'
-
-    @tf.function(autograph=False)
-    def parse_json(json_text):
-        specs = {
-            "x": tf.TensorSpec(tf.TensorShape([1, 2, 1]), tf.float32),
-            "y": tf.TensorSpec(tf.TensorShape([2]), tf.string),
-            "z": tf.TensorSpec(tf.TensorShape([]), tf.float32),
-        }
-        parsed = tfio.experimental.serialization.decode_json(json_text, specs)
-        return parsed
-
-    v = parse_json(r)
-    assert np.array_equal(v["x"], [[[1.0], [2.0]]])
-    assert np.array_equal(v["y"], [b"index", b"count"])
-    assert np.array_equal(v["z"], 0.5)
