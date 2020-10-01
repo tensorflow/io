@@ -84,6 +84,9 @@ class DecodeJSONOp : public OpKernel {
         case DT_STRING:
           writeToTensor(entry, value_tensor, flat_index, writeString);
           break;
+        case DT_BOOL:
+          writeToTensor(entry, value_tensor, flat_index, writeBool);
+          break;
         default:
           OP_REQUIRES(
               context, false,
@@ -133,6 +136,11 @@ class DecodeJSONOp : public OpKernel {
   static void writeString(rapidjson::Value* entry, Tensor* value_tensor,
                           int64& flat_index) {
     value_tensor->flat<tstring>()(flat_index) = (*entry).GetString();
+  }
+
+  static void writeBool(rapidjson::Value* entry, Tensor* value_tensor,
+                        int64& flat_index) {
+    value_tensor->flat<bool>()(flat_index) = (*entry).GetBool();
   }
 
   // Full Tensor Write
