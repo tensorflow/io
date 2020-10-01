@@ -80,6 +80,8 @@ class ElasticsearchReadableResource : public ResourceBase {
           dtype = DT_DOUBLE;
         } else if (itr->value.IsString()) {
           dtype = DT_STRING;
+        } else if (itr->value.IsBool()) {
+          dtype = DT_BOOL;
         } else {
           return errors::InvalidArgument(
               "field: ", itr->name.GetString(),
@@ -106,6 +108,8 @@ class ElasticsearchReadableResource : public ResourceBase {
           dtypes_tensor->flat<tstring>()(column_idx) = "DT_DOUBLE";
         } else if (base_dtypes_[column_idx] == DT_STRING) {
           dtypes_tensor->flat<tstring>()(column_idx) = "DT_STRING";
+        } else if (base_dtypes_[column_idx] == DT_BOOL) {
+          dtypes_tensor->flat<tstring>()(column_idx) = "DT_BOOL";
         }
       }
 
