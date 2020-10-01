@@ -206,4 +206,3 @@ def test_decode_json_partial_shape():
 
     v = parse_json(r)
     assert np.array_equal(v, [1, 2, 3, 4, 5])
-
