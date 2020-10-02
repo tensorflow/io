@@ -112,6 +112,8 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.double)
                     elif dtype == "DT_STRING":
                         dtypes.append(tf.string)
+                    elif dtype == "DT_BOOL":
+                        dtypes.append(tf.bool)
                 return resource, columns.numpy(), dtypes, request_url
             except Exception:
                 print("Skipping node: {}".format(healthcheck_url))

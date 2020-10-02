@@ -35,7 +35,7 @@ HEADERS = {
     "Content-Type": "application/json",
     "Authorization": "Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk",
 }
-ATTRS = ["name", "gender", "age", "fare", "survived"]
+ATTRS = ["name", "gender", "age", "fare", "vip", "survived"]
 
 
 def is_container_running():
@@ -63,10 +63,10 @@ def test_create_index():
 @pytest.mark.parametrize(
     "record",
     [
-        (("person1", "Male", 20, 80.52, 1)),
-        (("person2", "Female", 30, 40.88, 0)),
-        (("person3", "Male", 40, 20.73, 0)),
-        (("person4", "Female", 50, 100.99, 1)),
+        (("person1", "Male", 20, 80.52, False, 1)),
+        (("person2", "Female", 30, 40.88, True, 0)),
+        (("person3", "Male", 40, 20.73, True, 0)),
+        (("person4", "Female", 50, 100.99, False, 1)),
     ],
 )
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
