@@ -99,5 +99,29 @@ def test_hdf5_graph():
     shutil.rmtree(runpath)
 
 
+def test_hdf5_bool():
+    """test_hdf5_bool: GitHub issue 1144"""
+    runpath = tempfile.mkdtemp()
+
+    boolean_data = np.asarray(
+        [True, False, True, False, True, False, True, False, True, False]
+    )
+
+    with h5py.File("{}/my_data.h5".format(runpath), "w") as h5_obj:
+        h5_obj["my_bool_data"] = boolean_data
+
+    with h5py.File("{}/my_data.h5".format(runpath), "r") as h5_obj:
+        print(h5_obj["my_bool_data"].shape, h5_obj["my_bool_data"].dtype)
+
+    spec = {"/my_bool_data": tf.TensorSpec(shape=(None,), dtype=tf.bool)}
+    h5_tensors = tfio.IOTensor.from_hdf5("{}/my_data.h5".format(runpath), spec=spec)
+
+    print("H5 DATA: ", h5_tensors("/my_bool_data").to_tensor())
+
+    assert np.array_equal(boolean_data, h5_tensors("/my_bool_data").to_tensor())
+
+    shutil.rmtree(runpath)
+
+
 if __name__ == "__main__":
     test.main()
