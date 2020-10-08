@@ -315,18 +315,18 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.8.5
+          python-version: 3.8
       - name: Bazel on Windows
         env:
-          PYTHON_VERSION: 3.8.5
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
         shell: cmd
         run: |
           @echo on
           set /P BAZEL_VERSION=< .bazelversion
-          BAZEL_VERSION=$(cat .bazelversion)
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
           bazel version
+          python -c "import platform;print(platform.python_version())" > .pythonversion
+          set /P PYTHON_VERSION=< .pythonversion
           cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
           python3 --version
           python3 -m pip install wheel setuptools
