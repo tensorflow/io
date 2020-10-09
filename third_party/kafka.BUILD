@@ -29,9 +29,9 @@ cc_library(
             "src/rdkafka_plugin.h",
             "src/rdkafka_sasl_cyrus.c",
             "src/rdkafka_sasl_win32.c",
+            "src/rdxxhash.c",
+            "src/rdxxhash.h",
             "src/win32_config.h",
-            "src/xxhash.c",
-            "src/xxhash.h",
         ],
     ) + [
         "config/config.h",
@@ -47,6 +47,8 @@ cc_library(
         "config/config.h",
         "config/src/set1_host.c",
         "config/src/win32_config.h",
+        "src/rdxxhash.c",
+        "src/rdxxhash.h",
     ],
     defines = [
         "LIBRDKAFKA_STATICLIB",

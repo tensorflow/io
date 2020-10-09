@@ -283,11 +283,11 @@ http_archive(
         # TODO: Remove the fowllowing once librdkafka issue is resolved.
         """sed -i.bak '\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\/\//' src/rdkafka_cgrp.c""",
     ],
-    sha256 = "2d14551fd87262ec4917db3ae688ca2574d716faecccb1ac5136a478579cee19",
-    strip_prefix = "librdkafka-1.4.0-RC2",
+    sha256 = "f7fee59fdbf1286ec23ef0b35b2dfb41031c8727c90ced6435b8cf576f23a656",
+    strip_prefix = "librdkafka-1.5.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/edenhill/librdkafka/archive/v1.4.0-RC2.tar.gz",
-        "https://github.com/edenhill/librdkafka/archive/v1.4.0-RC2.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/edenhill/librdkafka/archive/v1.5.0.tar.gz",
+        "https://github.com/edenhill/librdkafka/archive/v1.5.0.tar.gz",
     ],
 )
 
