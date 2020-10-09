@@ -20,6 +20,7 @@ import shutil
 import tempfile
 import numpy as np
 import h5py
+import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio
@@ -119,6 +120,25 @@ def test_hdf5_bool():
     print("H5 DATA: ", h5_tensors("/my_bool_data").to_tensor())
 
     assert np.array_equal(boolean_data, h5_tensors("/my_bool_data").to_tensor())
+
+    mapping = {"SOLID": 0, "LIQUID": 1, "GAS": 2, "PLASMA": 3}
+    dtype = h5py.special_dtype(enum=(np.int16, mapping))
+    enum_data = np.asarray([0, 1, 2, 3])
+
+    with h5py.File("{}/my_enum_data.h5".format(runpath), "w") as h5_obj:
+        dset = h5_obj.create_dataset("my_enum_data", [4], dtype=dtype)
+        dset = enum_data
+
+    with h5py.File("{}/my_enum_data.h5".format(runpath), "r") as h5_obj:
+        print(h5_obj["my_enum_data"].shape, h5_obj["my_enum_data"].dtype)
+
+    spec = {"/my_enum_data": tf.TensorSpec(shape=(None,), dtype=tf.bool)}
+    with pytest.raises(
+        tf.errors.InvalidArgumentError, match=r".*unsupported data class for enum.*"
+    ):
+        h5_tensors = tfio.IOTensor.from_hdf5(
+            "{}/my_enum_data.h5".format(runpath), spec=spec
+        )
 
     shutil.rmtree(runpath)
 

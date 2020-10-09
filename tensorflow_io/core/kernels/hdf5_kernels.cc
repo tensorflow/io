@@ -284,7 +284,7 @@ class HDF5ReadableResource : public ResourceBase {
               names += name;
             }
             names += "]";
-            return errors::InvalidArgument("unsupported data class for enum :",
+            return errors::InvalidArgument("unsupported data class for enum: ",
                                            names);
           }
         }
@@ -549,7 +549,7 @@ class HDF5ReadableResource : public ResourceBase {
                 }
                 names += "]";
                 return errors::InvalidArgument(
-                    "unsupported data class for enum :", names);
+                    "unsupported data class for enum: ", names);
               }
             }
               data_set.read(value->flat<bool>().data(), data_type, memory_space,
