@@ -101,12 +101,6 @@ def write_config():
                 'build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'.format(library_name)
             )
             bazel_rc.write('build --cxxopt="-std=c++14"\n')
-            # Needed for GRPC build
-            if sys.platform == "darwin":
-                bazel_rc.write('build --copt="-DGRPC_BAZEL_BUILD"\n')
-            # Use llvm toolchain
-            if sys.platform == "darwin":
-                bazel_rc.write('build --crosstool_top=@llvm_toolchain//:toolchain"\n')
             for argv in sys.argv[1:]:
                 if argv == "--cuda":
                     bazel_rc.write('build --action_env TF_NEED_CUDA="1"\n')
@@ -118,6 +112,15 @@ def write_config():
                     )
                     bazel_rc.write('build --action_env TF_CUDA_VERSION="10.1"\n')
                     bazel_rc.write('build --action_env TF_CUDNN_VERSION="7"\n')
+            # Enable platform specific config
+            bazel_rc.write('build --enable_platform_specific_config\n')
+            # Use llvm toolchain
+            bazel_rc.write('build:macos --crosstool_top=@llvm_toolchain//:toolchain"\n')
+            # Needed for GRPC build
+            bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
+            # Stay with 10.13 for macOS
+            bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.13"\n')
+            bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.13"\n')
             bazel_rc.close()
     except OSError:
         print("ERROR: Writing .bazelrc")
