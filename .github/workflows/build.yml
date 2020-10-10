@@ -128,8 +128,6 @@ jobs:
           bazel build \
             ${BAZEL_OPTIMIZATION} \
             --copt -Wunguarded-availability \
-            --copt -mmacosx-version-min=10.13 \
-            --linkopt -mmacosx-version-min=10.13 \
             --noshow_progress \
             --noshow_loading_progress \
             --verbose_failures \
