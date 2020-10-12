@@ -32,3 +32,5 @@ toc:
   path: /io/tutorials/audio
 - title: "Kafka"
   path: /io/tutorials/kafka
+- title: "Elasticsearch"
+  path: /io/tutorials/elasticsearch
