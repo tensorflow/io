@@ -491,6 +491,7 @@ jobs:
           docker push tfsigio/tfio:latest
           python --version
           TFIO_VERSION=$(python setup.py --version)
+          docker tag tfsigio/tfio:latest tfsigio/tfio:${TFIO_VERSION}
           docker push tfsigio/tfio:${TFIO_VERSION}
           bash -x -e tools/docker/tests/dockerfile_nightly_test.sh
           docker push tfsigio/tfio:nightly
