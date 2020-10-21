@@ -1,3 +1,30 @@
+# Release 0.16.0
+
+## Major Features
+* Added support for stream timeout in KafkaGroupIODataset
+* Renamed gstpufs to gsmemcachedfs
+* Added experimental KakfaBatchIODataset for online learning
+* Added gabor/laplacian/gaussian filter support
+* Added basic Arrow string type support for BigQuery reader
+* Added ElasticSearch dataset support
+* Added Prewitt and Sobel filter support
+* Added arbitary dimensional support for `decode_json`
+* Added bool data type support for `decode_json`
+* Added tutorials for Kafka and ElasticSearch usage with tf.keras.
+* Containers of tensorflow-io releases are available
+  at `docker pull tfsigio/tfio`.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Daniel, Kota Yamaguchi, Mark Daoust,
+Michael Kuchnik, Vignesh Kothapalli, Yong Tang, Yuan Tang,
+emkornfield, marioecd
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.15.0
 
 ## Major Features
