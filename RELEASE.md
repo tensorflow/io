@@ -10,6 +10,9 @@
 * Added Prewitt and Sobel filter support
 * Added arbitary dimensional support for `decode_json`
 * Added bool data type support for `decode_json`
+* Added tutorials for Kafka and ElasticSearch usage with tf.keras.
+* Containers of tensorflow-io releases are available
+  at `docker pull tfsigio/tfio`.
 
 ## Thanks to our Contributors
 
