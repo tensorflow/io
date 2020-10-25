@@ -210,9 +210,9 @@ class KafkaDatasetOp : public DatasetOpKernel {
           : DatasetIterator<Dataset>(params) {}
  
       virtual ~Iterator() {
-          // destruction is needed to release rdkafka resources
           ResetStreamsLocked();
       }
+
       Status GetNextInternal(IteratorContext* ctx,
                              std::vector<Tensor>* out_tensors,
                              bool* end_of_sequence) override {
