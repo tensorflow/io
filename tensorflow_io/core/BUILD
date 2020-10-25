@@ -565,34 +565,16 @@ cc_library(
     name = "file_system_plugins",
     srcs = [
         "kernels/azfs_kernels.cc",
-        "kernels/azfs_kernels.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
-        "@com_google_absl//absl/algorithm",
-        "@com_google_absl//absl/container:fixed_array",
-        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
     alwayslink = 1,
-)
-
-# bazel test \
-#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
-#   //tensorflow_io/azure:azfs_ops_test
-cc_test(
-    name = "azfs_ops_test",
-    srcs = [
-        "kernels/azfs_kernels_test.cc",
-    ],
-    deps = [
-        ":azfs_ops",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
-    ],
 )
 
 cc_library(
