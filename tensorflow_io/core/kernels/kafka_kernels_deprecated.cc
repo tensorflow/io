@@ -209,6 +209,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
       explicit Iterator(const Params& params)
           : DatasetIterator<Dataset>(params) {}
 
+      virtual ~Iterator() { ResetStreamsLocked(); }
+
       Status GetNextInternal(IteratorContext* ctx,
                              std::vector<Tensor>* out_tensors,
                              bool* end_of_sequence) override {
