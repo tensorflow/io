@@ -96,10 +96,10 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     expensive resource. It is also imperative to fit data in GPU memory for
     speed up purposes. From that perspective lazy read could be very helpful.
 
-    ### Association of Meta Data
+    ### Association of Metadata
 
-    While a file format could consist of mostly numeric data, in may situations
-    the meta data is important as well. For example, in audio file format the
+    While a file format could consist of mostly numeric data, in many situations
+    the metadata is important as well. For example, in audio file format the
     sample rate is a number that is necessary for almost everything. Association
     of the sample rate with the sample of int16 Tensor is more helpful,
     especially in eager mode.
@@ -143,8 +143,8 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
 
     ### Access Columns of Tabular Data Formats
 
-    May file formats such as Parquet or Json are considered as Tabular because
-    they consists of columns in a table. With `IOTensor` it is possible to
+    Many file formats such as Parquet or Json are considered as Tabular because
+    they consist of columns in a table. With `IOTensor` it is possible to
     access individual columns through `__call__()`.
 
     Example:
@@ -164,11 +164,11 @@ class IOTensor(io_tensor_ops._IOTensor):  # pylint: disable=protected-access
     ... <dtype: 'float64'>
     ```
 
-    ### Conversion from and to Tensor and Dataset
+    ### Conversion to Tensor and Dataset
 
-    When needed, `IOTensor` could be converted into a `Tensor` (through
+    When needed, `IOTensor` can be converted into a `Tensor` (through
     `to_tensor()`, or a `tf.data.Dataset` (through `to_dataset()`, to
-    suppor operations that is only available through `Tensor` or
+    support operations that are only available through `Tensor` or
     `tf.data.Dataset`.
 
     Example:
