@@ -786,8 +786,8 @@ class KafkaRebalanceCb : public RdKafka::RebalanceCb {
 
       LOG(INFO) << "REBALANCE: " << partitions[partition]->topic() << "["
                 << partitions[partition]->partition() << "], "
-                << partitions[partition]->offset() << " "
-                << partitions[partition]->err();
+                << "OFFSET: " << partitions[partition]->offset() << " "
+                << "ERROR_CODE: " << partitions[partition]->err();
     }
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
       // librdkafka does not actually look up the stored offsets before
