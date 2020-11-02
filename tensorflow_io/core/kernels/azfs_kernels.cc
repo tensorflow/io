@@ -27,11 +27,11 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
-#include "tensorflow/c/experimental/filesystem/filesystem_interface.h"
+#include "tensorflow_io/core/kernels/file_system_plugins.h"
 
 namespace tensorflow {
 namespace io {
-namespace azfs {
+namespace az {
 namespace {
 // TODO: DO NOT use a hardcoded path
 bool GetTmpFilename(std::string* filename) {
@@ -488,9 +488,6 @@ Status GetMatchingPaths(const std::string& pattern, std::vector<std::string>* re
   return Status::OK();
 }
 #endif
-
-static void* plugin_memory_allocate(size_t size) { return calloc(1, size); }
-static void plugin_memory_free(void* ptr) { free(ptr); }
 
 // SECTION 1. Implementation for `TF_RandomAccessFile`
 // ----------------------------------------------------------------------------
@@ -1052,8 +1049,7 @@ static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
 
 }  // namespace
 
-static void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops,
-                                        const char* uri) {
+void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   TF_SetFilesystemVersionMetadata(ops);
   ops->scheme = strdup(uri);
 
@@ -1106,16 +1102,6 @@ static void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops,
   ops->filesystem_ops->translate_name = tf_azfs_filesystem::TranslateName;
 }
 
-}  // namespace azfs
+}  // namespace az
 }  // namespace io
 }  // namespace tensorflow
-
-void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
-  info->plugin_memory_allocate = tensorflow::io::azfs::plugin_memory_allocate;
-  info->plugin_memory_free = tensorflow::io::azfs::plugin_memory_free;
-  info->num_schemes = 1;
-  info->ops = static_cast<TF_FilesystemPluginOps*>(
-      tensorflow::io::azfs::plugin_memory_allocate(info->num_schemes *
-                                                   sizeof(info->ops[0])));
-  tensorflow::io::azfs::ProvideFilesystemSupportFor(&info->ops[0], "az");
-}

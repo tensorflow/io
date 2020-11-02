@@ -7,6 +7,19 @@ load(
     "tf_io_copts",
 )
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "static_build",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "static_build_on",
+    flag_values = {
+        ":static_build": "True",
+    },
+)
 
 cc_library(
     name = "cpuinfo",
@@ -565,6 +578,8 @@ cc_library(
     name = "file_system_plugins",
     srcs = [
         "kernels/azfs_kernels.cc",
+        "kernels/file_system_plugins.cc",
+        "kernels/file_system_plugins.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
@@ -689,9 +704,37 @@ cc_binary(
             "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
         ],
-    }) + [
-        "//tensorflow_io/core:file_system_plugins",
+    }) + select({
+        "//tensorflow_io/core:static_build_on": [
+            "//tensorflow_io/core:file_system_plugins",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_library(
+    name = "void_plugins",
+    srcs = [
+        "kernels/void_kernels.cc",
     ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [],
+    alwayslink = 1,
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_plugins.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = select({
+        "//tensorflow_io/core:static_build_on": [
+            "//tensorflow_io/core:void_plugins",
+        ],
+        "//conditions:default": [
+            "//tensorflow_io/core:file_system_plugins",
+        ],
+    }),
 )
 
 cc_binary(
