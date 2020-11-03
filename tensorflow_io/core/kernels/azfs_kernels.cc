@@ -354,6 +354,7 @@ class AzBlobRandomAccessFile {
 
     if (bytes_to_read < n) {
       TF_SetStatus(status, TF_OUT_OF_RANGE, "EOF reached");
+      return bytes_to_read;
     }
     TF_SetStatus(status, TF_OK, "");
     return bytes_to_read;
