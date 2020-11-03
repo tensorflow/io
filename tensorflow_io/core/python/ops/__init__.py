@@ -71,4 +71,7 @@ def _load_library(filename, lib="op"):
 
 
 core_ops = _load_library("libtensorflow_io.so")
-azfs_ops = _load_library("libtensorflow_io_plugins.so", "fs")
+try:
+    plugin_ops = _load_library("libtensorflow_io_plugins.so", "fs")
+except NotImplementedError as e:
+    plugin_ops = _load_library("libtensorflow_io.so", "fs")

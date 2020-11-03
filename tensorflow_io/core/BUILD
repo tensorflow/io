@@ -712,25 +712,12 @@ cc_binary(
     }),
 )
 
-cc_library(
-    name = "void_plugins",
-    srcs = [
-        "kernels/void_kernels.cc",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [],
-    alwayslink = 1,
-)
-
 cc_binary(
     name = "python/ops/libtensorflow_io_plugins.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = select({
-        "//tensorflow_io/core:static_build_on": [
-            "//tensorflow_io/core:void_plugins",
-        ],
+        "//tensorflow_io/core:static_build_on": [],
         "//conditions:default": [
             "//tensorflow_io/core:file_system_plugins",
         ],
