@@ -273,6 +273,7 @@ def freq_mask(input, param, name=None):
     Returns:
       A tensor of spectrogram.
     """
+    input = tf.convert_to_tensor(input)
     # TODO: Support audio with channel > 1.
     freq_max = tf.shape(input)[1]
     f = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
@@ -283,7 +284,7 @@ def freq_mask(input, param, name=None):
     condition = tf.math.logical_and(
         tf.math.greater_equal(indices, f0), tf.math.less(indices, f0 + f)
     )
-    return tf.where(condition, 0, input)
+    return tf.where(condition, tf.cast(0, input.dtype), input)
 
 
 def time_mask(input, param, name=None):
@@ -297,6 +298,7 @@ def time_mask(input, param, name=None):
     Returns:
       A tensor of spectrogram.
     """
+    input = tf.convert_to_tensor(input)
     # TODO: Support audio with channel > 1.
     time_max = tf.shape(input)[0]
     t = tf.random.uniform(shape=(), minval=0, maxval=param, dtype=tf.dtypes.int32)
@@ -307,7 +309,7 @@ def time_mask(input, param, name=None):
     condition = tf.math.logical_and(
         tf.math.greater_equal(indices, t0), tf.math.less(indices, t0 + t)
     )
-    return tf.where(condition, 0, input)
+    return tf.where(condition, tf.cast(0, input.dtype), input)
 
 
 def fade(input, fade_in, fade_out, mode, name=None):
