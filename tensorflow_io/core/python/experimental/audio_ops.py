@@ -312,7 +312,6 @@ def time_mask(input, param, name=None):
     return tf.where(condition, tf.cast(0, input.dtype), input)
 
 
-
 def fade(input, fade_in, fade_out, mode, name=None):
     """
     Apply fade in/out to audio.
