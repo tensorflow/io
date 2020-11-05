@@ -120,7 +120,7 @@ void ParseAzBlobPath(const std::string& fname, bool empty_object_ok,
     *object = std::string(objectp.substr(pos + 1));
   }
 
-  if (!empty_object_ok && object.empty()) {
+  if (!empty_object_ok && object->empty()) {
     std::string error_message = absl::StrCat(
         "Azure Blob Storage path doesn't contain a object name: ", fname);
     TF_SetStatus(status, TF_INVALID_ARGUMENT, error_message.c_str());
@@ -783,7 +783,8 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
 
   if (copy_status.find("success") == std::string::npos) {
     std::string error_message =
-        absl::StrCat("Process of renaming from , src, " to ", dst, " resulted in status of ", copy_status);
+        absl::StrCat("Process of renaming from ", src, " to ", dst,
+                     " resulted in status of ", copy_status);
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
