@@ -20,6 +20,8 @@ from tensorflow.python.platform import test
 from tensorflow.python.platform import gfile
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
+# Note: export TF_AZURE_USE_DEV_STORAGE=1 to enable emulation
+
 
 class AZFSTest(test.TestCase):
     """[summary]
