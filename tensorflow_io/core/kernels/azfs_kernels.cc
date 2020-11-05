@@ -19,6 +19,10 @@ limitations under the License.
 #include <ostream>
 #include <sstream>
 
+#if defined(_MSC_VER)
+#include <Windows.h>
+#endif
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -774,7 +778,11 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
   std::string copy_status;
   do {
     if (!copy_status.empty()) {
+#if defined(_MSC_VER)
+      Sleep(1000);
+#else
       sleep(1);
+#endif
     }
     const auto dst_blob_property =
         blob_client.get_blob_property(dst_container, dst_object);
