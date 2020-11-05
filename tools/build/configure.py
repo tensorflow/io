@@ -121,6 +121,8 @@ def write_config():
             # Stay with 10.13 for macOS
             bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.13"\n')
             bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.13"\n')
+            # MSVC (Windows): Standards-conformant preprocessor mode
+            bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
             bazel_rc.close()
     except OSError:
         print("ERROR: Writing .bazelrc")

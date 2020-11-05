@@ -21,7 +21,12 @@ cc_library(
         "config/H5Tinit.c",
         "config/H5lib_settings.c",
     ],
-    copts = [],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/Zc:preprocessor-",
+        ],
+        "//conditions:default": [],
+    }),
     includes = [
         "c++/src",
         "config",
@@ -45,7 +50,12 @@ cc_library(
     ]) + [
         "config/H5pubconf.h",
     ],
-    copts = [],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/Zc:preprocessor-",
+        ],
+        "//conditions:default": [],
+    }),
     includes = [
         "c++/src",
         "config",

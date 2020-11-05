@@ -311,6 +311,10 @@ libraries (.so). The gcc provided by Developer Toolset and rh-python36 should be
 Also, the libstdc++ has to be linked statically to avoid discrepancy of libstdc++ installed on
 CentOS vs. newer gcc version by devtoolset.
 
+Furthermore, a special flag `--//tensorflow_io/core:static_build` has to be passed to Bazel
+in order to avoid duplication of symbols in statically linked libraries for file system
+plugins.
+
 The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
 ```sh
 #!/usr/bin/env bash
@@ -331,10 +335,10 @@ scl enable rh-python36 devtoolset-9 \
 scl enable rh-python36 devtoolset-9 \
     './configure.sh'
 
-# Build shared libraries
+# Build shared libraries, notice the passing of --//tensorflow_io/core:static_build
 BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstdc++.a" \
   scl enable rh-python36 devtoolset-9 \
-    'bazel build -s --verbose_failures //tensorflow_io/...'
+    'bazel build -s --verbose_failures --//tensorflow_io/core:static_build //tensorflow_io/...'
 
 # Once build is complete, shared libraries will be available in
 # `bazel-bin/tensorflow_io/core/python/ops/` and it is possible

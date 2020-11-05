@@ -7,6 +7,19 @@ load(
     "tf_io_copts",
 )
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "static_build",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "static_build_on",
+    flag_values = {
+        ":static_build": "True",
+    },
+)
 
 cc_library(
     name = "cpuinfo",
@@ -562,34 +575,21 @@ cc_library(
 )
 
 cc_library(
-    name = "azfs_ops",
+    name = "file_system_plugins",
     srcs = [
         "kernels/azfs_kernels.cc",
-        "kernels/azfs_kernels.h",
+        "kernels/file_system_plugins.cc",
+        "kernels/file_system_plugins.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
+        "@com_google_absl//absl/strings",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
     alwayslink = 1,
-)
-
-# bazel test \
-#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
-#   //tensorflow_io/azure:azfs_ops_test
-cc_test(
-    name = "azfs_ops_test",
-    srcs = [
-        "kernels/azfs_kernels_test.cc",
-    ],
-    deps = [
-        ":azfs_ops",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
-    ],
 )
 
 cc_library(
@@ -674,7 +674,6 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
-        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -704,6 +703,23 @@ cc_binary(
             "//tensorflow_io/core:optimization",
             "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
+        ],
+    }) + select({
+        "//tensorflow_io/core:static_build_on": [
+            "//tensorflow_io/core:file_system_plugins",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_plugins.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = select({
+        "//tensorflow_io/core:static_build_on": [],
+        "//conditions:default": [
+            "//tensorflow_io/core:file_system_plugins",
         ],
     }),
 )
