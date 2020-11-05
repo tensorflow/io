@@ -120,6 +120,13 @@ void ParseAzBlobPath(const std::string& fname, bool empty_object_ok,
     *object = std::string(objectp.substr(pos + 1));
   }
 
+  if (!empty_object_ok && object.empty()) {
+    std::string error_message = absl::StrCat(
+        "Azure Blob Storage path doesn't contain a object name: ", fname);
+    TF_SetStatus(status, TF_INVALID_ARGUMENT, error_message.c_str());
+    return;
+  }
+
   TF_SetStatus(status, TF_OK, "");
   return;
 }
@@ -658,8 +665,8 @@ static void DeleteFile(const TF_Filesystem* filesystem, const char* path,
 
   blob_client.delete_blob(container, object);
   if (errno != 0) {
-    std::string error_message =
-        absl::StrCat("Failed to delete ", path, " (", errno_to_string(), ")");
+    std::string error_message = absl::StrCat(
+        "Failed to delete ", path, ": ", errno, "(", errno_to_string(), ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
@@ -766,6 +773,9 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
   // Status can be success, pending, aborted or failed
   std::string copy_status;
   do {
+    if (!copy_status.empty()) {
+      sleep(1);
+    }
     const auto dst_blob_property =
         blob_client.get_blob_property(dst_container, dst_object);
     copy_status = dst_blob_property.copy_status;
@@ -773,8 +783,7 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
 
   if (copy_status.find("success") == std::string::npos) {
     std::string error_message =
-        absl::StrCat("Process of renaming resulted in status of ", copy_status,
-                     " when renaming ", src, " to ", dst);
+        absl::StrCat("Process of renaming from , src, " to ", dst, " resulted in status of ", copy_status);
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
