@@ -118,9 +118,9 @@ def write_config():
             bazel_rc.write('build:macos --crosstool_top=@llvm_toolchain//:toolchain"\n')
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
-            # Stay with 10.13 for macOS
-            bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.13"\n')
-            bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.13"\n')
+            # Stay with 10.14 for macOS
+            bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.14"\n')
+            bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.14"\n')
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
             bazel_rc.close()
