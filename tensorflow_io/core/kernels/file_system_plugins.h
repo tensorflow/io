@@ -32,6 +32,12 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 
 }  // namespace az
 
+namespace http {
+
+void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
+
+}  // namespace http
+
 }  // namespace io
 }  // namespace tensorflow
 
