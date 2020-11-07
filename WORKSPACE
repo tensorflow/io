@@ -1063,3 +1063,14 @@ http_archive(
         "https://downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0-src.tar.gz",
     ],
 )
+
+http_archive(
+    name = "pulsar",
+    build_file = "//third_party:pulsar.BUILD",
+    patch_cmds = ["cp pulsar-common/src/main/proto/PulsarApi.proto pulsar-client-cpp/lib"],
+    sha256 = "08f19ca6d6353751ff0661403b16b71425bf7ada3d8835a38e426ae303b0e385",
+    strip_prefix = "pulsar-2.6.1",
+    urls = [
+        "https://github.com/apache/pulsar/archive/v2.6.1.tar.gz",
+    ],
+)

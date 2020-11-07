@@ -20,3 +20,6 @@ from tensorflow_io.core.python.experimental.kafka_group_io_dataset_ops import ( 
 from tensorflow_io.core.python.experimental.kafka_batch_io_dataset_ops import (  # pylint: disable=unused-import
     KafkaBatchIODataset,
 )
+from tensorflow_io.core.python.experimental.pulsar_dataset_ops import (  # pylint: disable=unused-import
+    PulsarIODataset,
+)
