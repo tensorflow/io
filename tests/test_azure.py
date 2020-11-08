@@ -40,11 +40,11 @@ class AZFSTest(tf.test.TestCase):
 
     def setUp(self):  # pylint: disable=invalid-name
         super().setUp()
-        if not tf.io.gfile.IsDirectory(self.path_root):
-            tf.io.gfile.MakeDirs(self.path_root)
+        if not tf.io.gfile.isdir(self.path_root):
+            tf.io.gfile.makedirs(self.path_root)
 
     def test_exists(self):
-        self.assertTrue(tf.io.gfile.IsDirectory(self.path_root))
+        self.assertTrue(tf.io.gfile.isdir(self.path_root))
 
     def test_also_works_with_full_dns_name(self):
         """Test the file system also works when we're given
@@ -52,31 +52,31 @@ class AZFSTest(tf.test.TestCase):
         az://<account>.blob.core.windows.net/<container>/<path>
         """
         file_name = self.account + ".blob.core.windows.net" + self.container
-        if not tf.io.gfile.IsDirectory(file_name):
-            tf.io.gfile.MakeDirs(file_name)
+        if not tf.io.gfile.isdir(file_name):
+            tf.io.gfile.makedirs(file_name)
 
-        self.assertTrue(tf.io.gfile.IsDirectory(file_name))
+        self.assertTrue(tf.io.gfile.isdir(file_name))
 
     def test_create_file(self):
         """Test create file."""
         # Setup and check preconditions.
         file_name = self._path_to("testfile")
-        if tf.io.gfile.Exists(file_name):
-            tf.io.gfile.Remove(file_name)
+        if tf.io.gfile.exists(file_name):
+            tf.io.gfile.remove(file_name)
         # Create file.
         with tf.io.gfile.Open(file_name, "w") as w:
             w.write("")
         # Check that file was created.
-        self.assertTrue(tf.io.gfile.Exists(file_name))
+        self.assertTrue(tf.io.gfile.exists(file_name))
 
-        tf.io.gfile.Remove(file_name)
+        tf.io.gfile.remove(file_name)
 
     def test_write_read_file(self):
         """Test write/read file."""
         # Setup and check preconditions.
         file_name = self._path_to("writereadfile")
-        if tf.io.gfile.Exists(file_name):
-            tf.io.gfile.Remove(file_name)
+        if tf.io.gfile.exists(file_name):
+            tf.io.gfile.remove(file_name)
 
         # Write data.
         with tf.io.gfile.Open(file_name, "w") as w:
@@ -108,19 +108,19 @@ class AZFSTest(tf.test.TestCase):
         dir_name = self._path_to("recursive")
         file_name = self._path_to("recursive/1")
 
-        tf.io.gfile.MkDir(dir_name)
+        tf.io.gfile.mkdir(dir_name)
         with tf.io.gfile.Open(file_name, "w") as w:
             w.write("")
 
-        self.assertTrue(tf.io.gfile.IsDirectory(dir_name))
-        self.assertTrue(tf.io.gfile.Exists(file_name))
+        self.assertTrue(tf.io.gfile.isdir(dir_name))
+        self.assertTrue(tf.io.gfile.exists(file_name))
 
         # Delete directory recursively.
         tf.io.gfile.DeleteRecursively(dir_name)
 
         # Check that directory was deleted.
-        self.assertFalse(tf.io.gfile.Exists(dir_name))
-        self.assertFalse(tf.io.gfile.Exists(file_name))
+        self.assertFalse(tf.io.gfile.exists(dir_name))
+        self.assertFalse(tf.io.gfile.exists(file_name))
 
     def test_is_directory(self):
         """Test is directory."""
@@ -129,11 +129,11 @@ class AZFSTest(tf.test.TestCase):
         file_name = self._path_to("isdir/2")
         with tf.io.gfile.Open(file_name, "w") as w:
             w.write("")
-        tf.io.gfile.MkDir(dir_name)
+        tf.io.gfile.mkdir(dir_name)
         # Check that directory is a directory.
-        self.assertTrue(tf.io.gfile.IsDirectory(dir_name))
+        self.assertTrue(tf.io.gfile.isdir(dir_name))
         # Check that file is not a directory.
-        self.assertFalse(tf.io.gfile.IsDirectory(file_name))
+        self.assertFalse(tf.io.gfile.isdir(file_name))
 
     def test_list_directory(self):
         """Test list directory."""
@@ -145,7 +145,7 @@ class AZFSTest(tf.test.TestCase):
             with tf.io.gfile.Open(file_name, "w") as w:
                 w.write("")
         # Get list of files in directory.
-        ls_result = tf.io.gfile.ListDirectory(dir_name)
+        ls_result = tf.io.gfile.listdir(dir_name)
         # Check that list of files is correct.
         self.assertEqual(len(file_names), len(ls_result))
         for e in ["1", "2", "3"]:
@@ -156,26 +156,26 @@ class AZFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         dir_name = self.path_root
         # Make directory.
-        tf.io.gfile.MkDir(dir_name)
+        tf.io.gfile.mkdir(dir_name)
         # Check that directory was created.
-        self.assertTrue(tf.io.gfile.IsDirectory(dir_name))
+        self.assertTrue(tf.io.gfile.isdir(dir_name))
 
         dir_name = self._path_to("test/directory")
-        tf.io.gfile.MkDir(dir_name)
-        self.assertTrue(tf.io.gfile.IsDirectory(dir_name))
+        tf.io.gfile.mkdir(dir_name)
+        self.assertTrue(tf.io.gfile.isdir(dir_name))
 
     def test_remove(self):
         """Test remove."""
         # Setup and check preconditions.
         file_name = self._path_to("1")
-        self.assertFalse(tf.io.gfile.Exists(file_name))
+        self.assertFalse(tf.io.gfile.exists(file_name))
         with tf.io.gfile.Open(file_name, "w") as w:
             w.write("")
-        self.assertTrue(tf.io.gfile.Exists(file_name))
+        self.assertTrue(tf.io.gfile.exists(file_name))
         # Remove file.
-        tf.io.gfile.Remove(file_name)
+        tf.io.gfile.remove(file_name)
         # Check that file was removed.
-        self.assertFalse(tf.io.gfile.Exists(file_name))
+        self.assertFalse(tf.io.gfile.exists(file_name))
 
     def _test_read_file_offset_and_dataset(self):
         """Test read file with dataset"""
@@ -183,8 +183,8 @@ class AZFSTest(tf.test.TestCase):
         # all moved to eager mode
         # Setup and check preconditions.
         file_name = self._path_to("readfiledataset")
-        if tf.io.gfile.Exists(file_name):
-            tf.io.gfile.Remove(file_name)
+        if tf.io.gfile.exists(file_name):
+            tf.io.gfile.remove(file_name)
 
         # Write data.
         with tf.io.gfile.Open(file_name, "w") as w:
