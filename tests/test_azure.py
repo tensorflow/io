@@ -64,7 +64,7 @@ class AZFSTest(tf.test.TestCase):
         if tf.io.gfile.exists(file_name):
             tf.io.gfile.remove(file_name)
         # Create file.
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("")
         # Check that file was created.
         self.assertTrue(tf.io.gfile.exists(file_name))
@@ -79,11 +79,11 @@ class AZFSTest(tf.test.TestCase):
             tf.io.gfile.remove(file_name)
 
         # Write data.
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("Hello\n, world!")
 
         # Read data.
-        with tf.io.gfile.Open(file_name, "r") as r:
+        with tf.io.gfile.GFile(file_name, "r") as r:
             file_read = r.read()
             self.assertEqual(file_read, "Hello\n, world!")
 
@@ -92,15 +92,15 @@ class AZFSTest(tf.test.TestCase):
         for ext in [".txt", ".md"]:
             for i in range(3):
                 file_path = self._path_to("wildcard/{}{}".format(i, ext))
-                with tf.io.gfile.Open(file_path, "w") as f:
+                with tf.io.gfile.GFile(file_path, "w") as f:
                     f.write("")
 
-        txt_files = tf.io.gfile.Glob(self._path_to("wildcard/*.txt"))
+        txt_files = tf.io.gfile.glob(self._path_to("wildcard/*.txt"))
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
             self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), name)
 
-        tf.io.gfile.DeleteRecursively(self._path_to("wildcard"))
+        tf.io.gfile.rmtree(self._path_to("wildcard"))
 
     def test_delete_recursively(self):
         """Test delete recursively."""
@@ -109,14 +109,14 @@ class AZFSTest(tf.test.TestCase):
         file_name = self._path_to("recursive/1")
 
         tf.io.gfile.mkdir(dir_name)
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("")
 
         self.assertTrue(tf.io.gfile.isdir(dir_name))
         self.assertTrue(tf.io.gfile.exists(file_name))
 
         # Delete directory recursively.
-        tf.io.gfile.DeleteRecursively(dir_name)
+        tf.io.gfile.rmtree(dir_name)
 
         # Check that directory was deleted.
         self.assertFalse(tf.io.gfile.exists(dir_name))
@@ -127,7 +127,7 @@ class AZFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         dir_name = self._path_to("isdir/1")
         file_name = self._path_to("isdir/2")
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("")
         tf.io.gfile.mkdir(dir_name)
         # Check that directory is a directory.
@@ -142,7 +142,7 @@ class AZFSTest(tf.test.TestCase):
         file_names = [self._path_to("listdir/{}".format(i)) for i in range(1, 4)]
 
         for file_name in file_names:
-            with tf.io.gfile.Open(file_name, "w") as w:
+            with tf.io.gfile.GFile(file_name, "w") as w:
                 w.write("")
         # Get list of files in directory.
         ls_result = tf.io.gfile.listdir(dir_name)
@@ -169,7 +169,7 @@ class AZFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         file_name = self._path_to("1")
         self.assertFalse(tf.io.gfile.exists(file_name))
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("")
         self.assertTrue(tf.io.gfile.exists(file_name))
         # Remove file.
@@ -187,7 +187,7 @@ class AZFSTest(tf.test.TestCase):
             tf.io.gfile.remove(file_name)
 
         # Write data.
-        with tf.io.gfile.Open(file_name, "w") as w:
+        with tf.io.gfile.GFile(file_name, "w") as w:
             w.write("Hello1,world1!\nHello2,world2!")
         dataset = tf.data.experimental.CsvDataset(file_name, [tf.string, tf.string])
         expected = [[b"Hello1", b"world1!"], [b"Hello2", b"world2!"]]
