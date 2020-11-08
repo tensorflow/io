@@ -15,7 +15,7 @@
 """Tests for HTTP file system"""
 
 import os
-from tensorflow.python.platform import test
+from tensorflow import test
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 

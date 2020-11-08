@@ -16,7 +16,7 @@
 
 import os
 
-from tensorflow.python.platform import test
+from tensorflow import test
 from tensorflow.python.platform import gfile
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
