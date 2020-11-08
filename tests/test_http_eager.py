@@ -15,12 +15,11 @@
 """Tests for HTTP file system"""
 
 import os
-from tensorflow import test
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
 
-class HTTPFSTest(test.TestCase):
+class HTTPFSTest(tf.test.TestCase):
     """TestCase class to test the HTTP file system plugins
     functionality.
     """
@@ -84,4 +83,4 @@ class HTTPFSTest(test.TestCase):
 
 
 if __name__ == "__main__":
-    test.main()
+    tf.test.main()
