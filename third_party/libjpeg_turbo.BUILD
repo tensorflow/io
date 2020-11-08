@@ -144,7 +144,6 @@ cc_library(
 )
 
 assembly_base = (
-    "    -I $$(dirname $(location config/jconfig.h))/" +
     "    -I $$(dirname $(location config/jconfigint.h))/" +
     "    -I $$(dirname $(location simd/nasm/jsimdcfg.inc.h))/" +
     "    -I $$(dirname $(location simd/x86_64/jccolext-sse2.asm))/" +
@@ -155,7 +154,6 @@ assembly_base = (
 genrule(
     name = "assembly",
     srcs = [
-        "config/jconfig.h",
         "config/jconfigint.h",
         "simd/x86_64/jccolext-avx2.asm",
         "simd/x86_64/jccolext-sse2.asm",
@@ -198,7 +196,14 @@ genrule(
         "simd/nasm/jsimdcfg.inc",
         "simd/nasm/jsimdcfg.inc.h",
         "simd/nasm/jsimdext.inc",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "winconfig/jconfig.h",
+        ],
+        "//conditions:default": [
+            "nonwinconfig/jconfig.h",
+        ],
+    }),
     outs = [
         "simd/x86_64/jccolor-avx2.o",
         "simd/x86_64/jccolor-sse2.o",
@@ -233,6 +238,7 @@ genrule(
             "for out in $(OUTS); do\n" +
             "  $(location @nasm//:nasm) " +
             "    -f win64 -DWIN64 -DPIC -D__x86_64__" +
+            "    -I $$(dirname $(location winconfig/jconfig.h))/" +
             assembly_base +
             "done"
         ),
@@ -240,6 +246,7 @@ genrule(
             "for out in $(OUTS); do\n" +
             "  $(location @nasm//:nasm) " +
             "    -f macho64 -DMACHO -DPIC -D__x86_64__" +
+            "    -I $$(dirname $(location nonwinconfig/jconfig.h))/" +
             assembly_base +
             "done"
         ),
@@ -247,6 +254,7 @@ genrule(
             "for out in $(OUTS); do\n" +
             "  $(location @nasm//:nasm) " +
             "    -f elf64 -DELF -DPIC -D__x86_64__" +
+            "    -I $$(dirname $(location nonwinconfig/jconfig.h))/" +
             assembly_base +
             "done"
         ),
@@ -268,25 +276,38 @@ cc_library(
         "jsimddct.h",
     ],
     hdrs = [
-        "config/jconfig.h",
         "config/jconfigint.h",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "winconfig/jconfig.h",
+        ],
+        "//conditions:default": [
+            "nonwinconfig/jconfig.h",
+        ],
+    }),
     copts = [],
     includes = [
         "config",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "winconfig",
+        ],
+        "//conditions:default": [
+            "nonwinconfig",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 
 genrule(
-    name = "config_jconfig_h",
+    name = "nonwinconfig_jconfig_h",
     srcs = ["jconfig.h.in"],
-    outs = ["config/jconfig.h"],
+    outs = ["nonwinconfig/jconfig.h"],
     cmd = (
         "sed " +
-        "-e 's/@JPEG_LIB_VERSION@/62/g' " +
-        "-e 's/@VERSION@/2.0.0/g' " +
-        "-e 's/@LIBJPEG_TURBO_VERSION_NUMBER@/2000000/g' " +
+        "-e 's/@JPEG_LIB_VERSION@/80/g' " +
+        "-e 's/@VERSION@/2.0.4/g' " +
+        "-e 's/@LIBJPEG_TURBO_VERSION_NUMBER@/2000004/g' " +
         "-e 's/#cmakedefine C_ARITH_CODING_SUPPORTED 1/#define C_ARITH_CODING_SUPPORTED 1/g' " +
         "-e 's/#cmakedefine D_ARITH_CODING_SUPPORTED 1/#define D_ARITH_CODING_SUPPORTED 1/g' " +
         "-e 's/#cmakedefine MEM_SRCDST_SUPPORTED 1/#define MEM_SRCDST_SUPPORTED 1/g' " +
@@ -307,6 +328,24 @@ genrule(
 )
 
 genrule(
+    name = "winconfig_jconfig_h",
+    srcs = ["win/jconfig.h.in"],
+    outs = ["winconfig/jconfig.h"],
+    cmd = (
+        "sed " +
+        "-e 's/@JPEG_LIB_VERSION@/80/g' " +
+        "-e 's/@VERSION@/2.0.4/g' " +
+        "-e 's/@LIBJPEG_TURBO_VERSION_NUMBER@/2000004/g' " +
+        "-e 's/#cmakedefine C_ARITH_CODING_SUPPORTED/#define C_ARITH_CODING_SUPPORTED 1/g' " +
+        "-e 's/#cmakedefine D_ARITH_CODING_SUPPORTED/#define D_ARITH_CODING_SUPPORTED 1/g' " +
+        "-e 's/#cmakedefine MEM_SRCDST_SUPPORTED/#define MEM_SRCDST_SUPPORTED 1/g' " +
+        "-e 's/#cmakedefine WITH_SIMD/#define WITH_SIMD 1/g' " +
+        "-e 's/@BITS_IN_JSAMPLE@/8/g' " +
+        "$< >$@"
+    ),
+)
+
+genrule(
     name = "config_jconfigint_h",
     srcs = ["jconfigint.h.in"],
     outs = ["config/jconfigint.h"],
@@ -316,7 +355,7 @@ genrule(
             "-e 's/@BUILD@/20180831/g' " +
             "-e 's/@INLINE@/inline/g' " +
             "-e 's/@CMAKE_PROJECT_NAME@/libjpeg-turbo/g' " +
-            "-e 's/@VERSION@/2.0.0/g' " +
+            "-e 's/@VERSION@/2.0.4/g' " +
             "-e 's/@SIZE_T@/8/g' " +
             "-e 's/#cmakedefine HAVE_BUILTIN_CTZL//g' " +
             "-e 's/#cmakedefine HAVE_INTRIN_H//g' " +
@@ -327,7 +366,7 @@ genrule(
             "-e 's/@BUILD@/20180831/g' " +
             "-e 's/@INLINE@/inline/g' " +
             "-e 's/@CMAKE_PROJECT_NAME@/libjpeg-turbo/g' " +
-            "-e 's/@VERSION@/2.0.0/g' " +
+            "-e 's/@VERSION@/2.0.4/g' " +
             "-e 's/@SIZE_T@/8/g' " +
             "-e 's/#cmakedefine HAVE_BUILTIN_CTZL/#define HAVE_BUILTIN_CTZL/g' " +
             "-e 's/#cmakedefine HAVE_INTRIN_H//g' " +
