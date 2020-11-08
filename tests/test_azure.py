@@ -26,9 +26,9 @@ import tensorflow_io as tfio  # pylint: disable=unused-import
 class AZFSTest(test.TestCase):
     """[summary]
 
-  Arguments:
-    test {[type]} -- [description]
-  """
+    Arguments:
+      test {[type]} -- [description]
+    """
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
         self.account = "devstoreaccount1"
@@ -49,9 +49,9 @@ class AZFSTest(test.TestCase):
 
     def test_also_works_with_full_dns_name(self):
         """Test the file system also works when we're given
-       a path of the form
-       az://<account>.blob.core.windows.net/<container>/<path>
-    """
+        a path of the form
+        az://<account>.blob.core.windows.net/<container>/<path>
+        """
         file_name = self.account + ".blob.core.windows.net" + self.container
         if not gfile.IsDirectory(file_name):
             gfile.MakeDirs(file_name)
@@ -59,8 +59,7 @@ class AZFSTest(test.TestCase):
         self.assertTrue(gfile.IsDirectory(file_name))
 
     def test_create_file(self):
-        """Test create file.
-    """
+        """Test create file."""
         # Setup and check preconditions.
         file_name = self._path_to("testfile")
         if gfile.Exists(file_name):
@@ -74,8 +73,7 @@ class AZFSTest(test.TestCase):
         gfile.Remove(file_name)
 
     def test_write_read_file(self):
-        """Test write/read file.
-    """
+        """Test write/read file."""
         # Setup and check preconditions.
         file_name = self._path_to("writereadfile")
         if gfile.Exists(file_name):
@@ -106,8 +104,7 @@ class AZFSTest(test.TestCase):
         gfile.DeleteRecursively(self._path_to("wildcard"))
 
     def test_delete_recursively(self):
-        """Test delete recursively.
-    """
+        """Test delete recursively."""
         # Setup and check preconditions.
         dir_name = self._path_to("recursive")
         file_name = self._path_to("recursive/1")
@@ -127,9 +124,7 @@ class AZFSTest(test.TestCase):
         self.assertFalse(gfile.Exists(file_name))
 
     def test_is_directory(self):
-        """Test is directory.
-
-    """
+        """Test is directory."""
         # Setup and check preconditions.
         dir_name = self._path_to("isdir/1")
         file_name = self._path_to("isdir/2")
@@ -142,9 +137,7 @@ class AZFSTest(test.TestCase):
         self.assertFalse(gfile.IsDirectory(file_name))
 
     def test_list_directory(self):
-        """Test list directory.
-
-    """
+        """Test list directory."""
         # Setup and check preconditions.
         dir_name = self._path_to("listdir")
         file_names = [self._path_to("listdir/{}".format(i)) for i in range(1, 4)]
@@ -160,8 +153,7 @@ class AZFSTest(test.TestCase):
             self.assertTrue(e in ls_result)
 
     def test_make_dirs(self):
-        """Test make dirs.
-    """
+        """Test make dirs."""
         # Setup and check preconditions.
         dir_name = self.path_root
         # Make directory.
@@ -174,8 +166,7 @@ class AZFSTest(test.TestCase):
         self.assertTrue(gfile.IsDirectory(dir_name))
 
     def test_remove(self):
-        """Test remove.
-    """
+        """Test remove."""
         # Setup and check preconditions.
         file_name = self._path_to("1")
         self.assertFalse(gfile.Exists(file_name))
@@ -188,8 +179,7 @@ class AZFSTest(test.TestCase):
         self.assertFalse(gfile.Exists(file_name))
 
     def _test_read_file_offset_and_dataset(self):
-        """Test read file with dataset
-    """
+        """Test read file with dataset"""
         # Note: disabled for now. Will enable once
         # all moved to eager mode
         # Setup and check preconditions.
