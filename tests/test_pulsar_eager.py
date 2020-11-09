@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
 
+
 def test_pulsar_simple_messages():
     """Test consuming simple messages from a Pulsar topic with PulsarIODataset. 
 
@@ -33,8 +34,7 @@ def test_pulsar_simple_messages():
         timeout=1000,
     )
     assert np.all(
-        [k.numpy() for (k, _) in dataset]
-        == [("D" + str(i)).encode() for i in range(6)]
+        [k.numpy() for (k, _) in dataset] == [("D" + str(i)).encode() for i in range(6)]
     )
 
 
@@ -96,7 +96,9 @@ def test_pulsar_invalid_arguments():
             timeout=INVALID_TIMEOUT,
         )
     except ValueError as e:
-        assert str(e) == "Invalid timeout value: {}, must be > 0".format(INVALID_TIMEOUT)
+        assert str(e) == "Invalid timeout value: {}, must be > 0".format(
+            INVALID_TIMEOUT
+        )
 
     VALID_TIMEOUT = 1000
     INVALID_POLL_TIMEOUT = -45
@@ -109,7 +111,9 @@ def test_pulsar_invalid_arguments():
             poll_timeout=INVALID_POLL_TIMEOUT,
         )
     except ValueError as e:
-        assert str(e) == "Invalid poll_timeout value: {}, must be > 0".format(INVALID_POLL_TIMEOUT)
+        assert str(e) == "Invalid poll_timeout value: {}, must be > 0".format(
+            INVALID_POLL_TIMEOUT
+        )
 
     LARGE_POLL_TIMEOUT = VALID_TIMEOUT + 1
     try:
@@ -124,8 +128,7 @@ def test_pulsar_invalid_arguments():
         assert str(
             e
         ) == "Invalid poll_timeout value: {}, must be <= timeout({})".format(
-            LARGE_POLL_TIMEOUT,
-            VALID_TIMEOUT
+            LARGE_POLL_TIMEOUT, VALID_TIMEOUT
         )
 
 

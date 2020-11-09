@@ -17,11 +17,18 @@
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
+
 class PulsarIODataset(tf.data.Dataset):
     """PulsarIODataset"""
 
     def __init__(
-        self, service_url, topic, subscription, timeout, ack_grouping_time=-1, poll_timeout=100
+        self,
+        service_url,
+        topic,
+        subscription,
+        timeout,
+        ack_grouping_time=-1,
+        poll_timeout=100,
     ):
         """Creates a `PulsarIODataset` from pulsar server with a subscription
 
@@ -47,13 +54,13 @@ class PulsarIODataset(tf.data.Dataset):
         """
         with tf.name_scope("PulsarIODataset"):
             if timeout <= 0:
-                raise ValueError("Invalid timeout value: {}, must be > 0".format(timeout))
+                raise ValueError(
+                    "Invalid timeout value: {}, must be > 0".format(timeout)
+                )
 
             if poll_timeout <= 0:
                 raise ValueError(
-                    "Invalid poll_timeout value: {}, must be > 0".format(
-                        poll_timeout
-                    )
+                    "Invalid poll_timeout value: {}, must be > 0".format(poll_timeout)
                 )
 
             if poll_timeout > timeout:
@@ -64,18 +71,13 @@ class PulsarIODataset(tf.data.Dataset):
                 )
 
             resource = core_ops.io_pulsar_readable_init(
-                service_url,
-                topic,
-                subscription,
-                ack_grouping_time
+                service_url, topic, subscription, ack_grouping_time
             )
             self._resource = resource
             dataset = tf.data.experimental.Counter()
             dataset = dataset.map(
                 lambda i: core_ops.io_pulsar_readable_next(
-                    input=self._resource,
-                    timeout=timeout,
-                    poll_timeout=poll_timeout
+                    input=self._resource, timeout=timeout, poll_timeout=poll_timeout
                 )
             )
             dataset = dataset.apply(
