@@ -22,12 +22,11 @@ import tensorflow as tf
 import tensorflow_io as tfio
 import pytest
 
-pytest.mark.skipif(
+
+@pytest.mark.skipif(
     sys.platform in ("win32", "darwin"),
     reason="TODO Localstack not setup properly on macOS/Windows yet",
-),
-
-
+)
 def test_read_file():
     """Test case for reading S3"""
     import boto3
