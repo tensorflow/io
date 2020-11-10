@@ -590,6 +590,8 @@ cc_library(
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
