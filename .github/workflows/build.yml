@@ -182,6 +182,7 @@ jobs:
         python: ['3.6', '3.7']
     steps:
       - uses: actions/checkout@v2
+      - uses: docker-practice/actions-setup-docker@v1
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -196,9 +197,11 @@ jobs:
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
+          docker version
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
+          bash -x -e tests/test_aws/aws_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -290,7 +293,7 @@ jobs:
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           bash -x -e tests/test_kafka/kafka_test.sh
-          bash -x -e tests/test_kinesis/kinesis_test.sh
+          bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
