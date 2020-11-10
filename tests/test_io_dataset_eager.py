@@ -312,10 +312,10 @@ def fixture_kinesis(request):
     os.environ["AWS_ACCESS_KEY_ID"] = "ACCESS_KEY"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "SECRET_KEY"
     os.environ["KINESIS_USE_HTTPS"] = "0"
-    os.environ["KINESIS_ENDPOINT"] = "localhost:4568"
+    os.environ["KINESIS_ENDPOINT"] = "localhost:4566"
 
     client = boto3.client(
-        "kinesis", region_name="us-east-1", endpoint_url="http://localhost:4568"
+        "kinesis", region_name="us-east-1", endpoint_url="http://localhost:4566"
     )
 
     # Setup the Kinesis with 1 shard.
@@ -1052,7 +1052,15 @@ def fixture_video_mp4():
                 ),
             ],
         ),
-        pytest.param("kinesis", marks=[pytest.mark.skip(reason="TODO")],),
+        pytest.param(
+            "kinesis",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Localstack not setup properly on macOS/Windows yet",
+                ),
+            ],
+        ),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
