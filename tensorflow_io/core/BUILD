@@ -579,12 +579,8 @@ cc_library(
         "kernels/azfs_kernels.cc",
         "kernels/file_system_plugins.cc",
         "kernels/file_system_plugins.h",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "kernels/http_kernels.cc",
-        ],
-    }),
+        "kernels/http_kernels.cc",
+    ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
