@@ -579,17 +579,15 @@ cc_library(
         "kernels/azfs_kernels.cc",
         "kernels/file_system_plugins.cc",
         "kernels/file_system_plugins.h",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "kernels/http_kernels.cc",
-        ],
-    }),
+        "kernels/http_kernels.cc",
+    ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "@com_github_azure_azure_storage_cpplite//:azure",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ],
