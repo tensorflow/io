@@ -22,7 +22,7 @@ limitations under the License.
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-#include "tensorflow_io/core/kernels/file_system_plugins.h"
+#include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 namespace tensorflow {
 namespace io {

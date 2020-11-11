@@ -574,27 +574,6 @@ cc_library(
 )
 
 cc_library(
-    name = "file_system_plugins",
-    srcs = [
-        "kernels/azfs_kernels.cc",
-        "kernels/file_system_plugins.cc",
-        "kernels/file_system_plugins.h",
-        "kernels/http_kernels.cc",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "@com_github_azure_azure_storage_cpplite//:azure",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
     name = "sql_ops",
     srcs = [
         "kernels/sql_kernels.cc",
@@ -708,7 +687,7 @@ cc_binary(
         ],
     }) + select({
         "//tensorflow_io/core:static_build_on": [
-            "//tensorflow_io/core:file_system_plugins",
+            "//tensorflow_io/core/plugins:plugins",
         ],
         "//conditions:default": [],
     }),
@@ -721,7 +700,7 @@ cc_binary(
     deps = select({
         "//tensorflow_io/core:static_build_on": [],
         "//conditions:default": [
-            "//tensorflow_io/core:file_system_plugins",
+            "//tensorflow_io/core/plugins:plugins",
         ],
     }),
 )

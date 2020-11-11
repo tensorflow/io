@@ -31,7 +31,7 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
-#include "tensorflow_io/core/kernels/file_system_plugins.h"
+#include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 namespace tensorflow {
 namespace io {
