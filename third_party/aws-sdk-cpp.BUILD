@@ -51,12 +51,13 @@ cc_library(
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
     defines = [
-        'AWS_SDK_VERSION_STRING=\\"1.7.270\\"',
+        'AWS_SDK_VERSION_STRING=\\"1.7.366\\"',
         "AWS_SDK_VERSION_MAJOR=1",
         "AWS_SDK_VERSION_MINOR=7",
-        "AWS_SDK_VERSION_PATCH=270",
-        "ENABLE_CURL_CLIENT",
-        "ENABLE_NO_ENCRYPTION",
+        "AWS_SDK_VERSION_PATCH=366",
+        "ENABLE_OPENSSL_ENCRYPTION=1",
+        "ENABLE_CURL_CLIENT=1",
+        "OPENSSL_IS_BORINGSSL=1",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "PLATFORM_WINDOWS",
@@ -84,7 +85,10 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = [
+        "@aws-c-common",
         "@aws-c-event-stream",
+        "@aws-checksums",
+        "@boringssl//:crypto",
         "@curl",
     ],
 )
