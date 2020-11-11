@@ -51,12 +51,13 @@ cc_library(
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
     defines = [
-        'AWS_SDK_VERSION_STRING=\\"1.7.270\\"',
+        'AWS_SDK_VERSION_STRING=\\"1.7.366\\"',
         "AWS_SDK_VERSION_MAJOR=1",
         "AWS_SDK_VERSION_MINOR=7",
-        "AWS_SDK_VERSION_PATCH=270",
+        "AWS_SDK_VERSION_PATCH=366",
+        "ENABLE_OPENSSL_ENCRYPTION",
         "ENABLE_CURL_CLIENT",
-        "ENABLE_NO_ENCRYPTION",
+        "OPENSSL_IS_BORINGSSL",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "PLATFORM_WINDOWS",
@@ -84,23 +85,21 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = [
+        "@aws-c-common",
         "@aws-c-event-stream",
+        "@aws-checksums",
+        "@boringssl//:crypto",
         "@curl",
     ],
 )
 
 genrule(
     name = "SDKConfig_h",
+    srcs = [
+        "aws-cpp-sdk-core/include/aws/core/SDKConfig.h.in",
+    ],
     outs = [
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
-    cmd = "\n".join([
-        "cat <<'EOF' >$@",
-        "#define USE_AWS_MEMORY_MANAGEMENT",
-        "#if defined(_MSC_VER)",
-        "#include <Windows.h>",
-        "#undef IGNORE",
-        "#endif",
-        "EOF",
-    ]),
+    cmd = "sed 's/cmakedefine/undef/g' $< > $@",
 )
