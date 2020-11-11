@@ -33,12 +33,12 @@ namespace {
 constexpr uint64_t kVerboseOutput = 0;
 
 static absl::Mutex mu;
-static bool uninitialized(false);
+static bool initialized(false);
 void CurlInitialize() {
   absl::MutexLock l(&mu);
-  if (!uninitialized) {
+  if (!initialized) {
     curl_global_init(CURL_GLOBAL_ALL);
-    uninitialized = true;
+    initialized = true;
   }
 }
 
@@ -128,22 +128,6 @@ class CurlHttpRequest {
       return;
     }
 
-    response_buffer_.reserve(CURL_MAX_WRITE_SIZE);
-    if ((s = curl_easy_setopt(curl_, CURLOPT_WRITEDATA,
-                              reinterpret_cast<void*>(this))) != CURLE_OK) {
-      std::string error_message =
-          absl::StrCat("Unable to set CURLOPT_WRITEDATA: ", s);
-      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-      return;
-    }
-    if ((s = curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION,
-                              &CurlHttpRequest::WriteCallback)) != CURLE_OK) {
-      std::string error_message =
-          absl::StrCat("Unable to set CURLOPT_WRITEFUNCTION ", s);
-      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-      return;
-    }
-
     TF_SetStatus(status, TF_OK, "");
   }
 
@@ -175,9 +159,30 @@ class CurlHttpRequest {
     TF_SetStatus(status, TF_OK, "");
   }
 
-  void SetResultBufferDirect(char* buffer, size_t size, TF_Status* status) {
-    direct_response_ = DirectResponseState{buffer, size, 0, 0};
+  void SetResultBuffer(TF_Status* status) {
     CURLcode s = CURLE_OK;
+    response_buffer_.reserve(CURL_MAX_WRITE_SIZE);
+    if ((s = curl_easy_setopt(curl_, CURLOPT_WRITEDATA,
+                              reinterpret_cast<void*>(this))) != CURLE_OK) {
+      std::string error_message =
+          absl::StrCat("Unable to set CURLOPT_WRITEDATA: ", s);
+      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
+      return;
+    }
+    if ((s = curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION,
+                              &CurlHttpRequest::WriteCallback)) != CURLE_OK) {
+      std::string error_message =
+          absl::StrCat("Unable to set CURLOPT_WRITEFUNCTION ", s);
+      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
+      return;
+    }
+
+    TF_SetStatus(status, TF_OK, "");
+  }
+
+  void SetResultBufferDirect(char* buffer, size_t size, TF_Status* status) {
+    CURLcode s = CURLE_OK;
+    direct_response_ = DirectResponseState{buffer, size, 0, 0};
     if ((s = curl_easy_setopt(curl_, CURLOPT_WRITEDATA,
                               reinterpret_cast<void*>(this))) != CURLE_OK) {
       std::string error_message =
@@ -189,7 +194,7 @@ class CurlHttpRequest {
                               &CurlHttpRequest::WriteCallbackDirect)) !=
         CURLE_OK) {
       std::string error_message =
-          absl::StrCat("Unable to set CURLOPT_WRITEDATA: ", s);
+          absl::StrCat("Unable to set CURLOPT_WRITEFUNCTION: ", s);
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
@@ -466,8 +471,9 @@ class CurlHttpRequest {
 
       double starttransfer_time = -1;
       const auto starttransfer_time_status = curl_easy_getinfo(
-          that->curl_, CURLINFO_PRETRANSFER_TIME, &starttransfer_time);
+          that->curl_, CURLINFO_STARTTRANSFER_TIME, &starttransfer_time);
 
+      // TODO: Use C API from TensorFlow for Logging.
       // LOG(ERROR) << "The transmission  of request " << this_object
       //            << " (URI: " << that->uri_ << ") has been stuck at "
       //            << current_progress << " of " << dltotal + ultotal
@@ -715,6 +721,10 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
                  TF_FileStatistics* stats, TF_Status* status) {
   CurlHttpRequest request;
   request.Initialize(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
+  request.SetResultBuffer(status);
   if (TF_GetCode(status) != TF_OK) {
     return;
   }
