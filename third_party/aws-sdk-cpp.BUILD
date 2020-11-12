@@ -25,7 +25,7 @@ cc_library(
         "aws-cpp-sdk-core/source/utils/base64/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/crypto/*.cpp",
         "aws-cpp-sdk-core/source/utils/crypto/factory/*.cpp",
-        "aws-cpp-sdk-core/source/utils/crypto/opsnssl/*.cpp",
+        "aws-cpp-sdk-core/source/utils/crypto/openssl/CryptoImpl.cpp",
         "aws-cpp-sdk-core/source/utils/event/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/json/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/logging/**/*.cpp",
