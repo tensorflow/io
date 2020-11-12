@@ -31,7 +31,7 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
-#include "tensorflow_io/core/kernels/file_system_plugins.h"
+#include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 namespace tensorflow {
 namespace io {
@@ -568,7 +568,7 @@ uint64_t Length(const TF_ReadOnlyMemoryRegion* region) { return 0; }
 
 // SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
 // ----------------------------------------------------------------------------
-namespace tf_azfs_filesystem {
+namespace tf_az_filesystem {
 
 static void Init(TF_Filesystem* filesystem, TF_Status* status) {
   TF_SetStatus(status, TF_OK, "");
@@ -1064,7 +1064,7 @@ static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
   return strdup(uri);
 }
 
-}  // namespace tf_azfs_filesystem
+}  // namespace tf_az_filesystem
 
 }  // namespace
 
@@ -1095,30 +1095,29 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
 
   ops->filesystem_ops = static_cast<TF_FilesystemOps*>(
       plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
-  ops->filesystem_ops->init = tf_azfs_filesystem::Init;
-  ops->filesystem_ops->cleanup = tf_azfs_filesystem::Cleanup;
+  ops->filesystem_ops->init = tf_az_filesystem::Init;
+  ops->filesystem_ops->cleanup = tf_az_filesystem::Cleanup;
   ops->filesystem_ops->new_random_access_file =
-      tf_azfs_filesystem::NewRandomAccessFile;
-  ops->filesystem_ops->new_writable_file = tf_azfs_filesystem::NewWritableFile;
+      tf_az_filesystem::NewRandomAccessFile;
+  ops->filesystem_ops->new_writable_file = tf_az_filesystem::NewWritableFile;
   ops->filesystem_ops->new_appendable_file =
-      tf_azfs_filesystem::NewAppendableFile;
+      tf_az_filesystem::NewAppendableFile;
   ops->filesystem_ops->new_read_only_memory_region_from_file =
-      tf_azfs_filesystem::NewReadOnlyMemoryRegionFromFile;
-  ops->filesystem_ops->create_dir = tf_azfs_filesystem::CreateDir;
+      tf_az_filesystem::NewReadOnlyMemoryRegionFromFile;
+  ops->filesystem_ops->create_dir = tf_az_filesystem::CreateDir;
   ops->filesystem_ops->recursively_create_dir =
-      tf_azfs_filesystem::RecursivelyCreateDir;
-  ops->filesystem_ops->delete_file = tf_azfs_filesystem::DeleteFile;
-  ops->filesystem_ops->delete_recursively =
-      tf_azfs_filesystem::DeleteRecursively;
-  ops->filesystem_ops->delete_dir = tf_azfs_filesystem::DeleteDir;
-  ops->filesystem_ops->copy_file = tf_azfs_filesystem::CopyFile;
-  ops->filesystem_ops->rename_file = tf_azfs_filesystem::RenameFile;
-  ops->filesystem_ops->path_exists = tf_azfs_filesystem::PathExists;
-  ops->filesystem_ops->stat = tf_azfs_filesystem::Stat;
-  ops->filesystem_ops->is_directory = tf_azfs_filesystem::IsDirectory;
-  ops->filesystem_ops->get_file_size = tf_azfs_filesystem::GetFileSize;
-  ops->filesystem_ops->get_children = tf_azfs_filesystem::GetChildren;
-  ops->filesystem_ops->translate_name = tf_azfs_filesystem::TranslateName;
+      tf_az_filesystem::RecursivelyCreateDir;
+  ops->filesystem_ops->delete_file = tf_az_filesystem::DeleteFile;
+  ops->filesystem_ops->delete_recursively = tf_az_filesystem::DeleteRecursively;
+  ops->filesystem_ops->delete_dir = tf_az_filesystem::DeleteDir;
+  ops->filesystem_ops->copy_file = tf_az_filesystem::CopyFile;
+  ops->filesystem_ops->rename_file = tf_az_filesystem::RenameFile;
+  ops->filesystem_ops->path_exists = tf_az_filesystem::PathExists;
+  ops->filesystem_ops->stat = tf_az_filesystem::Stat;
+  ops->filesystem_ops->is_directory = tf_az_filesystem::IsDirectory;
+  ops->filesystem_ops->get_file_size = tf_az_filesystem::GetFileSize;
+  ops->filesystem_ops->get_children = tf_az_filesystem::GetChildren;
+  ops->filesystem_ops->translate_name = tf_az_filesystem::TranslateName;
 }
 
 }  // namespace az
