@@ -36,6 +36,8 @@ cc_library(
         "aws-cpp-sdk-kinesis/source/**/*.cpp",
         "aws-cpp-sdk-s3/include/**/*.h",
         "aws-cpp-sdk-s3/source/**/*.cpp",
+        "aws-cpp-sdk-transfer/include/**/*.h",
+        "aws-cpp-sdk-transfer/source/**/*.cpp",
     ]) + select({
         "@bazel_tools//src/conditions:windows": glob([
             "aws-cpp-sdk-core/source/http/windows/*.cpp",
@@ -71,6 +73,7 @@ cc_library(
         "aws-cpp-sdk-core/include",
         "aws-cpp-sdk-kinesis/include",
         "aws-cpp-sdk-s3/include",
+        "aws-cpp-sdk-transfer/include",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "aws-cpp-sdk-core/include/aws/core/platform/refs",
