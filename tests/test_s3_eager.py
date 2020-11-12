@@ -57,5 +57,5 @@ def test_read_file():
 
     # TODO: The following is not working yet, need update to use
     # s3 implementation with module file system
-    content = tf.io.read_file("s3://{}/{}".format(bucket_name, key_name))
-    # assert content == body
+    content = tf.io.read_file("s3e://{}/{}".format(bucket_name, key_name))
+    assert content == body

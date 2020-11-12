@@ -94,11 +94,14 @@ static inline void TF_SetStatusFromAWSError(
 void ParseS3Path(const Aws::String& fname, bool object_empty_ok,
                  Aws::String* bucket, Aws::String* object, TF_Status* status) {
   size_t scheme_end = fname.find("://") + 2;
-  if (fname.substr(0, scheme_end + 1) != "s3://") {
-    TF_SetStatus(status, TF_INVALID_ARGUMENT,
-                 "S3 path doesn't start with 's3://'.");
-    return;
-  }
+  // NOTE: We disable the check here as we may apply different scheme
+  // like `s3e://` to help testing (so that it can be switched to `s3://`
+  // later).
+  // if (fname.substr(0, scheme_end + 1) != "s3://") {
+  //   TF_SetStatus(status, TF_INVALID_ARGUMENT,
+  //                "S3 path doesn't start with 's3://'.");
+  //   return;
+  // }
 
   size_t bucket_end = fname.find("/", scheme_end + 1);
   if (bucket_end == std::string::npos) {
@@ -507,13 +510,17 @@ uint64_t Length(const TF_ReadOnlyMemoryRegion* region) {
 
 // SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
 // ----------------------------------------------------------------------------
+// TODO: use_multi_part_download=true will cause an issue when read request
+// is asking for bytes larger than object size. In that case, a status code of
+// 416 is returned. However, 416 is not handled correctly and s3 thought this
+// is an error - should return OUT_OF_RANGE with less bytes.
 namespace tf_s3_filesystem {
 S3File::S3File()
     : s3_client(nullptr, ShutdownClient),
       executor(nullptr),
       transfer_managers(),
       multi_part_chunk_sizes(),
-      use_multi_part_download(true),
+      use_multi_part_download(false),  // TODO: change to true after fix
       initialization_lock() {
   uint64_t temp_value;
   multi_part_chunk_sizes[Aws::Transfer::TransferDirection::UPLOAD] =
