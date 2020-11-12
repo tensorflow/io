@@ -41,4 +41,4 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_CORE_KERNELS_FILE_SYSTEM_PLUGINS_H
+#endif  // TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
