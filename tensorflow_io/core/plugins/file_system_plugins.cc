@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/kernels/file_system_plugins.h"
+#include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   info->plugin_memory_allocate = tensorflow::io::plugin_memory_allocate;
