@@ -18,10 +18,11 @@ limitations under the License.
 void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   info->plugin_memory_allocate = tensorflow::io::plugin_memory_allocate;
   info->plugin_memory_free = tensorflow::io::plugin_memory_free;
-  info->num_schemes = 2;
+  info->num_schemes = 3;
   info->ops = static_cast<TF_FilesystemPluginOps*>(
       tensorflow::io::plugin_memory_allocate(info->num_schemes *
                                              sizeof(info->ops[0])));
   tensorflow::io::az::ProvideFilesystemSupportFor(&info->ops[0], "az");
   tensorflow::io::http::ProvideFilesystemSupportFor(&info->ops[1], "http");
+  tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
 }
