@@ -1052,3 +1052,14 @@ http_archive(
         "https://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
     ],
 )
+
+http_archive(
+    name = "hadoop",
+    build_file = "//third_party:hadoop.BUILD",
+    sha256 = "5fd5831b12b1e0999bd352d6cca11ef80f883c81ffa898e53c68d8fe8d170e9f",
+    strip_prefix = "hadoop-3.3.0-src",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0-src.tar.gz",
+        "https://downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0-src.tar.gz",
+    ],
+)
