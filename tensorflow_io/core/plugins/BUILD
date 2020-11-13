@@ -31,6 +31,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core/plugins/az",
         "//tensorflow_io/core/plugins/http",
+        "//tensorflow_io/core/plugins/s3",
     ],
     alwayslink = 1,
 )
