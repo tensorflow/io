@@ -151,7 +151,7 @@ def fixture_pubsub(request):
     """fixture_pubsub"""
     from google.cloud import pubsub_v1  # pylint: disable=import-outside-toplevel
 
-    channel = "e{}e".format(time.time())
+    channel = "e{}e".format(int(time.time()))
 
     os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8085"
     publisher = pubsub_v1.PublisherClient()
