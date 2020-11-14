@@ -71,12 +71,11 @@ sudo chown -R $(id -nu):$(id -ng) .
 ls wheelhouse/*
 
 ## Set test services
-bash -x -e tests/test_ignite/start_ignite.sh
+docker run -t -d --net=host -v $PWD:/v -w /v python:3 bash -x -e /v/tests/test_gcloud/test_gcs.sh
 bash -x -e tests/test_kafka/kafka_test.sh
 bash -x -e tests/test_aws/aws_test.sh
 bash -x -e tests/test_pubsub/pubsub_test.sh pubsub
 bash -x -e tests/test_prometheus/prometheus_test.sh start
-bash -x -e tests/test_gcloud/test_gcs.sh
 bash -x -e tests/test_azure/start_azure.sh
 bash -x -e tests/test_sql/sql_test.sh sql
 bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
