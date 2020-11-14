@@ -32,6 +32,12 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 
 }  // namespace az
 
+namespace gs {
+
+void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
+
+}  // namespace gs
+
 namespace hdfs {
 
 void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
