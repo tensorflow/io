@@ -23,6 +23,9 @@ import tensorflow_io as tfio
 import pytest
 
 
+# GCS emulator setup is in tests/test_gcloud/test_gcs.sh
+
+
 @pytest.mark.skipif(
     sys.platform in ("win32", "darwin"),
     reason="TODO GCS emulator not setup properly on macOS/Windows yet",
@@ -35,14 +38,14 @@ def test_read_file():
     client = storage.Client(
         project="[PROJECT]",
         _http=requests.Session(),
-        client_options={"api_endpoint": "http://localhost:9090"},
+        client_options={"api_endpoint": "http://localhost:9099"},
     )
 
     body = b"1234567"
 
     # Setup the S3 bucket and key
     key_name = "TEST"
-    bucket_name = "s3e{}e".format(time.time())
+    bucket_name = "s3e{}e".format(int(time.time()))
 
     bucket = client.create_bucket(bucket_name)
     print("Project number: {}".format(bucket.project_number))

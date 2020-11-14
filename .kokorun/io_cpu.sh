@@ -71,7 +71,7 @@ sudo chown -R $(id -nu):$(id -ng) .
 ls wheelhouse/*
 
 ## Set test services
-docker run -t -d --net=host -v $PWD:/v -w /v python:3 bash -x -e /v/tests/test_gcloud/test_gcs.sh
+bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
 bash -x -e tests/test_kafka/kafka_test.sh
 bash -x -e tests/test_aws/aws_test.sh
 bash -x -e tests/test_pubsub/pubsub_test.sh pubsub
