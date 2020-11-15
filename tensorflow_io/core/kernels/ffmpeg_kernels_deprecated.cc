@@ -140,6 +140,11 @@ class FFmpegReadStream {
       return -1;
     }
     r->offset_ += result.size();
+#if LIBAVFORMAT_VERSION_MAJOR > 57
+    if (result.size() == 0) {
+      return AVERROR_EOF;
+    }
+#endif
     return result.size();
   }
 

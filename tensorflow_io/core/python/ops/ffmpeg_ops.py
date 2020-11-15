@@ -47,8 +47,8 @@ def _load_dependency_and_library(p):
 
 _ffmpeg_ops, _decode_ops = _load_dependency_and_library(
     {
+        "libtensorflow_io_ffmpeg_4.2.so": ["libavformat.so.58", "libswscale.so.5",],
         "libtensorflow_io_ffmpeg_3.4.so": [
-            "libavformat.so.57",
             "libavformat.so.57",
             "libavutil.so.55",
             "libswscale.so.4",

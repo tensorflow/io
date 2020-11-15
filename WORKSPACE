@@ -479,6 +479,17 @@ http_archive(
 )
 
 http_archive(
+    name = "ffmpeg_4_2",
+    build_file = "//third_party:ffmpeg_4_2.BUILD",
+    sha256 = "42f3d391dbf07b65a52d3d9eed8038ecd9fae53cf4e0e44e2adb95d0cd433b53",
+    strip_prefix = "FFmpeg-n4.2.4",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/FFmpeg/FFmpeg/archive/n4.2.4.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n4.2.4.tar.gz",
+    ],
+)
+
+http_archive(
     name = "rules_python",
     sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
     strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
