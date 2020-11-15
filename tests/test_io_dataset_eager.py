@@ -163,7 +163,11 @@ def fixture_pubsub(request):
         "pubsub-project", "pubsub_subscription_{}".format(channel)
     )
     subscription = subscriber.create_subscription(
-        subscription_path, topic_path, retain_acked_messages=True
+        request={
+            "name": subscription_path,
+            "topic": topic_path,
+            "retain_acked_messages": True,
+        }
     )
     print("Subscription created: {}".format(subscription))
     for n in range(0, 10):
@@ -179,7 +183,7 @@ def fixture_pubsub(request):
         subscription_path = subscriber.subscription_path(
             "pubsub-project", "pubsub_subscription_{}".format(channel)
         )
-        subscriber.delete_subscription(subscription_path)
+        subscriber.delete_subscription(request={"subscription": subscription_path})
         print("Subscription {} deleted.".format(subscription_path))
 
     request.addfinalizer(fin)
