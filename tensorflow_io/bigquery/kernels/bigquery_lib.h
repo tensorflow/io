@@ -17,7 +17,13 @@ limitations under the License.
 #define TENSORFLOW_IO_BIGQUERY_KERNELS_BIGQUERY_LIB_H_
 
 #include <grpcpp/grpcpp.h>
-
+// Inclusion of googleapi related grpc headers, e.g., storage.grpc.pb.h
+// will cause Windows build failures due to the conflict of `OPTIONAL`
+// definition. The following is needed for Windows.
+#if defined(_MSC_VER)
+#include <Windows.h>
+#undef OPTIONAL
+#endif
 #include "api/Compiler.hh"
 #include "api/DataFile.hh"
 #include "api/Decoder.hh"
