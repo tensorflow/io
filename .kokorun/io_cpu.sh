@@ -71,7 +71,7 @@ sudo chown -R $(id -nu):$(id -ng) .
 ls wheelhouse/*
 
 ## Set test services
-bash -x -e tests/test_ignite/start_ignite.sh
+bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
 bash -x -e tests/test_kafka/kafka_test.sh
 bash -x -e tests/test_aws/aws_test.sh
 bash -x -e tests/test_pubsub/pubsub_test.sh pubsub
