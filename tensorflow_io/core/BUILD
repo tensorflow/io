@@ -299,6 +299,23 @@ cc_library(
 )
 
 cc_library(
+    name = "ffmpeg_4.2_ops",
+    srcs = [
+        "kernels/audio_ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels_deprecated.cc",
+        "ops/ffmpeg_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_4_2//:ffmpeg",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "ffmpeg_3.4_ops",
     srcs = [
         "kernels/audio_ffmpeg_kernels.cc",
@@ -711,6 +728,15 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/core:prometheus_ops",
+    ],
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_ffmpeg_4.2.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = [
+        "//tensorflow_io/core:ffmpeg_4.2_ops",
     ],
 )
 

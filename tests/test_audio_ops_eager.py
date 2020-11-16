@@ -663,9 +663,9 @@ def fixture_encode_aac():
             "decode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "linux" and sys.version_info < (3, 8))
                     or (sys.platform == "win32"),
-                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                    reason="need ubuntu 20.04 which is python 3.8, and no windows",
                 )
             ],
         ),
@@ -673,9 +673,9 @@ def fixture_encode_aac():
             "encode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "linux" and sys.version_info < (3, 8))
                     or (sys.platform == "win32"),
-                    reason="need ubuntu 18.04 which is python 3.6, and no windows",
+                    reason="need ubuntu 20.04 which is python 3.8, and no windows",
                 )
             ],
         ),
@@ -748,10 +748,10 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
             "decode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "linux" and sys.version_info < (3, 8))
                     or (sys.platform == "win32"),
                     reason=(
-                        "need ubuntu 18.04 which is python 3.6, "
+                        "need ubuntu 20.04 which is python 3.8, "
                         "and no windows support yet"
                     ),
                 )
@@ -761,10 +761,10 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
             "encode_aac",
             marks=[
                 pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 6))
+                    (sys.platform == "linux" and sys.version_info < (3, 8))
                     or (sys.platform == "win32"),
                     reason=(
-                        "need ubuntu 18.04 which is python 3.6, "
+                        "need ubuntu 20.04 which is python 3.8, "
                         "and no windows support yet"
                     ),
                 )
