@@ -15,7 +15,6 @@ cc_library(
         "gcs_env.cc",
         "gcs_env.h",
         "gcs_filesystem.cc",
-        "gcs_filesystem.h",
         "gcs_helper.cc",
         "gcs_helper.h",
         "ram_file_block_cache.cc",

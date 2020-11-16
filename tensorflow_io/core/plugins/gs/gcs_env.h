@@ -23,20 +23,20 @@ namespace tensorflow {
 namespace io {
 namespace gs {
 
-typedef struct TF_Thread TF_Thread;
-typedef struct TF_ThreadOptions {
+typedef struct GCSThread GCSThread;
+typedef struct GCSThreadOptions {
   size_t stack_size;
   size_t guard_size;
   int numa_node;
-} TF_ThreadOptions;
+} GCSThreadOptions;
 
-char* TF_GetTempFileName(const char* extension);
-uint64_t TF_NowSeconds(void);
-void TF_DefaultThreadOptions(TF_ThreadOptions* options);
-TF_Thread* TF_StartThread(const TF_ThreadOptions* options,
+char* GCSGetTempFileName(const char* extension);
+uint64_t GCSNowSeconds(void);
+void GCSDefaultThreadOptions(GCSThreadOptions* options);
+GCSThread* GCSStartThread(const GCSThreadOptions* options,
                           const char* thread_name, void (*work_func)(void*),
                           void* param);
-void TF_JoinThread(TF_Thread* thread);
+void GCSJoinThread(GCSThread* thread);
 
 }  // namespace gs
 }  // namespace io
