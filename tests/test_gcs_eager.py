@@ -57,5 +57,5 @@ def test_read_file():
     print("RESPONSE: ", response)
     assert response == body
 
-    # content = tf.io.read_file("gs://{}/{}".format(bucket_name, key_name))
-    # assert content == body
+    content = tf.io.read_file("gse://{}/{}".format(bucket_name, key_name))
+    assert content == body

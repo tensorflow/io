@@ -385,7 +385,7 @@ typedef struct GcsFileSystemStat {
   int64_t generation_number;
 } GcsFileSystemStat;
 
-typedef struct GCSFileSystem {
+typedef struct GCSFileSystemImplementation {
   google::cloud::storage::Client gcs_client;  // owned
   bool compose;
   absl::Mutex block_cache_lock;
@@ -394,18 +394,49 @@ typedef struct GCSFileSystem {
   uint64_t block_size;  // Reads smaller than block_size will trigger a read
                         // of block_size.
   std::unique_ptr<ExpiringLRUCache<GcsFileSystemStat>> stat_cache;
-  GCSFileSystem(google::cloud::storage::Client&& gcs_client);
+  GCSFileSystemImplementation(google::cloud::storage::Client&& gcs_client);
   // This constructor is used for testing purpose only.
-  GCSFileSystem(google::cloud::storage::Client&& gcs_client, bool compose,
-                uint64_t block_size, size_t max_bytes, uint64_t max_staleness,
-                uint64_t stat_cache_max_age, size_t stat_cache_max_entries);
+  GCSFileSystemImplementation(google::cloud::storage::Client&& gcs_client,
+                              bool compose, uint64_t block_size,
+                              size_t max_bytes, uint64_t max_staleness,
+                              uint64_t stat_cache_max_age,
+                              size_t stat_cache_max_entries);
+} GCSFileSystemImplementation;
+
+typedef struct GCSFileSystem {
+  absl::Mutex mu;
+  bool initialized ABSL_GUARDED_BY(mu);
+  std::unique_ptr<struct GCSFileSystemImplementation> ptr ABSL_GUARDED_BY(mu);
+  GCSFileSystem() : initialized(false), ptr(nullptr) {}
+  GCSFileSystemImplementation* Load(TF_Status* status) {
+    absl::MutexLock l(&mu);
+    if (!initialized) {
+      initialized = true;
+      google::cloud::StatusOr<gcs::Client> client =
+          gcs::Client::CreateDefaultClient();
+      if (!client) {
+        TF_SetStatusFromGCSStatus(client.status(), status);
+        return nullptr;
+      }
+      ptr.reset(new GCSFileSystemImplementation(std::move(client.value())));
+      TF_SetStatus(status, TF_OK, "");
+      return ptr.get();
+    }
+    if (ptr.get() == nullptr) {
+      TF_SetStatus(status, TF_INTERNAL,
+                   "gcs file system has not been initialized yet");
+      return nullptr;
+    }
+    TF_SetStatus(status, TF_OK, "");
+    return ptr.get();
+  }
 } GCSFileSystem;
 
 // A helper function to actually read the data from GCS.
-static int64_t LoadBufferFromGCS(const std::string& path, size_t offset,
-                                 size_t buffer_size, char* buffer,
-                                 tf_gcs_filesystem::GCSFileSystem* gcs_file,
-                                 TF_Status* status) {
+static int64_t LoadBufferFromGCS(
+    const std::string& path, size_t offset, size_t buffer_size, char* buffer,
+    tf_gcs_filesystem::GCSFileSystemImplementation* gcs_file,
+    TF_Status* status) {
   std::string bucket, object;
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return -1;
@@ -454,7 +485,8 @@ static int64_t LoadBufferFromGCS(const std::string& path, size_t offset,
 // TODO(vnvo2409): We could do some cleanups like `return TF_SetStatus`.
 // TODO(vnvo2409): Refactor the filesystem implementation when
 // https://github.com/googleapis/google-cloud-cpp/issues/4482 is done.
-GCSFileSystem::GCSFileSystem(google::cloud::storage::Client&& gcs_client)
+GCSFileSystemImplementation::GCSFileSystemImplementation(
+    google::cloud::storage::Client&& gcs_client)
     : gcs_client(gcs_client), block_cache_lock() {
   const char* append_mode = std::getenv(kAppendMode);
   compose = (append_mode != nullptr) && (!strcmp(kAppendMode, append_mode));
@@ -498,11 +530,10 @@ GCSFileSystem::GCSFileSystem(google::cloud::storage::Client&& gcs_client)
       stat_cache_max_age, stat_cache_max_entries);
 }
 
-GCSFileSystem::GCSFileSystem(google::cloud::storage::Client&& gcs_client,
-                             bool compose, uint64_t block_size,
-                             size_t max_bytes, uint64_t max_staleness,
-                             uint64_t stat_cache_max_age,
-                             size_t stat_cache_max_entries)
+GCSFileSystemImplementation::GCSFileSystemImplementation(
+    google::cloud::storage::Client&& gcs_client, bool compose,
+    uint64_t block_size, size_t max_bytes, uint64_t max_staleness,
+    uint64_t stat_cache_max_age, size_t stat_cache_max_entries)
     : gcs_client(gcs_client),
       compose(compose),
       block_cache_lock(),
@@ -519,14 +550,7 @@ GCSFileSystem::GCSFileSystem(google::cloud::storage::Client&& gcs_client,
 }
 
 void Init(TF_Filesystem* filesystem, TF_Status* status) {
-  google::cloud::StatusOr<gcs::Client> client =
-      gcs::Client::CreateDefaultClient();
-  if (!client) {
-    TF_SetStatusFromGCSStatus(client.status(), status);
-    return;
-  }
-
-  filesystem->plugin_filesystem = new GCSFileSystem(std::move(client.value()));
+  filesystem->plugin_filesystem = new GCSFileSystem();
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -561,7 +585,11 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   bool is_cache_enabled;
   {
     absl::MutexLock l(&gcs_file->block_cache_lock);
@@ -613,7 +641,11 @@ void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   char* temp_file_name = GCSGetTempFileName("");
   file->plugin_file = new tf_writable_file::GCSWritableFile(
       {std::move(bucket), std::move(object), &gcs_file->gcs_client,
@@ -631,7 +663,11 @@ void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   char* temp_file_name_c_str = GCSGetTempFileName("");
   std::string temp_file_name(temp_file_name_c_str);  // To prevent memory-leak
   free(temp_file_name_c_str);
@@ -683,7 +719,11 @@ void NewReadOnlyMemoryRegionFromFile(const TF_Filesystem* filesystem,
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   auto metadata = gcs_file->gcs_client.GetObjectMetadata(bucket, object,
                                                          gcs::Fields("size"));
   if (!metadata) {
@@ -710,9 +750,10 @@ void NewReadOnlyMemoryRegionFromFile(const TF_Filesystem* filesystem,
   }
 }
 
-static void StatForObject(GCSFileSystem* gcs_file, const std::string& path,
-                          const std::string& bucket, const std::string& object,
-                          GcsFileSystemStat* stat, TF_Status* status) {
+static void StatForObject(GCSFileSystemImplementation* gcs_file,
+                          const std::string& path, const std::string& bucket,
+                          const std::string& object, GcsFileSystemStat* stat,
+                          TF_Status* status) {
   if (object.empty())
     return TF_SetStatus(
         status, TF_INVALID_ARGUMENT,
@@ -729,9 +770,9 @@ static void StatForObject(GCSFileSystem* gcs_file, const std::string& path,
       status);
 }
 
-static bool ObjectExists(GCSFileSystem* gcs_file, const std::string& path,
-                         const std::string& bucket, const std::string& object,
-                         TF_Status* status) {
+static bool ObjectExists(GCSFileSystemImplementation* gcs_file,
+                         const std::string& path, const std::string& bucket,
+                         const std::string& object, TF_Status* status) {
   GcsFileSystemStat stat;
   StatForObject(gcs_file, path, bucket, object, &stat, status);
   if (TF_GetCode(status) != TF_OK && TF_GetCode(status) != TF_NOT_FOUND)
@@ -743,8 +784,8 @@ static bool ObjectExists(GCSFileSystem* gcs_file, const std::string& path,
   return !stat.base.is_directory;
 }
 
-static bool BucketExists(GCSFileSystem* gcs_file, const std::string& bucket,
-                         TF_Status* status) {
+static bool BucketExists(GCSFileSystemImplementation* gcs_file,
+                         const std::string& bucket, TF_Status* status) {
   auto metadata =
       gcs_file->gcs_client.GetBucketMetadata(bucket, gcs::Fields(""));
   TF_SetStatusFromGCSStatus(metadata.status(), status);
@@ -758,8 +799,9 @@ static bool BucketExists(GCSFileSystem* gcs_file, const std::string& bucket,
 }
 
 static std::vector<std::string> GetChildrenBounded(
-    GCSFileSystem* gcs_file, std::string dir, uint64_t max_results,
-    bool recursive, bool include_self_directory_marker, TF_Status* status) {
+    GCSFileSystemImplementation* gcs_file, std::string dir,
+    uint64_t max_results, bool recursive, bool include_self_directory_marker,
+    TF_Status* status) {
   std::string bucket, prefix;
   MaybeAppendSlash(&dir);
   ParseGCSPath(dir, true, &bucket, &prefix, status);
@@ -801,7 +843,7 @@ static std::vector<std::string> GetChildrenBounded(
   return result;
 }
 
-static bool FolderExists(GCSFileSystem* gcs_file, std::string dir,
+static bool FolderExists(GCSFileSystemImplementation* gcs_file, std::string dir,
                          TF_Status* status) {
   ExpiringLRUCache<GcsFileSystemStat>::ComputeFunc compute_func =
       [gcs_file](const std::string& dir, GcsFileSystemStat* stat,
@@ -828,7 +870,8 @@ static bool FolderExists(GCSFileSystem* gcs_file, std::string dir,
   return true;
 }
 
-static void ClearFileCaches(GCSFileSystem* gcs_file, const std::string& path) {
+static void ClearFileCaches(GCSFileSystemImplementation* gcs_file,
+                            const std::string& path) {
   absl::ReaderMutexLock l(&gcs_file->block_cache_lock);
   gcs_file->file_block_cache->RemoveFile(path);
   gcs_file->stat_cache->Delete(path);
@@ -840,7 +883,11 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, true, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   if (object.empty()) {
     bool result = BucketExists(gcs_file, bucket, status);
     if (result) return TF_SetStatus(status, TF_OK, "");
@@ -869,7 +916,11 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
   std::string bucket, object;
   ParseGCSPath(dir, true, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   if (object.empty()) {
     bool is_directory = BucketExists(gcs_file, bucket, status);
     if (TF_GetCode(status) != TF_OK) return;
@@ -907,7 +958,11 @@ void DeleteFile(const TF_Filesystem* filesystem, const char* path,
   std::string bucket, object;
   ParseGCSPath(path, false, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   auto gcs_status = gcs_file->gcs_client.DeleteObject(bucket, object);
   TF_SetStatusFromGCSStatus(gcs_status, status);
   if (TF_GetCode(status) == TF_OK) ClearFileCaches(gcs_file, path);
@@ -921,7 +976,11 @@ void DeleteDir(const TF_Filesystem* filesystem, const char* path,
   // with the corresponding name prefix or if there is exactly one matching
   // object and it is the directory marker. Therefore we need to retrieve
   // at most two children for the prefix to detect if a directory is empty.
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   auto childrens = GetChildrenBounded(gcs_file, path, 2, true, true, status);
   if (TF_GetCode(status) != TF_OK) return;
   if (childrens.size() > 1 || (childrens.size() == 1 && !childrens[0].empty()))
@@ -947,7 +1006,11 @@ void CopyFile(const TF_Filesystem* filesystem, const char* src, const char* dst,
   ParseGCSPath(dst, false, &bucket_dst, &object_dst, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   auto metadata = gcs_file->gcs_client.RewriteObjectBlocking(
       bucket_src, object_src, bucket_dst, object_dst,
       gcs::Fields("done,rewriteToken"));
@@ -960,7 +1023,11 @@ bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, true, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return false;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return false;
+  }
   if (object.empty()) {
     bool result = BucketExists(gcs_file, bucket, status);
     if (TF_GetCode(status) != TF_OK) return false;
@@ -1002,7 +1069,11 @@ static void RenameObject(const TF_Filesystem* filesystem,
   ParseGCSPath(dst, false, &bucket_dst, &object_dst, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   auto metadata = gcs_file->gcs_client.RewriteObjectBlocking(
       bucket_src, object_src, bucket_dst, object_dst,
       gcs::Fields("done,rewriteToken"));
@@ -1024,7 +1095,11 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
     return;
   }
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   std::vector<std::string> childrens =
       GetChildrenBounded(gcs_file, src, UINT64_MAX, true, true, status);
   if (TF_GetCode(status) != TF_OK) return;
@@ -1053,7 +1128,11 @@ void DeleteRecursively(const TF_Filesystem* filesystem, const char* path,
     *undeleted_dirs = 1;
     return;
   }
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   std::vector<std::string> childrens =
       GetChildrenBounded(gcs_file, path, UINT64_MAX, true, true, status);
   if (TF_GetCode(status) != TF_OK) return;
@@ -1075,7 +1154,11 @@ void DeleteRecursively(const TF_Filesystem* filesystem, const char* path,
 
 int GetChildren(const TF_Filesystem* filesystem, const char* path,
                 char*** entries, TF_Status* status) {
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return -1;
+  }
   std::vector<std::string> childrens =
       GetChildrenBounded(gcs_file, path, UINT64_MAX, false, false, status);
   if (TF_GetCode(status) != TF_OK) return -1;
@@ -1095,7 +1178,11 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
   ParseGCSPath(path, true, &bucket, &object, status);
   if (TF_GetCode(status) != TF_OK) return;
 
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->Load(status);
+  if (TF_GetCode(status) != TF_OK) {
+    return;
+  }
   if (object.empty()) {
     auto bucket_metadata =
         gcs_file->gcs_client.GetBucketMetadata(bucket, gcs::Fields(""));
@@ -1145,10 +1232,13 @@ static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
 }
 
 static void FlushCaches(const TF_Filesystem* filesystem) {
-  auto gcs_file = static_cast<GCSFileSystem*>(filesystem->plugin_filesystem);
-  absl::ReaderMutexLock l(&gcs_file->block_cache_lock);
-  gcs_file->file_block_cache->Flush();
-  gcs_file->stat_cache->Clear();
+  auto gcs_file =
+      static_cast<GCSFileSystem*>(filesystem->plugin_filesystem)->ptr.get();
+  if (gcs_file != nullptr) {
+    absl::ReaderMutexLock l(&gcs_file->block_cache_lock);
+    gcs_file->file_block_cache->Flush();
+    gcs_file->stat_cache->Clear();
+  }
 }
 
 }  // namespace tf_gcs_filesystem
