@@ -84,11 +84,13 @@ static void plugin_memory_free(void* ptr) { free(ptr); }
 void ParseGCSPath(const std::string& fname, bool object_empty_ok,
                   std::string* bucket, std::string* object, TF_Status* status) {
   size_t scheme_end = fname.find("://") + 2;
-  if (fname.substr(0, scheme_end + 1) != "gs://") {
-    TF_SetStatus(status, TF_INVALID_ARGUMENT,
-                 "GCS path doesn't start with 'gs://'.");
-    return;
-  }
+  // TODO: We need to relax the restriction as we want to use `gse://`
+  // to avoid collision with `gs://` in tensorflow.
+  // if (fname.substr(0, scheme_end + 1) != "gs://") {
+  //   TF_SetStatus(status, TF_INVALID_ARGUMENT,
+  //                "GCS path doesn't start with 'gs://'.");
+  //   return;
+  // }
 
   size_t bucket_end = fname.find("/", scheme_end + 1);
   if (bucket_end == std::string::npos) {
