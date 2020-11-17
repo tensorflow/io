@@ -14,6 +14,7 @@
 # ==============================================================================
 """KafkaGroupIODatasets"""
 
+import sys
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
 
@@ -62,21 +63,29 @@ class KafkaGroupIODataset(tf.data.Dataset):
                         configuration=[
                             "session.timeout.ms=7000",
                             "max.poll.interval.ms=8000",
+                            "auto.offset.reset=earliest",
                         ],
                     )
 
+    In the above example, the `auto.offset.reset` configuration is set to `earliest` so that
+    in case the consumer group is being newly created, it will start reading the messages from
+    the beginning. If it is not set, it defaults to `latest`. For additional configurations,
+    please refer the librdkafka's configurations:
+    https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
+
     In addition to the standard streaming functionality, there is added support for a timeout
-    based stream.
+    based stream. Once the existing data has been fetched, this dataset will block for
+    an additional `stream_timeout` milliseconds, for the new messages to be captured.
 
     >>> dataset = tfio.experimental.streaming.KafkaGroupIODataset(
                         topics=["topic1"],
                         group_id="cg",
                         servers="localhost:9092",
-                        message_timeout=5000,
-                        stream_timeout=15000,
+                        stream_timeout=30000,
                         configuration=[
                             "session.timeout.ms=7000",
                             "max.poll.interval.ms=8000",
+                            "auto.offset.reset=earliest",
                         ],
                     )
     >>> for (message, key) in dataset:
@@ -85,7 +94,20 @@ class KafkaGroupIODataset(tf.data.Dataset):
     The above loop will run as long as the consumer clients are able to fetch messages
     from the topic(s). However, since we set the `stream_timeout` value to `15000` milliseconds,
     the dataset will wait for any new messages that might be added to the topic for that duration.
-    The topics will be polled at `message_timeout` intervals.
+
+    As the kafka deployments vary in configuration as per various use-cases, the time required for
+    the consumers to fetch a single message might also vary. This timeout value can be adjusted
+    using the `message_poll_timeout` parameter.
+
+    The `message_poll_timeout` value represents the duration which the consumers
+    have to wait while fetching a new message. However, even if we receive a new message
+    before the `message_poll_timeout` interval finishes, the consumer doesn't resume the
+    consumption but it will wait until the `message_poll_timeout` interval has finished.
+    Thus, if we want to block indefinitely until a new message arrives,
+    we cannot do it with `message_poll_timeout` alone. This is when the `stream_timeout`
+    value comes in, where we can set the value to a very high timeout
+    (i.e, block indefinitely) and keep on polling for new messages at
+    `message_poll_timeout` intervals.
     """
 
     def __init__(
@@ -93,24 +115,26 @@ class KafkaGroupIODataset(tf.data.Dataset):
         topics,
         group_id,
         servers,
-        message_timeout=5000,
-        stream_timeout=5000,
+        stream_timeout=0,
+        message_poll_timeout=10000,
         configuration=None,
         internal=True,
     ):
         """
         Args:
           topics: A `tf.string` tensor containing topic names in [topic] format.
-            For example: ["topic1"]
+            For example: ["topic1", "topic2"]
           group_id: The id of the consumer group. For example: cgstream
           servers: An optional list of bootstrap servers.
             For example: `localhost:9092`.
-          message_timeout: An optional timeout value (in milliseconds) for retrieving messages
-            from kafka. Default value is 5000.
-          stream_timeout: An optional timeout value (in milliseconds) to wait for the new messages
-            from kafka to be retrieved by the consumers. Default value is 5000.
-            NOTE: The `stream_timeout` value should always be greater than or equal to the `message_timeout`.
-            value.
+          stream_timeout: An optional timeout duration (in milliseconds) to block until
+            the new messages from kafka are fetched.
+            By default it is set to 0 milliseconds and doesn't block for new messages.
+            To block indefinitely, set it to -1.
+          message_poll_timeout: An optional timeout duration (in milliseconds)
+            after which the kafka consumer throws a timeout error while fetching
+            a single message. This value also represents the intervals at which
+            the kafka topic(s) are polled for new messages while using the `stream_timeout`
           configuration: An optional `tf.string` tensor containing
             configurations in [Key=Value] format.
             Global configuration: please refer to 'Global configuration properties'
@@ -118,18 +142,26 @@ class KafkaGroupIODataset(tf.data.Dataset):
               ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
             Topic configuration: please refer to 'Topic configuration properties'
               in librdkafka doc. Note all topic configurations should be
-              prefixed with `configuration.topic.`. Examples include
+              prefixed with `conf.topic.`. Examples include
               ["conf.topic.auto.offset.reset=earliest"]
+            Reference: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
           internal: Whether the dataset is being created from within the named scope.
             Default: True
         """
         with tf.name_scope("KafkaGroupIODataset"):
             assert internal
 
-            if stream_timeout < message_timeout:
+            if stream_timeout == -1:
+                stream_timeout = sys.maxsize
+            elif stream_timeout >= 0:
+                # Taking the max of `stream_timeout` and `message_poll_timeout`
+                # to prevent the user from bothering about the underlying polling
+                # mechanism.
+                stream_timeout = max(stream_timeout, message_poll_timeout)
+            else:
                 raise ValueError(
-                    "stream_timeout {} is less than the message_timeout {}".format(
-                        stream_timeout, message_timeout
+                    "Invalid stream_timeout value: {} ,set it to -1 to block indefinitely.".format(
+                        stream_timeout
                     )
                 )
             metadata = list(configuration or [])
@@ -147,15 +179,16 @@ class KafkaGroupIODataset(tf.data.Dataset):
                 lambda i: core_ops.io_kafka_group_readable_next(
                     input=self._resource,
                     index=i,
-                    message_timeout=message_timeout,
+                    message_poll_timeout=message_poll_timeout,
                     stream_timeout=stream_timeout,
                 )
             )
             dataset = dataset.apply(
                 tf.data.experimental.take_while(
-                    lambda v: tf.greater(tf.shape(v.message)[0], 0)
+                    lambda v: tf.greater(v.continue_fetch, 0)
                 )
             )
+            dataset = dataset.map(lambda v: (v.message, v.key))
             dataset = dataset.unbatch()
 
             self._dataset = dataset

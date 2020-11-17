@@ -7,6 +7,19 @@ load(
     "tf_io_copts",
 )
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+bool_flag(
+    name = "static_build",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "static_build_on",
+    flag_values = {
+        ":static_build": "True",
+    },
+)
 
 cc_library(
     name = "cpuinfo",
@@ -101,7 +114,6 @@ cc_library(
     name = "core_ops",
     srcs = [
         "kernels/archive_kernels.cc",
-        "kernels/http_kernels.cc",
         "ops/core_ops.cc",
     ],
     copts = tf_io_copts(),
@@ -283,6 +295,23 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "ffmpeg_4.2_ops",
+    srcs = [
+        "kernels/audio_ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels.cc",
+        "kernels/ffmpeg_kernels_deprecated.cc",
+        "ops/ffmpeg_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@ffmpeg_4_2//:ffmpeg",
+    ],
     alwayslink = 1,
 )
 
@@ -562,37 +591,6 @@ cc_library(
 )
 
 cc_library(
-    name = "azfs_ops",
-    srcs = [
-        "kernels/azfs_kernels.cc",
-        "kernels/azfs_kernels.h",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "@com_github_azure_azure_storage_cpplite//:azure",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
-    ],
-    alwayslink = 1,
-)
-
-# bazel test \
-#   --action_env=TF_AZURE_USE_DEV_STORAGE=1 \
-#   //tensorflow_io/azure:azfs_ops_test
-cc_test(
-    name = "azfs_ops_test",
-    srcs = [
-        "kernels/azfs_kernels_test.cc",
-    ],
-    deps = [
-        ":azfs_ops",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_library(
     name = "sql_ops",
     srcs = [
         "kernels/sql_kernels.cc",
@@ -674,7 +672,6 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
-        "//tensorflow_io/core:azfs_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
@@ -705,6 +702,23 @@ cc_binary(
             "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
         ],
+    }) + select({
+        "//tensorflow_io/core:static_build_on": [
+            "//tensorflow_io/core/plugins:plugins",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_plugins.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = select({
+        "//tensorflow_io/core:static_build_on": [],
+        "//conditions:default": [
+            "//tensorflow_io/core/plugins:plugins",
+        ],
     }),
 )
 
@@ -714,6 +728,15 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/core:prometheus_ops",
+    ],
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_ffmpeg_4.2.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = [
+        "//tensorflow_io/core:ffmpeg_4.2_ops",
     ],
 )
 

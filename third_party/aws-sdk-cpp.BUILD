@@ -25,6 +25,7 @@ cc_library(
         "aws-cpp-sdk-core/source/utils/base64/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/crypto/*.cpp",
         "aws-cpp-sdk-core/source/utils/crypto/factory/*.cpp",
+        "aws-cpp-sdk-core/source/utils/crypto/openssl/CryptoImpl.cpp",
         "aws-cpp-sdk-core/source/utils/event/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/json/**/*.cpp",
         "aws-cpp-sdk-core/source/utils/logging/**/*.cpp",
@@ -36,6 +37,8 @@ cc_library(
         "aws-cpp-sdk-kinesis/source/**/*.cpp",
         "aws-cpp-sdk-s3/include/**/*.h",
         "aws-cpp-sdk-s3/source/**/*.cpp",
+        "aws-cpp-sdk-transfer/include/**/*.h",
+        "aws-cpp-sdk-transfer/source/**/*.cpp",
     ]) + select({
         "@bazel_tools//src/conditions:windows": glob([
             "aws-cpp-sdk-core/source/http/windows/*.cpp",
@@ -51,12 +54,13 @@ cc_library(
         "aws-cpp-sdk-core/include/aws/core/SDKConfig.h",
     ],
     defines = [
-        'AWS_SDK_VERSION_STRING=\\"1.7.270\\"',
+        'AWS_SDK_VERSION_STRING=\\"1.7.366\\"',
         "AWS_SDK_VERSION_MAJOR=1",
         "AWS_SDK_VERSION_MINOR=7",
-        "AWS_SDK_VERSION_PATCH=270",
-        "ENABLE_CURL_CLIENT",
-        "ENABLE_NO_ENCRYPTION",
+        "AWS_SDK_VERSION_PATCH=366",
+        "ENABLE_OPENSSL_ENCRYPTION=1",
+        "ENABLE_CURL_CLIENT=1",
+        "OPENSSL_IS_BORINGSSL=1",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "PLATFORM_WINDOWS",
@@ -70,6 +74,7 @@ cc_library(
         "aws-cpp-sdk-core/include",
         "aws-cpp-sdk-kinesis/include",
         "aws-cpp-sdk-s3/include",
+        "aws-cpp-sdk-transfer/include",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "aws-cpp-sdk-core/include/aws/core/platform/refs",
@@ -84,7 +89,10 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = [
+        "@aws-c-common",
         "@aws-c-event-stream",
+        "@aws-checksums",
+        "@boringssl//:crypto",
         "@curl",
     ],
 )

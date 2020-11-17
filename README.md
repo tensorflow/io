@@ -16,7 +16,7 @@ available in TensorFlow's built-in support. A full list of supported file system
 and file formats by TensorFlow I/O can be found [here](https://www.tensorflow.org/io/api_docs/python/tfio).
 
 The use of tensorflow-io is straightforward with keras. Below is an example
-to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials) with
+to [Get Started with TensorFlow](https://www.tensorflow.org/tutorials/quickstart/beginner) with
 the data processing aspect replaced by tensorflow-io:
 
 ```python
@@ -79,6 +79,20 @@ People who are a little more adventurous can also try our nightly binaries:
 $ pip install tensorflow-io-nightly
 ```
 
+In addition to the pip packages, the docker images can be used to quickly get started.
+
+For stable builds:
+```sh
+$ docker pull tfsigio/tfio:latest
+$ docker run -it --rm --name tfio-latest tfsigio/tfio:latest
+```
+
+For nightly builds:
+```sh
+$ docker pull tfsigio/tfio:nightly
+$ docker run -it --rm --name tfio-nightly tfsigio/tfio:nightly
+```
+
 ### R Package
 
 Once the `tensorflow-io` Python package has been successfully installed, you
@@ -96,6 +110,7 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.16.0 | 2.3.x | Oct 23, 2020 |
 | 0.15.0 | 2.3.x | Aug 03, 2020 |
 | 0.14.0 | 2.2.x | Jul 08, 2020 |
 | 0.13.0 | 2.2.x | May 10, 2020 |
@@ -165,20 +180,25 @@ $ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/o
 
 #### macOS
 
-On macOS Catalina or higher, it is possible to build tensorflow-io with
-system provided python 3 (3.7.3). Both `tensorflow` and `bazel` are needed.
+On macOS Catalina 10.15.7, it is possible to build tensorflow-io with
+system provided python 3.8.2. Both `tensorflow` and `bazel` are needed.
 
-NOTE: Xcode installation is needed as tensorflow-io requires Swift for accessing
-Apple's native AVFoundation APIs. Also there is a bug in macOS's native python 3.7.3
-that could be fixed with https://github.com/tensorflow/tensorflow/issues/33183#issuecomment-554701214
+NOTE: The system default python 3.8.2 on macOS 10.15.7 will cause `regex` installation
+error caused by compiler option of `-arch arm64 -arch x86_64` (similar to the issue
+mentioned in https://github.com/giampaolo/psutil/issues/1832). To overcome this issue
+`export ARCHFLAGS="-arch x86_64"` will be needed to remove arm64 build option.
 
 ```sh
 #!/usr/bin/env bash
 
+# Disable arm64 build by specifying only x86_64 arch.
+# Only needed for macOS's system default python 3.8.2 on macOS 10.15.7
+export ARCHFLAGS="-arch x86_64"
+
 # Use following command to check if Xcode is correctly installed:
 xcodebuild -version
 
-# macOS's default python3 is 3.7.3
+# Show macOS's default python3
 python3 --version
 
 # Install Bazel version specified in .bazelversion
@@ -291,6 +311,10 @@ libraries (.so). The gcc provided by Developer Toolset and rh-python36 should be
 Also, the libstdc++ has to be linked statically to avoid discrepancy of libstdc++ installed on
 CentOS vs. newer gcc version by devtoolset.
 
+Furthermore, a special flag `--//tensorflow_io/core:static_build` has to be passed to Bazel
+in order to avoid duplication of symbols in statically linked libraries for file system
+plugins.
+
 The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
 ```sh
 #!/usr/bin/env bash
@@ -311,10 +335,10 @@ scl enable rh-python36 devtoolset-9 \
 scl enable rh-python36 devtoolset-9 \
     './configure.sh'
 
-# Build shared libraries
+# Build shared libraries, notice the passing of --//tensorflow_io/core:static_build
 BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstdc++.a" \
   scl enable rh-python36 devtoolset-9 \
-    'bazel build -s --verbose_failures //tensorflow_io/...'
+    'bazel build -s --verbose_failures --//tensorflow_io/core:static_build //tensorflow_io/...'
 
 # Once build is complete, shared libraries will be available in
 # `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
@@ -359,11 +383,11 @@ $ TFIO_DATAPATH=bazel-bin python3
 #### Docker
 
 For Python development, a reference Dockerfile [here](tools/docker/devel.Dockerfile) can be
-used to build the TensorFlow I/O package (`tensorflow-io`) from source:
+used to build the TensorFlow I/O package (`tensorflow-io`) from source. Additionally, the
+pre-built devel images can be used as well:
 ```sh
-# Build and run the Docker image
-$ docker build -f tools/docker/devel.Dockerfile -t tfio-dev .
-$ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
+# Pull (if necessary) and start the devel container
+$ docker run -it --rm --name tfio-dev --net=host -v ${PWD}:/v -w /v tfsigio/tfio:latest-devel bash
 
 # Inside the docker container, ./configure.sh will install TensorFlow or use existing install
 (tfio-dev) root@docker-desktop:/v$ ./configure.sh
@@ -371,14 +395,19 @@ $ docker run -it --rm --net=host -v ${PWD}:/v -w /v tfio-dev
 # Clean up exisiting bazel build's (if any)
 (tfio-dev) root@docker-desktop:/v$ rm -rf bazel-*
 
-# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native) optimizes the generated code for your machine's CPU type. [see here](https://www.tensorflow.org/install/source#configuration_options). NOTE: Based on the available resources, please change the number of job workers to -j 4/8/16 to prevent bazel server terminations and resource oriented build errors.
+# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native)
+# optimizes the generated code for your machine's CPU type.
+# Reference: https://www.tensorflow.orginstall/source#configuration_options).
+
+# NOTE: Based on the available resources, please change the number of job workers to:
+# -j 4/8/16 to prevent bazel server terminations and resource oriented build errors.
 
 (tfio-dev) root@docker-desktop:/v$ bazel build -j 8 --copt=-msse4.2 --copt=-mavx --compilation_mode=opt --verbose_failures --test_output=errors --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain //tensorflow_io/...
 
 
 # Run tests with PyTest, note: some tests require launching additional containers to run (see below)
 (tfio-dev) root@docker-desktop:/v$ pytest -s -v tests/
- # Build the TensorFlow I/O package
+# Build the TensorFlow I/O package
 (tfio-dev) root@docker-desktop:/v$ python setup.py bdist_wheel
 ```
 
@@ -391,7 +420,7 @@ libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
 `python setup.py --data bazel-bin bdist_wheel`.
 
 NOTE: While the tfio-dev container gives developers an easy to work with
-environment, the released whl packages are build differently due to manylinux2010
+environment, the released whl packages are built differently due to manylinux2010
 requirements. Please check [Build Status and CI] section for more details
 on how the released whl packages are generated.
 
@@ -402,8 +431,8 @@ to run all tests, execute the following commands:
 
 ```sh
 $ bash -x -e tests/test_ignite/start_ignite.sh
-$ bash -x -e tests/test_kafka/kafka_test.sh start kafka
-$ bash -x -e tests/test_kinesis/kinesis_test.sh start kinesis
+$ bash -x -e tests/test_kafka/kafka_test.sh
+$ bash -x -e tests/test_kinesis/kinesis_test.sh
 ```
 
 ### R

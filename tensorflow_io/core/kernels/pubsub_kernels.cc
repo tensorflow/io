@@ -14,7 +14,13 @@ limitations under the License.
 ==============================================================================*/
 
 #include <grpc++/grpc++.h>
-
+// Inclusion of googleapi related grpc headers, e.g., pubsub.grpc.pb.h
+// will cause Windows build failures due to the conflict of `OPTIONAL`
+// definition. The following is needed for Windows.
+#if defined(_MSC_VER)
+#include <Windows.h>
+#undef OPTIONAL
+#endif
 #include "absl/time/clock.h"
 #include "google/pubsub/v1/pubsub.grpc.pb.h"
 #include "tensorflow/core/framework/resource_mgr.h"

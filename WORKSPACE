@@ -283,11 +283,11 @@ http_archive(
         # TODO: Remove the fowllowing once librdkafka issue is resolved.
         """sed -i.bak '\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\/\//' src/rdkafka_cgrp.c""",
     ],
-    sha256 = "2d14551fd87262ec4917db3ae688ca2574d716faecccb1ac5136a478579cee19",
-    strip_prefix = "librdkafka-1.4.0-RC2",
+    sha256 = "f7fee59fdbf1286ec23ef0b35b2dfb41031c8727c90ced6435b8cf576f23a656",
+    strip_prefix = "librdkafka-1.5.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/edenhill/librdkafka/archive/v1.4.0-RC2.tar.gz",
-        "https://github.com/edenhill/librdkafka/archive/v1.4.0-RC2.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/edenhill/librdkafka/archive/v1.5.0.tar.gz",
+        "https://github.com/edenhill/librdkafka/archive/v1.5.0.tar.gz",
     ],
 )
 
@@ -382,11 +382,14 @@ http_archive(
 http_archive(
     name = "aws-sdk-cpp",
     build_file = "//third_party:aws-sdk-cpp.BUILD",
-    sha256 = "8724a2c3f00478e5f9af00d1d9bc67b7a0a557cc587a10f7097b1257008c2e68",
-    strip_prefix = "aws-sdk-cpp-1.7.270",
+    patch_cmds = [
+        """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
+    ],
+    sha256 = "758174f9788fed6cc1e266bcecb20bf738bd5ef1c3d646131c9ed15c2d6c5720",
+    strip_prefix = "aws-sdk-cpp-1.7.336",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.7.270.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.7.270.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.7.336.tar.gz",
+        "https://github.com/aws/aws-sdk-cpp/archive/1.7.336.tar.gz",
     ],
 )
 
@@ -476,6 +479,17 @@ http_archive(
 )
 
 http_archive(
+    name = "ffmpeg_4_2",
+    build_file = "//third_party:ffmpeg_4_2.BUILD",
+    sha256 = "42f3d391dbf07b65a52d3d9eed8038ecd9fae53cf4e0e44e2adb95d0cd433b53",
+    strip_prefix = "FFmpeg-n4.2.4",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/FFmpeg/FFmpeg/archive/n4.2.4.tar.gz",
+        "https://github.com/FFmpeg/FFmpeg/archive/n4.2.4.tar.gz",
+    ],
+)
+
+http_archive(
     name = "rules_python",
     sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
     strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
@@ -560,22 +574,40 @@ apple_support_dependencies()
 
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    sha256 = "35058ff14e4f9f49f78da2f1bbf1c03f27e8e40ec65c51f62720346e99803392",
-    strip_prefix = "google-cloud-cpp-0.13.0",
+    patch_cmds = [
+        """sed -i.bak 's/CURL\\* m/CURLM* m/g' google/cloud/storage/internal/curl_handle_factory.cc""",
+    ],
+    repo_mapping = {
+        "@com_github_curl_curl": "@curl",
+        "@com_github_nlohmann_json": "@nlohmann_json_lib",
+    },
+    sha256 = "ff82045b9491f0d880fc8e5c83fd9542eafb156dcac9ff8c6209ced66ed2a7f0",
+    strip_prefix = "google-cloud-cpp-1.17.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v0.13.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.17.1.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v1.17.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "nlohmann_json_lib",
+    build_file = "//third_party:nlohmann_json.BUILD",
+    sha256 = "c377963a95989270c943d522bfefe7b889ef5ed0e1e15d535fd6f6f16ed70732",
+    strip_prefix = "json-3.4.0",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/nlohmann/json/archive/v3.4.0.tar.gz",
+        "https://github.com/nlohmann/json/archive/v3.4.0.tar.gz",
     ],
 )
 
 http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "cb531e445115e28054a33ad968c2d7d8ade4693721866ce1b9adf9a78762c032",
-    strip_prefix = "googleapis-960b76b1f0c46d12610088977d1129cc7405f3dc",
+    sha256 = "7ebab01b06c555f4b6514453dc3e1667f810ef91d1d4d2d3aa29bb9fcb40a900",
+    strip_prefix = "googleapis-541b1ded4abadcc38e8178680b0677f65594ea6f",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/960b76b1f0c46d12610088977d1129cc7405f3dc.tar.gz",
-        "https://github.com/googleapis/googleapis/archive/960b76b1f0c46d12610088977d1129cc7405f3dc.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
+        "https://github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
     ],
 )
 

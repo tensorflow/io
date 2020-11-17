@@ -17,25 +17,10 @@
 set -e
 set -o pipefail
 
-if [ "$#" -eq 1 ]; then
-  container=$1
-  echo pull localstack/localstack:0.8.10
-  docker pull localstack/localstack:0.8.10
-  echo pull localstack/localstack:0.8.10 successfully
-  docker run -d --rm -p 4568:4568 --name=$container localstack/localstack:0.8.10
-  echo Container $container started successfully
-
-  exit 0
-fi
-
-if [[ $(uname) == "Darwin" ]]; then
-    pip install -q --user localstack
-    $HOME/Library/Python/2.7/bin/localstack start --host &
-else
-    sudo apt-get install -y -qq python-dev libsasl2-dev gcc
-    python -m pip install --user -U pip
-    python -m pip install --user -U setuptools wheel
-    python -m pip install --user localstack
-    $HOME/.local/bin/localstack start --host &
-fi
+LOCALSTACK_VERSION=0.12.2
+docker pull localstack/localstack:$LOCALSTACK_VERSION
+docker run -d --rm --net=host --name=tensorflow-io-aws localstack/localstack:$LOCALSTACK_VERSION
+echo "Waiting for 10 secs until localstack is up and running"
+sleep 10
+echo "Localstack up"
 exit 0

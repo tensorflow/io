@@ -40,8 +40,9 @@ class KafkaIODataset(tf.data.Dataset):
               ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
             Topic configuration: please refer to 'Topic configuration properties'
               in librdkafka doc. Note all topic configurations should be
-              prefixed with `configuration.topic.`. Examples include
+              prefixed with `conf.topic.`. Examples include
               ["conf.topic.auto.offset.reset=earliest"]
+            Reference: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
           internal: Whether the dataset is being created from within the named scope.
             Default: True
         """
@@ -106,8 +107,9 @@ class KafkaStreamIODataset(tf.data.Dataset):
               ["enable.auto.commit=false", "heartbeat.interval.ms=2000"]
             Topic configuration: please refer to 'Topic configuration properties'
               in librdkafka doc. Note all topic configurations should be
-              prefixed with `configuration.topic.`. Examples include
+              prefixed with `conf.topic.`. Examples include
               ["conf.topic.auto.offset.reset=earliest"]
+            Reference: https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
           internal: Whether the dataset is being created from within the named scope.
             Default: True
         """

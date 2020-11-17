@@ -13,24 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include <grpcpp/grpcpp.h>
-
-#include <cstring>
-#include <iostream>
-#include <string>
-
-#include "api/Compiler.hh"
-#include "api/DataFile.hh"
-#include "api/Decoder.hh"
-#include "api/Encoder.hh"
-#include "api/Generic.hh"
-#include "api/Specific.hh"
-#include "api/ValidSchema.hh"
-#include "google/cloud/bigquery/storage/v1beta1/storage.grpc.pb.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/strings/stringprintf.h"
-#include "tensorflow/core/public/version.h"
 #include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
 
 namespace tensorflow {

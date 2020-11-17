@@ -34,10 +34,12 @@ class _ElasticsearchHandler:
         self.prepare_connection_data()
 
     def prepare_base_urls(self):
-        """Prepares the base url for establish connection with the elasticsearch master
+        """Prepares the base url for establish connection with the
+        elasticsearch master.
 
         Returns:
-            A list of base_url's, each of type tf.string for establishing the connection pool
+            A list of base_url's, each of type tf.string for establishing
+            the connection pool.
         """
 
         if self.nodes is None:
@@ -110,6 +112,8 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.double)
                     elif dtype == "DT_STRING":
                         dtypes.append(tf.string)
+                    elif dtype == "DT_BOOL":
+                        dtypes.append(tf.bool)
                 return resource, columns.numpy(), dtypes, request_url
             except Exception:
                 print("Skipping node: {}".format(healthcheck_url))
@@ -165,7 +169,61 @@ class _ElasticsearchHandler:
 
 
 class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
-    """Represents an elasticsearch based tf.data.Dataset"""
+    """Represents an elasticsearch based tf.data.Dataset
+
+    The records fetched from the cluster are structured in their content and
+    require additional processing to make them ready for training the
+    machine learning model.
+
+    There are various ways of converting column data into features and using them
+    to train the models. For example, let's consider an elasticsearch dataset
+    which contains records having the `fare`, `age` and `survived` keys. The
+    values of the `survived` key act as our label data.
+
+    >>> import tensorflow as tf
+    >>> from tensorflow import feature_column
+    >>> from tensorflow.keras import layers
+    >>> import tensorflow_io as tfio
+
+    >>> dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
+                    nodes=["localhost:9092"],
+                    index="people",
+                    doc_type="survivors")
+    >>> dataset = dataset.map(lambda v: (v, v.pop("survived")))
+    >>> dataset = dataset.batch(10)
+
+    >>> fare = feature_column.numeric_column('fare') # numeric column
+    >>> age = feature_column.numeric_column('age')
+    >>> age_buckets = feature_column.bucketized_column(age) # bucketized column
+
+    >>> feature_columns = [cost, age_buckets]
+    >>> feature_layer = tf.keras.layers.DenseFeatures(feature_columns)
+
+    The `feature_layer` can now be added as the input layer to the `tf.keras` model.
+
+    >>> model = tf.keras.Sequential([
+            feature_layer,
+            layers.Dense(128, activation="relu"),
+            layers.Dropout(0.1),
+            layers.Dense(1),
+        ])
+    >>> model.compile(optimizer="adam",
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
+    >>> model.fit(dataset, epochs=5)
+
+    Additionally, while creating the `ElasticsearchIODataset`, headers can be passed
+    to connect to clusters that require additional configuration. For example, passing
+    the authorization headers:
+
+    >>> HEADERS = {"Authorization": "Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk"}
+    >>> dataset = tfio.experimental.elasticsearch.ElasticsearchIODataset(
+                    nodes=["localhost:9092"],
+                    index="people",
+                    doc_type="survivors",
+                    headers=HEADERS)
+    """
 
     def __init__(self, nodes, index, doc_type=None, headers=None, internal=True):
         """Prepare the ElasticsearchIODataset.
@@ -175,10 +233,10 @@ class ElasticsearchIODataset(tf.compat.v2.data.Dataset):
                 in [protocol://hostname:port] format.
                 For example: ["http://localhost:9200"]
             index: A `tf.string` representing the elasticsearch index to query.
-            doc_type: (Optional) A `tf.string` representing the type of documents in the index
-                to query.
+            doc_type: (Optional) A `tf.string` representing the type of documents
+                in the index to query.
             headers: (Optional) A dict of headers. For example:
-                {'Content-Type': 'application/json'}    
+                {'Content-Type': 'application/json'}
         """
         with tf.name_scope("ElasticsearchIODataset"):
             assert internal

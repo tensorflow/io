@@ -51,8 +51,6 @@ jobs:
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
           export PATH=/usr/bin:$PATH
           echo $PATH
-          echo "Note the following is to fix a bug in Apple's python 3.7.3"
-          sudo sed -i.bak 's/sys.modules.values()/list(sys.modules.values())/g' /Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.7/lib/python3.7/linecache.py
           python3 --version
           python3 -c 'import site; print(site.getsitepackages())'
           python3 .github/workflows/build.instruction.py --sudo=true README.md "#### macOS" > source.sh
@@ -128,8 +126,6 @@ jobs:
           bazel build \
             ${BAZEL_OPTIMIZATION} \
             --copt -Wunguarded-availability \
-            --copt -mmacosx-version-min=10.13 \
-            --linkopt -mmacosx-version-min=10.13 \
             --noshow_progress \
             --noshow_loading_progress \
             --verbose_failures \
@@ -146,7 +142,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -183,9 +179,10 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7']
+        python: ['3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
+      - uses: docker-practice/actions-setup-docker@v1
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -200,9 +197,11 @@ jobs:
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
+          docker version
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
+          bash -x -e tests/test_aws/aws_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -244,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -277,10 +276,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, ubuntu-20.04]
-        python: ['3.6', '3.7']
+        python: ['3.7', '3.8']
         exclude:
-          - os: ubuntu-20.04
-            python: '3.6'
+          - os: ubuntu-18.04
+            python: '3.8'
           - os: ubuntu-20.04
             python: '3.7'
     steps:
@@ -294,12 +293,13 @@ jobs:
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           bash -x -e tests/test_kafka/kafka_test.sh
-          bash -x -e tests/test_kinesis/kinesis_test.sh
+          bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_sql/sql_test.sh
+          bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
       - name: Test Linux
         run: |
           set -x -e
@@ -315,18 +315,18 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.8.5
+          python-version: 3.8
       - name: Bazel on Windows
         env:
-          PYTHON_VERSION: 3.8.5
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
         shell: cmd
         run: |
           @echo on
           set /P BAZEL_VERSION=< .bazelversion
-          BAZEL_VERSION=$(cat .bazelversion)
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
           bazel version
+          python -c "import platform;print(platform.python_version())" > .pythonversion
+          set /P PYTHON_VERSION=< .pythonversion
           cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
           python3 --version
           python3 -m pip install wheel setuptools
@@ -334,7 +334,7 @@ jobs:
           python3 setup.py --package-version | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so
+          bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so
       - uses: actions/upload-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -346,7 +346,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -375,7 +375,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7']
+        python: ['3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -410,6 +410,7 @@ jobs:
           (python -m pytest -s -v test_image_eager.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff or avif")
           (python -m pytest -s -v test_serialization_eager.py)
           (python -m pytest -s -v test_io_dataset_eager.py -k "numpy or hdf5 or audio or to_file")
+          (python -m pytest -s -v test_http_eager.py)
           python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
           (python -m pytest -s -v test_bigquery_eager.py)
           (python -m pytest -s -v test_dicom_eager.py)
@@ -421,10 +422,6 @@ jobs:
     needs: [lint, linux-test, macos-test, windows-test]
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/download-artifact@v1
-        with:
-          name: macOS-3.5-wheel
-          path: macOS-3.5-wheel
       - uses: actions/download-artifact@v1
         with:
           name: macOS-3.6-wheel
@@ -439,10 +436,6 @@ jobs:
           path: macOS-3.8-wheel
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.5-wheel
-          path: Linux-3.5-wheel
-      - uses: actions/download-artifact@v1
-        with:
           name: Linux-3.6-wheel
           path: Linux-3.6-wheel
       - uses: actions/download-artifact@v1
@@ -453,10 +446,6 @@ jobs:
         with:
           name: Linux-3.8-wheel
           path: Linux-3.8-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.5-wheel
-          path: Windows-3.5-wheel
       - uses: actions/download-artifact@v1
         with:
           name: Windows-3.6-wheel
@@ -472,15 +461,12 @@ jobs:
       - run: |
           set -e -x
           mkdir -p wheelhouse
-          cp macOS-3.5-wheel/*.whl wheelhouse/
           cp macOS-3.6-wheel/*.whl wheelhouse/
           cp macOS-3.7-wheel/*.whl wheelhouse/
           cp macOS-3.8-wheel/*.whl wheelhouse/
-          cp Linux-3.5-wheel/*.whl wheelhouse/
           cp Linux-3.6-wheel/*.whl wheelhouse/
           cp Linux-3.7-wheel/*.whl wheelhouse/
           cp Linux-3.8-wheel/*.whl wheelhouse/
-          cp Windows-3.5-wheel/*.whl wheelhouse/
           cp Windows-3.6-wheel/*.whl wheelhouse/
           cp Windows-3.7-wheel/*.whl wheelhouse/
           cp Windows-3.8-wheel/*.whl wheelhouse/
@@ -498,11 +484,20 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
       - run: |
           set -e -x
           docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
           bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
           docker push tfsigio/tfio:latest
+          python --version
+          TFIO_VERSION=$(python setup.py --version)
+          docker tag tfsigio/tfio:latest tfsigio/tfio:${TFIO_VERSION}
+          docker push tfsigio/tfio:${TFIO_VERSION}
+          bash -x -e tools/docker/tests/dockerfile_nightly_test.sh
+          docker push tfsigio/tfio:nightly
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
           docker push tfsigio/tfio:latest-devel
 
@@ -527,7 +522,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -570,17 +565,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-18.04]
-        python: ['3.5', '3.6', '3.7', '3.8']
-        exclude:
-          - os: ubuntu-16.04
-            python: '3.6'
-          - os: ubuntu-16.04
-            python: '3.7'
-          - os: ubuntu-16.04
-            python: '3.8'
-          - os: ubuntu-18.04
-            python: '3.5'
+        os: [ubuntu-18.04]
+        python: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -618,7 +604,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.5', '3.6', '3.7', 3.8]
+        python: ['3.6', '3.7', 3.8]
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -654,10 +640,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: macOS-3.5-nightly
-          path: macOS-3.5-nightly
-      - uses: actions/download-artifact@v1
-        with:
           name: macOS-3.6-nightly
           path: macOS-3.6-nightly
       - uses: actions/download-artifact@v1
@@ -670,10 +652,6 @@ jobs:
           path: macOS-3.8-nightly
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.5-nightly
-          path: Linux-3.5-nightly
-      - uses: actions/download-artifact@v1
-        with:
           name: Linux-3.6-nightly
           path: Linux-3.6-nightly
       - uses: actions/download-artifact@v1
@@ -684,10 +662,6 @@ jobs:
         with:
           name: Linux-3.8-nightly
           path: Linux-3.8-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.5-nightly
-          path: Windows-3.5-nightly
       - uses: actions/download-artifact@v1
         with:
           name: Windows-3.6-nightly
@@ -703,15 +677,12 @@ jobs:
       - run: |
           set -e -x
           mkdir -p dist
-          cp macOS-3.5-nightly/*.whl dist/
           cp macOS-3.6-nightly/*.whl dist/
           cp macOS-3.7-nightly/*.whl dist/
           cp macOS-3.8-nightly/*.whl dist/
-          cp Linux-3.5-nightly/*.whl dist/
           cp Linux-3.6-nightly/*.whl dist/
           cp Linux-3.7-nightly/*.whl dist/
           cp Linux-3.8-nightly/*.whl dist/
-          cp Windows-3.5-nightly/*.whl dist/
           cp Windows-3.6-nightly/*.whl dist/
           cp Windows-3.7-nightly/*.whl dist/
           cp Windows-3.8-nightly/*.whl dist/

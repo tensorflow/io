@@ -243,6 +243,53 @@ class HDF5ReadableResource : public ResourceBase {
                       .getSize());
           }
           break;
+        case H5T_ENUM: {
+          bool success = false;
+          if (data_type.getSize() == 1 &&
+              data_type.getSize() == DataTypeSize(DT_BOOL) &&
+              static_cast<H5::EnumType&>(data_type).getNmembers() == 2) {
+            int index_false = 0, index_true = 0;
+            try {
+              index_false =
+                  static_cast<H5::EnumType&>(data_type).getMemberIndex("FALSE");
+              index_true =
+                  static_cast<H5::EnumType&>(data_type).getMemberIndex("TRUE");
+            } catch (H5::DataTypeIException e) {
+            }
+            char value_false = 0, value_true = 0;
+            try {
+              static_cast<H5::EnumType&>(data_type).getMemberValue(
+                  0, &value_false);
+              static_cast<H5::EnumType&>(data_type).getMemberValue(1,
+                                                                   &value_true);
+            } catch (H5::DataTypeIException e) {
+            }
+            if (index_false == 0 && index_true == 1 && value_false == 0 &&
+                value_true == 1) {
+              success = true;
+            }
+          }
+          if (!success) {
+            string names = "[";
+            for (int ii = 0;
+                 ii < static_cast<H5::EnumType&>(data_type).getNmembers();
+                 ii++) {
+              int value;
+              static_cast<H5::EnumType&>(data_type).getMemberValue(ii, &value);
+              string name =
+                  static_cast<H5::EnumType&>(data_type).nameOf(&value, 100);
+              if (ii != 0) {
+                names += ", ";
+              }
+              names += name;
+            }
+            names += "]";
+            return errors::InvalidArgument("unsupported data class for enum: ",
+                                           names);
+          }
+        }
+          dtype = DT_BOOL;
+          break;
         default:
           return errors::InvalidArgument("unsupported data class for ", dataset,
                                          ": ", data_type.getClass());
@@ -452,6 +499,65 @@ class HDF5ReadableResource : public ResourceBase {
             default:
               return errors::Unimplemented(
                   "data type class for string not supported: ",
+                  data_type.getClass());
+          }
+          break;
+        case DT_BOOL:
+          switch (data_type.getClass()) {
+            case H5T_ENUM: {
+              bool success = false;
+              if (data_type.getSize() == 1 &&
+                  data_type.getSize() == DataTypeSize(DT_BOOL) &&
+                  static_cast<H5::EnumType&>(data_type).getNmembers() == 2) {
+                int index_false = 0, index_true = 0;
+                try {
+                  index_false =
+                      static_cast<H5::EnumType&>(data_type).getMemberIndex(
+                          "FALSE");
+                  index_true =
+                      static_cast<H5::EnumType&>(data_type).getMemberIndex(
+                          "TRUE");
+                } catch (H5::DataTypeIException e) {
+                }
+                char value_false = 0, value_true = 0;
+                try {
+                  static_cast<H5::EnumType&>(data_type).getMemberValue(
+                      0, &value_false);
+                  static_cast<H5::EnumType&>(data_type).getMemberValue(
+                      1, &value_true);
+                } catch (H5::DataTypeIException e) {
+                }
+                if (index_false == 0 && index_true == 1 && value_false == 0 &&
+                    value_true == 1) {
+                  success = true;
+                }
+              }
+              if (!success) {
+                string names = "[";
+                for (int ii = 0;
+                     ii < static_cast<H5::EnumType&>(data_type).getNmembers();
+                     ii++) {
+                  int value;
+                  static_cast<H5::EnumType&>(data_type).getMemberValue(ii,
+                                                                       &value);
+                  string name =
+                      static_cast<H5::EnumType&>(data_type).nameOf(&value, 100);
+                  if (ii != 0) {
+                    names += ", ";
+                  }
+                  names += name;
+                }
+                names += "]";
+                return errors::InvalidArgument(
+                    "unsupported data class for enum: ", names);
+              }
+            }
+              data_set.read(value->flat<bool>().data(), data_type, memory_space,
+                            data_space);
+              break;
+            default:
+              return errors::Unimplemented(
+                  "data type class for bool not supported: ",
                   data_type.getClass());
           }
           break;

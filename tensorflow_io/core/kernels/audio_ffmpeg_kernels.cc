@@ -217,6 +217,19 @@ class EncodeAACFunctionState {
             av_frame_free(&p);
           }
         }) {
+    int channel_layout = 0;
+    switch (channels) {
+      case 1:
+        channel_layout = AV_CH_LAYOUT_MONO;
+        break;
+      case 2:
+        channel_layout = AV_CH_LAYOUT_STEREO;
+        break;
+      default:
+        LOG(INFO) << "aac codec does not support channels = " << channels
+                  << " yet";
+        return;
+    }
     codec_ = avcodec_find_encoder(AV_CODEC_ID_AAC);
     if (codec_ != nullptr) {
       AVCodecContext* codec_context = avcodec_alloc_context3(codec_);
@@ -232,6 +245,7 @@ class EncodeAACFunctionState {
         if (*p == AV_SAMPLE_FMT_FLTP) {
           codec_context->sample_rate = rate;
           codec_context->channels = channels;
+          codec_context->channel_layout = channel_layout;
           codec_context->sample_fmt = AV_SAMPLE_FMT_FLTP;
           if (avcodec_open2(codec_context, codec_, NULL) >= 0) {
             LOG(INFO) << "aac codec opened successfully";

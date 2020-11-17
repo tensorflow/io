@@ -151,19 +151,23 @@ def fixture_pubsub(request):
     """fixture_pubsub"""
     from google.cloud import pubsub_v1  # pylint: disable=import-outside-toplevel
 
-    channel = "e{}e".format(time.time())
+    channel = "e{}e".format(int(time.time()))
 
     os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8085"
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path("pubsub-project", "pubsub_topic_" + channel)
-    publisher.create_topic(topic_path)
+    publisher.create_topic(request={"name": topic_path})
     # print('Topic created: {}'.format(topic))
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(
         "pubsub-project", "pubsub_subscription_{}".format(channel)
     )
     subscription = subscriber.create_subscription(
-        subscription_path, topic_path, retain_acked_messages=True
+        request={
+            "name": subscription_path,
+            "topic": topic_path,
+            "retain_acked_messages": True,
+        }
     )
     print("Subscription created: {}".format(subscription))
     for n in range(0, 10):
@@ -179,7 +183,7 @@ def fixture_pubsub(request):
         subscription_path = subscriber.subscription_path(
             "pubsub-project", "pubsub_subscription_{}".format(channel)
         )
-        subscriber.delete_subscription(subscription_path)
+        subscriber.delete_subscription(request={"subscription": subscription_path})
         print("Subscription {} deleted.".format(subscription_path))
 
     request.addfinalizer(fin)
@@ -312,10 +316,10 @@ def fixture_kinesis(request):
     os.environ["AWS_ACCESS_KEY_ID"] = "ACCESS_KEY"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "SECRET_KEY"
     os.environ["KINESIS_USE_HTTPS"] = "0"
-    os.environ["KINESIS_ENDPOINT"] = "localhost:4568"
+    os.environ["KINESIS_ENDPOINT"] = "localhost:4566"
 
     client = boto3.client(
-        "kinesis", region_name="us-east-1", endpoint_url="http://localhost:4568"
+        "kinesis", region_name="us-east-1", endpoint_url="http://localhost:4566"
     )
 
     # Setup the Kinesis with 1 shard.
@@ -1052,7 +1056,15 @@ def fixture_video_mp4():
                 ),
             ],
         ),
-        pytest.param("kinesis", marks=[pytest.mark.skip(reason="TODO")],),
+        pytest.param(
+            "kinesis",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO Localstack not setup properly on macOS/Windows yet",
+                ),
+            ],
+        ),
         pytest.param("pubsub"),
         pytest.param("hdf5"),
         pytest.param("grpc"),
