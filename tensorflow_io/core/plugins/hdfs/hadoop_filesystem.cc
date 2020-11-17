@@ -19,9 +19,12 @@ limitations under the License.
 #include <functional>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
-#if !defined(_MSC_VER)
+#if defined(_MSC_VER)
+#include <Windows.h>
+#else
 #include <dlfcn.h>
 #endif
 
@@ -40,10 +43,32 @@ namespace tensorflow {
 namespace io {
 namespace hdfs {
 
+#if defined(_MSC_VER)
+std::wstring Utf8ToWideChar(const std::string& utf8str) {
+  int size_required = MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(),
+                                          (int)utf8str.size(), NULL, 0);
+  std::wstring ws_translated_str(size_required, 0);
+  MultiByteToWideChar(CP_UTF8, 0, utf8str.c_str(), (int)utf8str.size(),
+                      &ws_translated_str[0], size_required);
+  return ws_translated_str;
+}
+#endif
+
 void* LoadSharedLibrary(const char* library_filename, TF_Status* status) {
 #if defined(_MSC_VER)
-  TF_SetStatus(status, TF_UNIMPLEMENTED, "LoadSharedLibrary not implemented");
-  return nullptr;
+  std::string file_name = library_filename;
+  std::replace(file_name.begin(), file_name.end(), '/', '\\');
+
+  std::wstring ws_file_name(Utf8ToWideChar(file_name));
+
+  HMODULE handle =
+      LoadLibraryExW(ws_file_name.c_str(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+  if (handle == nullptr) {
+    std::string error_message =
+        absl::StrCat("Library (", library_filename, ") not found");
+    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+    return nullptr;
+  }
 #else
   void* handle = dlopen(library_filename, RTLD_NOW | RTLD_LOCAL);
   if (handle == nullptr) {
@@ -52,22 +77,28 @@ void* LoadSharedLibrary(const char* library_filename, TF_Status* status) {
     TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
     return nullptr;
   }
+#endif
   TF_SetStatus(status, TF_OK, "");
   return handle;
-#endif
 }
 
 void* GetSymbolFromLibrary(void* handle, const char* symbol_name,
                            TF_Status* status) {
-#if defined(_MSC_VER)
-  TF_SetStatus(status, TF_UNIMPLEMENTED,
-               "GetSymbolFromLibrary not implemented");
-  return nullptr;
-#else
   if (handle == nullptr) {
     TF_SetStatus(status, TF_INVALID_ARGUMENT, "library handle cannot be null");
     return nullptr;
   }
+#if defined(_MSC_VER)
+  FARPROC symbol;
+
+  symbol = GetProcAddress((HMODULE)handle, symbol_name);
+  if (symbol == nullptr) {
+    std::string error_message =
+        absl::StrCat("Symbol (", symbol_name, ") not found");
+    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+    return nullptr;
+  }
+#else
   void* symbol = dlsym(handle, symbol_name);
   if (symbol == nullptr) {
     std::string error_message =
@@ -75,9 +106,9 @@ void* GetSymbolFromLibrary(void* handle, const char* symbol_name,
     TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
     return nullptr;
   }
+#endif
   TF_SetStatus(status, TF_OK, "");
   return symbol;
-#endif
 }
 
 // Implementation of a filesystem for HADOOP environments.
