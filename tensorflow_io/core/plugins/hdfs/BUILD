@@ -11,7 +11,6 @@ cc_library(
     name = "hdfs",
     srcs = [
         "hadoop_filesystem.cc",
-        "hadoop_filesystem.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
