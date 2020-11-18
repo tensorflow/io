@@ -34,7 +34,7 @@ class PulsarWriter:
             self._resource = resource
 
     def write(self, value, key=""):
-        """Write a message to pulsar topic
+        """Write a message to pulsar topic asynchronously
 
         Args:
           value: A `tf.string` tensor containing the value of message
@@ -44,5 +44,5 @@ class PulsarWriter:
         return core_ops.io_pulsar_writable_write(self._resource, value, key)
 
     def flush(self):
-        """Flush the queued messages"""
+        """Flush the queued messages, it will wait async write operations completed."""
         return core_ops.io_pulsar_writable_flush(self._resource)

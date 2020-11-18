@@ -69,13 +69,38 @@ def test_pulsar_resubscribe():
     NOTE: This test must be run after `test_pulsar_simple_messages`.
     """
 
+    topic = "test"
+    writer = tfio.experimental.streaming.PulsarWriter(
+        service_url="pulsar://localhost:6650", topic=topic
+    )
+    # 1. Append new messages to topic
+    for i in range(6, 10):
+        writer.write("D" + str(i))
+    writer.flush()
+
+    # 2. Use the same subscription with `test_pulsar_simple_messages` to continue consuming
     dataset = tfio.experimental.streaming.PulsarIODataset(
         service_url="pulsar://localhost:6650",
-        topic="test",
+        topic=topic,
         subscription="subscription-0",
         timeout=1000,
     )
-    assert len([msg for (msg, _) in dataset]) == 0
+    assert np.all(
+        [k.numpy() for (k, _) in dataset]
+        == [("D" + str(i)).encode() for i in range(6, 10)]
+    )
+
+    # 3. Use another subscription to consume messages from beginning
+    dataset = tfio.experimental.streaming.PulsarIODataset(
+        service_url="pulsar://localhost:6650",
+        topic=topic,
+        subscription="subscription-1",
+        timeout=1000,
+    )
+    assert np.all(
+        [k.numpy() for (k, _) in dataset]
+        == [("D" + str(i)).encode() for i in range(10)]
+    )
 
 
 def test_pulsar_invalid_arguments():
@@ -130,6 +155,62 @@ def test_pulsar_invalid_arguments():
         ) == "Invalid poll_timeout value: {}, must be <= timeout({})".format(
             LARGE_POLL_TIMEOUT, VALID_TIMEOUT
         )
+
+
+def test_pulsar_write_simple_messages():
+    """Test writing simple messages to a Pulsar topic with PulsarWriter
+    """
+
+    topic = "test-write-simple-messages"
+    writer = tfio.experimental.streaming.PulsarWriter(
+        service_url="pulsar://localhost:6650", topic=topic
+    )
+    # 1. Write 10 messages
+    for i in range(10):
+        writer.write("msg-" + str(i))
+    writer.flush()
+
+    # 2. Consume messages and verify
+    dataset = tfio.experimental.streaming.PulsarIODataset(
+        service_url="pulsar://localhost:6650",
+        topic=topic,
+        subscription="subscription-0",
+        timeout=1000,
+    )
+    assert np.all(
+        [k.numpy() for (k, _) in dataset]
+        == [("msg-" + str(i)).encode() for i in range(10)]
+    )
+
+
+def test_pulsar_write_keyed_messages():
+    """Test writing keyed messages to a Pulsar topic with PulsarWriter
+    """
+
+    topic = "test-write-keyed-messages"
+    writer = tfio.experimental.streaming.PulsarWriter(
+        service_url="pulsar://localhost:6650", topic=topic
+    )
+    # 1. Write 10 keyed messages, the key set is 0,1,2,0,1,2,...
+    for i in range(10):
+        value = "msg-" + str(i)
+        key = str(i % 3)
+        writer.write(value=value, key=key)
+    writer.flush()
+
+    # 2. Consume messages and verify
+    dataset = tfio.experimental.streaming.PulsarIODataset(
+        service_url="pulsar://localhost:6650",
+        topic=topic,
+        subscription="subscription-0",
+        timeout=1000,
+    )
+    kv = dict()
+    for (msg, key) in dataset:
+        kv.setdefault(key.numpy().decode(), []).append(msg.numpy())
+    assert kv["0"] == [("msg-" + str(i)).encode() for i in range(0, 10, 3)]
+    assert kv["1"] == [("msg-" + str(i)).encode() for i in range(1, 10, 3)]
+    assert kv["2"] == [("msg-" + str(i)).encode() for i in range(2, 10, 3)]
 
 
 if __name__ == "__main__":
