@@ -82,7 +82,10 @@ std::string JoinPath(std::initializer_list<absl::string_view> paths) {
 
 }  // namespace
 
-uint64_t GCSNowSeconds(void) { return 0; }
+uint64_t GCSNowSeconds(void) {
+  // TODO: Either implement NowSeconds here, or have TensorFlow API exposed
+  std::abort();
+}
 
 void GCSDefaultThreadOptions(GCSThreadOptions* options) {
   options->stack_size = 0;
@@ -149,10 +152,15 @@ std::string GCSGetTempFileName(const std::string& extension) {
 GCSThread* GCSStartThread(const GCSThreadOptions* options,
                           const char* thread_name, void (*work_func)(void*),
                           void* param) {
+  // TODO: Either implement StartThread here, or have TensorFlow API exposed
+  std::abort();
   return nullptr;
 }
 
-void GCSJoinThread(GCSThread* thread) {}
+void GCSJoinThread(GCSThread* thread) {
+  // TODO: Either implement JoinThread here, or have TensorFlow API exposed
+  std::abort();
+}
 
 }  // namespace gs
 }  // namespace io
