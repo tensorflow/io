@@ -172,7 +172,9 @@ Status ParseAvro(const AvroParserConfig& config,
                  const gtl::ArraySlice<tstring>& serialized,
                  thread::ThreadPool* thread_pool, AvroResult* result) {
   DCHECK(result != nullptr);
-
+  using clock = std::chrono::system_clock;
+  using ms = std::chrono::duration<double, std::milli>;
+  const auto before = clock::now();
   // Allocate dense output for fixed length dense values
   // (variable-length dense and sparse and ragged have to be buffered).
   /*  std::vector<Tensor> fixed_len_dense_values(config.dense.size());
@@ -204,8 +206,14 @@ Status ParseAvro(const AvroParserConfig& config,
         minibatch_bytes = 0;
       }
     }
-    // 'special logic'
-    const size_t min_minibatches = std::min<size_t>(8, serialized.size());
+    if (const char* n_minibatches =
+            std::getenv("AVRO_PARSER_NUM_MINIBATCHES")) {
+      VLOG(5) << "Overriding num_minibatches with " << n_minibatches;
+      result = std::stoi(n_minibatches);
+    }
+    // This is to ensure users can control the num minibatches all the way down
+    // to size of 1(no parallelism).
+    const size_t min_minibatches = std::min<size_t>(1, serialized.size());
     const size_t max_minibatches = 64;
     return std::max<size_t>(min_minibatches,
                             std::min<size_t>(max_minibatches, result));
@@ -245,13 +253,16 @@ Status ParseAvro(const AvroParserConfig& config,
     auto read_value = [&](avro::GenericDatum& d) {
       return range_reader.read(d);
     };
-
+    VLOG(5) << "Processing minibatch " << minibatch;
     status_of_minibatch[minibatch] = parser_tree.ParseValues(
         &buffers[minibatch], read_value, reader_schema, defaults);
   };
-
+  const auto before_parse = clock::now();
   ParallelFor(ProcessMiniBatch, num_minibatches, thread_pool);
-
+  const auto after_parse = clock::now();
+  const ms parse_read_duration = after_parse - before_parse;
+  VLOG(5) << "PARSER_TIMING: Time spend reading and parsing "
+          << parse_read_duration.count() << " ms ";
   for (Status& status : status_of_minibatch) {
     TF_RETURN_IF_ERROR(status);
   }
@@ -367,15 +378,22 @@ Status ParseAvro(const AvroParserConfig& config,
 
     return Status::OK();
   };
-
+  const auto before_sparse_merge = clock::now();
   for (size_t d = 0; d < config.sparse.size(); ++d) {
     TF_RETURN_IF_ERROR(MergeSparseMinibatches(d));
   }
-
+  const auto after_sparse_merge = clock::now();
+  const ms s_merge_duration = after_sparse_merge - before_sparse_merge;
   for (size_t d = 0; d < config.dense.size(); ++d) {
     TF_RETURN_IF_ERROR(MergeDenseMinibatches(d));
   }
+  const auto after_dense_merge = clock::now();
+  const ms d_merge_duration = after_dense_merge - after_sparse_merge;
+  VLOG(5) << "PARSER_TIMING: Sparse merge duration" << s_merge_duration.count()
+          << " ms ";
 
+  VLOG(5) << "PARSER_TIMING: Dense merge duration" << d_merge_duration.count()
+          << " ms ";
   return Status::OK();
 }
 

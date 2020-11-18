@@ -81,6 +81,9 @@ Status AvroParserTree::ParseValues(
     const std::function<bool(avro::GenericDatum&)> read_value,
     const avro::ValidSchema& reader_schema,
     const std::map<string, Tensor>& defaults) const {
+  using clock = std::chrono::system_clock;
+  using ms = std::chrono::duration<double, std::milli>;
+
   // new assignment of all buffers
   TF_RETURN_IF_ERROR(InitializeValueBuffers(key_to_value));
 
@@ -90,11 +93,24 @@ Status AvroParserTree::ParseValues(
   avro::GenericDatum datum(reader_schema);
 
   bool has_value = false;
-
-  while ((has_value = read_value(datum))) {
+  ms parse_duration;
+  ms read_duration;
+  while (true) {
+    const auto before_read = clock::now();
+    if (!(has_value = read_value(datum))) {
+      break;
+    }
+    const auto after_read = clock::now();
     TF_RETURN_IF_ERROR((*root_).Parse(key_to_value, datum, defaults));
+    const auto after_parse = clock::now();
+    parse_duration += after_parse - after_read;
+    read_duration += after_read - before_read;
   }
 
+  VLOG(5) << "PARSER_TIMING: Avro Read times " << read_duration.count()
+          << " ms ";
+  VLOG(5) << "PARSER_TIMING: Avro Parse times " << parse_duration.count()
+          << " ms ";
   // add end marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddFinishMarks(key_to_value));
 
