@@ -21,21 +21,32 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-class PulsarReadableResource : public ResourceBase {
+class PulsarResourceBase : public ResourceBase {
  public:
-  PulsarReadableResource() = default;
+  PulsarResourceBase() = default;
 
-  ~PulsarReadableResource() {
+  virtual ~PulsarResourceBase() {
     if (client_.get()) {
       client_->close();
       client_.reset(nullptr);
     }
   }
 
+ protected:
+  mutable mutex mu_;
+  std::unique_ptr<pulsar::Client> client_ TF_GUARDED_BY(mu_);
+
+  void Init(const std::string& service_url) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    client_.reset(new pulsar::Client(service_url));
+  }
+};
+
+class PulsarReadableResource final : public PulsarResourceBase {
+ public:
   Status Init(const std::string& service_url, const std::string& topic,
               const std::string& subscription, int64 ack_grouping_time) {
     mutex_lock l(mu_);
-    client_.reset(new pulsar::Client(service_url));
+    PulsarResourceBase::Init(service_url);
 
     pulsar::ConsumerConfiguration conf;
     conf.setConsumerType(pulsar::ConsumerFailover);
@@ -111,9 +122,6 @@ class PulsarReadableResource : public ResourceBase {
   std::string DebugString() const override { return "PulsarReadableResource"; }
 
  private:
-  mutable mutex mu_;
-
-  std::unique_ptr<pulsar::Client> client_;
   pulsar::Consumer consumer_;
 };
 
@@ -197,20 +205,11 @@ class PulsarReadableNextOp : public OpKernel {
   mutable mutex mu_;
 };
 
-class PulsarWritableResource : public ResourceBase {
+class PulsarWritableResource final : public PulsarResourceBase {
  public:
-  PulsarWritableResource() = default;
-
-  ~PulsarWritableResource() {
-    if (client_.get()) {
-      client_->close();
-      client_.reset(nullptr);
-    }
-  }
-
   Status Init(const std::string& service_url, const std::string& topic) {
     mutex_lock l(mu_);
-    client_.reset(new pulsar::Client(service_url));
+    PulsarResourceBase::Init(service_url);
     index_ = 0;
 
     pulsar::ProducerConfiguration conf;
@@ -264,9 +263,6 @@ class PulsarWritableResource : public ResourceBase {
   std::string DebugString() const override { return "PulsarWritableResource"; }
 
  private:
-  mutable mutex mu_;
-
-  std::unique_ptr<pulsar::Client> client_;
   pulsar::Producer producer_;
   unsigned long index_;
 };
