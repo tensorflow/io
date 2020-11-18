@@ -527,7 +527,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -571,7 +571,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -609,7 +609,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
