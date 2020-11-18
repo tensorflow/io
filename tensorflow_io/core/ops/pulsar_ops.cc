@@ -48,6 +48,24 @@ REGISTER_OP("IO>PulsarReadableNext")
       return Status::OK();
     });
 
+REGISTER_OP("IO>PulsarWritableInit")
+    .Input("service_url: string")
+    .Input("topic: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Scalar());
+      return Status::OK();
+    });
+
+REGISTER_OP("IO>PulsarWritableWrite")
+    .Input("input: resource")
+    .Input("value: string")
+    .Input("key: string");
+
+REGISTER_OP("IO>PulsarWritableFlush").Input("input: resource");
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

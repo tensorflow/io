@@ -124,6 +124,7 @@ class PulsarReadableInitOp : public ResourceOpKernel<PulsarReadableResource> {
 
  private:
   void Compute(OpKernelContext* context) override {
+    mutex_lock l(mu_);
     ResourceOpKernel<PulsarReadableResource>::Compute(context);
 
     const Tensor* service_url_tensor;
@@ -196,10 +197,162 @@ class PulsarReadableNextOp : public OpKernel {
   mutable mutex mu_;
 };
 
+class PulsarWritableResource : public ResourceBase {
+ public:
+  PulsarWritableResource() = default;
+
+  ~PulsarWritableResource() {
+    if (client_.get()) {
+      client_->close();
+      client_.reset(nullptr);
+    }
+  }
+
+  Status Init(const std::string& service_url, const std::string& topic) {
+    mutex_lock l(mu_);
+    client_.reset(new pulsar::Client(service_url));
+    index_ = 0;
+
+    pulsar::ProducerConfiguration conf;
+    conf.setPartitionsRoutingMode(
+        pulsar::ProducerConfiguration::RoundRobinDistribution);
+
+    auto result = client_->createProducer(topic, conf, producer_);
+    if (result != pulsar::ResultOk) {
+      return errors::Internal("failed to create producer for topic: ", topic,
+                              " error: ", pulsar::strResult(result));
+    }
+
+    LOG(INFO) << "Created producer on pulsar topic: " << topic;
+    return Status::OK();
+  }
+
+  Status WriteAsync(const std::string& value, const std::string& key) {
+    mutex_lock l(mu_);
+    pulsar::MessageBuilder builder;
+    if (!key.empty()) {
+      builder.setPartitionKey(key);
+    }
+    auto send_async_result = pulsar::ResultOk;
+    producer_.sendAsync(
+        builder.setContent(value).build(),
+        [index = index_, &send_async_result](pulsar::Result result,
+                                             const pulsar::MessageId& id) {
+          if (result != pulsar::ResultOk) {
+            LOG(ERROR) << "failed to send message-" << index << ": " << result;
+          }
+          send_async_result = result;
+        });
+    // sendAsync may fail immediately caused by queue is full
+    if (send_async_result != pulsar::ResultOk) {
+      return errors::Internal("sendAsync failed for index: ", index_,
+                              " error: ", pulsar::strResult(send_async_result));
+    }
+    index_++;
+    return Status::OK();
+  }
+
+  Status Flush() {
+    mutex_lock l(mu_);
+    auto result = producer_.flush();
+    if (result != pulsar::ResultOk) {
+      return errors::Internal("failed to flush: ", pulsar::strResult(result));
+    }
+    return Status::OK();
+  }
+
+  std::string DebugString() const override { return "PulsarWritableResource"; }
+
+ private:
+  mutable mutex mu_;
+
+  std::unique_ptr<pulsar::Client> client_;
+  pulsar::Producer producer_;
+  unsigned long index_;
+};
+
+class PulsarWritableInitOp : public ResourceOpKernel<PulsarWritableResource> {
+ public:
+  explicit PulsarWritableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<PulsarWritableResource>(context) {}
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<PulsarWritableResource>::Compute(context);
+
+    const Tensor* service_url_tensor;
+    OP_REQUIRES_OK(context, context->input("service_url", &service_url_tensor));
+    const std::string service_url = service_url_tensor->flat<tstring>()(0);
+
+    const Tensor* topic_tensor;
+    OP_REQUIRES_OK(context, context->input("topic", &topic_tensor));
+    const std::string topic = topic_tensor->flat<tstring>()(0);
+
+    OP_REQUIRES_OK(context, resource_->Init(service_url, topic));
+  }
+
+  Status CreateResource(PulsarWritableResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new PulsarWritableResource();
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+};
+
+class PulsarWritableWriteOp : public OpKernel {
+ public:
+  explicit PulsarWritableWriteOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    PulsarWritableResource* resource;
+
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* value_tensor;
+    OP_REQUIRES_OK(context, context->input("value", &value_tensor));
+    const std::string value = value_tensor->flat<tstring>()(0);
+
+    const Tensor* key_tensor;
+    OP_REQUIRES_OK(context, context->input("key", &key_tensor));
+    const std::string key = key_tensor->flat<tstring>()(0);
+
+    OP_REQUIRES_OK(context, resource->WriteAsync(value, key));
+  }
+};
+
+class PulsarWritableFlushOp : public OpKernel {
+ public:
+  explicit PulsarWritableFlushOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    PulsarWritableResource* resource;
+
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "input", &resource));
+    core::ScopedUnref unref(resource);
+
+    OP_REQUIRES_OK(context, resource->Flush());
+  }
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>PulsarReadableInit").Device(DEVICE_CPU),
                         PulsarReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>PulsarReadableNext").Device(DEVICE_CPU),
                         PulsarReadableNextOp);
+REGISTER_KERNEL_BUILDER(Name("IO>PulsarWritableInit").Device(DEVICE_CPU),
+                        PulsarWritableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>PulsarWritableWrite").Device(DEVICE_CPU),
+                        PulsarWritableWriteOp);
+REGISTER_KERNEL_BUILDER(Name("IO>PulsarWritableFlush").Device(DEVICE_CPU),
+                        PulsarWritableFlushOp);
 
 }  // namespace
 }  // namespace io
