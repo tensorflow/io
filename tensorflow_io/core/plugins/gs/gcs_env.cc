@@ -16,7 +16,6 @@ limitations under the License.
 #include <fcntl.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -24,6 +23,8 @@ limitations under the License.
 #include "absl/synchronization/mutex.h"
 #if defined(_MSC_VER)
 #include <windows.h>
+#else
+#include <sys/time.h>
 #endif
 #include <string>
 #include <vector>
@@ -103,7 +104,7 @@ std::string GCSGetTempFileName(const std::string& extension) {
   }
 
   char temp_file_name[_MAX_PATH];
-  retval = GCSGetTempFileName(temp_dir, "", UniqueId(), temp_file_name);
+  retval = GetTempFileNameA(temp_dir, "", UniqueId(), temp_file_name);
   if (retval > _MAX_PATH || retval == 0) {
     TF_Log(TF_FATAL, "Cannot get a temporary file in: %s", temp_dir);
   }
