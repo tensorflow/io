@@ -117,6 +117,10 @@ jobs:
       - name: Bazel on macOS
         run: |
           set -x -e
+          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          python3 -c 'import site; print(site.getsitepackages())'
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
           BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
