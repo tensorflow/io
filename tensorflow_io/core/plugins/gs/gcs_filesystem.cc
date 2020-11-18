@@ -648,13 +648,11 @@ void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
   if (TF_GetCode(status) != TF_OK) {
     return;
   }
-  char* temp_file_name = GCSGetTempFileName("");
+  std::string temp_file_name = GCSGetTempFileName("");
   file->plugin_file = new tf_writable_file::GCSWritableFile(
       {std::move(bucket), std::move(object), &gcs_file->gcs_client,
        TempFile(temp_file_name, std::ios::binary | std::ios::out), true,
        (gcs_file->compose ? 0 : -1)});
-  // We are responsible for freeing the pointer returned by GCSGetTempFileName
-  free(temp_file_name);
   TF_VLog(3, "GcsWritableFile: %s", path);
   TF_SetStatus(status, TF_OK, "");
 }
@@ -670,9 +668,7 @@ void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
   if (TF_GetCode(status) != TF_OK) {
     return;
   }
-  char* temp_file_name_c_str = GCSGetTempFileName("");
-  std::string temp_file_name(temp_file_name_c_str);  // To prevent memory-leak
-  free(temp_file_name_c_str);
+  std::string temp_file_name = GCSGetTempFileName("");
 
   if (!gcs_file->compose) {
     auto gcs_status =

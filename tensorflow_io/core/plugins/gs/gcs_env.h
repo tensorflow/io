@@ -30,7 +30,7 @@ typedef struct GCSThreadOptions {
   int numa_node;
 } GCSThreadOptions;
 
-char* GCSGetTempFileName(const char* extension);
+std::string GCSGetTempFileName(const std::string& extension);
 uint64_t GCSNowSeconds(void);
 void GCSDefaultThreadOptions(GCSThreadOptions* options);
 GCSThread* GCSStartThread(const GCSThreadOptions* options,
