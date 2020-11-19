@@ -39,8 +39,8 @@ limitations under the License.
 //
 // You can call 'release()' on a Cleanup object to cancel the cleanup.
 
-#ifndef TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_GCS_CLEANUP_H_
-#define TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_GCS_CLEANUP_H_
+#ifndef TENSORFLOW_IO_CORE_PLUGINS_GS_CLEANUP_H_
+#define TENSORFLOW_IO_CORE_PLUGINS_GS_CLEANUP_H_
 
 #include <type_traits>
 #include <utility>
@@ -114,4 +114,4 @@ Cleanup<DecayF> MakeCleanup(F&& f) {
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_GCS_CLEANUP_H_
+#endif  // TENSORFLOW_IO_CORE_PLUGINS_GS_CLEANUP_H_
