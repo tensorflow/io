@@ -22,6 +22,12 @@ limitations under the License.
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
+// TODO: Restore logging.h
+#define TF_Log(...)
+#define TF_VLog(...)
+// #include "tensorflow/c/logging.h"
+// TODO: Restore logging.h
+#include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 namespace tensorflow {
@@ -473,20 +479,21 @@ class CurlHttpRequest {
       const auto starttransfer_time_status = curl_easy_getinfo(
           that->curl_, CURLINFO_STARTTRANSFER_TIME, &starttransfer_time);
 
-      // TODO: Use C API from TensorFlow for Logging.
-      // LOG(ERROR) << "The transmission  of request " << this_object
-      //            << " (URI: " << that->uri_ << ") has been stuck at "
-      //            << current_progress << " of " << dltotal + ultotal
-      //            << " bytes for " << now - that->last_progress_timestamp_
-      //            << " seconds and will be aborted. CURL timing information: "
-      //            << "lookup time: " << lookup_time << " ("
-      //            << curl_easy_strerror(lookup_time_status)
-      //            << "), connect time: " << connect_time << " ("
-      //            << curl_easy_strerror(connect_time_status)
-      //            << "), pre-transfer time: " << pretransfer_time << " ("
-      //            << curl_easy_strerror(pretransfer_time_status)
-      //            << "), start-transfer time: " << starttransfer_time << " ("
-      //            << curl_easy_strerror(starttransfer_time_status) << ")";
+      std::string error_message = absl::StrCat(
+          "The transmission  of request ", (int64_t)(this_object),
+          " (URI: ", that->uri_, ") has been stuck at ", current_progress,
+          " of ", dltotal + ultotal, " bytes for ",
+          now - that->last_progress_timestamp_,
+          " seconds and will be aborted. CURL timing information: ",
+          "lookup time: ", lookup_time, " (",
+          curl_easy_strerror(lookup_time_status),
+          "), connect time: ", connect_time, " (",
+          curl_easy_strerror(connect_time_status),
+          "), pre-transfer time: ", pretransfer_time, " (",
+          curl_easy_strerror(pretransfer_time_status),
+          "), start-transfer time: ", starttransfer_time, " (",
+          curl_easy_strerror(starttransfer_time_status), ")");
+      TF_Log(TF_ERROR, error_message.c_str());
       return 1;  // Will abort the request.
     }
     // No progress was made since the last call, but we should wait a bit
