@@ -30,6 +30,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/plugins/az",
+        "//tensorflow_io/core/plugins/gs",
         "//tensorflow_io/core/plugins/hdfs",
         "//tensorflow_io/core/plugins/http",
         "//tensorflow_io/core/plugins/s3",
