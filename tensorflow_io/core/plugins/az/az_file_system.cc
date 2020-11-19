@@ -31,6 +31,12 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
+// TODO: Restore logging.h
+#define TF_Log(...)
+#define TF_VLog(...)
+// #include "tensorflow/c/logging.h"
+// TODO: Restore logging.h
+#include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
 
 namespace tensorflow {
@@ -191,21 +197,20 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
   }
 }
 
-// TODO: Enable logging
 azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
     const std::string& account) {
   azure::storage_lite::logger::set_logger(
       [](azure::storage_lite::log_level level, const std::string& log_msg) {
         switch (level) {
           case azure::storage_lite::log_level::info:
-            // _TF_LOG_INFO << log_msg;
+            TF_Log(TF_INFO, log_msg.c_str());
             break;
           case azure::storage_lite::log_level::error:
           case azure::storage_lite::log_level::critical:
-            // _TF_LOG_ERROR << log_msg;
+            TF_Log(TF_ERROR, log_msg.c_str());
             break;
           case azure::storage_lite::log_level::warn:
-            // _TF_LOG_WARNING << log_msg;
+            TF_Log(TF_WARNING, log_msg.c_str());
             break;
           case azure::storage_lite::log_level::trace:
           case azure::storage_lite::log_level::debug:
