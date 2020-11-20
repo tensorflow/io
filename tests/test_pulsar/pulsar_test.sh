@@ -21,8 +21,8 @@ VERSION=2.6.1
 TAR_FILE="apache-pulsar-${VERSION}-bin.tar.gz"
 
 echo "Downloading pulsar ${VERSION}"
-if [[ ! -f apache-pulsar-2.6.1-bin.tar.gz ]]; then
-  curl -sSOL "https://downloads.apache.org/pulsar/pulsar-2.6.1/${TAR_FILE}"
+if [[ ! -f ${TAR_FILE} ]]; then
+  curl -sSOL "https://downloads.apache.org/pulsar/pulsar-${VERSION}/${TAR_FILE}"
 fi
 
 tar -xzf ${TAR_FILE}
