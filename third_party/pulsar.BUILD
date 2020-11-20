@@ -35,7 +35,11 @@ cc_library(
         "-msse4.2",
         "-mpclmul",
     ],
-    defines = ["_PULSAR_VERSION_=\\\"2.6.1\\\""],
+    defines = [
+        "_PULSAR_VERSION_=\\\"2.6.1\\\"",
+        "WIN32_LEAN_AND_MEAN",
+        "PULSAR_STATIC",
+    ],
     includes = [
         "pulsar-client-cpp",
         "pulsar-client-cpp/include",
@@ -45,7 +49,14 @@ cc_library(
     deps = [
         ":PulsarApi_cc_proto",
         "@boost",
+        "@boringssl//:crypto",
+        "@boringssl//:ssl",
         "@curl",
         "@zstd",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@dlfcn-win32",
+        ],
+        "//conditions:default": [],
+    }),
 )

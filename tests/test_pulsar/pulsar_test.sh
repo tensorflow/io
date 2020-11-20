@@ -29,13 +29,20 @@ tar -xzf ${TAR_FILE}
 cd "apache-pulsar-${VERSION}"
 
 echo "Disable deleting inactive topics"
-sed -i '' "s/brokerDeleteInactiveTopicsFrequencySeconds=.*/brokerDeleteInactiveTopicsFrequencySeconds=86400/" conf/standalone.conf
+sed -i.bak "s/brokerDeleteInactiveTopicsFrequencySeconds=.*/brokerDeleteInactiveTopicsFrequencySeconds=86400/" conf/standalone.conf
 
 bin/pulsar-daemon start standalone
 
-echo "-- Wait for Pulsar service to be ready"
-until curl http://localhost:8080/metrics > /dev/null 2>&1 ; do sleep 1; done
-echo "-- Pulsar service is ready -- Configure permissions"
+echo "Waiting for Pulsar service ready or 30 seconds passed"
+for i in {1..30}; do
+  RESPONSE=$(curl --write-out '%{http_code}' --silent -o /dev/null -L http://localhost:8080/metrics) || true
+  if [[ $RESPONSE == 200 ]]; then
+      echo "[$i] Fetch metrics successfully"
+      break
+  fi
+  echo "[$i] Fetch metrics failed: $RESPONSE, sleep for 1 second"
+  sleep 1
+done
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
 bin/pulsar-client produce -m "D0,D1,D2,D3,D4,D5" test
