@@ -405,6 +405,9 @@ http_archive(
 
 http_archive(
     name = "boringssl",
+    patch_cmds = [
+        """sed -i.bak 's/bio.c",/bio.c","src\\/decrepit\\/bio\\/base64_bio.c",/g' BUILD.generated.bzl""",
+    ],
     sha256 = "1188e29000013ed6517168600fc35a010d58c5d321846d6a6dfee74e4c788b45",
     strip_prefix = "boringssl-7f634429a04abc48e2eb041c81c5235816c96514",
     urls = [
