@@ -29,6 +29,7 @@ tar -xzf ${TAR_FILE}
 cd "apache-pulsar-${VERSION}"
 
 echo "Disable deleting inactive topics"
+sed -i.bak 's/zookeeperServers=.*/zookeeperServers=localhost:2182/' conf/standalone.conf
 sed -i.bak "s/brokerDeleteInactiveTopicsFrequencySeconds=.*/brokerDeleteInactiveTopicsFrequencySeconds=86400/" conf/standalone.conf
 
 bin/pulsar-daemon start standalone
