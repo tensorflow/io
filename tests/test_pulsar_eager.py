@@ -20,6 +20,9 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 
+default_pulsar_timeout = 5000
+
+
 def test_pulsar_simple_messages():
     """Test consuming simple messages from a Pulsar topic with PulsarIODataset. 
 
@@ -31,7 +34,7 @@ def test_pulsar_simple_messages():
         service_url="pulsar://localhost:6650",
         topic="test",
         subscription="subscription-0",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     assert np.all(
         [k.numpy() for (k, _) in dataset] == [("D" + str(i)).encode() for i in range(6)]
@@ -51,7 +54,7 @@ def test_pulsar_keyed_messages():
         service_url="pulsar://localhost:6650",
         topic="key-test",
         subscription="subscription-0",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     kv = dict()
     for (msg, key) in dataset:
@@ -83,7 +86,7 @@ def test_pulsar_resubscribe():
         service_url="pulsar://localhost:6650",
         topic=topic,
         subscription="subscription-0",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     assert np.all(
         [k.numpy() for (k, _) in dataset]
@@ -95,7 +98,7 @@ def test_pulsar_resubscribe():
         service_url="pulsar://localhost:6650",
         topic=topic,
         subscription="subscription-1",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     assert np.all(
         [k.numpy() for (k, _) in dataset]
@@ -125,7 +128,7 @@ def test_pulsar_invalid_arguments():
             INVALID_TIMEOUT
         )
 
-    VALID_TIMEOUT = 1000
+    VALID_TIMEOUT = default_pulsar_timeout
     INVALID_POLL_TIMEOUT = -45
     try:
         tfio.experimental.streaming.PulsarIODataset(
@@ -175,7 +178,7 @@ def test_pulsar_write_simple_messages():
         service_url="pulsar://localhost:6650",
         topic=topic,
         subscription="subscription-0",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     assert np.all(
         [k.numpy() for (k, _) in dataset]
@@ -203,7 +206,7 @@ def test_pulsar_write_keyed_messages():
         service_url="pulsar://localhost:6650",
         topic=topic,
         subscription="subscription-0",
-        timeout=1000,
+        timeout=default_pulsar_timeout,
     )
     kv = dict()
     for (msg, key) in dataset:
