@@ -206,6 +206,7 @@ jobs:
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_aws/aws_test.sh
+          bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -304,6 +305,7 @@ jobs:
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_sql/sql_test.sh
           bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
+          bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Test Linux
         run: |
           set -x -e
