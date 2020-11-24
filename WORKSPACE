@@ -405,6 +405,9 @@ http_archive(
 
 http_archive(
     name = "boringssl",
+    patch_cmds = [
+        """sed -i.bak 's/bio.c",/bio.c","src\\/decrepit\\/bio\\/base64_bio.c",/g' BUILD.generated.bzl""",
+    ],
     sha256 = "1188e29000013ed6517168600fc35a010d58c5d321846d6a6dfee74e4c788b45",
     strip_prefix = "boringssl-7f634429a04abc48e2eb041c81c5235816c96514",
     urls = [
@@ -1061,5 +1064,31 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0-src.tar.gz",
         "https://downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0-src.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "dlfcn-win32",
+    build_file = "//third_party:dlfcn-win32.BUILD",
+    sha256 = "f18a412e84d8b701e61a78252411fe8c72587f52417c1ef21ca93604de1b9c55",
+    strip_prefix = "dlfcn-win32-1.2.0",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/dlfcn-win32/dlfcn-win32/archive/v1.2.0.tar.gz",
+        "https://github.com/dlfcn-win32/dlfcn-win32/archive/v1.2.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "pulsar",
+    build_file = "//third_party:pulsar.BUILD",
+    patch_cmds = [
+        "cp pulsar-common/src/main/proto/PulsarApi.proto pulsar-client-cpp/lib",
+        "sed -i.bak 's/define PULSAR_DEFINES_H_/define PULSAR_DEFINES_H_\\'$'\\n''#if defined(_MSC_VER)\\'$'\\n''#include <Windows.h>\\'$'\\n''#undef ERROR\\'$'\\n''#endif/g' pulsar-client-cpp/include/pulsar/defines.h",
+        "sed -i.bak 's/define LIB_ACKGROUPINGTRACKER_H_/define LIB_ACKGROUPINGTRACKER_H_\\'$'\\n''#include <pulsar\\/defines.h>/g' pulsar-client-cpp/lib/AckGroupingTracker.h",
+    ],
+    sha256 = "08f19ca6d6353751ff0661403b16b71425bf7ada3d8835a38e426ae303b0e385",
+    strip_prefix = "pulsar-2.6.1",
+    urls = [
+        "https://github.com/apache/pulsar/archive/v2.6.1.tar.gz",
     ],
 )

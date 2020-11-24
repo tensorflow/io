@@ -13,6 +13,9 @@ cc_library(
         "boost/**/*.hpp",
         "boost/predef/**/*.h",
         "boost/detail/**/*.ipp",
+        "boost/asio/**/*.ipp",
+        "boost/date_time/**/*.ipp",
+        "boost/xpressive/detail/**/*.ipp",
     ]) + glob([
         "libs/filesystem/src/*.cpp",
         "libs/iostreams/src/*.cpp",
