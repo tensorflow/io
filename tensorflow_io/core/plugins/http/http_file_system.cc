@@ -22,11 +22,7 @@ limitations under the License.
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
+#include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
 

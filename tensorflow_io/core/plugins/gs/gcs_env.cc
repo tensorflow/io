@@ -28,12 +28,8 @@ limitations under the License.
 #endif
 #include <string>
 #include <vector>
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
 
+#include "tensorflow/c/logging.h"
 #include "tensorflow_io/core/plugins/gs/gcs_env.h"
 
 namespace tensorflow {
