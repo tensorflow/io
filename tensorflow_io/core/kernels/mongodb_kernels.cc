@@ -22,54 +22,56 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-class MongoReadableResource : public ResourceBase {
+class MongoDBReadableResource : public ResourceBase {
  public:
-  MongoReadableResource(Env* env) : env_(env) {}
-  ~MongoReadableResource() {
-    mongoc_collection_destroy(collection_);
-    mongoc_database_destroy(database_);
-    mongoc_uri_destroy(uri_);
-    mongoc_client_destroy(client_);
+  MongoDBReadableResource(Env* env) : env_(env) {}
+  ~MongoDBReadableResource() {
+    mongoc_collection_destroy(collection_obj_);
+    mongoc_database_destroy(database_obj_);
+    mongoc_uri_destroy(uri_obj_);
+    mongoc_client_destroy(client_obj_);
     mongoc_cleanup();
   }
 
-  Status Init() {
+  Status Init(const std::string& uri, const std::string& database,
+              const std::string& collection) {
     //   Required to initialize libmongoc's internals
     mongoc_init();
 
     // Log the uri
-    LOG(ERROR) << uri_string;
+    LOG(ERROR) << uri;
 
     // Create a MongoDB URI object from the given string
 
-    uri_ = mongoc_uri_new_with_error(uri_string, &error_);
-    if (!uri_) {
-      return errors::FailedPrecondition("Failed to parse URI: ", uri_string,
+    uri_obj_ = mongoc_uri_new_with_error(uri.c_str(), &error_);
+    if (!uri_obj_) {
+      return errors::FailedPrecondition("Failed to parse URI: ", uri,
                                         "due to: ", error_.message);
     }
 
     // Initialize the MongoDB client
 
-    client_ = mongoc_client_new_from_uri(uri_);
-    if (!client_) {
+    client_obj_ = mongoc_client_new_from_uri(uri_obj_);
+    if (!client_obj_) {
       return errors::FailedPrecondition("Failed to initialize the client");
     }
 
     // Register the application name so we can track it in the profile logs
     //  on the server. This can also be done from the URI.
 
-    mongoc_client_set_appname(client_, "tfio-mongo");
+    mongoc_client_set_appname(client_obj_, "tfio-mongo");
 
     //  Get a handle on the database "db_name" and collection "coll_name"
 
-    database_ = mongoc_client_get_database(client_, "tfiodb");
-    collection_ = mongoc_client_get_collection(client_, "tfiodb", "test");
+    database_obj_ = mongoc_client_get_database(client_obj_, database.c_str());
+    collection_obj_ = mongoc_client_get_collection(
+        client_obj_, database.c_str(), collection.c_str());
 
     // Perform healthcheck before proceeding
     Healthcheck();
   }
 
-  string DebugString() const override { return "MongoReadableResource"; }
+  string DebugString() const override { return "MongoDBReadableResource"; }
 
  protected:
   Status Healthcheck() {
@@ -77,7 +79,7 @@ class MongoReadableResource : public ResourceBase {
 
     cmd_ = BCON_NEW("ping", BCON_INT32(1));
 
-    retval_ = mongoc_client_command_simple(client_, "admin", cmd_, NULL,
+    retval_ = mongoc_client_command_simple(client_obj_, "admin", cmd_, NULL,
                                            &reply_, &error_);
 
     if (!retval_) {
@@ -91,34 +93,45 @@ class MongoReadableResource : public ResourceBase {
 
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
-  const char* uri_string = "mongodb://mongoadmin:secret@localhost:27017";
-  mongoc_uri_t* uri_;
-  mongoc_client_t* client_;
-  mongoc_database_t* database_;
-  mongoc_collection_t* collection_;
+  mongoc_uri_t* uri_obj_;
+  mongoc_client_t* client_obj_;
+  mongoc_database_t* database_obj_;
+  mongoc_collection_t* collection_obj_;
   bson_t *cmd_, reply_;
   bson_error_t error_;
   char* str;
   bool retval_;
 };
 
-class MongoReadableInitOp : public ResourceOpKernel<MongoReadableResource> {
+class MongoDBReadableInitOp : public ResourceOpKernel<MongoDBReadableResource> {
  public:
-  explicit MongoReadableInitOp(OpKernelConstruction* context)
-      : ResourceOpKernel<MongoReadableResource>(context) {
+  explicit MongoDBReadableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<MongoDBReadableResource>(context) {
     env_ = context->env();
   }
 
  private:
   void Compute(OpKernelContext* context) override {
-    ResourceOpKernel<MongoReadableResource>::Compute(context);
+    ResourceOpKernel<MongoDBReadableResource>::Compute(context);
 
-    OP_REQUIRES_OK(context, resource_->Init());
+    const Tensor* uri_tensor;
+    OP_REQUIRES_OK(context, context->input("uri", &uri_tensor));
+    const string& uri = uri_tensor->scalar<tstring>()();
+
+    const Tensor* database_tensor;
+    OP_REQUIRES_OK(context, context->input("database", &database_tensor));
+    const string& database = database_tensor->scalar<tstring>()();
+
+    const Tensor* collection_tensor;
+    OP_REQUIRES_OK(context, context->input("collection", &collection_tensor));
+    const string& collection = collection_tensor->scalar<tstring>()();
+
+    OP_REQUIRES_OK(context, resource_->Init(uri, database, collection));
   }
 
-  Status CreateResource(MongoReadableResource** resource)
+  Status CreateResource(MongoDBReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *resource = new MongoReadableResource(env_);
+    *resource = new MongoDBReadableResource(env_);
     return Status::OK();
   }
 
@@ -127,8 +140,8 @@ class MongoReadableInitOp : public ResourceOpKernel<MongoReadableResource> {
   Env* env_ TF_GUARDED_BY(mu_);
 };
 
-REGISTER_KERNEL_BUILDER(Name("IO>MongoReadableInit").Device(DEVICE_CPU),
-                        MongoReadableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>MongoDBReadableInit").Device(DEVICE_CPU),
+                        MongoDBReadableInitOp);
 
 }  // namespace
 }  // namespace io

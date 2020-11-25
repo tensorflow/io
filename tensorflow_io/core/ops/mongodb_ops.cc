@@ -21,7 +21,10 @@ namespace tensorflow {
 namespace io {
 namespace {
 
-REGISTER_OP("IO>MongoReadableInit")
+REGISTER_OP("IO>MongoDBReadableInit")
+    .Input("uri: string")
+    .Input("database: string")
+    .Input("collection: string")
     .Output("resource: resource")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''");

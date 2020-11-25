@@ -60,12 +60,9 @@ base_config = (
     "-e 's/@MONGOC_ENABLE_SSL_LIBRESSL@/0/g' " +
     "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CRYPTO_CNG@/0/g' " +
-    "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
     "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@/0/g' " +
     "-e 's/@MONGOC_HAVE_ASN1_STRING_GET0_DATA@/0/g' " +
-    "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
-    "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
     "-e 's/@MONGOC_HAVE_SASL_CLIENT_DONE@/0/g' " +
     "-e 's/@MONGOC_NO_AUTOMATIC_GLOBALS@/1/g' " +
     "-e 's/@MONGOC_HAVE_SOCKLEN@/1/g' " +
@@ -76,7 +73,8 @@ base_config = (
     "-e 's/@MONGOC_ENABLE_SHM_COUNTERS@/0/g' " +
     "-e 's/@MONGOC_ENABLE_RDTSCP@/0/g' " +
     "-e 's/@MONGOC_HAVE_SCHED_GETCPU@/0/g' " +
-    "-e 's/@MONGOC_TRACE@/0/g' " +
+    #TODO(vikoth18) set MONGOC_TRACE to 0 before merge
+    "-e 's/@MONGOC_TRACE@/1/g' " +
     "-e 's/@MONGOC_ENABLE_ICU@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION@/0/g' " +
     "-e 's/@MONGOC_HAVE_SS_FAMILY@/1/g' " +
@@ -99,15 +97,22 @@ genrule(
               "@bazel_tools//src/conditions:windows": (
                   "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/1/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/1/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' "
               ),
               "@bazel_tools//src/conditions:darwin": (
-                  "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/1/g' " +
@@ -116,6 +121,10 @@ genrule(
               "//conditions:default": (
                   "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
