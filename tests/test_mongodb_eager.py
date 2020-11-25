@@ -27,7 +27,7 @@ import tensorflow_io as tfio
 
 # COMMON VARIABLES
 
-URI = "mongodb://mongoadmin@default_password@localhost:27017"
+URI = "mongodb://mongoadmin:default_password@localhost:27017"
 DATABASE = "tfiodb"
 COLLECTION = "test"
 

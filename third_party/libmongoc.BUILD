@@ -28,7 +28,12 @@ cc_library(
             "src/common/*.h",
             "src/kms-message/src/**/*.h",
         ],
-    ),
+    ) + select({
+        "@bazel_tools//src/conditions:windows": [
+            "windows/unistd.h",
+        ],
+        "//conditions:default": [],
+    }),
     copts = [],
     defines = [
         "MONGOC_COMPILATION",
@@ -44,7 +49,22 @@ cc_library(
         "src/libbson/src/jsonsl",
         "src/libmongoc/src",
         "src/libmongoc/src/mongoc",
+        "windows",
     ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [],
+        "@bazel_tools//src/conditions:windows": [
+            # https://jira.mongodb.org/browse/CXX-1731
+            "-DEFAULTLIB:ws2_32.lib",
+            "-DEFAULTLIB:advapi32.lib",
+            "-DEFAULTLIB:crypt32.lib",
+            "-DEFAULTLIB:Normaliz.lib",
+        ],
+        "//conditions:default": [
+            "-lrt",
+            "-lresolv",
+        ],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         "@boringssl//:crypto",
@@ -99,20 +119,20 @@ genrule(
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL_SSPI@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/1/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' "
               ),
               "@bazel_tools//src/conditions:darwin": (
-                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/1/g' " +
@@ -138,22 +158,37 @@ genrule(
     name = "bson_config_h",
     srcs = ["src/libbson/src/bson/bson-config.h.in"],
     outs = ["src/libbson/src/bson/bson-config.h"],
-    cmd = ("sed " +
-           "-e 's/@BSON_HAVE_STRINGS_H@/1/g' " +
-           "-e 's/@BSON_HAVE_STDBOOL_H@/1/g' " +
-           "-e 's/@BSON_HAVE_ATOMIC_32_ADD_AND_FETCH@/1/g' " +
-           "-e 's/@BSON_HAVE_ATOMIC_64_ADD_AND_FETCH@/1/g' " +
-           "-e 's/@BSON_HAVE_CLOCK_GETTIME@/1/g' " +
-           "-e 's/@BSON_HAVE_STRNLEN@/1/g' " +
-           "-e 's/@BSON_HAVE_SNPRINTF@/1/g' " +
-           "-e 's/@BSON_HAVE_GMTIME_R@/1/g' " +
-           "-e 's/@BSON_HAVE_REALLOCF@/0/g' " +
-           "-e 's/@BSON_HAVE_TIMESPEC@/1/g' " +
-           "-e 's/@BSON_EXTRA_ALIGN@/1/g' " +
-           "-e 's/@BSON_HAVE_SYSCALL_TID@/0/g' " +
-           "-e 's/@BSON_HAVE_RAND_R@/1/g' " +
-           "-e 's/@BSON_HAVE_STRLCPY@/1/g' " +
-           "-e 's/@BSON_OS@/1/g' " +
-           "-e 's/@BSON_BYTE_ORDER@/1234/g' " +
-           "$< >$@"),
+    cmd = (
+        "sed " +
+        "-e 's/@BSON_HAVE_STRINGS_H@/1/g' " +
+        "-e 's/@BSON_HAVE_STDBOOL_H@/1/g' " +
+        "-e 's/@BSON_HAVE_ATOMIC_32_ADD_AND_FETCH@/1/g' " +
+        "-e 's/@BSON_HAVE_ATOMIC_64_ADD_AND_FETCH@/1/g' " +
+        "-e 's/@BSON_HAVE_CLOCK_GETTIME@/1/g' " +
+        "-e 's/@BSON_HAVE_STRNLEN@/1/g' " +
+        "-e 's/@BSON_HAVE_SNPRINTF@/1/g' " +
+        "-e 's/@BSON_HAVE_GMTIME_R@/1/g' " +
+        "-e 's/@BSON_HAVE_REALLOCF@/0/g' " +
+        "-e 's/@BSON_HAVE_TIMESPEC@/1/g' " +
+        "-e 's/@BSON_EXTRA_ALIGN@/1/g' " +
+        "-e 's/@BSON_HAVE_SYSCALL_TID@/0/g' " +
+        "-e 's/@BSON_HAVE_RAND_R@/1/g' " +
+        "-e 's/@BSON_HAVE_STRLCPY@/1/g' " +
+        "-e 's/@BSON_BYTE_ORDER@/1234/g' "
+    ) + select({
+        "@bazel_tools//src/conditions:windows": (
+            "-e 's/@BSON_OS@/2/g' " +
+            "$< >$@"
+        ),
+        "//conditions:default": (
+            "-e 's/@BSON_OS@/1/g' " +
+            "$< >$@"
+        ),
+    }),
+)
+
+genrule(
+    name = "windows_unistd_h",
+    outs = ["windows/unistd.h"],
+    cmd = "touch $@",
 )
