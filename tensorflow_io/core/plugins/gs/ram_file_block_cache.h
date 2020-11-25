@@ -27,12 +27,8 @@ limitations under the License.
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
+#include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
 #include "tensorflow_io/core/plugins/gs/gcs_env.h"
 
 namespace tensorflow {

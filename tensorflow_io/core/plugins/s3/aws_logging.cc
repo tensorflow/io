@@ -23,11 +23,7 @@ limitations under the License.
 #include <sstream>
 
 #include "absl/synchronization/mutex.h"
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
+#include "tensorflow/c/logging.h"
 
 namespace tensorflow {
 namespace io {

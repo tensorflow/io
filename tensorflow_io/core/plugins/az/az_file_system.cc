@@ -31,11 +31,7 @@ limitations under the License.
 #include "storage_account.h"
 #include "storage_credential.h"
 #include "storage_errno.h"
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
+#include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
 
