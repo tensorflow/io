@@ -123,8 +123,8 @@ genrule(
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
