@@ -35,9 +35,7 @@ class _MongoDBHandler:
         """Retrieve the resource which is connected to a healthy node"""
 
         resource = core_ops.io_mongo_readable_init(
-            uri=self.uri,
-            database=self.database,
-            collection=self.collection,
+            uri=self.uri, database=self.database, collection=self.collection,
         )
         print("Connection successful: {}".format(self.uri))
         return resource
