@@ -49,9 +49,43 @@ cc_library(
     deps = [
         "@boringssl//:crypto",
         "@boringssl//:ssl",
+        "@snappy",
         "@zlib",
         "@zstd",
     ],
+)
+
+base_config = (
+    "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_SSL_LIBRESSL@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_CRYPTO_CNG@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@/0/g' " +
+    "-e 's/@MONGOC_HAVE_ASN1_STRING_GET0_DATA@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
+    "-e 's/@MONGOC_HAVE_SASL_CLIENT_DONE@/0/g' " +
+    "-e 's/@MONGOC_NO_AUTOMATIC_GLOBALS@/1/g' " +
+    "-e 's/@MONGOC_HAVE_SOCKLEN@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_COMPRESSION@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_COMPRESSION_SNAPPY@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_COMPRESSION_ZLIB@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_COMPRESSION_ZSTD@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_SHM_COUNTERS@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_RDTSCP@/0/g' " +
+    "-e 's/@MONGOC_HAVE_SCHED_GETCPU@/0/g' " +
+    "-e 's/@MONGOC_TRACE@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_ICU@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION@/0/g' " +
+    "-e 's/@MONGOC_HAVE_SS_FAMILY@/1/g' " +
+    "-e 's/@MONGOC_HAVE_RES_NSEARCH@/1/g' " +
+    "-e 's/@MONGOC_HAVE_RES_SEARCH@/0/g' " +
+    "-e 's/@MONGOC_ENABLE_MONGODB_AWS_AUTH@/1/g' " +
+    "-e 's/@MONGOC_SOCKET_ARG3@/socklen_t/g' " +
+    "-e 's/@MONGOC_SOCKET_ARG2@/struct sockaddr/g' " +
+    "$< >$@"
 )
 
 genrule(
@@ -60,47 +94,35 @@ genrule(
     outs = ["src/libmongoc/src/mongoc/mongoc-config.h"],
     cmd = ("sed " +
            "-e 's/@MONGOC_USER_SET_CFLAGS@//g' " +
-           "-e 's/@MONGOC_USER_SET_LDFLAGS@//g' " +
-           "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_SSL_LIBRESSL@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_CRYPTO_CNG@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-           "-e 's/@MONGOC_HAVE_ASN1_STRING_GET0_DATA@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/1/g' " +
-           #   enable SASL_SSPI for windows
-           "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
-           "-e 's/@MONGOC_HAVE_SASL_CLIENT_DONE@/0/g' " +
-           "-e 's/@MONGOC_NO_AUTOMATIC_GLOBALS@/0/g' " +
-           "-e 's/@MONGOC_HAVE_SOCKLEN@/1/g' " +
-           #   enable DNSAPI for windows
-           "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
-           "-e 's/@MONGOC_HAVE_RES_NSEARCH@/1/g' " +
-           "-e 's/@MONGOC_HAVE_RES_NDESTROY@/1/g' " +
-           "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' " +
-           "-e 's/@MONGOC_HAVE_RES_SEARCH@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_COMPRESSION@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_COMPRESSION_SNAPPY@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_COMPRESSION_ZLIB@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_COMPRESSION_ZSTD@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_SHM_COUNTERS@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_RDTSCP@/0/g' " +
-           "-e 's/@MONGOC_HAVE_SCHED_GETCPU@/0/g' " +
-           #    enable trace only for development purposes
-           "-e 's/@MONGOC_TRACE@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_ICU@/0/g' " +
-           "-e 's/@MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION@/0/g' " +
-           "-e 's/@MONGOC_HAVE_SS_FAMILY@/1/g' " +
-           "-e 's/@MONGOC_ENABLE_MONGODB_AWS_AUTH@/1/g' " +
-           "-e 's/@MONGOC_SOCKET_ARG3@/socklen_t/g' " +
-           "-e 's/@MONGOC_SOCKET_ARG2@/struct sockaddr/g' " +
-           "$< >$@"),
+           "-e 's/@MONGOC_USER_SET_LDFLAGS@//g' ") +
+          select({
+              "@bazel_tools//src/conditions:windows": (
+                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_SSPI@/1/g' " +
+                  "-e 's/@MONGOC_HAVE_DNSAPI@/1/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' "
+              ),
+              "@bazel_tools//src/conditions:darwin": (
+                  "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NDESTROY@/1/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' "
+              ),
+              "//conditions:default": (
+                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NDESTROY@/0/g' " +
+                  "-e 's/@MONGOC_HAVE_RES_NCLOSE@/1/g' "
+              ),
+          }) +
+          base_config,
 )
 
 genrule(
@@ -116,7 +138,7 @@ genrule(
            "-e 's/@BSON_HAVE_STRNLEN@/1/g' " +
            "-e 's/@BSON_HAVE_SNPRINTF@/1/g' " +
            "-e 's/@BSON_HAVE_GMTIME_R@/1/g' " +
-           "-e 's/@BSON_HAVE_REALLOCF@/1/g' " +
+           "-e 's/@BSON_HAVE_REALLOCF@/0/g' " +
            "-e 's/@BSON_HAVE_TIMESPEC@/1/g' " +
            "-e 's/@BSON_EXTRA_ALIGN@/1/g' " +
            "-e 's/@BSON_HAVE_SYSCALL_TID@/0/g' " +
