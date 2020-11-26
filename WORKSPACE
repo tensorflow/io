@@ -1094,12 +1094,20 @@ http_archive(
 )
 
 http_archive(
+    name = "openssl",
+    build_file = "//third_party:openssl.BUILD",
+    sha256 = "d1f723c1f6b6d1eaf26655caa50d2f60d4d33f4b04977b1da63def878f386fcc",
+    strip_prefix = "openssl-OpenSSL_1_1_1h",
+    urls = ["https://github.com/openssl/openssl/archive/OpenSSL_1_1_1h.tar.gz"],
+)
+
+http_archive(
     name = "libmongoc",
     build_file = "//third_party:libmongoc.BUILD",
     patch_cmds = [],
-    sha256 = "bc53d5f72ab628a1ae549db6888325d6dc34db3ca31c5e16e550c1bb4266d864",
-    strip_prefix = "mongo-c-driver-1.17.2",
+    sha256 = "0a722180e5b5c86c415b9256d753b2d5552901dc5d95c9f022072c3cd336887e",
+    strip_prefix = "mongo-c-driver-1.16.2",
     urls = [
-        "https://github.com/mongodb/mongo-c-driver/releases/download/1.17.2/mongo-c-driver-1.17.2.tar.gz",
+        "https://github.com/mongodb/mongo-c-driver/releases/download/1.16.2/mongo-c-driver-1.16.2.tar.gz",
     ],
 )

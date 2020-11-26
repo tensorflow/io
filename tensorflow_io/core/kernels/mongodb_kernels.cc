@@ -308,7 +308,7 @@ class MongoDBWritableResource : public ResourceBase {
       return errors::FailedPrecondition(
           "Failed to ping the mongo cluster due to: ", error_.message);
     }
-    LOG(ERROR) << "Ping Successful";
+    LOG(INFO) << "Ping Successful";
 
     return Status::OK();
   }

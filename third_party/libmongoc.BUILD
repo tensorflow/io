@@ -7,13 +7,16 @@ exports_files(["LICENSE"])
 
 cc_library(
     name = "libmongoc",
-    srcs = glob([
-        "src/libmongoc/src/mongoc/**/*.c",
-        "src/libbson/src/bson/**/*.c",
-        "src/libbson/src/jsonsl/**/*.c",
-        "src/common/*.c",
-        "src/kms-message/src/**/*.c",
-    ]),
+    srcs = glob(
+        [
+            "src/libmongoc/src/mongoc/**/*.c",
+            "src/libbson/src/bson/**/*.c",
+            "src/libbson/src/jsonsl/**/*.c",
+            "src/common/*.c",
+            "src/kms-message/src/**/*.c",
+        ],
+        exclude = ["**/tests/**"],
+    ),
     hdrs = [
         "src/libmongoc/src/mongoc/mongoc-config.h",
         "src/libbson/src/bson/bson-config.h",
@@ -28,6 +31,7 @@ cc_library(
             "src/common/*.h",
             "src/kms-message/src/**/*.h",
         ],
+        exclude = ["**/tests/**"],
     ) + select({
         "@bazel_tools//src/conditions:windows": [
             "windows/unistd.h",
@@ -57,13 +61,15 @@ cc_library(
             # https://jira.mongodb.org/browse/CXX-1731
             "-DEFAULTLIB:ws2_32.lib",
             "-DEFAULTLIB:advapi32.lib",
-            "-DEFAULTLIB:crypt32.lib",
+            "-DEFAULTLIB:Crypt32.lib",
             "-DEFAULTLIB:Normaliz.lib",
+            "-DEFAULTLIB:Bcrypt.lib",
+            "-DEFAULTLIB:Secur32.lib",
+            "-DEFAULTLIB:Dnsapi.lib",
         ],
         "//conditions:default": [
             "-lrt",
             "-lresolv",
-            "-Wl,Security",
         ],
     }),
     visibility = ["//visibility:public"],
@@ -77,11 +83,8 @@ cc_library(
 )
 
 base_config = (
-    "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
     "-e 's/@MONGOC_ENABLE_SSL_LIBRESSL@/0/g' " +
-    "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CRYPTO_CNG@/0/g' " +
-    "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@/0/g' " +
     "-e 's/@MONGOC_HAVE_ASN1_STRING_GET0_DATA@/0/g' " +
     "-e 's/@MONGOC_HAVE_SASL_CLIENT_DONE@/0/g' " +
@@ -100,7 +103,7 @@ base_config = (
     "-e 's/@MONGOC_HAVE_SS_FAMILY@/1/g' " +
     "-e 's/@MONGOC_HAVE_RES_NSEARCH@/1/g' " +
     "-e 's/@MONGOC_HAVE_RES_SEARCH@/0/g' " +
-    "-e 's/@MONGOC_ENABLE_MONGODB_AWS_AUTH@/1/g' " +
+    "-e 's/@MONGOC_ENABLE_MONGODB_AWS_AUTH@/0/g' " +
     "-e 's/@MONGOC_SOCKET_ARG3@/socklen_t/g' " +
     "-e 's/@MONGOC_SOCKET_ARG2@/struct sockaddr/g' " +
     "$< >$@"
@@ -116,10 +119,13 @@ genrule(
           select({
               "@bazel_tools//src/conditions:windows": (
                   "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/1/g' " +
@@ -128,10 +134,13 @@ genrule(
               ),
               "@bazel_tools//src/conditions:darwin": (
                   "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
@@ -140,10 +149,13 @@ genrule(
               ),
               "//conditions:default": (
                   "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_CHANNEL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
                   "-e 's/@MONGOC_HAVE_DNSAPI@/0/g' " +
@@ -160,20 +172,20 @@ genrule(
     outs = ["src/libbson/src/bson/bson-config.h"],
     cmd = (
         "sed " +
-        "-e 's/@BSON_HAVE_STRINGS_H@/1/g' " +
-        "-e 's/@BSON_HAVE_STDBOOL_H@/1/g' " +
+        "-e 's/@BSON_HAVE_STRINGS_H@/0/g' " +
+        "-e 's/@BSON_HAVE_STDBOOL_H@/0/g' " +
         "-e 's/@BSON_HAVE_ATOMIC_32_ADD_AND_FETCH@/1/g' " +
         "-e 's/@BSON_HAVE_ATOMIC_64_ADD_AND_FETCH@/1/g' " +
-        "-e 's/@BSON_HAVE_CLOCK_GETTIME@/1/g' " +
-        "-e 's/@BSON_HAVE_STRNLEN@/1/g' " +
-        "-e 's/@BSON_HAVE_SNPRINTF@/1/g' " +
-        "-e 's/@BSON_HAVE_GMTIME_R@/1/g' " +
+        "-e 's/@BSON_HAVE_CLOCK_GETTIME@/0/g' " +
+        "-e 's/@BSON_HAVE_STRNLEN@/0/g' " +
+        "-e 's/@BSON_HAVE_SNPRINTF@/0/g' " +
+        "-e 's/@BSON_HAVE_GMTIME_R@/0/g' " +
         "-e 's/@BSON_HAVE_REALLOCF@/0/g' " +
-        "-e 's/@BSON_HAVE_TIMESPEC@/1/g' " +
-        "-e 's/@BSON_EXTRA_ALIGN@/1/g' " +
+        "-e 's/@BSON_HAVE_TIMESPEC@/0/g' " +
+        "-e 's/@BSON_EXTRA_ALIGN@/0/g' " +
         "-e 's/@BSON_HAVE_SYSCALL_TID@/0/g' " +
-        "-e 's/@BSON_HAVE_RAND_R@/1/g' " +
-        "-e 's/@BSON_HAVE_STRLCPY@/1/g' " +
+        "-e 's/@BSON_HAVE_RAND_R@/0/g' " +
+        "-e 's/@BSON_HAVE_STRLCPY@/0/g' " +
         "-e 's/@BSON_BYTE_ORDER@/1234/g' "
     ) + select({
         "@bazel_tools//src/conditions:windows": (
