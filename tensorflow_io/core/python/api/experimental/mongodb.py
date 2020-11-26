@@ -15,5 +15,5 @@
 """tensorflow_io.experimental.mongodb"""
 
 from tensorflow_io.core.python.experimental.mongodb_dataset_ops import (  # pylint: disable=unused-import
-    _MongoDBHandler,
+    MongoDBIODataset,
 )

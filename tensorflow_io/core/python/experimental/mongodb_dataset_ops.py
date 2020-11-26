@@ -39,3 +39,42 @@ class _MongoDBHandler:
         )
         print("Connection successful: {}".format(self.uri))
         return resource
+
+    def get_next_batch(self, resource):
+        """Prepares the next batch of data based on the request url and
+        the counter index.
+
+        Args:
+            resource: the init op resource.
+        Returns:
+            A Tensor containing serialized JSON records.
+        """
+
+        values = core_ops.io_mongo_db_readable_next(resource=resource)
+        return values
+
+
+class MongoDBIODataset(tf.data.Dataset):
+    """Fetch records from mongoDB"""
+
+    def __init__(self, uri, database, collection):
+        handler = _MongoDBHandler(uri=uri, database=database, collection=collection)
+        resource = handler.get_healthy_resource()
+        dataset = tf.data.experimental.Counter()
+        dataset = dataset.map(lambda i: handler.get_next_batch(resource=resource))
+        dataset = dataset.apply(
+            tf.data.experimental.take_while(lambda v: tf.greater(tf.shape(v)[0], 0))
+        )
+        dataset = dataset.flat_map(lambda x: tf.data.Dataset.from_tensor_slices(x))
+        self._dataset = dataset
+
+        super().__init__(
+            self._dataset._variant_tensor
+        )  # pylint: disable=protected-access
+
+    def _inputs(self):
+        return []
+
+    @property
+    def element_spec(self):
+        return self._dataset.element_spec

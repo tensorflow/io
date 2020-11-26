@@ -67,6 +67,7 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
+        "@boost",
         "@boringssl//:crypto",
         "@boringssl//:ssl",
         "@snappy",
@@ -93,8 +94,7 @@ base_config = (
     "-e 's/@MONGOC_ENABLE_SHM_COUNTERS@/0/g' " +
     "-e 's/@MONGOC_ENABLE_RDTSCP@/0/g' " +
     "-e 's/@MONGOC_HAVE_SCHED_GETCPU@/0/g' " +
-    #TODO(vikoth18) set MONGOC_TRACE to 0 before merge
-    "-e 's/@MONGOC_TRACE@/1/g' " +
+    "-e 's/@MONGOC_TRACE@/0/g' " +
     "-e 's/@MONGOC_ENABLE_ICU@/0/g' " +
     "-e 's/@MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION@/0/g' " +
     "-e 's/@MONGOC_HAVE_SS_FAMILY@/1/g' " +
@@ -129,7 +129,7 @@ genrule(
               "@bazel_tools//src/conditions:darwin": (
                   "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
@@ -139,9 +139,9 @@ genrule(
                   "-e 's/@MONGOC_HAVE_RES_NCLOSE@/0/g' "
               ),
               "//conditions:default": (
-                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +

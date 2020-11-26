@@ -46,9 +46,11 @@ def is_container_running():
 
 
 @pytest.mark.skipif(not is_container_running(), reason="The container is not running")
-def test_ping():
+def test_database_read():
     """Test the resource creation"""
 
-    handler = tfio.experimental.mongodb._MongoDBHandler(
+    dataset = tfio.experimental.mongodb.MongoDBIODataset(
         uri=URI, database=DATABASE, collection=COLLECTION
     )
+    for d in dataset:
+        print(d)

@@ -67,15 +67,52 @@ class MongoDBReadableResource : public ResourceBase {
     collection_obj_ = mongoc_client_get_collection(
         client_obj_, database.c_str(), collection.c_str());
 
+    cursor_obj_ =
+        mongoc_collection_find_with_opts(collection_obj_, query_, NULL, NULL);
+
     // Perform healthcheck before proceeding
     Healthcheck();
+    return Status::OK();
+  }
+
+  Status Next(std::function<Status(const TensorShape& shape, Tensor** record)>
+                  allocate_func) {
+    mutex_lock l(mu_);
+
+    constexpr size_t max_num_records = 1024;
+    std::vector<std::string> records;
+    records.reserve(max_num_records);
+
+    const bson_t* doc;
+
+    int num_records = 0;
+    while (mongoc_cursor_next(cursor_obj_, &doc) &&
+           num_records < max_num_records) {
+      char* record = bson_as_canonical_extended_json(doc, NULL);
+      LOG(ERROR) << record << "\n";
+      records.emplace_back(record);
+      num_records++;
+      bson_free(record);
+    }
+
+    TensorShape shape({static_cast<int32>(records.size())});
+    Tensor* records_tensor;
+    TF_RETURN_IF_ERROR(allocate_func(shape, &records_tensor));
+
+    // If no messages were received when timeout exceeded, we treat it as a
+    // failure and don't continue receiving messages.
+    for (size_t i = 0; i < records.size(); i++) {
+      records_tensor->flat<tstring>()(i) = records[i];
+    }
+
+    return Status::OK();
   }
 
   string DebugString() const override { return "MongoDBReadableResource"; }
 
  protected:
   Status Healthcheck() {
-    // Ping the server to ensure connectivity
+    // Ping the server to check connectivity
 
     cmd_ = BCON_NEW("ping", BCON_INT32(1));
 
@@ -97,6 +134,8 @@ class MongoDBReadableResource : public ResourceBase {
   mongoc_client_t* client_obj_;
   mongoc_database_t* database_obj_;
   mongoc_collection_t* collection_obj_;
+  mongoc_cursor_t* cursor_obj_;
+  bson_t* query_ = bson_new();
   bson_t *cmd_, reply_;
   bson_error_t error_;
   char* str;
@@ -140,8 +179,33 @@ class MongoDBReadableInitOp : public ResourceOpKernel<MongoDBReadableResource> {
   Env* env_ TF_GUARDED_BY(mu_);
 };
 
+class MongoDBReadableNextOp : public OpKernel {
+ public:
+  explicit MongoDBReadableNextOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override {
+    MongoDBReadableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
+    core::ScopedUnref unref(resource);
+
+    OP_REQUIRES_OK(context, resource->Next([&](const TensorShape& shape,
+                                               Tensor** record) -> Status {
+      TF_RETURN_IF_ERROR(context->allocate_output(0, shape, record));
+      return Status::OK();
+    }));
+  }
+
+ private:
+  mutable mutex mu_;
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>MongoDBReadableInit").Device(DEVICE_CPU),
                         MongoDBReadableInitOp);
+
+REGISTER_KERNEL_BUILDER(Name("IO>MongoDBReadableNext").Device(DEVICE_CPU),
+                        MongoDBReadableNextOp);
 
 }  // namespace
 }  // namespace io

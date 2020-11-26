@@ -29,6 +29,14 @@ REGISTER_OP("IO>MongoDBReadableInit")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''");
 
+REGISTER_OP("IO>MongoDBReadableNext")
+    .Input("resource: resource")
+    .Output("record: string")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim()}));
+      return Status::OK();
+    });
+
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow
