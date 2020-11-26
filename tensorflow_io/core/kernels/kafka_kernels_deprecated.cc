@@ -25,6 +25,7 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow/core/lib/strings/stringprintf.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/sequence_ops.h"
@@ -83,9 +84,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
     OP_REQUIRES_OK(
         ctx, data::ParseScalarArgument<bool>(ctx, "message_key", &message_key));
 
+    bool message_offset = false;
+    OP_REQUIRES_OK(
+        ctx, ParseScalarArgument<bool>(ctx, "message_offset", &message_offset));
+
     *output = new Dataset(ctx, std::move(topics), servers, group, eof, timeout,
                           std::move(config_global), std::move(config_topic),
-                          message_key);
+                          message_key, message_offset);
   }
 
  private:
@@ -94,7 +99,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
     Dataset(OpKernelContext* ctx, std::vector<string> topics,
             const string& servers, const string& group, const bool eof,
             const int64 timeout, std::vector<string> config_global,
-            std::vector<string> config_topic, const bool message_key)
+            std::vector<string> config_topic, const bool message_key,
+            const bool message_offset)
         : DatasetBase(DatasetContext(ctx)),
           topics_(std::move(topics)),
           servers_(servers),
@@ -103,7 +109,8 @@ class KafkaDatasetOp : public DatasetOpKernel {
           timeout_(timeout),
           config_global_(std::move(config_global)),
           config_topic_(std::move(config_topic)),
-          message_key_(message_key) {}
+          message_key_(message_key),
+          message_offset_(message_offset) {}
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string& prefix) const override {
@@ -112,9 +119,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
     }
 
     const DataTypeVector& output_dtypes() const override {
-      if (message_key_) {
+      if (message_key_ ^ message_offset_) {
         static DataTypeVector* dtypes =
             new DataTypeVector({DT_STRING, DT_STRING});
+        return *dtypes;
+      } else if (message_key_ && message_offset_) {
+        static DataTypeVector* dtypes =
+            new DataTypeVector({DT_STRING, DT_STRING, DT_STRING});
         return *dtypes;
       }
       static DataTypeVector* dtypes = new DataTypeVector({DT_STRING});
@@ -122,9 +133,13 @@ class KafkaDatasetOp : public DatasetOpKernel {
     }
 
     const std::vector<PartialTensorShape>& output_shapes() const override {
-      if (message_key_) {
+      if (message_key_ ^ message_offset_) {
         static std::vector<PartialTensorShape>* shapes =
             new std::vector<PartialTensorShape>({{}, {}});
+        return *shapes;
+      } else if (message_key_ && message_offset_) {
+        static std::vector<PartialTensorShape>* shapes =
+            new std::vector<PartialTensorShape>({{}, {}, {}});
         return *shapes;
       }
       static std::vector<PartialTensorShape>* shapes =
@@ -156,10 +171,12 @@ class KafkaDatasetOp : public DatasetOpKernel {
       TF_RETURN_IF_ERROR(b->AddVector(config_topic_, &config_topic));
       Node* message_key = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(message_key_, &message_key));
+      Node* message_offset = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(message_offset_, &message_offset));
       TF_RETURN_IF_ERROR(
           b->AddDataset(this,
                         {topics, servers, group, eof, timeout, config_global,
-                         config_topic, message_key},
+                         config_topic, message_key, message_offset},
                         output));
       return Status::OK();
     }
@@ -241,6 +258,14 @@ class KafkaDatasetOp : public DatasetOpKernel {
                     key_tensor.scalar<tstring>()() = "";
                   }
                   out_tensors->emplace_back(std::move(key_tensor));
+                }
+                if (dataset()->message_offset_) {
+                  Tensor offset_tensor(cpu_allocator(), DT_STRING, {});
+                  int64_t offset = message->offset();
+                  int32_t partition = message->partition();
+                  offset_tensor.scalar<tstring>()() =
+                      strings::Printf("%d:%ld", partition, offset);
+                  out_tensors->emplace_back(std::move(offset_tensor));
                 }
                 *end_of_sequence = false;
                 // Sync offset
@@ -508,6 +533,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
     const std::vector<string> config_global_;
     const std::vector<string> config_topic_;
     const bool message_key_;
+    const bool message_offset_;
   };
 };
 
