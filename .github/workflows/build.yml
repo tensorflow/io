@@ -117,6 +117,10 @@ jobs:
       - name: Bazel on macOS
         run: |
           set -x -e
+          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
+          export PATH=/usr/bin:$PATH
+          python3 --version
+          python3 -c 'import site; print(site.getsitepackages())'
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
           BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
@@ -202,6 +206,7 @@ jobs:
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_aws/aws_test.sh
+          bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -300,6 +305,7 @@ jobs:
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_sql/sql_test.sh
           bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
+          bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Test Linux
         run: |
           set -x -e
@@ -527,7 +533,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -571,7 +577,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -609,7 +615,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: BUILD_NUMBER
-      - uses: einaregilsson/build-number@v2
+      - uses: einaregilsson/build-number@v3
       - run: echo "Build number is $BUILD_NUMBER"
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1

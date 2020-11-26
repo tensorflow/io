@@ -36,15 +36,11 @@ limitations under the License.
 #include "absl/strings/ascii.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "tensorflow/c/logging.h"
+#include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
 #include "tensorflow_io/core/plugins/s3/aws_crypto.h"
 #include "tensorflow_io/core/plugins/s3/aws_logging.h"
-// TODO: Restore logging.h
-#define TF_Log(...)
-#define TF_VLog(...)
-// #include "tensorflow/c/logging.h"
-// TODO: Restore logging.h
-#include "tensorflow/c/tf_status.h"
 
 namespace tensorflow {
 namespace io {
