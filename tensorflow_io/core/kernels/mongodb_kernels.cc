@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
 #include "tensorflow/core/framework/resource_mgr.h"
@@ -39,7 +40,7 @@ class MongoDBReadableResource : public ResourceBase {
     mongoc_init();
 
     // Log the uri
-    LOG(ERROR) << uri;
+    LOG(INFO) << "Connecting to: " << uri;
 
     // Create a MongoDB URI object from the given string
 
@@ -59,7 +60,7 @@ class MongoDBReadableResource : public ResourceBase {
     // Register the application name so we can track it in the profile logs
     //  on the server. This can also be done from the URI.
 
-    mongoc_client_set_appname(client_obj_, "tfio-mongo");
+    mongoc_client_set_appname(client_obj_, "tfio-mongo-read");
 
     //  Get a handle on the database "db_name" and collection "coll_name"
 
@@ -89,7 +90,6 @@ class MongoDBReadableResource : public ResourceBase {
     while (mongoc_cursor_next(cursor_obj_, &doc) &&
            num_records < max_num_records) {
       char* record = bson_as_canonical_extended_json(doc, NULL);
-      LOG(ERROR) << record << "\n";
       records.emplace_back(record);
       num_records++;
       bson_free(record);
@@ -201,12 +201,221 @@ class MongoDBReadableNextOp : public OpKernel {
   mutable mutex mu_;
 };
 
+class MongoDBWritableResource : public ResourceBase {
+ public:
+  MongoDBWritableResource(Env* env) : env_(env) {}
+  ~MongoDBWritableResource() {
+    mongoc_collection_destroy(collection_obj_);
+    mongoc_database_destroy(database_obj_);
+    mongoc_uri_destroy(uri_obj_);
+    mongoc_client_destroy(client_obj_);
+    mongoc_cleanup();
+  }
+
+  Status Init(const std::string& uri, const std::string& database,
+              const std::string& collection) {
+    //   Required to initialize libmongoc's internals
+    mongoc_init();
+
+    // Log the uri
+    LOG(INFO) << "Connecting to: " << uri;
+
+    // Create a MongoDB URI object from the given string
+
+    uri_obj_ = mongoc_uri_new_with_error(uri.c_str(), &error_);
+    if (!uri_obj_) {
+      return errors::FailedPrecondition("Failed to parse URI: ", uri,
+                                        "due to: ", error_.message);
+    }
+
+    // Initialize the MongoDB client
+
+    client_obj_ = mongoc_client_new_from_uri(uri_obj_);
+    if (!client_obj_) {
+      return errors::FailedPrecondition("Failed to initialize the client");
+    }
+
+    // Register the application name so we can track it in the profile logs
+    //  on the server. This can also be done from the URI.
+
+    mongoc_client_set_appname(client_obj_, "tfio-mongo-write");
+
+    //  Get a handle on the database "db_name" and collection "coll_name"
+
+    database_obj_ = mongoc_client_get_database(client_obj_, database.c_str());
+    collection_obj_ = mongoc_client_get_collection(
+        client_obj_, database.c_str(), collection.c_str());
+
+    // Perform healthcheck before proceeding
+    Healthcheck();
+    return Status::OK();
+  }
+
+  Status Write(const std::string& record) {
+    const char* json_record = record.c_str();
+    bson_t* bson_record =
+        bson_new_from_json((const uint8_t*)json_record, -1, &error_);
+
+    if (!bson_record) {
+      return errors::FailedPrecondition("Failed to parse json due to: ",
+                                        error_.message);
+    }
+
+    if (!mongoc_collection_insert_one(collection_obj_, bson_record, NULL, NULL,
+                                      &error_)) {
+      return errors::FailedPrecondition("Failed to insert document due to: ",
+                                        error_.message);
+    }
+
+    bson_destroy(bson_record);
+
+    return Status::OK();
+  }
+
+  Status DeleteMany(const std::string& record) {
+    const char* json_record = record.c_str();
+    bson_t* bson_record =
+        bson_new_from_json((const uint8_t*)json_record, -1, &error_);
+
+    if (!bson_record) {
+      return errors::FailedPrecondition("Failed to parse json due to: ",
+                                        error_.message);
+    }
+
+    if (!mongoc_collection_delete_many(collection_obj_, bson_record, NULL, NULL,
+                                       &error_)) {
+      return errors::FailedPrecondition(
+          "Failed to delete matching documents due to: ", error_.message);
+    }
+
+    bson_destroy(bson_record);
+
+    return Status::OK();
+  }
+
+  string DebugString() const override { return "MongoDBWritableResource"; }
+
+ protected:
+  Status Healthcheck() {
+    // Ping the server to check connectivity
+
+    cmd_ = BCON_NEW("ping", BCON_INT32(1));
+
+    retval_ = mongoc_client_command_simple(client_obj_, "admin", cmd_, NULL,
+                                           &reply_, &error_);
+
+    if (!retval_) {
+      return errors::FailedPrecondition(
+          "Failed to ping the mongo cluster due to: ", error_.message);
+    }
+    LOG(ERROR) << "Ping Successful";
+
+    return Status::OK();
+  }
+
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+  mongoc_uri_t* uri_obj_;
+  mongoc_client_t* client_obj_;
+  mongoc_database_t* database_obj_;
+  mongoc_collection_t* collection_obj_;
+  bson_t *cmd_, reply_;
+  bson_error_t error_;
+  char* str;
+  bool retval_;
+};
+
+class MongoDBWritableInitOp : public ResourceOpKernel<MongoDBWritableResource> {
+ public:
+  explicit MongoDBWritableInitOp(OpKernelConstruction* context)
+      : ResourceOpKernel<MongoDBWritableResource>(context) {
+    env_ = context->env();
+  }
+
+ private:
+  void Compute(OpKernelContext* context) override {
+    ResourceOpKernel<MongoDBWritableResource>::Compute(context);
+
+    const Tensor* uri_tensor;
+    OP_REQUIRES_OK(context, context->input("uri", &uri_tensor));
+    const string& uri = uri_tensor->scalar<tstring>()();
+
+    const Tensor* database_tensor;
+    OP_REQUIRES_OK(context, context->input("database", &database_tensor));
+    const string& database = database_tensor->scalar<tstring>()();
+
+    const Tensor* collection_tensor;
+    OP_REQUIRES_OK(context, context->input("collection", &collection_tensor));
+    const string& collection = collection_tensor->scalar<tstring>()();
+
+    OP_REQUIRES_OK(context, resource_->Init(uri, database, collection));
+  }
+
+  Status CreateResource(MongoDBWritableResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new MongoDBWritableResource(env_);
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+};
+
+class MongoDBWritableWriteOp : public OpKernel {
+ public:
+  explicit MongoDBWritableWriteOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override {
+    MongoDBWritableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* record_tensor;
+    OP_REQUIRES_OK(context, context->input("record", &record_tensor));
+    const string& record = record_tensor->scalar<tstring>()();
+
+    OP_REQUIRES_OK(context, resource->Write(record));
+  }
+
+ private:
+  mutable mutex mu_;
+};
+
+class MongoDBWritableDeleteManyOp : public OpKernel {
+ public:
+  explicit MongoDBWritableDeleteManyOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override {
+    MongoDBWritableResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
+    core::ScopedUnref unref(resource);
+
+    const Tensor* record_tensor;
+    OP_REQUIRES_OK(context, context->input("record", &record_tensor));
+    const string& record = record_tensor->scalar<tstring>()();
+
+    OP_REQUIRES_OK(context, resource->DeleteMany(record));
+  }
+
+ private:
+  mutable mutex mu_;
+};
+
 REGISTER_KERNEL_BUILDER(Name("IO>MongoDBReadableInit").Device(DEVICE_CPU),
                         MongoDBReadableInitOp);
-
 REGISTER_KERNEL_BUILDER(Name("IO>MongoDBReadableNext").Device(DEVICE_CPU),
                         MongoDBReadableNextOp);
-
+REGISTER_KERNEL_BUILDER(Name("IO>MongoDBWritableInit").Device(DEVICE_CPU),
+                        MongoDBWritableInitOp);
+REGISTER_KERNEL_BUILDER(Name("IO>MongoDBWritableWrite").Device(DEVICE_CPU),
+                        MongoDBWritableWriteOp);
+REGISTER_KERNEL_BUILDER(Name("IO>MongoDBWritableDeleteMany").Device(DEVICE_CPU),
+                        MongoDBWritableDeleteManyOp);
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

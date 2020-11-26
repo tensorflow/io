@@ -63,11 +63,11 @@ cc_library(
         "//conditions:default": [
             "-lrt",
             "-lresolv",
+            "-Wl,Security",
         ],
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@boost",
         "@boringssl//:crypto",
         "@boringssl//:ssl",
         "@snappy",
@@ -115,9 +115,9 @@ genrule(
            "-e 's/@MONGOC_USER_SET_LDFLAGS@//g' ") +
           select({
               "@bazel_tools//src/conditions:windows": (
-                  "-e 's/@MONGOC_ENABLE_SSL@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_SSL_SECURE_TRANSPORT@/1/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +

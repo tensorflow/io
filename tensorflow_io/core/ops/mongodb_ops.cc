@@ -37,6 +37,21 @@ REGISTER_OP("IO>MongoDBReadableNext")
       return Status::OK();
     });
 
+REGISTER_OP("IO>MongoDBWritableInit")
+    .Input("uri: string")
+    .Input("database: string")
+    .Input("collection: string")
+    .Output("resource: resource")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''");
+
+REGISTER_OP("IO>MongoDBWritableWrite")
+    .Input("resource: resource")
+    .Input("record: string");
+
+REGISTER_OP("IO>MongoDBWritableDeleteMany")
+    .Input("resource: resource")
+    .Input("record: string");
 }  // namespace
 }  // namespace io
 }  // namespace tensorflow

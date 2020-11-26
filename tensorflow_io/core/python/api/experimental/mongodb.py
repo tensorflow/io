@@ -17,3 +17,7 @@
 from tensorflow_io.core.python.experimental.mongodb_dataset_ops import (  # pylint: disable=unused-import
     MongoDBIODataset,
 )
+
+from tensorflow_io.core.python.experimental.mongodb_writer_ops import (  # pylint: disable=unused-import
+    MongoDBWriter,
+)
