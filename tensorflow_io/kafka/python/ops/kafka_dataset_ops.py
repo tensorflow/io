@@ -120,11 +120,11 @@ class KafkaDataset(data.Dataset):
     @property
     def output_classes(self):
         if self._message_key ^ self._message_offset:
-            return (ops.Tensor, ops.Tensor)
+            return (tf.Tensor, tf.Tensor)
         elif self._message_key and self._message_offset:
-            return (ops.Tensor, ops.Tensor, ops.Tensor)
+            return (tf.Tensor, tf.Tensor, tf.Tensor)
         else:
-            return ops.Tensor
+            return tf.Tensor
 
     @property
     def output_shapes(self):
