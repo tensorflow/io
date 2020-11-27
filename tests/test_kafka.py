@@ -499,7 +499,6 @@ class KafkaDatasetTest(test.TestCase):
             # Basic offset test: read a limited number of messages from the topic.
             sess.run(init_op, feed_dict={topics: ["offset-test:0:0:4"], num_epochs: 1})
             for i in range(5):
-                self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
                 self.assertEqual(
                     (("D" + str(i)).encode(), ("0:" + str(i)).encode()),
                     sess.run(get_next),
