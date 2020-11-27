@@ -36,14 +36,16 @@ bin/pulsar-daemon start standalone
 
 echo "Waiting for Pulsar service ready or 30 seconds passed"
 for i in {1..30}; do
-  RESPONSE=$(curl --write-out '%{http_code}' --silent -o /dev/null -L http://localhost:8080/metrics) || true
+  RESPONSE=$(curl --write-out '%{http_code}' --silent -o /dev/null -L http://localhost:8080/admin/v2/persistent/public/default) || true
   if [[ $RESPONSE == 200 ]]; then
-      echo "[$i] Fetch metrics successfully"
+      echo "[$i] Access namespace public/default successfully"
       break
   fi
-  echo "[$i] Fetch metrics failed: $RESPONSE, sleep for 1 second"
+  echo "[$i] Access namespace public/default failed: $RESPONSE, sleep for 1 second"
   sleep 1
 done
+echo "Sleep for 5 seconds more to avoid flaky test"
+sleep 5
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
 bin/pulsar-client produce -m "D0,D1,D2,D3,D4,D5" test
