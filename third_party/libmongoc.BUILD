@@ -74,8 +74,8 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@boringssl//:crypto",
-        "@boringssl//:ssl",
+        "@openssl//:crypto",
+        "@openssl//:ssl",
         "@snappy",
         "@zlib",
         "@zstd",
