@@ -14,10 +14,9 @@
 # ==============================================================================
 """MongoDBWriter"""
 
-import json
 from urllib.parse import urlparse
 import tensorflow as tf
-from tensorflow_io.core.python.ops import mongodb_ops
+from tensorflow_io.core.python.experimental import mongodb_ops
 from tensorflow_io.core.python.experimental import serialization_ops
 
 
@@ -25,23 +24,22 @@ class MongoDBWriter:
     """Write documents to mongoDB"""
 
     def __init__(self, uri, database, collection):
+
         self.uri = uri
         self.database = database
         self.collection = collection
-        self.resource = mongodb_ops.io_mongo_db_writable_init(
-            uri=self.uri, database=self.database, collection=self.collection,
+        self.resource = mongodb_ops.writable_init(
+            uri=self.uri,
+            database=self.database,
+            collection=self.collection,
         )
 
     def write(self, doc):
         """Insert a single json document"""
 
-        mongodb_ops.io_mongo_db_writable_write(
-            resource=self.resource, record=json.dumps(doc)
-        )
+        mongodb_ops.writable_write(resource=self.resource, doc=doc)
 
     def _delete_many(self, doc):
         """Delete all matching documents"""
 
-        mongodb_ops.io_mongo_db_writable_delete_many(
-            resource=self.resource, record=json.dumps(doc)
-        )
+        mongodb_ops._delete_many(resource=self.resource, doc=doc)

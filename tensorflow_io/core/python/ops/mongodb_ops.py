@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Dataset."""
-
-import ctypes
-import _ctypes
+"""Module to handle MongoDB Ops"""
 
 from tensorflow_io.core.python.ops import _load_library
 
