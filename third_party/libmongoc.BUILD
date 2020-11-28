@@ -74,12 +74,19 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@openssl//:crypto",
-        "@openssl//:ssl",
         "@snappy",
         "@zlib",
         "@zstd",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@boringssl//:crypto",
+            "@boringssl//:ssl",
+        ],
+        "//conditions:default": [
+            "@openssl//:crypto",
+            "@openssl//:ssl",
+        ],
+    }),
 )
 
 base_config = (
@@ -124,7 +131,7 @@ genrule(
                   "-e 's/@MONGOC_ENABLE_SSL_OPENSSL@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@/0/g' " +
-                  "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/0/g' " +
+                  "-e 's/@MONGOC_ENABLE_CRYPTO_LIBCRYPTO@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL@/1/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_CYRUS@/0/g' " +
                   "-e 's/@MONGOC_ENABLE_SASL_SSPI@/0/g' " +
