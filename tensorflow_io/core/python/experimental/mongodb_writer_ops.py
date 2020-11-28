@@ -29,9 +29,7 @@ class MongoDBWriter:
         self.database = database
         self.collection = collection
         self.resource = mongodb_ops.writable_init(
-            uri=self.uri,
-            database=self.database,
-            collection=self.collection,
+            uri=self.uri, database=self.database, collection=self.collection,
         )
 
     def write(self, doc):

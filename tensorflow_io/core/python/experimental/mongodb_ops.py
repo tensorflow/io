@@ -23,9 +23,7 @@ def readable_init(uri, database, collection):
     )  # pylint: disable=import-outside-toplevel
 
     return mongodb_ops.io_mongo_db_readable_init(
-        uri=uri,
-        database=database,
-        collection=collection,
+        uri=uri, database=database, collection=collection,
     )
 
 
@@ -45,9 +43,7 @@ def writable_init(uri, database, collection):
     )  # pylint: disable=import-outside-toplevel
 
     return mongodb_ops.io_mongo_db_writable_init(
-        uri=uri,
-        database=database,
-        collection=collection,
+        uri=uri, database=database, collection=collection,
     )
 
 
