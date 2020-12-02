@@ -18,6 +18,7 @@ import os
 import ctypes
 import sys
 import inspect
+import types
 
 import tensorflow as tf
 
@@ -70,8 +71,29 @@ def _load_library(filename, lib="op"):
     )
 
 
-core_ops = _load_library("libtensorflow_io.so")
+class LazyLoader(types.ModuleType):
+    def __init__(self, name, library):
+        self._mod = None
+        self._module_name = name
+        self._library = library
+        super().__init__(self._module_name)
+
+    def _load(self):
+        if self._mod is None:
+            self._mod = _load_library(self._library)
+        return self._mod
+
+    def __getattr__(self, attrb):
+        return getattr(self._load(), attrb)
+
+    def __dir__(self):
+        return dir(self._load())
+
+
+core_ops = LazyLoader("core_ops", "libtensorflow_io.so")
 try:
     plugin_ops = _load_library("libtensorflow_io_plugins.so", "fs")
 except NotImplementedError as e:
+    # Note: load libtensorflow_io.so imperatively in case of statically linking
+    core_ops = _load_library("libtensorflow_io.so")
     plugin_ops = _load_library("libtensorflow_io.so", "fs")
