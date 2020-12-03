@@ -14,12 +14,10 @@
 # ==============================================================================
 """Module to handle MongoDB Ops"""
 
-from tensorflow_io.core.python.ops import _load_library
+from tensorflow_io.core.python.ops import core_ops
 
-_mongodb_ops = _load_library("libtensorflow_io_mongodb.so")
-
-io_mongo_db_readable_init = _mongodb_ops.io_mongo_db_readable_init
-io_mongo_db_readable_next = _mongodb_ops.io_mongo_db_readable_next
-io_mongo_db_writable_init = _mongodb_ops.io_mongo_db_writable_init
-io_mongo_db_writable_write = _mongodb_ops.io_mongo_db_writable_write
-io_mongo_db_writable_delete_many = _mongodb_ops.io_mongo_db_writable_delete_many
+io_mongo_db_readable_init = core_ops.io_mongo_db_readable_init
+io_mongo_db_readable_next = core_ops.io_mongo_db_readable_next
+io_mongo_db_writable_init = core_ops.io_mongo_db_writable_init
+io_mongo_db_writable_write = core_ops.io_mongo_db_writable_write
+io_mongo_db_writable_delete_many = core_ops.io_mongo_db_writable_delete_many

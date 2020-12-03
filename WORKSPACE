@@ -1094,17 +1094,11 @@ http_archive(
 )
 
 http_archive(
-    name = "openssl",
-    build_file = "//third_party:openssl.BUILD",
-    sha256 = "d1f723c1f6b6d1eaf26655caa50d2f60d4d33f4b04977b1da63def878f386fcc",
-    strip_prefix = "openssl-OpenSSL_1_1_1h",
-    urls = ["https://github.com/openssl/openssl/archive/OpenSSL_1_1_1h.tar.gz"],
-)
-
-http_archive(
     name = "libmongoc",
     build_file = "//third_party:libmongoc.BUILD",
-    patch_cmds = [],
+    patch_cmds = [
+        "sed -i.bak 's/undef MONGOC_LOG_DOMAIN/undef MONGOC_LOG_DOMAIN\\'$'\\n''# define BIO_get_ssl(b,sslp)     BIO_ctrl(b,BIO_C_GET_SSL,0,(char *)(sslp))\\'$'\\n''# define BIO_do_handshake(b)     BIO_ctrl(b,BIO_C_DO_STATE_MACHINE,0,NULL)/g' src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c",
+    ],
     sha256 = "0a722180e5b5c86c415b9256d753b2d5552901dc5d95c9f022072c3cd336887e",
     strip_prefix = "mongo-c-driver-1.16.2",
     urls = [

@@ -16,7 +16,9 @@ cc_library(
             "src/kms-message/src/**/*.c",
         ],
         exclude = ["**/tests/**"],
-    ),
+    ) + [
+        "ssl_compat.c",
+    ],
     hdrs = [
         "src/libmongoc/src/mongoc/mongoc-config.h",
         "src/libbson/src/bson/bson-config.h",
@@ -74,19 +76,12 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
+        "@boringssl//:crypto",
+        "@boringssl//:ssl",
         "@snappy",
         "@zlib",
         "@zstd",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [
-            "@boringssl//:crypto",
-            "@boringssl//:ssl",
-        ],
-        "//conditions:default": [
-            "@openssl//:crypto",
-            "@openssl//:ssl",
-        ],
-    }),
+    ],
 )
 
 base_config = (
@@ -210,4 +205,35 @@ genrule(
     name = "windows_unistd_h",
     outs = ["windows/unistd.h"],
     cmd = "touch $@",
+)
+
+genrule(
+    name = "ssl_compat_c",
+    outs = ["ssl_compat.c"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        '#include "src/libmongoc/src/mongoc/mongoc-config.h"',
+        '#include "openssl/bio.h"',
+        "BIO *BIO_new_ssl(SSL_CTX *ctx, int client)",
+        "{",
+        "    BIO *ret;",
+        "    SSL *ssl;",
+        "",
+        "    if ((ret = BIO_new(BIO_f_ssl())) == NULL)",
+        "        return NULL;",
+        "    if ((ssl = SSL_new(ctx)) == NULL) {",
+        "        BIO_free(ret);",
+        "        return NULL;",
+        "    }",
+        "    if (client)",
+        "        SSL_set_connect_state(ssl);",
+        "    else",
+        "        SSL_set_accept_state(ssl);",
+        "",
+        "    BIO_set_ssl(ret, ssl, BIO_CLOSE);",
+        "    return ret;",
+        "}",
+        "",
+        "EOF",
+    ]),
 )
