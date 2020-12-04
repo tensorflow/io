@@ -263,8 +263,10 @@ class KafkaDatasetOp : public DatasetOpKernel {
                   Tensor offset_tensor(cpu_allocator(), DT_STRING, {});
                   int64_t offset = message->offset();
                   int32_t partition = message->partition();
-                  offset_tensor.scalar<tstring>()() = 
-                      std::to_string(partition) + string(":") + std::to_string(offset);
+                  string offset_string = std::to_string(partition);
+                  offset_string += string(":");
+                  offset_string += std::to_string(offset);
+                  offset_tensor.scalar<tstring>()() = offset_string;
                   out_tensors->emplace_back(std::move(offset_tensor));
                 }
                 *end_of_sequence = false;
