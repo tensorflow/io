@@ -30,6 +30,9 @@ class AZFSTest(tf.test.TestCase):
     """
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
+
+        os.environ["TF_AZURE_USE_DEV_STORAGE"] = "1"
+
         self.account = "devstoreaccount1"
         self.container = "aztest"
         self.path_root = "az://" + os.path.join(self.account, self.container)
