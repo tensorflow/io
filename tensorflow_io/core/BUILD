@@ -723,6 +723,7 @@ cc_binary(
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/core:ignite_ops",
+        "//tensorflow_io/core:mongodb_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({
@@ -761,15 +762,6 @@ cc_binary(
     linkshared = 1,
     deps = [
         "//tensorflow_io/core:prometheus_ops",
-    ],
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_mongodb.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/core:mongodb_ops",
     ],
 )
 

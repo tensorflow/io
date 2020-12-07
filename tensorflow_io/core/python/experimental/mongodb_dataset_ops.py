@@ -16,7 +16,7 @@
 
 from urllib.parse import urlparse
 import tensorflow as tf
-from tensorflow_io.core.python.experimental import mongodb_ops
+from tensorflow_io.core.python.ops import core_ops
 from tensorflow_io.core.python.experimental import serialization_ops
 
 
@@ -34,7 +34,7 @@ class _MongoDBHandler:
     def get_healthy_resource(self):
         """Retrieve the resource which is connected to a healthy node"""
 
-        resource = mongodb_ops.readable_init(
+        resource = core_ops.io_mongo_db_readable_init(
             uri=self.uri, database=self.database, collection=self.collection,
         )
         print("Connection successful: {}".format(self.uri))
@@ -50,7 +50,7 @@ class _MongoDBHandler:
             A Tensor containing serialized JSON records.
         """
 
-        return mongodb_ops.readable_next(resource=resource)
+        return core_ops.io_mongo_db_readable_next(resource=resource)
 
 
 class MongoDBIODataset(tf.data.Dataset):
