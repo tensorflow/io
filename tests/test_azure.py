@@ -25,7 +25,7 @@ import tensorflow_io as tfio  # pylint: disable=unused-import
 class AZFSTest(tf.test.TestCase):
     """[summary]
 
-    Arguments:
+    Args:
       test {[type]} -- [description]
     """
 
