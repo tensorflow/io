@@ -25,7 +25,6 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-#include "tensorflow/core/lib/strings/stringprintf.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/sequence_ops.h"
@@ -263,9 +262,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                   Tensor offset_tensor(cpu_allocator(), DT_STRING, {});
                   int64_t offset = message->offset();
                   int32_t partition = message->partition();
-                  string offset_string = std::to_string(partition);
-                  offset_string += string(":");
-                  offset_string += std::to_string(offset);
+                  string offset_string = std::to_string(partition) + ":" + std::to_string(offset);
                   offset_tensor.scalar<tstring>()() = offset_string;
                   out_tensors->emplace_back(std::move(offset_tensor));
                 }
