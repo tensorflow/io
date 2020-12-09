@@ -1,0 +1,118 @@
+name: API Compatibility
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+
+env:
+  BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
+
+jobs:
+
+  macos:
+    name: macOS ${{ matrix.python }} + ${{ matrix.version }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python: ['3.8']
+        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker-practice/actions-setup-docker@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - run: |
+          set -x -e
+          python -m pip install -U wheel setuptools
+          python --version
+      - name: Setup macOS
+        run: |
+          set -x -e
+          docker version
+          bash -x -e tests/test_azure/start_azure.sh
+          bash -x -e tests/test_aws/aws_test.sh
+      - name: Test macOS
+        run: |
+          set -x -e
+          python --version
+          df -h
+          rm -rf tensorflow_io
+          echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
+          echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
+          python -m pip install pytest-benchmark boto3
+          python -m pip freeze
+          python -c 'import tensorflow as tf; print(tf.version.VERSION)'
+          python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
+          python -m pytest -s -v tests/test_http_eager.py
+          python -m pytest -s -v tests/test_s3_eager.py
+          python -m pytest -s -v tests/test_azure.py
+
+  linux:
+    name: Linux ${{ matrix.python }} + ${{ matrix.version }}
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python: ['3.8']
+        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Setup Linux
+        run: |
+          set -x -e
+          bash -x -e .github/workflows/build.space.sh
+          bash -x -e tests/test_aws/aws_test.sh
+          bash -x -e tests/test_azure/start_azure.sh
+          bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
+      - name: Test Linux
+        run: |
+          set -x -e
+          python --version
+          df -h
+          rm -rf tensorflow_io
+          echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
+          echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
+          python -m pip install pytest-benchmark boto3
+          python -m pip freeze
+          python -c 'import tensorflow as tf; print(tf.version.VERSION)'
+          python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
+          python -m pytest -s -v tests/test_http_eager.py
+          python -m pytest -s -v tests/test_s3_eager.py
+          python -m pytest -s -v tests/test_azure.py
+
+  windows:
+    name: Windows ${{ matrix.python }} + ${{ matrix.version }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python: ['3.8']
+        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '8.x'
+      - name: Setup Windows
+        shell: cmd
+        run: |
+          @echo on
+          bash -x -e tests/test_azure/start_azure.sh
+      - name: Test Windows
+        shell: cmd
+        run: |
+          @echo on
+          python --version
+          rm -rf tensorflow_io
+          echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
+          echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
+          python -m pip install pytest-benchmark
+          python -m pip freeze
+          python -c 'import tensorflow as tf; print(tf.version.VERSION)'
+          python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
+          python -m pytest -s -v tests/test_http_eager.py -k remote
