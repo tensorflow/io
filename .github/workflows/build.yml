@@ -30,6 +30,8 @@ jobs:
         run: |
           set -x -e
           git log --pretty -1
+          sudo python3 --version
+          sudo python3 -m pip install dataclasses
           sudo python3 -m pip install setuptools
           sudo python3 -m pip install -U git+https://github.com/tensorflow/docs
           find docs -name '*.ipynb' | xargs python3 -m tensorflow_docs.tools.nbfmt
