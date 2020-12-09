@@ -281,7 +281,7 @@ http_archive(
     patch_cmds = [
         "rm -f src/win32_config.h",
         # TODO: Remove the fowllowing once librdkafka issue is resolved.
-        """sed -i.bak '\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\/\//' src/rdkafka_cgrp.c""",
+        """sed -i.bak '\\|rd_kafka_log(rk,|,/ exceeded);/ s/^/\\/\\//' src/rdkafka_cgrp.c""",
     ],
     sha256 = "f7fee59fdbf1286ec23ef0b35b2dfb41031c8727c90ced6435b8cf576f23a656",
     strip_prefix = "librdkafka-1.5.0",
@@ -1090,5 +1090,18 @@ http_archive(
     strip_prefix = "pulsar-2.6.1",
     urls = [
         "https://github.com/apache/pulsar/archive/v2.6.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "libmongoc",
+    build_file = "//third_party:libmongoc.BUILD",
+    patch_cmds = [
+        "sed -i.bak 's/undef MONGOC_LOG_DOMAIN/undef MONGOC_LOG_DOMAIN\\'$'\\n''# define BIO_get_ssl(b,sslp)  BIO_ctrl(b,BIO_C_GET_SSL,0,(char *)(sslp))\\'$'\\n''# define BIO_do_handshake(b)  BIO_ctrl(b,BIO_C_DO_STATE_MACHINE,0,NULL)/g' src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c",
+    ],
+    sha256 = "0a722180e5b5c86c415b9256d753b2d5552901dc5d95c9f022072c3cd336887e",
+    strip_prefix = "mongo-c-driver-1.16.2",
+    urls = [
+        "https://github.com/mongodb/mongo-c-driver/releases/download/1.16.2/mongo-c-driver-1.16.2.tar.gz",
     ],
 )

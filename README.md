@@ -282,7 +282,7 @@ the shared libraries on CentOS 8:
 #!/usr/bin/env bash
 
 # Install gcc/g++, git, unzip/which (for bazel), and python3
-sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which
+sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which make
 
 # Install Bazel version specified in .bazelversion
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/$(cat .bazelversion)/bazel-$(cat .bazelversion)-installer-linux-x86_64.sh
@@ -321,7 +321,7 @@ The following will install bazel, devtoolset-9, rh-python36, and build the share
 
 # Install centos-release-scl, then install gcc/g++ (devtoolset), git, and python 3
 sudo yum install -y centos-release-scl
-sudo yum install -y devtoolset-9 git rh-python36
+sudo yum install -y devtoolset-9 git rh-python36 make
 
 # Install Bazel version specified in .bazelversion
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/$(cat .bazelversion)/bazel-$(cat .bazelversion)-installer-linux-x86_64.sh

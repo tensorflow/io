@@ -302,6 +302,7 @@ jobs:
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
+          bash -x -e tests/test_mongodb/mongodb_test.sh start
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_sql/sql_test.sh
           bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator

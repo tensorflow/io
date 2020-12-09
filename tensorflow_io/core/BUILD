@@ -679,6 +679,22 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "mongodb_ops",
+    srcs = [
+        "kernels/mongodb_kernels.cc",
+        "ops/mongodb_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@libmongoc",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -707,6 +723,7 @@ cc_binary(
         "//tensorflow_io/core:sql_ops",
         "//tensorflow_io/core:text_ops",
         "//tensorflow_io/core:ignite_ops",
+        "//tensorflow_io/core:mongodb_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
     ] + select({

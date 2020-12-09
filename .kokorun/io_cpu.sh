@@ -80,6 +80,7 @@ bash -x -e tests/test_prometheus/prometheus_test.sh start
 bash -x -e tests/test_azure/start_azure.sh
 bash -x -e tests/test_sql/sql_test.sh sql
 bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
+bash -x -e tests/test_mongodb/mongodb_test.sh start
 
 docker run -i --rm -v $PWD:/v -w /v --net=host \
   buildpack-deps:20.04 bash -x -e .github/workflows/build.wheel.sh python${PYTHON_VERSION}
