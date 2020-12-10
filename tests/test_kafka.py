@@ -479,6 +479,33 @@ class KafkaDatasetTest(test.TestCase):
                         sess.run(get_next),
                     )
 
+    def test_kafka_dataset_with_offset(self):
+        """Tests for KafkaDataset when reading non-keyed messages
+        from a single-partitioned topic"""
+        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+
+        repeat_dataset = kafka_io.KafkaDataset(
+            topics, group="test", eof=True, message_offset=True
+        ).repeat(num_epochs)
+        batch_dataset = repeat_dataset.batch(batch_size)
+
+        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        init_op = iterator.make_initializer(repeat_dataset)
+        get_next = iterator.get_next()
+
+        with self.cached_session() as sess:
+            # Basic offset test: read a limited number of messages from the topic.
+            sess.run(init_op, feed_dict={topics: ["offset-test:0:0:4"], num_epochs: 1})
+            for i in range(5):
+                self.assertEqual(
+                    (("D" + str(i)).encode(), ("0:" + str(i)).encode()),
+                    sess.run(get_next),
+                )
+            with self.assertRaises(errors.OutOfRangeError):
+                sess.run(get_next)
+
 
 if __name__ == "__main__":
     test.main()
