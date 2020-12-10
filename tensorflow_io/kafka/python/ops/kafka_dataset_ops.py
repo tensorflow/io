@@ -47,6 +47,7 @@ class KafkaDataset(data.Dataset):
         config_global=None,
         config_topic=None,
         message_key=False,
+        message_offset=False,
     ):
         """Create a KafkaReader.
 
@@ -76,6 +77,8 @@ class KafkaDataset(data.Dataset):
                             please refer to 'Topic configuration properties'
                             in librdkafka doc.
             message_key: If True, the kafka will output both message value and key.
+            message_offset: If True, the kafka will output both message value and offset,
+                            the offset info like 'partition-index:offset'.
         """
         self._topics = tf.convert_to_tensor(topics, dtype=dtypes.string, name="topics")
         self._servers = tf.convert_to_tensor(
@@ -95,6 +98,7 @@ class KafkaDataset(data.Dataset):
             config_topic, dtype=dtypes.string, name="config_topic"
         )
         self._message_key = message_key
+        self._message_offset = message_offset
         super().__init__()
 
     def _inputs(self):
@@ -110,25 +114,39 @@ class KafkaDataset(data.Dataset):
             self._config_global,
             self._config_topic,
             self._message_key,
+            self._message_offset,
         )
 
     @property
     def output_classes(self):
-        return (tf.Tensor) if not self._message_key else (tf.Tensor, tf.Tensor)
+        if self._message_key ^ self._message_offset:
+            return (tf.Tensor, tf.Tensor)
+        elif self._message_key and self._message_offset:
+            return (tf.Tensor, tf.Tensor, tf.Tensor)
+        else:
+            return tf.Tensor
 
     @property
     def output_shapes(self):
-        return (
-            (tf.TensorShape([]))
-            if not self._message_key
-            else (tf.TensorShape([]), tf.TensorShape([]))
-        )
+        if self._message_key ^ self._message_offset:
+            return (tf.TensorShape([]), tf.TensorShape([]))
+        elif self._message_key and self._message_offset:
+            return (
+                tf.TensorShape([]),
+                tf.TensorShape([]),
+                tf.TensorShape([]),
+            )
+        else:
+            return tf.TensorShape([])
 
     @property
     def output_types(self):
-        return (
-            (dtypes.string) if not self._message_key else (dtypes.string, dtypes.string)
-        )
+        if self._message_key ^ self._message_offset:
+            return (dtypes.string, dtypes.string)
+        elif self._message_key and self._message_offset:
+            return (dtypes.string, dtypes.string, dtypes.string)
+        else:
+            return dtypes.string
 
 
 def write_kafka(message, topic, servers="localhost", name=None):
