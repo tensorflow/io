@@ -46,7 +46,7 @@ ${ELASTICSEARCH_IMAGE}
 echo ""
 echo "Waiting for the elasticsearch cluster to be up and running..."
 echo ""
-sleep 20
+sleep 40
 
 echo ""
 echo "Checking the base REST-API endpoint..."
