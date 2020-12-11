@@ -243,10 +243,10 @@ Development of tensorflow-io on Linux is similar to macOS. The required packages
 are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python, other than the default system installed
 versions might be required though.
 
-##### Ubuntu 18.04/20.04
+##### Ubuntu 20.04
 
-Ubuntu 18.04/20.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
-the shared libraries on Ubuntu 18.04/20.04:
+Ubuntu 20.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 20.04:
 ```sh
 #!/usr/bin/env bash
 
