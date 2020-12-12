@@ -35,7 +35,7 @@ docker run --rm -d -p 27017-27019:27017-27019 --name tfio-mongodb \
 echo ""
 echo "Waiting for mongodb to be up and running..."
 echo ""
-sleep 20
+sleep 60
 
 elif [ "$action" == "stop" ]; then
 echo ""

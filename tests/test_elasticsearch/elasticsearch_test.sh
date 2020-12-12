@@ -43,21 +43,23 @@ docker run -d --rm --name=tfio-elasticsearch \
 --ulimit memlock=-1:-1 \
 ${ELASTICSEARCH_IMAGE}
 
-echo ""
 echo "Waiting for the elasticsearch cluster to be up and running..."
-echo ""
-sleep 20
+for i in {1..120}; do
+  RESPONSE=$(curl -w '%{http_code}' -H 'Authorization: Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk' -so /dev/null -L localhost:9200/) || true
+  if [[ $RESPONSE == 200 ]]; then
+      echo "[$i] Accessed base endpoint successfully"
+      break
+  fi
+  echo "[$i] Access base endpoint failed: $RESPONSE, sleep for 1 second"
+  sleep 1
+done
 
-echo ""
-echo "Checking the base REST-API endpoint..."
-echo ""
-# The Authorization header contains the base64 encoded value of "elastic:default_password"
-# As per the environment variable set while starting the container.
-curl -X GET localhost:9200/ --header 'Authorization: Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk'
 
 echo ""
 echo "Checking the healthcheck REST-API endpoint..."
 echo ""
+# The Authorization header contains the base64 encoded value of "elastic:default_password"
+# As per the environment variable set while starting the container.
 curl -X GET localhost:9200/_cluster/health --header 'Authorization: Basic ZWxhc3RpYzpkZWZhdWx0X3Bhc3N3b3Jk'
 
 echo ""

@@ -14,7 +14,7 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Run Lint Script for Bazel/Pyupgrade/Black/Clang
@@ -196,6 +196,8 @@ jobs:
           bash -x -e tests/test_pubsub/pubsub_test.sh
           bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_pulsar/pulsar_test.sh
+          bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
+          bash -x -e tests/test_mongodb/mongodb_test.sh start
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
