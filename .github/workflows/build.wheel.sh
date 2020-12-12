@@ -29,5 +29,20 @@ if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils libmp3lame0
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
   $PYTHON_VERSION get-pip.py -q
+
+  # Install Java
+  apt-get -y -qq install openjdk-8-jdk
+  update-alternatives --config java
+  export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+  # Install Hadoop
+  curl -OL https://archive.apache.org/dist/hadoop/common/hadoop-2.7.0/hadoop-2.7.0.tar.gz
+  tar -xzf hadoop-2.7.0.tar.gz -C /usr/local
+  export HADOOP_HOME=/usr/local/hadoop-2.7.0
+
+  # Update environmental variable
+  export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${JAVA_HOME}/jre/lib/amd64/server:${HADOOP_HOME}/lib/native
+  export CLASSPATH=$(${HADOOP_HOME}/bin/hadoop classpath --glob)
+  export
 fi
 run_test $PYTHON_VERSION
