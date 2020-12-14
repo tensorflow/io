@@ -7,7 +7,7 @@
 * Added the message offset to record for Kafka dataset.
 * Azure file system migrated to modular file system C APIs.
 * HTTP file system migrated to modular file system C APIs.
-* Initial s3 modular file system support through scheme `s3://`.
+* Initial s3 modular file system support through scheme `s3e://`.
 * Initial gcs modular file system support through scheme `gse://`.
 * Initial hdfs modular file system support through scheme `hdfse://`.
 
