@@ -16,7 +16,6 @@ cc_binary(
     ],
 )
 
-
 cc_library(
     name = "gcs_config_ops",
     srcs = [
