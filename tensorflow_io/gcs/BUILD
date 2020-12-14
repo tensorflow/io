@@ -7,6 +7,16 @@ load(
     "tf_io_copts",
 )
 
+cc_binary(
+    name = "_gcs_config_ops.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = [
+        ":gcs_config_ops",
+    ],
+)
+
+
 cc_library(
     name = "gcs_config_ops",
     srcs = [
