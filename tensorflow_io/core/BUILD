@@ -745,18 +745,6 @@ cc_binary(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflow_io_plugins.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = select({
-        "//tensorflow_io/core:static_build_on": [],
-        "//conditions:default": [
-            "//tensorflow_io/core/plugins:plugins",
-        ],
-    }),
-)
-
-cc_binary(
     name = "python/ops/libtensorflow_io_golang.so",
     copts = tf_io_copts(),
     linkshared = 1,
