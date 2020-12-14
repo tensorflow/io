@@ -1,3 +1,26 @@
+# Release 0.17.0
+
+## Major Features
+* Added MongoDB dataset support.
+* Added Apache Pulsar dataset support.
+* Added FFMpeg support for Ubuntu 20.04.
+* Added the message offset to record for Kafka dataset.
+* Azure file system migrated to modular file system C APIs.
+* HTTP file system migrated to modular file system C APIs.
+* Initial s3 modular file system support through scheme `s3e://`.
+* Initial gcs modular file system support through scheme `gse://`.
+* Initial hdfs modular file system support through scheme `hdfse://`.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Samuel Marks, Tom McTiernan, Vignesh Kothapalli, Yong Tang,
+Yunze Xu, 博琰
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.16.0
 
 ## Major Features
