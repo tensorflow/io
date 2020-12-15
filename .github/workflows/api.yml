@@ -1,6 +1,9 @@
 name: API Compatibility
 
 on:
+  push:
+    branches:
+      - master
   schedule:
     - cron: "0 12 * * *"
 
@@ -15,7 +18,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: docker-practice/actions-setup-docker@v1
@@ -54,7 +57,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -89,7 +92,7 @@ jobs:
     strategy:
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0rc4:tensorflow-io-nightly', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
