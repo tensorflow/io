@@ -132,8 +132,11 @@ arrow::Result<int64_t> ArrowStreamClient::Read(int64_t nbytes, void* out) {
 
 arrow::Result<std::shared_ptr<arrow::Buffer>> ArrowStreamClient::Read(
     int64_t nbytes) {
-  std::shared_ptr<arrow::ResizableBuffer> buffer;
-  ARROW_RETURN_NOT_OK(arrow::AllocateResizableBuffer(nbytes, &buffer));
+  arrow::Result<std::shared_ptr<arrow::ResizableBuffer>> result =
+      arrow::AllocateResizableBuffer(nbytes);
+  ARROW_RETURN_NOT_OK(result);
+  std::shared_ptr<arrow::ResizableBuffer> buffer =
+      std::move(result).ValueUnsafe();
   int64_t bytes_read;
   ARROW_ASSIGN_OR_RAISE(bytes_read, Read(nbytes, buffer->mutable_data()));
   ARROW_RETURN_NOT_OK(buffer->Resize(bytes_read, false));

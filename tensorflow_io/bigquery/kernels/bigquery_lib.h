@@ -224,12 +224,13 @@ class BigQueryReaderArrowDatasetIterator
     arrow::io::BufferReader buffer_reader_(buffer_);
     arrow::ipc::DictionaryMemo dict_memo;
 
-    auto arrow_status =
-        arrow::ipc::ReadRecordBatch(this->dataset()->arrow_schema(), &dict_memo,
-                                    &buffer_reader_, &this->record_batch_);
-    if (!arrow_status.ok()) {
-      return errors::Internal(arrow_status.ToString());
+    auto result = arrow::ipc::ReadRecordBatch(
+        this->dataset()->arrow_schema(), &dict_memo,
+        arrow::ipc::IpcReadOptions::Defaults(), &buffer_reader_);
+    if (!result.ok()) {
+      return errors::Internal(result.status().ToString());
     }
+    this->record_batch_ = std::move(result).ValueUnsafe();
 
     VLOG(3) << "got record batch, rows:" << record_batch_->num_rows();
 
