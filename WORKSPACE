@@ -256,22 +256,22 @@ http_archive(
 http_archive(
     name = "thrift",
     build_file = "//third_party:thrift.BUILD",
-    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
-    strip_prefix = "thrift-0.12.0",
+    sha256 = "5da60088e60984f4f0801deeea628d193c33cec621e78c8a43a5d8c4055f7ad9",
+    strip_prefix = "thrift-0.13.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/thrift/archive/0.12.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/thrift/archive/v0.13.0.tar.gz",
+        "https://github.com/apache/thrift/archive/v0.13.0.tar.gz",
     ],
 )
 
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    sha256 = "d7b3838758a365c8c47d55ab0df1006a70db951c6964440ba354f81f518b8d8d",
-    strip_prefix = "arrow-apache-arrow-0.16.0",
+    sha256 = "ea299df9cf440cfc43393ce12ee6d9a4c9d0dfa9fde33c3bc9b70ec25520a844",
+    strip_prefix = "arrow-apache-arrow-2.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-2.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-2.0.0.tar.gz",
     ],
 )
 
