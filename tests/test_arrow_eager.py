@@ -508,7 +508,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # Create a tempfile that is deleted after tests run
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            write_feather(df, f)
+            write_feather(df, f, version=1)
 
         # test single file
         dataset = arrow_io.ArrowFeatherDataset(
@@ -1143,7 +1143,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # Create a tempfile that is deleted after tests run
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            write_feather(df, f)
+            write_feather(df, f, version=1)
 
         # test single file
         # prefix "file://" to test scheme file system (e.g., s3, gcs, azfs, ignite)

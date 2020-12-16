@@ -20,6 +20,7 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 
 import tensorflow_io as tfio  # pylint: disable=wrong-import-position
 
@@ -37,9 +38,7 @@ def test_feather_format():
     }
     df = pd.DataFrame(data).sort_index(axis=1)
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        df.to_feather(f)
-
-    df = pd.read_feather(f.name)
+        pa.feather.write_feather(df, f, version=1)
 
     feather = tfio.IOTensor.from_feather(f.name)
     for column in df.columns:
