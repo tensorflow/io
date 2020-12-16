@@ -676,7 +676,7 @@ http_archive(
     patches = [
         "//third_party:libapr1.patch",
     ],
-    sha256 = "1a0909a1146a214a6ab9de28902045461901baab4e0ee43797539ec05b6dbae0",
+    sha256 = "096968a363b2374f7450a3c65f3cc0b50561204a8da7bc03a2c39e080febd6e1",
     strip_prefix = "apr-1.6.5",
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/apr/archive/1.6.5.tar.gz",
