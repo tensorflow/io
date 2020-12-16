@@ -61,6 +61,7 @@ cc_library(
             "cpp/src/arrow/json/*.cc",
             "cpp/src/arrow/tensor/*.cc",
             "cpp/src/arrow/util/*.cc",
+            "cpp/src/arrow/vendored/musl/strptime.c",
             "cpp/src/arrow/vendored/optional.hpp",
             "cpp/src/arrow/vendored/string_view.hpp",
             "cpp/src/arrow/vendored/variant.hpp",
