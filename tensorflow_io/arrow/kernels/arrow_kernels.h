@@ -51,8 +51,12 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
     return result.size();
   }
   arrow::Result<std::shared_ptr<arrow::Buffer>> Read(int64_t nbytes) override {
-    std::shared_ptr<arrow::ResizableBuffer> buffer;
-    RETURN_NOT_OK(AllocateResizableBuffer(nbytes, &buffer));
+    arrow::Result<std::shared_ptr<arrow::ResizableBuffer>> result =
+        arrow::AllocateResizableBuffer(nbytes);
+    ARROW_RETURN_NOT_OK(result);
+    std::shared_ptr<arrow::ResizableBuffer> buffer =
+        std::move(result).ValueUnsafe();
+
     ARROW_ASSIGN_OR_RAISE(int64_t bytes_read,
                           Read(nbytes, buffer->mutable_data()));
     RETURN_NOT_OK(buffer->Resize(bytes_read));

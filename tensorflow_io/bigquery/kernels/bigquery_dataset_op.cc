@@ -102,11 +102,12 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
         arrow::ipc::DictionaryMemo dict_memo;
         arrow::io::BufferReader input(buffer_);
-        arrow::Status arrow_status =
-            arrow::ipc::ReadSchema(&input, &dict_memo, &arrow_schema_);
-        OP_REQUIRES(ctx, arrow_status.ok(),
+        arrow::Result<std::shared_ptr<arrow::Schema>> result =
+            arrow::ipc::ReadSchema(&input, &dict_memo);
+        OP_REQUIRES(ctx, result.ok(),
                     errors::Internal("Error reading Arrow Schema",
-                                     arrow_status.message()));
+                                     result.status().message()));
+        arrow_schema_ = std::move(result).ValueUnsafe();
       } else {
         ctx->CtxFailure(errors::InvalidArgument("Invalid data_format"));
       }
