@@ -161,10 +161,11 @@ class ArrowReadableFromMemoryInitOp
     auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer_);
 
     std::shared_ptr<arrow::Schema> schema;
-    arrow::Status status =
-        arrow::ipc::ReadSchema(buffer_reader.get(), nullptr, &schema);
-    OP_REQUIRES(context, status.ok(),
+    arrow::Result<std::shared_ptr<arrow::Schema>> result =
+        arrow::ipc::ReadSchema(buffer_reader.get(), nullptr);
+    OP_REQUIRES(context, result.ok(),
                 errors::Internal("Error reading Arrow Schema"));
+    schema = std::move(result).ValueUnsafe();
 
     const Tensor* array_buffer_addrs_tensor;
     OP_REQUIRES_OK(context, context->input("array_buffer_addresses",
@@ -429,10 +430,10 @@ class ListFeatherColumnsOp : public OpKernel {
         ::arrow::ipc::feather::fbs::GetCTable(buffer.data());
 
     OP_REQUIRES(context,
-                (table->version() >= ::arrow::ipc::feather::kFeatherVersion),
+                (table->version() >= ::arrow::ipc::feather::kFeatherV1Version),
                 errors::InvalidArgument(
                     "feather file is old: ", table->version(), " vs. ",
-                    ::arrow::ipc::feather::kFeatherVersion));
+                    ::arrow::ipc::feather::kFeatherV1Version));
 
     std::vector<string> columns;
     std::vector<string> dtypes;
@@ -577,10 +578,10 @@ class FeatherReadable : public IOReadableInterface {
     const ::arrow::ipc::feather::fbs::CTable* table =
         ::arrow::ipc::feather::fbs::GetCTable(buffer.data());
 
-    if (table->version() < ::arrow::ipc::feather::kFeatherVersion) {
+    if (table->version() < ::arrow::ipc::feather::kFeatherV1Version) {
       return errors::InvalidArgument("feather file is old: ", table->version(),
                                      " vs. ",
-                                     ::arrow::ipc::feather::kFeatherVersion);
+                                     ::arrow::ipc::feather::kFeatherV1Version);
     }
 
     for (size_t i = 0; i < table->columns()->size(); i++) {
@@ -683,18 +684,20 @@ class FeatherReadable : public IOReadableInterface {
 
     if (feather_file_.get() == nullptr) {
       feather_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
-      arrow::Status s =
-          arrow::ipc::feather::TableReader::Open(feather_file_, &reader_);
-      if (!s.ok()) {
-        return errors::Internal(s.ToString());
+      arrow::Result<std::shared_ptr<arrow::ipc::feather::Reader>> result =
+          arrow::ipc::feather::Reader::Open(feather_file_);
+      if (!result.ok()) {
+        return errors::Internal(result.status().ToString());
       }
+      reader_ = std::move(result).ValueUnsafe();
     }
 
-    std::shared_ptr<arrow::ChunkedArray> column;
-    arrow::Status s = reader_->GetColumn(column_index, &column);
+    std::shared_ptr<arrow::Table> table;
+    arrow::Status s = reader_->Read(&table);
     if (!s.ok()) {
       return errors::Internal(s.ToString());
     }
+    std::shared_ptr<arrow::ChunkedArray> column = table->column(column_index);
 
     std::shared_ptr<::arrow::ChunkedArray> slice =
         column->Slice(element_start, element_stop);
@@ -767,7 +770,7 @@ class FeatherReadable : public IOReadableInterface {
   std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
   uint64 file_size_ TF_GUARDED_BY(mu_);
   std::shared_ptr<ArrowRandomAccessFile> feather_file_ TF_GUARDED_BY(mu_);
-  std::unique_ptr<arrow::ipc::feather::TableReader> reader_ TF_GUARDED_BY(mu_);
+  std::shared_ptr<arrow::ipc::feather::Reader> reader_ TF_GUARDED_BY(mu_);
 
   std::vector<DataType> dtypes_;
   std::vector<TensorShape> shapes_;

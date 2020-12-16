@@ -44,19 +44,24 @@ class CSVReadable : public IOReadableInterface {
 
     csv_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
 
-    ::arrow::Status status;
-
-    status = ::arrow::csv::TableReader::Make(
+    auto result = ::arrow::csv::TableReader::Make(
         ::arrow::default_memory_pool(), csv_file_,
         ::arrow::csv::ReadOptions::Defaults(),
         ::arrow::csv::ParseOptions::Defaults(),
-        ::arrow::csv::ConvertOptions::Defaults(), &reader_);
-    if (!status.ok()) {
-      return errors::InvalidArgument("unable to make a TableReader: ", status);
+        ::arrow::csv::ConvertOptions::Defaults());
+    if (!result.status().ok()) {
+      return errors::InvalidArgument("unable to make a TableReader: ",
+                                     result.status());
     }
-    status = reader_->Read(&table_);
-    if (!status.ok()) {
-      return errors::InvalidArgument("unable to read table: ", status);
+    reader_ = std::move(result).ValueUnsafe();
+
+    {
+      auto result = reader_->Read();
+      if (!result.status().ok()) {
+        return errors::InvalidArgument("unable to read table: ",
+                                       result.status());
+      }
+      table_ = std::move(result).ValueUnsafe();
     }
 
     for (int i = 0; i < table_->num_columns(); i++) {
@@ -108,11 +113,9 @@ class CSVReadable : public IOReadableInterface {
         case ::arrow::Type::TIMESTAMP:
         case ::arrow::Type::TIME32:
         case ::arrow::Type::TIME64:
-        case ::arrow::Type::INTERVAL:
         case ::arrow::Type::DECIMAL:
         case ::arrow::Type::LIST:
         case ::arrow::Type::STRUCT:
-        case ::arrow::Type::UNION:
         case ::arrow::Type::DICTIONARY:
         case ::arrow::Type::MAP:
         default:

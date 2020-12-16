@@ -28,21 +28,3 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [],
 )
-
-# parquet_types.[h|cpp] are generated from apache arrow 0.16.0
-# on Ubuntu 16.04 with default gcc/g++/cmake/flex/bison.
-cc_library(
-    name = "parquet",
-    srcs = [
-        "parquet/parquet_types.h",
-    ],
-    hdrs = [],
-    copts = [],
-    includes = ["."],
-    visibility = ["//visibility:public"],
-    deps = [],
-)
-
-exports_files([
-    "parquet/parquet_types.cpp",
-])

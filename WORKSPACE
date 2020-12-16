@@ -256,22 +256,22 @@ http_archive(
 http_archive(
     name = "thrift",
     build_file = "//third_party:thrift.BUILD",
-    sha256 = "b7452d1873c6c43a580d2b4ae38cfaf8fa098ee6dc2925bae98dce0c010b1366",
-    strip_prefix = "thrift-0.12.0",
+    sha256 = "5da60088e60984f4f0801deeea628d193c33cec621e78c8a43a5d8c4055f7ad9",
+    strip_prefix = "thrift-0.13.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/thrift/archive/0.12.0.tar.gz",
-        "https://github.com/apache/thrift/archive/0.12.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/thrift/archive/v0.13.0.tar.gz",
+        "https://github.com/apache/thrift/archive/v0.13.0.tar.gz",
     ],
 )
 
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    sha256 = "d7b3838758a365c8c47d55ab0df1006a70db951c6964440ba354f81f518b8d8d",
-    strip_prefix = "arrow-apache-arrow-0.16.0",
+    sha256 = "ea299df9cf440cfc43393ce12ee6d9a4c9d0dfa9fde33c3bc9b70ec25520a844",
+    strip_prefix = "arrow-apache-arrow-2.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-0.16.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-2.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-2.0.0.tar.gz",
     ],
 )
 
@@ -429,11 +429,11 @@ http_archive(
 
 http_archive(
     name = "com_github_google_flatbuffers",
-    sha256 = "12a13686cab7ffaf8ea01711b8f55e1dbd3bf059b7c46a25fefa1250bdd9dd23",
-    strip_prefix = "flatbuffers-b99332efd732e6faf60bb7ce1ce5902ed65d5ba3",
+    sha256 = "62f2223fb9181d1d6338451375628975775f7522185266cd5296571ac152bc45",
+    strip_prefix = "flatbuffers-1.12.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
-        "https://github.com/google/flatbuffers/archive/b99332efd732e6faf60bb7ce1ce5902ed65d5ba3.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/flatbuffers/archive/v1.12.0.tar.gz",
+        "https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz",
     ],
 )
 
@@ -676,7 +676,7 @@ http_archive(
     patches = [
         "//third_party:libapr1.patch",
     ],
-    sha256 = "1a0909a1146a214a6ab9de28902045461901baab4e0ee43797539ec05b6dbae0",
+    sha256 = "096968a363b2374f7450a3c65f3cc0b50561204a8da7bc03a2c39e080febd6e1",
     strip_prefix = "apr-1.6.5",
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/apr/archive/1.6.5.tar.gz",
