@@ -80,11 +80,11 @@ http_archive(
 http_archive(
     name = "avro",
     build_file = "//third_party:avro.BUILD",
-    sha256 = "e382ac6685544ae9539084793ac0a4ffd377ba476ea756439625552e14d212b0",
-    strip_prefix = "avro-release-1.9.1/lang/c++",
+    sha256 = "8fd1f850ce37e60835e6d8335c0027a959aaa316773da8a9660f7d33a66ac142",
+    strip_prefix = "avro-release-1.10.1/lang/c++",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/avro/archive/release-1.9.1.tar.gz",
-        "https://github.com/apache/avro/archive/release-1.9.1.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/avro/archive/release-1.10.1.tar.gz",
+        "https://github.com/apache/avro/archive/release-1.10.1.tar.gz",
     ],
 )
 
