@@ -31,12 +31,12 @@ def _require(condition: bool, err_msg: Optional[str] = None) -> None:
         err_msg: If specified, it's the error message to use if condition is not true.
 
     Raises:
-      ValueError: Raised when the condition is false
+        ValueError: Raised when the condition is false
 
     Returns:
         None
     """
-    
+
     if not condition:
         raise ValueError(err_msg)
 
@@ -200,7 +200,7 @@ class AvroRecordDataset(tf.data.Dataset):
     ):
         """Creates a `AvroRecordDataset` to read one or more AvroRecord files.
 
-        Args:
+         Args:
           filenames: A `tf.string` tensor or `tf.data.Dataset` containing one or
             more filenames.
           buffer_size: (Optional.) A `tf.int64` scalar representing the number of
@@ -225,7 +225,6 @@ class AvroRecordDataset(tf.data.Dataset):
           deterministic: (Optional.) A boolean controlling whether determinism should be traded for performance by
           allowing elements to be produced out of order. Defaults to `True`
           block_length: Sets the number of output on the output tensor. Defaults to 1
-
         Raises:
           TypeError: If any argument does not have the expected type.
           ValueError: If any argument does not have the expected shape.
