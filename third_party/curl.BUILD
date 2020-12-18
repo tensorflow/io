@@ -14,7 +14,9 @@ cc_library(
         "lib/vtls/*.h",
         "lib/vauth/*.h",
         "lib/vauth/*.c",
-    ]),
+    ]) + [
+        "lib/vssh/ssh.h",
+    ],
     hdrs = glob([
         "include/curl/*.h",
     ]) + [
