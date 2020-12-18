@@ -43,19 +43,18 @@ def test_read_file():
 
     body = b"1234567"
 
-    # Setup the S3 bucket and key
+    # Setup the GCS bucket and key
     key_name = "TEST"
-    bucket_name = "s3e{}e".format(int(time.time()))
-
+    bucket_name = "gse{}e".format(int(time.time()))
     bucket = client.create_bucket(bucket_name)
-    print("Project number: {}".format(bucket.project_number))
 
     blob = bucket.blob(key_name)
     blob.upload_from_string(body)
 
-    response = blob.download_as_string()
-    print("RESPONSE: ", response)
+    response = blob.download_as_bytes()
     assert response == body
 
-    # content = tf.io.read_file("gs://{}/{}".format(bucket_name, key_name))
-    # assert content == body
+    os.environ["CLOUD_STORAGE_TESTBENCH_ENDPOINT"] = "http://localhost:9099"
+
+    content = tf.io.read_file("gse://{}/{}".format(bucket_name, key_name))
+    assert content == body

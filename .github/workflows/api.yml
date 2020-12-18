@@ -50,6 +50,7 @@ jobs:
           python -m pytest -s -v tests/test_http_eager.py
           python -m pytest -s -v tests/test_s3_eager.py
           python -m pytest -s -v tests/test_azure.py
+          python -m pytest -s -v tests/test_gcs_eager.py
 
   linux:
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
@@ -85,6 +86,7 @@ jobs:
           python -m pytest -s -v tests/test_http_eager.py
           python -m pytest -s -v tests/test_s3_eager.py
           python -m pytest -s -v tests/test_azure.py
+          python -m pytest -s -v tests/test_gcs_eager.py
 
   windows:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
