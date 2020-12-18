@@ -72,19 +72,6 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
             bash -x -e source.sh
 
-  centos-8:
-    name: CentOS 8
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: |
-          set -x -e
-          bash -x -e .github/workflows/build.space.sh
-          python3 .github/workflows/build.instruction.py README.md "##### CentOS 8" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host centos:8 \
-            bash -x -e source.sh
-
   centos-7:
     name: CentOS 7
     runs-on: ubuntu-latest
