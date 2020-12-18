@@ -141,8 +141,248 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 ## Performance Benchmarking
 
-We use [github-pages](https://tensorflow.github.io/io/dev/bench/) to document the results of API performance benchmarks. The benchmark job is triggered on every commit to `master` branch and
-facilitates tracking performance w.r.t commits.
+# Show macOS's default python3
+python3 --version
+
+# Install Bazel version specified in .bazelversion
+curl -OL https://github.com/bazelbuild/bazel/releases/download/$(cat .bazelversion)/bazel-$(cat .bazelversion)-installer-darwin-x86_64.sh
+sudo bash -x -e bazel-$(cat .bazelversion)-installer-darwin-x86_64.sh
+
+# Install tensorflow and configure bazel
+sudo ./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+NOTE: When running pytest, `TFIO_DATAPATH=bazel-bin` has to be passed so that python can utilize the generated shared libraries after the build process.
+
+##### Troubleshoot
+
+If Xcode is installed, but `$ xcodebuild -version` is not displaying the expected output, you might need to enable Xcode command line with the command:
+
+`$ xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+
+A terminal restart might be required for the changes to take effect.
+
+Sample output:
+
+```
+$ xcodebuild -version
+Xcode 11.6
+Build version 11E708
+```
+
+
+#### Linux
+
+Development of tensorflow-io on Linux is similar to macOS. The required packages
+are gcc, g++, git, bazel, and python 3. Newer versions of gcc or python, other than the default system installed
+versions might be required though.
+
+##### Ubuntu 20.04
+
+Ubuntu 20.04 requires gcc/g++, git, and python 3. The following will install dependencies and build
+the shared libraries on Ubuntu 20.04:
+```sh
+#!/usr/bin/env bash
+
+# Install gcc/g++, git, unzip/curl (for bazel), and python3
+sudo apt-get -y -qq update
+sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
+
+# Install Bazel version specified in .bazelversion
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/$(cat .bazelversion)/bazel-$(cat .bazelversion)-installer-linux-x86_64.sh
+sudo bash -x -e bazel-$(cat .bazelversion)-installer-linux-x86_64.sh
+
+# Upgrade pip
+sudo python3 -m pip install -U pip
+
+# Install tensorflow and configure bazel
+sudo ./configure.sh
+
+# Build shared libraries
+bazel build -s --verbose_failures //tensorflow_io/...
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+sudo python3 -m pip install pytest
+TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization_eager.py
+```
+
+##### CentOS 8
+
+The steps to build shared libraries for CentOS 8 is similiar to Ubuntu 20.04 above
+excpet that
+```
+sudo yum install -y python3 python3-devel gcc gcc-c++ git unzip which make
+```
+should be used instead to install gcc/g++, git, unzip/which (for bazel), and python3.
+
+##### CentOS 7
+
+On CentOS 7, the default python and gcc version are too old to build tensorflow-io's shared
+libraries (.so). The gcc provided by Developer Toolset and rh-python36 should be used instead.
+Also, the libstdc++ has to be linked statically to avoid discrepancy of libstdc++ installed on
+CentOS vs. newer gcc version by devtoolset.
+
+Furthermore, a special flag `--//tensorflow_io/core:static_build` has to be passed to Bazel
+in order to avoid duplication of symbols in statically linked libraries for file system
+plugins.
+
+The following will install bazel, devtoolset-9, rh-python36, and build the shared libraries:
+```sh
+#!/usr/bin/env bash
+
+# Install centos-release-scl, then install gcc/g++ (devtoolset), git, and python 3
+sudo yum install -y centos-release-scl
+sudo yum install -y devtoolset-9 git rh-python36 make
+
+# Install Bazel version specified in .bazelversion
+curl -sSOL https://github.com/bazelbuild/bazel/releases/download/$(cat .bazelversion)/bazel-$(cat .bazelversion)-installer-linux-x86_64.sh
+sudo bash -x -e bazel-$(cat .bazelversion)-installer-linux-x86_64.sh
+
+# Upgrade pip
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install -U pip'
+
+# Install tensorflow and configure bazel with rh-python36
+scl enable rh-python36 devtoolset-9 \
+    './configure.sh'
+
+# Build shared libraries, notice the passing of --//tensorflow_io/core:static_build
+BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstdc++.a" \
+  scl enable rh-python36 devtoolset-9 \
+    'bazel build -s --verbose_failures --//tensorflow_io/core:static_build //tensorflow_io/...'
+
+# Once build is complete, shared libraries will be available in
+# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
+# to run tests with `pytest`, e.g.:
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install pytest'
+
+TFIO_DATAPATH=bazel-bin \
+  scl enable rh-python36 devtoolset-9 \
+    'python3 -m pytest -s -v tests/test_serialization_eager.py'
+```
+
+#### Python Wheels
+
+It is possible to build python wheels after bazel build is complete with the following command:
+```
+$ python3 setup.py bdist_wheel --data bazel-bin
+```
+The .whl file will be available in dist directory. Note the bazel binary directory `bazel-bin`
+has to be passed with `--data` args in order for setup.py to locate the necessary share objects,
+as `bazel-bin` is outside of the `tensorflow_io` package directory.
+
+Alternatively, source install could be done with:
+```
+$ TFIO_DATAPATH=bazel-bin python3 -m pip install .
+```
+with `TFIO_DATAPATH=bazel-bin` passed for the same reason.
+
+Note installing with `-e` is different from the above. The
+```
+$ TFIO_DATAPATH=bazel-bin python3 -m pip install -e .
+```
+will not install shared object automatically even with `TFIO_DATAPATH=bazel-bin`. Instead,
+`TFIO_DATAPATH=bazel-bin` has to be passed everytime the program is run after the install:
+```
+$ TFIO_DATAPATH=bazel-bin python3
+
+>>> import tensorflow_io as tfio
+>>> ...
+```
+
+#### Docker
+
+For Python development, a reference Dockerfile [here](tools/docker/devel.Dockerfile) can be
+used to build the TensorFlow I/O package (`tensorflow-io`) from source. Additionally, the
+pre-built devel images can be used as well:
+```sh
+# Pull (if necessary) and start the devel container
+$ docker run -it --rm --name tfio-dev --net=host -v ${PWD}:/v -w /v tfsigio/tfio:latest-devel bash
+
+# Inside the docker container, ./configure.sh will install TensorFlow or use existing install
+(tfio-dev) root@docker-desktop:/v$ ./configure.sh
+
+# Clean up exisiting bazel build's (if any)
+(tfio-dev) root@docker-desktop:/v$ rm -rf bazel-*
+
+# Build TensorFlow I/O C++. For compilation optimization flags, the default (-march=native)
+# optimizes the generated code for your machine's CPU type.
+# Reference: https://www.tensorflow.orginstall/source#configuration_options).
+
+# NOTE: Based on the available resources, please change the number of job workers to:
+# -j 4/8/16 to prevent bazel server terminations and resource oriented build errors.
+
+(tfio-dev) root@docker-desktop:/v$ bazel build -j 8 --copt=-msse4.2 --copt=-mavx --compilation_mode=opt --verbose_failures --test_output=errors --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain //tensorflow_io/...
+
+
+# Run tests with PyTest, note: some tests require launching additional containers to run (see below)
+(tfio-dev) root@docker-desktop:/v$ pytest -s -v tests/
+# Build the TensorFlow I/O package
+(tfio-dev) root@docker-desktop:/v$ python setup.py bdist_wheel
+```
+
+A package file `dist/tensorflow_io-*.whl` will be generated after a build is successful.
+
+NOTE: When working in the Python development container, an environment variable
+`TFIO_DATAPATH` is automatically set to point tensorflow-io to the shared C++
+libraries built by Bazel to run `pytest` and build the `bdist_wheel`. Python
+`setup.py` can also accept `--data [path]` as an argument, for example
+`python setup.py --data bazel-bin bdist_wheel`.
+
+NOTE: While the tfio-dev container gives developers an easy to work with
+environment, the released whl packages are built differently due to manylinux2010
+requirements. Please check [Build Status and CI] section for more details
+on how the released whl packages are generated.
+
+#### Starting Test Containers
+
+Some tests require launching a test container before running. In order
+to run all tests, execute the following commands:
+
+```sh
+$ bash -x -e tests/test_ignite/start_ignite.sh
+$ bash -x -e tests/test_kafka/kafka_test.sh
+$ bash -x -e tests/test_kinesis/kinesis_test.sh
+```
+
+### R
+
+We provide a reference Dockerfile [here](R-package/scripts/Dockerfile) for you
+so that you can use the R package directly for testing. You can build it via:
+```sh
+$ docker build -t tfio-r-dev -f R-package/scripts/Dockerfile .
+```
+
+Inside the container, you can start your R session, instantiate a `SequenceFileDataset`
+from an example [Hadoop SequenceFile](https://wiki.apache.org/hadoop/SequenceFile)
+[string.seq](R-package/tests/testthat/testdata/string.seq), and then use any [transformation functions](https://tensorflow.rstudio.com/tools/tfdatasets/articles/introduction.html#transformations) provided by [tfdatasets package](https://tensorflow.rstudio.com/tools/tfdatasets/) on the dataset like the following:
+
+```r
+library(tfio)
+dataset <- sequence_file_dataset("R-package/tests/testthat/testdata/string.seq") %>%
+    dataset_repeat(2)
+
+sess <- tf$Session()
+iterator <- make_iterator_one_shot(dataset)
+next_batch <- iterator_get_next(iterator)
+
+until_out_of_range({
+  batch <- sess$run(next_batch)
+  print(batch)
+})
+```
 
 ## Contributing
 

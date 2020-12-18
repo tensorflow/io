@@ -73,14 +73,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Ubuntu 20.04
-        run: |
-          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
-            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
-            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-          else
-            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
-          fi
+      - run: |
+          set -x -e
+          bash -x -e .github/workflows/build.space.sh
+          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 20.04" > source.sh
+          cat source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
+            bash -x -e source.sh
+
+  centos-7:
+    name: CentOS 7
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py docs/development.md "##### Ubuntu 20.04" > source.sh
