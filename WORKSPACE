@@ -419,11 +419,11 @@ http_archive(
 http_archive(
     name = "curl",
     build_file = "//third_party:curl.BUILD",
-    sha256 = "e9c37986337743f37fd14fe8737f246e97aec94b39d1b71e8a5973f72a9fc4f5",
-    strip_prefix = "curl-7.60.0",
+    sha256 = "01ae0c123dee45b01bbaef94c0bc00ed2aec89cb2ee0fd598e0d302a6b5e0a98",
+    strip_prefix = "curl-7.69.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/curl.haxx.se/download/curl-7.60.0.tar.gz",
-        "https://curl.haxx.se/download/curl-7.60.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/curl.haxx.se/download/curl-7.69.1.tar.gz",
+        "https://curl.haxx.se/download/curl-7.69.1.tar.gz",
     ],
 )
 
@@ -584,11 +584,11 @@ http_archive(
         "@com_github_curl_curl": "@curl",
         "@com_github_nlohmann_json": "@nlohmann_json_lib",
     },
-    sha256 = "ff82045b9491f0d880fc8e5c83fd9542eafb156dcac9ff8c6209ced66ed2a7f0",
-    strip_prefix = "google-cloud-cpp-1.17.1",
+    sha256 = "14bf9bf97431b890e0ae5dca8f8904841d4883b8596a7108a42f5700ae58d711",
+    strip_prefix = "google-cloud-cpp-1.21.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.17.1.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v1.17.1.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
     ],
 )
 
