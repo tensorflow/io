@@ -39,7 +39,7 @@ def make_avro_record_dataset(
     num_parallel_reads=None,
     drop_final_batch=False,
 ):
-       """Reads and (optionally) parses avro files into a dataset.
+    """Reads and (optionally) parses avro files into a dataset.
     Provides common functionality such as batching, optional parsing, shuffling,
     and performing defaults.
     Args:
