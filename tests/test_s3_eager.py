@@ -31,6 +31,11 @@ def test_read_file():
     """Test case for reading S3"""
     import boto3
 
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
+    os.environ["TF_CPP_MIN_VLOG_LEVEL"] = "5"
+    os.environ["AWS_LOG_LEVEL"] = "trace"
+    os.environ["S3_DISABLE_MULTI_PART_DOWNLOAD"] = "1"
+
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["AWS_ACCESS_KEY_ID"] = "ACCESS_KEY"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "SECRET_KEY"
