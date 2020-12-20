@@ -112,7 +112,7 @@ genrule(
         "#  define HAVE_SYS_FILIO_H 1",
         "#  define HAVE_SYS_SOCKIO_H 1",
         "#  define OS \"x86_64-apple-darwin15.5.0\"",
-        "#  define USE_DARWINSSL 1",
+        "#  define USE_SECTRANSP 1",
         "#else",
         "#  define CURL_CA_BUNDLE \"/etc/ssl/certs/ca-certificates.crt\"",
         "#  define GETSERVBYPORT_R_ARGS 6",
