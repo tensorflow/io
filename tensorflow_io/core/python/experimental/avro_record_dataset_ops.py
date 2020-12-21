@@ -16,14 +16,13 @@
 
 import tensorflow as tf
 from tensorflow_io.core.python.ops import core_ops
-from typing import Optional
 
 _DEFAULT_READER_BUFFER_SIZE_BYTES = 256 * 1024  # 256 KB
 _DEFAULT_READER_SCHEMA = ""
 # From https://github.com/tensorflow/tensorflow/blob/v2.0.0/tensorflow/python/data/ops/readers.py
 
 
-def _require(condition: bool, err_msg: Optional[str] = None) -> None:
+def _require(condition: bool, err_msg: str = None) -> None:
     """Checks if the specified condition is true else raises exception
     
     Args:
