@@ -176,6 +176,12 @@ def _tf_pip_impl(repository_ctx):
         "tf_header_include",
         tf_pip_dir_rename_pair = ["tensorflow_core", "tensorflow"],
     )
+    tf_c_header_rule = _symlink_genrule_for_dir(
+        repository_ctx,
+        tf_header_dir + "/tensorflow/c/",
+        "include_c",
+        "tf_c_header_include",
+    )
 
     tf_shared_library_dir = repository_ctx.os.environ[_TF_SHARED_LIBRARY_DIR]
     tf_shared_library_name = repository_ctx.os.environ[_TF_SHARED_LIBRARY_NAME]
@@ -192,6 +198,7 @@ def _tf_pip_impl(repository_ctx):
 
     _tpl(repository_ctx, "BUILD", {
         "%{TF_HEADER_GENRULE}": tf_header_rule,
+        "%{TF_C_HEADER_GENRULE}": tf_c_header_rule,
         "%{TF_SHARED_LIBRARY_GENRULE}": tf_shared_library_rule,
     })
 
