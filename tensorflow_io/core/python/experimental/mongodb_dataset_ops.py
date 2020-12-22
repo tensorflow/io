@@ -54,9 +54,54 @@ class _MongoDBHandler:
 
 
 class MongoDBIODataset(tf.data.Dataset):
-    """Fetch records from mongoDB"""
+    """Fetch records from mongoDB
+
+    The dataset aids in faster retrieval of data from MongoDB collections.
+
+    To make a connection and read the documents from the mongo collections,
+    the `tfio.experimental.mongodb.MongoDBIODataset` API can be used.
+
+    Example:
+
+    >>> URI = "mongodb://mongoadmin:default_password@localhost:27017"
+    >>> DATABASE = "tfiodb"
+    >>> COLLECTION = "test"
+    >>> dataset = tfio.experimental.mongodb.MongoDBIODataset(
+        uri=URI, database=DATABASE, collection=COLLECTION)
+
+    Perform operations on the dataset as one would with any `tf.data.Dataset`
+    >>> dataset = dataset.map(transform_func)
+    >>> dataset = dataset.batch(batch_size)
+
+    Assuming the user has already built a `tf.keras` model, the dataset can be directly
+    passed for training purposes.
+
+    >>> model.fit(dataset) # to train
+    >>> model.predict(dataset) # to infer
+
+    """
 
     def __init__(self, uri, database, collection):
+        """Initialize the dataset with the following parameters
+
+        Args:
+            uri: The uri of the mongo server or replicaset to connect to.
+                - To connect to a MongoDB server with username and password
+                based authentication, the following uri pattern can be used.
+                Example: `"mongodb://mongoadmin:default_password@localhost:27017"`.
+
+                - Connecting to a replica set is much like connecting to a
+                standalone MongoDB server. Simply specify the replica set name
+                using the `?replicaSet=myreplset` URI option.
+                Example: "mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset"
+
+                Additional information on writing uri's can be found here:
+                - [libmongoc uri docs](http://mongoc.org/libmongoc/current/mongoc_uri_t.html)
+                - [mongodb uri docs](https://docs.mongodb.com/manual/reference/connection-string/)
+            database: The database in the standalone standalone MongoDB server or a replica set
+                to connect to.
+            collection: The collection from which the documents have to be retrieved.
+        """
         handler = _MongoDBHandler(uri=uri, database=database, collection=collection)
         resource = handler.get_healthy_resource()
         dataset = tf.data.experimental.Counter()
