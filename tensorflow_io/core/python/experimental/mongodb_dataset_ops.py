@@ -35,7 +35,9 @@ class _MongoDBHandler:
         """Retrieve the resource which is connected to a healthy node"""
 
         resource = core_ops.io_mongo_db_readable_init(
-            uri=self.uri, database=self.database, collection=self.collection,
+            uri=self.uri,
+            database=self.database,
+            collection=self.collection,
         )
         print("Connection successful: {}".format(self.uri))
         return resource
@@ -59,7 +61,7 @@ class MongoDBIODataset(tf.data.Dataset):
     The dataset aids in faster retrieval of data from MongoDB collections.
 
     To make a connection and read the documents from the mongo collections,
-    the `tfio.experimental.mongodb.MongoDBWriter` API can be used.
+    the `tfio.experimental.mongodb.MongoDBIODataset` API can be used.
 
     Example:
 
