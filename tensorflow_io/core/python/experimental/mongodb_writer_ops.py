@@ -22,10 +22,53 @@ from tensorflow_io.core.python.experimental import serialization_ops
 
 
 class MongoDBWriter:
-    """Write documents to mongoDB"""
+    """Write documents to mongoDB.
+
+    The writer can be used to store documents in mongoDB while dealing with tensorflow
+    based models and inference outputs. Without loss of generality, consider an ML
+    model that is being used for inference. The outputs of inference can be modelled into
+    a structured record by enriching the schema with additional information( for ex: metadata
+    about input data and the semantics of the inference etc.) and can be stored in mongo
+    collections for persistence or future analysis.
+
+    To make a connection and write the documents to the mongo collections,
+    the `tfio.experimental.mongodb.MongoDBWriter` API can be used.
+
+    Example:
+
+    >>> URI = "mongodb://mongoadmin:default_password@localhost:27017"
+    >>> DATABASE = "tfiodb"
+    >>> COLLECTION = "test"
+    >>> writer = tfio.experimental.mongodb.MongoDBWriter(
+        uri=URI, database=DATABASE, collection=COLLECTION
+    )
+    >>> for i in range(1000):
+    ...    data = {"key{}".format(i): "value{}".format(i)}
+    ...    writer.write(data)
+
+    """
 
     def __init__(self, uri, database, collection):
+        """Initialize the dataset with the following parameters
 
+        Args:
+            uri: The uri of the mongo server or replicaset to connect to.
+                - To connect to a MongoDB server with username and password
+                based authentication, the following uri pattern can be used.
+                Example: `"mongodb://mongoadmin:default_password@localhost:27017"`.
+
+                - Connecting to a replica set is much like connecting to a
+                standalone MongoDB server. Simply specify the replica set name
+                using the `?replicaSet=myreplset` URI option.
+                Example: "mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset"
+
+                Additional information on writing uri's can be found here:
+                - [libmongoc uri docs](http://mongoc.org/libmongoc/current/mongoc_uri_t.html)
+                - [mongodb uri docs](https://docs.mongodb.com/manual/reference/connection-string/)
+            database: The database in the standalone standalone MongoDB server or a replica set
+                to connect to.
+            collection: The collection from which the documents have to be retrieved.
+        """
         self.uri = uri
         self.database = database
         self.collection = collection
