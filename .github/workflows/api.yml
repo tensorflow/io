@@ -16,6 +16,7 @@ jobs:
     name: macOS ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.8']
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
@@ -56,6 +57,7 @@ jobs:
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.8']
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
@@ -92,6 +94,7 @@ jobs:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.8']
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
