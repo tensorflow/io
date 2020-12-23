@@ -88,7 +88,7 @@ jobs:
           python -m pytest -s -v tests/test_http_eager.py
           python -m pytest -s -v tests/test_s3_eager.py
           python -m pytest -s -v tests/test_azure.py
-          python -m pytest -s -v tests/test_gcs_eager.py
+          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io==0.17.0" ]]; then python -m pytest -s -v tests/test_gcs_eager.py ; fi
 
   windows:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
