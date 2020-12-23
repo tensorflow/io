@@ -21,7 +21,8 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/plugins:plugins_header",
-        "@aws-sdk-cpp",
+        "@aws-sdk-cpp//:s3",
+        "@aws-sdk-cpp//:transfer",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ],
