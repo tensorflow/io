@@ -62,29 +62,41 @@ constexpr size_t kUploadRetries = 3;
 
 constexpr size_t kS3ReadAppendableFileBufferSize = 1024 * 1024;  // 1 MB
 
-static void* plugin_memory_allocate(size_t size) { return calloc(1, size); }
-static void plugin_memory_free(void* ptr) { free(ptr); }
-
 static inline void TF_SetStatusFromAWSError(
     const Aws::Client::AWSError<Aws::S3::S3Errors>& error, TF_Status* status) {
-  switch (error.GetResponseCode()) {
-    case Aws::Http::HttpResponseCode::FORBIDDEN:
-      TF_SetStatus(status, TF_FAILED_PRECONDITION,
-                   "AWS Credentials have not been set properly. "
-                   "Unable to access the specified S3 location");
-      break;
-    case Aws::Http::HttpResponseCode::REQUESTED_RANGE_NOT_SATISFIABLE:
-      TF_SetStatus(status, TF_OUT_OF_RANGE, "Read less bytes than requested");
-      break;
-    case Aws::Http::HttpResponseCode::NOT_FOUND:
-      TF_SetStatus(status, TF_NOT_FOUND, error.GetMessage().c_str());
-      break;
-    default:
-      TF_SetStatus(
-          status, TF_UNKNOWN,
-          (error.GetExceptionName() + ": " + error.GetMessage()).c_str());
-      break;
+  auto http_code = error.GetResponseCode();
+  auto status_msg = error.GetExceptionName() + ": " + error.GetMessage();
+  if (http_code == Aws::Http::HttpResponseCode::BAD_REQUEST) {
+    return TF_SetStatus(status, TF_INVALID_ARGUMENT, status_msg.c_str());
   }
+  if (http_code == Aws::Http::HttpResponseCode::UNAUTHORIZED) {
+    return TF_SetStatus(status, TF_UNAUTHENTICATED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::FORBIDDEN) {
+    return TF_SetStatus(status, TF_PERMISSION_DENIED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::NOT_FOUND) {
+    return TF_SetStatus(status, TF_NOT_FOUND, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::METHOD_NOT_ALLOWED ||
+      http_code == Aws::Http::HttpResponseCode::NOT_ACCEPTABLE ||
+      http_code == Aws::Http::HttpResponseCode::PROXY_AUTHENTICATION_REQUIRED) {
+    return TF_SetStatus(status, TF_PERMISSION_DENIED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::REQUEST_TIMEOUT) {
+    return TF_SetStatus(status, TF_RESOURCE_EXHAUSTED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::PRECONDITION_FAILED) {
+    return TF_SetStatus(status, TF_FAILED_PRECONDITION, status_msg.c_str());
+  }
+  if (http_code ==
+      Aws::Http::HttpResponseCode::REQUESTED_RANGE_NOT_SATISFIABLE) {
+    return TF_SetStatus(status, TF_OUT_OF_RANGE, status_msg.c_str());
+  }
+  if (Aws::Http::HttpResponseCode::INTERNAL_SERVER_ERROR <= http_code) {
+    return TF_SetStatus(status, TF_INTERNAL, status_msg.c_str());
+  }
+  return TF_SetStatus(status, TF_UNKNOWN, status_msg.c_str());
 }
 
 void ParseS3Path(const Aws::String& fname, bool object_empty_ok,
