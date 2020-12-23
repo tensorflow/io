@@ -463,7 +463,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@aws-sdk-cpp",
+        "@aws-sdk-cpp//:kinesis",
     ],
     alwayslink = 1,
 )

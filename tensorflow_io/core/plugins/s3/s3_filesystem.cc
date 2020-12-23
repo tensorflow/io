@@ -62,29 +62,41 @@ constexpr size_t kUploadRetries = 3;
 
 constexpr size_t kS3ReadAppendableFileBufferSize = 1024 * 1024;  // 1 MB
 
-static void* plugin_memory_allocate(size_t size) { return calloc(1, size); }
-static void plugin_memory_free(void* ptr) { free(ptr); }
-
 static inline void TF_SetStatusFromAWSError(
     const Aws::Client::AWSError<Aws::S3::S3Errors>& error, TF_Status* status) {
-  switch (error.GetResponseCode()) {
-    case Aws::Http::HttpResponseCode::FORBIDDEN:
-      TF_SetStatus(status, TF_FAILED_PRECONDITION,
-                   "AWS Credentials have not been set properly. "
-                   "Unable to access the specified S3 location");
-      break;
-    case Aws::Http::HttpResponseCode::REQUESTED_RANGE_NOT_SATISFIABLE:
-      TF_SetStatus(status, TF_OUT_OF_RANGE, "Read less bytes than requested");
-      break;
-    case Aws::Http::HttpResponseCode::NOT_FOUND:
-      TF_SetStatus(status, TF_NOT_FOUND, error.GetMessage().c_str());
-      break;
-    default:
-      TF_SetStatus(
-          status, TF_UNKNOWN,
-          (error.GetExceptionName() + ": " + error.GetMessage()).c_str());
-      break;
+  auto http_code = error.GetResponseCode();
+  auto status_msg = error.GetExceptionName() + ": " + error.GetMessage();
+  if (http_code == Aws::Http::HttpResponseCode::BAD_REQUEST) {
+    return TF_SetStatus(status, TF_INVALID_ARGUMENT, status_msg.c_str());
   }
+  if (http_code == Aws::Http::HttpResponseCode::UNAUTHORIZED) {
+    return TF_SetStatus(status, TF_UNAUTHENTICATED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::FORBIDDEN) {
+    return TF_SetStatus(status, TF_PERMISSION_DENIED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::NOT_FOUND) {
+    return TF_SetStatus(status, TF_NOT_FOUND, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::METHOD_NOT_ALLOWED ||
+      http_code == Aws::Http::HttpResponseCode::NOT_ACCEPTABLE ||
+      http_code == Aws::Http::HttpResponseCode::PROXY_AUTHENTICATION_REQUIRED) {
+    return TF_SetStatus(status, TF_PERMISSION_DENIED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::REQUEST_TIMEOUT) {
+    return TF_SetStatus(status, TF_RESOURCE_EXHAUSTED, status_msg.c_str());
+  }
+  if (http_code == Aws::Http::HttpResponseCode::PRECONDITION_FAILED) {
+    return TF_SetStatus(status, TF_FAILED_PRECONDITION, status_msg.c_str());
+  }
+  if (http_code ==
+      Aws::Http::HttpResponseCode::REQUESTED_RANGE_NOT_SATISFIABLE) {
+    return TF_SetStatus(status, TF_OUT_OF_RANGE, status_msg.c_str());
+  }
+  if (Aws::Http::HttpResponseCode::INTERNAL_SERVER_ERROR <= http_code) {
+    return TF_SetStatus(status, TF_INTERNAL, status_msg.c_str());
+  }
+  return TF_SetStatus(status, TF_UNKNOWN, status_msg.c_str());
 }
 
 void ParseS3Path(const Aws::String& fname, bool object_empty_ok,
@@ -218,9 +230,17 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
     // in the bucket name. Due to TLS hostname validation or DNS rules,
     // the bucket may not be resolved. Disabling of virtual addressing
     // should address the issue. See GitHub issue 16397 for details.
-    s3_file->s3_client = Aws::MakeShared<Aws::S3::S3Client>(
-        kS3ClientAllocationTag, GetDefaultClientConfig(),
-        Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, false);
+    s3_file->s3_client = std::shared_ptr<Aws::S3::S3Client>(
+        Aws::New<Aws::S3::S3Client>(
+            kS3ClientAllocationTag, GetDefaultClientConfig(),
+            Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, false),
+        [&options](Aws::S3::S3Client* s3_client) {
+          if (s3_client != nullptr) {
+            Aws::Delete(s3_client);
+            Aws::ShutdownAPI(options);
+            tf_s3_filesystem::AWSLogSystem::ShutdownAWSLogging();
+          }
+        });
   }
 }
 
@@ -252,15 +272,6 @@ static void GetTransferManager(
         (kExecutorPoolSize + 1) * s3_file->multi_part_chunk_sizes[direction];
     s3_file->transfer_managers[direction] =
         Aws::Transfer::TransferManager::Create(config);
-  }
-}
-
-static void ShutdownClient(Aws::S3::S3Client* s3_client) {
-  if (s3_client != nullptr) {
-    delete s3_client;
-    Aws::SDKOptions options;
-    Aws::ShutdownAPI(options);
-    tf_s3_filesystem::AWSLogSystem::ShutdownAWSLogging();
   }
 }
 
@@ -319,11 +330,10 @@ static int64_t ReadS3Client(S3File* s3_file, uint64_t offset, size_t n,
 static int64_t ReadS3TransferManager(S3File* s3_file, uint64_t offset, size_t n,
                                      char* buffer, TF_Status* status) {
   TF_VLog(3, "Using TransferManager\n");
-  auto create_download_stream = [&]() {
-    return Aws::New<TFS3UnderlyingStream>(
-        "S3ReadStream",
-        Aws::New<Aws::Utils::Stream::PreallocatedStreamBuf>(
-            "S3ReadStream", reinterpret_cast<unsigned char*>(buffer), n));
+  auto stream_buf = Aws::MakeShared<Aws::Utils::Stream::PreallocatedStreamBuf>(
+      "S3StreamBuf", reinterpret_cast<unsigned char*>(buffer), n);
+  auto create_download_stream = [stream_buf]() {
+    return Aws::New<TFS3UnderlyingStream>("S3ReadStream", stream_buf.get());
   };
   TF_VLog(3, "Created stream to read with transferManager\n");
   auto handle = s3_file->transfer_manager->DownloadFile(
@@ -439,9 +449,11 @@ void Sync(const TF_WritableFile* file, TF_Status* status) {
   TF_VLog(1, "WriteFileToS3: s3://%s/%s\n", s3_file->bucket.c_str(),
           s3_file->object.c_str());
   auto position = static_cast<int64_t>(s3_file->outfile->tellp());
+  // We always re-upload the whole file.
+  s3_file->outfile->seekg(0);
   auto handle = s3_file->transfer_manager->UploadFile(
       s3_file->outfile, s3_file->bucket, s3_file->object,
-      "application/octet-stream", Aws::Map<Aws::String, Aws::String>());
+      "application/octet-stream", /*metadata*/ {});
   handle->WaitUntilFinished();
 
   size_t retries = 0;
@@ -512,7 +524,7 @@ uint64_t Length(const TF_ReadOnlyMemoryRegion* region) {
 // is an error - should return OUT_OF_RANGE with less bytes.
 namespace tf_s3_filesystem {
 S3File::S3File()
-    : s3_client(nullptr, ShutdownClient),
+    : s3_client(nullptr),
       executor(nullptr),
       transfer_managers(),
       multi_part_chunk_sizes(),
@@ -768,8 +780,8 @@ static void SimpleCopyFile(const Aws::String& source,
                            const Aws::String& bucket_dst,
                            const Aws::String& object_dst, S3File* s3_file,
                            TF_Status* status) {
-  TF_VLog(1, "SimpleCopyFile from %s to %s/%s\n", bucket_dst.c_str(),
-          object_dst.c_str());
+  TF_VLog(1, "SimpleCopyFile from %s to %s/%s\n", source.c_str(),
+          bucket_dst.c_str(), object_dst.c_str());
   Aws::S3::Model::CopyObjectRequest copy_object_request;
   copy_object_request.WithCopySource(source)
       .WithBucket(bucket_dst)
@@ -834,8 +846,8 @@ static void MultiPartCopy(const Aws::String& source,
                           const Aws::String& object_dst, const size_t num_parts,
                           const uint64_t file_size, S3File* s3_file,
                           TF_Status* status) {
-  TF_VLog(1, "MultiPartCopy from %s to %s/%s\n", bucket_dst.c_str(),
-          object_dst.c_str());
+  TF_VLog(1, "MultiPartCopy from %s to %s/%s\n", source.c_str(),
+          bucket_dst.c_str(), object_dst.c_str());
   Aws::S3::Model::CreateMultipartUploadRequest create_multipart_upload_request;
   create_multipart_upload_request.WithBucket(bucket_dst).WithKey(object_dst);
 
@@ -1066,6 +1078,11 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
   TF_SetStatus(status, TF_OK, "");
 }
 
+void RecursivelyCreateDir(const TF_Filesystem* filesystem, const char* path,
+                          TF_Status* status) {
+  CreateDir(filesystem, path, status);
+}
+
 void DeleteDir(const TF_Filesystem* filesystem, const char* path,
                TF_Status* status) {
   TF_VLog(1, "DeleteDir: %s\n", path);
@@ -1262,6 +1279,8 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->new_read_only_memory_region_from_file =
       tf_s3_filesystem::NewReadOnlyMemoryRegionFromFile;
   ops->filesystem_ops->create_dir = tf_s3_filesystem::CreateDir;
+  ops->filesystem_ops->recursively_create_dir =
+      tf_s3_filesystem::RecursivelyCreateDir;
   ops->filesystem_ops->delete_file = tf_s3_filesystem::DeleteFile;
   ops->filesystem_ops->delete_dir = tf_s3_filesystem::DeleteDir;
   ops->filesystem_ops->copy_file = tf_s3_filesystem::CopyFile;
