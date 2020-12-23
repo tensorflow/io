@@ -1078,6 +1078,11 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
   TF_SetStatus(status, TF_OK, "");
 }
 
+void RecursivelyCreateDir(const TF_Filesystem* filesystem, const char* path,
+                          TF_Status* status) {
+  CreateDir(filesystem, path, status);
+}
+
 void DeleteDir(const TF_Filesystem* filesystem, const char* path,
                TF_Status* status) {
   TF_VLog(1, "DeleteDir: %s\n", path);
@@ -1274,6 +1279,8 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->new_read_only_memory_region_from_file =
       tf_s3_filesystem::NewReadOnlyMemoryRegionFromFile;
   ops->filesystem_ops->create_dir = tf_s3_filesystem::CreateDir;
+  ops->filesystem_ops->recursively_create_dir =
+      tf_s3_filesystem::RecursivelyCreateDir;
   ops->filesystem_ops->delete_file = tf_s3_filesystem::DeleteFile;
   ops->filesystem_ops->delete_dir = tf_s3_filesystem::DeleteDir;
   ops->filesystem_ops->copy_file = tf_s3_filesystem::CopyFile;
