@@ -15,9 +15,13 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_c_header_lib",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@local_config_tf//:libtensorflow_framework",
+        ],
+        "//conditions:default": [],
+    }),
     alwayslink = 1,
 )
 
