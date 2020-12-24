@@ -142,8 +142,8 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
 
     long samples_read = 0;
     long samples_to_read = value->shape().dim_size(0);
+    float** buffer;
     while (samples_read < samples_to_read) {
-      float** buffer;
       int bitstream = 0;
       long chunk = ov_read_float(&ogg_vorbis_file_, &buffer,
                                  samples_to_read - samples_read, &bitstream);
@@ -160,6 +160,9 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
       }
       samples_read += chunk;
     }
+    // Cleanup the vorbis file
+    ov_clear(&ogg_vorbis_file_);
+
     return Status::OK();
   }
   string DebugString() const override { return "OggVorbisReadableResource"; }
