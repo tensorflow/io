@@ -83,7 +83,10 @@ static ov_callbacks OggVorbisCallbacks = {
 class OggVorbisReadableResource : public AudioReadableResourceBase {
  public:
   OggVorbisReadableResource(Env* env) : env_(env) {}
-  ~OggVorbisReadableResource() {}
+  ~OggVorbisReadableResource() {
+    // Cleanup the vorbis file
+    ov_clear(&ogg_vorbis_file_);
+  }
 
   Status Init(const string& filename, const void* optional_memory,
               const size_t optional_length) override {
@@ -142,8 +145,8 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
 
     long samples_read = 0;
     long samples_to_read = value->shape().dim_size(0);
+    float** buffer;
     while (samples_read < samples_to_read) {
-      float** buffer;
       int bitstream = 0;
       long chunk = ov_read_float(&ogg_vorbis_file_, &buffer,
                                  samples_to_read - samples_read, &bitstream);
@@ -160,6 +163,7 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
       }
       samples_read += chunk;
     }
+
     return Status::OK();
   }
   string DebugString() const override { return "OggVorbisReadableResource"; }
