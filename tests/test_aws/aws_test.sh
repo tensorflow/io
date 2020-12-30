@@ -19,7 +19,7 @@ set -o pipefail
 
 export LOCALSTACK_VERSION=0.12.2
 cd tests/test_aws
-docker-compose up -d
+TMPDIR=/private$TMPDIR docker-compose up -d
 cd -
 echo "Waiting for 20 secs until localstack is up and running"
 sleep 20
