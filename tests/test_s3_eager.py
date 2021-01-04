@@ -24,8 +24,8 @@ import pytest
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "darwin"),
-    reason="TODO Localstack not setup properly on macOS/Windows yet",
+    sys.platform in ("win32"),
+    reason="TODO Localstack not setup properly on Windows yet",
 )
 def test_read_file():
     """Test case for reading S3"""
