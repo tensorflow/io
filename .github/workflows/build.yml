@@ -76,7 +76,7 @@ jobs:
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
-          python3 .github/workflows/build.instruction.py README.md "##### Ubuntu 20.04" > source.sh
+          python3 .github/workflows/build.instruction.py docs/development.md "##### Ubuntu 20.04" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
             bash -x -e source.sh
@@ -89,7 +89,7 @@ jobs:
       - run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
-          python3 .github/workflows/build.instruction.py docs/development.md "##### Ubuntu 20.04" > source.sh
+          python3 .github/workflows/build.instruction.py docs/development.md "##### CentOS 7" > source.sh
           cat source.sh
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
