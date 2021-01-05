@@ -176,6 +176,8 @@ Lint fix an individual python file with black and pyupgrade using:
 $ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
 ```
 
+### Notebooks/Tutorials 
+If you are updating or creating a notebook, please refer to the tutorials and instructions mentioned [here](https://github.com/tensorflow/io/tree/master/docs/tutorials).
 
 ### Python
 
