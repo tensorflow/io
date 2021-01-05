@@ -50,7 +50,7 @@ $ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/o
 #### macOS
 
 On macOS Catalina 10.15.7, it is possible to build tensorflow-io with
-system provided python 3.8.2. Both `tensorflow` and `bazel` are needed.
+system provided python 3.8.2. Both `tensorflow` and `bazel` are needed to do so.
 
 NOTE: The system default python 3.8.2 on macOS 10.15.7 will cause `regex` installation
 error caused by compiler option of `-arch arm64 -arch x86_64` (similar to the issue
