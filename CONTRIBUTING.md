@@ -1,7 +1,6 @@
 # Contributing
 
-Tensorflow I/O project welcomes all kinds of contributions, be it code changes, bug-fixes or documentation changes.
-This guide should help you in taking care of some basic setups & code conventions.
+Tensorflow I/O project welcomes all kinds of contributions, be it code changes, bug-fixes or documentation changes. This guide should help you in taking care of some basic setups & code conventions.
 
 ## Contributor License Agreement
 
@@ -17,8 +16,7 @@ again.
 
 ## Coding Style
 
-Tensorflow project wide code style guidelines can be followed at [TensorFlow Style Guide - Conventions](https://www.tensorflow.org/community/contribute/code_style) and Tensorflow I/O project specific 
-code style guidelines can be followed at [Style Guide](STYLE_GUIDE.md).
+Tensorflow project wide code style guidelines can be followed at [TensorFlow Style Guide - Conventions](https://www.tensorflow.org/community/contribute/code_style) and Tensorflow I/O project specific code style guidelines can be followed at [Style Guide](STYLE_GUIDE.md).
 
 ## Code Reviews
 
