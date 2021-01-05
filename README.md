@@ -138,6 +138,56 @@ of releases [here](https://github.com/tensorflow/io/releases).
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
 
+## Development
+
+### IDE Setup
+
+For instructions on how to configure Visual Studio Code for developing TensorFlow I/O, please refer to
+https://github.com/tensorflow/io/blob/master/docs/vscode.md
+
+### Lint
+
+TensorFlow I/O's code conforms to Bazel Buildifier, Clang Format, Black, and Pyupgrade.
+Please use the following command to check the source code and identify lint issues:
+```
+$ bazel run //tools/lint:check
+```
+
+For Bazel Buildifier and Clang Format, the following command will automatically identify
+and fix any lint errors:
+```
+$ bazel run //tools/lint:lint
+```
+
+Alternatively, if you only want to perform lint check using individual linters,
+then you can selectively pass `black`, `pyupgrade`, `bazel`, or `clang` to the above commands.
+
+For example, a `black` specific lint check can be done using:
+```
+$ bazel run //tools/lint:check -- black
+```
+
+Lint fix using Bazel Buildifier and Clang Format can be done using:
+```
+$ bazel run //tools/lint:lint -- bazel clang
+```
+
+Lint check using `black` and `pyupgrade` for an individual python file can be done using:
+```
+$ bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
+```
+
+Lint fix an individual python file with black and pyupgrade using:
+```
+$ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
+```
+
+### Notebooks/Tutorials 
+If you are updating or creating a notebook, please refer to the tutorials and instructions mentioned [here](https://github.com/tensorflow/io/tree/master/docs/tutorials).
+
+### Python
+
+#### macOS
 
 ## Performance Benchmarking
 
