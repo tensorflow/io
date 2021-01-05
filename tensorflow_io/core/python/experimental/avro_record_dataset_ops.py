@@ -106,7 +106,7 @@ Results in the following output:
         We set this equal to `block_length`, so that each time n number of records are returned for each of the n
         files.
         num_parallel_calls: Number of threads spawned by the interleave call.
-        deterministic: Sets whether the interleaved records are written in deterministic order. in tf.interleave thi sis default true
+        deterministic: Sets whether the interleaved records are written in deterministic order. in tf.interleave this is default true
         block_length: Sets the number of output on the output tensor. Defaults to 1
     Returns:
         A dataset iterator with an interleaved list of parsed avro records.

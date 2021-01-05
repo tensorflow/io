@@ -30,8 +30,8 @@ from avro.datafile import DataFileReader, DataFileWriter
 from avro.schema import Parse as parse
 import tensorflow_io as tfio
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: skip macOS", allow_module_level=True)
+# if sys.platform == "darwin":
+#    pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
 class AvroRecordsToFile:
@@ -245,6 +245,64 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
                 [AvroFileToRecords(filename).get_records() for filename in filenames],
             ),
         )
+
+    def test_inval_num_parallel_calls(self):
+        """test_inval_num_parallel_calls
+            
+            This function tests that value errors are raised upon
+            the passing of invalid values for num_parallel_calls which
+            includes zero values and values greater than num_parallel_reads
+        """
+
+        NUM_PARALLEL_READS = 1
+        NUM_PARALLEL_CALLS_ZERO = 0
+        NUM_PARALLEL_CALLS_GREATER = 2
+
+        writer_schema = """{
+              "type": "record",
+              "name": "dataTypes",
+              "fields": [
+                  {
+                     "name":"index",
+                     "type":"int"
+                  },
+                  {
+                     "name":"string_value",
+                     "type":"string"
+                  }
+              ]}"""
+
+        record_data = [
+            {"index": 0, "string_value": ""},
+            {"index": 1, "string_value": "SpecialChars@!#$%^&*()-_=+{}[]|/`~\\'?"},
+            {
+                "index": 2,
+                "string_value": "ABCDEFGHIJKLMNOPQRSTUVW"
+                + "Zabcdefghijklmnopqrstuvwz0123456789",
+            },
+        ]
+
+        filenames = AvroRecordDatasetTest._setup_files(
+            writer_schema=writer_schema, records=record_data
+        )
+
+        with pytest.raises(ValueError):
+
+            dataset_a = tfio.experimental.columnar.AvroRecordDataset(
+                filenames=filenames,
+                num_parallel_reads=NUM_PARALLEL_READS,
+                num_parallel_calls=NUM_PARALLEL_CALLS_ZERO,
+                reader_schema="reader_schema",
+            )
+
+        with pytest.raises(ValueError):
+
+            dataset_b = tfio.experimental.columnar.AvroRecordDataset(
+                filenames=filenames,
+                num_parallel_reads=NUM_PARALLEL_READS,
+                num_parallel_calls=NUM_PARALLEL_CALLS_GREATER,
+                reader_schema="reader_schema",
+            )
 
     def _test_pass_dataset(self, writer_schema, record_data, **kwargs):
         """test_pass_dataset"""
