@@ -12,8 +12,11 @@ cc_library(
             "src/*.c",
             "src/*.cpp",
             "src/iso19111/*.cpp",
+            "src/iso19111/operation/*.cpp",
+            "src/iso19111/operation/*.hpp",
             "src/projections/*.cpp",
             "src/transformations/*.cpp",
+            "src/transformations/*.hpp",
             "src/conversions/*.cpp",
         ],
         exclude = [
