@@ -142,22 +142,22 @@ new_git_repository(
 http_archive(
     name = "libgeotiff",
     build_file = "//third_party:libgeotiff.BUILD",
-    sha256 = "12c26422e89da7032efcd60d48f3d82c7c0b4c9f3f61aa30c5e3df512946c6cf",
-    strip_prefix = "libgeotiff-1.5.1",
+    sha256 = "9452dadd126223a22ce6b97d202066d3873792aaefa7ce739519635a3fe34034",
+    strip_prefix = "libgeotiff-1.6.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.5.1.zip",
-        "https://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.5.1.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.6.0.zip",
+        "https://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.6.0.zip",
     ],
 )
 
 http_archive(
     name = "proj",
     build_file = "//third_party:proj.BUILD",
-    sha256 = "0b157e1aa81df4d0dbd89368a0005916bb717f0c09143b4dbc1b20d59204e9f2",
-    strip_prefix = "proj-6.2.0",
+    sha256 = "219c6e11b2baa9a3e2bd7ec54ce19702909591032cf6f7d1004b406f10b7c9ad",
+    strip_prefix = "proj-7.2.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/proj/proj-6.2.0.zip",
-        "https://download.osgeo.org/proj/proj-6.2.0.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/proj/proj-7.2.1.zip",
+        "https://download.osgeo.org/proj/proj-7.2.1.zip",
     ],
 )
 
@@ -316,11 +316,11 @@ http_archive(
 http_archive(
     name = "libtiff",
     build_file = "//third_party:libtiff.BUILD",
-    sha256 = "5d29f32517dadb6dbcd1255ea5bbc93a2b54b94fbf83653b4d65c7d6775b8634",
-    strip_prefix = "tiff-4.1.0",
+    sha256 = "eb0484e568ead8fa23b513e9b0041df7e327f4ee2d22db5a533929dfc19633cb",
+    strip_prefix = "tiff-4.2.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
-        "https://download.osgeo.org/libtiff/tiff-4.1.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/libtiff/tiff-4.2.0.tar.gz",
+        "https://download.osgeo.org/libtiff/tiff-4.2.0.tar.gz",
     ],
 )
 
