@@ -20,12 +20,11 @@ import tensorflow_io.arrow as arrow_io
 # Assume `df` is an existing Pandas DataFrame
 dataset = arrow_io.ArrowDataset.from_pandas(df)
 
-iterator = dataset.make_one_shot_iterator()
-next_element = iterator.get_next()
+# All `tf.data.Dataset` operations can now be performed, for ex:
+dataset = dataset.batch(2)
 
-with tf.Session() as sess:
-  for i in range(len(df)):
-    print(sess.run(next_element))
+for row in dataset:
+  print(row)
 ```
 
 NOTE: The entire DataFrame will be serialized to the Dataset and is not
@@ -59,16 +58,9 @@ dataset = arrow_io.ArrowFeatherDataset(
     output_types=(tf.int32, tf.float32),
     output_shapes=([], []))
 
-iterator = dataset.make_one_shot_iterator()
-next_element = iterator.get_next()
-
 # This will iterate over each row of each file provided
-with tf.Session() as sess:
-  while True:
-    try:
-      print(sess.run(next_element))
-    except tf.errors.OutOfRangeError:
-      break
+for row in dataset:
+  print(row)
 ```
 
 An alternate constructor can also be used to infer output types and shapes from
@@ -101,17 +93,10 @@ dataset = arrow_io.ArrowStreamDataset(
     output_types=(tf.int32, tf.float32),
     output_shapes=([], []))
 
-iterator = dataset.make_one_shot_iterator()
-next_element = iterator.get_next()
-
 # The host connection is made when the Dataset op is run and will iterate over
 # each row of each record batch until the Arrow stream is finished
-with tf.Session() as sess:
-  while True:
-    try:
-      print(sess.run(next_element))
-    except tf.errors.OutOfRangeError:
-      break
+for row in dataset:
+  print(row)
 ```
 
 An alternate constructor can also be used to infer output types and shapes from
