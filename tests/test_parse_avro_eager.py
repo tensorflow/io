@@ -30,8 +30,8 @@ from avro.datafile import DataFileReader, DataFileWriter
 from avro.schema import Parse as parse
 import tensorflow_io as tfio
 
-# if sys.platform == "darwin":
-#    pytest.skip("TODO: skip macOS", allow_module_level=True)
+if sys.platform == "darwin":
+   pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
 class AvroRecordsToFile:
@@ -248,7 +248,6 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
 
     def test_inval_num_parallel_calls(self):
         """test_inval_num_parallel_calls
-            
             This function tests that value errors are raised upon
             the passing of invalid values for num_parallel_calls which
             includes zero values and values greater than num_parallel_reads
