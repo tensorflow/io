@@ -25,11 +25,15 @@ _DEFAULT_READER_SCHEMA = ""
 def _require(condition: bool, err_msg: str = None) -> None:
     """Checks if the specified condition is true else raises exception
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 =======
     
 >>>>>>> 5203f5d9... Exposes num_parallel_reads and num_parallel_calls
+=======
+    
+>>>>>>> bba69e31... Exposes num_parallel_reads and num_parallel_calls (#1232)
     Args:
         condition: The condition to test
         err_msg: If specified, it's the error message to use if condition is not true.
@@ -40,6 +44,7 @@ def _require(condition: bool, err_msg: str = None) -> None:
     Returns:
         None
     """
+<<<<<<< HEAD
 <<<<<<< HEAD
     
 =======
@@ -54,6 +59,8 @@ def _require(condition: bool, err_msg: str = None) -> None:
 >>>>>>> 21bc6c7c... Exposes num_parallel_reads and num_parallel_calls
 =======
 >>>>>>> 5203f5d9... Exposes num_parallel_reads and num_parallel_calls
+=======
+>>>>>>> bba69e31... Exposes num_parallel_reads and num_parallel_calls (#1232)
     if not condition:
         raise ValueError(err_msg)
 
@@ -217,9 +224,12 @@ class AvroRecordDataset(tf.data.Dataset):
     ):
         """Creates a `AvroRecordDataset` to read one or more AvroRecord files.
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 5203f5d9... Exposes num_parallel_reads and num_parallel_calls
+=======
+>>>>>>> bba69e31... Exposes num_parallel_reads and num_parallel_calls (#1232)
         Args:
           filenames: A `tf.string` tensor or `tf.data.Dataset` containing one or
             more filenames.
@@ -243,6 +253,7 @@ class AvroRecordDataset(tf.data.Dataset):
           reader_schema: (Optional.) A `tf.string` scalar representing the reader
             schema or None.
 <<<<<<< HEAD
+<<<<<<< HEAD
           deterministic: (Optional.) A boolean controlling whether determinism should be traded for performance by
           allowing elements to be produced out of order. Defaults to `True`
           block_length: Sets the number of output on the output tensor. Defaults to 1
@@ -255,6 +266,11 @@ class AvroRecordDataset(tf.data.Dataset):
           allowing elements to be produced out of order. Defaults to `True`
           block_length: Sets the number of output on the output tensor. Defaults to 1
 >>>>>>> d41d946... Added parameter constraints
+=======
+          deterministic: (Optional.) A boolean controlling whether determinism should be traded for performance by
+          allowing elements to be produced out of order. Defaults to `True`
+          block_length: Sets the number of output on the output tensor. Defaults to 1
+>>>>>>> bba69e31... Exposes num_parallel_reads and num_parallel_calls (#1232)
         Raises:
           TypeError: If any argument does not have the expected type.
           ValueError: If any argument does not have the expected shape.
