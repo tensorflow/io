@@ -59,7 +59,6 @@ class MongoDBReadableResource : public ResourceBase {
 
     // Register the application name so we can track it in the profile logs
     //  on the server. This can also be done from the URI.
-
     mongoc_client_set_appname(client_obj_, "tfio-mongo-read");
 
     //  Get a handle on the database "db_name" and collection "coll_name"
@@ -87,12 +86,15 @@ class MongoDBReadableResource : public ResourceBase {
     const bson_t* doc;
 
     int num_records = 0;
-    while (mongoc_cursor_next(cursor_obj_, &doc) &&
-           num_records < max_num_records) {
-      char* record = bson_as_canonical_extended_json(doc, NULL);
-      records.emplace_back(record);
-      num_records++;
-      bson_free(record);
+    while (num_records < max_num_records) {
+      if (mongoc_cursor_next(cursor_obj_, &doc)) {
+        char* record = bson_as_canonical_extended_json(doc, NULL);
+        records.emplace_back(record);
+        num_records++;
+        bson_free(record);
+      } else {
+        break;
+      }
     }
 
     TensorShape shape({static_cast<int32>(records.size())});
