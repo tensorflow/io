@@ -162,6 +162,9 @@ class ParquetReadableResource : public ResourceBase {
           row_group_reader->Column(column_index);
 
       // buffer to fill location is value.data()[row_to_read_start - start]
+      // Note: ReadBatch may not be able to read the elements requested
+      // (row_to_read_count) in one shot, as such we use while loop of
+      // `while (row_left > 0) {...}` to read until complete.
 
 #define PARQUET_PROCESS_TYPE(ptype, type)                                     \
   {                                                                           \
@@ -172,11 +175,16 @@ class ParquetReadableResource : public ResourceBase {
     }                                                                         \
     ptype::c_type* value_p = (ptype::c_type*)(void*)(&(                       \
         value->flat<type>().data()[row_to_read_start - element_start]));      \
-    int64_t values_read;                                                      \
-    int64_t levels_read = reader->ReadBatch(row_to_read_count, nullptr,       \
-                                            nullptr, value_p, &values_read);  \
-    if (!(levels_read == values_read && levels_read == row_to_read_count)) {  \
-      return errors::InvalidArgument("null value in column: ", column);       \
+    int64_t row_left = row_to_read_count;                                     \
+    while (row_left > 0) {                                                    \
+      int64_t values_read;                                                    \
+      int64_t levels_read = reader->ReadBatch(                                \
+          row_left, nullptr, nullptr, &value_p[row_to_read_count - row_left], \
+          &values_read);                                                      \
+      if (!(levels_read == values_read && levels_read > 0)) {                 \
+        return errors::InvalidArgument("null value in column: ", column);     \
+      }                                                                       \
+      row_left -= levels_read;                                                \
     }                                                                         \
   }
 
@@ -189,13 +197,18 @@ class ParquetReadableResource : public ResourceBase {
     }                                                                         \
     std::unique_ptr<ptype::c_type[]> value_p(                                 \
         new ptype::c_type[row_to_read_count]);                                \
-    int64_t values_read;                                                      \
-    int64_t levels_read = reader->ReadBatch(                                  \
-        row_to_read_count, nullptr, nullptr, value_p.get(), &values_read);    \
-    if (!(levels_read == values_read && levels_read == row_to_read_count)) {  \
-      return errors::InvalidArgument("null value in column: ", column);       \
+    int64_t row_left = row_to_read_count;                                     \
+    while (row_left > 0) {                                                    \
+      int64_t values_read;                                                    \
+      int64_t levels_read = reader->ReadBatch(                                \
+          row_left, nullptr, nullptr,                                         \
+          &value_p.get()[row_to_read_count - row_left], &values_read);        \
+      if (!(levels_read == values_read && levels_read > 0)) {                 \
+        return errors::InvalidArgument("null value in column: ", column);     \
+      }                                                                       \
+      row_left -= levels_read;                                                \
     }                                                                         \
-    for (int64_t index = 0; index < values_read; index++) {                   \
+    for (int64_t index = 0; index < row_to_read_count; index++) {             \
       value->flat<tstring>()(row_to_read_start - element_start + index) =     \
           ByteArrayToString(value_p[index]);                                  \
     }                                                                         \
@@ -210,13 +223,18 @@ class ParquetReadableResource : public ResourceBase {
     }                                                                         \
     std::unique_ptr<ptype::c_type[]> value_p(                                 \
         new ptype::c_type[row_to_read_count]);                                \
-    int64_t values_read;                                                      \
-    int64_t levels_read = reader->ReadBatch(                                  \
-        row_to_read_count, nullptr, nullptr, value_p.get(), &values_read);    \
-    if (!(levels_read == values_read && levels_read == row_to_read_count)) {  \
-      return errors::InvalidArgument("null value in column: ", column);       \
+    int64_t row_left = row_to_read_count;                                     \
+    while (row_left > 0) {                                                    \
+      int64_t values_read;                                                    \
+      int64_t levels_read = reader->ReadBatch(                                \
+          row_left, nullptr, nullptr,                                         \
+          &value_p.get()[row_to_read_count - row_left], &values_read);        \
+      if (!(levels_read == values_read && levels_read > 0)) {                 \
+        return errors::InvalidArgument("null value in column: ", column);     \
+      }                                                                       \
+      row_left -= levels_read;                                                \
     }                                                                         \
-    for (int64_t index = 0; index < values_read; index++) {                   \
+    for (int64_t index = 0; index < row_to_read_count; index++) {             \
       value->flat<tstring>()(row_to_read_start - element_start + index) =     \
           string((const char*)value_p[index].ptr, len);                       \
     }                                                                         \
