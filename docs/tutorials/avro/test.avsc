@@ -1,0 +1,1 @@
+{"name": "ImageDataset", "type": "record", "fields": [{"name": "features", "type": {"type": "array", "items": "int"}}, {"name": "label", "type": ["int", "null"]}, {"name": "dataType", "type": {"type": "enum", "name": "dataTypes", "symbols": ["TRAINING", "VALIDATION"]}}]}
