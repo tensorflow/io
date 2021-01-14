@@ -30,7 +30,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-      - name: Test macOS
+      - name: Benchmark on macOS
         run: |
           set -x -e
           python --version
@@ -62,7 +62,7 @@ jobs:
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           bash -x -e tests/test_sql/sql_test.sh
-      - name: Test Linux
+      - name: Benchmark on Linux
         run: |
           set -x -e
           python --version
