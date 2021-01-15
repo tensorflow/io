@@ -78,6 +78,7 @@ jobs:
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
+          name: Tensorflow-IO Benchmarks
           tool: 'pytest'
           output-file-path: benchmark.json
           auto-push: false
