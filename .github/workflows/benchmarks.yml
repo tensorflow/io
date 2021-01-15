@@ -6,7 +6,7 @@ on:
       - master
   pull_request:
     branches:
-      - master    
+      - master
   schedule:
     - cron: "0 12 * * *"
 
@@ -80,7 +80,6 @@ jobs:
         with:
           tool: 'pytest'
           output-file-path: benchmark.json
-          # Personal access token to deploy GitHub Pages branch
-          github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-          # Push and deploy GitHub pages branch automatically
-          auto-push: true
+          auto-push: false
+      - name: Push benchmark result
+        run: git push 'https://tensorflow:${{ secrets.PERSONAL_GITHUB_TOKEN }}@github.com/tensorflow/io.git' gh-pages:gh-pages
