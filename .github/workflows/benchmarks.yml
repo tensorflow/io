@@ -83,4 +83,4 @@ jobs:
           output-file-path: benchmark.json
           auto-push: false
       - name: Push benchmark result
-        run: git push 'https://${{ secrets.PERSONAL_GITHUB_TOKEN }}@github.com/tensorflow/io.git' gh-pages:gh-pages
+        run: git push 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git' gh-pages:gh-pages
