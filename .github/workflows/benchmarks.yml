@@ -80,4 +80,3 @@ jobs:
         with:
           tool: 'pytest'
           output-file-path: benchmark.json
-          auto-push: true
