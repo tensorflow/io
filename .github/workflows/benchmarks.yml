@@ -81,6 +81,7 @@ jobs:
           name: Tensorflow-IO Benchmarks
           tool: 'pytest'
           output-file-path: benchmark.json
-          auto-push: false
-      - name: Push benchmark result
-        run: git push 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/tensorflow/io.git' gh-pages:gh-pages
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+      # - name: Push benchmark result
+      #   run: git push 'https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/tensorflow/io.git' gh-pages:gh-pages
