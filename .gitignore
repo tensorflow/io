@@ -1,0 +1,39 @@
+/.bazelrc
+/bazel-*
+/artifacts
+/get-pip.py
+.DS_Store
+*.pyc
+__pycache__
+*.swp
+*.whl
+
+# IDE specific
+.vscode/
+.idea/
+*.pbxproj
+*.xcworkspacedata
+.ipynb_checkpoints
+
+# Auto-generated files by `R CMD check`
+tfio.Rcheck/
+tfio_*.tar.gz
+.Rproj.user
+*.Rcheck
+.cache
+
+# Setuptools
+*.egg-info
+/build
+/dist
+/wheelhouse
+
+# Lint
+.pylint
+
+# Prometheus
+.coredns
+.prometheus
+
+# Kafka
+/confluent*
