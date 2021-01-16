@@ -84,6 +84,8 @@ jobs:
           # github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
       - name: Push benchmark result
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/tensorflow/io.git
           git push origin gh-pages
