@@ -54,6 +54,8 @@ jobs:
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tensorflow==2.4.0:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
