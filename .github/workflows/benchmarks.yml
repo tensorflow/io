@@ -27,7 +27,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-      - name: Test macOS
+      - name: Benchmark on macOS
         run: |
           set -x -e
           python --version
@@ -35,7 +35,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          python -m pip install pytest-benchmark scikit-image
+          python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
@@ -51,6 +51,8 @@ jobs:
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tensorflow==2.4.0:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -58,7 +60,8 @@ jobs:
         run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
-      - name: Test Linux
+          bash -x -e tests/test_sql/sql_test.sh
+      - name: Benchmark on Linux
         run: |
           set -x -e
           python --version
@@ -66,7 +69,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          python -m pip install pytest-benchmark scikit-image
+          python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
@@ -74,5 +77,8 @@ jobs:
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
+          name: Tensorflow-IO Benchmarks
           tool: 'pytest'
           output-file-path: benchmark.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
