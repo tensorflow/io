@@ -17,11 +17,10 @@
 set -e
 set -o pipefail
 
-export LOCALSTACK_VERSION=0.12.2
-cd tests/test_aws
-TMPDIR=/private$TMPDIR docker-compose up -d
-cd -
-echo "Waiting for 20 secs until localstack is up and running"
-sleep 20
+LOCALSTACK_VERSION=0.12.2
+docker pull localstack/localstack:$LOCALSTACK_VERSION
+docker run -d --rm --net=host --name=tensorflow-io-aws localstack/localstack:$LOCALSTACK_VERSION
+echo "Waiting for 10 secs until localstack is up and running"
+sleep 10
 echo "Localstack up"
 exit 0
