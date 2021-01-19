@@ -22,7 +22,6 @@ jobs:
         version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
-      - uses: docker-practice/actions-setup-docker@v1
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -33,9 +32,7 @@ jobs:
       - name: Setup macOS
         run: |
           set -x -e
-          docker version
           bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_aws/aws_test.sh
       - name: Test macOS
         run: |
           set -x -e

@@ -162,7 +162,6 @@ jobs:
         python: ['3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
-      - uses: docker-practice/actions-setup-docker@v1
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
@@ -177,11 +176,9 @@ jobs:
       - name: Setup ${{ matrix.python }} macOS
         run: |
           set -x -e
-          docker version
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_pubsub/pubsub_test.sh
-          bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_pulsar/pulsar_test.sh
           bash -x -e tests/test_mongodb/mongodb_test.sh start
       - name: Install ${{ matrix.python }} macOS
