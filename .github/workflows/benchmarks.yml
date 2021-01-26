@@ -4,11 +4,8 @@ on:
   push:
     branches:
       - master
-  schedule:
-    - cron: "0 12 * * *"
 
 jobs:
-
   macos:
     name: macOS ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: macos-latest
