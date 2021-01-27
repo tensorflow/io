@@ -31,9 +31,10 @@ genrule(
     srcs = ["cpp/src/arrow/util/config.h.cmake"],
     outs = ["cpp/src/arrow/util/config.h"],
     cmd = ("sed " +
-           "-e 's/@ARROW_VERSION_MAJOR@/2/g' " +
+           "-e 's/@ARROW_VERSION_MAJOR@/3/g' " +
            "-e 's/@ARROW_VERSION_MINOR@/0/g' " +
            "-e 's/@ARROW_VERSION_PATCH@/0/g' " +
+           "-e 's/cmakedefine ARROW_USE_NATIVE_INT128/undef ARROW_USE_NATIVE_INT128/g' " +
            "-e 's/cmakedefine/define/g' " +
            "$< >$@"),
 )
