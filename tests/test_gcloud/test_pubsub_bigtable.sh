@@ -23,8 +23,10 @@ if [ "$#" -eq 1 ]; then
   echo pull google/cloud-sdk
   docker pull google/cloud-sdk:236.0.0
   echo pull google/cloud-sdk successfully
-  docker run -d --rm --net=host --name=$container -v $base:/v -w /v google/cloud-sdk:236.0.0 bash -x -c 'gcloud beta emulators pubsub start'
+  docker run -d --rm --net=host --name=$container-pubsub -v $base:/v -w /v google/cloud-sdk:236.0.0 bash -x -c 'gcloud beta emulators pubsub start'
   echo wait 10 secs until pubsub is up and running
+  docker run -d --rm --net=host --name=$container-bigtable -v $base:/v -w /v google/cloud-sdk:236.0.0 bash -x -c 'gcloud beta emulators bigtable start'
+  echo wait 10 secs until bigtable is up and running
   sleep 10
   exit 0
 fi
@@ -34,7 +36,9 @@ tar -xzf google-cloud-sdk-236.0.0-darwin-x86_64.tar.gz
 google-cloud-sdk/install.sh -q
 google-cloud-sdk/bin/gcloud -q components install beta
 google-cloud-sdk/bin/gcloud -q components install pubsub-emulator
+google-cloud-sdk/bin/gcloud -q components update beta
 google-cloud-sdk/bin/gcloud -q beta emulators pubsub start &
+google-cloud-sdk/bin/gcloud -q beta emulators bigtable start &
 exit 0
 
 
