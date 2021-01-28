@@ -66,17 +66,29 @@ def np_value_to_feature(value):
         feature = _float_feature([value])
 
     else:
-        raise TypeError(f"value type: {type(value)} is not recognized. value must be a valid Numpy object.")
+        raise TypeError(
+            f"value type: {type(value)} is not recognized. value must be a valid Numpy object."
+        )
 
     return feature
 
 
 def base_type(dtype):
     """Returns the TFRecords allowed type corresponding to dtype."""
-    int_types = [tf.int8, tf.int16, tf.int32, tf.int64,
-                 tf.uint8, tf.uint16, tf.uint32, tf.uint64,
-                 tf.qint8, tf.qint16, tf.qint32,
-                 tf.bool]
+    int_types = [
+        tf.int8,
+        tf.int16,
+        tf.int32,
+        tf.int64,
+        tf.uint8,
+        tf.uint16,
+        tf.uint32,
+        tf.uint64,
+        tf.qint8,
+        tf.qint16,
+        tf.qint32,
+        tf.bool,
+    ]
     float_types = [tf.float16, tf.float32, tf.float64]
     byte_types = [tf.string, bytes]
 
@@ -98,8 +110,10 @@ def build_header(dataset):
     and dtype is stored as an enumerated value (defined by tensorflow)."""
     header = {}
     for key in dataset.element_spec.keys():
-        header[key] = {"shape": list(dataset.element_spec[key].shape),
-                       "dtype": dataset.element_spec[key].dtype.as_datatype_enum}
+        header[key] = {
+            "shape": list(dataset.element_spec[key].shape),
+            "dtype": dataset.element_spec[key].dtype.as_datatype_enum,
+        }
 
     return header
 
@@ -113,7 +127,9 @@ def build_feature_desc(header):
     I got 115 problems but a VarLenFeature ain't one."""
     feature_desc = {}
     for key, params in header.items():
-        feature_desc[key] = tf.io.FixedLenFeature(shape=params["shape"], dtype=base_type(int(params["dtype"])))
+        feature_desc[key] = tf.io.FixedLenFeature(
+            shape=params["shape"], dtype=base_type(int(params["dtype"]))
+        )
 
     return feature_desc
 
@@ -140,7 +156,9 @@ def save(dataset, tfrecord_path, header_path):
     yaml.dump(header, stream=header_file)
 
     # Dataset
-    ds_examples = tf.data.Dataset.from_generator(lambda: dataset_to_examples(dataset), output_types=tf.string)
+    ds_examples = tf.data.Dataset.from_generator(
+        lambda: dataset_to_examples(dataset), output_types=tf.string
+    )
     writer = tf.data.experimental.TFRecordWriter(tfrecord_path)
     writer.write(ds_examples)
 
@@ -176,7 +194,10 @@ def test():
     new_ds = load(tfrecord_path=tfrecord_path, header_path=header_path)
 
     # Test that values were saved and restored
-    assert list(ds)[0]["image"].numpy()[0, 0, 0] == list(new_ds)[0]["image"].numpy()[0, 0, 0]
+    assert (
+        list(ds)[0]["image"].numpy()[0, 0, 0]
+        == list(new_ds)[0]["image"].numpy()[0, 0, 0]
+    )
     assert list(ds)[0]["label"] != list(new_ds)[0]["label"]
 
     # Clean up- folder will disappear on crash as well.
