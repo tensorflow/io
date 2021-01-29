@@ -7,6 +7,8 @@ Users only need to deal with 2 functions:
 save(dataset)
 dataset = load(tfrecord, header)
 
+It really is that easy!
+
 To make this work, we create a .header file for each tfrecord which encodes metadata
 needed to reconstruct the original dataset.
 
