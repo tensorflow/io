@@ -198,7 +198,7 @@ jobs:
           set -x -e
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_azure/start_azure.sh
-          bash -x -e tests/test_pubsub/pubsub_test.sh
+          bash -x -e tests/test_gcloud/test_pubsub_bigtable.sh
           bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
@@ -296,7 +296,7 @@ jobs:
           bash -x -e .github/workflows/build.space.sh
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_aws/aws_test.sh
-          bash -x -e tests/test_pubsub/pubsub_test.sh
+          bash -x -e tests/test_gcloud/test_pubsub_bigtable.sh
           bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
           bash -x -e tests/test_mongodb/mongodb_test.sh start
