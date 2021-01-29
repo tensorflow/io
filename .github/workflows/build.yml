@@ -9,6 +9,8 @@ on:
       - master
 
 env:
+  GCP_CREDS: ${{ secrets.GCP_CREDS }}
+  EVENT_NAME: ${{ github.event_name }}
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
 
 jobs:
@@ -49,6 +51,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           set -x -e
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
           export PATH=/usr/bin:$PATH
@@ -65,12 +71,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py docs/development.md "##### Ubuntu 20.04" > source.sh
           cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host ubuntu:20.04 \
-            bash -x -e source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
+            ubuntu:20.04 bash -x -e source.sh
 
   centos-7:
     name: CentOS 7
@@ -78,12 +89,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           python3 .github/workflows/build.instruction.py docs/development.md "##### CentOS 7" > source.sh
           cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host centos:7 \
-            bash -x -e source.sh
+          docker run -i --rm -v $PWD:/v -w /v --net=host \
+            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
+            centos:7 bash -x -e source.sh
 
   macos-bazel:
     name: Bazel macOS
@@ -92,6 +108,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: Bazel on macOS
         run: |
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
+            export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           set -x -e
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
           export PATH=/usr/bin:$PATH
@@ -199,6 +219,10 @@ jobs:
       - uses: actions/checkout@v2
       - name: Bazel on Linux
         run: |
+          if [[ "${EVENT_NAME}" == "push" ]]; then
+            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
+            export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
           BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
@@ -302,6 +326,12 @@ jobs:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
         shell: cmd
         run: |
+          if "%EVENT_NAME%" == "push" (
+            printenv GCP_CREDS > service_account_creds.json
+            set "BAZEL_OPTIMIZATION=--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          ) else (
+            echo %EVENT_NAME%
+          )
           @echo on
           set /P BAZEL_VERSION=< .bazelversion
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
@@ -315,7 +345,7 @@ jobs:
           python3 setup.py --package-version | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so
+          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so
       - uses: actions/upload-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
