@@ -137,7 +137,7 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 ## Performance Benchmarking
 
-We use [github-pages](https://tensorflow.github.io/io/dev/bench/) to document the results of api performance benchmarks. The benchmarks are triggered on every commit to `master` branch and
+We use [github-pages](https://tensorflow.github.io/io/dev/bench/) to document the results of api performance benchmarks. The benchmark job is triggered on every commit to `master` branch and
 facilitates tracking performance w.r.t commits.
 
 ## Contributing
