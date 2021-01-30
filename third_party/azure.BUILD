@@ -16,7 +16,6 @@ cc_library(
     ]),
     hdrs = [],
     defines = [
-        "azure_storage_lite_EXPORTS",
         "USE_OPENSSL",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
