@@ -34,3 +34,6 @@ toc:
   path: /io/tutorials/kafka
 - title: "Elasticsearch"
   path: /io/tutorials/elasticsearch
+- title: "Avro"
+  path: /io/tutorials/avro
+
