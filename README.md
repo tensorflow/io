@@ -134,6 +134,12 @@ of releases [here](https://github.com/tensorflow/io/releases).
 | 0.2.0 | 1.12.0 | Jan 29, 2019 |
 | 0.1.0 | 1.12.0 | Dec 16, 2018 |
 
+
+## Performance Benchmarking
+
+We use [github-pages](https://tensorflow.github.io/io/dev/bench/) to document the results of API performance benchmarks. The benchmark job is triggered on every commit to `master` branch and
+facilitates tracking performance w.r.t commits.
+
 ## Contributing
 
 Tensorflow I/O is a community led open source project. As such, the project
