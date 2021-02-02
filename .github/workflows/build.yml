@@ -55,6 +55,8 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          else
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           fi
           set -x -e
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
@@ -75,6 +77,8 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          else
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -93,6 +97,8 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          else
+            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -112,6 +118,8 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          else
+            export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           fi
           set -x -e
           echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
@@ -223,6 +231,8 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          else
+            export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           fi
           set -x -e
           bash -x -e .github/workflows/build.space.sh
@@ -333,9 +343,11 @@ jobs:
               set "BAZEL_OPTIMIZATION=--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
             ) else (
               echo %REPO_NAME%
+              set "BAZEL_OPTIMIZATION=--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
             )
           ) else (
             echo %EVENT_NAME%
+            set "BAZEL_OPTIMIZATION=--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           )
           @echo on
           set /P BAZEL_VERSION=< .bazelversion
