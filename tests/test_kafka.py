@@ -1,4 +1,4 @@
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License.  You may obtain a copy of
@@ -12,500 +12,504 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 # ==============================================================================
-"""Tests for KafkaDataset."""
+"""Tests for Kafka Output Sequence."""
 
 
 import time
 import pytest
+import numpy as np
+import threading
 
 import tensorflow as tf
-
-tf.compat.v1.disable_eager_execution()
-
-from tensorflow import dtypes  # pylint: disable=wrong-import-position
-from tensorflow import errors  # pylint: disable=wrong-import-position
-from tensorflow import test  # pylint: disable=wrong-import-position
-from tensorflow.compat.v1 import data  # pylint: disable=wrong-import-position
-
+import tensorflow_io as tfio
+from tensorflow_io.kafka.python.ops import (
+    kafka_ops,
+)  # pylint: disable=wrong-import-position
 import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
 
 
-class KafkaDatasetTest(test.TestCase):
-    """Tests for KafkaDataset."""
+def test_kafka_io_tensor():
+    kafka = tfio.IOTensor.from_kafka("test")
+    assert kafka.dtype == tf.string
+    assert kafka.shape.as_list() == [None]
+    assert np.all(
+        kafka.to_tensor().numpy() == [("D" + str(i)).encode() for i in range(10)]
+    )
+    assert len(kafka.to_tensor()) == 10
 
-    # The Kafka server has to be setup before the test
-    # and tear down after the test manually.
-    # The docker engine has to be installed.
-    #
-    # To setup the Kafka server:
-    # $ bash kafka_test.sh start kafka
-    #
-    # To tear down the Kafka server:
-    # $ bash kafka_test.sh stop kafka
 
-    def test_kafka_dataset(self):
-        """Tests for KafkaDataset when reading non-keyed messages
-        from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+@pytest.mark.skip(reason="TODO")
+def test_kafka_output_sequence():
+    """Test case based on fashion mnist tutorial"""
+    fashion_mnist = tf.keras.datasets.fashion_mnist
+    ((train_images, train_labels), (test_images, _)) = fashion_mnist.load_data()
 
-        repeat_dataset = kafka_io.KafkaDataset(topics, group="test", eof=True).repeat(
-            num_epochs
+    class_names = [
+        "T-shirt/top",
+        "Trouser",
+        "Pullover",
+        "Dress",
+        "Coat",
+        "Sandal",
+        "Shirt",
+        "Sneaker",
+        "Bag",
+        "Ankle boot",
+    ]
+
+    train_images = train_images / 255.0
+    test_images = test_images / 255.0
+
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Dense(128, activation=tf.nn.relu),
+            tf.keras.layers.Dense(10, activation=tf.nn.softmax),
+        ]
+    )
+
+    model.compile(
+        optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+    )
+
+    model.fit(train_images, train_labels, epochs=5)
+
+    class OutputCallback(tf.keras.callbacks.Callback):
+        """KafkaOutputCallback"""
+
+        def __init__(
+            self, batch_size, topic, servers
+        ):  # pylint: disable=super-init-not-called
+            self._sequence = kafka_ops.KafkaOutputSequence(topic=topic, servers=servers)
+            self._batch_size = batch_size
+
+        def on_predict_batch_end(self, batch, logs=None):
+            index = batch * self._batch_size
+            for outputs in logs["outputs"]:
+                for output in outputs:
+                    self._sequence.setitem(index, class_names[np.argmax(output)])
+                    index += 1
+
+        def flush(self):
+            self._sequence.flush()
+
+    channel = "e{}e".format(time.time())
+    topic = "test_" + channel
+
+    # By default batch size is 32
+    output = OutputCallback(32, topic, "localhost")
+    predictions = model.predict(test_images, callbacks=[output])
+    output.flush()
+
+    predictions = [class_names[v] for v in np.argmax(predictions, axis=1)]
+
+    # Reading from `test_e(time)e` we should get the same result
+    dataset = tfio.kafka.KafkaDataset(topics=[topic], group="test", eof=True)
+    for entry, prediction in zip(dataset, predictions):
+        assert entry.numpy() == prediction.encode()
+
+
+def test_avro_kafka_dataset():
+    """test_avro_kafka_dataset"""
+    schema = (
+        '{"type":"record","name":"myrecord","fields":['
+        '{"name":"f1","type":"string"},'
+        '{"name":"f2","type":"long"},'
+        '{"name":"f3","type":["null","string"],"default":null}'
+        "]}"
+    )
+    dataset = kafka_io.KafkaDataset(["avro-test:0"], group="avro-test", eof=True)
+    # remove kafka framing
+    dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
+    # deserialize avro
+    dataset = dataset.map(
+        lambda e: tfio.experimental.serialization.decode_avro(e, schema=schema)
+    )
+    entries = [(e["f1"], e["f2"], e["f3"]) for e in dataset]
+    np.all(entries == [("value1", 1, ""), ("value2", 2, ""), ("value3", 3, "")])
+
+
+def test_avro_kafka_dataset_with_resource():
+    """test_avro_kafka_dataset_with_resource"""
+    schema = (
+        '{"type":"record","name":"myrecord","fields":['
+        '{"name":"f1","type":"string"},'
+        '{"name":"f2","type":"long"},'
+        '{"name":"f3","type":["null","string"],"default":null}'
+        ']}"'
+    )
+    schema_resource = kafka_io.decode_avro_init(schema)
+    dataset = kafka_io.KafkaDataset(["avro-test:0"], group="avro-test", eof=True)
+    # remove kafka framing
+    dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
+    # deserialize avro
+    dataset = dataset.map(
+        lambda e: kafka_io.decode_avro(
+            e, schema=schema_resource, dtype=[tf.string, tf.int64, tf.string]
         )
-        batch_dataset = repeat_dataset.batch(batch_size)
+    )
+    entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
+    np.all(entries == [("value1", 1), ("value2", 2), ("value3", 3)])
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        init_batch_op = iterator.make_initializer(batch_dataset)
-        get_next = iterator.get_next()
 
-        with self.cached_session() as sess:
-            # Basic test: read a limited number of messages from the topic.
-            sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
+def test_kafka_stream_dataset():
+    dataset = tfio.IODataset.stream().from_kafka("test").batch(2)
+    assert np.all(
+        [k.numpy().tolist() for (k, _) in dataset]
+        == np.asarray([("D" + str(i)).encode() for i in range(10)]).reshape((5, 2))
+    )
 
-            # Basic test: read all the messages from the topic from offset 5.
-            sess.run(init_op, feed_dict={topics: ["test:0:5:-1"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(("D" + str(i + 5)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
 
-            # Basic test: read from different subscriptions of the same topic.
-            sess.run(
-                init_op,
-                feed_dict={topics: ["test:0:0:4", "test:0:5:-1"], num_epochs: 1},
-            )
-            for j in range(2):
-                for i in range(5):
-                    self.assertEqual(
-                        ("D" + str(i + j * 5)).encode(), sess.run(get_next)
-                    )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test repeated iteration through both subscriptions.
-            sess.run(
-                init_op,
-                feed_dict={topics: ["test:0:0:4", "test:0:5:-1"], num_epochs: 10},
-            )
-            for _ in range(10):
-                for j in range(2):
-                    for i in range(5):
-                        self.assertEqual(
-                            ("D" + str(i + j * 5)).encode(), sess.run(get_next)
-                        )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test batched and repeated iteration through both subscriptions.
-            sess.run(
-                init_batch_op,
-                feed_dict={
-                    topics: ["test:0:0:4", "test:0:5:-1"],
-                    num_epochs: 10,
-                    batch_size: 5,
-                },
-            )
-            for _ in range(10):
-                self.assertAllEqual(
-                    [("D" + str(i)).encode() for i in range(5)], sess.run(get_next)
-                )
-                self.assertAllEqual(
-                    [("D" + str(i + 5)).encode() for i in range(5)], sess.run(get_next)
-                )
-
-    @pytest.mark.skip(reason="TODO")
-    def test_kafka_dataset_save_and_restore(self):
-        """Tests for KafkaDataset save and restore."""
-        g = tf.Graph()
-        with g.as_default():
-            topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-            num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-
-            repeat_dataset = kafka_io.KafkaDataset(
-                topics, group="test", eof=True
-            ).repeat(num_epochs)
-            iterator = repeat_dataset.make_initializable_iterator()
-            get_next = iterator.get_next()
-
-            it = tf.data.experimental.make_saveable_from_iterator(iterator)
-            g.add_to_collection(tf.compat.v1.GraphKeys.SAVEABLE_OBJECTS, it)
-            saver = tf.compat.v1.train.Saver()
-
-            model_file = "/tmp/test-kafka-model"
-            with self.cached_session() as sess:
-                sess.run(
-                    iterator.initializer,
-                    feed_dict={topics: ["test:0:0:4"], num_epochs: 1},
-                )
-                for i in range(3):
-                    self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-                # Save current offset which is 2
-                saver.save(sess, model_file, global_step=3)
-
-            checkpoint_file = "/tmp/test-kafka-model-3"
-            with self.cached_session() as sess:
-                saver.restore(sess, checkpoint_file)
-                # Restore current offset to 2
-                for i in [2, 3]:
-                    self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-
-    def test_kafka_topic_configuration(self):
-        """Tests for KafkaDataset topic configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        cfg_list = ["auto.offset.reset=earliest"]
-
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, config_topic=cfg_list
-        ).repeat(num_epochs)
-
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            # Use a wrong offset 100 here to make sure
-            # configuration 'auto.offset.reset=earliest' works.
-            sess.run(init_op, feed_dict={topics: ["test:0:100:-1"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-
-    def test_kafka_global_configuration(self):
-        """Tests for KafkaDataset global configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        cfg_list = ["debug=generic", "enable.auto.commit=false"]
-
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, config_global=cfg_list
-        ).repeat(num_epochs)
-
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-    def test_kafka_wrong_global_configuration_failed(self):
-        """Tests for KafkaDataset worng global configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-
-        # Add wrong configuration
-        wrong_cfg = ["debug=al"]
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, config_global=wrong_cfg
-        ).repeat(num_epochs)
-
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            with self.assertRaises(errors.InternalError):
-                sess.run(get_next)
-
-    def test_kafka_wrong_topic_configuration_failed(self):
-        """Tests for KafkaDataset wrong topic configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-
-        # Add wrong configuration
-        wrong_cfg = ["auto.offset.reset=arliest"]
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, config_topic=wrong_cfg
-        ).repeat(num_epochs)
-
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            with self.assertRaises(errors.InternalError):
-                sess.run(get_next)
-
-    def test_write_kafka(self):
-        """test_write_kafka"""
-        channel = "e{}e".format(time.time())
-
-        # Start with reading test topic, replace `D` with `e(time)e`,
-        # and write to test_e(time)e` topic.
-        dataset = kafka_io.KafkaDataset(topics=["test:0:0:4"], group="test", eof=True)
-        dataset = dataset.map(
-            lambda x: kafka_io.write_kafka(
-                tf.strings.regex_replace(x, "D", channel), topic="test_" + channel
-            )
+def test_kafka_io_dataset():
+    dataset = tfio.IODataset.from_kafka(
+        "test", configuration=["fetch.min.bytes=2"]
+    ).batch(2)
+    # repeat multiple times will result in the same result
+    for _ in range(5):
+        assert np.all(
+            [k.numpy().tolist() for (k, _) in dataset]
+            == np.asarray([("D" + str(i)).encode() for i in range(10)]).reshape((5, 2))
         )
-        iterator = dataset.make_initializable_iterator()
-        init_op = iterator.initializer
-        get_next = iterator.get_next()
 
-        with self.cached_session() as sess:
-            # Basic test: read from topic 0.
-            sess.run(init_op)
-            for i in range(5):
-                self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
 
-        # Reading from `test_e(time)e` we should get the same result
-        dataset = kafka_io.KafkaDataset(
-            topics=["test_" + channel], group="test", eof=True
+def test_avro_encode_decode():
+    """test_avro_encode_decode"""
+    schema = (
+        '{"type":"record","name":"myrecord","fields":'
+        '[{"name":"f1","type":"string"},{"name":"f2","type":"long"}]}'
+    )
+    value = [("value1", 1), ("value2", 2), ("value3", 3)]
+    f1 = tf.cast([v[0] for v in value], tf.string)
+    f2 = tf.cast([v[1] for v in value], tf.int64)
+    message = tfio.experimental.serialization.encode_avro([f1, f2], schema=schema)
+    entries = tfio.experimental.serialization.decode_avro(message, schema=schema)
+    assert np.all(entries["f1"].numpy() == f1.numpy())
+    assert np.all(entries["f2"].numpy() == f2.numpy())
+
+
+def test_kafka_group_io_dataset_primary_cg():
+    """Test the functionality of the KafkaGroupIODataset when the consumer group
+    is being newly created.
+
+    NOTE: After the kafka cluster is setup during the testing phase, 10 messages
+    are written to the 'key-partition-test' topic with 5 in each partition
+    (topic created with 2 partitions, the messages are split based on the keys).
+    And the same 10 messages are written into the 'key-test' topic (topic created
+    with 1 partition, so no splitting of the messages based on the keys).
+
+    K0:D0, K1:D1, K0:D2, K1:D3, K0:D4, K1:D5, K0:D6, K1:D7, K0:D8, K1:D9.
+
+    Here, messages D0, D2, D4, D6 and D8 are written into partition 0 and the rest are written
+    into partition 1.
+
+    Also, since the messages are read from different partitions, the order of retrieval may not be
+    the same as storage. Thus, we sort and compare.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10)])
+    )
+
+
+def test_kafka_group_io_dataset_primary_cg_no_lag():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer group has read all the messages and committed the offsets.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+
+
+def test_kafka_group_io_dataset_primary_cg_new_topic():
+    """Test the functionality of the KafkaGroupIODataset when the existing
+    consumer group reads data from a new topic.
+    """
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10)])
+    )
+
+
+def test_kafka_group_io_dataset_resume_primary_cg():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer group is yet to catch up with the newly added messages only
+    (Instead of reading from the beginning).
+    """
+
+    # Write new messages to the topic
+    for i in range(10, 100):
+        message = "D{}".format(i)
+        kafka_io.write_kafka(message=message, topic="key-partition-test")
+    # Read only the newly sent 90 messages
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10, 100)])
+    )
+
+
+def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer group is yet to catch up with the newly added messages only
+    (Instead of reading from the beginning) from the new topic.
+    """
+
+    # Write new messages to the topic
+    for i in range(10, 100):
+        message = "D{}".format(i)
+        kafka_io.write_kafka(message=message, topic="key-test")
+    # Read only the newly sent 90 messages
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-test"],
+        group_id="cgtestprimary",
+        servers="localhost:9092",
+        configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(10, 100)])
+    )
+
+
+def test_kafka_group_io_dataset_secondary_cg():
+    """Test the functionality of the KafkaGroupIODataset when a
+    secondary consumer group is created and is yet to catch up all the messages,
+    from the beginning.
+    """
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtestsecondary",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)])
+    )
+
+
+def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
+    """Test the functionality of the KafkaGroupIODataset when a new
+    consumer group reads data from multiple topics from the beginning.
+    """
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test", "key-test"],
+        group_id="cgtesttertiary",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)] * 2)
+    )
+
+
+def test_kafka_group_io_dataset_auto_offset_reset():
+    """Test the functionality of the `auto.offset.reset` configuration
+    at global and topic level"""
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgglobaloffsetearliest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)])
+    )
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgglobaloffsetlatest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=latest",
+        ],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtopicoffsetearliest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "conf.topic.auto.offset.reset=earliest",
+        ],
+    )
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(100)])
+    )
+
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgtopicoffsetlatest",
+        servers="localhost:9092",
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "conf.topic.auto.offset.reset=latest",
+        ],
+    )
+    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+
+
+def test_kafka_group_io_dataset_invalid_stream_timeout():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer is configured to have an invalid stream_timeout value which is
+    less than the message_timeout value.
+    NOTE: The default value for message_timeout=5000
+    """
+
+    STREAM_TIMEOUT = -20
+    try:
+        tfio.experimental.streaming.KafkaGroupIODataset(
+            topics=["key-partition-test", "key-test"],
+            group_id="cgteststreaminvalid",
+            servers="localhost:9092",
+            stream_timeout=STREAM_TIMEOUT,
+            configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
         )
-        iterator = dataset.make_initializable_iterator()
-        init_op = iterator.initializer
-        get_next = iterator.get_next()
+    except ValueError as e:
+        assert str(
+            e
+        ) == "Invalid stream_timeout value: {} ,set it to -1 to block indefinitely.".format(
+            STREAM_TIMEOUT
+        )
 
-        with self.cached_session() as sess:
-            sess.run(init_op)
-            for i in range(5):
-                self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
 
-    def test_kafka_dataset_with_key(self):
-        """Tests for KafkaDataset when reading keyed-messages
-        from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+def test_kafka_group_io_dataset_stream_timeout_check():
+    """Test the functionality of the KafkaGroupIODataset when the
+    consumer is configured to have a valid stream_timeout value and thus waits
+    for the new messages from kafka.
+    NOTE: The default value for message_timeout=5000
+    """
 
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, message_key=True
-        ).repeat(num_epochs)
-        batch_dataset = repeat_dataset.batch(batch_size)
+    def write_messages_background():
+        # Write new messages to the topic in a background thread
+        time.sleep(6)
+        for i in range(100, 200):
+            message = "D{}".format(i)
+            kafka_io.write_kafka(message=message, topic="key-partition-test")
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        init_batch_op = iterator.make_initializer(batch_dataset)
-        get_next = iterator.get_next()
+    dataset = tfio.experimental.streaming.KafkaGroupIODataset(
+        topics=["key-partition-test"],
+        group_id="cgteststreamvalid",
+        servers="localhost:9092",
+        stream_timeout=20000,
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
 
-        with self.cached_session() as sess:
-            # Basic test: read a limited number of keyed messages from the topic.
-            sess.run(init_op, feed_dict={topics: ["key-test:0:0:4"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(
-                    (("D" + str(i)).encode(), ("K" + str(i % 2)).encode()),
-                    sess.run(get_next),
-                )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
+    # start writing the new messages to kafka using the background job.
+    # the job sleeps for some time (< stream_timeout) and then writes the
+    # messages into the topic.
+    thread = threading.Thread(target=write_messages_background, args=())
+    thread.daemon = True
+    thread.start()
 
-            # Basic test: read all the keyed messages from the topic from offset 5.
-            sess.run(init_op, feed_dict={topics: ["key-test:0:5:-1"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(
-                    (("D" + str(i + 5)).encode(), ("K" + str((i + 5) % 2)).encode()),
-                    sess.run(get_next),
-                )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
+    # At the end, after the timeout has occurred, we must have the old 100 messages
+    # along with the new 100 messages
+    assert np.all(
+        sorted([k.numpy() for (k, _) in dataset])
+        == sorted([("D" + str(i)).encode() for i in range(200)])
+    )
 
-            # Basic test: read from different subscriptions of the same topic.
-            sess.run(
-                init_op,
-                feed_dict={
-                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
-                    num_epochs: 1,
-                },
+
+def test_kafka_batch_io_dataset():
+    """Test the functionality of the KafkaBatchIODataset by training a model
+    directly on the incoming kafka message batch(of type tf.data.Dataset), in an
+    online-training fashion.
+
+    NOTE: This kind of dataset is suitable in scenarios where the 'keys' of 'messages'
+        act as labels. If not, additional transformations are required.
+    """
+
+    dataset = tfio.experimental.streaming.KafkaBatchIODataset(
+        topics=["mini-batch-test"],
+        group_id="cgminibatch",
+        servers=None,
+        stream_timeout=5000,
+        configuration=[
+            "session.timeout.ms=7000",
+            "max.poll.interval.ms=8000",
+            "auto.offset.reset=earliest",
+        ],
+    )
+
+    NUM_COLUMNS = 1
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Input(shape=(NUM_COLUMNS,)),
+            tf.keras.layers.Dense(4, activation="relu"),
+            tf.keras.layers.Dropout(0.1),
+            tf.keras.layers.Dense(1, activation="sigmoid"),
+        ]
+    )
+    model.compile(
+        optimizer="adam",
+        loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
+    assert issubclass(type(dataset), tf.data.Dataset)
+    for mini_d in dataset:
+        mini_d = mini_d.map(
+            lambda m, k: (
+                tf.strings.to_number(m, out_type=tf.float32),
+                tf.strings.to_number(k, out_type=tf.float32),
             )
-            for j in range(2):
-                for i in range(5):
-                    self.assertEqual(
-                        (
-                            ("D" + str(i + j * 5)).encode(),
-                            ("K" + str((i + j * 5) % 2)).encode(),
-                        ),
-                        sess.run(get_next),
-                    )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test repeated iteration through both subscriptions.
-            sess.run(
-                init_op,
-                feed_dict={
-                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
-                    num_epochs: 10,
-                },
-            )
-            for _ in range(10):
-                for j in range(2):
-                    for i in range(5):
-                        self.assertEqual(
-                            (
-                                ("D" + str(i + j * 5)).encode(),
-                                ("K" + str((i + j * 5) % 2)).encode(),
-                            ),
-                            sess.run(get_next),
-                        )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test batched and repeated iteration through both subscriptions.
-            sess.run(
-                init_batch_op,
-                feed_dict={
-                    topics: ["key-test:0:0:4", "key-test:0:5:-1"],
-                    num_epochs: 10,
-                    batch_size: 5,
-                },
-            )
-            for _ in range(10):
-                self.assertAllEqual(
-                    [
-                        [("D" + str(i)).encode() for i in range(5)],
-                        [("K" + str(i % 2)).encode() for i in range(5)],
-                    ],
-                    sess.run(get_next),
-                )
-                self.assertAllEqual(
-                    [
-                        [("D" + str(i + 5)).encode() for i in range(5)],
-                        [("K" + str((i + 5) % 2)).encode() for i in range(5)],
-                    ],
-                    sess.run(get_next),
-                )
-
-    def test_kafka_dataset_with_partitioned_key(self):
-        """Tests for KafkaDataset when reading keyed-messages
-        from a multi-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, message_key=True
-        ).repeat(num_epochs)
-        batch_dataset = repeat_dataset.batch(batch_size)
-
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        init_batch_op = iterator.make_initializer(batch_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            # Basic test: read first 5 messages from the first partition of the topic.
-            # NOTE: The key-partition mapping occurs based on the order in which the data
-            # is being stored in kafka. Please check kafka_test.sh for the sample data.
-
-            sess.run(
-                init_op,
-                feed_dict={topics: ["key-partition-test:0:0:5"], num_epochs: 1},
-            )
-            for i in range(5):
-                self.assertEqual(
-                    (("D" + str(i * 2)).encode(), (b"K0")), sess.run(get_next),
-                )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Basic test: read first 5 messages from the second partition of the topic.
-            sess.run(
-                init_op,
-                feed_dict={topics: ["key-partition-test:1:0:5"], num_epochs: 1},
-            )
-            for i in range(5):
-                self.assertEqual(
-                    (("D" + str(i * 2 + 1)).encode(), (b"K1")), sess.run(get_next),
-                )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Basic test: read from different subscriptions to the same topic.
-            sess.run(
-                init_op,
-                feed_dict={
-                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
-                    num_epochs: 1,
-                },
-            )
-            for j in range(2):
-                for i in range(5):
-                    self.assertEqual(
-                        (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
-                        sess.run(get_next),
-                    )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test repeated iteration through both subscriptions.
-            sess.run(
-                init_op,
-                feed_dict={
-                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
-                    num_epochs: 10,
-                },
-            )
-            for _ in range(10):
-                for j in range(2):
-                    for i in range(5):
-                        self.assertEqual(
-                            (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
-                            sess.run(get_next),
-                        )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-            # Test batched and repeated iteration through both subscriptions.
-            sess.run(
-                init_batch_op,
-                feed_dict={
-                    topics: ["key-partition-test:0:0:5", "key-partition-test:1:0:5"],
-                    num_epochs: 10,
-                    batch_size: 5,
-                },
-            )
-            for _ in range(10):
-                for j in range(2):
-                    self.assertAllEqual(
-                        [
-                            [("D" + str(i * 2 + j)).encode() for i in range(5)],
-                            [("K" + str(j)).encode() for i in range(5)],
-                        ],
-                        sess.run(get_next),
-                    )
-
-    def test_kafka_dataset_with_offset(self):
-        """Tests for KafkaDataset when reading non-keyed messages
-        from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-
-        repeat_dataset = kafka_io.KafkaDataset(
-            topics, group="test", eof=True, message_offset=True
-        ).repeat(num_epochs)
-        batch_dataset = repeat_dataset.batch(batch_size)
-
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
-        init_op = iterator.make_initializer(repeat_dataset)
-        get_next = iterator.get_next()
-
-        with self.cached_session() as sess:
-            # Basic offset test: read a limited number of messages from the topic.
-            sess.run(init_op, feed_dict={topics: ["offset-test:0:0:4"], num_epochs: 1})
-            for i in range(5):
-                self.assertEqual(
-                    (("D" + str(i)).encode(), ("0:" + str(i)).encode()),
-                    sess.run(get_next),
-                )
-            with self.assertRaises(errors.OutOfRangeError):
-                sess.run(get_next)
-
-
-if __name__ == "__main__":
-    test.main()
+        ).batch(2)
+        assert issubclass(type(mini_d), tf.data.Dataset)
+        # Fits the model as long as the data keeps on streaming
+        model.fit(mini_d, epochs=5)
