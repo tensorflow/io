@@ -237,7 +237,6 @@ class KafkaDatasetTest(test.TestCase):
             with self.assertRaises(errors.InternalError):
                 sess.run(get_next)
 
-    @pytest.mark.skip(reason="TODO")
     def test_write_kafka(self):
         """test_write_kafka"""
         channel = "e{}e".format(time.time())
