@@ -16,6 +16,7 @@
 
 
 import os
+import numpy as np
 import pytest
 
 import tensorflow as tf
@@ -35,8 +36,7 @@ import tensorflow_io as tfio
 
 
 def test_dicom_input():
-    """test_dicom_input
-  """
+    """test_dicom_input"""
     _ = tfio.image.decode_dicom_data
     _ = tfio.image.decode_dicom_image
     _ = tfio.image.dicom_tags
@@ -66,32 +66,26 @@ def test_dicom_input():
         ("MR-MONO2-12-shoulder.dcm", (1, 1024, 1024, 1)),
         ("OT-MONO2-8-a7.dcm", (1, 512, 512, 1)),
         ("US-PAL-8-10x-echo.dcm", (10, 430, 600, 3)),
+        ("TOSHIBA_J2K_OpenJPEGv2Regression.dcm", (1, 512, 512, 1)),
     ],
 )
 def test_decode_dicom_image(fname, exp_shape):
-    """test_decode_dicom_image
-  """
+    """test_decode_dicom_image"""
 
     dcm_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_dicom", fname
     )
 
-    g1 = tf.compat.v1.Graph()
+    file_contents = tf.io.read_file(filename=dcm_path)
 
-    with g1.as_default():
-        file_contents = tf.io.read_file(filename=dcm_path)
-        dcm_image = tfio.image.decode_dicom_image(
-            contents=file_contents,
-            dtype=tf.float32,
-            on_error="strict",
-            scale="auto",
-            color_dim=True,
-        )
-
-    sess = tf.compat.v1.Session(graph=g1)
-    dcm_image_np = sess.run(dcm_image)
-
-    assert dcm_image_np.shape == exp_shape
+    dcm_image = tfio.image.decode_dicom_image(
+        contents=file_contents,
+        dtype=tf.float32,
+        on_error="strict",
+        scale="auto",
+        color_dim=True,
+    )
+    assert dcm_image.numpy().shape == exp_shape
 
 
 @pytest.mark.parametrize(
@@ -121,23 +115,108 @@ def test_decode_dicom_image(fname, exp_shape):
     ],
 )
 def test_decode_dicom_data(fname, tag, exp_value):
-    """test_decode_dicom_data
-  """
+    """test_decode_dicom_data"""
 
     dcm_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_dicom", fname
     )
 
-    g1 = tf.compat.v1.Graph()
+    file_contents = tf.io.read_file(filename=dcm_path)
 
-    with g1.as_default():
-        file_contents = tf.io.read_file(filename=dcm_path)
-        dcm_data = tfio.image.decode_dicom_data(contents=file_contents, tags=tag)
+    dcm_data = tfio.image.decode_dicom_data(contents=file_contents, tags=tag)
 
-    sess = tf.compat.v1.Session(graph=g1)
-    dcm_data_np = sess.run(dcm_data)
+    assert dcm_data.numpy() == exp_value
 
-    assert dcm_data_np == exp_value
+
+def test_dicom_image_shape():
+    """test_decode_dicom_image"""
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "US-PAL-8-10x-echo.dcm",
+    )
+
+    dataset = tf.data.Dataset.from_tensor_slices([dcm_path])
+    dataset = dataset.map(tf.io.read_file)
+    dataset = dataset.map(lambda e: tfio.image.decode_dicom_image(e, dtype=tf.uint16))
+    dataset = dataset.map(lambda e: tf.image.resize(e, (224, 224)))
+
+
+def test_dicom_image_concurrency():
+    """test_decode_dicom_image_currency"""
+
+    @tf.function
+    def preprocess(dcm_content):
+        tags = tfio.image.decode_dicom_data(
+            dcm_content, tags=[tfio.image.dicom_tags.PatientsName]
+        )
+        tf.print(tags)
+        image = tfio.image.decode_dicom_image(dcm_content, dtype=tf.float32)
+        return image
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "TOSHIBA_J2K_OpenJPEGv2Regression.dcm",
+    )
+
+    dataset = (
+        tf.data.Dataset.from_tensor_slices([dcm_path])
+        .repeat()
+        .map(tf.io.read_file)
+        .map(preprocess, num_parallel_calls=8)
+        .take(200)
+    )
+    for i, item in enumerate(dataset):
+        print(tf.shape(item), i)
+        assert np.array_equal(tf.shape(item), [1, 512, 512, 1])
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "US-PAL-8-10x-echo.dcm",
+    )
+
+    dataset = (
+        tf.data.Dataset.from_tensor_slices([dcm_path])
+        .repeat()
+        .map(tf.io.read_file)
+        .map(preprocess, num_parallel_calls=8)
+        .take(200)
+    )
+    for i, item in enumerate(dataset):
+        print(tf.shape(item), i)
+        assert np.array_equal(tf.shape(item), [10, 430, 600, 3])
+
+
+def test_dicom_sequence():
+    """test_decode_dicom_sequence"""
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "2.25.304589190180579357564631626197663875025.dcm",
+    )
+    dcm_content = tf.io.read_file(filename=dcm_path)
+
+    tags = tfio.image.decode_dicom_data(
+        dcm_content, tags=["[0x0008,0x1115][0][0x0008,0x1140][0][0x0008,0x1155]"]
+    )
+    assert np.array_equal(tags, [b"2.25.211904290918469145111906856660599393535"])
+
+    dcm_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_dicom",
+        "US-PAL-8-10x-echo.dcm",
+    )
+    dcm_content = tf.io.read_file(filename=dcm_path)
+
+    tags = tfio.image.decode_dicom_data(dcm_content, tags=["[0x0020,0x000E]"])
+    assert np.array_equal(tags, [b"999.999.94827453"])
+
+    tags = tfio.image.decode_dicom_data(dcm_content, tags=["0x0020,0x000e"])
+    assert np.array_equal(tags, [b"999.999.94827453"])
 
 
 if __name__ == "__main__":
