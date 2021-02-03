@@ -440,11 +440,11 @@ http_archive(
 http_archive(
     name = "xz",
     build_file = "//third_party:xz.BUILD",
-    sha256 = "b512f3b726d3b37b6dc4c8570e137b9311e7552e8ccbab4d39d47ce5f4177145",
-    strip_prefix = "xz-5.2.4",
+    sha256 = "0d2b89629f13dd1a0602810529327195eff5f62a0142ccd65b903bc16a4ac78a",
+    strip_prefix = "xz-5.2.5",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/tukaani.org/xz/xz-5.2.4.tar.gz",
-        "https://tukaani.org/xz/xz-5.2.4.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/xz-mirror/xz/archive/v5.2.5.tar.gz",
+        "https://github.com/xz-mirror/xz/archive/v5.2.5.tar.gz",
     ],
 )
 
