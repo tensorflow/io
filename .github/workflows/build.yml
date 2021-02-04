@@ -68,12 +68,13 @@ jobs:
           bash -x -e source.sh
           python3 -c 'import tensorflow as tf; print(tf.version.VERSION)'
 
-  ubuntu-2004:
-    name: Ubuntu 20.04
+  linux:
+    name: Linux
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
+      - name: Ubuntu 20.04
+        run: |
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
@@ -87,13 +88,8 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
             ubuntu:20.04 bash -x -e source.sh
-
-  centos-7:
-    name: CentOS 7
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: |
+      - name: CentOS 7
+        run: |
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
             export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
