@@ -36,7 +36,7 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -m pytest --benchmark-only -v --import-mode=append $(find . -type f \( -iname "test_*_v1.py" ! \( -iname "test_bigquery.py" \) \))
+          python -m pytest --benchmark-only -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
 
   linux:
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
@@ -70,7 +70,7 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*_v1.py" ! \( -iname "test_bigquery.py" \) \))
+          python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
