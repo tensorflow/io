@@ -45,10 +45,10 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -m pytest -s -v tests/test_http_eager.py
-          python -m pytest -s -v tests/test_s3_eager.py
+          python -m pytest -s -v tests/test_http.py
+          python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
-          python -m pytest -s -v tests/test_gcs_eager.py
+          python -m pytest -s -v tests/test_gcs.py
 
   linux:
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
@@ -82,10 +82,10 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -m pytest -s -v tests/test_http_eager.py
-          python -m pytest -s -v tests/test_s3_eager.py
+          python -m pytest -s -v tests/test_http.py
+          python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
-          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io==0.17.0" ]]; then python -m pytest -s -v tests/test_gcs_eager.py ; fi
+          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io==0.17.0" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
 
   windows:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
@@ -120,4 +120,4 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -m pytest -s -v tests/test_http_eager.py -k remote
+          python -m pytest -s -v tests/test_http.py -k remote
