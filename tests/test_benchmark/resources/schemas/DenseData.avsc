@@ -1,0 +1,12 @@
+{
+    "type": "record",
+    "name": "person",
+    "fields": [
+        {"name": "employed", "type": "boolean", "optional": true, "default": false},
+        {"name": "age", "type": "int"},
+        {"name": "id", "type": "long"},
+        {"name": "salary", "type": "float"},
+        {"name": "altitude", "type": "double"},
+        {"name": "name", "type": "string"}
+   ]
+}

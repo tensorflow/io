@@ -1,0 +1,26 @@
+{
+  "type":"record",
+  "name":"library",
+  "fields":[
+    {
+      "name":"customer",
+      "type":{
+        "type":"array",
+        "items":{
+          "type":"record",
+          "name":"book",
+          "fields":[
+            {
+              "name":"ids",
+              "type":"long"
+            },
+            {
+              "name":"prices",
+              "type":"float"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
