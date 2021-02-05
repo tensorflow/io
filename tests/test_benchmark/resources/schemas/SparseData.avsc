@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "book",
+  "fields": [
+    {"name": "friends", "type":
+      {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "friend",
+          "fields": [
+            {"name": "id", "type": "long"},
+            {"name": "salary", "type": "float"}
+          ]
+        }
+      }
+    }
+  ]
+}
