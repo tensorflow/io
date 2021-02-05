@@ -208,6 +208,13 @@ scl enable rh-python36 devtoolset-9 \
 TFIO_DATAPATH=bazel-bin \
   scl enable rh-python36 devtoolset-9 \
     'python3 -m pytest -s -v tests/test_serialization.py'
+
+# To run the avro benchmark tests additional packages may need to be installed such as avro-python3 and python-benchmark
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install avro-python3'
+
+scl enable rh-python36 devtoolset-9 \
+    'python3 -m pip install python-benchmark'
 ```
 
 #### Python Wheels
