@@ -78,10 +78,16 @@ class KeyConditionedValueGenerator(ConditionedDataGenerator):
         :raise ValueError if num_samples < 1.
         """
         if num_samples < 1:
-            raise ValueError("Number of samples is {} but must be > {}".format(num_samples, 0))
+            raise ValueError(
+                "Number of samples is {} but must be > {}".format(num_samples, 0)
+            )
 
         if conditional not in self.conditionals:
-            raise ValueError("Conditional {0} not present in conditionals {1}".format(conditional, self.conditionals.keys()))
+            raise ValueError(
+                "Conditional {0} not present in conditionals {1}".format(
+                    conditional, self.conditionals.keys()
+                )
+            )
         count = self.counters[conditional]
         values = self.conditionals[conditional]
 
@@ -97,7 +103,9 @@ class KeyConditionedValueGenerator(ConditionedDataGenerator):
 
 class StringConditionedStringGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(StringConditionedStringGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(StringConditionedStringGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """
@@ -108,7 +116,9 @@ class StringConditionedStringGenerator(KeyConditionedValueGenerator):
 
 class StringConditionedIntegerGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(StringConditionedIntegerGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(StringConditionedIntegerGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """
@@ -119,18 +129,24 @@ class StringConditionedIntegerGenerator(KeyConditionedValueGenerator):
 
 class StringConditionedFloatGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(StringConditionedFloatGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(StringConditionedFloatGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """
         :return: A descriptive string for this conditional data generator.
         """
-        return "The conditional floating point generator is {}.".format(self.conditionals)
+        return "The conditional floating point generator is {}.".format(
+            self.conditionals
+        )
 
 
 class BooleanConditionedStringGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(BooleanConditionedStringGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(BooleanConditionedStringGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """
@@ -141,18 +157,24 @@ class BooleanConditionedStringGenerator(KeyConditionedValueGenerator):
 
 class StringConditionedBooleanGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(StringConditionedBooleanGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(StringConditionedBooleanGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """
         :return: A descriptive string for this conditional data generator.
         """
-        return "The string conditioned boolean generator is {}".format(self.conditionals)
+        return "The string conditioned boolean generator is {}".format(
+            self.conditionals
+        )
 
 
 class BooleanConditionedFloatGenerator(KeyConditionedValueGenerator):
     def __init__(self, conditionals):
-        super(BooleanConditionedFloatGenerator, self).__init__(name=self.__class__.__name__, conditionals=conditionals)
+        super(BooleanConditionedFloatGenerator, self).__init__(
+            name=self.__class__.__name__, conditionals=conditionals
+        )
 
     def __str__(self):
         """

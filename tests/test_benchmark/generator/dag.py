@@ -47,11 +47,19 @@ class Dag:
         """
         cycle = self.get_cycle(source=to_vertex, target=from_vertex)
         if len(cycle) > 0:
-            raise ValueError("Cyclic dependency between {0} and {1} through {2}.".format(from_vertex, to_vertex, cycle))
+            raise ValueError(
+                "Cyclic dependency between {0} and {1} through {2}.".format(
+                    from_vertex, to_vertex, cycle
+                )
+            )
         if from_vertex in self.depends_on:
             dependencies = self.depends_on[from_vertex]
             if to_vertex in dependencies:
-                logging.warning("Edge from {0} to {1} already exists.".format(from_vertex, to_vertex))
+                logging.warning(
+                    "Edge from {0} to {1} already exists.".format(
+                        from_vertex, to_vertex
+                    )
+                )
             self.depends_on[from_vertex].add(to_vertex)
         else:
             self.depends_on[from_vertex] = {to_vertex}
@@ -69,7 +77,9 @@ class Dag:
             if len(self.depends_on[from_vertex]) == 0:
                 del self.depends_on[from_vertex]
         else:
-            raise ValueError("Edge from {0} to {1} does not exist.".format(from_vertex, to_vertex))
+            raise ValueError(
+                "Edge from {0} to {1} does not exist.".format(from_vertex, to_vertex)
+            )
 
     def dependents(self):
         """
@@ -100,7 +110,10 @@ class Dag:
                     is_dependency_of[dependency] = [node]
                 else:
                     is_dependency_of[dependency].append(node)
-        num_dependents = {name_type: len(conditionals) for name_type, conditionals in self.depends_on.items()}
+        num_dependents = {
+            name_type: len(conditionals)
+            for name_type, conditionals in self.depends_on.items()
+        }
         is_never_dependency = set(self.depends_on.keys()) - set(is_dependency_of.keys())
         has_no_dependents = set(is_dependency_of.keys()) - set(self.depends_on.keys())
 
