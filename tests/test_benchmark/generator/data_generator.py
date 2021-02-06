@@ -7,8 +7,9 @@ from random import expovariate, gauss, randint, random, shuffle
 
 from pkg_resources import resource_filename
 
-from tests.test_benchmark.generator.constraint_parser import \
-    parse_lambda_constraint_into_intervals
+from tests.test_benchmark.generator.constraint_parser import (
+    parse_lambda_constraint_into_intervals,
+)
 
 WARN_PROB_TH = 0.01  # Warning threshold for probabilities
 
@@ -52,7 +53,9 @@ class DataGenerator:
         :raise ValueError if num_samples < 1.
         """
         if num_data < 1:
-            raise ValueError("Number of samples is {} but must be > {}".format(num_data, 0))
+            raise ValueError(
+                "Number of samples is {} but must be > {}".format(num_data, 0)
+            )
 
         if num_data > 1:
             return [self._next() for _ in range(num_data)]
@@ -125,7 +128,9 @@ class UniformIntegerDataGenerator(DataGenerator):
 
         :return: String.
         """
-        return "{0} has min = {1} and max = {2}".format(self.name, self.min_val, self.max_val)
+        return "{0} has min = {1} and max = {2}".format(
+            self.name, self.min_val, self.max_val
+        )
 
 
 class GaussianFloatDataGenerator(DataGenerator):
@@ -158,7 +163,9 @@ class GaussianFloatDataGenerator(DataGenerator):
 
         :return: String.
         """
-        return "{0} with mean = {1} and standard deviation = {2}".format(self.name, self.mu, self.sigma)
+        return "{0} with mean = {1} and standard deviation = {2}".format(
+            self.name, self.mu, self.sigma
+        )
 
 
 class ExponentialIntegerDataGenerator(DataGenerator):
@@ -185,7 +192,11 @@ class ExponentialIntegerDataGenerator(DataGenerator):
         # The probability mass beyond max_val is F(inf; lambda) - F(max_val; lambda) = exp(-max_val lambda)
         prob_mass = math.exp(-max_val * self.lambd)
         if prob_mass > WARN_PROB_TH:
-            logging.warn("Probability mass beyond max_val is {0} but should be {1}".format(prob_mass, WARN_PROB_TH))
+            logging.warn(
+                "Probability mass beyond max_val is {0} but should be {1}".format(
+                    prob_mass, WARN_PROB_TH
+                )
+            )
 
     def _next(self):
         """
@@ -204,7 +215,9 @@ class ExponentialIntegerDataGenerator(DataGenerator):
 
         :return: String.
         """
-        return "{0} has mean = {1} and max = {2}".format(self.name, 1.0 / self.lambd, self.max_val)
+        return "{0} has mean = {1} and max = {2}".format(
+            self.name, 1.0 / self.lambd, self.max_val
+        )
 
 
 class StringDataGenerator(DataGenerator):
@@ -222,7 +235,9 @@ class StringDataGenerator(DataGenerator):
         """
         super(StringDataGenerator, self).__init__(self.__class__.__name__)
         if len(words) == 0:
-            raise ValueError("Empty list of words given! Can't have a distribution over no words")
+            raise ValueError(
+                "Empty list of words given! Can't have a distribution over no words"
+            )
         self.words = words
         shuffle(self.words)
         self.i_words = -1
@@ -249,7 +264,9 @@ class StringDataGenerator(DataGenerator):
         return "{0} with {1} words.".format(self.name, len(self.words))
 
     @staticmethod
-    def create_from_file(filename=resource_filename("tests.test_benchmark.resources", "wordlist")):
+    def create_from_file(
+        filename=resource_filename("tests.test_benchmark.resources", "wordlist")
+    ):
         """
         Loads the vocabulary from a given file. As default loads a dictionary of about 70k English words.
 
@@ -278,7 +295,9 @@ class BytesDataGenerator(DataGenerator):
         """
         super(BytesDataGenerator, self).__init__(self.__class__.__name__)
         if len(words) == 0:
-            raise ValueError("Empty list of words given! Can't have a distribution over no words")
+            raise ValueError(
+                "Empty list of words given! Can't have a distribution over no words"
+            )
         self.words = words
         shuffle(self.words)
         self.i_words = -1
@@ -305,7 +324,9 @@ class BytesDataGenerator(DataGenerator):
         return "{0} with {1} words.".format(self.name, len(self.words))
 
     @staticmethod
-    def create_from_file(filename=resource_filename("tests.test_benchmark.resources", "wordlist")):
+    def create_from_file(
+        filename=resource_filename("tests.test_benchmark.resources", "wordlist")
+    ):
         """
         Loads the vocabulary from a given file. As default loads a dictionary of about 70k English words.
 
@@ -331,7 +352,9 @@ class CountDataGenerator(DataGenerator):
         :param initial_count: The initial count value. Default is '0'.
         """
         super(CountDataGenerator, self).__init__(self.__class__.__name__)
-        self.count = initial_count - 1  # Decrease by one because we increment before returning the value
+        self.count = (
+            initial_count - 1
+        )  # Decrease by one because we increment before returning the value
 
     def _next(self):
         """
@@ -441,7 +464,9 @@ class BoundsDataGenerator(DataGenerator):
         :param max_value: The maximum value bound.
         """
         super(BoundsDataGenerator, self).__init__(self.__class__.__name__)
-        assert min_value <= max_value, f"{min_value} must be smaller or equal to {max_value}"
+        assert (
+            min_value <= max_value
+        ), f"{min_value} must be smaller or equal to {max_value}"
         self.data_generator = data_generator
         self.min_value = min_value
         self.max_value = max_value
@@ -460,7 +485,9 @@ class BoundsDataGenerator(DataGenerator):
 
         :return: String.
         """
-        return "{} with min {} and max {}".format(self.name, self.min_value, self.max_value)
+        return "{} with min {} and max {}".format(
+            self.name, self.min_value, self.max_value
+        )
 
 
 class StringCountDataGenerator(DataGenerator):
@@ -477,7 +504,9 @@ class StringCountDataGenerator(DataGenerator):
         :param initial_count: The initial count value. Default is '0'.
         """
         super(StringCountDataGenerator, self).__init__(self.__class__.__name__)
-        self.count = initial_count - 1  # Decrease by one because we increment before returning the value
+        self.count = (
+            initial_count - 1
+        )  # Decrease by one because we increment before returning the value
 
     def _next(self):
         """
@@ -541,7 +570,9 @@ class ConstrainedIntegerDataGenerator(DataGenerator):
 
         :param constraint: A lambda function with the constraints.
         """
-        super(ConstrainedIntegerDataGenerator, self).__init__(name=self.__class__.__name__)
+        super(ConstrainedIntegerDataGenerator, self).__init__(
+            name=self.__class__.__name__
+        )
 
         def _compute_cum_ratios(merged_intervals):
             lengths = [interval[1] - interval[0] for interval in merged_intervals]
@@ -581,7 +612,9 @@ class ConstrainedIntegerDataGenerator(DataGenerator):
 
         self.min_val = -sys.maxsize - 1
         self.max_val = sys.maxsize
-        self.intervals = _sort_and_merge_intervals(parse_lambda_constraint_into_intervals(constraint))
+        self.intervals = _sort_and_merge_intervals(
+            parse_lambda_constraint_into_intervals(constraint)
+        )
         self.ratios = _compute_cum_ratios(self.intervals)
 
     def _next(self):

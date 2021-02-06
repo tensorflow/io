@@ -4,8 +4,10 @@ import pytest
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.ops import parsing_ops
 from tests.test_benchmark.benchmark_dataset import BenchmarkDataWrapper
-from tests.test_benchmark.avro.record.dataset.benchmark_avro_record_dataset \
-    import BenchmarkAvroRecordDataset, BenchmarkVanillaAvroRecordDataset
+from tests.test_benchmark.avro.record.dataset.benchmark_avro_record_dataset import (
+    BenchmarkAvroRecordDataset,
+    BenchmarkVanillaAvroRecordDataset,
+)
 
 """
 These are parameters for `avro-data-generator`.
@@ -13,13 +15,11 @@ These are parameters for `avro-data-generator`.
     :param num_part: The number of part files.
     :param num_epochs: The number of epochs that tells AvroRecordDataset whether to repeat.
 """
-PerfParams = namedtuple('PerfParams', ['num_data', 'num_parts', 'num_epochs'])
+PerfParams = namedtuple("PerfParams", ["num_data", "num_parts", "num_epochs"])
 AVRO_PARSER_NUM_MINIBATCHES = None
 
 # Note, it is expensive to create the test data and thus we do that only once
-@pytest.fixture(scope="module", params=[
-    PerfParams(8*1024, 10, 10),
-], ids=["small"])
+@pytest.fixture(scope="module", params=[PerfParams(8 * 1024, 10, 10),], ids=["small"])
 def test_setup(request):
     schema_name = "DenseData.avsc"
     features = {
@@ -28,18 +28,20 @@ def test_setup(request):
         "id": parsing_ops.FixedLenFeature([], tf_types.int64),
         "salary": parsing_ops.FixedLenFeature([], tf_types.float32),
         "altitude": parsing_ops.FixedLenFeature([], tf_types.float64),
-        "name": parsing_ops.FixedLenFeature([], tf_types.string)
+        "name": parsing_ops.FixedLenFeature([], tf_types.string),
     }
     # More meaningful numbers are
     #  num_data=64*1024
     #  num_parts=8
     #  num_epochs=10
     #  Reduced numbers for tests
-    benchmark_data = BenchmarkAvroRecordDataset(schema_name=schema_name,
-                                                features=features,
-                                                num_data=request.param.num_data,
-                                                num_parts=request.param.num_parts,
-                                                num_epochs=request.param.num_epochs)
+    benchmark_data = BenchmarkAvroRecordDataset(
+        schema_name=schema_name,
+        features=features,
+        num_data=request.param.num_data,
+        num_parts=request.param.num_parts,
+        num_epochs=request.param.num_epochs,
+    )
     benchmark_data.setup()
 
     yield BenchmarkDataWrapper(benchmark_data=benchmark_data)
@@ -56,18 +58,20 @@ def test_setup_vanilla():
         "id": parsing_ops.FixedLenFeature([], tf_types.int64),
         "salary": parsing_ops.FixedLenFeature([], tf_types.float32),
         "altitude": parsing_ops.FixedLenFeature([], tf_types.float64),
-        "name": parsing_ops.FixedLenFeature([], tf_types.string)
+        "name": parsing_ops.FixedLenFeature([], tf_types.string),
     }
     # More meaningful numbers are
     #  num_data=64*1024
     #  num_parts=8
     #  num_epochs=10
     #  Reduced numbers for tests
-    benchmark_data = BenchmarkVanillaAvroRecordDataset(schema_name=schema_name,
-                                                       features=features,
-                                                       num_data=128 * 1024,
-                                                       num_parts=16,
-                                                       num_epochs=10)
+    benchmark_data = BenchmarkVanillaAvroRecordDataset(
+        schema_name=schema_name,
+        features=features,
+        num_data=128 * 1024,
+        num_parts=16,
+        num_epochs=10,
+    )
     benchmark_data.setup()
 
     yield BenchmarkDataWrapper(benchmark_data=benchmark_data)
@@ -89,22 +93,32 @@ def test_dataset(batch_size, num_parallel_reads, test_setup):
     #  num_parallel_reads=4
     #  num_parallel_calls=4
     # Reduced numbers for tests
-    test_setup.benchmark_data.perf_dataset(batch_size=batch_size,
-                                           num_parallel_reads=num_parallel_reads)
+    test_setup.benchmark_data.perf_dataset(
+        batch_size=batch_size, num_parallel_reads=num_parallel_reads
+    )
 
 
-@pytest.mark.benchmark(
-    group="batch_8192_block_16",
+@pytest.mark.benchmark(group="batch_8192_block_16",)
+@pytest.mark.parametrize(
+    "num_parallel_reads,num_parallel_calls,num_parallel_parser_calls,num_minibatches",
+    [
+        (16, 8, 16, 1),
+        (16, 8, 32, 1),
+        (16, 8, 8, 1),
+        (16, 8, 1, 1),
+        (16, 8, 1, 5),
+        (16, 8, 4, 5),
+        (16, 8, 8, 5),
+    ],
 )
-@pytest.mark.parametrize("num_parallel_reads,num_parallel_calls,num_parallel_parser_calls,num_minibatches",
-                         [(16, 8, 16, 1), (16, 8, 32, 1), (16, 8, 8, 1), (16, 8, 1, 1),
-                          (16, 8, 1, 5), (16, 8, 4, 5), (16, 8, 8, 5)])
-def test_vary_parallel_reads_calls(num_parallel_reads,
-                                   num_parallel_calls,
-                                   num_parallel_parser_calls,
-                                   num_minibatches,
-                                   test_setup_vanilla,
-                                   benchmark):
+def test_vary_parallel_reads_calls(
+    num_parallel_reads,
+    num_parallel_calls,
+    num_parallel_parser_calls,
+    num_minibatches,
+    test_setup_vanilla,
+    benchmark,
+):
     """
     This tests the read and parse performance.
     Read params:
@@ -129,17 +143,17 @@ def test_vary_parallel_reads_calls(num_parallel_reads,
             "num_parallel_calls": num_parallel_calls,
             "num_parallel_parser_calls": num_parallel_parser_calls,
             "block_length": 16,
-            "deterministic": False
-        }
+            "deterministic": False,
+        },
     )
     assert count > 0, f"Count: {count} must be greater than 0"
 
 
-@pytest.mark.benchmark(
-    group="reads_16_calls_8",
+@pytest.mark.benchmark(group="reads_16_calls_8",)
+@pytest.mark.parametrize(
+    "batch_size,block_length",
+    [(4096, 8), (8192, 16), (8192, 64), (8192 * 4, 16), (8192 * 4, 16)],
 )
-@pytest.mark.parametrize("batch_size,block_length",
-                         [(4096, 8), (8192, 16), (8192, 64), (8192 * 4, 16), (8192 * 4, 16)])
 def test_vary_batch_block(batch_size, block_length, test_setup_vanilla, benchmark):
     AVRO_PARSER_NUM_MINIBATCHES = 5
     # https://pytest-benchmark.readthedocs.io/en/latest/pedantic.html
@@ -153,8 +167,7 @@ def test_vary_batch_block(batch_size, block_length, test_setup_vanilla, benchmar
             "num_parallel_calls": 8,
             "num_parallel_parser_calls": 16,
             "block_length": block_length,
-            "deterministic": False
-        }
+            "deterministic": False,
+        },
     )
     assert count > 0, f"Count: {count} must be greater than 0"
-

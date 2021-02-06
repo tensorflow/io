@@ -16,8 +16,7 @@ from time import perf_counter
 from tests.test_benchmark.generator.generator import Generator
 
 
-class BenchmarkDataWrapper(namedtuple('BenchmarkDataWrapper',
-                                      ['benchmark_data'])):
+class BenchmarkDataWrapper(namedtuple("BenchmarkDataWrapper", ["benchmark_data"])):
     """Capture the context information for each unit test"""
 
 
@@ -30,9 +29,9 @@ log.setLevel(logging.INFO)
 
 
 class BenchmarkDataset:
-
-    def __init__(self, schema_name, features, num_data=8*1024, num_parts=10,
-                 num_epochs=10):
+    def __init__(
+        self, schema_name, features, num_data=8 * 1024, num_parts=10, num_epochs=10
+    ):
         self._schema_name = schema_name
         self._features = features
         self._num_data = num_data
@@ -47,7 +46,8 @@ class BenchmarkDataset:
     def setup(self, constrain_generation=_default_constrain_generation):
         # Load schema
         self._schema_path = resource_filename(
-            "tests.test_benchmark.resources.schemas", self._schema_name)
+            "tests.test_benchmark.resources.schemas", self._schema_name
+        )
         self._schema_string = open(self._schema_path, "rb").read()
 
         # Create temporary file
@@ -55,8 +55,9 @@ class BenchmarkDataset:
 
         # Generate data
         generator = constrain_generation(Generator.create(self._schema_path))
-        generator.write(output_path=self._tmp_dir, n_data=self._num_data,
-                        n_part=self._num_parts)
+        generator.write(
+            output_path=self._tmp_dir, n_data=self._num_data, n_part=self._num_parts
+        )
         self._filenames = glob.glob(os.path.join(self._tmp_dir, "*.avro"))
 
     def cleanup(self):
@@ -71,7 +72,7 @@ class BenchmarkDataset:
         duration = perf_counter() - start_time
         log.debug("Avro dataset")
         log.debug("Elapsed time in sec ", duration)
-        log.debug("Samples per second ", num_samples/duration)
+        log.debug("Samples per second ", num_samples / duration)
         self.count += 1
         return self.count
 

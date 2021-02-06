@@ -3,9 +3,12 @@ import pytest
 from tensorflow.python.framework import dtypes as tf_types
 from tensorflow.python.ops import parsing_ops
 from tests.test_benchmark.benchmark_dataset import BenchmarkDataWrapper
-from tests.test_benchmark.avro.record.dataset.benchmark_avro_record_dataset \
-    import BenchmarkVanillaAvroRecordDataset
-from tests.test_benchmark.generator.data_generator import ExponentialIntegerDataGenerator
+from tests.test_benchmark.avro.record.dataset.benchmark_avro_record_dataset import (
+    BenchmarkVanillaAvroRecordDataset,
+)
+from tests.test_benchmark.generator.data_generator import (
+    ExponentialIntegerDataGenerator,
+)
 
 
 # Note, it is expensive to create the test data and thus we do that only once
@@ -14,20 +17,21 @@ def test_setup():
     schema_name = "Sparse1DRowFormat.avsc"
     features = {
         "customer": parsing_ops.SparseFeature(
-            index_key=["ids"],
-            value_key="prices",
-            dtype=tf_types.float32,
-            size=[4000])
+            index_key=["ids"], value_key="prices", dtype=tf_types.float32, size=[4000]
+        )
     }
-    benchmark_data = BenchmarkVanillaAvroRecordDataset(schema_name=schema_name,
-                                                       features=features,
-                                                       num_data=4 * 1024,
-                                                       num_parts=2,
-                                                       num_epochs=1)
+    benchmark_data = BenchmarkVanillaAvroRecordDataset(
+        schema_name=schema_name,
+        features=features,
+        num_data=4 * 1024,
+        num_parts=2,
+        num_epochs=1,
+    )
 
     def _constrain_generation(generator):
         generator.set_data_generator_for_all_array_num(
-            ExponentialIntegerDataGenerator(beta=5, max_val=25))
+            ExponentialIntegerDataGenerator(beta=5, max_val=25)
+        )
         return generator
 
     benchmark_data.setup(constrain_generation=_constrain_generation)

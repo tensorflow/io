@@ -3,9 +3,18 @@ import os.path
 
 from avro.datafile import DataFileWriter
 from avro.io import DatumWriter
-from avro.schema import ArraySchema, MapSchema, Parse, PrimitiveSchema, RecordSchema, UnionSchema
+from avro.schema import (
+    ArraySchema,
+    MapSchema,
+    Parse,
+    PrimitiveSchema,
+    RecordSchema,
+    UnionSchema,
+)
 
-from tests.test_benchmark.generator.conditioned_data_generator import ConditionedDataGenerator
+from tests.test_benchmark.generator.conditioned_data_generator import (
+    ConditionedDataGenerator,
+)
 from tests.test_benchmark.generator.dag import Dag
 from tests.test_benchmark.generator.data_generator import (
     BernoulliDataGenerator,
@@ -83,7 +92,9 @@ class Generator:
         self.name_type_unions = []
 
         # Parse all name types and store them per type
-        for full_name_type in self._get_name_types(self.schema, namespace=self.namespace):
+        for full_name_type in self._get_name_types(
+            self.schema, namespace=self.namespace
+        ):
             this_type = full_name_type.split(Generator.type_separator)[1]
             if this_type == "boolean":
                 self.name_type_booleans.append(full_name_type)
@@ -100,13 +111,17 @@ class Generator:
             elif this_type == "string":
                 self.name_type_strings.append(full_name_type)
             elif this_type == "null":
-                self.name_type_nulls.append(full_name_type)  # need to use full name type to avoid ambiguity
+                self.name_type_nulls.append(
+                    full_name_type
+                )  # need to use full name type to avoid ambiguity
             elif this_type == "array":
                 self.name_type_arrays.append(full_name_type)
             elif this_type == "map":
                 self.name_type_maps.append(full_name_type)
             elif this_type == "union":
-                self.name_type_unions.append(full_name_type)  # need to use full name type to avoid ambiguity
+                self.name_type_unions.append(
+                    full_name_type
+                )  # need to use full name type to avoid ambiguity
             else:
                 logging.warn("Unknown type string '{}'".format(this_type))
 
@@ -167,11 +182,17 @@ class Generator:
         :param data_generator: The data generator to be used for this full name and type.
         """
         if name_type in self.data_generator_for_name_type:
-            logging.info("Overwriting '{}' with data_generator: '{}'".format(name_type, data_generator))
+            logging.info(
+                "Overwriting '{}' with data_generator: '{}'".format(
+                    name_type, data_generator
+                )
+            )
         self.data_generator_for_name_type[name_type] = data_generator
         self.unconditioned_name_types.add(name_type)
 
-    def _set_data_generator_for_full_name_type_list(self, name_type_list, data_generator):
+    def _set_data_generator_for_full_name_type_list(
+        self, name_type_list, data_generator
+    ):
         """
         Sets the same data_generator for all the name types in the list.
 
@@ -193,7 +214,11 @@ class Generator:
         """
         last = conditional_name_type.rfind(same_type)  # last = -1 if not found
         if last > -1 and name_type[:last] != conditional_name_type[:last]:
-            raise ValueError("Condition {} is not in the same {} as the value {}".format(conditional_name_type, same_type, name_type))
+            raise ValueError(
+                "Condition {} is not in the same {} as the value {}".format(
+                    conditional_name_type, same_type, name_type
+                )
+            )
 
     @staticmethod
     def _check_has_same_array(name_type, conditional_name_type):
@@ -202,7 +227,11 @@ class Generator:
 
         Further details see '_check_name_and_conditional'.
         """
-        Generator._check_name_and_conditional(name_type=name_type, conditional_name_type=conditional_name_type, same_type=Generator.array_name)
+        Generator._check_name_and_conditional(
+            name_type=name_type,
+            conditional_name_type=conditional_name_type,
+            same_type=Generator.array_name,
+        )
 
     @staticmethod
     def _check_has_same_map(name_type, conditional_name_type):
@@ -211,9 +240,15 @@ class Generator:
 
         Further details see '_check_name_and_conditional'.
         """
-        Generator._check_name_and_conditional(name_type=name_type, conditional_name_type=conditional_name_type, same_type=Generator.map_name)
+        Generator._check_name_and_conditional(
+            name_type=name_type,
+            conditional_name_type=conditional_name_type,
+            same_type=Generator.map_name,
+        )
 
-    def set_conditioned_data_generator_for_name_type(self, name_type, conditional_name_type, data_generator):
+    def set_conditioned_data_generator_for_name_type(
+        self, name_type, conditional_name_type, data_generator
+    ):
         """
         Set a conditioned data_generator for a name type together with a conditional name type.
 
@@ -225,7 +260,11 @@ class Generator:
 
         # Check the type of the data_generator
         if not isinstance(data_generator, ConditionedDataGenerator):
-            raise ValueError("Distribution {} must be of type {}.".format(data_generator, type(ConditionedDataGenerator)))
+            raise ValueError(
+                "Distribution {} must be of type {}.".format(
+                    data_generator, type(ConditionedDataGenerator)
+                )
+            )
 
         # Write or overwrite the data_generator
         self.set_data_generator_for_name_type(name_type, data_generator)
@@ -242,8 +281,12 @@ class Generator:
         # If they appear in different arrays we might have a different number of items for each and, thus, cannot
         # condition correctly; hence, this restriction
         # If they appear in different maps it is not guaranteed that the conditioned map has the same key
-        Generator._check_has_same_array(name_type=name_type, conditional_name_type=conditional_name_type)
-        Generator._check_has_same_map(name_type=name_type, conditional_name_type=conditional_name_type)
+        Generator._check_has_same_array(
+            name_type=name_type, conditional_name_type=conditional_name_type
+        )
+        Generator._check_has_same_map(
+            name_type=name_type, conditional_name_type=conditional_name_type
+        )
 
         # If the this conditional data_generator was set before remove the previous dependency
         if name_type in self.condition_for_name_type:
@@ -258,40 +301,58 @@ class Generator:
         # Update the conditional name
         self.condition_for_name_type[name_type] = conditional_name_type
 
-    def set_data_generator_for_all_boolean_types(self, data_generator=BernoulliDataGenerator(prob_true=0.7)):
+    def set_data_generator_for_all_boolean_types(
+        self, data_generator=BernoulliDataGenerator(prob_true=0.7)
+    ):
         """
         Set the data_generator for boolean values. The default is a Bernoulli data_generator.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_booleans, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_booleans, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_integer_types(self, data_generator=UniformIntegerDataGenerator(min_val=0, max_val=100)):
+    def set_data_generator_for_all_integer_types(
+        self, data_generator=UniformIntegerDataGenerator(min_val=0, max_val=100)
+    ):
         """
         Set the data_generator for integer values. The default is a uniform integer data_generator.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_integers, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_integers, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_long_types(self, data_generator=UniformIntegerDataGenerator(min_val=0, max_val=1000)):
+    def set_data_generator_for_all_long_types(
+        self, data_generator=UniformIntegerDataGenerator(min_val=0, max_val=1000)
+    ):
         """
         Set the data_generator for long values. The default is a uniform integer data_generator. If you need to especially
         test the entire range of long values you may write your own data_generator class and use it here.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_longs, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_longs, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_float_types(self, data_generator=GaussianFloatDataGenerator(mu=0, sigma=50.5)):
+    def set_data_generator_for_all_float_types(
+        self, data_generator=GaussianFloatDataGenerator(mu=0, sigma=50.5)
+    ):
         """
         Set the data_generator for float values. The default is a normal data_generator.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_floats, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_floats, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_double_types(self, data_generator=GaussianFloatDataGenerator(mu=0, sigma=1005.23)):
+    def set_data_generator_for_all_double_types(
+        self, data_generator=GaussianFloatDataGenerator(mu=0, sigma=1005.23)
+    ):
         """
         Set the data_generator for double values. The default is a normal data_generator. Underneath this normal
         data_generator uses random.gauss, check the documentation for that function to see if it fits your range
@@ -299,31 +360,47 @@ class Generator:
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_doubles, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_doubles, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_bytes_types(self, data_generator=BytesDataGenerator.create_from_file()):
+    def set_data_generator_for_all_bytes_types(
+        self, data_generator=BytesDataGenerator.create_from_file()
+    ):
         """
         Set the data_generator for bytes values. The default is a string data_generator.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_bytes, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_bytes, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_string_types(self, data_generator=StringDataGenerator.create_from_file()):
+    def set_data_generator_for_all_string_types(
+        self, data_generator=StringDataGenerator.create_from_file()
+    ):
         """
         Set the data_generator for string values. The default is a string data_generator.
 
         :param data_generator: The data generator.
         """
-        self._set_data_generator_for_full_name_type_list(name_type_list=self.name_type_strings, data_generator=data_generator)
+        self._set_data_generator_for_full_name_type_list(
+            name_type_list=self.name_type_strings, data_generator=data_generator
+        )
 
-    def set_data_generator_for_all_array_num(self, data_generator=ExponentialIntegerDataGenerator(beta=5, max_val=25)):
+    def set_data_generator_for_all_array_num(
+        self, data_generator=ExponentialIntegerDataGenerator(beta=5, max_val=25)
+    ):
         """
         Set the data_generator for the number of array items. The default is an exponential integer data_generator.
 
         :param data_generator: The data generator.
         """
-        logging.info("Set the data_generator for the number of array items to: {0}".format(str(data_generator)))
+        logging.info(
+            "Set the data_generator for the number of array items to: {0}".format(
+                str(data_generator)
+            )
+        )
         for name_type_array in self.name_type_arrays:
             self.data_generator_for_array[name_type_array] = data_generator
 
@@ -337,17 +414,25 @@ class Generator:
             if name_type_array not in self.data_generator_for_array:
                 raise NameError(
                     "'{}' is not part of the schema '{}'.\nYou may have to add the '{}' "
-                    "namespace or append the ':array' value.".format(name_type_array, self.schema, "null")
+                    "namespace or append the ':array' value.".format(
+                        name_type_array, self.schema, "null"
+                    )
                 )
             self.data_generator_for_array[name_type_array] = data_generator
 
-    def set_data_generator_for_all_map_key_num(self, data_generator=ExponentialIntegerDataGenerator(beta=2, max_val=10)):
+    def set_data_generator_for_all_map_key_num(
+        self, data_generator=ExponentialIntegerDataGenerator(beta=2, max_val=10)
+    ):
         """
         Set the data_generator for the number of key pairs. The default is an exponential integer data_generator.
 
         :param data_generator: The data generator.
         """
-        logging.info("Set the data_generator for the number of keys in maps to: {0}".format(str(data_generator)))
+        logging.info(
+            "Set the data_generator for the number of keys in maps to: {0}".format(
+                str(data_generator)
+            )
+        )
         self.map_key_num_gen = data_generator
 
     @staticmethod
@@ -370,7 +455,8 @@ class Generator:
         logging.info("Set uniform data_generator for all union types in their range.")
         for name_type in self.name_type_unions:
             self.data_generator_for_name_type[name_type] = UniformIntegerDataGenerator(
-                min_val=0, max_val=Generator._get_num_of_branches_for_union(name_type) - 1
+                min_val=0,
+                max_val=Generator._get_num_of_branches_for_union(name_type) - 1,
             )
 
     def _get_update_order(self):
@@ -387,9 +473,19 @@ class Generator:
 
         :return: A set of dependent names without type.
         """
-        return {dependent.split(Generator.type_separator)[0] for dependent in self.dag.dependents()}
+        return {
+            dependent.split(Generator.type_separator)[0]
+            for dependent in self.dag.dependents()
+        }
 
-    def write(self, output_path, n_data, n_part, codec="deflate", name_format="part-{:05d}.avro"):
+    def write(
+        self,
+        output_path,
+        n_data,
+        n_part,
+        codec="deflate",
+        name_format="part-{:05d}.avro",
+    ):
         """
         Use the generator to write data points (rows) in parts to the output path using a codec and name format.
 
@@ -404,11 +500,17 @@ class Generator:
 
         # Check the input values
         if n_part > n_data:
-            raise ValueError("Number of parts '{}' < number of data '{}'".format(n_part, n_data))
+            raise ValueError(
+                "Number of parts '{}' < number of data '{}'".format(n_part, n_data)
+            )
         if n_part < 0:
-            raise ValueError("Number of parts is '{}' but must be > '{}'".format(n_part, 0))
+            raise ValueError(
+                "Number of parts is '{}' but must be > '{}'".format(n_part, 0)
+            )
         if n_data < 0:
-            raise ValueError("Number of data points is '{}' but must be > '{}'".format(n_data, 0))
+            raise ValueError(
+                "Number of data points is '{}' but must be > '{}'".format(n_data, 0)
+            )
 
         # If the output directory does not exist, create it
         if not os.path.exists(output_path):
@@ -416,7 +518,11 @@ class Generator:
             os.makedirs(output_path)
 
         # Compute the number of rows per part and the update order for the value, which respects conditionals
-        logging.info("Writing '{}' data points in '{}' parts to '{}'.".format(n_data, n_part, output_path))
+        logging.info(
+            "Writing '{}' data points in '{}' parts to '{}'.".format(
+                n_data, n_part, output_path
+            )
+        )
         n_row = n_data // n_part
         update_order = self._get_update_order()
         dependent_names = self._get_dependent_names()
@@ -453,7 +559,9 @@ class Generator:
         logging.info("The update order is '{}'".format(update_order))
         data = [None] * n_data
         for i_data in range(n_data):
-            data[i_data] = self._create_datum(update_order=update_order, dependent_names=dependent_names)
+            data[i_data] = self._create_datum(
+                update_order=update_order, dependent_names=dependent_names
+            )
         return data
 
     def _get_name_types(self, next_schema, namespace):
@@ -482,7 +590,9 @@ class Generator:
                 or next_schema.type == "float"
                 or next_schema.type == "double"
             ):
-                name_type_tuples.append(namespace + Generator.type_separator + next_schema.type)
+                name_type_tuples.append(
+                    namespace + Generator.type_separator + next_schema.type
+                )
             else:
                 logging.error("Found unknown type {0}".format(next_schema.type))
 
@@ -490,27 +600,52 @@ class Generator:
         elif isinstance(next_schema, RecordSchema):
             for field in next_schema.props["fields"]:
                 logging.debug("Found property '{}'".format(field.name))
-                name_type_tuples.extend(self._get_name_types(field.props["type"], namespace + Generator.namespace_separator + field.name))
+                name_type_tuples.extend(
+                    self._get_name_types(
+                        field.props["type"],
+                        namespace + Generator.namespace_separator + field.name,
+                    )
+                )
             return name_type_tuples
 
         # If this schema is an array type follow the items
         elif isinstance(next_schema, ArraySchema):
             logging.debug("Found array")
-            name_type_tuples.append(namespace + Generator.type_separator + Generator.array_name)
-            name_type_tuples.extend(self._get_name_types(next_schema.props["items"], namespace + Generator.namespace_separator + next_schema.type))
+            name_type_tuples.append(
+                namespace + Generator.type_separator + Generator.array_name
+            )
+            name_type_tuples.extend(
+                self._get_name_types(
+                    next_schema.props["items"],
+                    namespace + Generator.namespace_separator + next_schema.type,
+                )
+            )
 
         # If this schema is a union type we add tuples with all possible types
         elif isinstance(next_schema, UnionSchema):
             logging.debug("Found union")
-            name_type_tuples.append(namespace + Generator.type_separator + "union" + Generator.type_separator + str(len(next_schema.schemas)))
+            name_type_tuples.append(
+                namespace
+                + Generator.type_separator
+                + "union"
+                + Generator.type_separator
+                + str(len(next_schema.schemas))
+            )
             for schema in next_schema.schemas:
                 name_type_tuples.extend(self._get_name_types(schema, namespace))
 
         # If this schema is a map type we add the type of the map with this namespace
         elif isinstance(next_schema, MapSchema):
             logging.debug("Found map")
-            name_type_tuples.append(namespace + Generator.type_separator + Generator.map_name)
-            name_type_tuples.extend(self._get_name_types(next_schema.props["values"], namespace + Generator.namespace_separator + next_schema.type))
+            name_type_tuples.append(
+                namespace + Generator.type_separator + Generator.map_name
+            )
+            name_type_tuples.extend(
+                self._get_name_types(
+                    next_schema.props["values"],
+                    namespace + Generator.namespace_separator + next_schema.type,
+                )
+            )
         # None of the known schema types
         else:
             logging.error("Unknown type in schema {0}".format(next_schema))
@@ -525,8 +660,12 @@ class Generator:
         :param name_type: The name type in one string separated by ':'. Names are separated by '.'.
         :return: A tuple. The first component is a list of names. The second component is a the type.
         """
-        name_type_list = name_type[len(namespace) + 1 :].split(Generator.namespace_separator)  # Split on separator
-        name_type_list += name_type_list.pop().split(Generator.type_separator)  # Split name type
+        name_type_list = name_type[len(namespace) + 1 :].split(
+            Generator.namespace_separator
+        )  # Split on separator
+        name_type_list += name_type_list.pop().split(
+            Generator.type_separator
+        )  # Split name type
         return name_type_list
 
     @staticmethod
@@ -556,7 +695,10 @@ class Generator:
         elif isinstance(datum, list):
             # If we already have a list add to the existing items
             if isinstance(data, list):
-                return [Generator._add_datum(item, new_item) for item, new_item in zip(data, datum)]
+                return [
+                    Generator._add_datum(item, new_item)
+                    for item, new_item in zip(data, datum)
+                ]
             # If we don't have a list create one and add new items
             else:
                 return [Generator._add_datum(None, new_item) for new_item in datum]
@@ -576,14 +718,22 @@ class Generator:
         datum_for_dependent_full_name_type = {}
 
         # Defines the number of items in an array per array present in the schema
-        num_array_items = {name_type: generator.next() for name_type, generator in self.data_generator_for_array.items()}
+        num_array_items = {
+            name_type: generator.next()
+            for name_type, generator in self.data_generator_for_array.items()
+        }
         # num_array_items = {name_type: self.array_num_gen.next() for name_type in self.name_type_arrays}
 
         # Defines the number of entries in a map per map present in the schema
-        num_map_values = {name_type: self.map_key_num_gen.next() for name_type in self.name_type_maps}
+        num_map_values = {
+            name_type: self.map_key_num_gen.next() for name_type in self.name_type_maps
+        }
 
         # Number branches in union per union in the schema
-        num_union_branches = {name_type: self.data_generator_for_name_type[name_type].next() for name_type in self.name_type_unions}
+        num_union_branches = {
+            name_type: self.data_generator_for_name_type[name_type].next()
+            for name_type in self.name_type_unions
+        }
 
         # The initial data container for this avro record, empty map
         data = {}
@@ -598,30 +748,48 @@ class Generator:
             :return: The condition full name type.
             """
             condition_name_type = self.condition_for_name_type[name_type]
-            condition_name_type_list = Generator._get_name_type_list(self.namespace, name_type=condition_name_type)
+            condition_name_type_list = Generator._get_name_type_list(
+                self.namespace, name_type=condition_name_type
+            )
             condition_name_list = condition_name_type_list[:-1]  # Extract name
             condition_type = condition_name_type_list[-1]  # Extract type
             # Parse out the indices for arrays and values for maps and inject them properly into the condition name
-            full_name_type_list = Generator._get_name_type_list(self.namespace, name_type=full_name_type)
+            full_name_type_list = Generator._get_name_type_list(
+                self.namespace, name_type=full_name_type
+            )
             condition_full_name_type = self.namespace
             num_min = min(len(condition_name_list), len(full_name_type_list) - 1)
-            for condition, name in zip(condition_name_list[:num_min], full_name_type_list[:num_min]):
+            for condition, name in zip(
+                condition_name_list[:num_min], full_name_type_list[:num_min]
+            ):
                 if condition == name:
-                    condition_full_name_type += Generator.namespace_separator + condition
+                    condition_full_name_type += (
+                        Generator.namespace_separator + condition
+                    )
                 else:
-                    if name.startswith(Generator.array_name) or name.startswith(Generator.map_name):
+                    if name.startswith(Generator.array_name) or name.startswith(
+                        Generator.map_name
+                    ):
                         condition_full_name_type += Generator.namespace_separator + name
                     else:
-                        condition_full_name_type += Generator.namespace_separator + condition
+                        condition_full_name_type += (
+                            Generator.namespace_separator + condition
+                        )
             # For any remaining items in conditionals
             for condition in condition_name_list[num_min:]:
                 condition_full_name_type += Generator.namespace_separator + condition
             # Add the type
             condition_full_name_type += Generator.type_separator + condition_type
-            logging.debug("Resolved conditional for full name type {} is {}.".format(full_name_type, condition_full_name_type))
+            logging.debug(
+                "Resolved conditional for full name type {} is {}.".format(
+                    full_name_type, condition_full_name_type
+                )
+            )
             return condition_full_name_type
 
-        def _create_value(namespace, current_schema, name_type_list, full_name_type, i_names=0):
+        def _create_value(
+            namespace, current_schema, name_type_list, full_name_type, i_names=0
+        ):
             """
             Creates a value within a datum.
 
@@ -633,11 +801,19 @@ class Generator:
             :return: The newly generated value.
             """
 
-            logging.debug("Create data with namespace: '{}', full name type: '{}'.".format(namespace, full_name_type))
+            logging.debug(
+                "Create data with namespace: '{}', full name type: '{}'.".format(
+                    namespace, full_name_type
+                )
+            )
 
             if isinstance(current_schema, PrimitiveSchema):
                 # Construct the name and name type
-                name = self.namespace + Generator.namespace_separator + Generator.namespace_separator.join(name_type_list[:-1])
+                name = (
+                    self.namespace
+                    + Generator.namespace_separator
+                    + Generator.namespace_separator.join(name_type_list[:-1])
+                )
                 name_type = name + Generator.type_separator + current_schema.type
 
                 # Construct the full name type, has array indices and map key values in addition to the name type
@@ -662,24 +838,41 @@ class Generator:
 
                     # If this data is conditioned on some other data, find the other data and generate the new data
                     if name_type in self.condition_for_name_type:
-                        condition_full_name_type = _resolve_condition_full_name_type(name_type=name_type, full_name_type=full_name_type)
+                        condition_full_name_type = _resolve_condition_full_name_type(
+                            name_type=name_type, full_name_type=full_name_type
+                        )
 
-                        if condition_full_name_type not in datum_for_dependent_full_name_type:
+                        if (
+                            condition_full_name_type
+                            not in datum_for_dependent_full_name_type
+                        ):
                             raise RuntimeError(
                                 "When generating {0} could not find conditional {1} in already "
-                                "generated data. Check dependencies.".format(name_type, condition_full_name_type)
+                                "generated data. Check dependencies.".format(
+                                    name_type, condition_full_name_type
+                                )
                             )
                         data_generator = self.data_generator_for_name_type[name_type]
                         if not isinstance(data_generator, ConditionedDataGenerator):
-                            raise RuntimeError("Distribution type is {0} but expected {1}.".format(type(data_generator), ConditionedDataGenerator))
+                            raise RuntimeError(
+                                "Distribution type is {0} but expected {1}.".format(
+                                    type(data_generator), ConditionedDataGenerator
+                                )
+                            )
                         # The other data
-                        conditional = datum_for_dependent_full_name_type[condition_full_name_type]
+                        conditional = datum_for_dependent_full_name_type[
+                            condition_full_name_type
+                        ]
                         # Handle the null case here; occurs if we have different branches in a union where one is null
                         # the other branch is not
                         if conditional is None:
                             value = None
                         else:
-                            value = data_generator.next(datum_for_dependent_full_name_type[condition_full_name_type])
+                            value = data_generator.next(
+                                datum_for_dependent_full_name_type[
+                                    condition_full_name_type
+                                ]
+                            )
                     else:
                         value = self.data_generator_for_name_type[name_type].next()
                     # Store this datum only if it is a dependent
@@ -690,11 +883,21 @@ class Generator:
                     logging.error("Found unknown type {0}".format(current_schema.type))
 
             # Get the name up to this part
-            name = namespace + Generator.namespace_separator + Generator.namespace_separator.join(name_type_list[:i_names])
+            name = (
+                namespace
+                + Generator.namespace_separator
+                + Generator.namespace_separator.join(name_type_list[:i_names])
+            )
 
             # In case of a union just follow the branch given, keep the names the same (don't prepend nor inc i_names)
             if isinstance(current_schema, UnionSchema):
-                name_type = name + Generator.type_separator + current_schema.type + Generator.type_separator + str(len(current_schema.schemas))
+                name_type = (
+                    name
+                    + Generator.type_separator
+                    + current_schema.type
+                    + Generator.type_separator
+                    + str(len(current_schema.schemas))
+                )
                 # Select a branch according to the randomization above
                 i_schemas = num_union_branches[name_type]
                 return _create_value(
@@ -717,14 +920,18 @@ class Generator:
                         i_field_name = i_field
                         break
                 if i_field_name == -1:
-                    raise ValueError("Could not find field '{}' in '{}'.".format(field_name, fields))
+                    raise ValueError(
+                        "Could not find field '{}' in '{}'.".format(field_name, fields)
+                    )
                 # Recurse down that found field/attribute
                 return {
                     field_name: _create_value(
                         namespace=namespace,
                         current_schema=fields[i_field_name].props["type"],
                         name_type_list=name_type_list,
-                        full_name_type=full_name_type + Generator.namespace_separator + field_name,
+                        full_name_type=full_name_type
+                        + Generator.namespace_separator
+                        + field_name,
                         i_names=i_names + 1,
                     )
                 }
@@ -742,7 +949,12 @@ class Generator:
                         current_schema=current_schema.props["items"],
                         name_type_list=name_type_list,
                         full_name_type=(
-                            full_name_type + Generator.namespace_separator + field_name + Generator.array_item_start + str(i_items) + Generator.array_item_end
+                            full_name_type
+                            + Generator.namespace_separator
+                            + field_name
+                            + Generator.array_item_start
+                            + str(i_items)
+                            + Generator.array_item_end
                         ),
                         i_names=i_names + 1,
                     )
@@ -762,7 +974,12 @@ class Generator:
                         current_schema=current_schema.props["values"],
                         name_type_list=name_type_list,
                         full_name_type=(
-                            full_name_type + Generator.namespace_separator + field_name + Generator.map_value_start + str(i_values) + Generator.map_value_end
+                            full_name_type
+                            + Generator.namespace_separator
+                            + field_name
+                            + Generator.map_value_start
+                            + str(i_values)
+                            + Generator.map_value_end
                         ),
                         i_names=i_names + 1,
                     )
@@ -771,14 +988,23 @@ class Generator:
         # Here is where the main data generation loop starts
         for name_type in update_order:
             # Construct the name type list from the name type value
-            name_type_list = Generator._get_name_type_list(namespace=self.namespace, name_type=name_type)
+            name_type_list = Generator._get_name_type_list(
+                namespace=self.namespace, name_type=name_type
+            )
 
             # Create the new datum, internally this method will use the same number of items in arrays for all
             # attributes in the item type; also it will use the same number of map keys for all attributes of a map
             # value; assuming that both the array items and map values are avro record types
-            new_datum = _create_value(namespace=self.namespace, current_schema=self.schema, name_type_list=name_type_list, full_name_type=self.namespace)
+            new_datum = _create_value(
+                namespace=self.namespace,
+                current_schema=self.schema,
+                name_type_list=name_type_list,
+                full_name_type=self.namespace,
+            )
             # Some debug information
-            logging.debug("Datum for name-type '{}' is '{}'.".format(name_type, new_datum))
+            logging.debug(
+                "Datum for name-type '{}' is '{}'.".format(name_type, new_datum)
+            )
             data = Generator._add_datum(data, new_datum)
             logging.debug("Data is '{}'.".format(data))
 
@@ -797,9 +1023,15 @@ class Generator:
         """
         with open(out_filename, "wb") as out:
             # Open the writer
-            writer = DataFileWriter(out, DatumWriter(), writer_schema=Parse(self.json_schema), codec=codec)
+            writer = DataFileWriter(
+                out, DatumWriter(), writer_schema=Parse(self.json_schema), codec=codec
+            )
             for i_row in range(n_row):
-                writer.append(self._create_datum(update_order=update_order, dependent_names=dependent_names))
+                writer.append(
+                    self._create_datum(
+                        update_order=update_order, dependent_names=dependent_names
+                    )
+                )
             writer.close()
 
     @staticmethod
@@ -815,7 +1047,9 @@ class Generator:
         return Generator(json_schema)
 
     @staticmethod
-    def _write_data_part(data, out_filename, json_schema, codec, i_start_row, i_end_row):
+    def _write_data_part(
+        data, out_filename, json_schema, codec, i_start_row, i_end_row
+    ):
         """
         Write data part using avro-python3.
 
@@ -827,13 +1061,22 @@ class Generator:
         :param i_end_row: The last row (exclusive) where to stop writing data from.
         """
         with open(out_filename, "wb") as out:
-            writer = DataFileWriter(out, DatumWriter(), writer_schema=Parse(json_schema), codec=codec)
+            writer = DataFileWriter(
+                out, DatumWriter(), writer_schema=Parse(json_schema), codec=codec
+            )
             for i_row in range(i_start_row, i_end_row):
                 writer.append(data[i_row])
             writer.close()
 
     @staticmethod
-    def write_data(data, output_path, n_part, json_schema, codec="deflate", name_format="part-{:05d}.avro"):
+    def write_data(
+        data,
+        output_path,
+        n_part,
+        json_schema,
+        codec="deflate",
+        name_format="part-{:05d}.avro",
+    ):
         """
         Write the data to the output path in n_part parts.
 
@@ -851,17 +1094,27 @@ class Generator:
 
         # Check the input values
         if n_part > n_data:
-            raise ValueError("Number of parts '{}' < number of data '{}'".format(n_part, n_data))
+            raise ValueError(
+                "Number of parts '{}' < number of data '{}'".format(n_part, n_data)
+            )
         if n_part < 0:
-            raise ValueError("Number of parts is '{}' but must be > '{}'".format(n_part, 0))
+            raise ValueError(
+                "Number of parts is '{}' but must be > '{}'".format(n_part, 0)
+            )
         if n_data < 0:
-            raise ValueError("Number of data points is '{}' but must be > '{}'".format(n_data, 0))
+            raise ValueError(
+                "Number of data points is '{}' but must be > '{}'".format(n_data, 0)
+            )
 
         if not os.path.exists(output_path):
             logging.info("Creating output directory '{}'.".format(output_path))
             os.makedirs(output_path)
 
-        logging.info("Writing '{}' data points in '{}' parts to '{}'.".format(n_data, n_part, output_path))
+        logging.info(
+            "Writing '{}' data points in '{}' parts to '{}'.".format(
+                n_data, n_part, output_path
+            )
+        )
         n_row = n_data // n_part  # Number of rows for parts 0...n_part-1
         for i_part in range(n_part - 1):
             Generator._write_data_part(
