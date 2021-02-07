@@ -267,6 +267,11 @@ http_archive(
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
+    patch_cmds = [
+        # TODO: Remove the fowllowing once arrow issue is resolved.
+        """sed -i.bak 's/type_traits/std::max<int16_t>(sizeof(int16_t), type_traits/g' cpp/src/parquet/column_reader.cc""",
+        """sed -i.bak 's/value_byte_size/value_byte_size)/g' cpp/src/parquet/column_reader.cc""",
+    ],
     sha256 = "fc461c4f0a60e7470a7c58b28e9344aa8fb0be5cc982e9658970217e084c3a82",
     strip_prefix = "arrow-apache-arrow-3.0.0",
     urls = [
