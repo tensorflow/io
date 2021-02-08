@@ -8,18 +8,9 @@ cc_library(
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:inlined_vector",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:span",
     ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "tf_c_header_lib",
-    hdrs = [":tf_c_header_include"],
-    include_prefix = "tensorflow/c",
-    strip_include_prefix = "include_c",
     visibility = ["//visibility:public"],
 )
 
