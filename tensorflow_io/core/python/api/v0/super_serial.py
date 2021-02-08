@@ -176,36 +176,3 @@ def load(tfrecord_path, header_path):
     dataset = tf.data.TFRecordDataset(tfrecord_path).map(parse_func)
 
     return dataset
-
-
-def test():
-    """Test super serial saving and loading.
-    NOTE- test will only work in eager mode due to list() dataset cast."""
-    savefolder = tempfile.TemporaryDirectory()
-    savepath = os.path.join(savefolder.name, "temp_dataset")
-    tfrecord_path = savepath + ".tfrecord"
-    header_path = savepath + ".header"
-
-    # Data
-    x = np.linspace(1, 3000, num=3000).reshape(10, 10, 10, 3)
-    y = np.linspace(1, 10, num=10).astype(int)
-    ds = tf.data.Dataset.from_tensor_slices({"image": x, "label": y})
-
-    # Run
-    save(ds, tfrecord_path=tfrecord_path, header_path=header_path)
-    new_ds = load(tfrecord_path=tfrecord_path, header_path=header_path)
-
-    # Test that values were saved and restored
-    assert (
-        list(ds)[0]["image"].numpy()[0, 0, 0]
-        == list(new_ds)[0]["image"].numpy()[0, 0, 0]
-    )
-    assert list(ds)[0]["label"] != list(new_ds)[0]["label"]
-
-    # Clean up- folder will disappear on crash as well.
-    savefolder.cleanup()
-
-
-if __name__ == "__main__":
-    test()
-    print("Test passed.")
