@@ -18,6 +18,7 @@ import os
 import ctypes
 import sys
 import inspect
+import warnings
 import types
 
 import tensorflow as tf
@@ -95,5 +96,8 @@ try:
     plugin_ops = _load_library("libtensorflow_io_plugins.so", "fs")
 except NotImplementedError as e:
     # Note: load libtensorflow_io.so imperatively in case of statically linking
-    core_ops = _load_library("libtensorflow_io.so")
-    plugin_ops = _load_library("libtensorflow_io.so", "fs")
+    try:
+        core_ops = _load_library("libtensorflow_io.so")
+        plugin_ops = _load_library("libtensorflow_io.so", "fs")
+    except NotImplementedError as e:
+        warnings.warn("file system plugins are not loaded: {}".format(e))
