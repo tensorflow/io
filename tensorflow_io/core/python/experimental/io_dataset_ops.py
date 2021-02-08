@@ -171,7 +171,7 @@ class IODataset(io_dataset.IODataset):
         In case numpy file consists of unnamed elements, a tuple of numpy
         arrays are returned, otherwise a dict is returned for named
         elements.
-        ```
+
         Args:
           filename: filename of numpy file (npy or npz).
           spec: A tuple of tf.TensorSpec or dtype, or a dict of
