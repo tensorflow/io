@@ -33,8 +33,8 @@ def test_serialization():
     assert list(ds)[0]["label"] == list(new_ds)[0]["label"]
 
     assert (
-            list(ds)[-1]["image"].numpy()[0, 0, 0]
-            == list(new_ds)[-1]["image"].numpy()[0, 0, 0]
+        list(ds)[-1]["image"].numpy()[0, 0, 0]
+        == list(new_ds)[-1]["image"].numpy()[0, 0, 0]
     )
     assert list(ds)[-1]["label"] == list(new_ds)[-1]["label"]
 
