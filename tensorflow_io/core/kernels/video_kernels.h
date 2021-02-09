@@ -23,6 +23,7 @@ limitations under the License.
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 static int xioctl(int fh, int request, void* arg) {
   int r;
