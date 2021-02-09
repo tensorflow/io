@@ -145,8 +145,8 @@ http_archive(
     sha256 = "9452dadd126223a22ce6b97d202066d3873792aaefa7ce739519635a3fe34034",
     strip_prefix = "libgeotiff-1.6.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.6.0.zip",
-        "https://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.6.0.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/OSGeo/libgeotiff/releases/download/1.6.0/libgeotiff-1.6.0.zip",
+        "https://github.com/OSGeo/libgeotiff/releases/download/1.6.0/libgeotiff-1.6.0.zip",
     ],
 )
 
@@ -156,8 +156,8 @@ http_archive(
     sha256 = "219c6e11b2baa9a3e2bd7ec54ce19702909591032cf6f7d1004b406f10b7c9ad",
     strip_prefix = "proj-7.2.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/proj/proj-7.2.1.zip",
-        "https://download.osgeo.org/proj/proj-7.2.1.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/OSGeo/PROJ/releases/download/7.2.1/proj-7.2.1.zip",
+        "https://github.com/OSGeo/PROJ/releases/download/7.2.1/proj-7.2.1.zip",
     ],
 )
 
