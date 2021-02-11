@@ -35,8 +35,8 @@ def test_read_file():
     print("ADDRESS: {}".format(address))
 
     body = b"1234567"
-    tf.io.write_file("hdfse://{}:9000/file.txt".format(address), body)
+    tf.io.write_file("hdfs://{}:9000/file.txt".format(address), body)
 
-    content = tf.io.read_file("hdfse://{}:9000/file.txt".format(address))
+    content = tf.io.read_file("hdfs://{}:9000/file.txt".format(address))
     print("CONTENT: {}".format(content))
     assert content == body
