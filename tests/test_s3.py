@@ -55,7 +55,5 @@ def test_read_file():
     os.environ["S3_USE_HTTPS"] = "0"
     os.environ["S3_VERIFY_SSL"] = "0"
 
-    # TODO: The following is not working yet, need update to use
-    # s3 implementation with module file system
-    content = tf.io.read_file("s3e://{}/{}".format(bucket_name, key_name))
+    content = tf.io.read_file("s3://{}/{}".format(bucket_name, key_name))
     assert content == body
