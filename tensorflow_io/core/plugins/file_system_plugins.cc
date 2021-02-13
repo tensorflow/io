@@ -30,12 +30,25 @@ void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
                                              sizeof(info->ops[0])));
   tensorflow::io::az::ProvideFilesystemSupportFor(&info->ops[0], "az");
   tensorflow::io::http::ProvideFilesystemSupportFor(&info->ops[1], "http");
-  tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
   if (enable_legacy == "true" || enable_legacy == "1") {
+// TODO: enable on windows once tf-nightly releases windows build
+// that contains TF_ENABLE_LEGACY_FILESYSTEM.
+#if defined(_MSC_VER)
+    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3");
+#else
+    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
+#endif
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfse");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfse");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "hare");
   } else {
+// TODO: enable on windows once tf-nightly releases windows build
+// that contains TF_ENABLE_LEGACY_FILESYSTEM.
+#if defined(_MSC_VER)
+    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
+#else
+    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3");
+#endif
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "har");
