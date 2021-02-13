@@ -162,7 +162,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_13_x86_64
+          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -565,7 +565,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_13_x86_64 --nightly $BUILD_NUMBER
+          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
