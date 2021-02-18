@@ -4,8 +4,8 @@ The goal of this module is to create a SIMPLE api to tfrecords that can be used 
 learning all of the underlying mechanics.
 
 Users only need to deal with 2 functions:
-save(dataset)
-dataset = load(tfrecord, header)
+save_dataset(dataset)
+dataset = load_dataset(tfrecord, header)
 
 It really is that easy!
 
@@ -150,7 +150,7 @@ def dataset_to_examples(ds):
         yield example.SerializeToString()
 
 
-def save(dataset, tfrecord_path, header_path):
+def save_dataset(dataset, tfrecord_path, header_path):
     """Saves a flat dataset as a tfrecord file, and builds a header file for reloading as dataset."""
     # Header
     header = build_header(dataset)
@@ -166,7 +166,7 @@ def save(dataset, tfrecord_path, header_path):
 
 
 # TODO-DECIDE is this yaml loader safe?
-def load(tfrecord_path, header_path):
+def load_dataset(tfrecord_path, header_path):
     """Uses header file to predict the shape and dtypes of tensors for tf.data."""
     header_file = open(header_path)
     header = yaml.load(header_file, Loader=yaml.FullLoader)
