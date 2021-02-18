@@ -5,7 +5,7 @@ import tempfile
 import numpy as np
 import tensorflow as tf
 
-import tensorflow_io.core.python.api.v0.super_serial as ser
+import tensorflow_io.core.python.api.experimental.serialization as ser
 
 
 def test_serialization():
@@ -22,8 +22,8 @@ def test_serialization():
     ds = tf.data.Dataset.from_tensor_slices({"image": x, "label": y})
 
     # Run
-    ser.save(ds, tfrecord_path=tfrecord_path, header_path=header_path)
-    new_ds = ser.load(tfrecord_path=tfrecord_path, header_path=header_path)
+    ser.save_dataset(ds, tfrecord_path=tfrecord_path, header_path=header_path)
+    new_ds = ser.load_dataset(tfrecord_path=tfrecord_path, header_path=header_path)
 
     # Test that values were saved and restored
     assert (
