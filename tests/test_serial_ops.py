@@ -36,8 +36,12 @@ def test_serialization():
     ds = tf.data.Dataset.from_tensor_slices({"image": x, "label": y})
 
     # Run
-    tfio.experimental.serialization.save_dataset(ds, tfrecord_path=tfrecord_path, header_path=header_path)
-    new_ds = tfio.experimental.serialization.load_dataset(tfrecord_path=tfrecord_path, header_path=header_path)
+    tfio.experimental.serialization.save_dataset(
+        ds, tfrecord_path=tfrecord_path, header_path=header_path
+    )
+    new_ds = tfio.experimental.serialization.load_dataset(
+        tfrecord_path=tfrecord_path, header_path=header_path
+    )
 
     # Test that values were saved and restored
     assert (
