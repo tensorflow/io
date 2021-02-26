@@ -134,7 +134,7 @@ setuptools.setup(
     ],
     keywords="tensorflow io machine learning",
     packages=setuptools.find_packages(where=".", exclude=["tests"]),
-    python_requires=">=3.5, <3.9",
+    python_requires=">=3.5, <3.10",
     install_requires=[package],
     package_data={".": ["*.so"],},
     project_urls={
