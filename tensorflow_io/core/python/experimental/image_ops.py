@@ -208,3 +208,18 @@ def decode_jp2(contents, dtype=tf.uint8, name=None):
       A `Tensor` of type `uint8` and shape of `[height, width, 3]` (RGB).
     """
     return core_ops.io_decode_jpeg2k(contents, dtype=dtype, name=name)
+
+
+def decode_obj(contents, name=None):
+    """
+    Decode a Wavefront (obj) file into a float32 tensor.
+
+    Args:
+      contents: A 0-dimensional Tensor of type string, i.e the
+        content of the Wavefront (.obj) file.
+      name: A name for the operation (optional).
+
+    Returns:
+      A `Tensor` of type `float32` and shape of `[n, 3]` for vertices.
+    """
+    return core_ops.io_decode_obj(contents, name=name)
