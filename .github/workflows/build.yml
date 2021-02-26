@@ -252,7 +252,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -281,16 +281,10 @@ jobs:
   linux-test:
     name: Test ${{ matrix.python }} Linux
     needs: linux-wheel
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
-        python: ['3.7', '3.8']
-        exclude:
-          - os: ubuntu-18.04
-            python: '3.8'
-          - os: ubuntu-20.04
-            python: '3.7'
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -317,7 +311,7 @@ jobs:
           set -x -e
           df -h
           docker run -i --rm -v $PWD:/v -w /v --net=host \
-            buildpack-deps:$(echo ${{ matrix.os }} | awk -F- '{print $2}') \
+            buildpack-deps:20.04 \
             bash -x -e .github/workflows/build.wheel.sh python${{ matrix.python }}
 
   windows-bazel:
@@ -471,6 +465,10 @@ jobs:
           path: Linux-3.8-wheel
       - uses: actions/download-artifact@v1
         with:
+          name: Linux-3.9-wheel
+          path: Linux-3.9-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: Windows-3.6-wheel
           path: Windows-3.6-wheel
       - uses: actions/download-artifact@v1
@@ -490,6 +488,7 @@ jobs:
           cp Linux-3.6-wheel/*.whl wheelhouse/
           cp Linux-3.7-wheel/*.whl wheelhouse/
           cp Linux-3.8-wheel/*.whl wheelhouse/
+          cp Linux-3.9-wheel/*.whl wheelhouse/
           cp Windows-3.6-wheel/*.whl wheelhouse/
           cp Windows-3.7-wheel/*.whl wheelhouse/
           cp Windows-3.8-wheel/*.whl wheelhouse/
@@ -585,11 +584,10 @@ jobs:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
     needs: [build-number, release]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ubuntu-18.04]
-        python: ['3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -687,6 +685,10 @@ jobs:
           path: Linux-3.8-nightly
       - uses: actions/download-artifact@v1
         with:
+          name: Linux-3.9-nightly
+          path: Linux-3.9-nightly
+      - uses: actions/download-artifact@v1
+        with:
           name: Windows-3.6-nightly
           path: Windows-3.6-nightly
       - uses: actions/download-artifact@v1
@@ -706,6 +708,7 @@ jobs:
           cp Linux-3.6-nightly/*.whl dist/
           cp Linux-3.7-nightly/*.whl dist/
           cp Linux-3.8-nightly/*.whl dist/
+          cp Linux-3.9-nightly/*.whl dist/
           cp Windows-3.6-nightly/*.whl dist/
           cp Windows-3.7-nightly/*.whl dist/
           cp Windows-3.8-nightly/*.whl dist/
