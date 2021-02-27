@@ -364,7 +364,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -393,7 +393,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -479,6 +479,10 @@ jobs:
         with:
           name: Windows-3.8-wheel
           path: Windows-3.8-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.9-wheel
+          path: Windows-3.9-wheel
       - run: |
           set -e -x
           mkdir -p wheelhouse
@@ -492,6 +496,7 @@ jobs:
           cp Windows-3.6-wheel/*.whl wheelhouse/
           cp Windows-3.7-wheel/*.whl wheelhouse/
           cp Windows-3.8-wheel/*.whl wheelhouse/
+          cp Windows-3.9-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
       - uses: actions/upload-artifact@v1
@@ -625,7 +630,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', 3.8]
+        python: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -699,6 +704,10 @@ jobs:
         with:
           name: Windows-3.8-nightly
           path: Windows-3.8-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.9-nightly
+          path: Windows-3.9-nightly
       - run: |
           set -e -x
           mkdir -p dist
@@ -712,6 +721,7 @@ jobs:
           cp Windows-3.6-nightly/*.whl dist/
           cp Windows-3.7-nightly/*.whl dist/
           cp Windows-3.8-nightly/*.whl dist/
+          cp Windows-3.9-nightly/*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
