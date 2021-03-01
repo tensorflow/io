@@ -77,7 +77,9 @@ def graph_save_fail():
 
     # Run
     assert os.path.isdir(savefolder.name)
-    save(ds, tfrecord_path=tfrecord_path, header_path=header_path)
+    tfio.experimental.serialization.save_dataset(
+        ds, tfrecord_path=tfrecord_path, header_path=header_path
+    )
 
 
 def test_ensure_graph_fail():
