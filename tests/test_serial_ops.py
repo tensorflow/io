@@ -58,3 +58,26 @@ def test_serialization():
 
     # Clean up- folder will disappear on crash as well.
     savefolder.cleanup()
+
+@tf.function
+def graph_save_fail():
+    """Serial ops is expected to raise an exception when
+    trying to save in graph mode."""
+    savefolder = tempfile.TemporaryDirectory()
+    savepath = os.path.join(savefolder.name, "temp_dataset")
+    tfrecord_path = savepath + ".tfrecord"
+    header_path = savepath + ".header"
+
+    # Data
+    x = np.linspace(1, 3000, num=3000).reshape(10, 10, 10, 3)
+    y = np.linspace(1, 10, num=10).astype(int)
+    ds = tf.data.Dataset.from_tensor_slices({"image": x, "label": y})
+
+    # Run
+    assert os.path.isdir(savefolder.name)
+    save(ds, tfrecord_path=tfrecord_path, header_path=header_path)
+
+def test_ensure_graph_fail():
+    """Test that super_serial fails in graph mode."""
+    with pytest.raises(tf.python.framework.errors_impl.NotFoundError):
+        graph_save_fail()
