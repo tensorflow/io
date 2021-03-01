@@ -59,6 +59,7 @@ def test_serialization():
     # Clean up- folder will disappear on crash as well.
     savefolder.cleanup()
 
+
 @tf.function
 def graph_save_fail():
     """Serial ops is expected to raise an exception when
@@ -76,6 +77,7 @@ def graph_save_fail():
     # Run
     assert os.path.isdir(savefolder.name)
     save(ds, tfrecord_path=tfrecord_path, header_path=header_path)
+
 
 def test_ensure_graph_fail():
     """Test that super_serial fails in graph mode."""
