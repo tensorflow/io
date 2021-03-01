@@ -59,3 +59,5 @@ def test_serialization():
     # Clean up- folder will disappear on crash as well.
     savefolder.cleanup()
 
+lta = datetime.timedelta(seconds=5)
+	current_time = datetime.datetime.now()
