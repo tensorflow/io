@@ -19,7 +19,7 @@ set -o pipefail
 
 HADOOP_VERSION=2.7.0
 docker pull sequenceiq/hadoop-docker:$HADOOP_VERSION
-docker run -d --rm --net=host --name=tensorflow-io-hdfs sequenceiq/hadoop-docker:$HADOOP_VERSION
+docker run -d --rm -p 9000:9000 --name=tensorflow-io-hdfs sequenceiq/hadoop-docker:$HADOOP_VERSION
 echo "Waiting for 30 secs until hadoop is up and running"
 sleep 30
 docker logs tensorflow-io-hdfs
