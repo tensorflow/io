@@ -12,8 +12,6 @@ cc_library(
     srcs = [
         "cleanup.h",
         "expiring_lru_cache.h",
-        "gcs_env.cc",
-        "gcs_env.h",
         "gcs_filesystem.cc",
         "gcs_helper.cc",
         "gcs_helper.h",
