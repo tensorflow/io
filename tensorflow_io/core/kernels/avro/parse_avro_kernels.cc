@@ -190,6 +190,7 @@ Status ParseAvro(const AvroParserConfig& config,
 
   // This parameter affects performance in a big and data-dependent way.
   const size_t kMiniBatchSizeBytes = 50000;
+  size_t avro_num_minibatches_;
 
   // Calculate number of minibatches.
   // In main regime make each minibatch around kMiniBatchSizeBytes bytes.
@@ -206,10 +207,9 @@ Status ParseAvro(const AvroParserConfig& config,
         minibatch_bytes = 0;
       }
     }
-    if (const char* n_minibatches =
-            std::getenv("AVRO_PARSER_NUM_MINIBATCHES")) {
-      VLOG(5) << "Overriding num_minibatches with " << n_minibatches;
-      result = std::stoi(n_minibatches);
+    if (avro_num_minibatches_) {
+      VLOG(5) << "Overriding num_minibatches with " << avro_num_minibatches_;
+      result = avro_num_minibatches_;
     }
     // This is to ensure users can control the num minibatches all the way down
     // to size of 1(no parallelism).
@@ -406,6 +406,8 @@ class ParseAvroOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_types", &sparse_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_types", &dense_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_shapes", &dense_shapes_));
+    OP_REQUIRES_OK(
+        ctx, ctx->GetAttr("avro_num_minibatches", &avro_num_minibatches_));
 
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_keys", &sparse_keys_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_keys", &dense_keys_));
@@ -418,6 +420,11 @@ class ParseAvroOp : public OpKernel {
       variable_length_[d] =
           dense_shapes_[d].dims() > 1 && dense_shapes_[d].dim_size(0) == -1;
     }
+
+    // Check that avro_num_minibatches is positive
+    OP_REQUIRES(ctx, avro_num_minibatches_ >= 0,
+                errors::InvalidArgument("Need avro_num_minibatches >= 0, got ",
+                                        avro_num_minibatches_));
 
     string reader_schema_str;
     OP_REQUIRES_OK(ctx, ctx->GetAttr("reader_schema", &reader_schema_str));
@@ -513,6 +520,7 @@ class ParseAvroOp : public OpKernel {
   avro::ValidSchema reader_schema_;
   size_t num_dense_;
   size_t num_sparse_;
+  int64 avro_num_minibatches_;
 
  private:
   std::vector<std::pair<string, DataType>> CreateKeysAndTypes() {

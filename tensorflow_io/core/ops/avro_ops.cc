@@ -83,6 +83,7 @@ REGISTER_OP("IO>ParseAvro")
     .Output("sparse_values: sparse_types")
     .Output("sparse_shapes: num_sparse * int64")
     .Output("dense_values: dense_types")
+    .Attr("avro_num_minibatches: int >= 0")
     .Attr("num_sparse: int >= 0")
     .Attr("reader_schema: string")
     .Attr("sparse_keys: list(string) >= 0")
@@ -94,6 +95,7 @@ REGISTER_OP("IO>ParseAvro")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       size_t num_dense;
       size_t num_sparse;
+      int64 avro_num_minibatches;
       int64 num_sparse_from_user;
       std::vector<DataType> sparse_types;
       std::vector<DataType> dense_types;
@@ -106,6 +108,8 @@ REGISTER_OP("IO>ParseAvro")
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_types", &sparse_types));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_types", &dense_types));
       TF_RETURN_IF_ERROR(c->GetAttr("dense_shapes", &dense_shapes));
+      TF_RETURN_IF_ERROR(
+          c->GetAttr("avro_num_minibatches", &avro_num_minibatches));
 
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_keys", &sparse_keys));
       TF_RETURN_IF_ERROR(c->GetAttr("sparse_ranks", &sparse_ranks));
