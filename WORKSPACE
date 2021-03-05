@@ -1110,3 +1110,14 @@ http_archive(
         "https://github.com/mongodb/mongo-c-driver/releases/download/1.16.2/mongo-c-driver-1.16.2.tar.gz",
     ],
 )
+
+http_archive(
+    name = "tinyobjloader",
+    build_file = "//third_party:tinyobjloader.BUILD",
+    sha256 = "b8c972dfbbcef33d55554e7c9031abe7040795b67778ad3660a50afa7df6ec56",
+    strip_prefix = "tinyobjloader-2.0.0rc8",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/tinyobjloader/tinyobjloader/archive/v2.0.0rc8.tar.gz",
+        "https://github.com/tinyobjloader/tinyobjloader/archive/v2.0.0rc8.tar.gz",
+    ],
+)
