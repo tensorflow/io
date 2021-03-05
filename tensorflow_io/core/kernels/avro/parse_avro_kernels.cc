@@ -207,10 +207,9 @@ Status ParseAvro(const AvroParserConfig& config,
         minibatch_bytes = 0;
       }
     }
-    if (const char* n_minibatches =
-            std::getenv("AVRO_PARSER_NUM_MINIBATCHES")) {
-      VLOG(5) << "Overriding num_minibatches with " << n_minibatches;
-      result = std::stoi(n_minibatches);
+    if (avro_num_minibatches_) {
+      VLOG(5) << "Overriding num_minibatches with " << avro_num_minibatches_;
+      result = avro_num_minibatches_;
     }
     // This is to ensure users can control the num minibatches all the way down
     // to size of 1(no parallelism).
