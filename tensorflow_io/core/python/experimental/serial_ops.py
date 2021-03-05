@@ -26,6 +26,8 @@ It really is that easy!
 To make this work, we create a .header file for each tfrecord which encodes metadata
 needed to reconstruct the original dataset.
 
+Note that PyYAML (yaml) package must be installed to make use of this module.
+
 Saving must be done in eager mode, but loading is compatible with both eager and
 graph execution modes.
 
@@ -39,7 +41,6 @@ import os
 import tempfile
 
 import numpy as np
-import yaml
 import tensorflow as tf
 
 
@@ -166,6 +167,8 @@ def dataset_to_examples(ds):
 
 def save_dataset(dataset, tfrecord_path, header_path):
     """Saves a flat dataset as a tfrecord file, and builds a header file for reloading as dataset."""
+    import yaml
+
     # Header
     header = build_header(dataset)
     header_file = open(header_path, "w")
@@ -182,6 +185,8 @@ def save_dataset(dataset, tfrecord_path, header_path):
 # TODO-DECIDE is this yaml loader safe?
 def load_dataset(tfrecord_path, header_path):
     """Uses header file to predict the shape and dtypes of tensors for tf.data."""
+    import yaml
+
     header_file = open(header_path)
     header = yaml.load(header_file, Loader=yaml.FullLoader)
 
