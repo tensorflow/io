@@ -695,6 +695,22 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "obj_ops",
+    srcs = [
+        "kernels/obj_kernels.cc",
+        "ops/obj_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+        "@tinyobjloader",
+    ],
+    alwayslink = 1,
+)
+
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
@@ -717,6 +733,7 @@ cc_binary(
         "//tensorflow_io/core:parquet_ops",
         "//tensorflow_io/core:pcap_ops",
         "//tensorflow_io/core:pulsar_ops",
+        "//tensorflow_io/core:obj_ops",
         "//tensorflow_io/core:operation_ops",
         "//tensorflow_io/core:pubsub_ops",
         "//tensorflow_io/core:serialization_ops",
