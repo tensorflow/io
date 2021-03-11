@@ -84,5 +84,5 @@ def graph_save_fail():
 
 def test_ensure_graph_fail():
     """Test that super_serial fails in graph mode."""
-    with pytest.raises(tf.errors.NotFoundError):
+    with pytest.raises(ValueError):
         graph_save_fail()

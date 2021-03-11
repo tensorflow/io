@@ -156,6 +156,10 @@ def dataset_to_examples(ds):
     WARNING: Only compatible with "dictionary-style" datasets {key: val, key2:val2,..., keyN, valN}.
     WARNING: Must run in eager mode!"""
     # TODO handle tuples and flat datasets as well.
+
+    if not tf.executing_eagerly():
+        raise ValueError("dataset_to_examples() must run in eager mode!")
+
     for x in ds:
         # Each individual tensor is converted to a known serializable type.
         features = {key: np_value_to_feature(value.numpy()) for key, value in x.items()}
