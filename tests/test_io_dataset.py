@@ -194,7 +194,7 @@ def fixture_pubsub(request):
 
     def func(q):
         v = tfio.experimental.IODataset.stream().from_pubsub(
-            q, endpoint="http://localhost:8085", timeout=5000
+            q, endpoint="localhost:8085", timeout=5000
         )
         v = v.map(lambda e: e.data)
         return v

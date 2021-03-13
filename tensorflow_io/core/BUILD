@@ -446,9 +446,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
-        "@com_github_grpc_grpc//:grpc++",
-        "@com_google_absl//absl/time",
-        "@com_google_googleapis//google/pubsub/v1:pubsub_cc_grpc",
+        "@com_github_googleapis_google_cloud_cpp//:pubsub_client",
     ],
     alwayslink = 1,
 )
