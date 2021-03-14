@@ -24,9 +24,11 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 # Read the MNIST data into the IODataset.
+dataset_url = "http://storage.googleapis.com/cvdf-datasets/mnist/"
 d_train = tfio.IODataset.from_mnist(
-    'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-    'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz')
+    dataset_url + "train-images-idx3-ubyte.gz",
+    dataset_url + "train-labels-idx1-ubyte.gz",
+)
 
 # Shuffle the elements of the dataset.
 d_train = d_train.shuffle(buffer_size=1024)
@@ -38,17 +40,19 @@ d_train = d_train.map(lambda x, y: (tf.image.convert_image_dtype(x, tf.float32),
 d_train = d_train.batch(32)
 
 # Build the model.
-model = tf.keras.models.Sequential([
-  tf.keras.layers.Flatten(input_shape=(28, 28)),
-  tf.keras.layers.Dense(512, activation=tf.nn.relu),
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(10, activation=tf.nn.softmax)
-])
+model = tf.keras.models.Sequential(
+    [
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(512, activation=tf.nn.relu),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(10, activation=tf.nn.softmax),
+    ]
+)
 
 # Compile the model.
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+model.compile(
+    optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+)
 
 # Fit the model.
 model.fit(d_train, epochs=5, steps_per_epoch=200)
