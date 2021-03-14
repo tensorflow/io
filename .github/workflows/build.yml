@@ -88,21 +88,6 @@ jobs:
           docker run -i --rm -v $PWD:/v -w /v --net=host \
             -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
             ubuntu:20.04 bash -x -e source.sh
-      - name: CentOS 7
-        run: |
-          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
-            printf '%s\n' "${GCP_CREDS}" >service_account_creds.json
-            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-          else
-            export BAZEL_OPTIMIZATION="--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
-          fi
-          set -x -e
-          bash -x -e .github/workflows/build.space.sh
-          python3 .github/workflows/build.instruction.py docs/development.md "##### CentOS 7" > source.sh
-          cat source.sh
-          docker run -i --rm -v $PWD:/v -w /v --net=host \
-            -e BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" \
-            centos:7 bash -x -e source.sh
 
   macos-bazel:
     name: Bazel macOS
