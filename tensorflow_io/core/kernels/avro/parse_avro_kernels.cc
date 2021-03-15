@@ -190,6 +190,9 @@ Status ParseAvro(const AvroParserConfig& config,
 
   // This parameter affects performance in a big and data-dependent way.
   const size_t kMiniBatchSizeBytes = 50000;
+
+  // avro_num_minibatches_ is int64 in the op interface. If not set
+  // the default value is 0.
   size_t avro_num_minibatches_;
 
   // Calculate number of minibatches.
@@ -421,7 +424,7 @@ class ParseAvroOp : public OpKernel {
           dense_shapes_[d].dims() > 1 && dense_shapes_[d].dim_size(0) == -1;
     }
 
-    // Check that avro_num_minibatches is positive
+    // Check that avro_num_minibatches is not negative
     OP_REQUIRES(ctx, avro_num_minibatches_ >= 0,
                 errors::InvalidArgument("Need avro_num_minibatches >= 0, got ",
                                         avro_num_minibatches_));
