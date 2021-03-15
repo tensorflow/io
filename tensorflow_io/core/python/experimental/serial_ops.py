@@ -156,6 +156,7 @@ def dataset_to_examples(ds):
     WARNING: Only compatible with "dictionary-style" datasets {key: val, key2:val2,..., keyN, valN}.
     WARNING: Must run in eager mode!"""
     # TODO handle tuples and flat datasets as well.
+    assert not tf.executing_eagerly()
 
     if not tf.executing_eagerly():
         raise ValueError("dataset_to_examples() must run in eager mode!")
