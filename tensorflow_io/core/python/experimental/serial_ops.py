@@ -156,11 +156,6 @@ def dataset_to_examples(ds):
     WARNING: Only compatible with "dictionary-style" datasets {key: val, key2:val2,..., keyN, valN}.
     WARNING: Must run in eager mode!"""
     # TODO handle tuples and flat datasets as well.
-    assert not tf.executing_eagerly()
-
-    if not tf.executing_eagerly():
-        raise ValueError("dataset_to_examples() must run in eager mode!")
-
     for x in ds:
         # Each individual tensor is converted to a known serializable type.
         features = {key: np_value_to_feature(value.numpy()) for key, value in x.items()}
@@ -171,8 +166,12 @@ def dataset_to_examples(ds):
 
 
 def save_dataset(dataset, tfrecord_path, header_path):
-    """Saves a flat dataset as a tfrecord file, and builds a header file for reloading as dataset."""
+    """Saves a flat dataset as a tfrecord file, and builds a header file for reloading as dataset.
+    Must run in eager mode because it depends on dataset iteration and element_spec."""
     import yaml
+
+    if not tf.executing_eagerly():
+        raise ValueError("save_dataset() must run in eager mode!")
 
     # Header
     header = build_header(dataset)
