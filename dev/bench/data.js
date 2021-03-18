@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1616084501147,
+  "lastUpdate": 1616097807156,
   "repoUrl": "https://github.com/tensorflow/io",
   "entries": {
     "Tensorflow-IO Benchmarks": [
@@ -10824,6 +10824,170 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.00019086679684979758",
             "extra": "mean: 1.2545136455150747 msec\nrounds: 457"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "reachchaim@gmail.com",
+            "name": "markemus",
+            "username": "markemus"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d65cc6605fa9df871784a453e9e0a854256339ac",
+          "message": "Super Serial- automatically save and load TFRecords from Tensorflow datasets (#1280)\n\n* super_serial automatically creates TFRecords files from dictionary-style Tensorflow datasets.\r\n\r\n* pep8 fixes\r\n\r\n* more pep8 (undoing tensorflow 2 space tabs)\r\n\r\n* bazel changes\r\n\r\n* small change so github checks will run again\r\n\r\n* moved super_serial test to tests/\r\n\r\n* bazel changes\r\n\r\n* moved super_serial to experimental\r\n\r\n* refactored super_serial test to work for serial_ops\r\n\r\n* bazel fixes\r\n\r\n* refactored test to load from tfio instead of full import path\r\n\r\n* licenses\r\n\r\n* bazel fixes\r\n\r\n* fixed license dates for new files\r\n\r\n* small change so tests rerun\r\n\r\n* small change so tests rerun\r\n\r\n* cleanup and bazel fix\r\n\r\n* added test to ensure proper crash occurs when trying to save in graph mode\r\n\r\n* bazel fixes\r\n\r\n* fixed imports for test\r\n\r\n* fixed imports for test\r\n\r\n* fixed yaml imports for serial_ops\r\n\r\n* fixed error path for new tf version\r\n\r\n* prevented flaky behavior in graph mode for serial_ops.py by preemptively raising an exception if graph mode is detected.\r\n\r\n* sanity check for graph execution in graph_save_fail()\r\n\r\n* it should be impossible for serial_ops not to raise an exception now outside of eager mode. Impossible.\r\n\r\n* moved eager execution check in serial_ops",
+          "timestamp": "2021-03-18T12:54:18-07:00",
+          "tree_id": "03bf0fee04f313f6f51bce93be31fbf663961389",
+          "url": "https://github.com/tensorflow/io/commit/d65cc6605fa9df871784a453e9e0a854256339ac"
+        },
+        "date": 1616097806528,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[mnist]",
+            "value": 3.648562819758071,
+            "unit": "iter/sec",
+            "range": "stddev: 0.004838633803062808",
+            "extra": "mean: 274.08052140001473 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[lmdb]",
+            "value": 25.94695177883436,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0014073083985817086",
+            "extra": "mean: 38.540172599994094 msec\nrounds: 10"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav]]",
+            "value": 1.274023575871555,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05247067073448068",
+            "extra": "mean: 784.914831199967 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav|s24]]",
+            "value": 1.2700129636598692,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05824173126009415",
+            "extra": "mean: 787.3935373999984 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[flac]]",
+            "value": 1.231205502112406,
+            "unit": "iter/sec",
+            "range": "stddev: 0.061803703195695815",
+            "extra": "mean: 812.2120947999974 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[vorbis]]",
+            "value": 0.4789628786885529,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04704294590034843",
+            "extra": "mean: 2.08784447500002 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[mp3]]",
+            "value": 0.3705099461327575,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04405127634270361",
+            "extra": "mean: 2.698982876000014 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[hdf5]",
+            "value": 0.718160268238277,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05916557318044653",
+            "extra": "mean: 1.3924468453999908 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy]",
+            "value": 3.459895656771268,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05848025420209442",
+            "extra": "mean: 289.02605719999883 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[structure]]",
+            "value": 1.9911371966580254,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06770997842786375",
+            "extra": "mean: 502.22556319997693 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/tuple]]",
+            "value": 1.8414769794160848,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06560092479815702",
+            "extra": "mean: 543.0423574000315 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/dict]]",
+            "value": 1.939139616038702,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06814702122898007",
+            "extra": "mean: 515.6926256000133 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[sql]",
+            "value": 22.864865918236035,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006626563656492176",
+            "extra": "mean: 43.73522257143187 msec\nrounds: 7"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav]]",
+            "value": 5260.933851823147,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011738716788257132",
+            "extra": "mean: 190.08032189065744 usec\nrounds: 2243"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav|s24]]",
+            "value": 3780.2198852141078,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000012458121057425462",
+            "extra": "mean: 264.5348763735634 usec\nrounds: 2548"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[flac]]",
+            "value": 891.9549514732826,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00009695793291414386",
+            "extra": "mean: 1.1211328535687306 msec\nrounds: 799"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[vorbis]]",
+            "value": 476.2688209733824,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000051089636014283115",
+            "extra": "mean: 2.0996545563411715 msec\nrounds: 426"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[mp3]]",
+            "value": 1506.4711881062813,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000454819368543068",
+            "extra": "mean: 663.8029375504061 usec\nrounds: 1265"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[hdf5]",
+            "value": 671.9003189397126,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000040817029580192644",
+            "extra": "mean: 1.4883160073179347 msec\nrounds: 410"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[arrow]",
+            "value": 1123.4952236594336,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000028441776975868014",
+            "extra": "mean: 890.0794404294959 usec\nrounds: 747"
           }
         ]
       }
