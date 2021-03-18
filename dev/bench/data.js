@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1615745264714,
+  "lastUpdate": 1616084501147,
   "repoUrl": "https://github.com/tensorflow/io",
   "entries": {
     "Tensorflow-IO Benchmarks": [
@@ -10660,6 +10660,170 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.00003353766071220882",
             "extra": "mean: 881.6647997411549 usec\nrounds: 774"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ionyeneho@linkedin.com",
+            "name": "Irene Onyeneho",
+            "username": "StanfordMCP"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5fac573eed60e8ec1ec31ccad50423f2da27f92",
+          "message": "Adds AVRO_PARSER_NUM_MINIBATCH to override num_minibatches and logs the parsing time (#1283)\n\n* Exposes num_parallel_reads and num_parallel_calls\r\n\r\n-Exposes `num_parallel_reads` and `num_parallel_calls` in AvroRecordDataset and `make_avro_record_dataset`\r\n-Adds parameter constraints\r\n-Fixes lint issues\r\n-Adds test method for _require() function\r\n-This update adds a test to check if ValueErrors\r\nare raised when given an invalid input for num_parallel_calls\r\n\r\n* Bump Apache Arrow to 2.0.0 (#1231)\r\n\r\n* Bump Apache Arrow to 2.0.0\r\n\r\nAlso bumps Apache Thrift to 0.13.0\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Update code to match Arrow\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Bump pyarrow to 2.0.0\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Stay with version=1 for write_feather to pass tests\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Bump flatbuffers to 1.12.0\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Fix Windows issue\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Fix tests\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Fix Windows\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Remove -std=c++11 and leave default -std=c++14 for arrow build\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Update sha256 of libapr1\r\n\r\nAs the hash changed by the repo.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add emulator for gcs (#1234)\r\n\r\n* Bump com_github_googleapis_google_cloud_cpp to `1.21.0`\r\n\r\n* Add gcs testbench\r\n\r\n* Bump `libcurl` to `7.69.1`\r\n\r\n* Remove the CI build for CentOS 8 (#1237)\r\n\r\nBuilding shared libraries on CentOS 8 is pretty much the same as\r\non Ubuntu 20.04 except `apt` should be changed to `yum`. For that\r\nour CentOS 8 CI test is not adding a lot of value.\r\n\r\nFurthermore with the upcoming CentOS 8 change:\r\nhttps://www.phoronix.com/scan.php?page=news_item&px=CentOS-8-Ending-For-Stream\r\n\r\nCentOS 8 is effectively EOLed at 2021.\r\n\r\nFor that we may want to drop the CentOS 8 build (only leave a comment in README.md)\r\n\r\nNote we keep CentOS 7 build for now as there are still many users using\r\nCentOS 7 and CentOS 7 will only be EOLed at 2024. We might drop CentOS 7 build in\r\nthe future as well if there is similiar changes to CentOS 7 like CentOS 8.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* add tf-c-header rule (#1244)\r\n\r\n* Skip  tf-nightly:tensorflow-io==0.17.0 on API compatibility test (#1247)\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* [s3] add support for testing on macOS (#1253)\r\n\r\n* [s3] add support for testing on macOS\r\n\r\n* modify docker-compose cmd\r\n\r\n* add notebook formatting instruction in README (#1256)\r\n\r\n* [docs] Restructure README.md content (#1257)\r\n\r\n* Refactor README.md content\r\n\r\n* bump to run ci jobs\r\n\r\n* Update libtiff/libgeotiff dependency (#1258)\r\n\r\nThis PR updates libtiff/libgeotiff to the latest version.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* remove unstable elasticsearch test setup on macOS (#1263)\r\n\r\n* Exposes num_parallel_reads and num_parallel_calls (#1232)\r\n\r\n-Exposes `num_parallel_reads` and `num_parallel_calls` in AvroRecordDataset and `make_avro_record_dataset`\r\n-Adds parameter constraints\r\n-Fixes lint issues\r\n- Adds test method for _require() function\r\n-This update adds a test to check if ValueErrors\r\nare raised when given an invalid input for num_parallel_calls\r\n\r\nCo-authored-by: Abin Shahab <ashahab@linkedin.com>\r\n\r\n* Added AVRO_PARSER_NUM_MINIBATCH to override num_minibatches\r\n\r\nAdded AVRO_PARSER_NUM_MINIBATCH to override num_minibatches. This is recommended to be set equal to the vcore request.\r\n\r\n* Exposes num_parallel_reads and num_parallel_calls (#1232)\r\n\r\n* Exposes num_parallel_reads and num_parallel_calls\r\n\r\n-Exposes `num_parallel_reads` and `num_parallel_calls` in AvroRecordDataset and `make_avro_record_dataset`\r\n-Adds parameter constraints\r\n-Fixes lint issues\r\n\r\n* Exposes num_parallel_reads and num_parallel_calls\r\n\r\n-Exposes `num_parallel_reads` and `num_parallel_calls` in AvroRecordDataset and `make_avro_record_dataset`\r\n-Adds parameter constraints\r\n-Fixes lint issues\r\n\r\n* Exposes num_parallel_reads and num_parallel_calls\r\n\r\n-Exposes `num_parallel_reads` and `num_parallel_calls` in AvroRecordDataset and `make_avro_record_dataset`\r\n-Adds parameter constraints\r\n-Fixes lint issues\r\n\r\n* Fixes Lint Issues\r\n\r\n* Removes Optional typing for method parameter\r\n\r\n-\r\n\r\n* Adds test method for _require() function\r\n\r\n-This update adds a test to check if ValueErrors\r\nare raised when given an invalid input for num_parallel_calls\r\n\r\n* Uncomments skip for macOS pytests\r\n\r\n* Fixes Lint issues\r\n\r\nCo-authored-by: Abin Shahab <ashahab@linkedin.com>\r\n\r\n* add avro tutorial testing data (#1267)\r\n\r\nCo-authored-by: Cheng Ren <1428327+chengren311@users.noreply.github.com>\r\n\r\n* Update Kafka tutorial to work with Apache Kafka (#1266)\r\n\r\n* Update Kafka tutorial to work with Apache Kafka\r\n\r\nMinor update to the Kafka tutorial to remove the dependency on\r\nConfluent's distribution of Kafka, and instead work with vanilla\r\nApache Kafka.\r\n\r\nSigned-off-by: Dale Lane <dale.lane@uk.ibm.com>\r\n\r\n* Address review comments\r\n\r\nRemove redundant pip install commands\r\n\r\nSigned-off-by: Dale Lane <dale.lane@gmail.com>\r\n\r\n* add github workflow for performance benchmarking (#1269)\r\n\r\n* add github workflow for performance benchmarking\r\n\r\n* add github-action-benchmark step\r\n\r\n* handle missing dependencies while benchmarking (#1271)\r\n\r\n* handle missing dependencies while benchmarking\r\n\r\n* setup test_sql\r\n\r\n* job name change\r\n\r\n* set auto-push to true\r\n\r\n* remove auto-push\r\n\r\n* add personal access token\r\n\r\n* use alternate method to push to gh-pages\r\n\r\n* add name to the action\r\n\r\n* use different id\r\n\r\n* modify creds\r\n\r\n* use github_token\r\n\r\n* change repo name\r\n\r\n* set auto-push\r\n\r\n* set origin and push results\r\n\r\n* set env\r\n\r\n* use PERSONAL_GITHUB_TOKEN\r\n\r\n* use push changes action\r\n\r\n* use github.head_ref to push the changes\r\n\r\n* try using fetch-depth\r\n\r\n* modify branch name\r\n\r\n* use alternative push approach\r\n\r\n* git switch -\r\n\r\n* test by merging with forked master\r\n\r\n* Disable s3 macOS for now as docker is not working on GitHub Actions for macOS (#1277)\r\n\r\n* Revert \"[s3] add support for testing on macOS (#1253)\"\r\n\r\nThis reverts commit 81789bde99e62523ca4d9f460bb345c666902acd.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Update\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* rename testing data files (#1278)\r\n\r\n* Add tutorial for avro dataset API (#1250)\r\n\r\n* remove docker based mongodb tests in macos (#1279)\r\n\r\n* trigger benchmarks workflow only on commits (#1282)\r\n\r\n* Bump Apache Arrow to 3.0.0 (#1285)\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add bazel cache (#1287)\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add initial bigtable stub test (#1286)\r\n\r\n* Add initial bigtable stub test\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Fix kokoro test\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add reference to github-pages benchmarks in README (#1289)\r\n\r\n* add reference to github-pages benchmarks\r\n\r\n* minor grammar change\r\n\r\n* Update README.md\r\n\r\nCo-authored-by: Yuan Tang <terrytangyuan@gmail.com>\r\n\r\nCo-authored-by: Yuan Tang <terrytangyuan@gmail.com>\r\n\r\n* Clear outputs (#1292)\r\n\r\n* fix kafka online-learning section in tutorial notebook (#1274)\r\n\r\n* kafka notebook fix for colab env\r\n\r\n* change timeout from 30 to 20 seconds\r\n\r\n* reduce stream_timeout\r\n\r\n* Only enable bazel caching writes for tensorflow/io github actions (#1293)\r\n\r\nThis PR updates so that only GitHub actions run on\r\ntensorflow/io repo will be enabled with bazel cache writes.\r\n\r\nWithout the updates, a focked repo actions will cause error.\r\n\r\nNote once bazel cache read-permissions are enabled from gcs\r\nforked repo will be able to access bazel cache (read-only).\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Enable ready-only bazel cache (#1294)\r\n\r\nThis PR enables read-only bazel cache\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Rename tests (#1297)\r\n\r\n* Combine Ubuntu 20.04 and CentOS 7 tests into one GitHub jobs (#1299)\r\n\r\nWhen GitHub Actions runs it looks like there is an implicit concurrent\r\njobs limit. As such the CentOS 7 test normally is scheduled later after\r\nother jobs completes. However, many times CentOS 7 test hangs\r\n(e.g., https://github.com/tensorflow/io/runs/1825943449). This is likely\r\ndue to the CentOS 7 test is on the GitHub Actions queue for too long.\r\n\r\nThis PR moves CentOS 7 to run after Ubuntu 20.04 test complete, to try to\r\navoid hangs.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Update names of api tests (#1300)\r\n\r\nWe renamed the tests to remove \"_eager\" parts. This PR updates the api test for correct filenames\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Fix wrong benchmark tests names (#1301)\r\n\r\nFixes wrong benchmark tests names caused by last commit\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Patch arrow to temporarily resolve the ARROW-11518 issue (#1304)\r\n\r\nThis PR patchs arrow to temporarily resolve the ARROW-11518 issue.\r\n\r\nSee 1281 for details\r\n\r\nCredit to diggerk.\r\n\r\nWe will update arrow after the upstream PR is merged.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Remove AWS headers from tensorflow, and use headers from third_party … (#1241)\r\n\r\n* Remove external headers from tensorflow, and use third_party headers instead\r\n\r\nThis PR removes external headers from tensorflow, and\r\nuse third_party headers instead.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Address review comment\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Switch to use github to download libgeotiff (#1307)\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add @com_google_absl//absl/strings:cord (#1308)\r\n\r\nFix read/STDIN_FILENO\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Switch to modular file system for hdfs (#1309)\r\n\r\n* Switch to modular file system for hdfs\r\n\r\nThis PR is part of the effort to switch to modular file system for hdfs.\r\nWhen TF_ENABLE_LEGACY_FILESYSTEM=1 is provided, old behavior will\r\nbe preserved.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Build against tf-nightly\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Update tests\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Adjust the if else logic, follow review comment\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Disable test_write_kafka test for now. (#1310)\r\n\r\nWith tensorflow upgrade to tf-nightly, the test_write_kafka test\r\nis failing and that is block the plan to modular file system migration.\r\n\r\nThis PR disables the test temporarily so that CI can continue\r\nto push tensorflow-io-nightly image (needed for modular file system migration)\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Switch to modular file system for s3 (#1312)\r\n\r\nThis PR is part of the effort to switch to modular file system for s3.\r\nWhen TF_ENABLE_LEGACY_FILESYSTEM=1 is provided, old behavior will\r\nbe preserved.\r\n\r\nSigned-off-by: Yong Tang <yong.tang.github@outlook.com>\r\n\r\n* Add python 3.9 on Windows (#1316)\r\n\r\n* Updates the PR to use attribute instead of Env Variable\r\n\r\n-Originally AVRO_PARSER_NUM_MINIBATCH was set as an environmental\r\nvariable.  Because tensorflow-io rarely uses env vars to fine tune\r\nkernal ops this was changed to an attribute. See comment here:\r\nhttps://github.com/tensorflow/io/pull/1283#issuecomment-767747791\r\n\r\n* Added AVRO_PARSER_NUM_MINIBATCH to override num_minibatches\r\n\r\nAdded AVRO_PARSER_NUM_MINIBATCH to override num_minibatches. This is recommended to be set equal to the vcore request.\r\n\r\n* Updates the PR to use attribute instead of Env Variable\r\n\r\n-Originally AVRO_PARSER_NUM_MINIBATCH was set as an environmental\r\nvariable.  Because tensorflow-io rarely uses env vars to fine tune\r\nkernal ops this was changed to an attribute. See comment here:\r\nhttps://github.com/tensorflow/io/pull/1283#issuecomment-767747791\r\n\r\n* Adds addtional comments in source code for understandability\r\n\r\nCo-authored-by: Abin Shahab <ashahab@linkedin.com>\r\nCo-authored-by: Yong Tang <yong.tang.github@outlook.com>\r\nCo-authored-by: Vo Van Nghia <vovannghia2409@gmail.com>\r\nCo-authored-by: Vignesh Kothapalli <vikoth18@in.ibm.com>\r\nCo-authored-by: Cheng Ren <chren@linkedin.com>\r\nCo-authored-by: Cheng Ren <1428327+chengren311@users.noreply.github.com>\r\nCo-authored-by: Dale Lane <dale.lane@gmail.com>\r\nCo-authored-by: Yuan Tang <terrytangyuan@gmail.com>\r\nCo-authored-by: Mark Daoust <markdaoust@google.com>",
+          "timestamp": "2021-03-18T09:11:49-07:00",
+          "tree_id": "3f2974463728dae0b1d3d5ba5606a24b72e637a3",
+          "url": "https://github.com/tensorflow/io/commit/e5fac573eed60e8ec1ec31ccad50423f2da27f92"
+        },
+        "date": 1616084500698,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[mnist]",
+            "value": 2.6962058347639655,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03203494933252425",
+            "extra": "mean: 370.8915643999944 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[lmdb]",
+            "value": 22.390829647637556,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0024745610087481894",
+            "extra": "mean: 44.661140999994586 msec\nrounds: 10"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav]]",
+            "value": 0.7458334763524964,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06914345661062173",
+            "extra": "mean: 1.3407818657999997 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav|s24]]",
+            "value": 0.7418525751977266,
+            "unit": "iter/sec",
+            "range": "stddev: 0.042514946312363626",
+            "extra": "mean: 1.3479767186000118 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[flac]]",
+            "value": 0.7249583089960518,
+            "unit": "iter/sec",
+            "range": "stddev: 0.08325888147350784",
+            "extra": "mean: 1.3793896664000385 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[vorbis]]",
+            "value": 0.34743904532237413,
+            "unit": "iter/sec",
+            "range": "stddev: 0.049484726088422665",
+            "extra": "mean: 2.8782027048000374 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[mp3]]",
+            "value": 0.27075847820459825,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1283138306337245",
+            "extra": "mean: 3.693328484600033 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[hdf5]",
+            "value": 0.5474600604728475,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0827550719593672",
+            "extra": "mean: 1.82661726799995 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy]",
+            "value": 2.012854485680422,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04569725193652796",
+            "extra": "mean: 496.80690140000934 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[structure]]",
+            "value": 1.2618519109499637,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0709552063434444",
+            "extra": "mean: 792.4860210000134 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/tuple]]",
+            "value": 1.2942096580265743,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06199150112540994",
+            "extra": "mean: 772.672336200003 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/dict]]",
+            "value": 1.249471681827973,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05451493360454044",
+            "extra": "mean: 800.3382666000107 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[sql]",
+            "value": 20.85984924378686,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0006680026530737066",
+            "extra": "mean: 47.93898499999235 msec\nrounds: 6"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav]]",
+            "value": 3535.8075621747353,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005114581530392838",
+            "extra": "mean: 282.82082166964415 usec\nrounds: 2086"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav|s24]]",
+            "value": 2619.7163865888137,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00022358754296000503",
+            "extra": "mean: 381.72071034839024 usec\nrounds: 2068"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[flac]]",
+            "value": 808.5902683198808,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00019384194413064036",
+            "extra": "mean: 1.2367203009725032 msec\nrounds: 721"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[vorbis]]",
+            "value": 462.0086319135727,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00027857766175747175",
+            "extra": "mean: 2.164461724141701 msec\nrounds: 406"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[mp3]]",
+            "value": 1243.379552624751,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00019595989809318117",
+            "extra": "mean: 804.2596469348547 usec\nrounds: 946"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[hdf5]",
+            "value": 456.54994309479616,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00043613680796612066",
+            "extra": "mean: 2.1903408709709646 msec\nrounds: 341"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[arrow]",
+            "value": 797.1216603143625,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00019086679684979758",
+            "extra": "mean: 1.2545136455150747 msec\nrounds: 457"
           }
         ]
       }
