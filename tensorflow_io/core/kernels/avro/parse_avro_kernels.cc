@@ -172,7 +172,9 @@ Status ParseAvro(const AvroParserConfig& config,
                  const gtl::ArraySlice<tstring>& serialized,
                  thread::ThreadPool* thread_pool, AvroResult* result) {
   DCHECK(result != nullptr);
-
+  using clock = std::chrono::system_clock;
+  using ms = std::chrono::duration<double, std::milli>;
+  const auto before = clock::now();
   // Allocate dense output for fixed length dense values
   // (variable-length dense and sparse and ragged have to be buffered).
   /*  std::vector<Tensor> fixed_len_dense_values(config.dense.size());
@@ -189,6 +191,10 @@ Status ParseAvro(const AvroParserConfig& config,
   // This parameter affects performance in a big and data-dependent way.
   const size_t kMiniBatchSizeBytes = 50000;
 
+  // avro_num_minibatches_ is int64 in the op interface. If not set
+  // the default value is 0.
+  size_t avro_num_minibatches_;
+
   // Calculate number of minibatches.
   // In main regime make each minibatch around kMiniBatchSizeBytes bytes.
   // Apply 'special logic' below for small and big regimes.
@@ -204,8 +210,13 @@ Status ParseAvro(const AvroParserConfig& config,
         minibatch_bytes = 0;
       }
     }
-    // 'special logic'
-    const size_t min_minibatches = std::min<size_t>(8, serialized.size());
+    if (avro_num_minibatches_) {
+      VLOG(5) << "Overriding num_minibatches with " << avro_num_minibatches_;
+      result = avro_num_minibatches_;
+    }
+    // This is to ensure users can control the num minibatches all the way down
+    // to size of 1(no parallelism).
+    const size_t min_minibatches = std::min<size_t>(1, serialized.size());
     const size_t max_minibatches = 64;
     return std::max<size_t>(min_minibatches,
                             std::min<size_t>(max_minibatches, result));
@@ -245,13 +256,16 @@ Status ParseAvro(const AvroParserConfig& config,
     auto read_value = [&](avro::GenericDatum& d) {
       return range_reader.read(d);
     };
-
+    VLOG(5) << "Processing minibatch " << minibatch;
     status_of_minibatch[minibatch] = parser_tree.ParseValues(
         &buffers[minibatch], read_value, reader_schema, defaults);
   };
-
+  const auto before_parse = clock::now();
   ParallelFor(ProcessMiniBatch, num_minibatches, thread_pool);
-
+  const auto after_parse = clock::now();
+  const ms parse_read_duration = after_parse - before_parse;
+  VLOG(5) << "PARSER_TIMING: Time spend reading and parsing "
+          << parse_read_duration.count() << " ms ";
   for (Status& status : status_of_minibatch) {
     TF_RETURN_IF_ERROR(status);
   }
@@ -367,15 +381,22 @@ Status ParseAvro(const AvroParserConfig& config,
 
     return Status::OK();
   };
-
+  const auto before_sparse_merge = clock::now();
   for (size_t d = 0; d < config.sparse.size(); ++d) {
     TF_RETURN_IF_ERROR(MergeSparseMinibatches(d));
   }
-
+  const auto after_sparse_merge = clock::now();
+  const ms s_merge_duration = after_sparse_merge - before_sparse_merge;
   for (size_t d = 0; d < config.dense.size(); ++d) {
     TF_RETURN_IF_ERROR(MergeDenseMinibatches(d));
   }
+  const auto after_dense_merge = clock::now();
+  const ms d_merge_duration = after_dense_merge - after_sparse_merge;
+  VLOG(5) << "PARSER_TIMING: Sparse merge duration" << s_merge_duration.count()
+          << " ms ";
 
+  VLOG(5) << "PARSER_TIMING: Dense merge duration" << d_merge_duration.count()
+          << " ms ";
   return Status::OK();
 }
 
@@ -388,6 +409,8 @@ class ParseAvroOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_types", &sparse_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_types", &dense_types_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_shapes", &dense_shapes_));
+    OP_REQUIRES_OK(
+        ctx, ctx->GetAttr("avro_num_minibatches", &avro_num_minibatches_));
 
     OP_REQUIRES_OK(ctx, ctx->GetAttr("sparse_keys", &sparse_keys_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("dense_keys", &dense_keys_));
@@ -400,6 +423,11 @@ class ParseAvroOp : public OpKernel {
       variable_length_[d] =
           dense_shapes_[d].dims() > 1 && dense_shapes_[d].dim_size(0) == -1;
     }
+
+    // Check that avro_num_minibatches is not negative
+    OP_REQUIRES(ctx, avro_num_minibatches_ >= 0,
+                errors::InvalidArgument("Need avro_num_minibatches >= 0, got ",
+                                        avro_num_minibatches_));
 
     string reader_schema_str;
     OP_REQUIRES_OK(ctx, ctx->GetAttr("reader_schema", &reader_schema_str));
@@ -495,6 +523,7 @@ class ParseAvroOp : public OpKernel {
   avro::ValidSchema reader_schema_;
   size_t num_dense_;
   size_t num_sparse_;
+  int64 avro_num_minibatches_;
 
  private:
   std::vector<std::pair<string, DataType>> CreateKeysAndTypes() {
