@@ -130,6 +130,7 @@ def _parse_avro(
     dense_defaults=None,
     dense_shapes=None,
     name=None,
+    avro_num_minibatches=0,
 ):
     """Parses Avro records.
 
@@ -196,6 +197,7 @@ def _parse_avro(
             dense_keys=dense_keys,
             dense_shapes=dense_shapes,
             name=name,
+            avro_num_minibatches=avro_num_minibatches,
         )
 
         (sparse_indices, sparse_values, sparse_shapes, dense_values) = outputs
