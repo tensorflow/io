@@ -19,3 +19,5 @@ from tensorflow_io.core.python.experimental.serialization_ops import (  # pylint
     decode_avro,
     encode_avro,
 )
+
+from tensorflow_io.core.python.experimental.serial_ops import save_dataset, load_dataset
