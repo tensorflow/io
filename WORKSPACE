@@ -582,18 +582,15 @@ apple_support_dependencies()
 
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
-    patch_cmds = [
-        """sed -i.bak 's/CURL\\* m/CURLM* m/g' google/cloud/storage/internal/curl_handle_factory.cc""",
-    ],
     repo_mapping = {
         "@com_github_curl_curl": "@curl",
         "@com_github_nlohmann_json": "@nlohmann_json_lib",
     },
-    sha256 = "14bf9bf97431b890e0ae5dca8f8904841d4883b8596a7108a42f5700ae58d711",
-    strip_prefix = "google-cloud-cpp-1.21.0",
+    sha256 = "fc4488c6ce8e47cc5f8de9a0a2878045fec9fd1e4ef4d2a732e4b1e8a977fbd7",
+    strip_prefix = "google-cloud-cpp-1.25.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
-        "https://github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.25.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/v1.25.0.tar.gz",
     ],
 )
 
@@ -605,17 +602,6 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/nlohmann/json/archive/v3.4.0.tar.gz",
         "https://github.com/nlohmann/json/archive/v3.4.0.tar.gz",
-    ],
-)
-
-http_archive(
-    name = "com_google_googleapis",
-    build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "7ebab01b06c555f4b6514453dc3e1667f810ef91d1d4d2d3aa29bb9fcb40a900",
-    strip_prefix = "googleapis-541b1ded4abadcc38e8178680b0677f65594ea6f",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
-        "https://github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
     ],
 )
 
