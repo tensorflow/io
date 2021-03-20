@@ -136,6 +136,7 @@ class PubSubReadableResource : public ResourceBase {
     }
     return Status::OK();
   }
+
   string DebugString() const override {
     mutex_lock l(mu_);
     return "PubSubReadableResource";
