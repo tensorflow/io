@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io.experimental.columnar"""
+"""tensorflow_io.experimental.avro"""
 
 from tensorflow_io.core.python.experimental.avro_record_dataset_ops import (  # pylint: disable=unused-import
     AvroRecordDataset,

@@ -287,7 +287,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
 
         with pytest.raises(ValueError):
 
-            dataset_a = tfio.experimental.columnar.AvroRecordDataset(
+            dataset_a = tfio.experimental.avro.AvroRecordDataset(
                 filenames=filenames,
                 num_parallel_reads=NUM_PARALLEL_READS,
                 num_parallel_calls=NUM_PARALLEL_CALLS_ZERO,
@@ -296,7 +296,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
 
         with pytest.raises(ValueError):
 
-            dataset_b = tfio.experimental.columnar.AvroRecordDataset(
+            dataset_b = tfio.experimental.avro.AvroRecordDataset(
                 filenames=filenames,
                 num_parallel_reads=NUM_PARALLEL_READS,
                 num_parallel_calls=NUM_PARALLEL_CALLS_GREATER,
@@ -311,7 +311,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         expected_data = AvroRecordDatasetTest._load_records_as_tensors(
             filenames, writer_schema
         )
-        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
+        actual_dataset = tfio.experimental.avro.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
             reader_schema=kwargs.get("reader_schema"),
@@ -330,7 +330,7 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         expected_data = AvroRecordDatasetTest._load_records_as_tensors(
             filenames, reader_schema
         )
-        actual_dataset = tfio.experimental.columnar.AvroRecordDataset(
+        actual_dataset = tfio.experimental.avro.AvroRecordDataset(
             filenames=filenames,
             num_parallel_reads=kwargs.get("num_parallel_reads", 1),
             reader_schema=reader_schema,
@@ -452,7 +452,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
             writer_schema=writer_schema, records=record_data
         )
 
-        actual_dataset = tfio.experimental.columnar.make_avro_record_dataset(
+        actual_dataset = tfio.experimental.avro.make_avro_record_dataset(
             file_pattern=filenames,
             features=features,
             batch_size=batch_size,
@@ -486,7 +486,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
         ]
         features = {
-            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "int_list_list[*][*]": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.int32
             )
         }
@@ -544,7 +544,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
         ]
         features = {
-            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "int_list_list[*][*]": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.int32, 2
             )
         }
@@ -659,7 +659,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             expected_data, ParseAvroDatasetTest._batcher(record_data, batch_size)
         ):
             # Get any key out of expected datum
-            actual_datum = tfio.experimental.columnar.parse_avro(
+            actual_datum = tfio.experimental.avro.parse_avro(
                 serialized=[
                     tf.convert_to_tensor(serializer.serialize(r))
                     for r in actual_records
@@ -677,7 +677,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
         for actual_records in ParseAvroDatasetTest._batcher(record_data, batch_size):
             # Get any key out of expected datum
             with self.assertRaises(tf.errors.OpError):
-                _ = tfio.experimental.columnar.parse_avro(
+                _ = tfio.experimental.avro.parse_avro(
                     serialized=[
                         tf.convert_to_tensor(serializer.serialize(r))
                         for r in actual_records
@@ -1462,7 +1462,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
               ]}"""
         record_data = [{"int_list": [1, 2]}, {"int_list": [3, 4, 5]}, {"int_list": [6]}]
         features = {
-            "int_list[*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "int_list[*]": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.int32, 1
             )
         }
@@ -1507,7 +1507,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             {"int_list_list": [[6]]},
         ]
         features = {
-            "int_list_list[*][*]": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "int_list_list[*][*]": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.int32, 2
             )
         }
@@ -1881,10 +1881,10 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             },
         ]
         features = {
-            "guests[gender='male'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='male'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             ),
-            "guests[gender='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='female'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             ),
         }
@@ -1954,7 +1954,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             {"guests": [{"name": "Joel", "gender": "male"}]},
         ]
         features = {
-            "guests[gender='wrong_value'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='wrong_value'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             )
         }
@@ -2004,7 +2004,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[wrong_key='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[wrong_key='female'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             )
         }
@@ -2039,7 +2039,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[forgot_the_separator].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[forgot_the_separator].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             )
         }
@@ -2074,7 +2074,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
           """
         record_data = [{"guests": [{"name": "Hans"}]}]
         features = {
-            "guests[used=too=many=separators].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[used=too=many=separators].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             )
         }
@@ -2153,7 +2153,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             }
         ]
         features = {
-            "guests[gender='female'].address.street": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='female'].address.street": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             )
         }
@@ -2223,10 +2223,10 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             },
         ]
         features = {
-            "guests[gender='male'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='male'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             ),
-            "guests[gender='female'].name": tfio.experimental.columnar.VarLenFeatureWithRank(
+            "guests[gender='female'].name": tfio.experimental.avro.VarLenFeatureWithRank(
                 tf.dtypes.string
             ),
         }

@@ -96,7 +96,7 @@ def parse_avro(serialized, reader_schema, features, avro_names=None, name=None):
     ) = _features_to_raw_params(
         features,
         [
-            tensorflow_io.experimental.columnar.VarLenFeatureWithRank,
+            tensorflow_io.experimental.avro.VarLenFeatureWithRank,
             tf.io.SparseFeature,
             tf.io.FixedLenFeature,
         ],
@@ -337,7 +337,7 @@ def _features_to_raw_params(features, types):
         for key in sorted(features.keys()):
             feature = features[key]
             if isinstance(
-                feature, tensorflow_io.experimental.columnar.VarLenFeatureWithRank
+                feature, tensorflow_io.experimental.avro.VarLenFeatureWithRank
             ):
                 _handle_varlen_feature(
                     feature, key, sparse_keys, sparse_types, sparse_ranks, types
@@ -441,7 +441,7 @@ def _handle_varlen_feature(
     feature, key, sparse_keys, sparse_types, sparse_ranks, types
 ):
     """handle_varlen_feature"""
-    if tensorflow_io.experimental.columnar.VarLenFeatureWithRank not in types:
+    if tensorflow_io.experimental.avro.VarLenFeatureWithRank not in types:
         raise ValueError("Unsupported VarLenFeatureWithRank {}.".format(feature))
     if not feature.dtype:
         raise ValueError("Missing type for VarLenFeatureWithRank %s." % key)
