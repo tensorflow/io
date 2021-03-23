@@ -535,7 +535,7 @@ jobs:
   macos-nightly:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
-    needs: [build-number, release]
+    needs: [build-number, macos-wheel]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -578,7 +578,7 @@ jobs:
   linux-nightly:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
-    needs: [build-number, release]
+    needs: [build-number, linux-wheel]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -616,7 +616,7 @@ jobs:
   windows-nightly:
     name: Nightly ${{ matrix.python }} Windows
     if: github.event_name == 'push'
-    needs: [build-number, release]
+    needs: [build-number, windows-wheel]
     runs-on: windows-latest
     strategy:
       matrix:
