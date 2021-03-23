@@ -21,3 +21,5 @@ from tensorflow_io.core.python.ops.io_tensor import IOTensor
 from tensorflow_io.core.python.api import genome
 from tensorflow_io.core.python.api import image
 from tensorflow_io.core.python.api import audio
+from tensorflow_io.core.python.api import version
+from tensorflow_io.core.python.api import experimental
