@@ -16,6 +16,3 @@
 
 from tensorflow_io.core.python.api import *  # pylint: disable=wildcard-import
 from tensorflow_io.core.python.api.version import VERSION as __version__
-
-from tensorflow_io.core.python.api import version
-from tensorflow_io.core.python.api import experimental
