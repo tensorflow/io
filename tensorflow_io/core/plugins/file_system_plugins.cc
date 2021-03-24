@@ -35,11 +35,12 @@ void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfse");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfse");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "hare");
+    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gse");
   } else {
     tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "har");
+    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gs");
   }
-  tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gse");
 }

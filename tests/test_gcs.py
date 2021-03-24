@@ -45,7 +45,7 @@ def test_read_file():
 
     # Setup the GCS bucket and key
     key_name = "TEST"
-    bucket_name = "gse{}e".format(int(time.time()))
+    bucket_name = "gs{}e".format(int(time.time()))
     bucket = client.create_bucket(bucket_name)
 
     blob = bucket.blob(key_name)
@@ -56,5 +56,5 @@ def test_read_file():
 
     os.environ["CLOUD_STORAGE_TESTBENCH_ENDPOINT"] = "http://localhost:9099"
 
-    content = tf.io.read_file("gse://{}/{}".format(bucket_name, key_name))
+    content = tf.io.read_file("gs://{}/{}".format(bucket_name, key_name))
     assert content == body

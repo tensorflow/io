@@ -31,4 +31,6 @@ class TempFile : public std::fstream {
   const std::string name_;
 };
 
+std::string GCSGetTempFileName(const std::string& extension);
+
 #endif  // TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_GCS_GCS_HELPER_H_

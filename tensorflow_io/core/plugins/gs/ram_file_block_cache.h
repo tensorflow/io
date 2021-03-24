@@ -27,9 +27,9 @@ limitations under the License.
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
+#include "tensorflow/c/env.h"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
-#include "tensorflow_io/core/plugins/gs/gcs_env.h"
 
 namespace tensorflow {
 namespace io {
@@ -56,19 +56,19 @@ class RamFileBlockCache {
 
   RamFileBlockCache(size_t block_size, size_t max_bytes, uint64_t max_staleness,
                     BlockFetcher block_fetcher,
-                    std::function<uint64_t()> timer_seconds = GCSNowSeconds)
+                    std::function<uint64_t()> timer_seconds = TF_NowSeconds)
       : block_size_(block_size),
         max_bytes_(max_bytes),
         max_staleness_(max_staleness),
         block_fetcher_(block_fetcher),
         timer_seconds_(timer_seconds),
         pruning_thread_(nullptr,
-                        [](GCSThread* thread) { GCSJoinThread(thread); }) {
+                        [](TF_Thread* thread) { TF_JoinThread(thread); }) {
     if (max_staleness_ > 0) {
-      GCSThreadOptions thread_options;
-      GCSDefaultThreadOptions(&thread_options);
+      TF_ThreadOptions thread_options;
+      TF_DefaultThreadOptions(&thread_options);
       pruning_thread_.reset(
-          GCSStartThread(&thread_options, "TF_prune_FBC", PruneThread, this));
+          TF_StartThread(&thread_options, "TF_prune_FBC", PruneThread, this));
     }
     TF_VLog(1, "GCS file block cache is %s.\n",
             (IsCacheEnabled() ? "enabled" : "disabled"));
@@ -236,7 +236,7 @@ class RamFileBlockCache {
   void RemoveBlock(BlockMap::iterator entry) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   /// The cache pruning thread that removes files with expired blocks.
-  std::unique_ptr<GCSThread, std::function<void(GCSThread*)>> pruning_thread_;
+  std::unique_ptr<TF_Thread, std::function<void(TF_Thread*)>> pruning_thread_;
 
   /// Notification for stopping the cache pruning thread.
   absl::Notification stop_pruning_thread_;
