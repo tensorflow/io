@@ -24,8 +24,8 @@ limitations under the License.
 
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
+#include "tensorflow/c/env.h"
 #include "tensorflow/c/tf_status.h"
-#include "tensorflow_io/core/plugins/gs/gcs_env.h"
 
 namespace tensorflow {
 namespace io {
@@ -44,7 +44,7 @@ class ExpiringLRUCache {
   /// that there is no limit on the number of entries in the cache (however, if
   /// `max_age` is also 0, the cache will not be populated).
   ExpiringLRUCache(uint64_t max_age, size_t max_entries,
-                   std::function<uint64_t()> timer_seconds = GCSNowSeconds)
+                   std::function<uint64_t()> timer_seconds = TF_NowSeconds)
       : max_age_(max_age),
         max_entries_(max_entries),
         timer_seconds_(timer_seconds) {}

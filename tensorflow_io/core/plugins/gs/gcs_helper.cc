@@ -16,9 +16,12 @@ limitations under the License.
 
 #include <stdio.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <utility>
+
+#include "tensorflow/c/env.h"
 
 TempFile::TempFile(const std::string& temp_file_name, std::ios::openmode mode)
     : std::fstream(temp_file_name, mode), name_(temp_file_name) {}
@@ -37,4 +40,12 @@ bool TempFile::truncate() {
   std::fstream::close();
   std::fstream::open(name_, std::ios::binary | std::ios::out);
   return std::fstream::is_open();
+}
+
+std::string GCSGetTempFileName(const std::string& extension) {
+  char* raw_temp_file_name = TF_GetTempFileName(extension.c_str());
+  if (!raw_temp_file_name) return "";
+  std::string temp_file_name(raw_temp_file_name);
+  std::free(raw_temp_file_name);
+  return temp_file_name;
 }
