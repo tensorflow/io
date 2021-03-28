@@ -135,8 +135,6 @@ static Aws::Client::ClientConfiguration& GetDefaultClientConfig() {
   absl::MutexLock l(&cfg_lock);
 
   if (!init) {
-    const char* endpoint = getenv("S3_ENDPOINT");
-    if (endpoint) cfg.endpointOverride = Aws::String(endpoint);
     const char* region = getenv("AWS_REGION");
     // TODO (yongtang): `S3_REGION` should be deprecated after 2.0.
     if (!region) region = getenv("S3_REGION");
@@ -241,9 +239,13 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
             tf_s3_filesystem::AWSLogSystem::ShutdownAWSLogging();
           }
         });
+
     int temp_value;
     if (absl::SimpleAtoi(getenv("S3_DISABLE_MULTI_PART_DOWNLOAD"), &temp_value))
       s3_file->use_multi_part_download = (temp_value != 1);
+
+    const char* endpoint = getenv("S3_ENDPOINT");
+    if (endpoint) s3_file->s3_client->OverrideEndpoint(endpoint);
   }
 }
 
