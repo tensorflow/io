@@ -241,6 +241,9 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
             tf_s3_filesystem::AWSLogSystem::ShutdownAWSLogging();
           }
         });
+    int temp_value;
+    if (absl::SimpleAtoi(getenv("S3_DISABLE_MULTI_PART_DOWNLOAD"), &temp_value))
+      s3_file->use_multi_part_download = (temp_value != 1);
   }
 }
 
@@ -263,15 +266,26 @@ static void GetTransferManager(
 
   absl::MutexLock l(&s3_file->initialization_lock);
 
-  if (s3_file->transfer_managers[direction].get() == nullptr) {
+  if (s3_file->transfer_managers.count(direction) == 0) {
+    uint64_t temp_value;
+    if (direction == Aws::Transfer::TransferDirection::UPLOAD) {
+      if (!absl::SimpleAtoi(getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE"),
+                            &temp_value))
+        temp_value = kS3MultiPartUploadChunkSize;
+    } else if (direction == Aws::Transfer::TransferDirection::DOWNLOAD) {
+      if (!absl::SimpleAtoi(getenv("S3_MULTI_PART_DOWNLOAD_CHUNK_SIZE"),
+                            &temp_value))
+        temp_value = kS3MultiPartDownloadChunkSize;
+    }
+    s3_file->multi_part_chunk_sizes.emplace(direction, temp_value);
+
     Aws::Transfer::TransferManagerConfiguration config(s3_file->executor.get());
     config.s3Client = s3_file->s3_client;
-    config.bufferSize = s3_file->multi_part_chunk_sizes[direction];
+    config.bufferSize = temp_value;
     // must be larger than pool size * multi part chunk size
-    config.transferBufferMaxHeapSize =
-        (kExecutorPoolSize + 1) * s3_file->multi_part_chunk_sizes[direction];
-    s3_file->transfer_managers[direction] =
-        Aws::Transfer::TransferManager::Create(config);
+    config.transferBufferMaxHeapSize = (kExecutorPoolSize + 1) * temp_value;
+    s3_file->transfer_managers.emplace(
+        direction, Aws::Transfer::TransferManager::Create(config));
   }
 }
 
@@ -529,24 +543,7 @@ S3File::S3File()
       transfer_managers(),
       multi_part_chunk_sizes(),
       use_multi_part_download(false),  // TODO: change to true after fix
-      initialization_lock() {
-  uint64_t temp_value;
-  multi_part_chunk_sizes[Aws::Transfer::TransferDirection::UPLOAD] =
-      absl::SimpleAtoi(getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE"), &temp_value)
-          ? temp_value
-          : kS3MultiPartUploadChunkSize;
-  multi_part_chunk_sizes[Aws::Transfer::TransferDirection::DOWNLOAD] =
-      absl::SimpleAtoi(getenv("S3_MULTI_PART_DOWNLOAD_CHUNK_SIZE"), &temp_value)
-          ? temp_value
-          : kS3MultiPartDownloadChunkSize;
-  use_multi_part_download =
-      absl::SimpleAtoi(getenv("S3_DISABLE_MULTI_PART_DOWNLOAD"), &temp_value)
-          ? (temp_value != 1)
-          : use_multi_part_download;
-  transfer_managers.emplace(Aws::Transfer::TransferDirection::UPLOAD, nullptr);
-  transfer_managers.emplace(Aws::Transfer::TransferDirection::DOWNLOAD,
-                            nullptr);
-}
+      initialization_lock() {}
 void Init(TF_Filesystem* filesystem, TF_Status* status) {
   filesystem->plugin_filesystem = new S3File();
   TF_SetStatus(status, TF_OK, "");

@@ -60,11 +60,12 @@ typedef struct S3File {
   std::shared_ptr<Aws::S3::S3Client> s3_client;
   std::shared_ptr<Aws::Utils::Threading::PooledThreadExecutor> executor;
   // We need 2 `TransferManager`, for multipart upload/download.
-  Aws::Map<Aws::Transfer::TransferDirection,
-           std::shared_ptr<Aws::Transfer::TransferManager>>
+  Aws::UnorderedMap<Aws::Transfer::TransferDirection,
+                    std::shared_ptr<Aws::Transfer::TransferManager>>
       transfer_managers;
   // Sizes to split objects during multipart upload/download.
-  Aws::Map<Aws::Transfer::TransferDirection, uint64_t> multi_part_chunk_sizes;
+  Aws::UnorderedMap<Aws::Transfer::TransferDirection, uint64_t>
+      multi_part_chunk_sizes;
   bool use_multi_part_download;
   absl::Mutex initialization_lock;
   S3File();
