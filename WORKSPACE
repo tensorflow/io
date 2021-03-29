@@ -390,11 +390,11 @@ http_archive(
     patch_cmds = [
         """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
     ],
-    sha256 = "758174f9788fed6cc1e266bcecb20bf738bd5ef1c3d646131c9ed15c2d6c5720",
-    strip_prefix = "aws-sdk-cpp-1.7.336",
+    sha256 = "820d73f8b4130633bdb5884df051381d08b6ea9dcb9ea72c2904ba26c2b27c5b",
+    strip_prefix = "aws-sdk-cpp-1.8.172",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.7.336.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.7.336.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.8.172.tar.gz",
+        "https://github.com/aws/aws-sdk-cpp/archive/1.8.172.tar.gz",
     ],
 )
 
