@@ -29,7 +29,7 @@ tf_v1 = tf.version.VERSION.startswith("1")
 class GcsConfigOpsTest(test.TestCase):
     """GCS Config OPS test"""
 
-    @pytest.mark.skipif(sys.platform == "darwin", reason=None)
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows not working yet")
     def test_set_block_cache(self):
         """test_set_block_cache"""
         cfg = gcs.BlockCacheParams(max_bytes=1024 * 1024 * 1024)
