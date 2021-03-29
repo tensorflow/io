@@ -166,20 +166,6 @@ static Aws::Client::ClientConfiguration& GetDefaultClientConfig() {
           cfg.region = profiles["default"].GetRegion();
       }
     }
-    const char* use_https = getenv("S3_USE_HTTPS");
-    if (use_https) {
-      if (use_https[0] == '0')
-        cfg.scheme = Aws::Http::Scheme::HTTP;
-      else
-        cfg.scheme = Aws::Http::Scheme::HTTPS;
-    }
-    const char* verify_ssl = getenv("S3_VERIFY_SSL");
-    if (verify_ssl) {
-      if (verify_ssl[0] == '0')
-        cfg.verifySSL = false;
-      else
-        cfg.verifySSL = true;
-    }
     // if these timeouts are low, you may see an error when
     // uploading/downloading large files: Unable to connect to endpoint
     int64_t timeout;
