@@ -51,9 +51,7 @@ def test_read_file():
     response = client.get_object(Bucket=bucket_name, Key=key_name)
     assert response["Body"].read() == body
 
-    os.environ["S3_ENDPOINT"] = "localhost:4566"
-    os.environ["S3_USE_HTTPS"] = "0"
-    os.environ["S3_VERIFY_SSL"] = "0"
+    os.environ["S3_ENDPOINT"] = "http://localhost:4566"
 
     content = tf.io.read_file("s3://{}/{}".format(bucket_name, key_name))
     assert content == body
