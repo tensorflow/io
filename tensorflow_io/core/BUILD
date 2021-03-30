@@ -751,6 +751,7 @@ cc_binary(
             "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
             "//tensorflow_io/core:oss_ops",
+            "//tensorflow_io/gcs:gcs_config_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
         ],
     }) + select({
