@@ -30,16 +30,16 @@ void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   tensorflow::io::az::ProvideFilesystemSupportFor(&info->ops[0], "az");
   tensorflow::io::http::ProvideFilesystemSupportFor(&info->ops[1], "http");
   if (load_plugin == "true" || load_plugin == "1") {
-    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
-    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfse");
-    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfse");
-    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "hare");
-    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gse");
-  } else {
     tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfs");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "har");
     tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gs");
+  } else {
+    tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
+    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfse");
+    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfse");
+    tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "hare");
+    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[6], "gse");
   }
 }
