@@ -18,9 +18,8 @@ limitations under the License.
 #include "absl/strings/ascii.h"
 
 void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
-  const char* enable_legacy_env = getenv("TF_ENABLE_LEGACY_FILESYSTEM");
-  std::string enable_legacy =
-      enable_legacy_env ? absl::AsciiStrToLower(enable_legacy_env) : "";
+  const char* env_value = getenv("TF_USE_MODULAR_FILESYSTEM");
+  std::string load_plugin = env_value ? absl::AsciiStrToLower(env_value) : "";
 
   info->plugin_memory_allocate = tensorflow::io::plugin_memory_allocate;
   info->plugin_memory_free = tensorflow::io::plugin_memory_free;
@@ -30,7 +29,7 @@ void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
                                              sizeof(info->ops[0])));
   tensorflow::io::az::ProvideFilesystemSupportFor(&info->ops[0], "az");
   tensorflow::io::http::ProvideFilesystemSupportFor(&info->ops[1], "http");
-  if (enable_legacy == "true" || enable_legacy == "1") {
+  if (load_plugin == "true" || load_plugin == "1") {
     tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3e");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfse");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "viewfse");
