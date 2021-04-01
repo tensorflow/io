@@ -29,6 +29,7 @@ void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
                                              sizeof(info->ops[0])));
   tensorflow::io::az::ProvideFilesystemSupportFor(&info->ops[0], "az");
   tensorflow::io::http::ProvideFilesystemSupportFor(&info->ops[1], "http");
+  // Load plugins only when the environment variable is set
   if (load_plugin == "true" || load_plugin == "1") {
     tensorflow::io::s3::ProvideFilesystemSupportFor(&info->ops[2], "s3");
     tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[3], "hdfs");
