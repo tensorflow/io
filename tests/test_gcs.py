@@ -29,6 +29,7 @@ import pytest
 # from tensorflow.
 os.environ["TF_USE_MODULAR_FILESYSTEM"] = "true"
 
+
 @pytest.mark.skipif(
     sys.platform in ("win32", "darwin"),
     reason="TODO GCS emulator not setup properly on macOS/Windows yet",
