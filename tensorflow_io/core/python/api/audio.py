@@ -15,6 +15,15 @@
 """tensorflow_io.audio"""
 
 from tensorflow_io.core.python.ops.audio_ops import (  # pylint: disable=unused-import
+    spectrogram,
+    melscale,
+    dbscale,
+    remix,
+    split,
+    trim,
+    freq_mask,
+    time_mask,
+    fade,
     resample,
     decode_wav,
     encode_wav,

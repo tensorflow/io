@@ -838,9 +838,7 @@ def test_spectrogram():
     nfft = 400
     window = 400
     stride = 200
-    spectrogram = tfio.experimental.audio.spectrogram(
-        audio, nfft=nfft, window=window, stride=stride
-    )
+    spectrogram = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=stride)
 
     # TODO: assert content of spectrogram
     assert spectrogram.shape == [29, nfft // 2 + 1]
@@ -850,7 +848,7 @@ def test_spectrogram():
     mels = 128
     fmin = 0
     fmax = 5000
-    mel_spectrogram = tfio.experimental.audio.melscale(
+    mel_spectrogram = tfio.audio.melscale(
         spectrogram, rate=rate, mels=mels, fmin=fmin, fmax=fmax
     )
 
@@ -858,9 +856,7 @@ def test_spectrogram():
     assert mel_spectrogram.shape == [29, mels]
     assert mel_spectrogram.dtype == tf.float32
 
-    dbscale_mel_spectrogram = tfio.experimental.audio.dbscale(
-        mel_spectrogram, top_db=80
-    )
+    dbscale_mel_spectrogram = tfio.audio.dbscale(mel_spectrogram, top_db=80)
 
     # TODO: assert content of dbscale_mel_spectrogram
     assert dbscale_mel_spectrogram.shape == [29, mels]
@@ -869,10 +865,10 @@ def test_spectrogram():
     spec = dbscale_mel_spectrogram
 
     # Freq masking
-    spec = tfio.experimental.audio.freq_mask(spec, param=30)
+    spec = tfio.audio.freq_mask(spec, param=30)
 
     # Time masking
-    spec = tfio.experimental.audio.time_mask(spec, param=10)
+    spec = tfio.audio.time_mask(spec, param=10)
 
 
 def test_fade():
@@ -890,9 +886,7 @@ def test_fade():
     fade_in = 1000
     fade_out = 1500
     for mode in ["linear", "logarithmic", "exponential"]:
-        fade = tfio.experimental.audio.fade(
-            audio, fade_in=fade_in, fade_out=fade_out, mode=mode
-        )
+        fade = tfio.audio.fade(audio, fade_in=fade_in, fade_out=fade_out, mode=mode)
 
         # TODO: validate fade effect
         # import matplotlib.pyplot as plt
@@ -957,11 +951,11 @@ def test_audio_trim_split_remix():
             tf.reshape(k, [4, 90, 1]),
         ),
     ]:
-        indices = tfio.experimental.audio.trim(value, axis=axis, epsilon=epsilon)
+        indices = tfio.audio.trim(value, axis=axis, epsilon=epsilon)
         assert np.array_equal(ee, indices)
 
-        indices = tfio.experimental.audio.split(value, axis=axis, epsilon=epsilon)
+        indices = tfio.audio.split(value, axis=axis, epsilon=epsilon)
         assert np.array_equal(ei, indices)
 
-        result = tfio.experimental.audio.remix(value, axis=axis, indices=indices)
+        result = tfio.audio.remix(value, axis=axis, indices=indices)
         assert np.array_equal(ek, result)
