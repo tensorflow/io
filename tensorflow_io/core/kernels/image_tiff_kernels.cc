@@ -329,6 +329,9 @@ class DecodeTIFFInfoOp : public OpKernel {
             case 8:
               pixel_dtype = DT_UINT8;
               break;
+            case 16:
+              pixel_dtype = DT_UINT16;
+              break;
             default:
               OP_REQUIRES(context, false,
                           errors::InvalidArgument("unsupported bits ", bits,

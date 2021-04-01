@@ -449,5 +449,23 @@ def test_encode_gif():
     assert np.allclose(image, encoded, atol=8.0)
 
 
+def test_decode_tiff_16bit():
+    """Test case for 16 bit tiff"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "IXMtest_A01_s1_w164FBEEF7-F77C-4892-86F5-72D0160D4FB2.tif",
+    )
+    shape, dtype = tfio.experimental.image.decode_tiff_info(tf.io.read_file(filename))
+    # only one item for now
+    assert np.all(shape.shape == [1, 3])
+    assert np.all(dtype.shape == [1])
+    assert np.all(shape[0] == [520, 696, 1])
+    assert np.all(dtype[0].numpy() == tf.uint16)
+
+    image = tfio.experimental.image.decode_tiff(tf.io.read_file(filename))
+    assert image.shape == [520, 696, 4]
+
+
 if __name__ == "__main__":
     test.main()
