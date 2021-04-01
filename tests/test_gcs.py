@@ -15,6 +15,7 @@
 """Tests for GCS file system"""
 
 import os
+
 # Use modular file system plugins from tfio instead of the legacy implementation
 # from tensorflow.
 os.environ["TF_USE_MODULAR_FILESYSTEM"] = "true"
@@ -27,6 +28,7 @@ import pytest
 
 
 # GCS emulator setup is in tests/test_gcloud/test_gcs.sh
+
 
 @pytest.mark.skipif(
     sys.platform in ("win32", "darwin"),
