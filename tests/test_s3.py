@@ -22,6 +22,10 @@ import tensorflow as tf
 import tensorflow_io as tfio
 import pytest
 
+# Use modular file system plugins from tfio instead of the legacy implementation
+# from tensorflow.
+os.environ["TF_USE_MODULAR_FILESYSTEM"] = "true"
+
 
 @pytest.mark.skipif(
     sys.platform in ("win32", "darwin"),
