@@ -15,6 +15,10 @@
 """Tests for HDFS file system"""
 
 import os
+
+# Use modular file system plugins from tfio instead of the legacy implementation
+# from tensorflow.
+os.environ["TF_USE_MODULAR_FILESYSTEM"] = "true"
 import sys
 import socket
 import time
