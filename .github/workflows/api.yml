@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.5.0rc0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.5.0rc0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -85,7 +85,7 @@ jobs:
           python -m pytest -s -v tests/test_http.py
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
-          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io==0.17.0" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
+          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
 
   windows:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
@@ -94,7 +94,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.4.0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io==0.17.0', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow==2.5.0rc0:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
