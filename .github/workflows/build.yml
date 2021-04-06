@@ -513,8 +513,6 @@ jobs:
           TFIO_VERSION=$(python setup.py --version)
           docker tag tfsigio/tfio:latest tfsigio/tfio:${TFIO_VERSION}
           docker push tfsigio/tfio:${TFIO_VERSION}
-          bash -x -e tools/docker/tests/dockerfile_nightly_test.sh
-          docker push tfsigio/tfio:nightly
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
           docker push tfsigio/tfio:latest-devel
 
@@ -723,3 +721,20 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.github_tensorflow_io_nightly }}
+
+  docker-nightly:
+    name: Docker Nightly
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [linux-nightly, macos-nightly, windows-nightly]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - run: |
+          set -e -x
+          docker login --username tfsigio --password ${{ secrets.DOCKER_PASSWORD }}
+          python --version
+          bash -x -e tools/docker/tests/dockerfile_nightly_test.sh
+          docker push tfsigio/tfio:nightly
