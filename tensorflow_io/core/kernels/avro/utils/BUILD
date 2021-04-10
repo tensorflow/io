@@ -19,6 +19,7 @@ cc_library(
         "prefix_tree.h",
         "value_buffer.h",
     ],
+    linkstatic = True,
     deps = [
         "//tensorflow_io/core:dataset_ops",
         "@com_googlesource_code_re2//:re2",
@@ -36,6 +37,7 @@ cc_library(
         "prefix_tree.cc",
         "value_buffer.cc",
     ],
+    linkstatic = True,
     deps = [
         ":avro_utils_api",
         "@avro",
