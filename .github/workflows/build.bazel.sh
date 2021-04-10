@@ -15,7 +15,7 @@
 # ==============================================================================
 set -e -x
 
-export TENSORFLOW_INSTALL="$(python3 setup.py --package-version)"
+export TENSORFLOW_INSTALL="$(python3 setup.py --install-require)"
 
 export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
@@ -41,10 +41,11 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/...
+  -- //tensorflow_io/...  //tensorflow_io_plugin_gs/...
 
 rm -rf build && mkdir -p build
 
 cp -r bazel-bin/tensorflow_io  build/tensorflow_io
+cp -r bazel-bin/tensorflow_io_plugin_gs  build/tensorflow_io_plugin_gs
 
 exit 0

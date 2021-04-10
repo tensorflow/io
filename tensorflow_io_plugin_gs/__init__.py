@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""tensorflow_io_plugin_gs"""
 
-rm -f .bazelrc
-
-PYTHON=python3
-if [[ "$#" -gt 0 ]]; then
-  PYTHON=$1
-fi
-
-if $PYTHON -c "import tensorflow as tf" &> /dev/null; then
-    echo 'using installed tensorflow'
-else
-    $PYTHON -m pip install $($PYTHON setup.py --install-require)
-fi
-$PYTHON tools/build/configure.py
+from tensorflow_io_plugin_gs.core.python.ops import plugin_gs

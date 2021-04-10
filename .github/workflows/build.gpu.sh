@@ -69,7 +69,7 @@ export CUDNN_INSTALL_PATH="/usr/lib/x86_64-linux-gnu"
 python3 --version
 python3 -m pip --version
 
-python3 -m pip install $(python3 setup.py --package-version)
+python3 -m pip install $(python3 setup.py --install-require)
 python3 tools/build/configure.py --cuda
 
 cat .bazelrc
