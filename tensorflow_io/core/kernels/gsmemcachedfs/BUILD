@@ -11,6 +11,7 @@ cc_library(
         "memcached_dao_interface.h",
     ],
     copts = tf_io_copts(),
+    linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
         "@libmemcached",
@@ -22,6 +23,7 @@ cc_library(
     srcs = ["memcached_file_block_cache.cc"],
     hdrs = ["memcached_file_block_cache.h"],
     copts = tf_io_copts(),
+    linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
         ":memcached_dao_interfaces",
@@ -41,6 +43,7 @@ cc_library(
         "gce_memcached_server_list_provider.h",
     ],
     copts = tf_io_copts(),
+    linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/memory",
@@ -54,6 +57,7 @@ cc_library(
     srcs = ["memcached_file_system.cc"],
     hdrs = ["memcached_file_system.h"],
     copts = tf_io_copts(),
+    linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
         ":gce_memcached_server_list_provider",
