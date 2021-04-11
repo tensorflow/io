@@ -24,7 +24,7 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 # Read the MNIST data into the IODataset.
-dataset_url = "http://storage.googleapis.com/cvdf-datasets/mnist/"
+dataset_url = "https://storage.googleapis.com/cvdf-datasets/mnist/"
 d_train = tfio.IODataset.from_mnist(
     dataset_url + "train-images-idx3-ubyte.gz",
     dataset_url + "train-labels-idx1-ubyte.gz",
@@ -60,7 +60,7 @@ model.fit(d_train, epochs=5, steps_per_epoch=200)
 
 In the above [MNIST](http://yann.lecun.com/exdb/mnist/) example, the URL's
 to access the dataset files are passed directly to the `tfio.IODataset.from_mnist` API call.
-This is due to the inherent support that `tensorflow-io` provides for the `HTTP` file system,
+This is due to the inherent support that `tensorflow-io` provides for `HTTP`/`HTTPS` file system,
 thus eliminating the need for downloading and saving datasets on a local directory.
 
 NOTE: Since `tensorflow-io` is able to detect and uncompress the MNIST dataset automatically if needed,
