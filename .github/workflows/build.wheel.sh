@@ -1,6 +1,7 @@
 set -e
 
 export TF_AZURE_USE_DEV_STORAGE=1
+export TF_USE_MODULAR_FILESYSTEM=1
 
 run_test() {
   entry=$1
