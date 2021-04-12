@@ -15,4 +15,4 @@
 """version_ops"""
 
 package = "tensorflow>=2.4.0,<2.5.0"
-version = "0.17.0"
+version = "0.17.1"

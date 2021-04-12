@@ -28,7 +28,7 @@ class HTTPFSTest(tf.test.TestCase):
         self.local_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
         )
-        self.remote_filename = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        self.remote_filename = "https://www.apache.org/licenses/LICENSE-2.0.txt"
         super().__init__(methodName)
 
     def setUp(self):  # pylint: disable=invalid-name

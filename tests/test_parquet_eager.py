@@ -22,6 +22,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
 
+import pandas as pd
+
 filename = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "test_parquet",
@@ -182,6 +184,25 @@ def test_parquet_graph():
         assert np.isclose(v5, p5.numpy())
         assert v6 == p6.numpy()
         assert v7 == p7.numpy()
+
+
+def test_parquet_data():
+    """Test case for parquet GitHub 1254"""
+    filename = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_parquet",
+        "part-00000-ca0e89bf-ccd7-47e1-925c-9b42c8716c84-c000.snappy.parquet",
+    )
+    parquet = pd.read_parquet(filename)
+    dataset = tfio.IODataset.from_parquet(filename)
+    i = 0
+    for columns in dataset:
+        assert columns[b"user_id"] == parquet["user_id"][i]
+        assert columns[b"movie_id"] == parquet["movie_id"][i]
+        assert columns[b"movie_title"] == parquet["movie_title"][i]
+        assert columns[b"rating"] == parquet["rating"][i]
+        assert columns[b"timestamp"] == parquet["timestamp"][i]
+        i += 1
 
 
 if __name__ == "__main__":

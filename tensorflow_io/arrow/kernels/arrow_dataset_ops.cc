@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "arrow/api.h"
 #include "arrow/ipc/api.h"
+#include "arrow/result.h"
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
@@ -476,12 +477,17 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
         buffer_ = std::make_shared<arrow::Buffer>(dataset()->buffer_ptr_,
                                                   dataset()->buffer_size_);
         buffer_reader_ = std::make_shared<arrow::io::BufferReader>(buffer_);
-        CHECK_ARROW(arrow::ipc::RecordBatchFileReader::Open(
-            buffer_reader_.get(), buffer_->size(), &reader_));
+        arrow::Result<std::shared_ptr<arrow::ipc::RecordBatchFileReader>>
+            result = arrow::ipc::RecordBatchFileReader::Open(
+                buffer_reader_.get(), buffer_->size());
+        CHECK_ARROW(result.status());
+        reader_ = std::move(result).ValueUnsafe();
         num_batches_ = reader_->num_record_batches();
         if (num_batches_ > 0) {
-          CHECK_ARROW(
-              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          arrow::Result<std::shared_ptr<arrow::RecordBatch>> result =
+              reader_->ReadRecordBatch(current_batch_idx_);
+          CHECK_ARROW(result.status());
+          current_batch_ = std::move(result).ValueUnsafe();
           TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         }
         return Status::OK();
@@ -491,8 +497,10 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < num_batches_) {
-          CHECK_ARROW(
-              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          arrow::Result<std::shared_ptr<arrow::RecordBatch>> result =
+              reader_->ReadRecordBatch(current_batch_idx_);
+          CHECK_ARROW(result.status());
+          current_batch_ = std::move(result).ValueUnsafe();
         }
         return Status::OK();
       }
@@ -604,12 +612,14 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
         const string& batches = dataset()->batches_.scalar<tstring>()();
         auto buffer = std::make_shared<arrow::Buffer>(batches);
         auto buffer_reader = std::make_shared<arrow::io::BufferReader>(buffer);
-        CHECK_ARROW(
-            arrow::ipc::RecordBatchFileReader::Open(buffer_reader, &reader_));
+        auto result = arrow::ipc::RecordBatchFileReader::Open(buffer_reader);
+        CHECK_ARROW(result.status());
+        reader_ = std::move(result).ValueUnsafe();
         num_batches_ = reader_->num_record_batches();
         if (num_batches_ > 0) {
-          CHECK_ARROW(
-              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          auto result = reader_->ReadRecordBatch(current_batch_idx_);
+          CHECK_ARROW(result.status());
+          current_batch_ = std::move(result).ValueUnsafe();
           TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         }
         return Status::OK();
@@ -619,8 +629,9 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
         if (++current_batch_idx_ < num_batches_) {
-          CHECK_ARROW(
-              reader_->ReadRecordBatch(current_batch_idx_, &current_batch_));
+          auto result = reader_->ReadRecordBatch(current_batch_idx_);
+          CHECK_ARROW(result.status());
+          current_batch_ = std::move(result).ValueUnsafe();
         }
         return Status::OK();
       }
@@ -736,13 +747,17 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
             new ArrowRandomAccessFile(tf_file.get(), size));
 
         // Create the Feather reader
-        std::unique_ptr<arrow::ipc::feather::TableReader> reader;
-        CHECK_ARROW(arrow::ipc::feather::TableReader::Open(in_file, &reader));
+        std::shared_ptr<arrow::ipc::feather::Reader> reader;
+        arrow::Result<std::shared_ptr<arrow::ipc::feather::Reader>> result =
+            arrow::ipc::feather::Reader::Open(in_file);
+        CHECK_ARROW(result.status());
+        reader = std::move(result).ValueUnsafe();
 
         // Read file columns and build a table
-        int64_t num_columns = reader->num_columns();
         std::shared_ptr<::arrow::Table> table;
         CHECK_ARROW(reader->Read(&table));
+
+        int64_t num_columns = table->num_columns();
 
         // Convert the table to a sequence of batches
         arrow::TableBatchReader tr(*table.get());
@@ -885,8 +900,10 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
           in_stream_ = socket_stream;
         }
 
-        CHECK_ARROW(arrow::ipc::RecordBatchStreamReader::Open(in_stream_.get(),
-                                                              &reader_));
+        auto result =
+            arrow::ipc::RecordBatchStreamReader::Open(in_stream_.get());
+        CHECK_ARROW(result.status());
+        reader_ = std::move(result).ValueUnsafe();
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
         TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         return Status::OK();

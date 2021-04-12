@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - R0.17
   pull_request:
     branches:
       - master
+      - R0.17
 
 env:
   BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
@@ -418,7 +420,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [lint, linux-test, macos-test, windows-test]
+    needs: [linux-wheel, macos-wheel, windows-wheel]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1

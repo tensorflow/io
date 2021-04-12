@@ -31,9 +31,10 @@ genrule(
     srcs = ["cpp/src/arrow/util/config.h.cmake"],
     outs = ["cpp/src/arrow/util/config.h"],
     cmd = ("sed " +
-           "-e 's/@ARROW_VERSION_MAJOR@/0/g' " +
-           "-e 's/@ARROW_VERSION_MINOR@/16/g' " +
+           "-e 's/@ARROW_VERSION_MAJOR@/3/g' " +
+           "-e 's/@ARROW_VERSION_MINOR@/0/g' " +
            "-e 's/@ARROW_VERSION_PATCH@/0/g' " +
+           "-e 's/cmakedefine ARROW_USE_NATIVE_INT128/undef ARROW_USE_NATIVE_INT128/g' " +
            "-e 's/cmakedefine/define/g' " +
            "$< >$@"),
 )
@@ -59,13 +60,17 @@ cc_library(
             "cpp/src/arrow/io/*.cc",
             "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/json/*.cc",
+            "cpp/src/arrow/tensor/*.cc",
             "cpp/src/arrow/util/*.cc",
+            "cpp/src/arrow/vendored/musl/strptime.c",
             "cpp/src/arrow/vendored/optional.hpp",
             "cpp/src/arrow/vendored/string_view.hpp",
             "cpp/src/arrow/vendored/variant.hpp",
             "cpp/src/arrow/**/*.h",
             "cpp/src/parquet/**/*.h",
             "cpp/src/parquet/**/*.cc",
+            "cpp/src/generated/*.h",
+            "cpp/src/generated/*.cpp",
         ],
         exclude = [
             "cpp/src/**/*_benchmark.cc",
@@ -77,16 +82,16 @@ cc_library(
             "cpp/src/**/*fuzz*.cc",
             "cpp/src/**/file_to_stream.cc",
             "cpp/src/**/stream_to_file.cc",
+            "cpp/src/arrow/util/bpacking_avx2.cc",
+            "cpp/src/arrow/util/bpacking_avx512.cc",
         ],
-    ) + [
-        "@org_tensorflow_io//third_party:parquet/parquet_types.cpp",
-    ],
+    ),
     hdrs = [
         # declare header from above genrule
         "cpp/src/arrow/util/config.h",
         "cpp/src/parquet/parquet_version.h",
     ],
-    copts = ["-std=c++11"],
+    copts = [],
     defines = [
         "ARROW_WITH_BROTLI",
         "ARROW_WITH_SNAPPY",
@@ -112,7 +117,6 @@ cc_library(
         "@bzip2",
         "@double-conversion",
         "@lz4",
-        "@org_tensorflow_io//third_party:parquet",
         "@rapidjson",
         "@snappy",
         "@thrift",
