@@ -1,3 +1,18 @@
+# Release 0.17.1
+
+## Major Features
+* Fixed incomplete row reading issue in parquet files.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Samuel Marks, Tom McTiernan, Vignesh Kothapalli, Yong Tang,
+Yunze Xu, 博琰
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.17.0
 
 ## Major Features
