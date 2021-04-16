@@ -24,7 +24,7 @@ import types
 import tensorflow as tf
 
 
-def _load_library(filename, lib="op"):
+def _load_library(filename):
     """_load_library"""
     f = inspect.getfile(sys._getframe(1))  # pylint: disable=protected-access
 
@@ -37,25 +37,18 @@ def _load_library(filename, lib="op"):
     datapath = os.environ.get("TFIO_DATAPATH")
     if datapath is not None:
         # Build filename from:
-        # `datapath` + `tensorflow_io` + `package_name` + `relpath_to_library`
-        rootpath = os.path.dirname(sys.modules["tensorflow_io"].__file__)
+        # `datapath` + `tensorflow_io_package` + `package_name` + `relpath_to_library`
+        rootpath = os.path.dirname(sys.modules["tensorflow_io_plugin_gs"].__file__)
         filename = sys.modules[__name__].__file__
         f = os.path.join(
             datapath,
-            "tensorflow_io",
+            "tensorflow_io_plugin_gs",
             os.path.relpath(os.path.dirname(filename), rootpath),
             os.path.relpath(f, os.path.dirname(filename)),
         )
         filenames.append(f)
     # Function to load the library, return True if file system library is loaded
-    if lib == "op":
-        load_fn = tf.load_op_library
-    elif lib == "dependency":
-        load_fn = lambda f: ctypes.CDLL(f, mode=ctypes.RTLD_GLOBAL)
-    elif lib == "fs":
-        load_fn = lambda f: tf.experimental.register_filesystem_plugin(f) is None
-    else:
-        load_fn = lambda f: tf.compat.v1.load_file_system_library(f) is None
+    load_fn = lambda f: tf.experimental.register_filesystem_plugin(f) is None
 
     # Try to load all paths for file, fail if none succeed
     errs = []
@@ -73,6 +66,6 @@ def _load_library(filename, lib="op"):
 
 
 try:
-    plugin_gs = _load_library("libtensorflow_io_plugin_gs.so", "fs")
+    plugin_gs = _load_library("libtensorflow_io_plugin_gs.so")
 except NotImplementedError as e:
     warnings.warn("file system plugin for gs are not loaded: {}".format(e))
