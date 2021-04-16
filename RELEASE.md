@@ -1,6 +1,6 @@
 # Release 0.17.1
 
-## Major Features
+## Bug Fixes
 * Fixed incomplete row reading issue in parquet files.
 
 ## Thanks to our Contributors
