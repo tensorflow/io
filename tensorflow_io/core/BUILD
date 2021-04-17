@@ -369,6 +369,21 @@ cc_library(
 )
 
 cc_library(
+    name = "orc_ops",
+    srcs = [
+        "kernels/orc/hello-time.cc",
+    ],
+    hdrs = [
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@liborc",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_kernels.cc",
@@ -720,6 +735,7 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:orc_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",
