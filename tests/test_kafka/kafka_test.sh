@@ -17,11 +17,11 @@
 set -e
 set -o pipefail
 
-VERSION=5.4.1
+VERSION=6.1.1
 
 echo "Downloading the confluent packages"
-curl -sSOL http://packages.confluent.io/archive/5.4/confluent-community-5.4.1-2.12.tar.gz
-tar -xzf confluent-community-5.4.1-2.12.tar.gz
+curl -sSOL http://packages.confluent.io/archive/6.1/confluent-community-6.1.1.tar.gz
+tar -xzf confluent-community-6.1.1.tar.gz
 
 (cd confluent-$VERSION/ && sudo bin/zookeeper-server-start -daemon etc/kafka/zookeeper.properties)
 echo "Waiting for 10 secs until zookeeper is up and running"
