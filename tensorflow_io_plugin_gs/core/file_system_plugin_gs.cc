@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ limitations under the License.
 
 #include "absl/strings/ascii.h"
 
+// Please see:
+// tensorflow/tensorflow/c/experimental/filesystem/filesystem_interface.h
+// for definition of `TF_InitPlugin`
 void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   const char* env_value = getenv("TF_USE_MODULAR_FILESYSTEM");
   std::string load_plugin = env_value ? absl::AsciiStrToLower(env_value) : "";
