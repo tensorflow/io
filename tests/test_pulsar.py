@@ -13,16 +13,21 @@
 # the License.
 # ==============================================================================
 """Tests for Pulsar Dataset"""
-
+import sys
 import numpy as np
 
 import tensorflow as tf
 import tensorflow_io as tfio
 
+import pytest
 
 default_pulsar_timeout = 5000
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_simple_messages():
     """Test consuming simple messages from a Pulsar topic with PulsarIODataset. 
 
@@ -41,6 +46,10 @@ def test_pulsar_simple_messages():
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_keyed_messages():
     """Test consuming keyed messages from a Pulsar topic with PulsarIODataset
 
@@ -63,6 +72,10 @@ def test_pulsar_keyed_messages():
     assert kv["K1"] == [("D" + str(i)).encode() for i in range(1, 6, 2)]
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_resubscribe():
     """Test resubscribing the same topic.
 
@@ -106,6 +119,10 @@ def test_pulsar_resubscribe():
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_invalid_arguments():
     """Test the invalid arguments when a PulsarIODataset is created
 
@@ -160,6 +177,10 @@ def test_pulsar_invalid_arguments():
         )
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_write_simple_messages():
     """Test writing simple messages to a Pulsar topic with PulsarWriter
     """
@@ -186,6 +207,10 @@ def test_pulsar_write_simple_messages():
     )
 
 
+@pytest.mark.skipif(
+    sys.platform in ("win32", "linux"),
+    reason="TODO Pulsar not setup properly on Windows/Linux yet",
+)
 def test_pulsar_write_keyed_messages():
     """Test writing keyed messages to a Pulsar topic with PulsarWriter
     """
