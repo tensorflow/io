@@ -43,6 +43,7 @@ for i in {1..30}; do
       break
   fi
   echo "[$i] Access namespace public/default failed: $RESPONSE, sleep for 1 second"
+  cat logs/*.log
   sleep 1
 done
 echo "Sleep for 5 seconds more to avoid flaky test"
