@@ -43,11 +43,12 @@ for i in {1..30}; do
       break
   fi
   echo "[$i] Access namespace public/default failed: $RESPONSE, sleep for 1 second"
-  cat logs/*.log
   sleep 1
 done
 echo "Sleep for 5 seconds more to avoid flaky test"
 sleep 5
+
+cat logs/*.log
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
 bin/pulsar-client produce -m "D0,D1,D2,D3,D4,D5" test
