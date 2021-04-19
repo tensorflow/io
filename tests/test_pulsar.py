@@ -25,7 +25,7 @@ default_pulsar_timeout = 5000
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_simple_messages():
@@ -47,7 +47,7 @@ def test_pulsar_simple_messages():
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_keyed_messages():
@@ -73,7 +73,7 @@ def test_pulsar_keyed_messages():
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_resubscribe():
@@ -120,7 +120,7 @@ def test_pulsar_resubscribe():
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_invalid_arguments():
@@ -178,7 +178,7 @@ def test_pulsar_invalid_arguments():
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_write_simple_messages():
@@ -208,7 +208,7 @@ def test_pulsar_write_simple_messages():
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "linux"),
+    sys.platform in ("win32",),
     reason="TODO Pulsar not setup properly on Windows/Linux yet",
 )
 def test_pulsar_write_keyed_messages():
