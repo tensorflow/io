@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
 
+import pytest
 
 default_pulsar_timeout = 5000
 
