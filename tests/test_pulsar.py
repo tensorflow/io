@@ -13,7 +13,7 @@
 # the License.
 # ==============================================================================
 """Tests for Pulsar Dataset"""
-
+import sys
 import numpy as np
 
 import tensorflow as tf
