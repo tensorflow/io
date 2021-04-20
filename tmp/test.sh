@@ -1,0 +1,13 @@
+BUILD_SCRIPT=bazel-out/k8-fastbuild/bin/external/liborc/liborc_foreign_cc/build_script.sh
+EXT_BUILD_ROOT=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io
+BUILD_LOG=bazel-out/k8-fastbuild/bin/external/liborc/liborc_foreign_cc/CMake.log
+PWD=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io
+TF_HEADER_DIR=/home/pi/p3/lib/python3.8/site-packages/tensorflow/include
+BUILD_WRAPPER_SCRIPT=bazel-out/k8-fastbuild/bin/external/liborc/liborc_foreign_cc/wrapper_build_script.sh
+TF_SHARED_LIBRARY_NAME=libtensorflow_framework.so.2
+TMPDIR=/tmp
+EXT_BUILD_DEPS=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/bazel-out/k8-fastbuild/bin/external/liborc/liborc.ext_build_deps
+BUILD_TMPDIR=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/bazel-out/k8-fastbuild/bin/external/liborc/liborc.build_tmpdir
+SHLVL=2
+CMAKE_MAKE_PROGRAM=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/bazel-out/host/bin/external/rules_foreign_cc/toolchains/make/bin/make LD_LIBRARY_PATH=:/usr/local/cuda-11.2/lib64 INSTALLDIR=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/bazel-out/k8-fastbuild/bin/external/liborc/liborc TF_SHARED_LIBRARY_DIR=/home/pi/p3/lib/python3.8/site-packages/tensorflow PATH=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io:/home/pi/.cache/bazelisk/downloads/bazelbuild/bazel-3.7.2-linux-x86_64/bin:/home/pi/.local/bin:/usr/local/cuda-11.2/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin /home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/external/cmake-3.19.6-Linux-x86_64/bin/cmake -DCMAKE_TOOLCHAIN_FILE=crosstool_bazel.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=liborc -DCMAKE_PREFIX_PATH=/home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb7715    09e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/bazel-out/k8-fastbuild/bin/external/liborc/liborc.ext_build_deps -DCMAKE_RANLIB= -DBUILD_JAVA=OFF -DBUILD_TESTING=OFF -DBUILD_CPP_TESTS=OFF -DSTOP_BUILD_ON_WARNING=OFF -G 'Unix Makefiles' /home/pi/.cache/bazel/_bazel_pi/be6ac8eba0db45fb771509e53438aa5b/sandbox/linux-sandbox/1/execroot/org_tensorflow_io/external/liborc
+
