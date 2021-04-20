@@ -11,7 +11,11 @@ cmake(
     lib_source = "@liborc//:all_srcs",
     cmake_options = [
       "-DBUILD_JAVA=OFF",
-      "-DCMAKE_BUILD_TYPE=DEBUG"
+      "-DBUILD_TESTING=OFF",
+      "-DBUILD_CPP_TESTS=OFF",
+      "-DSTOP_BUILD_ON_WARNING=OFF",
+      # "-Werror",
+      # "-DCMAKE_BUILD_TYPE=DEBUG"
     ],
     visibility = ["//visibility:public"],
     out_include_dir = "include",

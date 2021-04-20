@@ -1135,9 +1135,9 @@ rules_foreign_cc_dependencies()
 http_archive(
     name = "liborc",
     build_file = "//third_party:liborc.BUILD",
-    sha256 = "df5885db8fa2e4435db8d486c6c7fc4e2c565d6197eee27729cf9cbdf36353c0",
-    strip_prefix = "orc-rel-release-1.6.5",
+    sha256 = "abdffe48b8d2e7776c3b541ee2241401e49774941ca4a8c759e5d795daec8a45",
+    strip_prefix = "orc-rel-release-1.6.7",
     urls = [
-        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.5.tar.gz",
+        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
     ],
 )

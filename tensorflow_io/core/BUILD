@@ -376,7 +376,12 @@ cc_library(
     hdrs = [
     ],
     copts = tf_io_copts(),
-    linkstatic = True,
+    linkopts = [
+        "-lcrypto",
+        "-pthread",
+        "-L/usr/local/lib/",
+        "-lsasl2",
+    ],
     deps = [
         "@liborc",
     ],
