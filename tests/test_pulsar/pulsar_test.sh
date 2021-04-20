@@ -51,15 +51,15 @@ sleep 5
 cat logs/*.log
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D0,D1,D2,D3,D4,D5" test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D0,D1,D2,D3,D4,D5" test
 
 echo "Creating and populating 'key-test' topic with sample keyed messages"
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D0" -k "K0" key-test
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D1" -k "K1" key-test
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D2" -k "K0" key-test
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D3" -k "K1" key-test
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D4" -k "K0" key-test
-bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D5" -k "K1" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D0" -k "K0" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D1" -k "K1" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D2" -k "K0" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D3" -k "K1" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D4" -k "K0" key-test
+bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D5" -k "K1" key-test
 
 echo "Pulsar test setup completed"
 exit 0
