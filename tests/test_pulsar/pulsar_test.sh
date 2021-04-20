@@ -37,7 +37,7 @@ bin/pulsar-daemon start standalone
 
 echo "Waiting for Pulsar service ready or 30 seconds passed"
 for i in {1..30}; do
-  RESPONSE=$(curl --write-out '%{http_code}' --silent -o /dev/null -L http://localhost:8080/admin/v2/persistent/public/default) || true
+  RESPONSE=$(curl --write-out '%{http_code}' --silent -o /dev/null -L http://127.0.0.1:8080/admin/v2/persistent/public/default) || true
   if [[ $RESPONSE == 200 ]]; then
       echo "[$i] Access namespace public/default successfully"
       break
@@ -51,15 +51,15 @@ sleep 5
 cat logs/*.log
 
 echo "Creating and populating 'test' topic with sample non-keyed messages"
-bin/pulsar-client produce -m "D0,D1,D2,D3,D4,D5" test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D0,D1,D2,D3,D4,D5" test
 
 echo "Creating and populating 'key-test' topic with sample keyed messages"
-bin/pulsar-client produce -m "D0" -k "K0" key-test
-bin/pulsar-client produce -m "D1" -k "K1" key-test
-bin/pulsar-client produce -m "D2" -k "K0" key-test
-bin/pulsar-client produce -m "D3" -k "K1" key-test
-bin/pulsar-client produce -m "D4" -k "K0" key-test
-bin/pulsar-client produce -m "D5" -k "K1" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D0" -k "K0" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D1" -k "K1" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D2" -k "K0" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D3" -k "K1" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D4" -k "K0" key-test
+bin/pulsar-client produce --url pulsar://127.0.0.1:6650 -m "D5" -k "K1" key-test
 
 echo "Pulsar test setup completed"
 exit 0
