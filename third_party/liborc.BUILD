@@ -8,17 +8,17 @@ filegroup(
 
 cmake(
     name = "liborc",
-    lib_source = "@liborc//:all_srcs",
     cmake_options = [
-      "-DBUILD_JAVA=OFF",
-      "-DBUILD_CPP_TESTS=OFF",
+        "-DBUILD_JAVA=OFF",
+        "-DBUILD_CPP_TESTS=OFF",
     ],
-    visibility = ["//visibility:public"],
+    lib_source = "@liborc//:all_srcs",
     out_include_dir = "include",
     out_static_libs = [
-      "liborc.a",
-      "libzstd.a",
-      "libhdfspp_static.a",
+        "liborc.a",
+        "libzstd.a",
+        "libhdfspp_static.a",
     ],
     tags = ["requires-network"],
+    visibility = ["//visibility:public"],
 )
