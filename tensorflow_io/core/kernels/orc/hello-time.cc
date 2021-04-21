@@ -5,15 +5,13 @@
 #include <orc/Exceptions.hh>
 #include <orc/OrcFile.hh>
 
-void print_localtime()
-{
+void print_localtime() {
   std::time_t result = std::time(nullptr);
   std::cout << std::asctime(std::localtime(&result));
 }
 
-int main(int argc, char const *argv[])
-{
-  std::cout << "test\n";
+// Sample ORC file: https://github.com/harbby/cmake_ExternalProject_demo/blob/main/iris.orc
+int main(int argc, char const *argv[]) {
   std::list<uint64_t> read_cols = {0, 1, 2, 3, 4};
   std::string file_path = "./iris.orc";
 
@@ -36,10 +34,8 @@ int main(int argc, char const *argv[])
   char **buffer2 = col4->data.data();
   long *lengths = col4->length.data();
 
-  while (row_reader->next(*batch))
-  {
-    for (uint32_t r = 0; r < batch->numElements; ++r)
-    {
+  while (row_reader->next(*batch)) {
+    for (uint32_t r = 0; r < batch->numElements; ++r) {
       std::cout << "line " << buffer1[r] << "," << std::string(buffer2[r], lengths[r]) << "\n";
     }
     //std::cout << "this batch nums" << " " << batch->numElements << " " << "lines\n";

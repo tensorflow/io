@@ -373,15 +373,7 @@ cc_library(
     srcs = [
         "kernels/orc/hello-time.cc",
     ],
-    hdrs = [
-    ],
     copts = tf_io_copts(),
-    linkopts = [
-        "-lcrypto",
-        "-pthread",
-        "-L/usr/local/lib/",
-        "-lsasl2",
-    ],
     deps = [
         "@liborc",
     ],
