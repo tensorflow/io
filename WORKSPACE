@@ -1123,11 +1123,12 @@ http_archive(
 )
 
 http_archive(
-   name = "rules_foreign_cc",
-   sha256 = "e60cfd0a8426fa4f5fd2156e768493ca62b87d125cb35e94c44e79a3f0d8635f",
-   strip_prefix = "rules_foreign_cc-0.2.0",
-   url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.2.0.zip",
+    name = "rules_foreign_cc",
+    sha256 = "e60cfd0a8426fa4f5fd2156e768493ca62b87d125cb35e94c44e79a3f0d8635f",
+    strip_prefix = "rules_foreign_cc-0.2.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.2.0.zip",
 )
+
 load("@rules_foreign_cc//:workspace_definitions.bzl", "rules_foreign_cc_dependencies")
 
 rules_foreign_cc_dependencies()
