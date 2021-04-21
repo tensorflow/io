@@ -49,8 +49,6 @@ done
 echo "Sleep for 5 seconds more to avoid flaky test"
 sleep 5
 
-cat logs/*.log
-
 echo "Creating and populating 'test' topic with sample non-keyed messages"
 bin/pulsar-client --url pulsar://127.0.0.1:6650 produce -m "D0,D1,D2,D3,D4,D5" test
 
