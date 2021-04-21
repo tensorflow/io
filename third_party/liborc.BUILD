@@ -21,11 +21,6 @@ cmake(
     out_include_dir = "include",
     out_static_libs = [
       "liborc.a",
-      "libprotoc.a",
-      "libz.a",
-      "liblz4.a",
-      "libprotobuf.a",
-      "libsnappy.a",
       "libzstd.a",
       "libhdfspp_static.a",
     ],

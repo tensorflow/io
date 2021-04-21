@@ -27,6 +27,7 @@ def write_config():
 
     include_list = []
     opt_list = []
+    opt_list.append("-fPIC")
 
     for arg in cflags:
         if inc_regex.match(arg):
@@ -35,7 +36,7 @@ def write_config():
             opt_list.append(arg)
         else:
             print("WARNING: Unexpected cflag item {}".format(arg))
-
+    opt_list.remove("-D_GLIBCXX_USE_CXX11_ABI=0")
     if len(include_list) != 1:
         print(
             "ERROR: Expected a single include directory in "
