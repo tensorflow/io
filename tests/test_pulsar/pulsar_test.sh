@@ -32,6 +32,7 @@ echo "Disable deleting inactive topics"
 sed -i.bak 's/zookeeperServers=.*/zookeeperServers=localhost:2182/' conf/standalone.conf
 sed -i.bak "s/brokerDeleteInactiveTopicsFrequencySeconds=.*/brokerDeleteInactiveTopicsFrequencySeconds=86400/" conf/standalone.conf
 sed -i.bak 's/advertisedAddress=.*/advertisedAddress=127.0.0.1/' conf/standalone.conf
+sed -i.bak 's/bindAddress=.*/bindAddress=127.0.0.1/' conf/standalone.conf
 
 bin/pulsar-daemon start standalone
 
