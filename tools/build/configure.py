@@ -112,6 +112,8 @@ def write_config():
                     )
                     bazel_rc.write('build --action_env TF_CUDA_VERSION="10.1"\n')
                     bazel_rc.write('build --action_env TF_CUDNN_VERSION="7"\n')
+            # Needed for tf rules
+            bazel_rc.write('build --experimental_repo_remote_exec\n')
             # Enable platform specific config
             bazel_rc.write('build --enable_platform_specific_config\n')
             # Needed for GRPC build

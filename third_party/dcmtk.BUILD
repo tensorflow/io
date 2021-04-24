@@ -91,8 +91,8 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@libpng",
         "@libtiff",
+        "@png",
         "@zlib",
     ],
 )
