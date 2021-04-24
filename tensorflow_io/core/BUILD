@@ -368,19 +368,6 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_library(
-    name = "orc_ops",
-    srcs = [
-        "kernels/orc/hello-time.cc",
-    ],
-    copts = tf_io_copts(),
-    deps = [
-        "@liborc",
-        ":orc_binary",
-    ],
-    alwayslink = 1,
-)
-
 cc_binary(
     name = "orc_binary",
     srcs = [

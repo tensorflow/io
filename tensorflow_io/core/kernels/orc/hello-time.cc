@@ -15,7 +15,11 @@ void print_localtime() {
 // https://github.com/harbby/cmake_ExternalProject_demo/blob/main/iris.orc
 int main(int argc, char const *argv[]) {
   std::list<uint64_t> read_cols = {0, 1, 2, 3, 4};
-  std::string file_path = "./iris.orc";
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " some_orc_file.orc" << std::endl;
+    return 1;
+  }
+  std::string file_path = argv[1];
 
   orc::RowReaderOptions row_reader_opts;
   row_reader_opts.include(read_cols);
