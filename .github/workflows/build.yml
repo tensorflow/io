@@ -280,6 +280,7 @@ jobs:
         run: |
           set -x -e
           bash -x -e .github/workflows/build.space.sh
+          bash -x -e tests/test_pulsar/pulsar_test.sh
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_gcloud/test_pubsub_bigtable.sh
@@ -290,7 +291,6 @@ jobs:
           bash -x -e tests/test_sql/sql_test.sh
           bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
           bash -x -e tests/test_hdfs/hdfs_test.sh
-          echo bash -x -e tests/test_pulsar/pulsar_test.sh
       - name: Test Linux
         run: |
           set -x -e
