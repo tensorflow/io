@@ -74,7 +74,7 @@ cc_library(
     includes = [
         "c++/libs/libhdfspp/include",
     ],
-        deps = [],
+    deps = [],
 )
 
 proto_library(

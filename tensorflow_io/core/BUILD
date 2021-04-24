@@ -377,7 +377,7 @@ cc_binary(
     # linkshared = 1,
     deps = [
         "@liborc",
-    ]
+    ],
 )
 
 cc_library(
