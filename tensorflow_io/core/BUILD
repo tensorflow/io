@@ -376,8 +376,21 @@ cc_library(
     copts = tf_io_copts(),
     deps = [
         "@liborc",
+        ":orc_binary",
     ],
     alwayslink = 1,
+)
+
+cc_binary(
+    name = "orc_binary",
+    srcs = [
+        "kernels/orc/hello-time.cc",
+    ],
+    copts = tf_io_copts(),
+    # linkshared = 1,
+    deps = [
+        "@liborc",
+    ]
 )
 
 cc_library(

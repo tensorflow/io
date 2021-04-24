@@ -37,7 +37,7 @@ int main(int argc, char const *argv[]) {
   // string field
   auto *col4 = dynamic_cast<orc::StringVectorBatch *>(fields->fields[4]);
   char **buffer2 = col4->data.data();
-  long *lengths = col4->length.data();
+  int64_t *lengths = col4->length.data();
 
   while (row_reader->next(*batch)) {
     for (uint32_t r = 0; r < batch->numElements; ++r) {
