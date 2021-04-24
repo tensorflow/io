@@ -48,8 +48,6 @@ int main(int argc, char const *argv[]) {
       std::cout << "line " << buffer1[r] << ","
                 << std::string(buffer2[r], lengths[r]) << "\n";
     }
-    // std::cout << "this batch nums" << " " << batch->numElements << " " <<
-    // "lines\n";
   }
 
   return 0;

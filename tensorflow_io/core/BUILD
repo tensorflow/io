@@ -374,7 +374,6 @@ cc_binary(
         "kernels/orc/hello-time.cc",
     ],
     copts = tf_io_copts(),
-    # linkshared = 1,
     deps = [
         "@liborc",
     ],
