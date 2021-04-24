@@ -35,6 +35,7 @@ def write_config():
             opt_list.append(arg)
         else:
             print("WARNING: Unexpected cflag item {}".format(arg))
+
     if len(include_list) != 1:
         print(
             "ERROR: Expected a single include directory in "
