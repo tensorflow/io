@@ -17,7 +17,7 @@
 set -e
 set -o pipefail
 
-LOCALSTACK_VERSION=0.12.2
+LOCALSTACK_VERSION=0.12.10
 docker pull localstack/localstack:$LOCALSTACK_VERSION
 docker run -d --rm --net=host --name=tensorflow-io-aws localstack/localstack:$LOCALSTACK_VERSION
 echo "Waiting for 10 secs until localstack is up and running"
