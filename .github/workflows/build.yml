@@ -724,24 +724,46 @@ jobs:
       - run: |
           set -e -x
           mkdir -p dist
-          cp macOS-3.6-nightly/*.whl dist/
-          cp macOS-3.7-nightly/*.whl dist/
-          cp macOS-3.8-nightly/*.whl dist/
-          cp macOS-3.9-nightly/*.whl dist/
-          cp Linux-3.6-nightly/*.whl dist/
-          cp Linux-3.7-nightly/*.whl dist/
-          cp Linux-3.8-nightly/*.whl dist/
-          cp Linux-3.9-nightly/*.whl dist/
-          cp Windows-3.6-nightly/*.whl dist/
-          cp Windows-3.7-nightly/*.whl dist/
-          cp Windows-3.8-nightly/*.whl dist/
-          cp Windows-3.9-nightly/*.whl dist/
+          cp macOS-3.6-nightly/tensorflow_io_nightly*.whl dist/
+          cp macOS-3.7-nightly/tensorflow_io_nightly*.whl dist/
+          cp macOS-3.8-nightly/tensorflow_io_nightly*.whl dist/
+          cp macOS-3.9-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.6-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.7-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.8-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.9-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.6-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.7-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.8-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.9-nightly/tensorflow_io_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
           password: ${{ secrets.github_tensorflow_io_nightly }}
+      - run: |
+          set -e -x
+          rm -rf dist
+          mkdir -p dist
+          cp macOS-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp macOS-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp macOS-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp macOS-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Linux-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Linux-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Linux-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Linux-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Windows-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Windows-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Windows-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp Windows-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          ls -la dist/
+          sha256sum dist/*.whl
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.tensorflow_io_plugin_gs_nightly }}
 
   docker-nightly:
     name: Docker Nightly
