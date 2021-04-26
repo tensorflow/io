@@ -368,17 +368,6 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_binary(
-    name = "orc_binary",
-    srcs = [
-        "kernels/orc/hello-time.cc",
-    ],
-    copts = tf_io_copts(),
-    deps = [
-        "@liborc",
-    ],
-)
-
 cc_library(
     name = "text_ops",
     srcs = [
@@ -754,6 +743,7 @@ cc_binary(
         "//tensorflow_io/core:mongodb_ops",
         "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_header_lib",
+        "@liborc",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
