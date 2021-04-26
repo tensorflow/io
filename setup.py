@@ -23,32 +23,69 @@ import setuptools
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-# read package and version from:
+# read package version and require from:
 # tensorflow_io/core/python/ops/version_ops.py
 with open(os.path.join(here, "tensorflow_io/core/python/ops/version_ops.py")) as f:
     entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
-    assert sum(e.startswith("package = ") for e in entries) == 1
     assert sum(e.startswith("version = ") for e in entries) == 1
-    package = list([e[10:] for e in entries if e.startswith("package = ")])[0].strip(
-        '"'
-    )
+    assert sum(e.startswith("require = ") for e in entries) == 1
     version = list([e[10:] for e in entries if e.startswith("version = ")])[0].strip(
         '"'
     )
-    assert package != ""
+    require = list([e[10:] for e in entries if e.startswith("require = ")])[0].strip(
+        '"'
+    )
     assert version != ""
+    assert require != ""
 
-if "--package-version" in sys.argv:
-    print(package)
+if "--install-require" in sys.argv:
+    print(require)
     sys.exit(0)
 
-project = "tensorflow-io"
+subpackages = ["tensorflow-io-plugin-gs"]
+
+assert "--project" in sys.argv, "--project ({} or {}) must be provided".format(
+    "tensorflow-io", ", ".join(subpackages)
+)
+project_idx = sys.argv.index("--project")
+project = sys.argv[project_idx + 1]
+sys.argv.remove("--project")
+sys.argv.pop(project_idx)
+assert (
+    project.replace("_", "-") == "tensorflow-io"
+    or project.replace("_", "-") in subpackages
+), "--project ({} or {}) must be provided, found {}".format(
+    "tensorflow-io", ", ".join(subpackages), project
+)
+project = project.replace("_", "-")
+
+exclude = (
+    ["tests", "tests.*"]
+    + [e.replace("-", "_") for e in subpackages if e != project]
+    + ["{}.*".format(e.replace("-", "_")) for e in subpackages if e != project]
+    + (["tensorflow_io", "tensorflow_io.*"] if project != "tensorflow-io" else [])
+)
+project_rootpath = project.replace("-", "_")
+
 if "--nightly" in sys.argv:
     nightly_idx = sys.argv.index("--nightly")
     version = version + ".dev" + sys.argv[nightly_idx + 1]
-    project = "tensorflow-io-nightly"
+    project = project + "-nightly"
     sys.argv.remove("--nightly")
     sys.argv.pop(nightly_idx)
+
+install_requires = []
+if project == "tensorflow-io":
+    install_requires = [require] + ["{}=={}".format(e, version) for e in subpackages]
+elif project == "tensorflow-io-nightly":
+    install_requires = [require] + [
+        "{}-nightly=={}".format(e, version) for e in subpackages
+    ]
+
+print("Project: {}".format(project))
+print("Exclude: {}".format(exclude))
+print("Install Requires: {}".format(install_requires))
+print("Project Rootpath: {}".format(project_rootpath))
 
 datapath = None
 if "--data" in sys.argv:
@@ -61,8 +98,10 @@ else:
 
 if (datapath is not None) and ("bdist_wheel" in sys.argv):
     rootpath = tempfile.mkdtemp()
-    print("setup.py - create {} and copy tensorflow_io data files".format(rootpath))
-    for rootname, _, filenames in os.walk(os.path.join(datapath, "tensorflow_io")):
+    print(
+        "setup.py - create {} and copy {} data files".format(rootpath, project_rootpath)
+    )
+    for rootname, _, filenames in os.walk(os.path.join(datapath, project_rootpath)):
         if not fnmatch.fnmatch(rootname, "*test*") and not fnmatch.fnmatch(
             rootname, "*runfiles*"
         ):
@@ -133,9 +172,9 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     keywords="tensorflow io machine learning",
-    packages=setuptools.find_packages(where=".", exclude=["tests"]),
+    packages=setuptools.find_packages(where=".", exclude=exclude),
     python_requires=">=3.5, <3.10",
-    install_requires=[package],
+    install_requires=install_requires,
     package_data={".": ["*.so"],},
     project_urls={
         "Source": "https://github.com/tensorflow/io",

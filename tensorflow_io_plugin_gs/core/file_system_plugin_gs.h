@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
-#define TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
+#ifndef TENSORFLOW_IO_PLUGIN_GS_CORE_FILE_SYSTEM_PLUGINS_H
+#define TENSORFLOW_IO_PLUGIN_GS_CORE_FILE_SYSTEM_PLUGINS_H
 
 #include <stdlib.h>
 
@@ -26,31 +26,13 @@ namespace io {
 static void* plugin_memory_allocate(size_t size) { return calloc(1, size); }
 static void plugin_memory_free(void* ptr) { free(ptr); }
 
-namespace az {
+namespace gs {
 
 void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 
-}  // namespace az
-
-namespace hdfs {
-
-void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
-
-}  // namespace hdfs
-
-namespace http {
-
-void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
-
-}  // namespace http
-
-namespace s3 {
-
-void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
-
-}  // namespace s3
+}  // namespace gs
 
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
+#endif  // TENSORFLOW_IO_PLUGIN_GS_CORE_FILE_SYSTEM_PLUGINS_H

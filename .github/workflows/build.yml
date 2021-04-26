@@ -111,7 +111,7 @@ jobs:
           BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          sudo python3 -m pip install $(python3 setup.py --package-version)
+          sudo python3 -m pip install $(python3 setup.py --install-require)
           python3 tools/build/configure.py
           bazel build \
             ${BAZEL_OPTIMIZATION} \
@@ -120,11 +120,16 @@ jobs:
             --noshow_loading_progress \
             --verbose_failures \
             --test_output=errors \
-            //tensorflow_io/...
-      - uses: actions/upload-artifact@v1
+            //tensorflow_io/...  //tensorflow_io_plugin_gs/...
+          mkdir build
+          cp -r bazel-bin/tensorflow_io build
+          cp -r bazel-bin/tensorflow_io_plugin_gs build
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: |
+            build/tensorflow_io
+            build/tensorflow_io_plugin_gs
 
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
@@ -138,7 +143,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -147,7 +152,8 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
+          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
+          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -158,7 +164,7 @@ jobs:
             delocate-wheel -w wheelhouse  $f
           done
           ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: wheelhouse
@@ -195,7 +201,8 @@ jobs:
           set -x -e
           python --version
           df -h
-          (cd wheelhouse && python -m pip install *.whl)
+          (cd wheelhouse && python -m pip install tensorflow_io_plugin_gs-*.whl)
+          (cd wheelhouse && python -m pip install tensorflow_io-*.whl)
       - name: Test ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -225,11 +232,14 @@ jobs:
             gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
           sudo chown -R $(id -nu):$(id -ng) .
           sudo find build/tensorflow_io -name '*runfiles*' | sudo xargs rm -rf
+          sudo find build/tensorflow_io_plugin_gs -name '*runfiles*' | sudo xargs rm -rf
           sudo cp .bazelrc build/tensorflow_io/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: build/tensorflow_io
+          path: |
+            build/tensorflow_io
+            build/tensorflow_io_plugin_gs
 
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
@@ -243,12 +253,13 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - name: Wheel ${{ matrix.python }} Linux
         run: |
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
           set -x -e
@@ -258,7 +269,7 @@ jobs:
           done
           sudo chown -R $(id -nu):$(id -ng) .
           ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: wheelhouse
@@ -334,14 +345,19 @@ jobs:
           python3 --version
           python3 -m pip install wheel setuptools
           python3 -m pip --version
-          python3 setup.py --package-version | xargs python3 -m pip install
+          python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so
-      - uses: actions/upload-artifact@v1
+          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_plugin_gs/...
+          mkdir build
+          cp -r bazel-bin/tensorflow_io build
+          cp -r bazel-bin/tensorflow_io_plugin_gs build
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: |
+            build/tensorflow_io
+            build/tensorflow_io_plugin_gs
 
   windows-wheel:
     name: Wheel ${{ matrix.python }} Windows
@@ -355,7 +371,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -365,9 +381,10 @@ jobs:
           @echo on
           python --version
           python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel
+          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
+          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel
           ls -la dist
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-wheel
           path: dist
@@ -401,14 +418,15 @@ jobs:
         run: |
           @echo on
           python --version
-          (cd wheel && ls *.whl | xargs python -m pip install)
+          (cd wheel && ls tensorflow_io_plugin_gs-*.whl | xargs python -m pip install && cd ..)
+          (cd wheel && ls tensorflow_io-*.whl | xargs python -m pip install && cd ..)
       - name: Test ${{ matrix.python }} Windows
         shell: cmd
         run: |
           @echo on
           python --version
           python -m pip install -U pytest-benchmark
-          rm -rf tensorflow_io
+          rm -rf tensorflow_io tensorflow_io_plugin_gs
           (cd tests && python -m pytest -s -v test_lmdb.py)
           (python -m pytest -s -v test_image.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff or avif")
           (python -m pytest -s -v test_serialization.py)
@@ -489,7 +507,7 @@ jobs:
           cp Windows-3.9-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: tensorflow-io-release
           path: wheelhouse
@@ -525,7 +543,7 @@ jobs:
           set -e -x
           BUILD_NUMBER=$(date "+%Y%m%d%H%M%S")
           echo ${BUILD_NUMBER} > BUILD_NUMBER
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: BUILD_NUMBER
           path: BUILD_NUMBER
@@ -548,7 +566,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -557,7 +575,8 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
+          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
+          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -568,7 +587,7 @@ jobs:
             delocate-wheel -w wheelhouse  $f
           done
           ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
@@ -591,12 +610,13 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - name: Wheel ${{ matrix.python }} Linux
         run: |
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
           set -x -e
@@ -606,7 +626,7 @@ jobs:
           done
           sudo chown -R $(id -nu):$(id -ng) .
           ls wheelhouse/*
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: wheelhouse
@@ -629,7 +649,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: ${{ runner.os }}-bazel-bin
-          path: bazel-bin/tensorflow_io
+          path: bazel-bin
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python }}
@@ -639,9 +659,10 @@ jobs:
           @echo on
           python --version
           python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
           ls -la dist
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-${{ matrix.python }}-nightly
           path: dist

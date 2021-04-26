@@ -12,6 +12,8 @@ cc_library(
     srcs = [
         "cleanup.h",
         "expiring_lru_cache.h",
+        "file_system_plugin_gs.cc",
+        "file_system_plugin_gs.h",
         "gcs_filesystem.cc",
         "gcs_helper.cc",
         "gcs_helper.h",
@@ -21,12 +23,22 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins:plugins_header",
         "@com_github_googleapis_google_cloud_cpp//:storage_client",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/types:variant",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_c_header_lib",
     ],
     alwayslink = 1,
+)
+
+cc_binary(
+    name = "python/ops/libtensorflow_io_plugin_gs.so",
+    copts = tf_io_copts(),
+    linkshared = 1,
+    deps = [
+        "//tensorflow_io_plugin_gs/core:gs",
+    ],
 )

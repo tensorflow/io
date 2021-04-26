@@ -22,10 +22,10 @@ limitations under the License.
 #include "google/cloud/storage/client.h"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
-#include "tensorflow_io/core/plugins/file_system_plugins.h"
-#include "tensorflow_io/core/plugins/gs/expiring_lru_cache.h"
-#include "tensorflow_io/core/plugins/gs/gcs_helper.h"
-#include "tensorflow_io/core/plugins/gs/ram_file_block_cache.h"
+#include "tensorflow_io_plugin_gs/core/expiring_lru_cache.h"
+#include "tensorflow_io_plugin_gs/core/file_system_plugin_gs.h"
+#include "tensorflow_io_plugin_gs/core/gcs_helper.h"
+#include "tensorflow_io_plugin_gs/core/ram_file_block_cache.h"
 
 namespace tensorflow {
 namespace io {

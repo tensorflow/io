@@ -19,7 +19,7 @@ import sys
 import time
 import requests
 import tensorflow as tf
-import tensorflow_io as tfio
+import tensorflow_io_plugin_gs
 import pytest
 
 
