@@ -32,6 +32,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -66,6 +67,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
