@@ -9,7 +9,7 @@ exports_files(["LICENSE"])
 # was supposed to capture platform discrepancies.
 # However, since orc_proto.pb.cc can be compiled
 # with cc_proto_library successfully, there is no need
-# for orc-proto-wrapper.cc.
+# for orc-proto-wrapper.cc
 cc_library(
     name = "liborc",
     srcs = glob(
