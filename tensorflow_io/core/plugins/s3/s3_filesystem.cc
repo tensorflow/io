@@ -28,7 +28,7 @@ limitations under the License.
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadBucketRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
-#include <aws/s3/model/ListObjectsRequest.h>
+#include <aws/s3/model/ListObjectsV2Request.h>
 #include <aws/s3/model/UploadPartCopyRequest.h>
 #include <stdlib.h>
 #include <string.h>
@@ -678,12 +678,12 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
   if (prefix.back() != '/') {
     prefix.push_back('/');
   }
-  Aws::S3::Model::ListObjectsRequest list_objects_request;
+  Aws::S3::Model::ListObjectsV2Request list_objects_request;
   list_objects_request.WithBucket(bucket).WithPrefix(prefix).WithMaxKeys(1);
   list_objects_request.SetResponseStreamFactory(
       []() { return Aws::New<Aws::StringStream>(kS3FileSystemAllocationTag); });
   auto list_objects_outcome =
-      s3_file->s3_client->ListObjects(list_objects_request);
+      s3_file->s3_client->ListObjectsV2(list_objects_request);
   if (list_objects_outcome.IsSuccess()) {
     auto objects = list_objects_outcome.GetResult().GetContents();
     if (objects.size() > 0) {
@@ -1074,12 +1074,12 @@ void DeleteDir(const TF_Filesystem* filesystem, const char* path,
   GetS3Client(s3_file);
 
   if (object.back() != '/') object.push_back('/');
-  Aws::S3::Model::ListObjectsRequest list_objects_request;
+  Aws::S3::Model::ListObjectsV2Request list_objects_request;
   list_objects_request.WithBucket(bucket).WithPrefix(object).WithMaxKeys(2);
   list_objects_request.SetResponseStreamFactory(
       []() { return Aws::New<Aws::StringStream>(kS3FileSystemAllocationTag); });
   auto list_objects_outcome =
-      s3_file->s3_client->ListObjects(list_objects_request);
+      s3_file->s3_client->ListObjectsV2(list_objects_request);
   if (list_objects_outcome.IsSuccess()) {
     auto contents = list_objects_outcome.GetResult().GetContents();
     if (contents.size() > 1 ||
@@ -1125,17 +1125,17 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   }
 
   Aws::S3::Model::DeleteObjectRequest delete_object_request;
-  Aws::S3::Model::ListObjectsRequest list_objects_request;
+  Aws::S3::Model::ListObjectsV2Request list_objects_request;
   list_objects_request.WithBucket(bucket_src)
       .WithPrefix(object_src)
       .WithMaxKeys(kS3GetChildrenMaxKeys);
   list_objects_request.SetResponseStreamFactory(
       []() { return Aws::New<Aws::StringStream>(kS3FileSystemAllocationTag); });
 
-  Aws::S3::Model::ListObjectsResult list_objects_result;
+  Aws::S3::Model::ListObjectsV2Result list_objects_result;
   do {
     auto list_objects_outcome =
-        s3_file->s3_client->ListObjects(list_objects_request);
+        s3_file->s3_client->ListObjectsV2(list_objects_request);
     if (!list_objects_outcome.IsSuccess())
       return TF_SetStatusFromAWSError(list_objects_outcome.GetError(), status);
 
@@ -1155,7 +1155,8 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
         return TF_SetStatusFromAWSError(delete_object_outcome.GetError(),
                                         status);
     }
-    list_objects_request.SetMarker(list_objects_result.GetNextMarker());
+    list_objects_request.SetContinuationToken(
+        list_objects_result.GetNextContinuationToken());
   } while (list_objects_result.GetIsTruncated());
   TF_SetStatus(status, TF_OK, "");
 }
@@ -1171,7 +1172,7 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   auto s3_file = static_cast<S3File*>(filesystem->plugin_filesystem);
   GetS3Client(s3_file);
 
-  Aws::S3::Model::ListObjectsRequest list_objects_request;
+  Aws::S3::Model::ListObjectsV2Request list_objects_request;
   list_objects_request.WithBucket(bucket)
       .WithPrefix(prefix)
       .WithMaxKeys(kS3GetChildrenMaxKeys)
@@ -1179,11 +1180,11 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   list_objects_request.SetResponseStreamFactory(
       []() { return Aws::New<Aws::StringStream>(kS3FileSystemAllocationTag); });
 
-  Aws::S3::Model::ListObjectsResult list_objects_result;
+  Aws::S3::Model::ListObjectsV2Result list_objects_result;
   std::vector<Aws::String> result;
   do {
     auto list_objects_outcome =
-        s3_file->s3_client->ListObjects(list_objects_request);
+        s3_file->s3_client->ListObjectsV2(list_objects_request);
     if (!list_objects_outcome.IsSuccess()) {
       TF_SetStatusFromAWSError(list_objects_outcome.GetError(), status);
       return -1;
@@ -1205,7 +1206,8 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
         result.push_back(entry);
       }
     }
-    list_objects_result.SetMarker(list_objects_result.GetNextMarker());
+    list_objects_request.SetContinuationToken(
+        list_objects_result.GetNextContinuationToken());
   } while (list_objects_result.GetIsTruncated());
 
   int num_entries = result.size();
