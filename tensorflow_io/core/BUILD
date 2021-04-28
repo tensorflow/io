@@ -385,17 +385,6 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_binary(
-    name = "orc_binary",
-    srcs = [
-        "kernels/orc/hello-time.cc",
-    ],
-    copts = tf_io_copts(),
-    deps = [
-        "@liborc",
-    ],
-)
-
 cc_library(
     name = "text_ops",
     srcs = [
@@ -555,19 +544,6 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
         "@rapidjson",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "orc_ops",
-    srcs = [
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@liborc",
     ],
     alwayslink = 1,
 )
