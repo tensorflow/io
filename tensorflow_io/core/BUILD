@@ -532,6 +532,19 @@ cc_library(
 )
 
 cc_library(
+    name = "orc_ops",
+    srcs = [
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@liborc",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "numpy_ops",
     srcs = [
         "kernels/numpy_kernels.cc",
@@ -720,6 +733,7 @@ cc_binary(
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:orc_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
         "//tensorflow_io/core:grpc_ops",

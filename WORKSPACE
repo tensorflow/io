@@ -1121,3 +1121,16 @@ http_archive(
         "https://github.com/tinyobjloader/tinyobjloader/archive/v2.0.0rc8.tar.gz",
     ],
 )
+
+http_archive(
+    name = "liborc",
+    build_file = "//third_party:liborc.BUILD",
+    patch_cmds = [
+        "tar -xzf c++/libs/libhdfspp/libhdfspp.tar.gz -C c++/libs/libhdfspp",
+    ],
+    sha256 = "abdffe48b8d2e7776c3b541ee2241401e49774941ca4a8c759e5d795daec8a45",
+    strip_prefix = "orc-rel-release-1.6.7",
+    urls = [
+        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
+    ],
+)
