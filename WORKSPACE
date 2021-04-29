@@ -893,6 +893,7 @@ http_archive(
     strip_prefix = "nasm-2.14.02",
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.bz2",
+        "https://mirror.sobukus.de/files/src/nasm/nasm-2.14.02.tar.bz2",
         "http://www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.bz2",
     ],
 )
