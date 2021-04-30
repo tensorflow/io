@@ -39,7 +39,6 @@ limitations under the License.
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/plugins/file_system_plugins.h"
-#include "tensorflow_io/core/plugins/s3/aws_crypto.h"
 #include "tensorflow_io/core/plugins/s3/aws_logging.h"
 
 namespace tensorflow {
@@ -193,18 +192,6 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
     tf_s3_filesystem::AWSLogSystem::InitializeAWSLogging();
 
     Aws::SDKOptions options;
-    options.cryptoOptions.sha256Factory_create_fn = []() {
-      return Aws::MakeShared<tf_s3_filesystem::AWSSHA256Factory>(
-          tf_s3_filesystem::AWSCryptoAllocationTag);
-    };
-    options.cryptoOptions.sha256HMACFactory_create_fn = []() {
-      return Aws::MakeShared<tf_s3_filesystem::AWSSHA256HmacFactory>(
-          tf_s3_filesystem::AWSCryptoAllocationTag);
-    };
-    options.cryptoOptions.secureRandomFactory_create_fn = []() {
-      return Aws::MakeShared<tf_s3_filesystem::AWSSecureRandomFactory>(
-          tf_s3_filesystem::AWSCryptoAllocationTag);
-    };
     Aws::InitAPI(options);
 
     // The creation of S3Client disables virtual addressing:
@@ -218,7 +205,7 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
         Aws::New<Aws::S3::S3Client>(
             kS3ClientAllocationTag, GetDefaultClientConfig(),
             Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, false),
-        [&options](Aws::S3::S3Client* s3_client) {
+        [options](Aws::S3::S3Client* s3_client) {
           if (s3_client != nullptr) {
             Aws::Delete(s3_client);
             Aws::ShutdownAPI(options);
