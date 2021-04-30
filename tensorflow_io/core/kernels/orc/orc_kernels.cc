@@ -93,13 +93,13 @@ class ORCReadable : public IOReadableInterface {
               PROCESS_TYPE(orc::DoubleVectorBatch*, double, float);
               break;
             case DT_INT16:
-              PROCESS_TYPE(orc::LongVectorBatch*, long, int16);
+              PROCESS_TYPE(orc::LongVectorBatch*, int64, int16);
               break;
             case DT_INT32:
-              PROCESS_TYPE(orc::LongVectorBatch*, long, int32);
+              PROCESS_TYPE(orc::LongVectorBatch*, int64, int32);
               break;
             case DT_INT64:
-              PROCESS_TYPE(orc::LongVectorBatch*, long, int64);
+              PROCESS_TYPE(orc::LongVectorBatch*, int64, int64);
               break;
             case DT_STRING: {
               auto* string_col = dynamic_cast<orc::StringVectorBatch*>(
@@ -198,7 +198,6 @@ class ORCReadable : public IOReadableInterface {
   Env* env_ TF_GUARDED_BY(mu_);
   std::unique_ptr<SizedRandomAccessFile> file_ TF_GUARDED_BY(mu_);
   std::unique_ptr<orc::RowReader> row_reader_ TF_GUARDED_BY(mu_);
-  uint64 file_size_ TF_GUARDED_BY(mu_);
   std::vector<Tensor> tensors_;
 
   std::vector<DataType> dtypes_;

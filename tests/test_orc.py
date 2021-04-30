@@ -34,7 +34,14 @@ def test_orc_input():
     dataset = tfio.IODataset.from_orc(orc_filename, capacity=15).batch(1)
     packets_total = 0
     for v in dataset:
+        if packets_total == 0:
+            sepal_length, _, _, _, species = v
+            assert sepal_length.dtype == tf.float64
+            assert species.dtype == tf.string
+            assert tf.math.less(tf.math.abs(sepal_length - 5.0999999), 0.0001)
+            assert tf.math.equal(species, "setosa")
         packets_total += 1
+
     assert packets_total == 150
 
 
