@@ -528,7 +528,7 @@ jobs:
           bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
           docker push tfsigio/tfio:latest
           python --version
-          TFIO_VERSION=$(python setup.py --version)
+          TFIO_VERSION=$(python setup.py --project tensorflow-io --version | tail -1)
           docker tag tfsigio/tfio:latest tfsigio/tfio:${TFIO_VERSION}
           docker push tfsigio/tfio:${TFIO_VERSION}
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
