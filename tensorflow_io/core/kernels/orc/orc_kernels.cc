@@ -35,11 +35,20 @@ class ORCReadable : public IOReadableInterface {
 
     // Parse columns. We assume the orc record file is a flat array
     auto row_count = reader->getNumberOfRows();
-    for (int i = 0; i < reader->getType().getSubtypeCount(); ++i) {
+    for (uint64_t i = 0; i < reader->getType().getSubtypeCount(); ++i) {
       auto field_name = reader->getType().getFieldName(i);
       auto subtype = reader->getType().getSubtype(i);
       DataType dtype;
       switch (static_cast<int64_t>(subtype->getKind())) {
+        case orc::SHORT:
+          dtype = DT_INT16;
+          break;
+        case orc::INT:
+          dtype = DT_INT32;
+          break;
+        case orc::LONG:
+          dtype = DT_INT64;
+          break;
         case orc::STRING:
           dtype = DT_STRING;
           break;
@@ -65,22 +74,46 @@ class ORCReadable : public IOReadableInterface {
         row_reader_->createRowBatch(10);
     auto* fields = dynamic_cast<orc::StructVectorBatch*>(batch.get());
     int64_t record_index = 0;
+// MACRO to template type conversions between ORC and TensorFlow DT
+#define PROCESS_TYPE(VTYPE, VDTYPE, TDTYPE)                                   \
+  {                                                                           \
+    auto* col = dynamic_cast<VTYPE>(fields->fields[column_index]);            \
+    VDTYPE* buffer1 = col->data.data();                                       \
+    tensors_[column_index].flat<TDTYPE>()(record_index) = (TDTYPE)buffer1[r]; \
+  }
     while (row_reader_->next(*batch)) {
       for (uint32_t r = 0; r < batch->numElements; ++r) {
         for (size_t column_index = 0; column_index < columns_.size();
              column_index++) {
-          if (dtypes_[column_index] == DT_DOUBLE) {
-            auto* float_col = dynamic_cast<orc::DoubleVectorBatch*>(
-                fields->fields[column_index]);
-            double* buffer1 = float_col->data.data();
-            tensors_[column_index].flat<double>()(record_index) = buffer1[r];
-          } else if (dtypes_[column_index] == DT_STRING) {
-            auto* string_col = dynamic_cast<orc::StringVectorBatch*>(
-                fields->fields[column_index]);
-            char** buffer = string_col->data.data();
-            int64_t* lengths = string_col->length.data();
-            tensors_[column_index].flat<tstring>()(record_index) =
-                std::string(buffer[r], lengths[r]);
+          switch (dtypes_[column_index]) {
+            case DT_DOUBLE:
+              PROCESS_TYPE(orc::DoubleVectorBatch*, double, double);
+              break;
+            case DT_FLOAT:
+              PROCESS_TYPE(orc::DoubleVectorBatch*, double, float);
+              break;
+            case DT_INT16:
+              PROCESS_TYPE(orc::LongVectorBatch*, long, int16);
+              break;
+            case DT_INT32:
+              PROCESS_TYPE(orc::LongVectorBatch*, long, int32);
+              break;
+            case DT_INT64:
+              PROCESS_TYPE(orc::LongVectorBatch*, long, int64);
+              break;
+            case DT_STRING: {
+              auto* string_col = dynamic_cast<orc::StringVectorBatch*>(
+                  fields->fields[column_index]);
+              char** buffer = string_col->data.data();
+              int64_t* lengths = string_col->length.data();
+              tensors_[column_index].flat<tstring>()(record_index) =
+                  std::string(buffer[r], lengths[r]);
+              break;
+            }
+            default:
+              return errors::InvalidArgument(
+                  "data type is not supported: ",
+                  DataTypeString(dtypes_[column_index]));
           }
         }
         record_index++;
