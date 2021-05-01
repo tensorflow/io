@@ -48,8 +48,8 @@ def _load_dependency_and_library(p):
 
 def _shared_object(name, version):
     if sys.platform == "darwin":
-        return "lib%s.%s.dylib" % (name, version)
-    return "lib%s.so.%s" % (name, version)
+        return "lib{}.{}.dylib".format(name, version)
+    return "lib{}.so.{}".format(name, version)
 
 
 _ffmpeg_ops, _decode_ops = _load_dependency_and_library(
