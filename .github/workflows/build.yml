@@ -196,7 +196,6 @@ jobs:
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_gcloud/test_pubsub_bigtable.sh
           bash -x -e tests/test_pulsar/pulsar_test.sh
-          bash -x -e tests/test_ffmpeg/install_ffmpeg.sh
       - name: Install ${{ matrix.python }} macOS
         run: |
           set -x -e
