@@ -36,7 +36,7 @@ def test_orc_input():
     for v in dataset:
         if packets_total == 0:
             sepal_length, _, _, _, species = v
-            assert sepal_length.dtype == tf.float64
+            assert sepal_length.dtype == tf.float32
             assert species.dtype == tf.string
             assert tf.math.less(tf.math.abs(sepal_length - 5.0999999), 0.0001)
             assert tf.math.equal(species, "setosa")

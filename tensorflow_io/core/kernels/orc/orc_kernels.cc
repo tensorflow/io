@@ -71,7 +71,7 @@ class ORCReadable : public IOReadableInterface {
           dtype = DT_DOUBLE;
           break;
         case orc::FLOAT:
-          dtype = DT_DOUBLE;
+          dtype = DT_FLOAT;
           break;
         default:
           return errors::InvalidArgument("data type is not supported: ",
