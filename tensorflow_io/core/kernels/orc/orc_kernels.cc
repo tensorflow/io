@@ -1,3 +1,18 @@
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
 #include <ctime>
 #include <iostream>
 #include <orc/Exceptions.hh>
@@ -74,7 +89,7 @@ class ORCReadable : public IOReadableInterface {
         row_reader_->createRowBatch(10);
     auto* fields = dynamic_cast<orc::StructVectorBatch*>(batch.get());
     int64_t record_index = 0;
-// MACRO to template type conversions between ORC and TensorFlow DT
+// Template type conversions between ORC and TensorFlow DT
 #define PROCESS_TYPE(VTYPE, VDTYPE, TDTYPE)                                   \
   {                                                                           \
     auto* col = dynamic_cast<VTYPE>(fields->fields[column_index]);            \
@@ -148,20 +163,36 @@ class ORCReadable : public IOReadableInterface {
     if (element_start == element_stop) {
       return Status::OK();
     }
+
+#define PROCESS_VALUE(VTYPE)                            \
+  {                                                     \
+    value->flat<VTYPE>().data()[i] =                    \
+        tensors_[column_index].flat<VTYPE>().data()[i]; \
+  }
     for (int i = element_start; i < element_stop; i++) {
-      if (dtypes_[column_index] == DT_STRING) {
-        value->flat<tstring>().data()[i] =
-            tensors_[column_index].flat<tstring>().data()[i];
-        // LOG(INFO) << " column_index: " << column_index << " index: " << i <<
-        // " data: " << value->flat<tstring>().data()[i];
-      } else if (dtypes_[column_index] == DT_DOUBLE) {
-        value->flat<double>().data()[i] =
-            tensors_[column_index].flat<double>().data()[i];
-        // LOG(INFO) << " column_index: " << column_index << " index: " << i <<
-        // " data: " << value->flat<double>().data()[i];
-      } else {
-        return errors::InvalidArgument("invalid data type: ",
-                                       dtypes_[column_index]);
+      switch (dtypes_[column_index]) {
+        case DT_DOUBLE:
+          PROCESS_VALUE(double);
+          break;
+        case DT_FLOAT:
+          PROCESS_VALUE(float);
+          break;
+        case DT_INT16:
+          PROCESS_VALUE(int16);
+          break;
+        case DT_INT32:
+          PROCESS_VALUE(int32);
+          break;
+        case DT_INT64:
+          PROCESS_VALUE(int64);
+          break;
+        case DT_STRING: {
+          PROCESS_VALUE(tstring);
+          break;
+        }
+        default:
+          return errors::InvalidArgument("data type is not supported: ",
+                                         DataTypeString(dtypes_[column_index]));
       }
     }
     (*record_read) = element_stop - element_start;
