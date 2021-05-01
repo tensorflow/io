@@ -369,6 +369,23 @@ cc_library(
 )
 
 cc_library(
+    name = "orc_ops",
+    srcs = [
+        "kernels/orc/orc_kernels.cc",
+        "ops/orc_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@liborc",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "text_ops",
     srcs = [
         "kernels/csv_kernels.cc",
@@ -527,19 +544,6 @@ cc_library(
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
         "@rapidjson",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "orc_ops",
-    srcs = [
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@liborc",
     ],
     alwayslink = 1,
 )

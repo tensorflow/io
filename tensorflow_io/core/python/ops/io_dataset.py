@@ -26,6 +26,7 @@ from tensorflow_io.core.python.ops import json_dataset_ops
 from tensorflow_io.core.python.ops import parquet_dataset_ops
 from tensorflow_io.core.python.ops import pcap_dataset_ops
 from tensorflow_io.core.python.ops import mnist_dataset_ops
+from tensorflow_io.core.python.ops import orc_dataset_ops
 
 
 class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
@@ -307,6 +308,21 @@ class IODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-access
         """
         with tf.name_scope(kwargs.get("name", "IOFromPcap")):
             return pcap_dataset_ops.PcapIODataset(filename, internal=True, **kwargs)
+
+    @classmethod
+    def from_orc(cls, filename, **kwargs):
+        """Creates an `IODataset` from an ORC file.
+
+        Args:
+          filename: A string, the filename of an ORC file.
+          name: A name prefix for the IOTensor (optional).
+
+        Returns:
+          A `IODataset`.
+
+        """
+        with tf.name_scope(kwargs.get("name", "IOFromORC")):
+            return orc_dataset_ops.ORCIODataset(filename, internal=True, **kwargs)
 
 
 class StreamIODataset(
