@@ -62,9 +62,6 @@ def fixture_audio_data_24():
         pytest.param(
             lambda f: tfio.IOTensor.from_ffmpeg(f)("a:0"),
             marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
                 pytest.mark.xfail(reason="does not support 24 bit yet"),
             ],
         ),
@@ -95,9 +92,6 @@ def test_audio_io_tensor_24(audio_data_24, io_tensor_func):
         pytest.param(
             lambda f: tfio.IODataset.from_ffmpeg(f, "a:0"),
             marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
                 pytest.mark.xfail(reason="does not support 24 bit yet"),
             ],
         ),
@@ -134,9 +128,6 @@ def test_audio_io_dataset_24(audio_data_24, io_dataset_func):
         pytest.param(
             lambda f: tfio.IOTensor.from_ffmpeg(f)("a:0"),
             marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
                 pytest.mark.xfail(reason="shape does not work correctly yet"),
             ],
         ),
@@ -166,19 +157,9 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
     [
         pytest.param(
             lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
-            ],
         ),
         pytest.param(
             lambda f: tfio.IODataset.from_ffmpeg(f, "a:0"),
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
-            ],
         ),
     ],
     ids=["from_ffmpeg", "from_ffmpeg(eager)"],
@@ -212,9 +193,6 @@ def test_audio_io_dataset(audio_data, io_dataset_func):
             tfio.IOTensor.from_ffmpeg,
             1,
             marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
                 pytest.mark.xfail(reason="does not work in graph yet"),
             ],
         ),
@@ -259,11 +237,6 @@ def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func, num_parallel_c
     [
         pytest.param(
             lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0"),
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
-            ],
         ),
     ],
     ids=["from_ffmpeg"],

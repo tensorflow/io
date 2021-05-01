@@ -22,9 +22,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
 
-if sys.platform == "darwin":
-    pytest.skip("video is not supported on macOS yet", allow_module_level=True)
-
 video_path = "file://" + os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4"
 )
