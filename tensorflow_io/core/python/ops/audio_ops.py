@@ -372,12 +372,13 @@ def fade(input, fade_in, fade_out, mode, name=None):
     return factor_in * factor_out * input
 
 
-def resample(input, rate_in, rate_out, name=None):  # pylint: disable=redefined-builtin
+def resample(input, rate_in, rate_out, name=None):
     """Resample audio.
 
     Args:
-      input: A 1-D (`[samples]`) or 2-D (`[samples, channels]`) `Tensor` of
-        type `int16` or `float`. Audio input.
+      input: A 1-D (`[samples]`) or 2-D (`[samples, channels]`) or 3-D
+        (`[batch, samples, channels]`) `Tensor` of type
+        `int16` or `float`. Audio input.
       rate_in: The rate of the audio input.
       rate_out: The rate of the audio output.
       name: A name for the operation (optional).
@@ -387,14 +388,37 @@ def resample(input, rate_in, rate_out, name=None):  # pylint: disable=redefined-
     """
     rank = tf.rank(input)
 
-    input = tf.cond(
-        tf.math.equal(rank, 1), lambda: tf.expand_dims(input, -1), lambda: input
+    def f1():
+        return tf.expand_dims(tf.expand_dims(input, -1), 0)
+
+    def f2():
+        return tf.expand_dims(input, 0)
+
+    def f3():
+        return input
+
+    input = tf.case(
+        [(tf.math.equal(rank, 1), f1), (tf.math.equal(rank, 2), f2)], default=f3
     )
-    value = core_ops.io_audio_resample(
-        input, rate_in=rate_in, rate_out=rate_out, name=name
-    )
-    return tf.cond(
-        tf.math.equal(rank, 1), lambda: tf.squeeze(value, [-1]), lambda: value
+
+    def f(i):
+        return core_ops.io_audio_resample(
+            i, rate_in=rate_in, rate_out=rate_out, name=name
+        )
+
+    value = tf.vectorized_map(f, input)
+
+    def g1():
+        return tf.squeeze(value, [0, -1])
+
+    def g2():
+        return tf.squeeze(value, [0])
+
+    def g3():
+        return value
+
+    return tf.case(
+        [(tf.math.equal(rank, 1), g1), (tf.math.equal(rank, 2), g2)], default=g3
     )
 
 
