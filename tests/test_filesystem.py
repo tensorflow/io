@@ -15,6 +15,7 @@
 
 import os
 import posixpath
+import sys
 import time
 from urllib.parse import urlparse
 
@@ -22,14 +23,16 @@ import boto3
 import pytest
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
+from azure.storage.blob import ContainerClient
 
-# pytestmark = pytest.mark.skipif(
-#     sys.platform in ("win32", "darwin"),
-#     reason="TODO emulator not setup properly on macOS/Windows yet",
-# )
+pytestmark = pytest.mark.skipif(
+    sys.platform in ("win32", "darwin"),
+    reason="TODO emulator not setup properly on macOS/Windows yet",
+)
 
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
 S3_URI = "s3"
+AZ_URI = "az"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -96,26 +99,80 @@ def s3_fs():
             path += "/"
         write(path, b"")
 
-    yield path_to, read, write, mkdirs, posixpath.join
+    yield S3_URI, path_to, read, write, mkdirs, posixpath.join
+    monkeypatch.undo()
+
+
+@pytest.fixture(scope="module")
+def az_fs():
+    monkeypatch = pytest.MonkeyPatch()
+    container_name = os.environ.get("AZ_TEST_CONTAINER")
+    account = None
+    client = None
+
+    # This means we are running against emulator.
+    if container_name is None:
+        monkeypatch.setenv("TF_AZURE_USE_DEV_STORAGE", "1")
+        container_name = f"tf-io-bucket-az-{int(time.time())}"
+        account = "devstoreaccount1"
+        conn_str = (
+            "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq"
+            "/K1SZFPTOtr/KBHBeksoGMGw==;"
+            "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+        )
+        client = ContainerClient.from_connection_string(conn_str, container_name)
+        client.create_container()
+    else:
+        # TODO(vnvo2409): Implement for testing against production scenario
+        pass
+
+    client.upload_blob(ROOT_PREFIX, b"")
+
+    def parse(path):
+        res = urlparse(path, scheme=AZ_URI, allow_fragments=False)
+        return res.path.split("/", 2)[2]
+
+    def path_to(*args):
+        return f"{AZ_URI}://{account}/{container_name}/{posixpath.join(ROOT_PREFIX, *args)}"
+
+    def read(path):
+        key_name = parse(path)
+        return client.download_blob(key_name).content_as_bytes()
+
+    def write(path, body):
+        key_name = parse(path)
+        client.upload_blob(key_name, body)
+
+    def mkdirs(_):
+        pass
+
+    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join
     monkeypatch.undo()
 
 
 @pytest.fixture
-def fs(request, s3_fs):
+def fs(request, s3_fs, az_fs):
     if request.param == S3_URI:
         return s3_fs
+    elif request.param == AZ_URI:
+        return az_fs
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_init(fs, patchs, monkeypatch):
-    path_to, _, _, _, _ = fs
+    _, path_to, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
     assert tf.io.gfile.exists(path_to("")) is True
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_io_read_file(fs, patchs, monkeypatch):
-    path_to, _, write, _, _ = fs
+    _, path_to, _, write, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_read_file")
@@ -125,9 +182,11 @@ def test_io_read_file(fs, patchs, monkeypatch):
     assert tf.io.read_file(fname) == body
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_io_write_file(fs, patchs, monkeypatch):
-    path_to, read, _, _, _ = fs
+    _, path_to, read, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_write_file")
@@ -148,12 +207,13 @@ def test_io_write_file(fs, patchs, monkeypatch):
             lambda monkeypatch: monkeypatch.setattr(
                 tf.io.gfile.GFile, "seekable", lambda _: False
             ),
-        )
+        ),
+        (AZ_URI, None),
     ],
     indirect=["fs"],
 )
 def test_gfile_GFile_readable(fs, patchs, monkeypatch):
-    path_to, _, write, _, _ = fs
+    uri, path_to, _, write, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_readable")
@@ -169,10 +229,12 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
         assert file_read == body
 
     # Notfound
-    with pytest.raises(tf.errors.NotFoundError):
-        fname_not_found = fname + "_not_found"
-        with tf.io.gfile.GFile(fname_not_found, "rb") as f:
-            _ = f.read()
+    # TODO(vnvo2409): `az` should raise `tf.errors.NotFoundError`.
+    if uri != AZ_URI:
+        with pytest.raises(tf.errors.NotFoundError):
+            fname_not_found = fname + "_not_found"
+            with tf.io.gfile.GFile(fname_not_found, "rb") as f:
+                _ = f.read()
 
     # Read length
     with tf.io.gfile.GFile(fname, "rb") as f:
@@ -211,9 +273,11 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
             assert file_read == body[seek_size : seek_size + read_length]
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_GFile_writable(fs, patchs, monkeypatch):
-    path_to, read, _, _, _ = fs
+    uri, path_to, read, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_writable")
@@ -230,15 +294,19 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
         assert read(fname) == body
 
     # Append
-    with tf.io.gfile.GFile(fname, "ab") as f:
-        f.write(base_body)
-        f.flush()
-        assert read(fname) == body + base_body
+    # TODO(vnvo2409): implement `az` appendable file.
+    if uri != AZ_URI:
+        with tf.io.gfile.GFile(fname, "ab") as f:
+            f.write(base_body)
+            f.flush()
+            assert read(fname) == body + base_body
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_isdir(fs, patchs, monkeypatch):
-    path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_isdir"
@@ -252,9 +320,11 @@ def test_gfile_isdir(fs, patchs, monkeypatch):
     assert tf.io.gfile.isdir(fname) is False
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_listdir(fs, patchs, monkeypatch):
-    path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_listdir"
@@ -276,9 +346,11 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
     assert sorted(childrens) == sorted([join(dname, entry) for entry in entries])
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_makedirs(fs, patchs, monkeypatch):
-    path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_makedirs/"
@@ -292,9 +364,11 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
     assert tf.io.gfile.isdir(subdname) is True
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_rmtree(fs, patchs, monkeypatch):
-    path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join = fs
     mock_patchs(monkeypatch, patchs)
 
     num_entries = 3
@@ -313,9 +387,10 @@ def test_gfile_rmtree(fs, patchs, monkeypatch):
     assert [tf.io.gfile.exists(entry) for entry in trees] == [False] * num_entries
 
 
+# TODO(vnvo2409): `az` copy operations causes an infinite loop.
 @pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
 def test_gfile_copy(fs, patchs, monkeypatch):
-    path_to, read, write, _, _ = fs
+    _, path_to, read, write, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     src = path_to("test_gfile_copy_src")
@@ -337,9 +412,11 @@ def test_gfile_copy(fs, patchs, monkeypatch):
     assert read(dst) == new_body
 
 
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_glob(fs, patchs, monkeypatch):
-    path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join = fs
     mock_patchs(monkeypatch, patchs)
 
     dname = path_to("test_gfile_glob/")
