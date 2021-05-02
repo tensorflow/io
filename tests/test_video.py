@@ -36,23 +36,8 @@ def fixture_video_data():
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
-        pytest.param(
-            lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
-            ],
-        ),
-        pytest.param(
-            lambda f: tfio.IODataset.from_ffmpeg(f, "v:0"),
-            marks=[
-                pytest.mark.skipif(
-                    True,  # sys.platform == "darwin",
-                    reason="macOS does not support FFmpeg",
-                ),
-            ],
-        ),
+        pytest.param(lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),),
+        pytest.param(lambda f: tfio.IODataset.from_ffmpeg(f, "v:0"),),
     ],
     ids=["from_ffmpeg", "from_ffmpeg(eager)"],
 )
@@ -79,16 +64,7 @@ def test_video_io_dataset(video_data, io_dataset_func):
 
 @pytest.mark.parametrize(
     ("io_dataset_func"),
-    [
-        pytest.param(
-            lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),
-            marks=[
-                pytest.mark.skipif(
-                    sys.platform == "darwin", reason="macOS does not support FFmpeg"
-                ),
-            ],
-        ),
-    ],
+    [pytest.param(lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),),],
     ids=["from_ffmpeg"],
 )
 def test_video_io_dataset_with_dataset(video_data, io_dataset_func):

@@ -16,6 +16,7 @@
 
 import ctypes
 import _ctypes
+import sys
 
 from tensorflow_io.core.python.ops import _load_library
 
@@ -45,19 +46,28 @@ def _load_dependency_and_library(p):
     raise NotImplementedError("could not find ffmpeg after search through ", p)
 
 
+def _shared_object(name, version):
+    if sys.platform == "darwin":
+        return "lib{}.{}.dylib".format(name, version)
+    return "lib{}.so.{}".format(name, version)
+
+
 _ffmpeg_ops, _decode_ops = _load_dependency_and_library(
     {
-        "libtensorflow_io_ffmpeg_4.2.so": ["libavformat.so.58", "libswscale.so.5",],
+        "libtensorflow_io_ffmpeg_4.2.so": [
+            _shared_object("avformat", "58"),
+            _shared_object("swscale", "5"),
+        ],
         "libtensorflow_io_ffmpeg_3.4.so": [
-            "libavformat.so.57",
-            "libavutil.so.55",
-            "libswscale.so.4",
+            _shared_object("avformat", "57"),
+            _shared_object("avutil", "55"),
+            _shared_object("swscale", "4"),
         ],
         "libtensorflow_io_ffmpeg_2.8.so": [
-            "libavformat-ffmpeg.so.56",
-            "libavcodec-ffmpeg.so.56",
-            "libavutil-ffmpeg.so.54",
-            "libswscale-ffmpeg.so.3",
+            _shared_object("avformat-ffmpeg", "56"),
+            _shared_object("avcodec-ffmpeg", "56"),
+            _shared_object("avutil-ffmpeg", "54"),
+            _shared_object("swscale-ffmpeg", "3"),
         ],
     }
 )
