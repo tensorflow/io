@@ -72,6 +72,13 @@ def fixture_resample_1d():
     return args[:, 0], func, expected[:, 0]
 
 
+@pytest.fixture(name="resample_batch", scope="module")
+def fixture_resample_batch():
+    """fixture_resample_batch"""
+    args, func, expected = fixture_resample_base()
+    return tf.stack([args, args]), func, tf.stack([expected, expected])
+
+
 @pytest.fixture(name="decode_wav", scope="module")
 def fixture_decode_wav():
     """fixture_decode_wav"""
@@ -633,6 +640,7 @@ def fixture_encode_aac():
     [
         pytest.param("resample"),
         pytest.param("resample_1d"),
+        pytest.param("resample_batch"),
         pytest.param("decode_wav"),
         pytest.param("encode_wav"),
         pytest.param("decode_wav_u8"),
@@ -683,6 +691,7 @@ def fixture_encode_aac():
     ids=[
         "resample",
         "resample[1d]",
+        "resample[batch]",
         "decode_wav",
         "encode_wav",
         "decode_wav|u8",
