@@ -435,7 +435,6 @@ jobs:
           python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
           (python -m pytest -s -v test_bigquery.py)
           (python -m pytest -s -v test_dicom.py)
-          (python -m pytest -s -v test_filesystem.py)
 
   release:
     name: Release
