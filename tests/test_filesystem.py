@@ -203,7 +203,7 @@ def test_io_write_file(fs, patchs, monkeypatch):
     [
         (
             S3_URI,
-            # `use_multi_part_download` does not work with `seakable`.
+            # `use_multi_part_download` does not work with `seekable`.
             lambda monkeypatch: monkeypatch.setattr(
                 tf.io.gfile.GFile, "seekable", lambda _: False
             ),
