@@ -57,7 +57,9 @@ def reload_filesystem():
 
 # Helper to check if we should skip tests for an `uri`.
 def should_skip(uri):
-    if uri == S3_URI and sys.platform in ("win32", "darwin"):
+    if (uri == S3_URI and sys.platform in ("win32", "darwin")) or (
+        uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32"
+    ):
         return True
     else:
         return False
@@ -221,8 +223,12 @@ def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs):
             pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
         return s3_fs
     elif request.param == AZ_URI:
+        if should_skip(AZ_URI):
+            pytest.skip("TODO: `az` does not work on Windows yet")
         return az_fs
     elif request.param == AZ_DSN_URI:
+        if should_skip(AZ_DSN_URI):
+            pytest.skip("TODO: `az` does not work on Windows yet")
         return az_dsn_fs
     elif request.param == HTTPS_URI:
         return https_fs
