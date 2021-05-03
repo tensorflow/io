@@ -94,7 +94,7 @@ def s3_fs():
             path += "/"
         write(path, b"")
 
-    yield S3_URI, path_to, read, write, mkdirs, posixpath.join
+    yield S3_URI, path_to, read, write, mkdirs, posixpath.join, (client, bucket_name)
     monkeypatch.undo()
 
 
@@ -142,7 +142,11 @@ def az_fs():
     def mkdirs(_):
         pass
 
-    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join
+    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join, (
+        client,
+        container_name,
+        account,
+    )
     monkeypatch.undo()
 
 
@@ -160,7 +164,7 @@ def fs(request, s3_fs, az_fs):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_init(fs, patchs, monkeypatch):
-    _, path_to, _, _, _, _ = fs
+    _, path_to, _, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
     assert tf.io.gfile.exists(path_to("")) is True
 
@@ -169,7 +173,7 @@ def test_init(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_io_read_file(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, _ = fs
+    _, path_to, _, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_read_file")
@@ -183,7 +187,7 @@ def test_io_read_file(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_io_write_file(fs, patchs, monkeypatch):
-    _, path_to, read, _, _, _ = fs
+    _, path_to, read, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_write_file")
@@ -210,7 +214,7 @@ def test_io_write_file(fs, patchs, monkeypatch):
     indirect=["fs"],
 )
 def test_gfile_GFile_readable(fs, patchs, monkeypatch):
-    uri, path_to, _, write, _, _ = fs
+    uri, path_to, _, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_readable")
@@ -274,7 +278,7 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_GFile_writable(fs, patchs, monkeypatch):
-    uri, path_to, read, _, _, _ = fs
+    uri, path_to, read, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_writable")
@@ -303,7 +307,7 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_isdir(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_isdir"
@@ -321,7 +325,7 @@ def test_gfile_isdir(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_listdir(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_listdir"
@@ -347,7 +351,7 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_makedirs(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_makedirs/"
@@ -365,7 +369,7 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_rmtree(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     num_entries = 3
@@ -387,7 +391,7 @@ def test_gfile_rmtree(fs, patchs, monkeypatch):
 # TODO(vnvo2409): `az` copy operations causes an infinite loop.
 @pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
 def test_gfile_copy(fs, patchs, monkeypatch):
-    _, path_to, read, write, _, _ = fs
+    _, path_to, read, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     src = path_to("test_gfile_copy_src")
@@ -413,7 +417,7 @@ def test_gfile_copy(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_glob(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     dname = path_to("test_gfile_glob/")
