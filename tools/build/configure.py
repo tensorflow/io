@@ -114,8 +114,6 @@ def write_config():
                     bazel_rc.write('build --action_env TF_CUDNN_VERSION="7"\n')
             # Enable platform specific config
             bazel_rc.write('build --enable_platform_specific_config\n')
-            # Use llvm toolchain
-            bazel_rc.write('build:macos --crosstool_top=@llvm_toolchain//:toolchain"\n')
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
             # Stay with 10.14 for macOS
