@@ -42,7 +42,7 @@ jobs:
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
-          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0
+          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
@@ -50,6 +50,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           python -m pytest -s -v tests/test_gcs.py
+          python -m pytest -s -v tests/test_filesystem.py
 
   linux:
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
@@ -80,7 +81,7 @@ jobs:
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
-          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0
+          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
@@ -88,6 +89,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
+          python -m pytest -s -v tests/test_filesystem.py
 
   windows:
     name: Windows ${{ matrix.python }} + ${{ matrix.version }}
