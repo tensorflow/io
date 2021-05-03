@@ -25,11 +25,6 @@ import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 from azure.storage.blob import ContainerClient
 
-pytestmark = pytest.mark.skipif(
-    sys.platform in ("win32", "darwin"),
-    reason="TODO emulator not setup properly on macOS/Windows yet",
-)
-
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
 S3_URI = "s3"
 AZ_URI = "az"
@@ -154,6 +149,8 @@ def az_fs():
 @pytest.fixture
 def fs(request, s3_fs, az_fs):
     if request.param == S3_URI:
+        if sys.platform in ("win32", "darwin"):
+            pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
         return s3_fs
     elif request.param == AZ_URI:
         return az_fs
