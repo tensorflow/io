@@ -50,6 +50,12 @@ cc_library(
         "src/rdxxhash.c",
         "src/rdxxhash.h",
     ],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-error=implicit-function-declaration",
+        ],
+    }),
     defines = [
         "LIBRDKAFKA_STATICLIB",
         "WIN32_LEAN_AND_MEAN",

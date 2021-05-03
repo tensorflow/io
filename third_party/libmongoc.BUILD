@@ -40,7 +40,12 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
-    copts = [],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-error=implicit-function-declaration",
+        ],
+    }),
     defines = [
         "MONGOC_COMPILATION",
         "BSON_COMPILATION",
