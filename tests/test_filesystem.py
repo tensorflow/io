@@ -25,9 +25,11 @@ import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 from azure.storage.blob import ContainerClient
 
+# `ROOT_PREFIX` shouldn't be called directly in tests.
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
 S3_URI = "s3"
 AZ_URI = "az"
+AZ_DSN_URI = "az_dsn"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -150,18 +152,34 @@ def az_fs():
     monkeypatch.undo()
 
 
+@pytest.fixture(scope="module")
+def az_dsn_fs(az_fs):
+    uri, _, read, write, mkdirs, join, fs_internal = az_fs
+    client, container_name, account = fs_internal
+
+    # Prefix `az_dsn` with `dsn`
+    client.upload_blob(join(ROOT_PREFIX, "dsn/"), b"")
+
+    def path_to_dsn(*args):
+        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, 'dsn', *args)}"
+
+    return uri, path_to_dsn, read, write, mkdirs, join, fs_internal
+
+
 @pytest.fixture
-def fs(request, s3_fs, az_fs):
+def fs(request, s3_fs, az_fs, az_dsn_fs):
     if request.param == S3_URI:
         if sys.platform in ("win32", "darwin"):
             pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
         return s3_fs
     elif request.param == AZ_URI:
         return az_fs
+    elif request.param == AZ_DSN_URI:
+        return az_dsn_fs
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_init(fs, patchs, monkeypatch):
     _, path_to, _, _, _, _, _ = fs
@@ -170,7 +188,7 @@ def test_init(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_io_read_file(fs, patchs, monkeypatch):
     _, path_to, _, write, _, _, _ = fs
@@ -184,7 +202,7 @@ def test_io_read_file(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_io_write_file(fs, patchs, monkeypatch):
     _, path_to, read, _, _, _, _ = fs
