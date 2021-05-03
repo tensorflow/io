@@ -32,6 +32,7 @@ NUM_ATR_FS = 7
 S3_URI = "s3"
 AZ_URI = "az"
 AZ_DSN_URI = "az_dsn"
+HTTPS_URI = "https"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -192,8 +193,29 @@ def az_dsn_fs(az_fs):
     yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
 
 
+@pytest.fixture(scope="module")
+def https_fs():
+    if should_skip(HTTPS_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    def path_to(*_):
+        return f"{HTTPS_URI}://www.apache.org/licenses/LICENSE-2.0.txt"
+
+    def read(_):
+        pass
+
+    def write(*_):
+        pass
+
+    def mkdirs(_):
+        pass
+
+    yield HTTPS_URI, path_to, read, write, mkdirs, posixpath.join, None
+
+
 @pytest.fixture
-def fs(request, s3_fs, az_fs, az_dsn_fs):
+def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs):
     if request.param == S3_URI:
         if should_skip(S3_URI):
             pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
@@ -202,6 +224,8 @@ def fs(request, s3_fs, az_fs, az_dsn_fs):
         return az_fs
     elif request.param == AZ_DSN_URI:
         return az_dsn_fs
+    elif request.param == HTTPS_URI:
+        return https_fs
 
 
 @pytest.mark.parametrize(
@@ -243,6 +267,21 @@ def test_io_write_file(fs, patchs, monkeypatch):
     assert read(fname) == body
 
 
+def get_readable_body(uri):
+    if uri != HTTPS_URI:
+        num_lines = 10
+        base_body = b"abcdefghijklmn\n"
+        lines = [base_body] * num_lines
+        body = b"".join(lines)
+        return body
+    else:
+        local_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
+        )
+        with open(local_path, "rb") as f:
+            return f.read()
+
+
 @pytest.mark.parametrize(
     "fs, patchs",
     [
@@ -254,6 +293,7 @@ def test_io_write_file(fs, patchs, monkeypatch):
             ),
         ),
         (AZ_URI, None),
+        (HTTPS_URI, None),
     ],
     indirect=["fs"],
 )
@@ -263,9 +303,8 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
 
     fname = path_to("test_gfile_GFile_readable")
 
-    num_lines = 10
-    base_body = b"abcdefghijklmn\n"
-    body = base_body * num_lines
+    body = get_readable_body(uri)
+    lines = body.splitlines(True)
     write(fname, body)
 
     # Simple
@@ -298,13 +337,13 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
             if not line:
                 break
             line_count += 1
-            assert line == base_body
-        assert line_count == num_lines
+            assert line == lines[line_count - 1]
+        assert line_count == len(lines)
 
     # Readlines
     with tf.io.gfile.GFile(fname, "rb") as f:
-        lines = f.readlines()
-        assert lines == [base_body] * num_lines
+        gfile_lines = f.readlines()
+        assert gfile_lines == lines
 
     # Seek/Tell
     with tf.io.gfile.GFile(fname, "rb") as f:
@@ -316,6 +355,28 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
             file_read = f.read(read_length)
             assert f.tell() == seek_size + read_length
             assert file_read == body[seek_size : seek_size + read_length]
+
+
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (HTTPS_URI, None)], indirect=["fs"]
+)
+def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
+    uri, path_to, _, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    fname = path_to("test_dataset_from_remote_filename")
+
+    body = get_readable_body(uri)
+    lines = body.splitlines(True)
+    write(fname, body)
+
+    # TextLineDataset
+    line_dataset = tf.data.TextLineDataset(fname)
+    count_line_dataset = 0
+    for line in line_dataset:
+        assert line == lines[count_line_dataset].rstrip()
+        count_line_dataset += 1
+    assert count_line_dataset == len(lines)
 
 
 @pytest.mark.parametrize(
