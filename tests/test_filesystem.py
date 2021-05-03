@@ -19,14 +19,16 @@ import sys
 import time
 from urllib.parse import urlparse
 
-import boto3
 import pytest
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
-from azure.storage.blob import ContainerClient
 
 # `ROOT_PREFIX` shouldn't be called directly in tests.
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
+
+# This is the number of attributes each filesystem should return in `*_fs`.
+NUM_ATR_FS = 7
+
 S3_URI = "s3"
 AZ_URI = "az"
 AZ_DSN_URI = "az_dsn"
@@ -52,8 +54,22 @@ def reload_filesystem():
     pass
 
 
+# Helper to check if we should skip tests for an `uri`.
+def should_skip(uri):
+    if uri == S3_URI and sys.platform in ("win32", "darwin"):
+        return True
+    else:
+        return False
+
+
 @pytest.fixture(scope="module")
 def s3_fs():
+    if should_skip(S3_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    import boto3
+
     monkeypatch = pytest.MonkeyPatch()
     bucket_name = os.environ.get("S3_TEST_BUCKET")
     client = None
@@ -102,6 +118,12 @@ def s3_fs():
 
 @pytest.fixture(scope="module")
 def az_fs():
+    if should_skip(AZ_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    from azure.storage.blob import ContainerClient
+
     monkeypatch = pytest.MonkeyPatch()
     container_name = os.environ.get("AZ_TEST_CONTAINER")
     account = None
@@ -154,6 +176,10 @@ def az_fs():
 
 @pytest.fixture(scope="module")
 def az_dsn_fs(az_fs):
+    if should_skip(AZ_DSN_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
     uri, _, read, write, mkdirs, join, fs_internal = az_fs
     client, container_name, account = fs_internal
 
@@ -163,13 +189,13 @@ def az_dsn_fs(az_fs):
     def path_to_dsn(*args):
         return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, 'dsn', *args)}"
 
-    return uri, path_to_dsn, read, write, mkdirs, join, fs_internal
+    yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
 
 
 @pytest.fixture
 def fs(request, s3_fs, az_fs, az_dsn_fs):
     if request.param == S3_URI:
-        if sys.platform in ("win32", "darwin"):
+        if should_skip(S3_URI):
             pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
         return s3_fs
     elif request.param == AZ_URI:
