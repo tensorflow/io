@@ -13,8 +13,10 @@
 # the License.
 # ==============================================================================
 
+import functools
 import os
 import posixpath
+import random
 import sys
 import time
 from urllib.parse import urlparse
@@ -56,11 +58,18 @@ def reload_filesystem():
 
 
 # Helper to check if we should skip tests for an `uri`.
-def should_skip(uri):
-    if (uri == S3_URI and sys.platform in ("win32", "darwin")) or (
-        uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32"
-    ):
-        return True
+def should_skip(uri, check_only=True):
+    message = None
+    if uri == S3_URI and sys.platform in ("win32", "darwin"):
+        message = "TODO: `s3` emulator not setup properly on macOS/Windows yet"
+    elif uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32":
+        message = "TODO: `az` does not work on Windows yet"
+
+    if message is not None:
+        if check_only:
+            return True
+        else:
+            pytest.skip(message)
     else:
         return False
 
@@ -166,8 +175,9 @@ def az_fs():
         key_name = parse(path)
         client.upload_blob(key_name, body)
 
-    def mkdirs(_):
-        pass
+    def mkdirs(path):
+        if path[-1] == "/":
+            write(path, b"")
 
     yield AZ_URI, path_to, read, write, mkdirs, posixpath.join, (
         client,
@@ -184,13 +194,10 @@ def az_dsn_fs(az_fs):
         return
 
     uri, _, read, write, mkdirs, join, fs_internal = az_fs
-    client, container_name, account = fs_internal
-
-    # Prefix `az_dsn` with `dsn`
-    client.upload_blob(join(ROOT_PREFIX, "dsn/"), b"")
+    _, container_name, account = fs_internal
 
     def path_to_dsn(*args):
-        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, 'dsn', *args)}"
+        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, *args)}"
 
     yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
 
@@ -218,20 +225,21 @@ def https_fs():
 
 @pytest.fixture
 def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs):
+    uri, path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
+    should_skip(request.param, check_only=False)
+
     if request.param == S3_URI:
-        if should_skip(S3_URI):
-            pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
-        return s3_fs
+        uri, path_to, read, write, mkdirs, join, internal = s3_fs
     elif request.param == AZ_URI:
-        if should_skip(AZ_URI):
-            pytest.skip("TODO: `az` does not work on Windows yet")
-        return az_fs
+        uri, path_to, read, write, mkdirs, join, internal = az_fs
     elif request.param == AZ_DSN_URI:
-        if should_skip(AZ_DSN_URI):
-            pytest.skip("TODO: `az` does not work on Windows yet")
-        return az_dsn_fs
+        uri, path_to, read, write, mkdirs, join, internal = az_dsn_fs
     elif request.param == HTTPS_URI:
-        return https_fs
+        uri, path_to, read, write, mkdirs, join, internal = https_fs
+
+    path_to_rand = functools.partial(path_to, str(random.getrandbits(32)))
+    mkdirs(path_to_rand(""))
+    yield uri, path_to_rand, read, write, mkdirs, join, internal
 
 
 @pytest.mark.parametrize(
