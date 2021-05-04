@@ -1249,6 +1249,11 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->writable_file_ops = static_cast<TF_WritableFileOps*>(
       plugin_memory_allocate(TF_WRITABLE_FILE_OPS_SIZE));
   ops->writable_file_ops->cleanup = tf_writable_file::Cleanup;
+  ops->writable_file_ops->append = tf_writable_file::Append;
+  ops->writable_file_ops->tell = tf_writable_file::Tell;
+  ops->writable_file_ops->flush = tf_writable_file::Flush;
+  ops->writable_file_ops->sync = tf_writable_file::Sync;
+  ops->writable_file_ops->close = tf_writable_file::Close;
 
   ops->read_only_memory_region_ops = static_cast<TF_ReadOnlyMemoryRegionOps*>(
       plugin_memory_allocate(TF_READ_ONLY_MEMORY_REGION_OPS_SIZE));
