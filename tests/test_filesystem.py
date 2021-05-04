@@ -19,20 +19,20 @@ import sys
 import time
 from urllib.parse import urlparse
 
-import boto3
 import pytest
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
-from azure.storage.blob import ContainerClient
 
-pytestmark = pytest.mark.skipif(
-    sys.platform in ("win32", "darwin"),
-    reason="TODO emulator not setup properly on macOS/Windows yet",
-)
-
+# `ROOT_PREFIX` shouldn't be called directly in tests.
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
+
+# This is the number of attributes each filesystem should return in `*_fs`.
+NUM_ATR_FS = 7
+
 S3_URI = "s3"
 AZ_URI = "az"
+AZ_DSN_URI = "az_dsn"
+HTTPS_URI = "https"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -55,8 +55,24 @@ def reload_filesystem():
     pass
 
 
+# Helper to check if we should skip tests for an `uri`.
+def should_skip(uri):
+    if (uri == S3_URI and sys.platform in ("win32", "darwin")) or (
+        uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32"
+    ):
+        return True
+    else:
+        return False
+
+
 @pytest.fixture(scope="module")
 def s3_fs():
+    if should_skip(S3_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    import boto3
+
     monkeypatch = pytest.MonkeyPatch()
     bucket_name = os.environ.get("S3_TEST_BUCKET")
     client = None
@@ -99,12 +115,18 @@ def s3_fs():
             path += "/"
         write(path, b"")
 
-    yield S3_URI, path_to, read, write, mkdirs, posixpath.join
+    yield S3_URI, path_to, read, write, mkdirs, posixpath.join, (client, bucket_name)
     monkeypatch.undo()
 
 
 @pytest.fixture(scope="module")
 def az_fs():
+    if should_skip(AZ_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    from azure.storage.blob import ContainerClient
+
     monkeypatch = pytest.MonkeyPatch()
     container_name = os.environ.get("AZ_TEST_CONTAINER")
     account = None
@@ -147,32 +169,85 @@ def az_fs():
     def mkdirs(_):
         pass
 
-    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join
+    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join, (
+        client,
+        container_name,
+        account,
+    )
     monkeypatch.undo()
 
 
+@pytest.fixture(scope="module")
+def az_dsn_fs(az_fs):
+    if should_skip(AZ_DSN_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    uri, _, read, write, mkdirs, join, fs_internal = az_fs
+    client, container_name, account = fs_internal
+
+    # Prefix `az_dsn` with `dsn`
+    client.upload_blob(join(ROOT_PREFIX, "dsn/"), b"")
+
+    def path_to_dsn(*args):
+        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, 'dsn', *args)}"
+
+    yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
+
+
+@pytest.fixture(scope="module")
+def https_fs():
+    if should_skip(HTTPS_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    def path_to(*_):
+        return f"{HTTPS_URI}://www.apache.org/licenses/LICENSE-2.0.txt"
+
+    def read(_):
+        pass
+
+    def write(*_):
+        pass
+
+    def mkdirs(_):
+        pass
+
+    yield HTTPS_URI, path_to, read, write, mkdirs, posixpath.join, None
+
+
 @pytest.fixture
-def fs(request, s3_fs, az_fs):
+def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs):
     if request.param == S3_URI:
+        if should_skip(S3_URI):
+            pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
         return s3_fs
     elif request.param == AZ_URI:
+        if should_skip(AZ_URI):
+            pytest.skip("TODO: `az` does not work on Windows yet")
         return az_fs
+    elif request.param == AZ_DSN_URI:
+        if should_skip(AZ_DSN_URI):
+            pytest.skip("TODO: `az` does not work on Windows yet")
+        return az_dsn_fs
+    elif request.param == HTTPS_URI:
+        return https_fs
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_init(fs, patchs, monkeypatch):
-    _, path_to, _, _, _, _ = fs
+    _, path_to, _, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
     assert tf.io.gfile.exists(path_to("")) is True
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_io_read_file(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, _ = fs
+    _, path_to, _, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_read_file")
@@ -183,10 +258,10 @@ def test_io_read_file(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
 )
 def test_io_write_file(fs, patchs, monkeypatch):
-    _, path_to, read, _, _, _ = fs
+    _, path_to, read, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_io_write_file")
@@ -198,29 +273,44 @@ def test_io_write_file(fs, patchs, monkeypatch):
     assert read(fname) == body
 
 
+def get_readable_body(uri):
+    if uri != HTTPS_URI:
+        num_lines = 10
+        base_body = b"abcdefghijklmn\n"
+        lines = [base_body] * num_lines
+        body = b"".join(lines)
+        return body
+    else:
+        local_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
+        )
+        with open(local_path, "rb") as f:
+            return f.read()
+
+
 @pytest.mark.parametrize(
     "fs, patchs",
     [
         (
             S3_URI,
-            # `use_multi_part_download` does not work with `seakable`.
+            # `use_multi_part_download` does not work with `seekable`.
             lambda monkeypatch: monkeypatch.setattr(
                 tf.io.gfile.GFile, "seekable", lambda _: False
             ),
         ),
         (AZ_URI, None),
+        (HTTPS_URI, None),
     ],
     indirect=["fs"],
 )
 def test_gfile_GFile_readable(fs, patchs, monkeypatch):
-    uri, path_to, _, write, _, _ = fs
+    uri, path_to, _, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_readable")
 
-    num_lines = 10
-    base_body = b"abcdefghijklmn\n"
-    body = base_body * num_lines
+    body = get_readable_body(uri)
+    lines = body.splitlines(True)
     write(fname, body)
 
     # Simple
@@ -253,13 +343,13 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
             if not line:
                 break
             line_count += 1
-            assert line == base_body
-        assert line_count == num_lines
+            assert line == lines[line_count - 1]
+        assert line_count == len(lines)
 
     # Readlines
     with tf.io.gfile.GFile(fname, "rb") as f:
-        lines = f.readlines()
-        assert lines == [base_body] * num_lines
+        gfile_lines = f.readlines()
+        assert gfile_lines == lines
 
     # Seek/Tell
     with tf.io.gfile.GFile(fname, "rb") as f:
@@ -274,10 +364,32 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (HTTPS_URI, None)], indirect=["fs"]
+)
+def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
+    uri, path_to, _, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    fname = path_to("test_dataset_from_remote_filename")
+
+    body = get_readable_body(uri)
+    lines = body.splitlines(True)
+    write(fname, body)
+
+    # TextLineDataset
+    line_dataset = tf.data.TextLineDataset(fname)
+    count_line_dataset = 0
+    for line in line_dataset:
+        assert line == lines[count_line_dataset].rstrip()
+        count_line_dataset += 1
+    assert count_line_dataset == len(lines)
+
+
+@pytest.mark.parametrize(
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_GFile_writable(fs, patchs, monkeypatch):
-    uri, path_to, read, _, _, _ = fs
+    uri, path_to, read, _, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     fname = path_to("test_gfile_GFile_writable")
@@ -306,7 +418,7 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_isdir(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_isdir"
@@ -324,7 +436,7 @@ def test_gfile_isdir(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_listdir(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_listdir"
@@ -350,7 +462,7 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_makedirs(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_makedirs/"
@@ -368,7 +480,7 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_rmtree(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join = fs
+    _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     num_entries = 3
@@ -390,7 +502,7 @@ def test_gfile_rmtree(fs, patchs, monkeypatch):
 # TODO(vnvo2409): `az` copy operations causes an infinite loop.
 @pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
 def test_gfile_copy(fs, patchs, monkeypatch):
-    _, path_to, read, write, _, _ = fs
+    _, path_to, read, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     src = path_to("test_gfile_copy_src")
@@ -416,7 +528,7 @@ def test_gfile_copy(fs, patchs, monkeypatch):
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_glob(fs, patchs, monkeypatch):
-    _, path_to, _, write, _, join = fs
+    _, path_to, _, write, _, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     dname = path_to("test_gfile_glob/")
