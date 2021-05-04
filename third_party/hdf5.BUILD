@@ -25,7 +25,9 @@ cc_library(
         "@bazel_tools//src/conditions:windows": [
             "/Zc:preprocessor-",
         ],
-        "//conditions:default": [],
+        "//conditions:default": [
+            "-Wno-error=implicit-function-declaration",
+        ],
     }),
     includes = [
         "c++/src",
