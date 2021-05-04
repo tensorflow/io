@@ -487,6 +487,25 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
 @pytest.mark.parametrize(
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
+def test_gfile_remove(fs, patchs, monkeypatch):
+    _, path_to, read, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    fname = path_to("test_gfile_remove")
+
+    body = b"123456789"
+    write(fname, body)
+
+    tf.io.gfile.remove(fname)
+    assert tf.io.gfile.exists(fname) is False
+
+    with pytest.raises(Exception):
+        read(fname)
+
+
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
 def test_gfile_rmtree(fs, patchs, monkeypatch):
     _, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
@@ -529,6 +548,33 @@ def test_gfile_copy(fs, patchs, monkeypatch):
     assert read(dst) == body
 
     tf.io.gfile.copy(src, dst, overwrite=True)
+    assert read(dst) == new_body
+
+
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+)
+def test_gfile_rename(fs, patchs, monkeypatch):
+    _, path_to, read, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    src = path_to("test_gfile_rename_src")
+    dst = path_to("test_gfile_rename_dst")
+
+    body = b"123456789"
+    write(src, body)
+
+    tf.io.gfile.rename(src, dst)
+    assert read(dst) == body
+    assert tf.io.gfile.exists(src) is False
+
+    new_body = body + body.capitalize()
+    write(src, new_body)
+    with pytest.raises(tf.errors.AlreadyExistsError):
+        tf.io.gfile.rename(src, dst)
+    assert read(dst) == body
+
+    tf.io.gfile.rename(src, dst, overwrite=True)
     assert read(dst) == new_body
 
 
