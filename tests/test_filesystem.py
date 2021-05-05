@@ -282,22 +282,32 @@ def gcs_fs():
 @pytest.fixture
 def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
     uri, path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
-    should_skip(request.param, check_only=False)
+    test_fs_uri = request.param
+    should_skip(test_fs_uri, check_only=False)
 
-    if request.param == S3_URI:
+    if test_fs_uri == S3_URI:
         uri, path_to, read, write, mkdirs, join, internal = s3_fs
-    elif request.param == AZ_URI:
+    elif test_fs_uri == AZ_URI:
         uri, path_to, read, write, mkdirs, join, internal = az_fs
-    elif request.param == AZ_DSN_URI:
+    elif test_fs_uri == AZ_DSN_URI:
         uri, path_to, read, write, mkdirs, join, internal = az_dsn_fs
-    elif request.param == HTTPS_URI:
+    elif test_fs_uri == HTTPS_URI:
         uri, path_to, read, write, mkdirs, join, internal = https_fs
-    elif request.param == GCS_URI:
+    elif test_fs_uri == GCS_URI:
         uri, path_to, read, write, mkdirs, join, internal = gcs_fs
 
-    path_to_rand = functools.partial(path_to, str(random.getrandbits(32)))
-    mkdirs(path_to_rand(""))
+    path_to_rand = None
+    test_patchs = request.getfixturevalue("patchs")
+    if (test_fs_uri, test_patchs) in fs.path_to_rand_cache:
+        path_to_rand = fs.path_to_rand_cache[(test_fs_uri, test_patchs)]
+    else:
+        path_to_rand = functools.partial(path_to, str(random.getrandbits(32)))
+        mkdirs(path_to_rand(""))
+        fs.path_to_rand_cache[(test_fs_uri, test_patchs)] = path_to_rand
     yield uri, path_to_rand, read, write, mkdirs, join, internal
+
+
+fs.path_to_rand_cache = {}
 
 
 @pytest.mark.parametrize(
