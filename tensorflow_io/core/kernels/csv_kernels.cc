@@ -45,8 +45,8 @@ class CSVReadable : public IOReadableInterface {
     csv_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
 
     auto result = ::arrow::csv::TableReader::Make(
-        ::arrow::default_memory_pool(), csv_file_,
-        ::arrow::csv::ReadOptions::Defaults(),
+        ::arrow::default_memory_pool(), ::arrow::io::default_io_context(),
+        csv_file_, ::arrow::csv::ReadOptions::Defaults(),
         ::arrow::csv::ParseOptions::Defaults(),
         ::arrow::csv::ConvertOptions::Defaults());
     if (!result.status().ok()) {

@@ -120,6 +120,7 @@ cc_library(
         "@rapidjson",
         "@snappy",
         "@thrift",
+        "@xsimd",
         "@zlib",
         "@zstd",
     ],
