@@ -272,11 +272,11 @@ http_archive(
         """sed -i.bak 's/type_traits/std::max<int16_t>(sizeof(int16_t), type_traits/g' cpp/src/parquet/column_reader.cc""",
         """sed -i.bak 's/value_byte_size/value_byte_size)/g' cpp/src/parquet/column_reader.cc""",
     ],
-    sha256 = "fc461c4f0a60e7470a7c58b28e9344aa8fb0be5cc982e9658970217e084c3a82",
-    strip_prefix = "arrow-apache-arrow-3.0.0",
+    sha256 = "a27971e2a71c412ae43d998b7b6d06201c7a3da382c804dcdc4a8126ccbabe67",
+    strip_prefix = "arrow-apache-arrow-4.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-3.0.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-3.0.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
     ],
 )
 
@@ -1133,5 +1133,15 @@ http_archive(
     strip_prefix = "orc-rel-release-1.6.7",
     urls = [
         "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "xsimd",
+    build_file = "//third_party:xsimd.BUILD",
+    sha256 = "45337317c7f238fe0d64bb5d5418d264a427efc53400ddf8e6a964b6bcb31ce9",
+    strip_prefix = "xsimd-7.5.0",
+    urls = [
+        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/7.5.0.tar.gz",
     ],
 )
