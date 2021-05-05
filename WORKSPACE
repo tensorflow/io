@@ -153,11 +153,11 @@ http_archive(
 http_archive(
     name = "proj",
     build_file = "//third_party:proj.BUILD",
-    sha256 = "219c6e11b2baa9a3e2bd7ec54ce19702909591032cf6f7d1004b406f10b7c9ad",
-    strip_prefix = "proj-7.2.1",
+    sha256 = "f0c88738b1bd3b65a217734b56a763988ea1ca4c779e39d9d9a8b5878888cd6f",
+    strip_prefix = "proj-8.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/OSGeo/PROJ/releases/download/7.2.1/proj-7.2.1.zip",
-        "https://github.com/OSGeo/PROJ/releases/download/7.2.1/proj-7.2.1.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/OSGeo/PROJ/releases/download/7.2.1/proj-8.0.0.zip",
+        "https://github.com/OSGeo/PROJ/releases/download/8.0.0/proj-8.0.0.zip",
     ],
 )
 
@@ -321,11 +321,11 @@ http_archive(
 http_archive(
     name = "libtiff",
     build_file = "//third_party:libtiff.BUILD",
-    sha256 = "eb0484e568ead8fa23b513e9b0041df7e327f4ee2d22db5a533929dfc19633cb",
-    strip_prefix = "tiff-4.2.0",
+    sha256 = "0e46e5acb087ce7d1ac53cf4f56a09b221537fc86dfc5daaad1c2e89e1b37ac8",
+    strip_prefix = "tiff-4.3.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/libtiff/tiff-4.2.0.tar.gz",
-        "https://download.osgeo.org/libtiff/tiff-4.2.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/download.osgeo.org/libtiff/tiff-4.3.0.tar.gz",
+        "https://download.osgeo.org/libtiff/tiff-4.3.0.tar.gz",
     ],
 )
 
