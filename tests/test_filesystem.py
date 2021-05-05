@@ -29,7 +29,7 @@ import tensorflow_io as tfio  # pylint: disable=unused-import
 ROOT_PREFIX = f"tf-io-root-{int(time.time())}/"
 
 # This is the number of attributes each filesystem should return in `*_fs`.
-NUM_ATR_FS = 7
+NUM_ATR_FS = 6
 
 S3_URI = "s3"
 AZ_URI = "az"
@@ -127,7 +127,7 @@ def s3_fs():
             path += "/"
         write(path, b"")
 
-    yield S3_URI, path_to, read, write, mkdirs, posixpath.join, (client, bucket_name)
+    yield path_to, read, write, mkdirs, posixpath.join, (client, bucket_name)
     monkeypatch.undo()
 
 
@@ -182,7 +182,7 @@ def az_fs():
         if path[-1] == "/":
             write(path, b"")
 
-    yield AZ_URI, path_to, read, write, mkdirs, posixpath.join, (
+    yield path_to, read, write, mkdirs, posixpath.join, (
         client,
         container_name,
         account,
@@ -196,13 +196,13 @@ def az_dsn_fs(az_fs):
         yield [None] * NUM_ATR_FS
         return
 
-    uri, _, read, write, mkdirs, join, fs_internal = az_fs
+    _, read, write, mkdirs, join, fs_internal = az_fs
     _, container_name, account = fs_internal
 
     def path_to_dsn(*args):
         return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, *args)}"
 
-    yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
+    yield path_to_dsn, read, write, mkdirs, join, fs_internal
 
 
 @pytest.fixture(scope="module")
@@ -223,7 +223,7 @@ def https_fs():
     def mkdirs(_):
         pass
 
-    yield HTTPS_URI, path_to, read, write, mkdirs, posixpath.join, None
+    yield path_to, read, write, mkdirs, posixpath.join, None
 
 
 # TODO(vnvo2409): some tests with `gcs` are falling.
@@ -275,26 +275,28 @@ def gcs_fs():
             path += "/"
         write(path, b"")
 
-    yield GCS_URI, path_to, read, write, mkdirs, posixpath.join, None
+    yield path_to, read, write, mkdirs, posixpath.join, None
     monkeypatch.undo()
 
 
 @pytest.fixture
 def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
-    uri, path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
+    path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
     test_fs_uri = request.param
+    real_uri = test_fs_uri
     should_skip(test_fs_uri, check_only=False)
 
     if test_fs_uri == S3_URI:
-        uri, path_to, read, write, mkdirs, join, internal = s3_fs
+        path_to, read, write, mkdirs, join, internal = s3_fs
     elif test_fs_uri == AZ_URI:
-        uri, path_to, read, write, mkdirs, join, internal = az_fs
+        path_to, read, write, mkdirs, join, internal = az_fs
     elif test_fs_uri == AZ_DSN_URI:
-        uri, path_to, read, write, mkdirs, join, internal = az_dsn_fs
+        real_uri = AZ_URI
+        path_to, read, write, mkdirs, join, internal = az_dsn_fs
     elif test_fs_uri == HTTPS_URI:
-        uri, path_to, read, write, mkdirs, join, internal = https_fs
+        path_to, read, write, mkdirs, join, internal = https_fs
     elif test_fs_uri == GCS_URI:
-        uri, path_to, read, write, mkdirs, join, internal = gcs_fs
+        path_to, read, write, mkdirs, join, internal = gcs_fs
 
     path_to_rand = None
     test_patchs = request.getfixturevalue("patchs")
@@ -304,7 +306,7 @@ def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
         path_to_rand = functools.partial(path_to, str(random.getrandbits(32)))
         mkdirs(path_to_rand(""))
         fs.path_to_rand_cache[(test_fs_uri, test_patchs)] = path_to_rand
-    yield uri, path_to_rand, read, write, mkdirs, join, internal
+    yield real_uri, path_to_rand, read, write, mkdirs, join, internal
 
 
 fs.path_to_rand_cache = {}
