@@ -226,7 +226,6 @@ def https_fs():
     yield path_to, read, write, mkdirs, posixpath.join, None
 
 
-# TODO(vnvo2409): some tests with `gcs` are falling.
 @pytest.fixture(scope="module")
 def gcs_fs():
     if should_skip(GCS_URI):
@@ -340,7 +339,9 @@ def test_io_read_file(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    indirect=["fs"],
 )
 def test_io_write_file(fs, patchs, monkeypatch):
     _, path_to, read, _, _, _, _ = fs
@@ -471,7 +472,7 @@ def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_GFile_writable(fs, patchs, monkeypatch):
     uri, path_to, read, _, _, _, _ = fs
@@ -500,7 +501,7 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_isdir(fs, patchs, monkeypatch):
     _, path_to, _, write, mkdirs, join, _ = fs
@@ -518,10 +519,10 @@ def test_gfile_isdir(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_listdir(fs, patchs, monkeypatch):
-    _, path_to, _, write, mkdirs, join, _ = fs
+    uri, path_to, _, write, mkdirs, join, _ = fs
     mock_patchs(monkeypatch, patchs)
 
     root_path = "test_gfile_listdir"
@@ -531,6 +532,10 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
     num_childs = 5
     childrens = [None] * num_childs
     childrens[0] = join(dname, "subdir")
+    # TODO(vnvo2409): `gs` filesystem requires `/` at the end of directory's path.
+    # Consider if we could change the behavior for matching the other filesystems.
+    if uri == GCS_URI:
+        childrens[0] += "/"
     mkdirs(childrens[0])
 
     body = b"123456789"
@@ -544,7 +549,7 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_makedirs(fs, patchs, monkeypatch):
     _, path_to, _, write, _, join, _ = fs
@@ -581,7 +586,7 @@ def test_gfile_remove(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_rmtree(fs, patchs, monkeypatch):
     _, path_to, _, write, mkdirs, join, _ = fs
@@ -658,7 +663,7 @@ def test_gfile_rename(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
 )
 def test_gfile_glob(fs, patchs, monkeypatch):
     _, path_to, _, write, _, join, _ = fs
