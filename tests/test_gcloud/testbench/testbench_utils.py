@@ -18,6 +18,9 @@ import error_response
 import hashlib
 import json
 import random
+import re
+
+field_match = re.compile(r"(?:(\w+)\((\w+(?:,\w+)*)\))|(\w+)")
 
 
 def filter_fields_from_response(fields, response):
@@ -33,23 +36,29 @@ def filter_fields_from_response(fields, response):
     if fields is None:
         return json.dumps(response)
     tmp = {}
-    for key in fields.split(","):
-        key.replace(" ", "")
-        parentheses_idx = key.find("(")
-        if parentheses_idx != -1:
-            main_key = key[:parentheses_idx]
-            child_key = key[parentheses_idx + 1 : -1]
-            if main_key in response:
-                children = response[main_key]
-                if isinstance(children, list):
-                    tmp_list = []
-                    for value in children:
-                        tmp_list.append(value[child_key])
-                    tmp[main_key] = tmp_list
-                elif isinstance(children, dict):
-                    tmp[main_key] = children[child_key]
-        elif key in response:
-            tmp[key] = response[key]
+    fields.replace(" ", "")
+    for keys in field_match.findall(fields):
+        if keys[2]:
+            if keys[2] not in response:
+                continue
+            tmp[keys[2]] = response[keys[2]]
+        else:
+            if keys[0] not in response:
+                continue
+            childrens = response[keys[0]]
+            if isinstance(childrens, list):
+                tmp_list = []
+                for children in childrens:
+                    child = {}
+                    for child_key in keys[1].split(","):
+                        child[child_key] = children[child_key]
+                    tmp_list.append(child)
+                tmp[keys[0]] = tmp_list
+            elif isinstance(childrens, dict):
+                child = {}
+                for child_key in keys[1].split(","):
+                    child[child_key] = children[child_key]
+                tmp[keys[0]] = child
     return json.dumps(tmp)
 
 
