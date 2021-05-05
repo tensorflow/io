@@ -1135,3 +1135,13 @@ http_archive(
         "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
     ],
 )
+
+http_archive(
+    name = "xsimd",
+    build_file = "//third_party:xsimd.BUILD",
+    sha256 = "45337317c7f238fe0d64bb5d5418d264a427efc53400ddf8e6a964b6bcb31ce9",
+    strip_prefix = "xsimd-7.5.0",
+    urls = [
+        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/7.5.0.tar.gz",
+    ],
+)
