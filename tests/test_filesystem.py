@@ -13,8 +13,10 @@
 # the License.
 # ==============================================================================
 
+import functools
 import os
 import posixpath
+import random
 import sys
 import time
 from urllib.parse import urlparse
@@ -33,6 +35,7 @@ S3_URI = "s3"
 AZ_URI = "az"
 AZ_DSN_URI = "az_dsn"
 HTTPS_URI = "https"
+GCS_URI = "gs"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -56,11 +59,20 @@ def reload_filesystem():
 
 
 # Helper to check if we should skip tests for an `uri`.
-def should_skip(uri):
-    if (uri == S3_URI and sys.platform in ("win32", "darwin")) or (
-        uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32"
-    ):
-        return True
+def should_skip(uri, check_only=True):
+    message = None
+    if uri == S3_URI and sys.platform in ("win32", "darwin"):
+        message = "TODO: `s3` emulator not setup properly on macOS/Windows yet"
+    elif uri in (AZ_URI, AZ_DSN_URI) and sys.platform == "win32":
+        message = "TODO: `az` does not work on Windows yet"
+    elif uri == GCS_URI and sys.platform in ("win32", "darwin"):
+        message = "TODO: `gs` does not work on Windows yet"
+
+    if message is not None:
+        if check_only:
+            return True
+        else:
+            pytest.skip(message)
     else:
         return False
 
@@ -166,8 +178,9 @@ def az_fs():
         key_name = parse(path)
         client.upload_blob(key_name, body)
 
-    def mkdirs(_):
-        pass
+    def mkdirs(path):
+        if path[-1] == "/":
+            write(path, b"")
 
     yield AZ_URI, path_to, read, write, mkdirs, posixpath.join, (
         client,
@@ -184,13 +197,10 @@ def az_dsn_fs(az_fs):
         return
 
     uri, _, read, write, mkdirs, join, fs_internal = az_fs
-    client, container_name, account = fs_internal
-
-    # Prefix `az_dsn` with `dsn`
-    client.upload_blob(join(ROOT_PREFIX, "dsn/"), b"")
+    _, container_name, account = fs_internal
 
     def path_to_dsn(*args):
-        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, 'dsn', *args)}"
+        return f"{AZ_URI}://{account}.blob.core.windows.net/{container_name}/{posixpath.join(ROOT_PREFIX, *args)}"
 
     yield uri, path_to_dsn, read, write, mkdirs, join, fs_internal
 
@@ -216,26 +226,84 @@ def https_fs():
     yield HTTPS_URI, path_to, read, write, mkdirs, posixpath.join, None
 
 
+# TODO(vnvo2409): some tests with `gcs` are falling.
+@pytest.fixture(scope="module")
+def gcs_fs():
+    if should_skip(GCS_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    import tensorflow_io_plugin_gs
+    from google.cloud import storage
+
+    monkeypatch = pytest.MonkeyPatch()
+    bucket_name = os.environ.get("GCS_TEST_BUCKET")
+    bucket = None
+
+    # This means we are running against emulator.
+    if bucket_name is None:
+        monkeypatch.setenv("STORAGE_EMULATOR_HOST", "http://localhost:9099")
+        monkeypatch.setenv("CLOUD_STORAGE_EMULATOR_ENDPOINT", "http://localhost:9099")
+
+        bucket_name = f"tf-io-bucket-gs-{int(time.time())}"
+        client = storage.Client.create_anonymous_client()
+        client.project = "test_project"
+        bucket = client.create_bucket(bucket_name)
+    else:
+        # TODO(vnvo2409): Implement for testing against production scenario
+        pass
+
+    def parse(path):
+        res = urlparse(path, scheme=GCS_URI, allow_fragments=False)
+        return res.path[1:]
+
+    def path_to(*args):
+        return f"{GCS_URI}://{bucket_name}/{posixpath.join(ROOT_PREFIX, *args)}"
+
+    def read(path):
+        key_name = parse(path)
+        blob = bucket.get_blob(key_name)
+        return blob.download_as_bytes()
+
+    def write(path, body):
+        key_name = parse(path)
+        blob = bucket.blob(key_name)
+        blob.upload_from_string(body)
+
+    def mkdirs(path):
+        if path[-1] != "/":
+            path += "/"
+        write(path, b"")
+
+    yield GCS_URI, path_to, read, write, mkdirs, posixpath.join, None
+    monkeypatch.undo()
+
+
 @pytest.fixture
-def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs):
+def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
+    uri, path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
+    should_skip(request.param, check_only=False)
+
     if request.param == S3_URI:
-        if should_skip(S3_URI):
-            pytest.skip("TODO: `s3` emulator not setup properly on macOS/Windows yet")
-        return s3_fs
+        uri, path_to, read, write, mkdirs, join, internal = s3_fs
     elif request.param == AZ_URI:
-        if should_skip(AZ_URI):
-            pytest.skip("TODO: `az` does not work on Windows yet")
-        return az_fs
+        uri, path_to, read, write, mkdirs, join, internal = az_fs
     elif request.param == AZ_DSN_URI:
-        if should_skip(AZ_DSN_URI):
-            pytest.skip("TODO: `az` does not work on Windows yet")
-        return az_dsn_fs
+        uri, path_to, read, write, mkdirs, join, internal = az_dsn_fs
     elif request.param == HTTPS_URI:
-        return https_fs
+        uri, path_to, read, write, mkdirs, join, internal = https_fs
+    elif request.param == GCS_URI:
+        uri, path_to, read, write, mkdirs, join, internal = gcs_fs
+
+    path_to_rand = functools.partial(path_to, str(random.getrandbits(32)))
+    mkdirs(path_to_rand(""))
+    yield uri, path_to_rand, read, write, mkdirs, join, internal
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    indirect=["fs"],
 )
 def test_init(fs, patchs, monkeypatch):
     _, path_to, _, _, _, _, _ = fs
@@ -244,7 +312,9 @@ def test_init(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    indirect=["fs"],
 )
 def test_io_read_file(fs, patchs, monkeypatch):
     _, path_to, _, write, _, _, _ = fs
@@ -300,6 +370,7 @@ def get_readable_body(uri):
         ),
         (AZ_URI, None),
         (HTTPS_URI, None),
+        (GCS_URI, None),
     ],
     indirect=["fs"],
 )
@@ -364,7 +435,9 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (HTTPS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (HTTPS_URI, None), (GCS_URI, None)],
+    indirect=["fs"],
 )
 def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
     uri, path_to, _, write, _, _, _ = fs
@@ -477,6 +550,25 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+)
+def test_gfile_remove(fs, patchs, monkeypatch):
+    _, path_to, read, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    fname = path_to("test_gfile_remove")
+
+    body = b"123456789"
+    write(fname, body)
+
+    tf.io.gfile.remove(fname)
+    assert tf.io.gfile.exists(fname) is False
+
+    with pytest.raises(Exception):
+        read(fname)
+
+
+@pytest.mark.parametrize(
     "fs, patchs", [(S3_URI, None), (AZ_URI, None)], indirect=["fs"]
 )
 def test_gfile_rmtree(fs, patchs, monkeypatch):
@@ -500,7 +592,9 @@ def test_gfile_rmtree(fs, patchs, monkeypatch):
 
 
 # TODO(vnvo2409): `az` copy operations causes an infinite loop.
-@pytest.mark.parametrize("fs, patchs", [(S3_URI, None)], indirect=["fs"])
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (GCS_URI, None)], indirect=["fs"]
+)
 def test_gfile_copy(fs, patchs, monkeypatch):
     _, path_to, read, write, _, _, _ = fs
     mock_patchs(monkeypatch, patchs)
@@ -521,6 +615,33 @@ def test_gfile_copy(fs, patchs, monkeypatch):
     assert read(dst) == body
 
     tf.io.gfile.copy(src, dst, overwrite=True)
+    assert read(dst) == new_body
+
+
+@pytest.mark.parametrize(
+    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+)
+def test_gfile_rename(fs, patchs, monkeypatch):
+    _, path_to, read, write, _, _, _ = fs
+    mock_patchs(monkeypatch, patchs)
+
+    src = path_to("test_gfile_rename_src")
+    dst = path_to("test_gfile_rename_dst")
+
+    body = b"123456789"
+    write(src, body)
+
+    tf.io.gfile.rename(src, dst)
+    assert read(dst) == body
+    assert tf.io.gfile.exists(src) is False
+
+    new_body = body + body.capitalize()
+    write(src, new_body)
+    with pytest.raises(tf.errors.AlreadyExistsError):
+        tf.io.gfile.rename(src, dst)
+    assert read(dst) == body
+
+    tf.io.gfile.rename(src, dst, overwrite=True)
     assert read(dst) == new_body
 
 
