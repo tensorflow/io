@@ -36,7 +36,7 @@ namespace {
 bool initialized(false);
 mutex mu(LINKER_INITIALIZED);
 
-} // namespace
+}  // namespace
 
 namespace data {
 
@@ -113,7 +113,8 @@ class FFmpegStream {
           if (p != nullptr) {
             av_packet_unref(p);
           }
-        }) {}
+        }) {
+  }
   virtual ~FFmpegStream() {}
   virtual Status Open(int64 media, int64 index) {
     offset_ = 0;
@@ -640,7 +641,7 @@ class FFmpegVideoStream : public FFmpegStream {
     }
     return Status::OK();
   }
-  Status PeekAll(int64 *frames) {
+  Status PeekAll(int64* frames) {
     Status status;
     do {
       status = DecodePacket();
@@ -879,17 +880,17 @@ REGISTER_KERNEL_BUILDER(Name("IO>FfmpegVideoReadableNext").Device(DEVICE_CPU),
                         FFmpegVideoReadableNextOp);
 
 class FFmpegDecodeVideoOp : public OpKernel {
-public:
-  explicit FFmpegDecodeVideoOp(OpKernelConstruction *context)
+ public:
+  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context)
       : OpKernel(context) {
     env_ = context->env();
   }
 
-  void Compute(OpKernelContext *context) override {
-    const Tensor *input_tensor;
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
     OP_REQUIRES_OK(context, context->input("input", &input_tensor));
 
-    const Tensor *index_tensor;
+    const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
     string input = input_tensor->scalar<tstring>()();
@@ -902,20 +903,20 @@ public:
     int64 frames = 0;
     OP_REQUIRES_OK(context, stream.PeekAll(&frames));
 
-    Tensor *video_tensor = nullptr;
+    Tensor* video_tensor = nullptr;
     OP_REQUIRES_OK(context,
                    context->allocate_output(
                        0,
-                       TensorShape({frames, stream.height(),
-                                    stream.width(), stream.channels()}),
+                       TensorShape({frames, stream.height(), stream.width(),
+                                    stream.channels()}),
                        &video_tensor));
 
     OP_REQUIRES_OK(context, stream.Read(video_tensor));
   }
 
-private:
+ private:
   mutable mutex mu_;
-  Env *env_ TF_GUARDED_BY(mu_);
+  Env* env_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("IO>FfmpegDecodeVideo").Device(DEVICE_CPU),

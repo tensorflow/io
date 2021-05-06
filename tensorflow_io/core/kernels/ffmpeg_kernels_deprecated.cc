@@ -35,7 +35,7 @@ namespace {
 
 mutex mu(LINKER_INITIALIZED);
 
-} // namespace
+}  // namespace
 
 namespace data {
 
@@ -67,7 +67,8 @@ class FFmpegReadStream {
 #endif
                       }
                     }),
-        stream_index_(-1) {}
+        stream_index_(-1) {
+  }
   virtual ~FFmpegReadStream() {}
 
   int64 Streams() { return format_context_.get()->nb_streams; }
