@@ -103,6 +103,7 @@ class FFmpegReadStream {
             format_context_.reset(format_context);
             return Status::OK();
           }
+          avformat_close_input(&format_context);
         }
         av_free(io_context->buffer);
 #if LIBAVCODEC_VERSION_MAJOR > 56
