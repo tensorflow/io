@@ -56,7 +56,7 @@ def test_read_text():
             assert entries[k].numpy().decode() + "\n" == v.decode()
 
 
-@pytest.mark.skip(reason="TODO")
+@pytest.mark.xfail(reason="TODO")
 def test_text_output_sequence():
     """Test case based on fashion mnist tutorial"""
     fashion_mnist = tf.keras.datasets.fashion_mnist
