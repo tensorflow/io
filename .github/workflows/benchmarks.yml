@@ -7,6 +7,7 @@ on:
 
 jobs:
   macos:
+    if: github.repository == 'tensorflow/io' # Don't do this in forks
     name: macOS ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: macos-latest
     strategy:
@@ -40,6 +41,7 @@ jobs:
           python -m pytest --benchmark-only -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
 
   linux:
+    if: github.repository == 'tensorflow/io' # Don't do this in forks
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: ubuntu-20.04
     strategy:
