@@ -15,6 +15,7 @@ limitations under the License.
 
 #include <deque>
 
+#include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 
@@ -29,8 +30,48 @@ extern "C" {
 }
 
 namespace tensorflow {
+
+namespace {
+
+bool initialized(false);
+mutex mu(LINKER_INITIALIZED);
+
+}  // namespace
+
 namespace data {
-void FFmpegInit();
+
+void FFmpegInit() {
+  mutex_lock lock(mu);
+  if (!initialized) {
+    // Set log level if needed
+    static const struct {
+      const char* name;
+      int level;
+    } log_levels[] = {
+        {"quiet", AV_LOG_QUIET},     {"panic", AV_LOG_PANIC},
+        {"fatal", AV_LOG_FATAL},     {"error", AV_LOG_ERROR},
+        {"warning", AV_LOG_WARNING}, {"info", AV_LOG_INFO},
+        {"verbose", AV_LOG_VERBOSE}, {"debug", AV_LOG_DEBUG},
+        // { "trace"  , AV_LOG_TRACE   },
+    };
+    const char* log_level_name = getenv("FFMPEG_LOG_LEVEL");
+    if (log_level_name != nullptr) {
+      string log_level = log_level_name;
+      for (size_t i = 0; i < sizeof(log_levels) / sizeof(log_levels[0]); i++) {
+        if (log_level == log_levels[i].name) {
+          LOG(INFO) << "FFmpeg log level: " << log_level;
+          av_log_set_level(log_levels[i].level);
+          break;
+        }
+      }
+    }
+
+    // Register all formats and codecs
+    av_register_all();
+    initialized = true;
+  }
+}
+
 namespace {
 
 class FFmpegStream {
@@ -45,13 +86,18 @@ class FFmpegStream {
                         [](AVFormatContext* p) {
                           if (p != nullptr) {
                             avformat_close_input(&p);
-                            av_free(p);
+                            avformat_free_context(p);
                           }
                         }),
         io_context_(nullptr,
                     [](AVIOContext* p) {
                       if (p != nullptr) {
+                        av_free(p->buffer);
+#if LIBAVCODEC_VERSION_MAJOR > 56
+                        avio_context_free(&p);
+#else
                         av_free(p);
+#endif
                       }
                     }),
         stream_index_(-1),
@@ -67,13 +113,15 @@ class FFmpegStream {
           if (p != nullptr) {
             av_packet_unref(p);
           }
-        }) {}
+        }) {
+  }
   virtual ~FFmpegStream() {}
   virtual Status Open(int64 media, int64 index) {
     offset_ = 0;
     AVFormatContext* format_context;
     if ((format_context = avformat_alloc_context()) != NULL) {
       AVIOContext* io_context;
+      // TODO: Perhaps allocate buffer and buffer_size here.
       if ((io_context =
                avio_alloc_context(NULL, 0, 0, this, FFmpegStream::ReadPacket,
                                   NULL, FFmpegStream::Seek)) != NULL) {
@@ -107,10 +155,16 @@ class FFmpegStream {
               return Status::OK();
             }
           }
+          avformat_close_input(&format_context);
         }
+        av_free(io_context->buffer);
+#if LIBAVCODEC_VERSION_MAJOR > 56
+        avio_context_free(&io_context);
+#else
         av_free(io_context);
+#endif
       }
-      av_free(format_context);
+      avformat_free_context(format_context);
     }
     return errors::InvalidArgument("unable to open file: ", filename_);
   }
@@ -145,10 +199,13 @@ class FFmpegStream {
 #else
     codec_context_ = format_context_->streams[stream_index]->codec;
 #endif
-    // TODO (yongtang): avcodec_open2 is not thread-safe
-    AVDictionary* opts = NULL;
-    if (avcodec_open2(codec_context_, codec, &opts) < 0) {
-      return errors::Internal("could not open codec");
+    {
+      // avcodec_open2 is not thread-safe
+      mutex_lock lock(mu);
+      AVDictionary* opts = NULL;
+      if (avcodec_open2(codec_context_, codec, &opts) < 0) {
+        return errors::Internal("could not open codec");
+      }
     }
 
     nb_frames_ = format_context_->streams[stream_index]->nb_frames;
@@ -286,8 +343,10 @@ class FFmpegAudioStream : public FFmpegStream {
     // reference after first
     packet_scope_.reset(&packet_);
     while (packet_.stream_index != stream_index_) {
+      av_packet_unref(&packet_);
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
+        av_packet_unref(&packet_);
         return errors::InvalidArgument("no frame available");
       }
     }
@@ -295,6 +354,7 @@ class FFmpegAudioStream : public FFmpegStream {
     while (packet_.size > 0) {
       TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
     }
+    av_packet_unref(&packet_);
 
     return Status::OK();
   }
@@ -334,6 +394,7 @@ class FFmpegAudioStream : public FFmpegStream {
     }
     int ret;
     do {
+      av_packet_unref(&packet_);
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
         break;
@@ -345,6 +406,7 @@ class FFmpegAudioStream : public FFmpegStream {
       while (packet_.size > 0) {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
+      av_packet_unref(&packet_);
       return Status::OK();
     }
     // final cache clean up
@@ -556,8 +618,10 @@ class FFmpegVideoStream : public FFmpegStream {
     // reference after first
     packet_scope_.reset(&packet_);
     while (packet_.stream_index != stream_index_) {
+      av_packet_unref(&packet_);
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
+        av_packet_unref(&packet_);
         return errors::InvalidArgument("no frame available");
       }
     }
@@ -565,6 +629,7 @@ class FFmpegVideoStream : public FFmpegStream {
     while (packet_.size > 0) {
       TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
     }
+    av_packet_unref(&packet_);
 
     return Status::OK();
   }
@@ -574,6 +639,14 @@ class FFmpegVideoStream : public FFmpegStream {
       TF_RETURN_IF_ERROR(DecodePacket());
       (*frames) = frames_.size();
     }
+    return Status::OK();
+  }
+  Status PeekAll(int64* frames) {
+    Status status;
+    do {
+      status = DecodePacket();
+    } while (status.ok());
+    (*frames) = frames_.size();
     return Status::OK();
   }
   Status Read(Tensor* value) {
@@ -595,6 +668,7 @@ class FFmpegVideoStream : public FFmpegStream {
     }
     int ret;
     do {
+      av_packet_unref(&packet_);
       ret = av_read_frame(format_context_.get(), &packet_);
       if (ret < 0) {
         break;
@@ -606,6 +680,7 @@ class FFmpegVideoStream : public FFmpegStream {
       while (packet_.size > 0) {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
+      av_packet_unref(&packet_);
       return Status::OK();
     }
     // final cache clean up
@@ -672,6 +747,7 @@ class FFmpegVideoStream : public FFmpegStream {
   std::deque<std::unique_ptr<uint8_t, void (*)(uint8_t*)>> frames_buffer_;
   std::unique_ptr<SwsContext, void (*)(SwsContext*)> sws_context_;
 };
+
 class FFmpegVideoReadableResource : public ResourceBase {
  public:
   FFmpegVideoReadableResource(Env* env) : env_(env) {}
@@ -802,6 +878,49 @@ REGISTER_KERNEL_BUILDER(Name("IO>FfmpegVideoReadableInit").Device(DEVICE_CPU),
                         FFmpegVideoReadableInitOp);
 REGISTER_KERNEL_BUILDER(Name("IO>FfmpegVideoReadableNext").Device(DEVICE_CPU),
                         FFmpegVideoReadableNextOp);
+
+class FFmpegDecodeVideoOp : public OpKernel {
+ public:
+  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    env_ = context->env();
+  }
+
+  void Compute(OpKernelContext* context) override {
+    const Tensor* input_tensor;
+    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
+
+    const Tensor* index_tensor;
+    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
+
+    string input = input_tensor->scalar<tstring>()();
+    SizedRandomAccessFile file(env_, "memory", input.data(), input.size());
+
+    FFmpegInit();
+
+    FFmpegVideoStream stream("memory", &file, input.size());
+    OP_REQUIRES_OK(context, stream.OpenVideo(index_tensor->scalar<int64>()()));
+    int64 frames = 0;
+    OP_REQUIRES_OK(context, stream.PeekAll(&frames));
+
+    Tensor* video_tensor = nullptr;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(
+                       0,
+                       TensorShape({frames, stream.height(), stream.width(),
+                                    stream.channels()}),
+                       &video_tensor));
+
+    OP_REQUIRES_OK(context, stream.Read(video_tensor));
+  }
+
+ private:
+  mutable mutex mu_;
+  Env* env_ TF_GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("IO>FfmpegDecodeVideo").Device(DEVICE_CPU),
+                        FFmpegDecodeVideoOp);
 
 }  // namespace
 }  // namespace data

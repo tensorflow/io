@@ -30,42 +30,16 @@ extern "C" {
 }
 
 namespace tensorflow {
+
+namespace {
+
+mutex mu(LINKER_INITIALIZED);
+
+}  // namespace
+
 namespace data {
 
-static mutex mu(LINKER_INITIALIZED);
-static bool initialized(false);
-
-void FFmpegInit() {
-  mutex_lock lock(mu);
-  if (!initialized) {
-    // Set log level if needed
-    static const struct {
-      const char* name;
-      int level;
-    } log_levels[] = {
-        {"quiet", AV_LOG_QUIET},     {"panic", AV_LOG_PANIC},
-        {"fatal", AV_LOG_FATAL},     {"error", AV_LOG_ERROR},
-        {"warning", AV_LOG_WARNING}, {"info", AV_LOG_INFO},
-        {"verbose", AV_LOG_VERBOSE}, {"debug", AV_LOG_DEBUG},
-        // { "trace"  , AV_LOG_TRACE   },
-    };
-    const char* log_level_name = getenv("FFMPEG_LOG_LEVEL");
-    if (log_level_name != nullptr) {
-      string log_level = log_level_name;
-      for (size_t i = 0; i < sizeof(log_levels) / sizeof(log_levels[0]); i++) {
-        if (log_level == log_levels[i].name) {
-          LOG(INFO) << "FFmpeg log level: " << log_level;
-          av_log_set_level(log_levels[i].level);
-          break;
-        }
-      }
-    }
-
-    // Register all formats and codecs
-    av_register_all();
-    initialized = true;
-  }
-}
+void FFmpegInit();
 
 class FFmpegReadStream {
  public:
@@ -79,16 +53,22 @@ class FFmpegReadStream {
                         [](AVFormatContext* p) {
                           if (p != nullptr) {
                             avformat_close_input(&p);
-                            av_free(p);
+                            avformat_free_context(p);
                           }
                         }),
         io_context_(nullptr,
                     [](AVIOContext* p) {
                       if (p != nullptr) {
+                        av_free(p->buffer);
+#if LIBAVCODEC_VERSION_MAJOR > 56
+                        avio_context_free(&p);
+#else
                         av_free(p);
+#endif
                       }
                     }),
-        stream_index_(-1) {}
+        stream_index_(-1) {
+  }
   virtual ~FFmpegReadStream() {}
 
   int64 Streams() { return format_context_.get()->nb_streams; }
@@ -124,10 +104,16 @@ class FFmpegReadStream {
             format_context_.reset(format_context);
             return Status::OK();
           }
+          avformat_close_input(&format_context);
         }
+        av_free(io_context->buffer);
+#if LIBAVCODEC_VERSION_MAJOR > 56
+        avio_context_free(&io_context);
+#else
         av_free(io_context);
+#endif
       }
-      av_free(format_context);
+      avformat_free_context(format_context);
     }
     return errors::InvalidArgument("unable to open file: ", filename_);
   }
@@ -186,6 +172,7 @@ class FFmpegReadStream {
   std::unique_ptr<AVIOContext, void (*)(AVIOContext*)> io_context_;
   int64 stream_index_;
 };
+
 class FFmpegReadStreamMeta : public FFmpegReadStream {
  public:
   FFmpegReadStreamMeta(const string& filename, SizedRandomAccessFile* file,
@@ -247,10 +234,13 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
 #else
     codec_context_ = format_context_->streams[stream_index]->codec;
 #endif
-    // TODO (yongtang): avcodec_open2 is not thread-safe
-    AVDictionary* opts = NULL;
-    if (avcodec_open2(codec_context_, codec, &opts) < 0) {
-      return errors::Internal("could not open codec");
+    {
+      // avcodec_open2 is not thread-safe
+      AVDictionary* opts = NULL;
+      mutex_lock lock(mu);
+      if (avcodec_open2(codec_context_, codec, &opts) < 0) {
+        return errors::Internal("could not open codec");
+      }
     }
 
     nb_frames_ = format_context_->streams[stream_index]->nb_frames;
@@ -349,6 +339,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
   int got_frame_;
   int64 samples_index_;
 };
+
 class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
  public:
   FFmpegVideoReadStreamMeta(const string& filename, SizedRandomAccessFile* file,
@@ -680,6 +671,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
   }
   std::deque<string> subtitles_;
 };
+
 class FFmpegReadable : public IOReadableInterface {
  public:
   FFmpegReadable(Env* env) : env_(env) {}
@@ -822,55 +814,6 @@ REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableSpec").Device(DEVICE_CPU),
                         IOInterfaceSpecOp<FFmpegReadable>);
 REGISTER_KERNEL_BUILDER(Name("IO>FfmpegReadableRead").Device(DEVICE_CPU),
                         IOReadableReadOp<FFmpegReadable>);
-
-class FFmpegDecodeVideoOp : public OpKernel {
- public:
-  explicit FFmpegDecodeVideoOp(OpKernelConstruction* context)
-      : OpKernel(context) {
-    env_ = context->env();
-  }
-
-  void Compute(OpKernelContext* context) override {
-    const Tensor* input_tensor;
-    OP_REQUIRES_OK(context, context->input("input", &input_tensor));
-
-    const Tensor* index_tensor;
-    OP_REQUIRES_OK(context, context->input("index", &index_tensor));
-
-    string input = input_tensor->scalar<tstring>()();
-    SizedRandomAccessFile file(env_, "memory", input.data(), input.size());
-
-    FFmpegInit();
-
-    FFmpegVideoReadStreamMeta video_meta("memory", &file, input.size());
-    OP_REQUIRES_OK(context, video_meta.Open(index_tensor->scalar<int64>()()));
-    int64 record_to_read = 0;
-    OP_REQUIRES_OK(context, video_meta.Peek(&record_to_read));
-
-    Tensor* video_tensor = nullptr;
-    OP_REQUIRES_OK(context,
-                   context->allocate_output(
-                       0,
-                       TensorShape({record_to_read, video_meta.Height(),
-                                    video_meta.Width(), channels_}),
-                       &video_tensor));
-
-    int64 record_read = 0;
-    OP_REQUIRES_OK(context,
-                   video_meta.Read(record_to_read, &record_read, video_tensor));
-    OP_REQUIRES(context, (record_read == record_to_read),
-                errors::InvalidArgument("unable to read expected frames ",
-                                        record_to_read, " vs. ", record_read));
-  }
-
- private:
-  mutable mutex mu_;
-  Env* env_ TF_GUARDED_BY(mu_);
-  static const int64 channels_ = 3;
-};
-
-REGISTER_KERNEL_BUILDER(Name("IO>FfmpegDecodeVideo").Device(DEVICE_CPU),
-                        FFmpegDecodeVideoOp);
 
 }  // namespace data
 }  // namespace tensorflow
