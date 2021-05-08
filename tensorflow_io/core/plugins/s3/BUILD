@@ -10,6 +10,8 @@ load(
 cc_library(
     name = "s3",
     srcs = [
+        "aws_crypto.cc",
+        "aws_crypto.h",
         "aws_logging.cc",
         "aws_logging.h",
         "s3_filesystem.cc",
