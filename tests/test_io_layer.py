@@ -27,8 +27,6 @@ import tensorflow_io as tfio
 if sys.platform == "darwin":
     pytest.skip("TODO: !!!pytest-xdist!!!", allow_module_level=True)
 
-import tensorflow_io.kafka as kafka_io
-
 
 @pytest.fixture(name="fashion_mnist", scope="module")
 def fixture_fashion_mnist():
@@ -116,6 +114,8 @@ class KafkaIOLayerHelper:
         return tfio.experimental.IOLayer.kafka(self._topic)
 
     def check(self, images, predictions):
+        import tensorflow_io.kafka as kafka_io
+
         f = kafka_io.KafkaDataset(topics=[self._topic], group="test", eof=True)
         lines = list(f)
         assert np.all(lines == predictions)
