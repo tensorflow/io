@@ -271,10 +271,12 @@ def test_kafka_group_io_dataset_resume_primary_cg():
     # Write new messages to the topic
     for i in range(10, 100):
         message = "D{}".format(i)
-        kafka_io.write_kafka(message=message, topic="key-partition-test")
+        kafka_io.write_kafka(
+            message=message, topic="test_kafka_group_io_dataset_resume_primary_cg"
+        )
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
-        topics=["key-partition-test"],
+        topics=["test_kafka_group_io_dataset_resume_primary_cg"],
         group_id="test_kafka_group_io_dataset_resume_primary_cg",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
@@ -295,10 +297,13 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
     # Write new messages to the topic
     for i in range(10, 100):
         message = "D{}".format(i)
-        kafka_io.write_kafka(message=message, topic="key-test")
+        kafka_io.write_kafka(
+            message=message,
+            topic="test_kafka_group_io_dataset_resume_primary_cg_new_topic",
+        )
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
-        topics=["key-test"],
+        topics=["test_kafka_group_io_dataset_resume_primary_cg_new_topic"],
         group_id="test_kafka_group_io_dataset_resume_primary_cg_new_topic",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
@@ -448,10 +453,13 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         time.sleep(6)
         for i in range(100, 200):
             message = "D{}".format(i)
-            kafka_io.write_kafka(message=message, topic="key-partition-test")
+            kafka_io.write_kafka(
+                message=message,
+                topic="test_kafka_group_io_dataset_stream_timeout_check",
+            )
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
-        topics=["key-partition-test"],
+        topics=["test_kafka_group_io_dataset_stream_timeout_check"],
         group_id="test_kafka_group_io_dataset_stream_timeout_check",
         servers="localhost:9092",
         stream_timeout=20000,
