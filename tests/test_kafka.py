@@ -101,7 +101,9 @@ def test_kafka_output_sequence():
     predictions = [class_names[v] for v in np.argmax(predictions, axis=1)]
 
     # Reading from `test_e(time)e` we should get the same result
-    dataset = tfio.kafka.KafkaDataset(topics=[topic], group="test", eof=True)
+    dataset = tfio.kafka.KafkaDataset(
+        topics=[topic], group="test_kafka_output_sequence", eof=True
+    )
     for entry, prediction in zip(dataset, predictions):
         assert entry.numpy() == prediction.encode()
 
@@ -117,7 +119,9 @@ def test_avro_kafka_dataset():
         '{"name":"f3","type":["null","string"],"default":null}'
         "]}"
     )
-    dataset = kafka_io.KafkaDataset(["avro-test:0"], group="avro-test", eof=True)
+    dataset = kafka_io.KafkaDataset(
+        ["avro-test:0"], group="test_avro_kafka_dataset", eof=True
+    )
     # remove kafka framing
     dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
     # deserialize avro
@@ -140,7 +144,9 @@ def test_avro_kafka_dataset_with_resource():
         ']}"'
     )
     schema_resource = kafka_io.decode_avro_init(schema)
-    dataset = kafka_io.KafkaDataset(["avro-test:0"], group="avro-test", eof=True)
+    dataset = kafka_io.KafkaDataset(
+        ["avro-test:0"], group="test_avro_kafka_dataset_with_resource", eof=True
+    )
     # remove kafka framing
     dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
     # deserialize avro
@@ -208,7 +214,7 @@ def test_kafka_group_io_dataset_primary_cg():
     """
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtestprimary",
+        group_id="test_kafka_group_io_dataset_primary_cg",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -228,7 +234,7 @@ def test_kafka_group_io_dataset_primary_cg_no_lag():
     """
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtestprimary",
+        group_id="test_kafka_group_io_dataset_primary_cg_no_lag",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -241,7 +247,7 @@ def test_kafka_group_io_dataset_primary_cg_new_topic():
     """
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-test"],
-        group_id="cgtestprimary",
+        group_id="test_kafka_group_io_dataset_primary_cg_new_topic",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -269,7 +275,7 @@ def test_kafka_group_io_dataset_resume_primary_cg():
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtestprimary",
+        group_id="test_kafka_group_io_dataset_resume_primary_cg",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -293,7 +299,7 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-test"],
-        group_id="cgtestprimary",
+        group_id="test_kafka_group_io_dataset_resume_primary_cg_new_topic",
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
@@ -311,7 +317,7 @@ def test_kafka_group_io_dataset_secondary_cg():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtestsecondary",
+        group_id="test_kafka_group_io_dataset_secondary_cg",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -332,7 +338,7 @@ def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test", "key-test"],
-        group_id="cgtesttertiary",
+        group_id="test_kafka_group_io_dataset_tertiary_cg_multiple_topic",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -352,7 +358,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgglobaloffsetearliest",
+        group_id="test_kafka_group_io_dataset_auto_offset_reset",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -367,7 +373,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgglobaloffsetlatest",
+        group_id="test_kafka_group_io_dataset_auto_offset_reset",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -379,7 +385,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtopicoffsetearliest",
+        group_id="test_kafka_group_io_dataset_auto_offset_reset",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -394,7 +400,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgtopicoffsetlatest",
+        group_id="test_kafka_group_io_dataset_auto_offset_reset_2",
         servers="localhost:9092",
         configuration=[
             "session.timeout.ms=7000",
@@ -416,7 +422,7 @@ def test_kafka_group_io_dataset_invalid_stream_timeout():
     try:
         tfio.experimental.streaming.KafkaGroupIODataset(
             topics=["key-partition-test", "key-test"],
-            group_id="cgteststreaminvalid",
+            group_id="test_kafka_group_io_dataset_invalid_stream_timeout",
             servers="localhost:9092",
             stream_timeout=STREAM_TIMEOUT,
             configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
@@ -446,7 +452,7 @@ def test_kafka_group_io_dataset_stream_timeout_check():
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
-        group_id="cgteststreamvalid",
+        group_id="test_kafka_group_io_dataset_stream_timeout_check",
         servers="localhost:9092",
         stream_timeout=20000,
         configuration=[
@@ -482,7 +488,7 @@ def test_kafka_batch_io_dataset():
 
     dataset = tfio.experimental.streaming.KafkaBatchIODataset(
         topics=["mini-batch-test"],
-        group_id="cgminibatch",
+        group_id="test_kafka_batch_io_dataset",
         servers=None,
         stream_timeout=5000,
         configuration=[
