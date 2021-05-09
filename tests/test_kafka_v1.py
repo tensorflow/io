@@ -20,6 +20,8 @@ import pytest
 
 import tensorflow as tf
 
+pytest.skip("kafka v1 has been deprecated", allow_module_level=True)
+
 
 class KafkaDatasetTest(tf.test.TestCase):
     """Tests for KafkaDataset."""
