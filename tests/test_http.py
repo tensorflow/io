@@ -15,8 +15,14 @@
 """Tests for HTTP file system"""
 
 import os
+import sys
+import pytest
+
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
+
+if sys.platform == "darwin":
+    pytest.skip("!!!pytest-xdist!!!", allow_module_level=True)
 
 
 class HTTPFSTest(tf.test.TestCase):

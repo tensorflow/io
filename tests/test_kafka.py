@@ -15,6 +15,7 @@
 """Tests for Kafka Output Sequence."""
 
 
+import sys
 import time
 import pytest
 import numpy as np
@@ -22,6 +23,10 @@ import threading
 
 import tensorflow as tf
 import tensorflow_io as tfio
+
+if sys.platform == "darwin":
+    pytest.skip("TODO: !!!pytest-xdist!!!", allow_module_level=True)
+
 from tensorflow_io.kafka.python.ops import (
     kafka_ops,
 )  # pylint: disable=wrong-import-position

@@ -16,6 +16,11 @@
 
 
 import os
+import sys
+import pytest
+
+if sys.platform == "darwin":
+    pytest.skip("!!!pytest-xdist!!!", allow_module_level=True)
 
 
 def extract_block(filename, lang):

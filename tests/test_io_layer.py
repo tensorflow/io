@@ -15,6 +15,7 @@
 """Test tfio.IOLayer"""
 
 import os
+import sys
 import time
 import tempfile
 import pytest
@@ -22,6 +23,10 @@ import numpy as np
 
 import tensorflow as tf
 import tensorflow_io as tfio
+
+if sys.platform == "darwin":
+    pytest.skip("TODO: !!!pytest-xdist!!!", allow_module_level=True)
+
 import tensorflow_io.kafka as kafka_io
 
 
