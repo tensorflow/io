@@ -26,7 +26,7 @@ def test_feather_format():
     import numpy as np
     import pandas as pd
 
-    import pyarrow as pa
+    from pyarrow import feather as pa_feather
 
     data = {
         "bool": np.asarray([e % 2 for e in range(100)], np.bool),
@@ -39,7 +39,7 @@ def test_feather_format():
     }
     df = pd.DataFrame(data).sort_index(axis=1)
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        pa.feather.write_feather(df, f, version=1)
+        pa_feather.write_feather(df, f, version=1)
 
     feather = tfio.IOTensor.from_feather(f.name)
     for column in df.columns:
