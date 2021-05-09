@@ -304,7 +304,6 @@ class KafkaDatasetTest(tf.test.TestCase):
             with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
-    @pytest.mark.skip(reason="TODO: !!!pytest-xdist!!!")
     def test_kafka_dataset_with_key(self):
         """Tests for KafkaDataset when reading keyed-messages from a single-partitioned topic"""
         tf.compat.v1.disable_eager_execution()
@@ -412,7 +411,6 @@ class KafkaDatasetTest(tf.test.TestCase):
                     sess.run(get_next),
                 )
 
-    @pytest.mark.skip(reason="TODO: !!!pytest-xdist!!!")
     def test_kafka_dataset_with_partitioned_key(self):
         """Tests for KafkaDataset when reading keyed-messages
         from a multi-partitioned topic"""
