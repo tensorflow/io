@@ -24,9 +24,6 @@ import threading
 import tensorflow as tf
 import tensorflow_io as tfio
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: !!!pytest-xdist!!!", allow_module_level=True)
-
 
 def test_kafka_io_tensor():
     kafka = tfio.IOTensor.from_kafka("test")
