@@ -18,15 +18,16 @@
 import os
 import tempfile
 
-import numpy as np
-import pandas as pd
-import pyarrow as pa
-
-import tensorflow_io as tfio  # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
 
 def test_feather_format():
     """test_feather_format"""
+    import numpy as np
+    import pandas as pd
+
+    import pyarrow as pa
+
     data = {
         "bool": np.asarray([e % 2 for e in range(100)], np.bool),
         "int8": np.asarray(range(100), np.int8),

@@ -408,6 +408,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_dataset(self):
         """test_arrow_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             self.scalar_data + self.list_data,
             self.scalar_dtypes + self.list_dtypes,
@@ -417,14 +419,14 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
 
         # test all columns selected
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch, truth_data.output_types, truth_data.output_shapes
         )
         self.run_test_case(dataset, truth_data)
 
         # test column selection
         columns = (1, 3, len(truth_data.output_types) - 1)
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch,
             tuple([truth_data.output_types[c] for c in columns]),
             tuple([truth_data.output_shapes[c] for c in columns]),
@@ -434,11 +436,13 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # test construction from pd.DataFrame
         df = batch.to_pandas()
-        dataset = tfio.arrow.ArrowDataset.from_pandas(df, preserve_index=False)
+        dataset = arrow_io.ArrowDataset.from_pandas(df, preserve_index=False)
         self.run_test_case(dataset, truth_data)
 
     def test_arrow_dataset_with_strings(self):
         """test_arrow_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         scalar_data = [
             [b"1.1", b"2.2", b"3.3", b"4.4"],
         ]
@@ -449,13 +453,15 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
 
         # test all columns selected
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch, truth_data.output_types, truth_data.output_shapes
         )
         self.run_test_case(dataset, truth_data)
 
     def test_from_pandas_preserve_index(self):
         """test_from_pandas_preserve_index"""
+        import tensorflow_io.arrow as arrow_io
+
         data_v = [
             [1.0, 2.0, 3.0],
             [0.2, 0.4, 0.8],
@@ -469,7 +475,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         batch = self.make_record_batch(truth_data)
         df = batch.to_pandas()
-        dataset = tfio.arrow.ArrowDataset.from_pandas(df, preserve_index=True)
+        dataset = arrow_io.ArrowDataset.from_pandas(df, preserve_index=True)
 
         # Add index column to test data to check results
         truth_data_with_index = TruthData(
@@ -486,13 +492,15 @@ class ArrowDatasetTest(ArrowTestBase):
             truth_data_with_index.output_types[1:],
             truth_data_with_index.output_shapes[1:],
         )
-        dataset = tfio.arrow.ArrowDataset.from_pandas(
+        dataset = arrow_io.ArrowDataset.from_pandas(
             df, columns=(1,), preserve_index=True
         )
         self.run_test_case(dataset, truth_data_selected_with_index)
 
     def test_arrow_feather_dataset(self):
         """test_arrow_feather_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         from pyarrow.feather import write_feather
 
         # Feather files currently do not support columns of list types
@@ -506,7 +514,7 @@ class ArrowDatasetTest(ArrowTestBase):
             write_feather(df, f, version=1)
 
         # test single file
-        dataset = tfio.arrow.ArrowFeatherDataset(
+        dataset = arrow_io.ArrowFeatherDataset(
             f.name,
             list(range(len(truth_data.output_types))),
             truth_data.output_types,
@@ -515,7 +523,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data)
 
         # test single file with 'file://' prefix
-        dataset = tfio.arrow.ArrowFeatherDataset(
+        dataset = arrow_io.ArrowFeatherDataset(
             "file://{}".format(f.name),
             list(range(len(truth_data.output_types))),
             truth_data.output_types,
@@ -524,7 +532,7 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data)
 
         # test multiple files
-        dataset = tfio.arrow.ArrowFeatherDataset(
+        dataset = arrow_io.ArrowFeatherDataset(
             [f.name, f.name],
             list(range(len(truth_data.output_types))),
             truth_data.output_types,
@@ -538,13 +546,15 @@ class ArrowDatasetTest(ArrowTestBase):
         self.run_test_case(dataset, truth_data_doubled)
 
         # test construction from schema
-        dataset = tfio.arrow.ArrowFeatherDataset.from_schema(f.name, batch.schema)
+        dataset = arrow_io.ArrowFeatherDataset.from_schema(f.name, batch.schema)
         self.run_test_case(dataset, truth_data)
 
         os.unlink(f.name)
 
     def test_arrow_socket_dataset(self):
         """test_arrow_socket_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             self.scalar_data + self.list_data,
             self.scalar_dtypes + self.list_dtypes,
@@ -575,7 +585,7 @@ class ArrowDatasetTest(ArrowTestBase):
         server = threading.Thread(target=run_server, args=(num_batches,))
         server.start()
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_schema(host, batch.schema)
+        dataset = arrow_io.ArrowStreamDataset.from_schema(host, batch.schema)
         truth_data_mult = TruthData(
             [d * num_batches for d in truth_data.data],
             truth_data.output_types,
@@ -587,6 +597,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_unix_socket_dataset(self):
         """test_arrow_unix_socket_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         if os.name == "nt":
             self.skipTest("Unix Domain Sockets not supported on Windows")
 
@@ -629,7 +641,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         endpoint = "unix://{}".format(host)
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_schema(endpoint, batch.schema)
+        dataset = arrow_io.ArrowStreamDataset.from_schema(endpoint, batch.schema)
         truth_data_mult = TruthData(
             [d * num_batches for d in truth_data.data],
             truth_data.output_types,
@@ -641,6 +653,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_multiple_stream_hosts(self):
         """test_multiple_stream_hosts"""
+        import tensorflow_io.arrow as arrow_io
+
         if os.name == "nt":
             self.skipTest("Unix Domain Sockets not supported on Windows")
 
@@ -689,7 +703,7 @@ class ArrowDatasetTest(ArrowTestBase):
         servers = [start_server(h) for h in hosts]
         endpoints = ["unix://{}".format(h) for h in hosts]
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_schema(endpoints, batch.schema)
+        dataset = arrow_io.ArrowStreamDataset.from_schema(endpoints, batch.schema)
         truth_data_mult = TruthData(
             [d * len(hosts) for d in truth_data.data],
             truth_data.output_types,
@@ -702,6 +716,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas(self):
         """test_stream_from_pandas"""
+        import tensorflow_io.arrow as arrow_io
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -711,7 +726,7 @@ class ArrowDatasetTest(ArrowTestBase):
         batch_size = 2
 
         # Test preserve index False
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(
             df, batch_size=batch_size, preserve_index=False
         )
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
@@ -722,13 +737,15 @@ class ArrowDatasetTest(ArrowTestBase):
             truth_data.output_types + (tf.dtypes.int64,),
             truth_data.output_shapes + (tf.TensorShape([]),),
         )
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(
             df, batch_size=batch_size, preserve_index=True
         )
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_stream_from_pandas_remainder(self):
         """Test stream from Pandas that produces partial batch"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -736,13 +753,14 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
         df = batch.to_pandas()
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(
             df, batch_size=batch_size, preserve_index=False
         )
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_stream_from_pandas_iter(self):
         """test_stream_from_pandas_iter"""
+        import tensorflow_io.arrow as arrow_io
 
         batch_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -752,7 +770,7 @@ class ArrowDatasetTest(ArrowTestBase):
         batch_size = 2
         num_iters = 3
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(
             (df for _ in range(num_iters)), batch_size=batch_size, preserve_index=False
         )
 
@@ -766,17 +784,19 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas_not_batched(self):
         """test_stream_from_pandas_not_batched"""
+        import tensorflow_io.arrow as arrow_io
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
         batch = self.make_record_batch(truth_data)
         df = batch.to_pandas()
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(df, preserve_index=False)
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(df, preserve_index=False)
         self.run_test_case(dataset, truth_data)
 
     def test_stream_from_pandas_repeat(self):
         """test_stream_from_pandas_repeat"""
+        import tensorflow_io.arrow as arrow_io
 
         batch_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -785,7 +805,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         num_repeat = 10
 
-        dataset = tfio.arrow.ArrowStreamDataset.from_pandas(
+        dataset = arrow_io.ArrowStreamDataset.from_pandas(
             df, batch_size=2, preserve_index=False
         ).repeat(num_repeat)
 
@@ -806,6 +826,8 @@ class ArrowDatasetTest(ArrowTestBase):
         DataFrameBlock: bool
         see https://issues.apache.org/jira/browse/ARROW-4370
         """
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             [[[False, False], [False, True], [True, False], [True, True]]],
             (tf.dtypes.bool,),
@@ -814,17 +836,19 @@ class ArrowDatasetTest(ArrowTestBase):
 
         batch = self.make_record_batch(truth_data)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch, truth_data.output_types, truth_data.output_shapes, columns=(0,)
         )
         self.run_test_case(dataset, truth_data)
 
     def test_incorrect_column_type(self):
         """Test that a column with incorrect dtype raises error"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
         batch = self.make_record_batch(truth_data)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch,
             tuple([tf.dtypes.int32 for _ in truth_data.output_types]),
             truth_data.output_shapes,
@@ -836,11 +860,13 @@ class ArrowDatasetTest(ArrowTestBase):
         """Test that using map then batch produces correct output. This will create
         a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
         """
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             [list(range(10))], (tf.dtypes.int32,), (tf.TensorShape([]),)
         )
         batch = self.make_record_batch(truth_data)
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batch, truth_data.output_types, truth_data.output_shapes
         )
 
@@ -857,6 +883,8 @@ class ArrowDatasetTest(ArrowTestBase):
     @pytest.mark.skip(reason="TODO")
     def test_tf_function(self):
         """Test that an ArrowDataset can be used in tf.function call"""
+        import tensorflow_io.arrow as arrow_io
+
         if not tf.version.VERSION.startswith("2."):
             self.skipTest("Test requires TF2.0 for tf.function")
 
@@ -869,7 +897,7 @@ class ArrowDatasetTest(ArrowTestBase):
         @tf.function
         def create_arrow_dataset(serialized_batch):
             """Create an arrow dataset from input tensor"""
-            dataset = tfio.arrow.ArrowDataset(
+            dataset = arrow_io.ArrowDataset(
                 serialized_batch,
                 list(range(len(truth_data.output_types))),
                 truth_data.output_types,
@@ -890,6 +918,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_no_remainder(self):
         """Test batch_size that does not leave a remainder"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0])
         num_batches = 2
 
@@ -902,13 +932,15 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
         df = batch.to_pandas()
 
-        dataset = tfio.arrow.ArrowDataset.from_pandas(
+        dataset = arrow_io.ArrowDataset.from_pandas(
             df, preserve_index=False, batch_size=batch_size
         )
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_remainder(self):
         """Test batch_size that does leave a remainder"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -916,13 +948,15 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
         df = batch.to_pandas()
 
-        dataset = tfio.arrow.ArrowDataset.from_pandas(
+        dataset = arrow_io.ArrowDataset.from_pandas(
             df, preserve_index=False, batch_size=batch_size
         )
         self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_drop_remainder(self):
         """Test batch_size that drops remainder data"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -936,13 +970,15 @@ class ArrowDatasetTest(ArrowTestBase):
             truth_data.output_shapes,
         )
 
-        dataset = tfio.arrow.ArrowDataset.from_pandas(
+        dataset = arrow_io.ArrowDataset.from_pandas(
             df, preserve_index=False, batch_size=batch_size, batch_mode="drop_remainder"
         )
         self.run_test_case(dataset, truth_data_drop_last, batch_size=batch_size)
 
     def test_batch_mode_auto(self):
         """Test auto batch_mode to size to record batch number of rows"""
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 2
 
         single_batch_data = TruthData(
@@ -958,7 +994,7 @@ class ArrowDatasetTest(ArrowTestBase):
             single_batch_data.output_shapes,
         )
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batches,
             truth_data.output_types,
             truth_data.output_shapes,
@@ -971,6 +1007,8 @@ class ArrowDatasetTest(ArrowTestBase):
         """Test batch_size that divides an Arrow record batch into
         partial batches
         """
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 3
         batch_size = int(len(self.scalar_data[0]) * 1.5)
 
@@ -990,7 +1028,7 @@ class ArrowDatasetTest(ArrowTestBase):
         # Batches should divide input without remainder
         self.assertEqual(len(truth_data.data[0]) % batch_size, 0)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batches,
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1003,6 +1041,8 @@ class ArrowDatasetTest(ArrowTestBase):
         """Test batch_size that divides an Arrow record batch into
         partial batches and leaves remainder data
         """
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 3
         batch_size = len(self.scalar_data[0]) + 1
 
@@ -1022,7 +1062,7 @@ class ArrowDatasetTest(ArrowTestBase):
         # Batches should divide input and leave a remainder
         self.assertNotEqual(len(truth_data.data[0]) % batch_size, 0)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batches,
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1033,6 +1073,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_spans_mulitple_partials(self):
         """Test large batch_size that spans mulitple Arrow record batches"""
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 6
         batch_size = int(len(self.scalar_data[0]) * 3)
 
@@ -1049,7 +1091,7 @@ class ArrowDatasetTest(ArrowTestBase):
             single_batch_data.output_shapes,
         )
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             batches,
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1060,6 +1102,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_fixed_lists(self):
         """Test batching with fixed length list types"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = int(len(self.list_fixed_data[0]) / 2)
 
         truth_data = TruthData(
@@ -1068,7 +1112,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         batch = self.make_record_batch(truth_data)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             [batch],
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1079,6 +1123,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_variable_length_list_batched(self):
         """Test batching with variable length lists raises error"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.list_var_data[1])
 
         truth_data = TruthData(
@@ -1087,7 +1133,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         batch = self.make_record_batch(truth_data)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             [batch],
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1099,6 +1145,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_variable_length_list_unbatched(self):
         """Test unbatched variable length lists"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = None
 
         truth_data = TruthData(
@@ -1107,7 +1155,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         batch = self.make_record_batch(truth_data)
 
-        dataset = tfio.arrow.ArrowDataset.from_record_batches(
+        dataset = arrow_io.ArrowDataset.from_record_batches(
             [batch],
             truth_data.output_types,
             truth_data.output_shapes,
@@ -1118,10 +1166,12 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_unsupported_batch_mode(self):
         """Test using an unsupported batch mode"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
         with self.assertRaisesRegex(ValueError, "Unsupported batch_mode.*doh"):
-            tfio.arrow.ArrowDataset.from_record_batches(
+            arrow_io.ArrowDataset.from_record_batches(
                 [self.make_record_batch(truth_data)],
                 truth_data.output_types,
                 truth_data.output_shapes,
@@ -1130,6 +1180,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_list_feather_columns(self):
         """test_arrow_list_feather_columns"""
+        import tensorflow_io.arrow as arrow_io
+
         from pyarrow.feather import write_feather
 
         # Feather files currently do not support columns of list types
@@ -1144,7 +1196,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # test single file
         # prefix "file://" to test scheme file system (e.g., s3, gcs, azfs, ignite)
-        columns = tfio.arrow.list_feather_columns("file://" + f.name)
+        columns = arrow_io.list_feather_columns("file://" + f.name)
         for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
             assert columns[name].name == name
             assert columns[name].dtype == dtype
@@ -1154,7 +1206,7 @@ class ArrowDatasetTest(ArrowTestBase):
         with open(f.name, "rb") as ff:
             memory = ff.read()
         # when memory is provided filename doesn't matter:
-        columns = tfio.arrow.list_feather_columns("file:///non_exist", memory=memory)
+        columns = arrow_io.list_feather_columns("file:///non_exist", memory=memory)
         for name, dtype in list(zip(batch.schema.names, batch.schema.types)):
             assert columns[name].name == name
             assert columns[name].dtype == dtype

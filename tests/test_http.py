@@ -21,6 +21,9 @@ import pytest
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
+if sys.platform == "darwin":
+    pytest.skip("TODO: http is failing on macOS with xdist", allow_module_level=True)
+
 
 @pytest.fixture(scope="module")
 def local_lines():
