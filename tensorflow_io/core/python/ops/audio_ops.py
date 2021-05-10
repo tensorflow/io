@@ -418,10 +418,10 @@ def _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width):
     return tf.expand_dims(kernels,axis=1)*scale, width
 
 def resample(input, rate_in, rate_out, lowpass_filter_width= 6):
-    """Resamples the waveform at the new frequency. This matches Kaldi’s OfflineFeatureTpl ResampleWaveform which uses a LinearResample (resample a signal at linearly spaced intervals to upsample/downsample a signal). LinearResample (LR) means that the output signal is at linearly spaced intervals (i.e the output signal has a frequency of rate_out). It uses sinc/bandlimited interpolation to upsample/downsample the signal.
+    """Resamples the input at the new frequency. This matches Kaldi’s OfflineFeatureTpl ResampleWaveform which uses a LinearResample (resample a signal at linearly spaced intervals to upsample/downsample a signal). LinearResample (LR) means that the output signal is at linearly spaced intervals (i.e the output signal has a frequency of rate_out). It uses sinc/bandlimited interpolation to upsample/downsample the signal.
 
     Args:
-      waveform: A 1-D (`[samples]`) or 2-D (`[samples, channels]`) or 3-D (`[batch, samples, channels]`) `Tensor` of type `float`. Audio input.
+      input: A 1-D (`[samples]`) or 2-D (`[samples, channels]`) or 3-D (`[batch, samples, channels]`) `Tensor` of type `float`. Audio input.
       rate_in: The rate of the audio input.
       rate_out: The rate of the audio output.
       lowpass_filter_width:  Controls the sharpness of the filter, more == sharper but less efficient. We suggest around 4 to 10 for normal use. (Default: 6)
