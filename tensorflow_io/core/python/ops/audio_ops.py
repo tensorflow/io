@@ -17,7 +17,7 @@
 import sys
 
 import tensorflow as tf
-
+import math
 from tensorflow_io.core.python.ops import core_ops
 
 
