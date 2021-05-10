@@ -130,6 +130,8 @@ def test_avro_kafka_dataset():
 
 def test_avro_kafka_dataset_with_resource():
     """test_avro_kafka_dataset_with_resource"""
+    import tensorflow_io.kafka as kafka_io
+
     schema = (
         '{"type":"record","name":"myrecord","fields":['
         '{"name":"f1","type":"string"},'
