@@ -371,6 +371,7 @@ def fade(input, fade_in, fade_out, mode, name=None):
 
     return factor_in * factor_out * input
 
+
 def _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width):
     assert lowpass_filter_width > 0
     base_freq = min(rate_in, rate_out)
@@ -402,22 +403,25 @@ def _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width):
     # they will have a lot of almost zero values to the left or to the right...
     # There is probably a way to evaluate those filters more efficiently, but this is kept for
     # future work.
-    idx = tf.range(-width, width + rate_in,dtype=tf.float32)
-    idx=tf.repeat(tf.expand_dims(idx,axis=-1),rate_out,axis=-1)
-    aux_i=tf.expand_dims(tf.range(rate_out,dtype=tf.float32),axis=0)
+    idx = tf.range(-width, width + rate_in, dtype=tf.float32)
+    idx = tf.repeat(tf.expand_dims(idx, axis=-1), rate_out, axis=-1)
+    aux_i = tf.expand_dims(tf.range(rate_out, dtype=tf.float32), axis=0)
     kernels = (-aux_i / rate_out + idx / rate_in) * base_freq
-        
-    kernels = tf.clip_by_value(kernels,-lowpass_filter_width, lowpass_filter_width)
+
+    kernels = tf.clip_by_value(kernels, -lowpass_filter_width, lowpass_filter_width)
     kernels *= math.pi
 
-    window = tf.math.cos(kernels / lowpass_filter_width / 2)**2
-    kernels = tf.where(kernels == 0, tf.ones_like(kernels), tf.math.sin(kernels) / kernels)
-    kernels*=window
-    
-    scale = base_freq / rate_in
-    return tf.expand_dims(kernels,axis=1)*scale, width
+    window = tf.math.cos(kernels / lowpass_filter_width / 2) ** 2
+    kernels = tf.where(
+        kernels == 0, tf.ones_like(kernels), tf.math.sin(kernels) / kernels
+    )
+    kernels *= window
 
-def resample(input, rate_in, rate_out, lowpass_filter_width= 6):
+    scale = base_freq / rate_in
+    return tf.expand_dims(kernels, axis=1) * scale, width
+
+
+def resample(input, rate_in, rate_out, lowpass_filter_width=6):
     """Resamples the input at the new frequency. This matches Kaldi’s OfflineFeatureTpl ResampleWaveform which uses a LinearResample (resample a signal at linearly spaced intervals to upsample/downsample a signal). LinearResample (LR) means that the output signal is at linearly spaced intervals (i.e the output signal has a frequency of rate_out). It uses sinc/bandlimited interpolation to upsample/downsample the signal.
 
     Args:
@@ -431,9 +435,9 @@ def resample(input, rate_in, rate_out, lowpass_filter_width= 6):
     """
     waveform = input
 
-    if rate_in==rate_out:
+    if rate_in == rate_out:
         return waveform
-    
+
     rate_in = int(rate_in)
     rate_out = int(rate_out)
     gcd = math.gcd(rate_in, rate_out)
@@ -442,33 +446,35 @@ def resample(input, rate_in, rate_out, lowpass_filter_width= 6):
 
     kernel, width = _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width)
 
-    ori_shape=waveform.shape
-    ori_shape_len=len(ori_shape)
-    if ori_shape_len==1:
-        waveform = tf.expand_dims(waveform,axis=0)
-    elif ori_shape_len==2:
-        waveform = tf.transpose(waveform,[1,0])
-    elif ori_shape_len==3:
-        waveform = tf.transpose(waveform,[0,2,1])
-        waveform = tf.reshape(waveform,[ori_shape[0]*ori_shape[2],ori_shape[1]])
+    ori_shape = waveform.shape
+    ori_shape_len = len(ori_shape)
+    if ori_shape_len == 1:
+        waveform = tf.expand_dims(waveform, axis=0)
+    elif ori_shape_len == 2:
+        waveform = tf.transpose(waveform, [1, 0])
+    elif ori_shape_len == 3:
+        waveform = tf.transpose(waveform, [0, 2, 1])
+        waveform = tf.reshape(waveform, [ori_shape[0] * ori_shape[2], ori_shape[1]])
 
-    waveform = tf.expand_dims(waveform,axis=-1)
+    waveform = tf.expand_dims(waveform, axis=-1)
 
     num_wavs, length, _ = waveform.shape
-    
-    waveform = tf.pad(waveform,[[0,0],[width, width + rate_in],[0,0]])
-    resampled = tf.nn.conv1d(waveform, kernel, stride=rate_in,padding='VALID')
-    resampled = tf.reshape(resampled,[num_wavs, -1])
+
+    waveform = tf.pad(waveform, [[0, 0], [width, width + rate_in], [0, 0]])
+    resampled = tf.nn.conv1d(waveform, kernel, stride=rate_in, padding="VALID")
+    resampled = tf.reshape(resampled, [num_wavs, -1])
     target_length = int(math.ceil(rate_out * length / rate_in))
-    if ori_shape_len==1:
+    if ori_shape_len == 1:
         return resampled[0, :target_length]
-    elif ori_shape_len==2:
-        return tf.transpose(resampled[:, :target_length],[1,0])
-    elif ori_shape_len==3:
+    elif ori_shape_len == 2:
+        return tf.transpose(resampled[:, :target_length], [1, 0])
+    elif ori_shape_len == 3:
         return tf.transpose(
             tf.reshape(
-                resampled[:, :target_length],[ori_shape[0],ori_shape[2],target_length]
-            ),[0,2,1]
+                resampled[:, :target_length],
+                [ori_shape[0], ori_shape[2], target_length],
+            ),
+            [0, 2, 1],
         )
 
 
