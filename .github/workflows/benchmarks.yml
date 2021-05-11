@@ -41,6 +41,7 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
+          python -c 'from tensorflow_io_plugin_gs.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
 
   linux:
@@ -77,6 +78,7 @@ jobs:
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
+          python -c 'from tensorflow_io_plugin_gs.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
       # - name: Store benchmark result
       #   uses: rhysd/github-action-benchmark@v1
