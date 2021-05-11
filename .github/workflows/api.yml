@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master    
   schedule:
     - cron: "0 12 * * *"
 
@@ -40,6 +43,7 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_plugin_gs
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
@@ -80,6 +84,7 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_plugin_gs
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
@@ -121,6 +126,7 @@ jobs:
           @echo on
           python --version
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_plugin_gs
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
