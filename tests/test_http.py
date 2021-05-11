@@ -15,71 +15,87 @@
 """Tests for HTTP file system"""
 
 import os
+import sys
+import pytest
+
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
+if sys.platform == "darwin":
+    pytest.skip("TODO: http is failing on macOS with xdist", allow_module_level=True)
 
-class HTTPFSTest(tf.test.TestCase):
-    """TestCase class to test the HTTP file system plugins
-    functionality.
-    """
 
-    def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
-        self.local_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
-        )
-        self.remote_filename = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-        super().__init__(methodName)
+@pytest.fixture(scope="module")
+def local_lines():
+    local_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
+    )
+    with open(local_path) as f:
+        return list(f)
 
-    def setUp(self):  # pylint: disable=invalid-name
-        with open(self.local_path) as f:
-            self.local_lines = list(f)
-        self.local_content = "".join(self.local_lines)
-        super().setUp()
 
-    def test_read_remote_file(self):
-        """Test case for reading the entire content of the http file"""
+@pytest.fixture(scope="module")
+def local_content():
+    local_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_http", "LICENSE-2.0.txt"
+    )
+    with open(local_path) as f:
+        local_lines = list(f)
+    return "".join(local_lines)
 
-        remote_content = tf.io.read_file(self.remote_filename)
 
-        assert remote_content == self.local_content
+@pytest.fixture(scope="module")
+def remote_filename():
+    return "https://www.apache.org/licenses/LICENSE-2.0.txt"
 
-    def test_dataset_from_remote_filename(self):
-        """Test case to prepare a tf.data Dataset from a remote http file"""
 
-        dataset = tf.data.TextLineDataset(self.remote_filename)
-        i = 0
-        for d in dataset:
-            assert d == self.local_lines[i].rstrip()
-            i += 1
-        assert i == len(self.local_lines)
+def test_read_remote_file(local_content, remote_filename):
+    """Test case for reading the entire content of the http file"""
 
-    def test_gfile_read(self):
-        """Test case to read chunks of content from the http file"""
+    remote_content = tf.io.read_file(remote_filename)
 
-        remote_gfile = tf.io.gfile.GFile(self.remote_filename)
-        assert remote_gfile.size() == len(self.local_content)
-        offset_start = list(range(0, len(self.local_content), 100))
-        offset_stop = offset_start[1:] + [len(self.local_content)]
-        for (start, stop) in zip(offset_start, offset_stop):
-            assert remote_gfile.read(100) == self.local_content[start:stop]
+    assert remote_content == local_content
 
-    def test_gfile_seek(self):
-        """Test case to seek an offset after reading the content from the http file"""
 
-        remote_gfile = tf.io.gfile.GFile(self.remote_filename)
-        assert remote_gfile.read() == self.local_content
-        assert remote_gfile.read() == ""
-        remote_gfile.seek(0)
-        assert remote_gfile.read() == self.local_content
+def test_dataset_from_remote_filename(local_lines, local_content, remote_filename):
+    """Test case to prepare a tf.data Dataset from a remote http file"""
 
-    def test_gfile_tell(self):
-        """Test case to tell the current position in the http file"""
+    dataset = tf.data.TextLineDataset(remote_filename)
+    i = 0
+    for d in dataset:
+        assert d == local_lines[i].rstrip()
+        i += 1
+    assert i == len(local_lines)
 
-        remote_gfile = tf.io.gfile.GFile(self.remote_filename)
-        assert remote_gfile.tell() == 0
-        remote_gfile.read(100)
-        assert remote_gfile.tell() == 100
+
+def test_gfile_read(local_content, remote_filename):
+    """Test case to read chunks of content from the http file"""
+
+    remote_gfile = tf.io.gfile.GFile(remote_filename)
+    assert remote_gfile.size() == len(local_content)
+    offset_start = list(range(0, len(local_content), 100))
+    offset_stop = offset_start[1:] + [len(local_content)]
+    for (start, stop) in zip(offset_start, offset_stop):
+        assert remote_gfile.read(100) == local_content[start:stop]
+
+
+def test_gfile_seek(local_content, remote_filename):
+    """Test case to seek an offset after reading the content from the http file"""
+
+    remote_gfile = tf.io.gfile.GFile(remote_filename)
+    assert remote_gfile.read() == local_content
+    assert remote_gfile.read() == ""
+    remote_gfile.seek(0)
+    assert remote_gfile.read() == local_content
+
+
+def test_gfile_tell(local_content, remote_filename):
+    """Test case to tell the current position in the http file"""
+
+    remote_gfile = tf.io.gfile.GFile(remote_filename)
+    assert remote_gfile.tell() == 0
+    remote_gfile.read(100)
+    assert remote_gfile.tell() == 100
 
 
 if __name__ == "__main__":

@@ -18,15 +18,16 @@
 import os
 import tempfile
 
-import numpy as np
-import pandas as pd
-import pyarrow as pa
-
-import tensorflow_io as tfio  # pylint: disable=wrong-import-position
+import tensorflow_io as tfio
 
 
 def test_feather_format():
     """test_feather_format"""
+    import numpy as np
+    import pandas as pd
+
+    from pyarrow import feather as pa_feather
+
     data = {
         "bool": np.asarray([e % 2 for e in range(100)], np.bool),
         "int8": np.asarray(range(100), np.int8),
@@ -38,7 +39,7 @@ def test_feather_format():
     }
     df = pd.DataFrame(data).sort_index(axis=1)
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        pa.feather.write_feather(df, f, version=1)
+        pa_feather.write_feather(df, f, version=1)
 
     feather = tfio.IOTensor.from_feather(f.name)
     for column in df.columns:

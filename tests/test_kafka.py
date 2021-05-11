@@ -15,6 +15,7 @@
 """Tests for Kafka Output Sequence."""
 
 
+import sys
 import time
 import pytest
 import numpy as np
@@ -22,10 +23,6 @@ import threading
 
 import tensorflow as tf
 import tensorflow_io as tfio
-from tensorflow_io.kafka.python.ops import (
-    kafka_ops,
-)  # pylint: disable=wrong-import-position
-import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
 
 
 def test_kafka_io_tensor():
@@ -111,6 +108,8 @@ def test_kafka_output_sequence():
 
 def test_avro_kafka_dataset():
     """test_avro_kafka_dataset"""
+    import tensorflow_io.kafka as kafka_io
+
     schema = (
         '{"type":"record","name":"myrecord","fields":['
         '{"name":"f1","type":"string"},'
@@ -131,6 +130,8 @@ def test_avro_kafka_dataset():
 
 def test_avro_kafka_dataset_with_resource():
     """test_avro_kafka_dataset_with_resource"""
+    import tensorflow_io.kafka as kafka_io
+
     schema = (
         '{"type":"record","name":"myrecord","fields":['
         '{"name":"f1","type":"string"},'
@@ -259,6 +260,7 @@ def test_kafka_group_io_dataset_resume_primary_cg():
     consumer group is yet to catch up with the newly added messages only
     (Instead of reading from the beginning).
     """
+    import tensorflow_io.kafka as kafka_io
 
     # Write new messages to the topic
     for i in range(10, 100):
@@ -282,6 +284,7 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
     consumer group is yet to catch up with the newly added messages only
     (Instead of reading from the beginning) from the new topic.
     """
+    import tensorflow_io.kafka as kafka_io
 
     # Write new messages to the topic
     for i in range(10, 100):
@@ -432,6 +435,7 @@ def test_kafka_group_io_dataset_stream_timeout_check():
     for the new messages from kafka.
     NOTE: The default value for message_timeout=5000
     """
+    import tensorflow_io.kafka as kafka_io
 
     def write_messages_background():
         # Write new messages to the topic in a background thread
