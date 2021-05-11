@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc1:tensorflow-io-nightly', 'tensorflow==2.5.0rc1:tensorflow-io']
+        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tensorflow==2.5.0rc3:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -48,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc1:tensorflow-io-nightly', 'tensorflow==2.5.0rc1:tensorflow-io']
+        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tensorflow==2.5.0rc3:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
         with:
