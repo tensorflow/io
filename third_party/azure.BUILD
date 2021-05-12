@@ -19,6 +19,7 @@ cc_library(
         "USE_OPENSSL",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
+            "WIN32",
             "WIN32_LEAN_AND_MEAN",
             'struct_stat="struct _stat64"',
         ],
