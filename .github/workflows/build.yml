@@ -12,7 +12,7 @@ env:
   GCP_CREDS: ${{ secrets.GCP_CREDS }}
   REPO_NAME: ${{ github.repository }}
   EVENT_NAME: ${{ github.event_name }}
-  BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
+  BAZEL_OPTIMIZATION: --copt=-shared-libasan
 
 jobs:
   lint:
