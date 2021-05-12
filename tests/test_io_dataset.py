@@ -1097,8 +1097,8 @@ def fixture_video_mp4():
             "video_mp4",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
-                    reason="TODO Windows is not supported",
+                    sys.platform in ("win32", "linux", "darwin"),
+                    reason="TODO Windows is not supported, and TODO: !!!pytest-xdist!!! on macOS",
                 ),
             ],
         ),
@@ -1209,7 +1209,7 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
             "video_mp4",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
+                    sys.platform in ("win32", "linux", "darwin"),
                     reason="TODO Windows is not supported",
                 ),
             ],
@@ -1323,8 +1323,8 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
             "video_mp4",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
-                    reason="TODO Windows is not supported",
+                    sys.platform in ("win32", "linux", "darwin"),
+                    reason="TODO Windows is not supported, and TODO: !!!pytest-xdist!!! on macOS",
                 ),
             ],
         ),
@@ -1463,8 +1463,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             None,
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
-                    reason="TODO Windows is not supported",
+                    sys.platform in ("win32", "linux", "darwin"),
+                    reason="TODO Windows is not supported, and TODO: !!!pytest-xdist!!! on macOS",
                 ),
             ],
         ),
@@ -1473,8 +1473,8 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
             2,
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
-                    reason="TODO Windows is not supported",
+                    sys.platform in ("win32", "linux", "darwin"),
+                    reason="TODO Windows is not supported, and TODO: !!!pytest-xdist!!! on macOS",
                 ),
             ],
         ),
@@ -1594,8 +1594,8 @@ def test_io_dataset_in_dataset_parallel(
             "video_mp4",
             marks=[
                 pytest.mark.skipif(
-                    sys.platform in ("win32", "linux"),
-                    reason="TODO Windows is not supported",
+                    sys.platform in ("win32", "linux", "darwin"),
+                    reason="TODO Windows is not supported, and TODO: !!!pytest-xdist!!! on macOS",
                 ),
             ],
         ),

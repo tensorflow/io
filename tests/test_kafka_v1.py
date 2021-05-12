@@ -20,17 +20,10 @@ import pytest
 
 import tensorflow as tf
 
-tf.compat.v1.disable_eager_execution()
-
-from tensorflow import dtypes  # pylint: disable=wrong-import-position
-from tensorflow import errors  # pylint: disable=wrong-import-position
-from tensorflow import test  # pylint: disable=wrong-import-position
-from tensorflow.compat.v1 import data  # pylint: disable=wrong-import-position
-
-import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+pytest.skip("kafka v1 has been deprecated", allow_module_level=True)
 
 
-class KafkaDatasetTest(test.TestCase):
+class KafkaDatasetTest(tf.test.TestCase):
     """Tests for KafkaDataset."""
 
     # The Kafka server has to be setup before the test
@@ -46,16 +39,20 @@ class KafkaDatasetTest(test.TestCase):
     def test_kafka_dataset(self):
         """Tests for KafkaDataset when reading non-keyed messages
         from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         repeat_dataset = kafka_io.KafkaDataset(topics, group="test", eof=True).repeat(
             num_epochs
         )
         batch_dataset = repeat_dataset.batch(batch_size)
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(batch_dataset.output_types)
         init_op = iterator.make_initializer(repeat_dataset)
         init_batch_op = iterator.make_initializer(batch_dataset)
         get_next = iterator.get_next()
@@ -65,14 +62,14 @@ class KafkaDatasetTest(test.TestCase):
             sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read all the messages from the topic from offset 5.
             sess.run(init_op, feed_dict={topics: ["test:0:5:-1"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(("D" + str(i + 5)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read from different subscriptions of the same topic.
@@ -85,7 +82,7 @@ class KafkaDatasetTest(test.TestCase):
                     self.assertEqual(
                         ("D" + str(i + j * 5)).encode(), sess.run(get_next)
                     )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test repeated iteration through both subscriptions.
@@ -99,7 +96,7 @@ class KafkaDatasetTest(test.TestCase):
                         self.assertEqual(
                             ("D" + str(i + j * 5)).encode(), sess.run(get_next)
                         )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test batched and repeated iteration through both subscriptions.
@@ -122,10 +119,14 @@ class KafkaDatasetTest(test.TestCase):
     @pytest.mark.skip(reason="TODO")
     def test_kafka_dataset_save_and_restore(self):
         """Tests for KafkaDataset save and restore."""
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
         g = tf.Graph()
         with g.as_default():
-            topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-            num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+            topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+            num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
             repeat_dataset = kafka_io.KafkaDataset(
                 topics, group="test", eof=True
@@ -157,15 +158,21 @@ class KafkaDatasetTest(test.TestCase):
 
     def test_kafka_topic_configuration(self):
         """Tests for KafkaDataset topic configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
         cfg_list = ["auto.offset.reset=earliest"]
 
         repeat_dataset = kafka_io.KafkaDataset(
             topics, group="test", eof=True, config_topic=cfg_list
         ).repeat(num_epochs)
 
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(
+            repeat_dataset.output_types
+        )
         init_op = iterator.make_initializer(repeat_dataset)
         get_next = iterator.get_next()
 
@@ -178,15 +185,21 @@ class KafkaDatasetTest(test.TestCase):
 
     def test_kafka_global_configuration(self):
         """Tests for KafkaDataset global configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
         cfg_list = ["debug=generic", "enable.auto.commit=false"]
 
         repeat_dataset = kafka_io.KafkaDataset(
             topics, group="test", eof=True, config_global=cfg_list
         ).repeat(num_epochs)
 
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(
+            repeat_dataset.output_types
+        )
         init_op = iterator.make_initializer(repeat_dataset)
         get_next = iterator.get_next()
 
@@ -194,13 +207,17 @@ class KafkaDatasetTest(test.TestCase):
             sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
             for i in range(5):
                 self.assertEqual(("D" + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
     def test_kafka_wrong_global_configuration_failed(self):
         """Tests for KafkaDataset worng global configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         # Add wrong configuration
         wrong_cfg = ["debug=al"]
@@ -208,19 +225,25 @@ class KafkaDatasetTest(test.TestCase):
             topics, group="test", eof=True, config_global=wrong_cfg
         ).repeat(num_epochs)
 
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(
+            repeat_dataset.output_types
+        )
         init_op = iterator.make_initializer(repeat_dataset)
         get_next = iterator.get_next()
 
         with self.cached_session() as sess:
             sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            with self.assertRaises(errors.InternalError):
+            with self.assertRaises(tf.errors.InternalError):
                 sess.run(get_next)
 
     def test_kafka_wrong_topic_configuration_failed(self):
         """Tests for KafkaDataset wrong topic configuration properties."""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         # Add wrong configuration
         wrong_cfg = ["auto.offset.reset=arliest"]
@@ -228,18 +251,24 @@ class KafkaDatasetTest(test.TestCase):
             topics, group="test", eof=True, config_topic=wrong_cfg
         ).repeat(num_epochs)
 
-        iterator = data.Iterator.from_structure(repeat_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(
+            repeat_dataset.output_types
+        )
         init_op = iterator.make_initializer(repeat_dataset)
         get_next = iterator.get_next()
 
         with self.cached_session() as sess:
             sess.run(init_op, feed_dict={topics: ["test:0:0:4"], num_epochs: 1})
-            with self.assertRaises(errors.InternalError):
+            with self.assertRaises(tf.errors.InternalError):
                 sess.run(get_next)
 
     @pytest.mark.skip(reason="TODO")
     def test_write_kafka(self):
         """test_write_kafka"""
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
         channel = "e{}e".format(time.time())
 
         # Start with reading test topic, replace `D` with `e(time)e`,
@@ -259,7 +288,7 @@ class KafkaDatasetTest(test.TestCase):
             sess.run(init_op)
             for i in range(5):
                 self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
         # Reading from `test_e(time)e` we should get the same result
@@ -274,22 +303,25 @@ class KafkaDatasetTest(test.TestCase):
             sess.run(init_op)
             for i in range(5):
                 self.assertEqual((channel + str(i)).encode(), sess.run(get_next))
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
     def test_kafka_dataset_with_key(self):
-        """Tests for KafkaDataset when reading keyed-messages
-        from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        """Tests for KafkaDataset when reading keyed-messages from a single-partitioned topic"""
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         repeat_dataset = kafka_io.KafkaDataset(
             topics, group="test", eof=True, message_key=True
         ).repeat(num_epochs)
         batch_dataset = repeat_dataset.batch(batch_size)
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(batch_dataset.output_types)
         init_op = iterator.make_initializer(repeat_dataset)
         init_batch_op = iterator.make_initializer(batch_dataset)
         get_next = iterator.get_next()
@@ -302,7 +334,7 @@ class KafkaDatasetTest(test.TestCase):
                     (("D" + str(i)).encode(), ("K" + str(i % 2)).encode()),
                     sess.run(get_next),
                 )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read all the keyed messages from the topic from offset 5.
@@ -312,7 +344,7 @@ class KafkaDatasetTest(test.TestCase):
                     (("D" + str(i + 5)).encode(), ("K" + str((i + 5) % 2)).encode()),
                     sess.run(get_next),
                 )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read from different subscriptions of the same topic.
@@ -332,7 +364,7 @@ class KafkaDatasetTest(test.TestCase):
                         ),
                         sess.run(get_next),
                     )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test repeated iteration through both subscriptions.
@@ -353,7 +385,7 @@ class KafkaDatasetTest(test.TestCase):
                             ),
                             sess.run(get_next),
                         )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test batched and repeated iteration through both subscriptions.
@@ -384,16 +416,20 @@ class KafkaDatasetTest(test.TestCase):
     def test_kafka_dataset_with_partitioned_key(self):
         """Tests for KafkaDataset when reading keyed-messages
         from a multi-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         repeat_dataset = kafka_io.KafkaDataset(
             topics, group="test", eof=True, message_key=True
         ).repeat(num_epochs)
         batch_dataset = repeat_dataset.batch(batch_size)
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(batch_dataset.output_types)
         init_op = iterator.make_initializer(repeat_dataset)
         init_batch_op = iterator.make_initializer(batch_dataset)
         get_next = iterator.get_next()
@@ -401,7 +437,7 @@ class KafkaDatasetTest(test.TestCase):
         with self.cached_session() as sess:
             # Basic test: read first 5 messages from the first partition of the topic.
             # NOTE: The key-partition mapping occurs based on the order in which the data
-            # is being stored in kafka. Please check kafka_test.sh for the sample data.
+            # is being stored in kafka. Please check kafka_test.sh for the sample tf.compat.v1.data.
 
             sess.run(
                 init_op,
@@ -411,7 +447,7 @@ class KafkaDatasetTest(test.TestCase):
                 self.assertEqual(
                     (("D" + str(i * 2)).encode(), (b"K0")), sess.run(get_next),
                 )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read first 5 messages from the second partition of the topic.
@@ -423,7 +459,7 @@ class KafkaDatasetTest(test.TestCase):
                 self.assertEqual(
                     (("D" + str(i * 2 + 1)).encode(), (b"K1")), sess.run(get_next),
                 )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Basic test: read from different subscriptions to the same topic.
@@ -440,7 +476,7 @@ class KafkaDatasetTest(test.TestCase):
                         (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
                         sess.run(get_next),
                     )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test repeated iteration through both subscriptions.
@@ -458,7 +494,7 @@ class KafkaDatasetTest(test.TestCase):
                             (("D" + str(i * 2 + j)).encode(), ("K" + str(j)).encode()),
                             sess.run(get_next),
                         )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
             # Test batched and repeated iteration through both subscriptions.
@@ -483,16 +519,20 @@ class KafkaDatasetTest(test.TestCase):
     def test_kafka_dataset_with_offset(self):
         """Tests for KafkaDataset when reading non-keyed messages
         from a single-partitioned topic"""
-        topics = tf.compat.v1.placeholder(dtypes.string, shape=[None])
-        num_epochs = tf.compat.v1.placeholder(dtypes.int64, shape=[])
-        batch_size = tf.compat.v1.placeholder(dtypes.int64, shape=[])
+        tf.compat.v1.disable_eager_execution()
+
+        import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
+
+        topics = tf.compat.v1.placeholder(tf.dtypes.string, shape=[None])
+        num_epochs = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
+        batch_size = tf.compat.v1.placeholder(tf.dtypes.int64, shape=[])
 
         repeat_dataset = kafka_io.KafkaDataset(
             topics, group="test", eof=True, message_offset=True
         ).repeat(num_epochs)
         batch_dataset = repeat_dataset.batch(batch_size)
 
-        iterator = data.Iterator.from_structure(batch_dataset.output_types)
+        iterator = tf.compat.v1.data.Iterator.from_structure(batch_dataset.output_types)
         init_op = iterator.make_initializer(repeat_dataset)
         get_next = iterator.get_next()
 
@@ -504,7 +544,7 @@ class KafkaDatasetTest(test.TestCase):
                     (("D" + str(i)).encode(), ("0:" + str(i)).encode()),
                     sess.run(get_next),
                 )
-            with self.assertRaises(errors.OutOfRangeError):
+            with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
 
 

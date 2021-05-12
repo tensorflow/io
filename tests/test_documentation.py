@@ -16,6 +16,14 @@
 
 
 import os
+import sys
+import pytest
+
+if sys.platform == "darwin":
+    pytest.skip(
+        "Documentation test only need to be run on Linux, skip macOS",
+        allow_module_level=True,
+    )
 
 
 def extract_block(filename, lang):

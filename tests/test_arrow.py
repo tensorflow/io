@@ -23,29 +23,18 @@ import tempfile
 import threading
 import pytest
 
+import pyarrow as pa
+
 import numpy.testing as npt
+
 import tensorflow as tf
-
-from tensorflow import dtypes  # pylint: disable=wrong-import-position
-from tensorflow import errors  # pylint: disable=wrong-import-position
-from tensorflow import test  # pylint: disable=wrong-import-position
-
-import tensorflow_io.arrow as arrow_io  # pylint: disable=wrong-import-position
-from tensorflow_io import IOTensor  # pylint: disable=wrong-import-position
-from tensorflow_io.core.python.ops.arrow_io_tensor_ops import (
-    ArrowIOResource,
-)  # pylint: disable=wrong-import-position
-
-import pyarrow as pa  # pylint: disable=wrong-import-order,wrong-import-position
-from pyarrow.feather import (
-    write_feather,
-)  # pylint: disable=wrong-import-order,wrong-import-position
+import tensorflow_io as tfio
 
 
 TruthData = namedtuple("TruthData", ["data", "output_types", "output_shapes"])
 
 
-class ArrowTestBase(test.TestCase):
+class ArrowTestBase(tf.test.TestCase):
     """ArrowTestBase"""
 
     @classmethod
@@ -65,17 +54,17 @@ class ArrowTestBase(test.TestCase):
             [1.1, 2.2, 3.3, 4.4],
         ]
         cls.scalar_dtypes = (
-            dtypes.bool,
-            dtypes.int8,
-            dtypes.int16,
-            dtypes.int32,
-            dtypes.int64,
-            dtypes.uint8,
-            dtypes.uint16,
-            dtypes.uint32,
-            dtypes.uint64,
-            dtypes.float32,
-            dtypes.float64,
+            tf.dtypes.bool,
+            tf.dtypes.int8,
+            tf.dtypes.int16,
+            tf.dtypes.int32,
+            tf.dtypes.int64,
+            tf.dtypes.uint8,
+            tf.dtypes.uint16,
+            tf.dtypes.uint32,
+            tf.dtypes.uint64,
+            tf.dtypes.float32,
+            tf.dtypes.float64,
         )
         cls.scalar_shapes = tuple([tf.TensorShape([]) for _ in cls.scalar_dtypes])
 
@@ -86,10 +75,10 @@ class ArrowTestBase(test.TestCase):
             [[1.1, 1.1], [2.2, 2.2], [3.3, 3.3], [4.4, 4.4]],
         ]
         cls.list_fixed_dtypes = (
-            dtypes.int32,
-            dtypes.int64,
-            dtypes.float32,
-            dtypes.float64,
+            tf.dtypes.int32,
+            tf.dtypes.int64,
+            tf.dtypes.float32,
+            tf.dtypes.float64,
         )
         cls.list_fixed_shapes = tuple(
             [tf.TensorShape([None]) for _ in cls.list_fixed_dtypes]
@@ -99,7 +88,7 @@ class ArrowTestBase(test.TestCase):
             [[1], [2, 2], [3, 3, 3], [4, 4, 4]],
             [[1.1], [2.2, 2.2], [3.3, 3.3, 3.3], [4.4, 4.4, 4.4]],
         ]
-        cls.list_var_dtypes = (dtypes.int32, dtypes.float32)
+        cls.list_var_dtypes = (tf.dtypes.int32, tf.dtypes.float32)
         cls.list_var_shapes = (tf.TensorShape([None]), tf.TensorShape([None]))
 
         cls.list_data = cls.list_fixed_data + cls.list_var_data
@@ -108,31 +97,31 @@ class ArrowTestBase(test.TestCase):
 
     def get_arrow_type(self, dt, is_list):
         """get_arrow_type"""
-        if dt == dtypes.bool:
+        if dt == tf.dtypes.bool:
             arrow_type = pa.bool_()
-        elif dt == dtypes.int8:
+        elif dt == tf.dtypes.int8:
             arrow_type = pa.int8()
-        elif dt == dtypes.int16:
+        elif dt == tf.dtypes.int16:
             arrow_type = pa.int16()
-        elif dt == dtypes.int32:
+        elif dt == tf.dtypes.int32:
             arrow_type = pa.int32()
-        elif dt == dtypes.int64:
+        elif dt == tf.dtypes.int64:
             arrow_type = pa.int64()
-        elif dt == dtypes.uint8:
+        elif dt == tf.dtypes.uint8:
             arrow_type = pa.uint8()
-        elif dt == dtypes.uint16:
+        elif dt == tf.dtypes.uint16:
             arrow_type = pa.uint16()
-        elif dt == dtypes.uint32:
+        elif dt == tf.dtypes.uint32:
             arrow_type = pa.uint32()
-        elif dt == dtypes.uint64:
+        elif dt == tf.dtypes.uint64:
             arrow_type = pa.uint64()
-        elif dt == dtypes.float16:
+        elif dt == tf.dtypes.float16:
             arrow_type = pa.float16()
-        elif dt == dtypes.float32:
+        elif dt == tf.dtypes.float32:
             arrow_type = pa.float32()
-        elif dt == dtypes.float64:
+        elif dt == tf.dtypes.float64:
             arrow_type = pa.float64()
-        elif dt == dtypes.string:
+        elif dt == tf.dtypes.string:
             arrow_type = pa.string()
         else:
             raise TypeError("Unsupported dtype for Arrow" + str(dt))
@@ -187,7 +176,7 @@ class ArrowIOTensorTest(ArrowTestBase):
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
         table = self.make_table(truth_data)
-        iot = IOTensor.from_arrow(table)
+        iot = tfio.IOTensor.from_arrow(table)
         self.run_test_case(iot, truth_data, table.column_names)
 
     def test_arrow_io_tensor_lists(self):
@@ -197,7 +186,7 @@ class ArrowIOTensorTest(ArrowTestBase):
         )
 
         table = self.make_table(truth_data)
-        iot = IOTensor.from_arrow(table)
+        iot = tfio.IOTensor.from_arrow(table)
         self.run_test_case(iot, truth_data, table.column_names)
 
     def test_arrow_io_tensor_mixed(self):
@@ -209,7 +198,7 @@ class ArrowIOTensorTest(ArrowTestBase):
         )
 
         table = self.make_table(truth_data)
-        iot = IOTensor.from_arrow(table)
+        iot = tfio.IOTensor.from_arrow(table)
         self.run_test_case(iot, truth_data, table.column_names)
 
     def test_arrow_io_tensor_chunked(self):
@@ -241,13 +230,13 @@ class ArrowIOTensorTest(ArrowTestBase):
         )
 
         self.assertGreater(table[0].num_chunks, 1)
-        iot = IOTensor.from_arrow(table)
+        iot = tfio.IOTensor.from_arrow(table)
         self.run_test_case(iot, truth_data, table.column_names)
 
     def test_arrow_io_dataset_map_from_file(self):
         """test_arrow_io_dataset_map_from_file"""
         column = "a"
-        dtype = dtypes.int64
+        dtype = tf.dtypes.int64
         column_dtype = self.get_arrow_type(dtype, False)
         arr = pa.array(list(range(100)), column_dtype)
         table = pa.Table.from_arrays([arr], [column])
@@ -261,7 +250,7 @@ class ArrowIOTensorTest(ArrowTestBase):
         def from_file(_):
             reader = pa.RecordBatchFileReader(f.name)
             t = reader.read_all()
-            tio = IOTensor.from_arrow(t, spec=spec)
+            tio = tfio.IOTensor.from_arrow(t, spec=spec)
             return tio(column).to_tensor()
 
         num_iters = 2
@@ -279,7 +268,7 @@ class ArrowIOTensorTest(ArrowTestBase):
     def test_arrow_io_dataset_map_py_func(self):
         """test_arrow_io_dataset_map_from_py_func"""
         column = "a"
-        dtype = dtypes.int64
+        dtype = tf.dtypes.int64
         column_dtype = self.get_arrow_type(dtype, False)
         arr = pa.array(list(range(100)), column_dtype)
         table = pa.Table.from_arrays([arr], [column])
@@ -296,8 +285,12 @@ class ArrowIOTensorTest(ArrowTestBase):
             return reader.read_all()
 
         def from_py_func(filename):
+            from tensorflow_io.core.python.ops.arrow_io_tensor_ops import (
+                ArrowIOResource,
+            )
+
             table_res = ArrowIOResource.from_py_function(read_table, [filename])
-            tio = IOTensor.from_arrow(table_res, spec=spec)
+            tio = tfio.IOTensor.from_arrow(table_res, spec=spec)
             return tio(column).to_tensor()
 
         num_iters = 2
@@ -320,7 +313,7 @@ class ArrowIOTensorTest(ArrowTestBase):
             b = pa.array([4, 5, 6], type=pa.int64())
             c = pa.array([7, 8, 9], type=pa.float32())
             t = pa.Table.from_arrays([a, b, c], ["a", "b", "c"])
-            foo = IOTensor.from_arrow(t, spec={"b": tf.int64})
+            foo = tfio.IOTensor.from_arrow(t, spec={"b": tf.int64})
             return foo("b").to_tensor()
 
         ds = tf.data.Dataset.range(1).map(from_func)
@@ -341,7 +334,7 @@ class ArrowIOTensorTest(ArrowTestBase):
             b = pa.array([4, 5, 6], type=pa.int64())
             c = pa.array([7, 8, 9], type=pa.float32())
             t = pa.Table.from_arrays([a, b, c], ["a", "b", "c"])
-            foo = IOTensor.from_arrow(t, spec={1: tf.int64})
+            foo = tfio.IOTensor.from_arrow(t, spec={1: tf.int64})
             return foo(1).to_tensor()
 
         ds = tf.data.Dataset.range(1).map(from_func)
@@ -363,7 +356,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         def is_float(dtype):
             """Check if dtype is a floating-point"""
-            return dtype in [dtypes.float16, dtypes.float32, dtypes.float64]
+            return dtype in [tf.dtypes.float16, tf.dtypes.float32, tf.dtypes.float64]
 
         def evaluate_result(value):
             """Check the results match truth data"""
@@ -415,6 +408,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_dataset(self):
         """test_arrow_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             self.scalar_data + self.list_data,
             self.scalar_dtypes + self.list_dtypes,
@@ -446,10 +441,12 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_dataset_with_strings(self):
         """test_arrow_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         scalar_data = [
             [b"1.1", b"2.2", b"3.3", b"4.4"],
         ]
-        scalar_dtypes = (dtypes.string,)
+        scalar_dtypes = (tf.dtypes.string,)
         scalar_shapes = tuple([tf.TensorShape([]) for _ in scalar_dtypes])
         truth_data = TruthData(scalar_data, scalar_dtypes, scalar_shapes)
 
@@ -463,6 +460,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_from_pandas_preserve_index(self):
         """test_from_pandas_preserve_index"""
+        import tensorflow_io.arrow as arrow_io
+
         data_v = [
             [1.0, 2.0, 3.0],
             [0.2, 0.4, 0.8],
@@ -470,7 +469,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         truth_data = TruthData(
             data_v,
-            (dtypes.float32, dtypes.float32),
+            (tf.dtypes.float32, tf.dtypes.float32),
             (tf.TensorShape([]), tf.TensorShape([])),
         )
 
@@ -481,7 +480,7 @@ class ArrowDatasetTest(ArrowTestBase):
         # Add index column to test data to check results
         truth_data_with_index = TruthData(
             truth_data.data + [range(len(truth_data.data[0]))],
-            truth_data.output_types + (dtypes.int64,),
+            truth_data.output_types + (tf.dtypes.int64,),
             truth_data.output_shapes + (tf.TensorShape([]),),
         )
         self.run_test_case(dataset, truth_data_with_index)
@@ -500,6 +499,10 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_feather_dataset(self):
         """test_arrow_feather_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
+        from pyarrow.feather import write_feather
+
         # Feather files currently do not support columns of list types
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -550,6 +553,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_socket_dataset(self):
         """test_arrow_socket_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             self.scalar_data + self.list_data,
             self.scalar_dtypes + self.list_dtypes,
@@ -592,6 +597,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_unix_socket_dataset(self):
         """test_arrow_unix_socket_dataset"""
+        import tensorflow_io.arrow as arrow_io
+
         if os.name == "nt":
             self.skipTest("Unix Domain Sockets not supported on Windows")
 
@@ -646,6 +653,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_multiple_stream_hosts(self):
         """test_multiple_stream_hosts"""
+        import tensorflow_io.arrow as arrow_io
+
         if os.name == "nt":
             self.skipTest("Unix Domain Sockets not supported on Windows")
 
@@ -707,6 +716,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas(self):
         """test_stream_from_pandas"""
+        import tensorflow_io.arrow as arrow_io
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -724,7 +734,7 @@ class ArrowDatasetTest(ArrowTestBase):
         # Test preserve index True and select all but index columns
         truth_data = TruthData(
             truth_data.data + [range(len(truth_data.data[0]))],
-            truth_data.output_types + (dtypes.int64,),
+            truth_data.output_types + (tf.dtypes.int64,),
             truth_data.output_shapes + (tf.TensorShape([]),),
         )
         dataset = arrow_io.ArrowStreamDataset.from_pandas(
@@ -734,6 +744,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas_remainder(self):
         """Test stream from Pandas that produces partial batch"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -748,6 +760,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas_iter(self):
         """test_stream_from_pandas_iter"""
+        import tensorflow_io.arrow as arrow_io
 
         batch_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -771,6 +784,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas_not_batched(self):
         """test_stream_from_pandas_not_batched"""
+        import tensorflow_io.arrow as arrow_io
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -782,6 +796,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_stream_from_pandas_repeat(self):
         """test_stream_from_pandas_repeat"""
+        import tensorflow_io.arrow as arrow_io
 
         batch_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
@@ -811,9 +826,11 @@ class ArrowDatasetTest(ArrowTestBase):
         DataFrameBlock: bool
         see https://issues.apache.org/jira/browse/ARROW-4370
         """
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
             [[[False, False], [False, True], [True, False], [True, True]]],
-            (dtypes.bool,),
+            (tf.dtypes.bool,),
             (tf.TensorShape([None]),),
         )
 
@@ -826,23 +843,27 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_incorrect_column_type(self):
         """Test that a column with incorrect dtype raises error"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
         batch = self.make_record_batch(truth_data)
 
         dataset = arrow_io.ArrowDataset.from_record_batches(
             batch,
-            tuple([dtypes.int32 for _ in truth_data.output_types]),
+            tuple([tf.dtypes.int32 for _ in truth_data.output_types]),
             truth_data.output_shapes,
         )
-        with self.assertRaisesRegex(errors.OpError, "Arrow type mismatch"):
+        with self.assertRaisesRegex(tf.errors.OpError, "Arrow type mismatch"):
             self.run_test_case(dataset, truth_data)
 
     def test_map_and_batch(self):
         """Test that using map then batch produces correct output. This will create
         a map_and_batch_dataset_op that calls GetNext after end_of_sequence=true
         """
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(
-            [list(range(10))], (dtypes.int32,), (tf.TensorShape([]),)
+            [list(range(10))], (tf.dtypes.int32,), (tf.TensorShape([]),)
         )
         batch = self.make_record_batch(truth_data)
         dataset = arrow_io.ArrowDataset.from_record_batches(
@@ -862,12 +883,14 @@ class ArrowDatasetTest(ArrowTestBase):
     @pytest.mark.skip(reason="TODO")
     def test_tf_function(self):
         """Test that an ArrowDataset can be used in tf.function call"""
+        import tensorflow_io.arrow as arrow_io
+
         if not tf.version.VERSION.startswith("2."):
             self.skipTest("Test requires TF2.0 for tf.function")
 
         truth_data = TruthData(
             [list(range(10)), [x * 1.1 for x in range(10)]],
-            (dtypes.int32, dtypes.float64),
+            (tf.dtypes.int32, tf.dtypes.float64),
             (tf.TensorShape([]), tf.TensorShape([])),
         )
 
@@ -895,6 +918,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_no_remainder(self):
         """Test batch_size that does not leave a remainder"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0])
         num_batches = 2
 
@@ -914,6 +939,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_remainder(self):
         """Test batch_size that does leave a remainder"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -928,6 +955,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_drop_remainder(self):
         """Test batch_size that drops remainder data"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.scalar_data[0]) - 1
 
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
@@ -948,6 +977,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_mode_auto(self):
         """Test auto batch_mode to size to record batch number of rows"""
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 2
 
         single_batch_data = TruthData(
@@ -976,6 +1007,8 @@ class ArrowDatasetTest(ArrowTestBase):
         """Test batch_size that divides an Arrow record batch into
         partial batches
         """
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 3
         batch_size = int(len(self.scalar_data[0]) * 1.5)
 
@@ -1008,6 +1041,8 @@ class ArrowDatasetTest(ArrowTestBase):
         """Test batch_size that divides an Arrow record batch into
         partial batches and leaves remainder data
         """
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 3
         batch_size = len(self.scalar_data[0]) + 1
 
@@ -1038,6 +1073,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_spans_mulitple_partials(self):
         """Test large batch_size that spans mulitple Arrow record batches"""
+        import tensorflow_io.arrow as arrow_io
+
         num_batches = 6
         batch_size = int(len(self.scalar_data[0]) * 3)
 
@@ -1065,6 +1102,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_fixed_lists(self):
         """Test batching with fixed length list types"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = int(len(self.list_fixed_data[0]) / 2)
 
         truth_data = TruthData(
@@ -1084,6 +1123,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_batch_variable_length_list_batched(self):
         """Test batching with variable length lists raises error"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = len(self.list_var_data[1])
 
         truth_data = TruthData(
@@ -1099,11 +1140,13 @@ class ArrowDatasetTest(ArrowTestBase):
             batch_size=batch_size,
         )
 
-        with self.assertRaisesRegex(errors.OpError, "variable.*unsupported"):
+        with self.assertRaisesRegex(tf.errors.OpError, "variable.*unsupported"):
             self.run_test_case(dataset, truth_data, batch_size=batch_size)
 
     def test_batch_variable_length_list_unbatched(self):
         """Test unbatched variable length lists"""
+        import tensorflow_io.arrow as arrow_io
+
         batch_size = None
 
         truth_data = TruthData(
@@ -1123,6 +1166,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_unsupported_batch_mode(self):
         """Test using an unsupported batch mode"""
+        import tensorflow_io.arrow as arrow_io
+
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
         with self.assertRaisesRegex(ValueError, "Unsupported batch_mode.*doh"):
@@ -1135,6 +1180,10 @@ class ArrowDatasetTest(ArrowTestBase):
 
     def test_arrow_list_feather_columns(self):
         """test_arrow_list_feather_columns"""
+        import tensorflow_io.arrow as arrow_io
+
+        from pyarrow.feather import write_feather
+
         # Feather files currently do not support columns of list types
         truth_data = TruthData(self.scalar_data, self.scalar_dtypes, self.scalar_shapes)
 
