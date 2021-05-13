@@ -152,10 +152,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "354e58a2883210575ae7deacc9ab4a7ce00a3c60315151c2efbb734255e73713",
-    strip_prefix = "tensorflow-2.5.0-rc1",
+    sha256 = "233875ea27fc357f6b714b2a0de5f6ff124b50c1ee9b3b41f9e726e9e677b86c",
+    strip_prefix = "tensorflow-2.5.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.5.0-rc1.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.5.0.tar.gz",
     ],
 )
 
