@@ -255,9 +255,9 @@ http_archive(
 )
 
 http_archive(
-     name = "com_github_azure_azure_storage_cpplite",
-     build_file = "//third_party:azure.BUILD",
-     patch_cmds = [
+    name = "com_github_azure_azure_storage_cpplite",
+    build_file = "//third_party:azure.BUILD",
+    patch_cmds = [
         #"sed -i.bak 's/struct stat/struct_stat/' src/blob/blob_client_wrapper.cpp",
         "echo '' >> include/base64.h",
         "echo '#include <stdexcept>' >> include/base64.h",
