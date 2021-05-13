@@ -118,7 +118,7 @@ else
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find tensorflow_io tensorflow_io_plugin_gs tests -type f \
+            find tensorflow_io tensorflow_io_gcs_filesystem tests -type f \
                 \( -name '*.py' \) \
         ) ; do \
         black_func $mode "$i" ; \
@@ -182,7 +182,7 @@ else
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find tensorflow_io tensorflow_io_plugin_gs -type f \
+            find tensorflow_io tensorflow_io_gcs_filesystem -type f \
                 \( \
                     -name '*.cc' \
                     -o -name '*.h' \
@@ -210,7 +210,7 @@ else
     cd "$BUILD_WORKSPACE_DIRECTORY" && \
     for i in \
         $( \
-            find tensorflow_io tensorflow_io_plugin_gs tests -type f \
+            find tensorflow_io tensorflow_io_gcs_filesystem tests -type f \
                 \( -name '*.py' \) \
         ) ; do \
         pyupgrade_func $mode "$i" ; \

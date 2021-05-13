@@ -41,11 +41,11 @@ bazel build \
   --noshow_loading_progress \
   --verbose_failures \
   --test_output=errors \
-  -- //tensorflow_io/...  //tensorflow_io_plugin_gs/...
+  -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
 
 rm -rf build && mkdir -p build
 
 cp -r bazel-bin/tensorflow_io  build/tensorflow_io
-cp -r bazel-bin/tensorflow_io_plugin_gs  build/tensorflow_io_plugin_gs
+cp -r bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
 
 exit 0

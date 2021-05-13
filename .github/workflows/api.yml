@@ -42,7 +42,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -82,7 +82,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -123,7 +123,7 @@ jobs:
           rm -rf tensorflow_io
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
