@@ -1,3 +1,26 @@
+# Release 0.18.0
+
+## Major Features
+* GCS modular file system is now part of the tensorflow-io-gcs-filesystem package.
+* S3 and HDFS modular file systems can be enabled with TF_USE_MODULAR_FILESYSTEM=1.
+* Add python 3.9 support on macOS, Linux, and Windows.
+* Add initial wavefront/obj parser for 3D vertices.
+* Move tfio.experimental.audio to tfio.audio.
+* Add https file system registration.
+* Add FFmpeg support on macOS.
+* Add 16 bit TIFF support.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Cheng Ren, Dale Lane, Irene Onyeneho, Keqiu Hu, Kota Yamaguchi,
+Mark Daoust, Vignesh Kothapalli, Vo Van Nghia, Yong Tang,
+Yuan Tang, markemus
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.17.1
 
 ## Bug Fixes
