@@ -120,16 +120,16 @@ jobs:
             --noshow_loading_progress \
             --verbose_failures \
             --test_output=errors \
-            //tensorflow_io/...  //tensorflow_io_plugin_gs/...
+            //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
           mkdir build
           cp -r bazel-bin/tensorflow_io build
-          cp -r bazel-bin/tensorflow_io_plugin_gs build
+          cp -r bazel-bin/tensorflow_io_gcs_filesystem build
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
           path: |
             build/tensorflow_io
-            build/tensorflow_io_plugin_gs
+            build/tensorflow_io_gcs_filesystem
 
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
@@ -153,7 +153,7 @@ jobs:
           python -m pip install -U wheel setuptools
           python --version
           python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
-          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
+          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -201,7 +201,7 @@ jobs:
           set -x -e
           python --version
           df -h
-          (cd wheelhouse && python -m pip install tensorflow_io_plugin_gs-*.whl)
+          (cd wheelhouse && python -m pip install tensorflow_io_gcs_filesystem-*.whl)
           (cd wheelhouse && python -m pip install tensorflow_io-*.whl)
       - name: Test ${{ matrix.python }} macOS
         run: |
@@ -232,14 +232,14 @@ jobs:
             gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170 /v/.github/workflows/build.bazel.sh
           sudo chown -R $(id -nu):$(id -ng) .
           sudo find build/tensorflow_io -name '*runfiles*' | sudo xargs rm -rf
-          sudo find build/tensorflow_io_plugin_gs -name '*runfiles*' | sudo xargs rm -rf
+          sudo find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | sudo xargs rm -rf
           sudo cp .bazelrc build/tensorflow_io/
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
           path: |
             build/tensorflow_io
-            build/tensorflow_io_plugin_gs
+            build/tensorflow_io_gcs_filesystem
 
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
@@ -259,7 +259,7 @@ jobs:
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
           set -x -e
@@ -348,16 +348,16 @@ jobs:
           python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_plugin_gs/...
+          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           mkdir build
           cp -r bazel-bin/tensorflow_io build
-          cp -r bazel-bin/tensorflow_io_plugin_gs build
+          cp -r bazel-bin/tensorflow_io_gcs_filesystem build
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
           path: |
             build/tensorflow_io
-            build/tensorflow_io_plugin_gs
+            build/tensorflow_io_gcs_filesystem
 
   windows-wheel:
     name: Wheel ${{ matrix.python }} Windows
@@ -382,7 +382,7 @@ jobs:
           python --version
           python -m pip install -U wheel setuptools
           python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
-          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel
+          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel
           ls -la dist
       - uses: actions/upload-artifact@v2
         with:
@@ -418,7 +418,7 @@ jobs:
         run: |
           @echo on
           python --version
-          (cd wheel && ls tensorflow_io_plugin_gs-*.whl | xargs python -m pip install && cd ..)
+          (cd wheel && ls tensorflow_io_gcs_filesystem-*.whl | xargs python -m pip install && cd ..)
           (cd wheel && ls tensorflow_io-*.whl | xargs python -m pip install && cd ..)
       - name: Test ${{ matrix.python }} Windows
         shell: cmd
@@ -426,7 +426,7 @@ jobs:
           @echo on
           python --version
           python -m pip install -U pytest-benchmark
-          rm -rf tensorflow_io tensorflow_io_plugin_gs
+          rm -rf tensorflow_io tensorflow_io_gcs_filesystem
           (cd tests && python -m pytest -s -v test_lmdb.py)
           (python -m pytest -s -v test_image.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff or avif")
           (python -m pytest -s -v test_serialization.py)
@@ -576,7 +576,7 @@ jobs:
           python -m pip install -U wheel setuptools
           python --version
           python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
-          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
+          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
@@ -616,7 +616,7 @@ jobs:
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
           set -x -e
@@ -660,7 +660,7 @@ jobs:
           python --version
           python -m pip install -U wheel setuptools
           python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
-          python setup.py --project tensorflow-io-plugin-gs --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
           ls -la dist
       - uses: actions/upload-artifact@v2
         with:
@@ -746,24 +746,24 @@ jobs:
           set -e -x
           rm -rf dist
           mkdir -p dist
-          cp macOS-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp macOS-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp macOS-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp macOS-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Linux-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Linux-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Linux-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Linux-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Windows-3.6-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Windows-3.7-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Windows-3.8-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
-          cp Windows-3.9-nightly/tensorflow_io_plugin_gs_nightly*.whl dist/
+          cp macOS-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp macOS-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp macOS-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp macOS-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.tensorflow_io_plugin_gs_nightly }}
+          password: ${{ secrets.tensorflow_io_gcs_filesystem_nightly }}
 
   docker-nightly:
     name: Docker Nightly

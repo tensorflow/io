@@ -38,11 +38,11 @@ def _load_library(filename):
     if datapath is not None:
         # Build filename from:
         # `datapath` + `tensorflow_io_package` + `package_name` + `relpath_to_library`
-        rootpath = os.path.dirname(sys.modules["tensorflow_io_plugin_gs"].__file__)
+        rootpath = os.path.dirname(sys.modules["tensorflow_io_gcs_filesystem"].__file__)
         filename = sys.modules[__name__].__file__
         f = os.path.join(
             datapath,
-            "tensorflow_io_plugin_gs",
+            "tensorflow_io_gcs_filesystem",
             os.path.relpath(os.path.dirname(filename), rootpath),
             os.path.relpath(f, os.path.dirname(filename)),
         )
@@ -66,6 +66,6 @@ def _load_library(filename):
 
 
 try:
-    plugin_gs = _load_library("libtensorflow_io_plugin_gs.so")
+    plugin_gs = _load_library("libtensorflow_io_gcs_filesystem.so")
 except NotImplementedError as e:
     warnings.warn("file system plugin for gs are not loaded: {}".format(e))

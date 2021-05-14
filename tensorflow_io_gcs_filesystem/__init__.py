@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io_plugin_gs"""
+"""tensorflow_io_gcs_filesystem"""
 
-from tensorflow_io_plugin_gs.core.python.ops import plugin_gs
+from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs

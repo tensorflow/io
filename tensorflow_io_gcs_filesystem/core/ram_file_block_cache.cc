@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow_io_plugin_gs/core/ram_file_block_cache.h"
+#include "tensorflow_io_gcs_filesystem/core/ram_file_block_cache.h"
 
 #include <cstring>
 #include <memory>
@@ -20,7 +20,7 @@ limitations under the License.
 #include <utility>
 
 #include "absl/synchronization/mutex.h"
-#include "tensorflow_io_plugin_gs/core/cleanup.h"
+#include "tensorflow_io_gcs_filesystem/core/cleanup.h"
 
 namespace tensorflow {
 namespace io {

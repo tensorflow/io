@@ -6,7 +6,7 @@ export TF_USE_MODULAR_FILESYSTEM=1
 run_test() {
   entry=$1
   CPYTHON_VERSION=$($entry -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
-  (cd wheelhouse && $entry -m pip install tensorflow_io_plugin_gs-*-cp${CPYTHON_VERSION}-*.whl)
+  (cd wheelhouse && $entry -m pip install tensorflow_io_gcs_filesystem-*-cp${CPYTHON_VERSION}-*.whl)
   (cd wheelhouse && $entry -m pip install tensorflow_io-*-cp${CPYTHON_VERSION}-*.whl)
   $entry -m pip install -q pytest pytest-benchmark pytest-xdist boto3 fastavro avro-python3 scikit-image pandas pyarrow==3.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigtable==1.6.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 PyYAML==5.3.1 azure-storage-blob==12.8.1
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append --forked --numprocesses=auto --dist loadfile $(find . -type f \( -iname "test_*.py" \)))

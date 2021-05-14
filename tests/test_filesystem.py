@@ -234,7 +234,7 @@ def gcs_fs():
         yield [None] * NUM_ATR_FS
         return
 
-    import tensorflow_io_plugin_gs
+    import tensorflow_io_gcs_filesystem
     from google.cloud import storage
 
     monkeypatch = pytest.MonkeyPatch()

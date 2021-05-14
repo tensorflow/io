@@ -31,15 +31,15 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
-          rm -rf tensorflow_io_plugin_gs
+          rm -rf tensorflow_io_gcs_filesystem
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -c 'from tensorflow_io_plugin_gs.core.python.ops import plugin_gs; print(plugin_gs)'
+          python -c 'from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
 
   linux:
@@ -69,15 +69,15 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
-          rm -rf tensorflow_io_plugin_gs
+          rm -rf tensorflow_io_gcs_filesystem
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
-          python -c 'from tensorflow_io_plugin_gs.core.python.ops import plugin_gs; print(plugin_gs)'
+          python -c 'from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1

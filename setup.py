@@ -42,7 +42,7 @@ if "--install-require" in sys.argv:
     print(require)
     sys.exit(0)
 
-subpackages = ["tensorflow-io-plugin-gs"]
+subpackages = ["tensorflow-io-gcs-filesystem"]
 
 assert "--project" in sys.argv, "--project ({} or {}) must be provided".format(
     "tensorflow-io", ", ".join(subpackages)

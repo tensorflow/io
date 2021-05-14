@@ -35,10 +35,10 @@ cc_library(
 )
 
 cc_binary(
-    name = "python/ops/libtensorflow_io_plugin_gs.so",
+    name = "python/ops/libtensorflow_io_gcs_filesystem.so",
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io_plugin_gs/core:gs",
+        "//tensorflow_io_gcs_filesystem/core:gs",
     ],
 )
