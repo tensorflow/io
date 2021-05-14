@@ -116,6 +116,7 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.18.0 | 2.5.x | May 13, 2021 |
 | 0.17.1 | 2.4.x | Apr 16, 2021 |
 | 0.17.0 | 2.4.x | Dec 14, 2020 |
 | 0.16.0 | 2.3.x | Oct 23, 2020 |
