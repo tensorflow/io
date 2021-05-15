@@ -11,8 +11,14 @@ cc_library(
     name = "plugins_header",
     srcs = [
         "file_system_plugins.h",
-        "@local_config_tf//:stub/libtensorflow_framework.so",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@local_config_tf//:c/libtensorflow_framework.lib",
+        ],
+        "//conditions:default": [
+            "@local_config_tf//:c/libtensorflow_framework.so",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [

@@ -336,6 +336,8 @@ jobs:
             set "BAZEL_OPTIMIZATION=--remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
           )
           @echo on
+          dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.28.29910\bin\Hostx64\x64"
+          copy "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.28.29910\bin\Hostx64\x64\*" "C:\Windows\System32"
           set /P BAZEL_VERSION=< .bazelversion
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
           bazel version

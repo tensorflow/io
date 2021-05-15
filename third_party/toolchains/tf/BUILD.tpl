@@ -16,11 +16,10 @@ cc_library(
 )
 
 cc_binary(
-    name = "stub/libtensorflow_framework.so",
+    name = "c/libtensorflow_framework.so",
     srcs = [],
     linkopts = select({
-        "@bazel_tools//src/conditions:windows": [
-        ],
+        "@bazel_tools//src/conditions:windows": [],
         "@bazel_tools//src/conditions:darwin": [
             "-install_name",
             "@rpath/libtensorflow_framework.2.dylib",
@@ -33,6 +32,36 @@ cc_binary(
     }),
     linkshared = 1,
     deps = [],
+)
+
+genrule(
+    name = "c/libtensorflow_framework.def",
+    outs = ["c/libtensorflow_framework.def"],
+    cmd = "\n".join([
+        "cat <<'EOF' >$@",
+        "EXPORTS",
+        "    TF_DefaultThreadOptions",
+        "    TF_DeleteStatus",
+        "    TF_GetCode",
+        "    TF_GetTempFileName",
+        "    TF_JoinThread",
+        "    TF_Log",
+        "    TF_Message",
+        "    TF_NewStatus",
+        "    TF_NowSeconds",
+        "    TF_SetStatus",
+        "    TF_SetStatusFromIOError",
+        "    TF_StartThread",
+        "    TF_VLog",
+        "EOF",
+    ]),
+)
+
+genrule(
+    name = "c/libtensorflow_framework.lib",
+    srcs = ["c/libtensorflow_framework.def"],
+    outs = ["c/libtensorflow_framework.lib"],
+    cmd = "lib /def:$< /machine:x64 /out:$@",
 )
 
 cc_library(

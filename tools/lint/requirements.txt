@@ -1,2 +1,2 @@
-black==19.10b0;python_version>="3.6"
-pyupgrade==2.1.0;python_version>="3.6"
+black==19.10b0;python_version>="3.6" and sys.platform!="win32"
+pyupgrade==2.1.0;python_version>="3.6" and sys.platform!="win32"
