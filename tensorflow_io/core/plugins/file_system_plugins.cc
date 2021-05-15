@@ -17,7 +17,16 @@ limitations under the License.
 
 #include "absl/strings/ascii.h"
 
-void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
+#if defined(_MSC_VER)
+#define TFIO_PLUGIN_EXPORT __declspec(dllexport)
+#else
+#define TFIO_PLUGIN_EXPORT __attribute__((visibility("default")))
+#endif
+
+// Please see:
+// tensorflow/tensorflow/c/experimental/filesystem/filesystem_interface.h
+// for definition of `TF_InitPlugin`
+TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   const char* env_value = getenv("TF_USE_MODULAR_FILESYSTEM");
   std::string load_plugin = env_value ? absl::AsciiStrToLower(env_value) : "";
 
