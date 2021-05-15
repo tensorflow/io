@@ -4,6 +4,7 @@ cc_library(
     name = "tf_header_lib",
     hdrs = [":tf_header_include"],
     includes = ["include"],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:inlined_vector",
@@ -12,7 +13,6 @@ cc_library(
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:span",
     ],
-    visibility = ["//visibility:public"],
 )
 
 cc_binary(
@@ -74,7 +74,14 @@ cc_library(
 
 cc_library(
     name = "libtensorflow_framework",
-    srcs = [":libtensorflow_framework.so"],
+    srcs = select({
+        "@bazel_tools//src/conditions:windows": [
+            ":libtensorflow_framework.so",
+        ],
+        "//conditions:default": [
+            ":c/libtensorflow_framework.so",
+        ],
+    }),
     #data = ["lib/libtensorflow_framework.so"],
     visibility = ["//visibility:public"],
 )
