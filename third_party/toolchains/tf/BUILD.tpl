@@ -15,6 +15,26 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+cc_binary(
+    name = "stub/libtensorflow_framework.so",
+    srcs = [],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+        ],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "@rpath/libtensorflow_framework.2.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-rpath,'$$ORIGIN/'",
+            "-Wl,-soname,libtensorflow_framework.so.2",
+        ],
+    }),
+    linkshared = 1,
+    deps = [],
+)
+
 cc_library(
     name = "tf_c_header_lib",
     hdrs = [":tf_c_header_include"],

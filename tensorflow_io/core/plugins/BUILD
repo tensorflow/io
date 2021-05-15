@@ -11,11 +11,11 @@ cc_library(
     name = "plugins_header",
     srcs = [
         "file_system_plugins.h",
+        "@local_config_tf//:stub/libtensorflow_framework.so",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_c_header_lib",
     ],
     alwayslink = 1,
