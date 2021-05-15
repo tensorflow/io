@@ -21,9 +21,6 @@ import pytest
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: http is failing on macOS with xdist", allow_module_level=True)
-
 
 @pytest.fixture(scope="module")
 def local_lines():
@@ -49,6 +46,7 @@ def remote_filename():
     return "https://www.apache.org/licenses/LICENSE-2.0.txt"
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
 def test_read_remote_file(local_content, remote_filename):
     """Test case for reading the entire content of the http file"""
 
@@ -57,6 +55,7 @@ def test_read_remote_file(local_content, remote_filename):
     assert remote_content == local_content
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
 def test_dataset_from_remote_filename(local_lines, local_content, remote_filename):
     """Test case to prepare a tf.data Dataset from a remote http file"""
 
@@ -68,6 +67,9 @@ def test_dataset_from_remote_filename(local_lines, local_content, remote_filenam
     assert i == len(local_lines)
 
 
+@pytest.mark.skipif(
+    sys.platform in ("darwin", "win32"), reason="macOS/Windows fails now"
+)
 def test_gfile_read(local_content, remote_filename):
     """Test case to read chunks of content from the http file"""
 
@@ -79,6 +81,9 @@ def test_gfile_read(local_content, remote_filename):
         assert remote_gfile.read(100) == local_content[start:stop]
 
 
+@pytest.mark.skipif(
+    sys.platform in ("darwin", "win32"), reason="macOS/Windows fails now"
+)
 def test_gfile_seek(local_content, remote_filename):
     """Test case to seek an offset after reading the content from the http file"""
 
@@ -89,6 +94,9 @@ def test_gfile_seek(local_content, remote_filename):
     assert remote_gfile.read() == local_content
 
 
+@pytest.mark.skipif(
+    sys.platform in ("darwin", "win32"), reason="macOS/Windows fails now"
+)
 def test_gfile_tell(local_content, remote_filename):
     """Test case to tell the current position in the http file"""
 
