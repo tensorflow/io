@@ -95,6 +95,7 @@ core_ops = LazyLoader("core_ops", "libtensorflow_io.so")
 try:
     plugin_ops = _load_library("libtensorflow_io_plugins.so", "fs")
 except NotImplementedError as e:
+    warnings.warn("unable to load libtensorflow_io_plugins.so: {}".format(e))
     # Note: load libtensorflow_io.so imperatively in case of statically linking
     try:
         core_ops = _load_library("libtensorflow_io.so")

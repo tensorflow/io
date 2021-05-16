@@ -318,6 +318,9 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: 3.8
+      - uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
       - name: Bazel on Windows
         env:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
@@ -339,16 +342,13 @@ jobs:
           set /P BAZEL_VERSION=< .bazelversion
           curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
           bazel version
-          python -c "import platform;print(platform.python_version())" > .pythonversion
-          set /P PYTHON_VERSION=< .pythonversion
-          cp /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python /c/hostedtoolcache/windows/Python/%PYTHON_VERSION%/x64/python3
           python3 --version
           python3 -m pip install wheel setuptools
           python3 -m pip --version
           python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
+          bazel build -s --verbose_failures --noshow_progress --noshow_loading_progress --experimental_ui_max_stdouterr_bytes=-1 %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           if %errorlevel% neq 0 exit /b %errorlevel%
           mkdir build
           cp -r bazel-bin/tensorflow_io build

@@ -19,7 +19,14 @@ cc_library(
         "gcs_helper.h",
         "ram_file_block_cache.cc",
         "ram_file_block_cache.h",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "@local_config_tf//:stub/libtensorflow_framework.lib",
+        ],
+        "//conditions:default": [
+            "@local_config_tf//:stub/libtensorflow_framework.so",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
@@ -28,7 +35,6 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/types:variant",
-        "@local_config_tf//:libtensorflow_framework",
         "@local_config_tf//:tf_c_header_lib",
     ],
     alwayslink = 1,
