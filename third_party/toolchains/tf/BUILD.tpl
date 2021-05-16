@@ -39,6 +39,7 @@ genrule(
     outs = ["stub/libtensorflow_framework.def"],
     cmd = "\n".join([
         "cat <<'EOF' >$@",
+        "LIBRARY _pywrap_tensorflow_internal.pyd",
         "EXPORTS",
         "    TF_DefaultThreadOptions",
         "    TF_DeleteStatus",
