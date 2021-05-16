@@ -72,6 +72,7 @@ def write_config():
     try:
 
         with open(".bazelrc", "w") as bazel_rc:
+            bazel_rc.write('build --copt="-fvisibility=hidden"\n')
             for opt in opt_list:
                 bazel_rc.write('build --copt="{}"\n'.format(opt))
             header_dir = include_list[0][2:]
