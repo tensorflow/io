@@ -316,9 +316,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
       - uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
