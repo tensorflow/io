@@ -349,6 +349,7 @@ jobs:
           python3 tools/build/configure.py
           cat .bazelrc
           bazel build -s --verbose_failures %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
+          if %errorlevel% neq 0 exit /b %errorlevel%
           mkdir build
           cp -r bazel-bin/tensorflow_io build
           cp -r bazel-bin/tensorflow_io_gcs_filesystem build
@@ -426,15 +427,23 @@ jobs:
           @echo on
           python --version
           python -m pip install -U pytest-benchmark
-          rm -rf tensorflow_io tensorflow_io_gcs_filesystem
-          (cd tests && python -m pytest -s -v test_lmdb.py)
-          (python -m pytest -s -v test_image.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff or avif")
-          (python -m pytest -s -v test_serialization.py)
-          (python -m pytest -s -v test_io_dataset.py -k "numpy or hdf5 or audio or to_file")
-          (python -m pytest -s -v test_http.py)
           python -m pip install google-cloud-bigquery-storage==0.7.0 google-cloud-bigquery==1.22.0 fastavro
-          (python -m pytest -s -v test_bigquery.py)
-          (python -m pytest -s -v test_dicom.py)
+          rm -rf tensorflow_io tensorflow_io_gcs_filesystem
+          cd tests
+          python -m pytest -s -v test_lmdb.py
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_image.py -k "webp or ppm or bmp or bounding or exif or hdr or openexr or tiff or avif"
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_serialization.py
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_io_dataset.py -k "numpy or hdf5 or audio or to_file"
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_http.py
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_bigquery.py
+          if %errorlevel% neq 0 exit /b %errorlevel%
+          python -m pytest -s -v test_dicom.py
+          if %errorlevel% neq 0 exit /b %errorlevel%
 
   release:
     name: Release
