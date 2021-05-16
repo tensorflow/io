@@ -33,6 +33,7 @@ cc_library(
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
             "-DEFAULTLIB:Rpcrt4.lib",
+            "-DEFAULTLIB:Bcrypt.lib",
         ],
         "//conditions:default": [],
     }),
