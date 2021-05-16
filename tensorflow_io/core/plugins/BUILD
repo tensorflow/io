@@ -13,10 +13,10 @@ cc_library(
         "file_system_plugins.h",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
-            "@local_config_tf//:c/libtensorflow_framework.lib",
+            "@local_config_tf//:stub/libtensorflow_framework.lib",
         ],
         "//conditions:default": [
-            "@local_config_tf//:c/libtensorflow_framework.so",
+            "@local_config_tf//:stub/libtensorflow_framework.so",
         ],
     }),
     copts = tf_io_copts(),

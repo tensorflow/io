@@ -16,7 +16,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "c/libtensorflow_framework.so",
+    name = "stub/libtensorflow_framework.so",
     srcs = [],
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [],
@@ -35,8 +35,8 @@ cc_binary(
 )
 
 genrule(
-    name = "c/libtensorflow_framework.def",
-    outs = ["c/libtensorflow_framework.def"],
+    name = "stub/libtensorflow_framework.def",
+    outs = ["stub/libtensorflow_framework.def"],
     cmd = "\n".join([
         "cat <<'EOF' >$@",
         "EXPORTS",
@@ -58,9 +58,9 @@ genrule(
 )
 
 genrule(
-    name = "c/libtensorflow_framework.lib",
-    srcs = ["c/libtensorflow_framework.def"],
-    outs = ["c/libtensorflow_framework.lib"],
+    name = "stub/libtensorflow_framework.lib",
+    srcs = ["stub/libtensorflow_framework.def"],
+    outs = ["stub/libtensorflow_framework.lib"],
     cmd = "lib /def:$< /machine:x64 /out:$@",
 )
 
@@ -79,7 +79,7 @@ cc_library(
             ":libtensorflow_framework.so",
         ],
         "//conditions:default": [
-            ":c/libtensorflow_framework.so",
+            ":stub/libtensorflow_framework.so",
         ],
     }),
     #data = ["lib/libtensorflow_framework.so"],

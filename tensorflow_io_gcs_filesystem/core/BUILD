@@ -21,10 +21,10 @@ cc_library(
         "ram_file_block_cache.h",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
-            "@local_config_tf//:c/libtensorflow_framework.lib",
+            "@local_config_tf//:stub/libtensorflow_framework.lib",
         ],
         "//conditions:default": [
-            "@local_config_tf//:c/libtensorflow_framework.so",
+            "@local_config_tf//:stub/libtensorflow_framework.so",
         ],
     }),
     copts = tf_io_copts(),
