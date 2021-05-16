@@ -2,7 +2,7 @@ TF_SHARED_LIBRARY_NAME=$(grep -r TF_SHARED_LIBRARY_NAME .bazelrc | awk -F= '{pri
 
 POLICY_JSON=$(find / -name policy.json)
 
-sed -i "s/libresolv.so.2\"/libresolv.so.2\", $TF_SHARED_LIBRARY_NAME/g" $POLICY_JSON
+sed -i "s/libresolv.so.2\"/libresolv.so.2\", $TF_SHARED_LIBRARY_NAME, \"libavformat.so.58\", \"libswscale.so.5\", \"libavformat.so.57\", \"libavutil.so.55\", \"libswscale.so.4\", \"libavformat-ffmpeg.so.56\", \"libavcodec-ffmpeg.so.56\", \"libavutil-ffmpeg.so.54\", \"libswscale-ffmpeg.so.3\"/g" $POLICY_JSON
 
 cat $POLICY_JSON
 
