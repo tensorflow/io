@@ -5,8 +5,14 @@ licenses(["notice"])  # LGPL v2.1+ license
 
 exports_files(["LICENSE.md"])
 
-cc_import(
+cc_library(
     name = "ffmpeg",
+    srcs = [
+        ":stub/libavcodec-ffmpeg.so",
+        ":stub/libavformat-ffmpeg.so",
+        ":stub/libavutil-ffmpeg.so",
+        ":stub/libswscale-ffmpeg.so",
+    ],
     hdrs = [
         "libavcodec/avcodec.h",
         "libavcodec/old_codec_ids.h",
@@ -54,4 +60,69 @@ genrule(
         "#endif /* AVUTIL_AVCONFIG_H */",
         "EOF",
     ]),
+)
+
+cc_binary(
+    name = "stub/libavformat-ffmpeg.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libavformat-ffmpeg.56.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libavformat-ffmpeg.so.56",
+        ],
+    }),
+    linkshared = 1,
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "stub/libavcodec-ffmpeg.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libavcodec-ffmpeg.56.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libavcodec-ffmpeg.so.56",
+        ],
+    }),
+    linkshared = 1,
+)
+
+cc_binary(
+    name = "stub/libavutil-ffmpeg.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libavutil-ffmpeg.54.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libavutil-ffmpeg.so.54",
+        ],
+    }),
+    linkshared = 1,
+)
+
+cc_binary(
+    name = "stub/libswscale-ffmpeg.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libswscale-ffmpeg.3.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libswscale-ffmpeg.so.3",
+        ],
+    }),
+    linkshared = 1,
 )

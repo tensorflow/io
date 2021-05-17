@@ -14,62 +14,43 @@
 # ==============================================================================
 """Dataset."""
 
-import ctypes
-import _ctypes
 import sys
+import warnings
 
 from tensorflow_io.core.python.ops import _load_library
 
 
-def _load_dependency_and_library(p):
+def _load_libraries(p):
     """load_dependency_and_library"""
     for library in p:
-        # First try load all dependencies with RTLD_LOCAL
-        entries = []
-        for dependency in p[library]:
-            try:
-                entries.append(ctypes.CDLL(dependency))
-            except OSError:
-                pass
-        if len(entries) == len(p[library]):
-            # Dependencies has been satisfied, load dependencies again with RTLD_GLOBAL, no error is expected
-            for dependency in p[library]:
-                ctypes.CDLL(dependency, mode=ctypes.RTLD_GLOBAL)
-            # Load video_op
+        try:
             v = _load_library(library)
-            l = _load_library(library, "dependency")
-            return v, l
-        # Otherwise we dlclose and retry
-        entries.reverse()
-        for entry in entries:
-            _ctypes.dlclose(entry._handle)  # pylint: disable=protected-access
+            # Only Linux utilize the library for
+            # EncodeAACFunctionFiniFFmpeg
+            # EncodeAACFunctionInitFFmpeg
+            # EncodeAACFunctionCallFFmpeg
+            # DecodeAACFunctionFiniFFmpeg
+            # DecodeAACFunctionInitFFmpeg
+            # DecodeAACFunctionCallFFmpeg
+            l = (
+                _load_library(library, "dependency")
+                if sys.platform == "linux"
+                else None
+            )
+            if v is not None:
+                return v, l
+        except NotImplementedError as e:
+            warnings.warn("could not load {}: {}".format(library, e))
+        NotImplementedError
     raise NotImplementedError("could not find ffmpeg after search through ", p)
 
 
-def _shared_object(name, version):
-    if sys.platform == "darwin":
-        return "lib{}.{}.dylib".format(name, version)
-    return "lib{}.so.{}".format(name, version)
-
-
-_ffmpeg_ops, _decode_ops = _load_dependency_and_library(
-    {
-        "libtensorflow_io_ffmpeg_4.2.so": [
-            _shared_object("avformat", "58"),
-            _shared_object("swscale", "5"),
-        ],
-        "libtensorflow_io_ffmpeg_3.4.so": [
-            _shared_object("avformat", "57"),
-            _shared_object("avutil", "55"),
-            _shared_object("swscale", "4"),
-        ],
-        "libtensorflow_io_ffmpeg_2.8.so": [
-            _shared_object("avformat-ffmpeg", "56"),
-            _shared_object("avcodec-ffmpeg", "56"),
-            _shared_object("avutil-ffmpeg", "54"),
-            _shared_object("swscale-ffmpeg", "3"),
-        ],
-    }
+_ffmpeg_ops, _decode_ops = _load_libraries(
+    [
+        "libtensorflow_io_ffmpeg_4.2.so",
+        "libtensorflow_io_ffmpeg_3.4.so",
+        "libtensorflow_io_ffmpeg_2.8.so",
+    ]
 )
 
 io_ffmpeg_readable_init = _ffmpeg_ops.io_ffmpeg_readable_init

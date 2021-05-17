@@ -22,19 +22,22 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_io as tfio
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: !!!pytest-xdist!!!", allow_module_level=True)
 
-video_path = "file://" + os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4"
-)
-
-audio_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav"
-)
+@pytest.fixture(name="video_path", scope="module")
+def fixture_video_path():
+    return "file://" + os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_video", "small.mp4"
+    )
 
 
-def test_ffmpeg_io_tensor_audio():
+@pytest.fixture(name="audio_path", scope="module")
+def fixture_audio_path():
+    return os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav"
+    )
+
+
+def test_ffmpeg_io_tensor_audio(audio_path):
     """test_ffmpeg_io_tensor_audio"""
     audio = tfio.IOTensor.from_audio(audio_path)
     ffmpeg = tfio.IOTensor.from_ffmpeg(audio_path)
@@ -49,7 +52,7 @@ def test_ffmpeg_io_tensor_audio():
 # Disable as the mkv file is large. Run locally
 # by pulling test file while is located in:
 # https://github.com/Matroska-Org/matroska-test-files/blob/master/test_files/test5.mkv
-def _test_ffmpeg_io_tensor_mkv():
+def _test_ffmpeg_io_tensor_mkv(video_path):
     """test_ffmpeg_io_tensor_mkv"""
     mkv_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_video", "test5.mkv"
@@ -75,7 +78,7 @@ def _test_ffmpeg_io_tensor_mkv():
     assert video("v:0").to_tensor().shape == [166, 320, 560, 3]
 
 
-def test_ffmpeg_decode_video():
+def test_ffmpeg_decode_video(video_path):
     """test_ffmpeg_decode_video"""
     content = tf.io.read_file(video_path)
     video = tfio.experimental.ffmpeg.decode_video(content, 0)
@@ -83,7 +86,8 @@ def test_ffmpeg_decode_video():
     assert video.dtype == tf.uint8
 
 
-def test_video_predict():
+@pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
+def test_video_predict(video_path):
     """test_video_predict"""
     model = tf.keras.applications.resnet50.ResNet50(weights="imagenet")
     x = (

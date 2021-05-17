@@ -44,7 +44,6 @@ if [[ $(uname) == "Linux" ]]; then
   export CLASSPATH=$(${HADOOP_HOME}/bin/hadoop classpath --glob)
   export
 elif [[ $(uname) == "Darwin" ]]; then
-  echo "TODO: !!!pytest-xdist!!!"
-  echo brew install ffmpeg
+  brew install ffmpeg
 fi
 run_test $PYTHON_VERSION
