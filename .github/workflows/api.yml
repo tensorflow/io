@@ -43,7 +43,7 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
-          rm -rf tensorflow_io_plugin_gs
+          rm -rf tensorflow_io_gcs_filesystem
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
@@ -85,7 +85,7 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
-          rm -rf tensorflow_io_plugin_gs
+          rm -rf tensorflow_io_gcs_filesystem
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
@@ -128,7 +128,7 @@ jobs:
           @echo on
           python --version
           rm -rf tensorflow_io
-          rm -rf tensorflow_io_plugin_gs
+          rm -rf tensorflow_io_gcs_filesystem
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
