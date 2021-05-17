@@ -395,6 +395,9 @@ http_archive(
 http_archive(
     name = "freetype",
     build_file = "//third_party:freetype.BUILD",
+    patch_cmds = [
+        """sed -i.bak 's/__attribute__(( visibility( "default" ) ))//g' include/freetype/config/ftconfig.h """,
+    ],
     sha256 = "3a60d391fd579440561bf0e7f31af2222bc610ad6ce4d9d7bd2165bca8669110",
     strip_prefix = "freetype-2.10.1",
     urls = [
@@ -552,6 +555,8 @@ http_archive(
     build_file = "//third_party:libmongoc.BUILD",
     patch_cmds = [
         "sed -i.bak 's/undef MONGOC_LOG_DOMAIN/undef MONGOC_LOG_DOMAIN\\'$'\\n''# define BIO_get_ssl(b,sslp)  BIO_ctrl(b,BIO_C_GET_SSL,0,(char *)(sslp))\\'$'\\n''# define BIO_do_handshake(b)  BIO_ctrl(b,BIO_C_DO_STATE_MACHINE,0,NULL)/g' src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c",
+        """sed -i.bak 's/__attribute__ ((visibility ("default")))//g' src/libmongoc/src/mongoc/mongoc-macros.h """,
+        """sed -i.bak 's/__attribute__ ((visibility ("default")))//g' src/libbson/src/bson/bson-macros.h """,
     ],
     sha256 = "0a722180e5b5c86c415b9256d753b2d5552901dc5d95c9f022072c3cd336887e",
     strip_prefix = "mongo-c-driver-1.16.2",
@@ -605,6 +610,9 @@ new_git_repository(
 http_archive(
     name = "lz4",
     build_file = "//third_party:lz4.BUILD",
+    patch_cmds = [
+        """sed -i.bak 's/__attribute__ ((__visibility__ ("default")))//g' lib/lz4frame.h """,
+    ],
     sha256 = "658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc",
     strip_prefix = "lz4-1.9.2",
     urls = [

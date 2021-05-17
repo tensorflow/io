@@ -135,6 +135,7 @@ cc_library(
         "-std=c99",
     ],
     defines = [
+        "DAV1D_API=",
         "_FILE_OFFSET_BITS=64",
         "_GNU_SOURCE",
     ],
