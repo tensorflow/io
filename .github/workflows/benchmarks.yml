@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
 
 jobs:
   macos:
@@ -82,11 +79,11 @@ jobs:
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
           python -c 'from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
-      # - name: Store benchmark result
-      #   uses: rhysd/github-action-benchmark@v1
-      #   with:
-      #     name: Tensorflow-IO Benchmarks
-      #     tool: 'pytest'
-      #     output-file-path: benchmark.json
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     auto-push: true
+      - name: Store benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: Tensorflow-IO Benchmarks
+          tool: 'pytest'
+          output-file-path: benchmark.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
