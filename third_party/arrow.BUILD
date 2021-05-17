@@ -7,7 +7,7 @@ licenses(["notice"])  # Apache 2.0
 
 exports_files(["LICENSE.txt"])
 
-load("@com_github_google_flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
+load("@flatbuffers//:build_defs.bzl", "flatbuffer_cc_library")
 
 flatbuffer_cc_library(
     name = "arrow_format",

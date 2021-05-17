@@ -21,6 +21,7 @@ limitations under the License.
 
 #if defined(_MSC_VER)
 #include <Windows.h>
+#include <io.h>
 #endif
 
 #include "absl/strings/str_cat.h"

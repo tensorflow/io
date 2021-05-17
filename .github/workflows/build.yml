@@ -28,7 +28,8 @@ jobs:
           BAZEL_VERSION=$(cat .bazelversion)
           curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          bazel run -s --verbose_failures //tools/lint:check -- bazel pyupgrade black clang
+          sudo python3 -m pip install -U numpy
+          bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade black clang
       - name: Run Lint Script for Docs
         run: |
           set -x -e
@@ -315,9 +316,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
       - uses: egor-tensin/vs-shell@v2
         with:
           arch: x64

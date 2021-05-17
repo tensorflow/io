@@ -247,7 +247,7 @@ cc_library(
         "@easyexif",
         "@fmjpeg2koj",
         "@freetype",
-        "@giflib",
+        "@gif",
         "@libavif",
         "@libgeotiff",
         "@libtiff",

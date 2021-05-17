@@ -41,7 +41,7 @@ cc_library(
     linkopts = [],
     visibility = ["//visibility:public"],
     deps = [
-        "@sqlite",
+        "@org_sqlite",
     ],
 )
 
