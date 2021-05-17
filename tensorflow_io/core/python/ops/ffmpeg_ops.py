@@ -14,6 +14,7 @@
 # ==============================================================================
 """Dataset."""
 
+import sys
 import warnings
 
 from tensorflow_io.core.python.ops import _load_library
@@ -24,15 +25,27 @@ def _load_libraries(p):
     for library in p:
         try:
             v = _load_library(library)
+            # Only Linux utilize the library for
+            # EncodeAACFunctionFiniFFmpeg
+            # EncodeAACFunctionInitFFmpeg
+            # EncodeAACFunctionCallFFmpeg
+            # DecodeAACFunctionFiniFFmpeg
+            # DecodeAACFunctionInitFFmpeg
+            # DecodeAACFunctionCallFFmpeg
+            l = (
+                _load_library(library, "dependency")
+                if sys.platform == "linux"
+                else None
+            )
             if v is not None:
-                return v
+                return v, l
         except NotImplementedError as e:
             warnings.warn("could not load {}: {}".format(library, e))
         NotImplementedError
     raise NotImplementedError("could not find ffmpeg after search through ", p)
 
 
-_ffmpeg_ops = _load_libraries(
+_ffmpeg_ops, _decode_ops = _load_libraries(
     [
         "libtensorflow_io_ffmpeg_4.2.so",
         "libtensorflow_io_ffmpeg_3.4.so",
