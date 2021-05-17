@@ -80,6 +80,7 @@ http_archive(
     build_file = "//third_party:aws-sdk-cpp.BUILD",
     patch_cmds = [
         """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
+        """sed -i.bak 's/__attribute__((visibility("default")))//g' aws-cpp-sdk-core/include/aws/core/external/tinyxml2/tinyxml2.h """,
     ],
     sha256 = "758174f9788fed6cc1e266bcecb20bf738bd5ef1c3d646131c9ed15c2d6c5720",
     strip_prefix = "aws-sdk-cpp-1.7.336",
@@ -258,7 +259,7 @@ http_archive(
     name = "com_github_azure_azure_storage_cpplite",
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
-        #"sed -i.bak 's/struct stat/struct_stat/' src/blob/blob_client_wrapper.cpp",
+        """sed -i.bak 's/__attribute__((visibility("default")))//g' include/tinyxml2.h """,
         "echo '' >> include/base64.h",
         "echo '#include <stdexcept>' >> include/base64.h",
         "echo '' >> include/utility.h",
