@@ -134,37 +134,6 @@ static Aws::Client::ClientConfiguration& GetDefaultClientConfig() {
   absl::MutexLock l(&cfg_lock);
 
   if (!init) {
-    const char* region = getenv("AWS_REGION");
-    // TODO (yongtang): `S3_REGION` should be deprecated after 2.0.
-    if (!region) region = getenv("S3_REGION");
-    if (region) {
-      cfg.region = Aws::String(region);
-    } else {
-      // Load config file (e.g., ~/.aws/config) only if AWS_SDK_LOAD_CONFIG
-      // is set with a truthy value.
-      const char* load_config_env = getenv("AWS_SDK_LOAD_CONFIG");
-      std::string load_config =
-          load_config_env ? absl::AsciiStrToLower(load_config_env) : "";
-      if (load_config == "true" || load_config == "1") {
-        Aws::String config_file;
-        // If AWS_CONFIG_FILE is set then use it, otherwise use ~/.aws/config.
-        const char* config_file_env = getenv("AWS_CONFIG_FILE");
-        if (config_file_env) {
-          config_file = config_file_env;
-        } else {
-          const char* home_env = getenv("HOME");
-          if (home_env) {
-            config_file = home_env;
-            config_file += "/.aws/config";
-          }
-        }
-        Aws::Config::AWSConfigFileProfileConfigLoader loader(config_file);
-        loader.Load();
-        auto profiles = loader.GetProfiles();
-        if (!profiles["default"].GetRegion().empty())
-          cfg.region = profiles["default"].GetRegion();
-      }
-    }
     // if these timeouts are low, you may see an error when
     // uploading/downloading large files: Unable to connect to endpoint
     int64_t timeout;
