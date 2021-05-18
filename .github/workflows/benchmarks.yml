@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tensorflow==2.5.0rc3:tensorflow-io']
+        version: ['tensorflow:tensorflow-io-nightly', 'tensorflow:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -32,9 +32,10 @@ jobs:
           df -h
           rm -rf tensorflow_io
           rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
+          python -m pip install tensorflow-io-gcs-filesystem-nightly
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -50,7 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tensorflow==2.5.0rc3:tensorflow-io']
+        version: ['tensorflow:tensorflow-io-nightly', 'tensorflow:tensorflow-io']
     steps:
       - uses: actions/checkout@v2
         with:
@@ -70,9 +71,10 @@ jobs:
           df -h
           rm -rf tensorflow_io
           rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
+          python -m pip install tensorflow-io-gcs-filesystem-nightly
           python -m pip install -q scikit-image pytest pytest-benchmark boto3 fastavro avro-python3 scikit-image pandas pyarrow==2.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
