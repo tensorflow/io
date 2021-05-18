@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -40,6 +40,8 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
@@ -61,7 +63,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -80,6 +82,8 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
@@ -101,7 +105,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -121,6 +125,8 @@ jobs:
           @echo on
           python --version
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
           if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
