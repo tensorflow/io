@@ -25,6 +25,8 @@ cc_library(
     ],
     defines = [
         "XXH_PRIVATE_API",
+        "ZSTDLIB_VISIBILITY=",
+        "ZSTDERRORLIB_VISIBILITY=",
     ],
     includes = [
         "lib",

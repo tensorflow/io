@@ -100,7 +100,9 @@ cc_library(
         "ARROW_WITH_ZSTD",
         "ARROW_WITH_BZ2",
         "ARROW_STATIC",
+        "ARROW_EXPORT=",
         "PARQUET_STATIC",
+        "PARQUET_EXPORT=",
         "WIN32_LEAN_AND_MEAN",
     ],
     includes = [

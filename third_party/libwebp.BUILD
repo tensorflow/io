@@ -28,6 +28,9 @@ cc_library(
         "imageio/imageio_util.h",
         "examples/unicode.h",
     ],
+    defines = [
+        "WEBP_EXTERN=",
+    ],
     includes = [
         "src",
     ],
