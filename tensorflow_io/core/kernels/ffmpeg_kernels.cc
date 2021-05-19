@@ -136,7 +136,7 @@ class FFmpegStream {
                                          this, FFmpegStream::ReadPacket, NULL,
                                          FFmpegStream::Seek));
     if (!io_context_) {
-      return errors::ResourceExhausted("unable to aloocate ffmpeg io context");
+      return errors::ResourceExhausted("unable to allocate ffmpeg io context");
     }
     format_context->pb = io_context_.get();
     // Release here because avformat_open_input frees on failure.
