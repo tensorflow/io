@@ -487,7 +487,7 @@ GCSFileSystemImplementation::GCSFileSystemImplementation(
     google::cloud::storage::Client&& gcs_client)
     : gcs_client(gcs_client), block_cache_lock() {
   const char* append_mode = std::getenv(kAppendMode);
-  compose = (append_mode != nullptr) && (!strcmp(kAppendMode, append_mode));
+  compose = (append_mode != nullptr) && (!strcmp(kComposeAppend, append_mode));
 
   uint64_t value;
   block_size = kDefaultBlockSize;
