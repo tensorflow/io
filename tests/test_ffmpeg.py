@@ -88,7 +88,7 @@ def test_ffmpeg_decode_video(video_path):
 
 def test_ffmpeg_decode_video_invalid_content():
     """test_ffmpeg_decode_video_invalid_content"""
-    content = tf.constant(b'bad-video')
+    content = tf.constant(b"bad-video")
     with pytest.raises(tf.errors.InvalidArgumentError):
         tfio.experimental.ffmpeg.decode_video(content, 0)
 

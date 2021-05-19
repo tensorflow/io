@@ -132,28 +132,27 @@ class FFmpegStream {
     if (!io_buffer) {
       return errors::ResourceExhausted("unable to allocate ffmpeg io buffer");
     }
-    io_context_.reset(avio_alloc_context(
-        io_buffer.release(), kIOBufferSize, 0, this,
-        FFmpegStream::ReadPacket, NULL, FFmpegStream::Seek));
+    io_context_.reset(avio_alloc_context(io_buffer.release(), kIOBufferSize, 0,
+                                         this, FFmpegStream::ReadPacket, NULL,
+                                         FFmpegStream::Seek));
     if (!io_context_) {
       return errors::ResourceExhausted("unable to aloocate ffmpeg io context");
     }
     format_context->pb = io_context_.get();
     // Release here because avformat_open_input frees on failure.
     format_context_scope.release();
-    ret = avformat_open_input(
-        &format_context, filename_.c_str(), NULL, NULL);
+    ret = avformat_open_input(&format_context, filename_.c_str(), NULL, NULL);
     if (ret < 0) {
       av_strerror(ret, error_message, sizeof(error_message));
-      return errors::InvalidArgument(
-          "unable to open file: ", filename_, ": ", error_message);
+      return errors::InvalidArgument("unable to open file: ", filename_, ": ",
+                                     error_message);
     }
     format_context_.reset(format_context);
     ret = avformat_find_stream_info(format_context_.get(), NULL);
     if (ret < 0) {
       av_strerror(ret, error_message, sizeof(error_message));
-      return errors::InvalidArgument(
-          "unable to find stream info: ", error_message);
+      return errors::InvalidArgument("unable to find stream info: ",
+                                     error_message);
     }
 
     stream_index_ = -1;
@@ -161,8 +160,7 @@ class FFmpegStream {
     int64 media_index = 0;
     for (int64 i = 0; i < format_context->nb_streams; i++) {
 #if LIBAVCODEC_VERSION_MAJOR > 56
-      int media_type =
-          format_context->streams[i]->codecpar->codec_type;
+      int media_type = format_context->streams[i]->codecpar->codec_type;
 #else
       int media_type = format_context->streams[i]->codec->codec_type;
 #endif
