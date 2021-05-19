@@ -86,7 +86,6 @@ class FFmpegStream {
                         [](AVFormatContext* p) {
                           if (p != nullptr) {
                             avformat_close_input(&p);
-                            avformat_free_context(p);
                           }
                         }),
         io_context_(nullptr,
@@ -117,56 +116,69 @@ class FFmpegStream {
   }
   virtual ~FFmpegStream() {}
   virtual Status Open(int64 media, int64 index) {
+    constexpr int kIOBufferSize = 4096;  // TODO: maybe make this a parameter.
+    int ret = 0;
+    char error_message[AV_ERROR_MAX_STRING_SIZE];
     offset_ = 0;
-    AVFormatContext* format_context;
-    if ((format_context = avformat_alloc_context()) != NULL) {
-      AVIOContext* io_context;
-      // TODO: Perhaps allocate buffer and buffer_size here.
-      if ((io_context =
-               avio_alloc_context(NULL, 0, 0, this, FFmpegStream::ReadPacket,
-                                  NULL, FFmpegStream::Seek)) != NULL) {
-        format_context->pb = io_context;
-        if (avformat_open_input(&format_context, filename_.c_str(), NULL,
-                                NULL) >= 0) {
-          if (avformat_find_stream_info(format_context, NULL) >= 0) {
-            stream_index_ = -1;
-
-            // No plan to read any other stream frame
-            int64 media_index = 0;
-            for (int64 i = 0; i < format_context->nb_streams; i++) {
-#if LIBAVCODEC_VERSION_MAJOR > 56
-              int media_type = format_context->streams[i]->codecpar->codec_type;
-#else
-              int media_type = format_context->streams[i]->codec->codec_type;
-#endif
-              if (media_type == media) {
-                if (media_index == index) {
-                  stream_index_ = i;
-                }
-                media_index++;
-              }
-              if (stream_index_ != i) {
-                format_context->streams[i]->discard = AVDISCARD_ALL;
-              }
-            }
-            if (stream_index_ >= 0) {
-              io_context_.reset(io_context);
-              format_context_.reset(format_context);
-              return Status::OK();
-            }
-          }
-          avformat_close_input(&format_context);
-        }
-        av_free(io_context->buffer);
-#if LIBAVCODEC_VERSION_MAJOR > 56
-        avio_context_free(&io_context);
-#else
-        av_free(io_context);
-#endif
-      }
-      avformat_free_context(format_context);
+    AVFormatContext* format_context = avformat_alloc_context();
+    if (!format_context) {
+      return errors::ResourceExhausted(
+          "unable to allocate ffmpeg format context");
     }
-    return errors::InvalidArgument("unable to open file: ", filename_);
+    std::unique_ptr<AVFormatContext, decltype(avformat_free_context)*>
+        format_context_scope(format_context, avformat_free_context);
+    std::unique_ptr<uint8_t, decltype(av_free)*> io_buffer(
+        (uint8_t*)av_malloc(kIOBufferSize), av_free);
+    if (!io_buffer) {
+      return errors::ResourceExhausted("unable to allocate ffmpeg io buffer");
+    }
+    io_context_.reset(avio_alloc_context(io_buffer.release(), kIOBufferSize, 0,
+                                         this, FFmpegStream::ReadPacket, NULL,
+                                         FFmpegStream::Seek));
+    if (!io_context_) {
+      return errors::ResourceExhausted("unable to allocate ffmpeg io context");
+    }
+    format_context->pb = io_context_.get();
+    // Release here because avformat_open_input frees on failure.
+    format_context_scope.release();
+    ret = avformat_open_input(&format_context, filename_.c_str(), NULL, NULL);
+    if (ret < 0) {
+      av_strerror(ret, error_message, sizeof(error_message));
+      return errors::InvalidArgument("unable to open file: ", filename_, ": ",
+                                     error_message);
+    }
+    format_context_.reset(format_context);
+    ret = avformat_find_stream_info(format_context_.get(), NULL);
+    if (ret < 0) {
+      av_strerror(ret, error_message, sizeof(error_message));
+      return errors::InvalidArgument("unable to find stream info: ",
+                                     error_message);
+    }
+
+    stream_index_ = -1;
+    // No plan to read any other stream frame
+    int64 media_index = 0;
+    for (int64 i = 0; i < format_context->nb_streams; i++) {
+#if LIBAVCODEC_VERSION_MAJOR > 56
+      int media_type = format_context->streams[i]->codecpar->codec_type;
+#else
+      int media_type = format_context->streams[i]->codec->codec_type;
+#endif
+      if (media_type == media) {
+        if (media_index == index) {
+          stream_index_ = i;
+        }
+        media_index++;
+      }
+      if (stream_index_ != i) {
+        format_context->streams[i]->discard = AVDISCARD_ALL;
+      }
+    }
+    if (stream_index_ < 0) {
+      return errors::InvalidArgument(
+          "unable to find specified stream: media=", media, ", index=", index);
+    }
+    return Status::OK();
   }
   Status OpenCodec() {
     int64 stream_index = stream_index_;

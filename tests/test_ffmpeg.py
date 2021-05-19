@@ -86,6 +86,20 @@ def test_ffmpeg_decode_video(video_path):
     assert video.dtype == tf.uint8
 
 
+def test_ffmpeg_decode_video_invalid_content():
+    """test_ffmpeg_decode_video_invalid_content"""
+    content = tf.constant(b"bad-video")
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        tfio.experimental.ffmpeg.decode_video(content, 0)
+
+
+def test_ffmpeg_decode_video_invalid_index(video_path):
+    """test_ffmpeg_decode_video_invalid_index"""
+    content = tf.io.read_file(video_path)
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        tfio.experimental.ffmpeg.decode_video(content, 1)
+
+
 @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
 def test_video_predict(video_path):
     """test_video_predict"""
