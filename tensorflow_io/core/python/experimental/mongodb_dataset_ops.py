@@ -85,22 +85,27 @@ class MongoDBIODataset(tf.data.Dataset):
         """Initialize the dataset with the following parameters
 
         Args:
-            uri: The uri of the mongo server or replicaset to connect to.
-                - To connect to a MongoDB server with username and password
+            uri: A string, representing the uri of the mongo server or replicaset.
+                To connect to a MongoDB server with username and password
                 based authentication, the following uri pattern can be used.
-                Example: `"mongodb://mongoadmin:default_password@localhost:27017"`.
+                Ex: `"mongodb://mongoadmin:default_password@localhost:27017"`.
 
-                - Connecting to a replica set is much like connecting to a
+                Connecting to a replica set is much like connecting to a
                 standalone MongoDB server. Simply specify the replica set name
                 using the `?replicaSet=myreplset` URI option.
-                Example: "mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset"
+                Ex: "mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset"
+
+                Connection to a secure cluster via CA certs can be achieved by setting
+                the respective TLS options to the URI.
+                Ex: "mongodb://host01:27017/?tls=true&sslCertificateAuthorityFile=/opt/ca.pem"
 
                 Additional information on writing uri's can be found here:
                 - [libmongoc uri docs](http://mongoc.org/libmongoc/current/mongoc_uri_t.html)
                 - [mongodb uri docs](https://docs.mongodb.com/manual/reference/connection-string/)
-            database: The database in the standalone standalone MongoDB server or a replica set
-                to connect to.
-            collection: The collection from which the documents have to be retrieved.
+            database: A string, representing the database in the standalone MongoDB
+                server or a replica set to connect to.
+            collection: A string, representing the collection from which the documents
+                have to be retrieved.
         """
         handler = _MongoDBHandler(uri=uri, database=database, collection=collection)
         resource = handler.get_healthy_resource()
