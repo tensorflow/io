@@ -53,7 +53,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           python -m pytest -s -v tests/test_gcs.py
-          python -m pytest -s -v tests/test_filesystem.py
+          python -m pytest -s -v tests/test_standalone_filesystem.py
 
   linux:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
@@ -95,7 +95,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
-          python -m pytest -s -v tests/test_filesystem.py
+          python -m pytest -s -v tests/test_standalone_filesystem.py
 
   windows:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
