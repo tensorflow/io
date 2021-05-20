@@ -17,6 +17,7 @@ import functools
 import os
 import posixpath
 import random
+import socket
 import sys
 import time
 from urllib.parse import urlparse
@@ -36,6 +37,7 @@ AZ_URI = "az"
 AZ_DSN_URI = "az_dsn"
 HTTPS_URI = "https"
 GCS_URI = "gs"
+HDFS_URI = "hdfs"
 
 
 def mock_patchs(monkeypatch, patchs):
@@ -67,6 +69,8 @@ def should_skip(uri, check_only=True):
         message = "TODO: `az` does not work on Windows yet"
     elif uri == GCS_URI and sys.platform in ("win32", "darwin"):
         message = "TODO: `gs` does not work on Windows yet"
+    elif uri == HDFS_URI and sys.platform in ("win32", "darwin"):
+        message = "TODO: `hdfs` does not work properly on macOS/Windows yet"
 
     if message is not None:
         if check_only:
@@ -278,8 +282,45 @@ def gcs_fs():
     monkeypatch.undo()
 
 
+@pytest.fixture(scope="module")
+def hdfs_fs():
+    if should_skip(HDFS_URI):
+        yield [None] * NUM_ATR_FS
+        return
+
+    from pyarrow.fs import HadoopFileSystem
+
+    monkeypatch = pytest.MonkeyPatch()
+    hdfs_host = os.environ.get("HDFS_HOST")
+    hdfs_port = int(os.environ.get("HDFS_PORT", 9000))
+
+    if hdfs_host is None:
+        hdfs_host = socket.gethostbyname(socket.gethostname())
+
+    hdfs = HadoopFileSystem(hdfs_host, hdfs_port)
+
+    def path_to(*args):
+        return (
+            f"{HDFS_URI}://{hdfs_host}:{hdfs_port}/{posixpath.join(ROOT_PREFIX, *args)}"
+        )
+
+    def read(path):
+        f = hdfs.open_input_stream(path)
+        return f.readall()
+
+    def write(path, body):
+        with hdfs.open_output_stream(path) as f:
+            f.write(body)
+
+    def mkdirs(path):
+        hdfs.create_dir(path, recursive=True)
+
+    yield path_to, read, write, mkdirs, posixpath.join, None
+    monkeypatch.undo()
+
+
 @pytest.fixture
-def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
+def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs, hdfs_fs):
     path_to, read, write, mkdirs, join, internal = [None] * NUM_ATR_FS
     test_fs_uri = request.param
     real_uri = test_fs_uri
@@ -296,6 +337,8 @@ def fs(request, s3_fs, az_fs, az_dsn_fs, https_fs, gcs_fs):
         path_to, read, write, mkdirs, join, internal = https_fs
     elif test_fs_uri == GCS_URI:
         path_to, read, write, mkdirs, join, internal = gcs_fs
+    elif test_fs_uri == HDFS_URI:
+        path_to, read, write, mkdirs, join, internal = hdfs_fs
 
     path_to_rand = None
     test_patchs = request.getfixturevalue("patchs")
@@ -313,7 +356,13 @@ fs.path_to_rand_cache = {}
 
 @pytest.mark.parametrize(
     "fs, patchs",
-    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    [
+        (S3_URI, None),
+        (AZ_URI, None),
+        (AZ_DSN_URI, None),
+        (GCS_URI, None),
+        (HDFS_URI, None),
+    ],
     indirect=["fs"],
 )
 def test_init(fs, patchs, monkeypatch):
@@ -324,7 +373,13 @@ def test_init(fs, patchs, monkeypatch):
 
 @pytest.mark.parametrize(
     "fs, patchs",
-    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    [
+        (S3_URI, None),
+        (AZ_URI, None),
+        (AZ_DSN_URI, None),
+        (GCS_URI, None),
+        (HDFS_URI, None),
+    ],
     indirect=["fs"],
 )
 def test_io_read_file(fs, patchs, monkeypatch):
@@ -340,7 +395,13 @@ def test_io_read_file(fs, patchs, monkeypatch):
 
 @pytest.mark.parametrize(
     "fs, patchs",
-    [(S3_URI, None), (AZ_URI, None), (AZ_DSN_URI, None), (GCS_URI, None)],
+    [
+        (S3_URI, None),
+        (AZ_URI, None),
+        (AZ_DSN_URI, None),
+        (GCS_URI, None),
+        (HDFS_URI, None),
+    ],
     indirect=["fs"],
 )
 def test_io_write_file(fs, patchs, monkeypatch):
@@ -384,6 +445,7 @@ def get_readable_body(uri):
         (AZ_URI, None),
         (HTTPS_URI, None),
         (GCS_URI, None),
+        (HDFS_URI, None),
     ],
     indirect=["fs"],
 )
@@ -449,7 +511,13 @@ def test_gfile_GFile_readable(fs, patchs, monkeypatch):
 
 @pytest.mark.parametrize(
     "fs, patchs",
-    [(S3_URI, None), (AZ_URI, None), (HTTPS_URI, None), (GCS_URI, None)],
+    [
+        (S3_URI, None),
+        (AZ_URI, None),
+        (HTTPS_URI, None),
+        (GCS_URI, None),
+        (HDFS_URI, None),
+    ],
     indirect=["fs"],
 )
 def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
@@ -472,7 +540,9 @@ def test_dataset_from_remote_filename(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_GFile_writable(fs, patchs, monkeypatch):
     uri, path_to, read, _, _, _, _ = fs
@@ -493,7 +563,8 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
 
     # Append
     # TODO(vnvo2409): implement `az` appendable file.
-    if uri != AZ_URI:
+    # TODO(vnvo2409): implement `hdfs` appendable file.
+    if uri != AZ_URI and uri != HDFS_URI:
         with tf.io.gfile.GFile(fname, "ab") as f:
             f.write(base_body)
             f.flush()
@@ -501,7 +572,9 @@ def test_gfile_GFile_writable(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_isdir(fs, patchs, monkeypatch):
     _, path_to, _, write, mkdirs, join, _ = fs
@@ -519,7 +592,9 @@ def test_gfile_isdir(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_listdir(fs, patchs, monkeypatch):
     uri, path_to, _, write, mkdirs, join, _ = fs
@@ -549,7 +624,9 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_makedirs(fs, patchs, monkeypatch):
     _, path_to, _, write, _, join, _ = fs
@@ -567,7 +644,9 @@ def test_gfile_makedirs(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_remove(fs, patchs, monkeypatch):
     _, path_to, read, write, _, _, _ = fs
@@ -586,7 +665,9 @@ def test_gfile_remove(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_rmtree(fs, patchs, monkeypatch):
     _, path_to, _, write, mkdirs, join, _ = fs
@@ -610,7 +691,7 @@ def test_gfile_rmtree(fs, patchs, monkeypatch):
 
 # TODO(vnvo2409): `az` copy operations causes an infinite loop.
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs", [(S3_URI, None), (GCS_URI, None), (HDFS_URI, None)], indirect=["fs"]
 )
 def test_gfile_copy(fs, patchs, monkeypatch):
     _, path_to, read, write, _, _, _ = fs
@@ -636,7 +717,9 @@ def test_gfile_copy(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_rename(fs, patchs, monkeypatch):
     _, path_to, read, write, _, _, _ = fs
@@ -663,7 +746,9 @@ def test_gfile_rename(fs, patchs, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "fs, patchs", [(S3_URI, None), (AZ_URI, None), (GCS_URI, None)], indirect=["fs"]
+    "fs, patchs",
+    [(S3_URI, None), (AZ_URI, None), (GCS_URI, None), (HDFS_URI, None)],
+    indirect=["fs"],
 )
 def test_gfile_glob(fs, patchs, monkeypatch):
     _, path_to, _, write, _, join, _ = fs
