@@ -180,7 +180,7 @@ class FFmpegStream {
     }
     return Status::OK();
   }
-  Status OpenCodec() {
+  Status OpenCodec(int64 thread_count, int64 thread_type) {
     int64 stream_index = stream_index_;
 
 #if LIBAVCODEC_VERSION_MAJOR > 56
@@ -211,6 +211,8 @@ class FFmpegStream {
 #else
     codec_context_ = format_context_->streams[stream_index]->codec;
 #endif
+    codec_context_->thread_count = (int)thread_count;
+    codec_context_->thread_type = (int)thread_type;
     {
       // avcodec_open2 is not thread-safe
       mutex_lock lock(mu);
@@ -298,9 +300,9 @@ class FFmpegAudioStream : public FFmpegStream {
         rate_(-1) {}
   virtual ~FFmpegAudioStream() {}
 
-  Status OpenAudio(int64 index) {
+  Status OpenAudio(int64 index, int64 thread_type, int64 thread_count) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_AUDIO, index));
-    TF_RETURN_IF_ERROR(OpenCodec());
+    TF_RETURN_IF_ERROR(OpenCodec(thread_type, thread_count));
 
     int64 stream_index = stream_index_;
 #if LIBAVCODEC_VERSION_MAJOR > 56
@@ -475,7 +477,7 @@ class FFmpegAudioReadableResource : public ResourceBase {
     ffmpeg_audio_stream_.reset(
         new FFmpegAudioStream(filename_, file_.get(), file_size_));
 
-    TF_RETURN_IF_ERROR(ffmpeg_audio_stream_->OpenAudio(audio_index_));
+    TF_RETURN_IF_ERROR(ffmpeg_audio_stream_->OpenAudio(audio_index_, 0, 1));
 
     sample_index_ = 0;
 
@@ -488,7 +490,7 @@ class FFmpegAudioReadableResource : public ResourceBase {
     ffmpeg_audio_stream_.reset(
         new FFmpegAudioStream(filename_, file_.get(), file_size_));
 
-    TF_RETURN_IF_ERROR(ffmpeg_audio_stream_->OpenAudio(audio_index_));
+    TF_RETURN_IF_ERROR(ffmpeg_audio_stream_->OpenAudio(audio_index_, 0, 1));
     sample_index_ = 0;
     return Status::OK();
   }
@@ -595,9 +597,9 @@ class FFmpegVideoStream : public FFmpegStream {
         }) {}
   virtual ~FFmpegVideoStream() {}
 
-  Status OpenVideo(int64 index) {
+  Status OpenVideo(int64 index, int64 thread_type, int64 thread_count) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_VIDEO, index));
-    TF_RETURN_IF_ERROR(OpenCodec());
+    TF_RETURN_IF_ERROR(OpenCodec(thread_type, thread_count));
 
     dtype_ = DT_UINT8;
     height_ = codec_context_->height;
@@ -775,7 +777,7 @@ class FFmpegVideoReadableResource : public ResourceBase {
     ffmpeg_video_stream_.reset(
         new FFmpegVideoStream(filename_, file_.get(), file_size_));
 
-    TF_RETURN_IF_ERROR(ffmpeg_video_stream_->OpenVideo(video_index_));
+    TF_RETURN_IF_ERROR(ffmpeg_video_stream_->OpenVideo(video_index_, 0, 1));
 
     frame_index_ = 0;
 
@@ -788,7 +790,7 @@ class FFmpegVideoReadableResource : public ResourceBase {
     ffmpeg_video_stream_.reset(
         new FFmpegVideoStream(filename_, file_.get(), file_size_));
 
-    TF_RETURN_IF_ERROR(ffmpeg_video_stream_->OpenVideo(video_index_));
+    TF_RETURN_IF_ERROR(ffmpeg_video_stream_->OpenVideo(video_index_, 0, 1));
     frame_index_ = 0;
     return Status::OK();
   }
@@ -812,6 +814,8 @@ class FFmpegVideoReadableResource : public ResourceBase {
   uint64 file_size_ TF_GUARDED_BY(mu_);
   std::unique_ptr<FFmpegVideoStream> ffmpeg_video_stream_ TF_GUARDED_BY(mu_);
   int64 frame_index_ TF_GUARDED_BY(mu_);
+  int64 thread_type_ TF_GUARDED_BY(mu_);
+  int64 thread_count_ TF_GUARDED_BY(mu_);
 };
 
 class FFmpegVideoReadableInitOp
@@ -905,13 +909,27 @@ class FFmpegDecodeVideoOp : public OpKernel {
     const Tensor* index_tensor;
     OP_REQUIRES_OK(context, context->input("index", &index_tensor));
 
+    const Tensor* thread_type_tensor;
+    OP_REQUIRES_OK(context, context->input("thread_type", &thread_type_tensor));
+    const int64 thread_type = thread_type_tensor->scalar<int64>()();
+    OP_REQUIRES(context, 0 <= thread_type && thread_type <= 2,
+                errors::InvalidArgument("thead_type must be 0, 1, or 2"));
+
+    const Tensor* thread_count_tensor;
+    OP_REQUIRES_OK(context,
+                   context->input("thread_count", &thread_count_tensor));
+    const int64 thread_count = thread_count_tensor->scalar<int64>()();
+    OP_REQUIRES(context, 0 <= thread_count,
+                errors::InvalidArgument("thread_count must be 0 or greater"));
+
     string input = input_tensor->scalar<tstring>()();
     SizedRandomAccessFile file(env_, "memory", input.data(), input.size());
 
     FFmpegInit();
 
     FFmpegVideoStream stream("memory", &file, input.size());
-    OP_REQUIRES_OK(context, stream.OpenVideo(index_tensor->scalar<int64>()()));
+    OP_REQUIRES_OK(context, stream.OpenVideo(index_tensor->scalar<int64>()(),
+                                             thread_type, thread_count));
     int64 frames = 0;
     OP_REQUIRES_OK(context, stream.PeekAll(&frames));
 

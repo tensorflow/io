@@ -64,6 +64,8 @@ REGISTER_OP("IO>FfmpegReadableRead")
 REGISTER_OP("IO>FfmpegDecodeVideo")
     .Input("input: string")
     .Input("index: int64")
+    .Input("thread_type: int64")
+    .Input("thread_count: int64")
     .Output("value: uint8")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
