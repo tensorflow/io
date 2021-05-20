@@ -814,8 +814,6 @@ class FFmpegVideoReadableResource : public ResourceBase {
   uint64 file_size_ TF_GUARDED_BY(mu_);
   std::unique_ptr<FFmpegVideoStream> ffmpeg_video_stream_ TF_GUARDED_BY(mu_);
   int64 frame_index_ TF_GUARDED_BY(mu_);
-  int64 thread_type_ TF_GUARDED_BY(mu_);
-  int64 thread_count_ TF_GUARDED_BY(mu_);
 };
 
 class FFmpegVideoReadableInitOp
