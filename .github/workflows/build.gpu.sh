@@ -76,7 +76,7 @@ cat .bazelrc
 
 bazel build -s --verbose_failures -c opt -k \
      --jobs=${N_JOBS} \
-     --crosstool_top=//third_party/toolchains/gcc7_manylinux2010-nvcc-cuda10.1:toolchain \
+     --config=linux_ci_gpu \
      //tensorflow_io/core:python/ops/libtensorflow_io.so
 
 exit $?

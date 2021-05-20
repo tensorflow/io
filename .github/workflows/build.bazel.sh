@@ -18,6 +18,7 @@ set -e -x
 export TENSORFLOW_INSTALL="$(python3 setup.py --install-require)"
 
 export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
+export BAZEL_VERSION=$(cat .bazelversion)
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bazel version
@@ -35,17 +36,17 @@ python3 tools/build/configure.py
 cat .bazelrc
 
 bazel build \
-  --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain \
   ${BAZEL_OPTIMIZATION} \
-  --noshow_progress \
-  --noshow_loading_progress \
-  --verbose_failures \
-  --test_output=errors \
   -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
 
 rm -rf build && mkdir -p build
 
 cp -r bazel-bin/tensorflow_io  build/tensorflow_io
 cp -r bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+
+chown -R $(id -nu):$(id -ng) build/tensorflow_io/
+chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
+find build/tensorflow_io -name '*runfiles*' | xargs rm -rf
+find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | xargs rm -rf
 
 exit 0
