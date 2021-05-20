@@ -89,15 +89,7 @@ def test_ffmpeg_decode_video(video_path):
 @pytest.mark.benchmark(group="ffmpeg_decode_video_benchmark")
 @pytest.mark.parametrize(
     "thread_type, thread_count",
-    [
-        (0, 0),
-        (0, 1),
-        (0, 2),
-        (1, 1),
-        (1, 2),
-        (2, 1),
-        (2, 2),
-    ],
+    [(0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 1), (2, 2),],
 )
 def test_ffmpeg_decode_video_benchmark(
     benchmark, video_path, thread_type, thread_count
@@ -124,12 +116,7 @@ def test_ffmpeg_decode_video_invalid_index(video_path):
 
 
 @pytest.mark.parametrize(
-    "thread_type, thread_count",
-    [
-        (-1, 0),
-        (0, -1),
-        (3, 0),
-    ],
+    "thread_type, thread_count", [(-1, 0), (0, -1), (3, 0),],
 )
 def test_ffmpeg_decode_video_invalid_thread(video_path, thread_type, thread_count):
     """test_ffmpeg_decode_video_invalid_index"""
