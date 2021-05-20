@@ -86,9 +86,7 @@ def test_ffmpeg_decode_video(video_path):
     assert video.dtype == tf.uint8
 
 
-@pytest.mark.benchmark(
-    group="ffmpeg_decode_video",
-)
+@pytest.mark.benchmark(group="ffmpeg_decode_video_benchmark")
 @pytest.mark.parametrize(
     "thread_type, thread_count",
     [
