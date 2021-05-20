@@ -78,6 +78,17 @@ def _test_ffmpeg_io_tensor_mkv(video_path):
     assert video("v:0").to_tensor().shape == [166, 320, 560, 3]
 
 
+def test_ffmpeg_decode_video(video_path):
+    """test_ffmpeg_decode_video"""
+    content = tf.io.read_file(video_path)
+    video = tfio.experimental.ffmpeg.decode_video(content, 0)
+    assert video.shape == [166, 320, 560, 3]
+    assert video.dtype == tf.uint8
+
+
+@pytest.mark.benchmark(
+    group="ffmpeg_decode_video",
+)
 @pytest.mark.parametrize(
     "thread_type, thread_count",
     [
@@ -90,12 +101,14 @@ def _test_ffmpeg_io_tensor_mkv(video_path):
         (2, 2),
     ],
 )
-def test_ffmpeg_decode_video(video_path, thread_type, thread_count):
-    """test_ffmpeg_decode_video"""
+def test_ffmpeg_decode_video_benchmark(
+    benchmark, video_path, thread_type, thread_count
+):
+    """test_ffmpeg_decode_video_benchmark"""
     content = tf.io.read_file(video_path)
-    video = tfio.experimental.ffmpeg.decode_video(content, 0, thread_type, thread_count)
-    assert video.shape == [166, 320, 560, 3]
-    assert video.dtype == tf.uint8
+    benchmark(
+        tfio.experimental.ffmpeg.decode_video, content, 0, thread_type, thread_count
+    )
 
 
 def test_ffmpeg_decode_video_invalid_content():
