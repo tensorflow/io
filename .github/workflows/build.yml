@@ -113,7 +113,7 @@ jobs:
       - name: Bazel on macOS
         run: |
           set -x -e
-          export BAZEL_OPTIMIZATION="--config=ci --config=mac_ci --config=output_ci --config=cache"
+          export BAZEL_OPTIMIZATION="--config=optimization --config=cache"
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
@@ -224,7 +224,7 @@ jobs:
         shell: bash
         run: |
           set -x -e
-          export BAZEL_OPTIMIZATION="--config=ci --config=linux_ci --config=output_ci --config=cache"
+          export BAZEL_OPTIMIZATION="--config=optimization --config=linux_ci --config=cache"
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
@@ -326,7 +326,7 @@ jobs:
         shell: cmd
         run: |
           @echo on
-          set "BAZEL_OPTIMIZATION=--config=output_ci --config=cache"
+          set "BAZEL_OPTIMIZATION=--config=cache"
           if "%EVENT_NAME%" == "push" (
             if "%REPO_NAME%" == "tensorflow/io" (
               set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
@@ -341,7 +341,7 @@ jobs:
           python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s --experimental_ui_max_stdouterr_bytes=-1 %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
+          bazel build -s %BAZEL_OPTIMIZATION% //tensorflow_io/core:python/ops/libtensorflow_io.so //tensorflow_io/core:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           if %errorlevel% neq 0 exit /b %errorlevel%
           mkdir build
           cp -r bazel-bin/tensorflow_io build
