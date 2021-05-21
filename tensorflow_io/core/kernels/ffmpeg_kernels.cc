@@ -302,6 +302,7 @@ class FFmpegAudioStream : public FFmpegStream {
 
   Status OpenAudio(int64 index) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_AUDIO, index));
+    // FF_THREAD_SLICE=2, see libavcodec/avcodec.h
     TF_RETURN_IF_ERROR(OpenCodec(FF_THREAD_SLICE, 1));
 
     int64 stream_index = stream_index_;
@@ -599,6 +600,7 @@ class FFmpegVideoStream : public FFmpegStream {
 
   Status OpenVideo(int64 index) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_VIDEO, index));
+    // FF_THREAD_SLICE=2, see libavcodec/avcodec.h
     TF_RETURN_IF_ERROR(OpenCodec(FF_THREAD_SLICE, 1));
 
     dtype_ = DT_UINT8;
