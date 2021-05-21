@@ -7,9 +7,6 @@ on:
   schedule:
     - cron: "0 12 * * *"
 
-env:
-  BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
-
 jobs:
 
   macos:

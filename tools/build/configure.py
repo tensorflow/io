@@ -114,16 +114,40 @@ def write_config():
                     bazel_rc.write('build --action_env TF_CUDA_VERSION="10.1"\n')
                     bazel_rc.write('build --action_env TF_CUDNN_VERSION="7"\n')
             # Needed for tf rules
-            bazel_rc.write('build --experimental_repo_remote_exec\n')
+            bazel_rc.write("build --experimental_repo_remote_exec\n")
             # Enable platform specific config
-            bazel_rc.write('build --enable_platform_specific_config\n')
+            bazel_rc.write("build --enable_platform_specific_config\n")
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
             # Stay with 10.14 for macOS
             bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.14"\n')
             bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.14"\n')
+            # Warns for unguarded uses of Objective-C APIs
+            bazel_rc.write("build:macos --copt=-Wunguarded-availability\n")
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
+            # Config for CI and release build
+            bazel_rc.write("build:optimization --copt=-msse4.2\n")
+            bazel_rc.write("build:optimization --copt=-mavx\n")
+            bazel_rc.write("build:optimization --compilation_mode=opt\n")
+            bazel_rc.write(
+                "build:linux_ci --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain\n"
+            )
+            bazel_rc.write(
+                "build:linux_ci_gpu --crosstool_top=//third_party/toolchains/gcc7_manylinux2010-nvcc-cuda10.1:toolchain\n"
+            )
+            # For a cleaner output
+            bazel_rc.write("build --noshow_progress\n")
+            bazel_rc.write("build --noshow_loading_progress\n")
+            bazel_rc.write("build --verbose_failures\n")
+            bazel_rc.write("build --test_output=errors\n")
+            bazel_rc.write("build --experimental_ui_max_stdouterr_bytes=-1\n")
+            # GCS cache (read-only by default)
+            bazel_rc.write(
+                "build:cache --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io\n"
+            )
+            bazel_rc.write("build:cache --remote_upload_local_results=false\n")
+
             bazel_rc.close()
     except OSError:
         print("ERROR: Writing .bazelrc")
