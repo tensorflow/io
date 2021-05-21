@@ -15,14 +15,12 @@
 """FFmpeg"""
 
 
-def decode_video(content, index=0, thread_type=0, thread_count=1, name=None):
+def decode_video(content, index=0, name=None):
     """Decode video stream from a video file.
 
     Args:
       content: A `Tensor` of type `string`.
       index: The stream index.
-      thread_type: Decoding thread mode, 0 = default, 1 = frame, 2 = slice.
-      thread_count: Number of decoding threads.
 
     Returns:
       value: A `uint8` Tensor.
@@ -31,6 +29,4 @@ def decode_video(content, index=0, thread_type=0, thread_count=1, name=None):
         ffmpeg_ops,
     )
 
-    return ffmpeg_ops.io_ffmpeg_decode_video(
-        content, index, thread_type, thread_count, name=name
-    )
+    return ffmpeg_ops.io_ffmpeg_decode_video(content, index, name=name)

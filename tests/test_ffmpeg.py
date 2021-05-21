@@ -86,21 +86,6 @@ def test_ffmpeg_decode_video(video_path):
     assert video.dtype == tf.uint8
 
 
-@pytest.mark.benchmark(group="ffmpeg_decode_video_benchmark")
-@pytest.mark.parametrize(
-    "thread_type, thread_count",
-    [(0, 0), (0, 1), (0, 2), (1, 1), (1, 2), (2, 1), (2, 2),],
-)
-def test_ffmpeg_decode_video_benchmark(
-    benchmark, video_path, thread_type, thread_count
-):
-    """test_ffmpeg_decode_video_benchmark"""
-    content = tf.io.read_file(video_path)
-    benchmark(
-        tfio.experimental.ffmpeg.decode_video, content, 0, thread_type, thread_count
-    )
-
-
 def test_ffmpeg_decode_video_invalid_content():
     """test_ffmpeg_decode_video_invalid_content"""
     content = tf.constant(b"bad-video")
@@ -113,16 +98,6 @@ def test_ffmpeg_decode_video_invalid_index(video_path):
     content = tf.io.read_file(video_path)
     with pytest.raises(tf.errors.InvalidArgumentError):
         tfio.experimental.ffmpeg.decode_video(content, 1)
-
-
-@pytest.mark.parametrize(
-    "thread_type, thread_count", [(-1, 0), (0, -1), (3, 0),],
-)
-def test_ffmpeg_decode_video_invalid_thread(video_path, thread_type, thread_count):
-    """test_ffmpeg_decode_video_invalid_index"""
-    content = tf.io.read_file(video_path)
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        tfio.experimental.ffmpeg.decode_video(content, 0, thread_type, thread_count)
 
 
 @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
