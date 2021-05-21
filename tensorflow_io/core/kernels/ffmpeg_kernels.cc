@@ -180,7 +180,7 @@ class FFmpegStream {
     }
     return Status::OK();
   }
-  Status OpenCodec() {
+  Status OpenCodec(int64 thread_count, int64 thread_type) {
     int64 stream_index = stream_index_;
 
 #if LIBAVCODEC_VERSION_MAJOR > 56
@@ -211,6 +211,8 @@ class FFmpegStream {
 #else
     codec_context_ = format_context_->streams[stream_index]->codec;
 #endif
+    codec_context_->thread_count = (int)thread_count;
+    codec_context_->thread_type = (int)thread_type;
     {
       // avcodec_open2 is not thread-safe
       mutex_lock lock(mu);
@@ -300,7 +302,8 @@ class FFmpegAudioStream : public FFmpegStream {
 
   Status OpenAudio(int64 index) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_AUDIO, index));
-    TF_RETURN_IF_ERROR(OpenCodec());
+    // FF_THREAD_SLICE=2, see libavcodec/avcodec.h
+    TF_RETURN_IF_ERROR(OpenCodec(FF_THREAD_SLICE, 1));
 
     int64 stream_index = stream_index_;
 #if LIBAVCODEC_VERSION_MAJOR > 56
@@ -597,7 +600,8 @@ class FFmpegVideoStream : public FFmpegStream {
 
   Status OpenVideo(int64 index) {
     TF_RETURN_IF_ERROR(Open(AVMEDIA_TYPE_VIDEO, index));
-    TF_RETURN_IF_ERROR(OpenCodec());
+    // FF_THREAD_SLICE=2, see libavcodec/avcodec.h
+    TF_RETURN_IF_ERROR(OpenCodec(FF_THREAD_SLICE, 1));
 
     dtype_ = DT_UINT8;
     height_ = codec_context_->height;
