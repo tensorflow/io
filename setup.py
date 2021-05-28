@@ -44,13 +44,14 @@ if "--install-require" in sys.argv:
 
 subpackages = ["tensorflow-io-gcs-filesystem"]
 
-assert "--project" in sys.argv, "--project ({} or {}) must be provided".format(
-    "tensorflow-io", ", ".join(subpackages)
-)
-project_idx = sys.argv.index("--project")
-project = sys.argv[project_idx + 1]
-sys.argv.remove("--project")
-sys.argv.pop(project_idx)
+if "--project" in sys.argv:
+    project_idx = sys.argv.index("--project")
+    project = sys.argv[project_idx + 1]
+    sys.argv.remove("--project")
+    sys.argv.pop(project_idx)
+else:
+    project = "tensorflow-io"
+
 assert (
     project.replace("_", "-") == "tensorflow-io"
     or project.replace("_", "-") in subpackages

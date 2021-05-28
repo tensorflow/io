@@ -148,7 +148,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
+          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
@@ -254,7 +254,7 @@ jobs:
         run: |
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
@@ -375,7 +375,7 @@ jobs:
           @echo on
           python --version
           python -m pip install -U wheel setuptools
-          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel
+          python setup.py --data bazel-bin -q bdist_wheel
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel
           ls -la dist
       - uses: actions/upload-artifact@v2
@@ -530,7 +530,7 @@ jobs:
           bash -x -e tools/docker/tests/dockerfile_cpu_test.sh
           docker push tfsigio/tfio:latest
           python --version
-          TFIO_VERSION=$(python setup.py --project tensorflow-io --version | tail -1)
+          TFIO_VERSION=$(python setup.py --version | tail -1)
           docker tag tfsigio/tfio:latest tfsigio/tfio:${TFIO_VERSION}
           docker push tfsigio/tfio:${TFIO_VERSION}
           bash -x -e tools/docker/tests/dockerfile_devel_test.sh
@@ -577,7 +577,7 @@ jobs:
           set -x -e
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
+          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_x86_64 --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
@@ -617,7 +617,7 @@ jobs:
         run: |
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
-          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
+          docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --nightly $BUILD_NUMBER
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
@@ -661,7 +661,7 @@ jobs:
           @echo on
           python --version
           python -m pip install -U wheel setuptools
-          python setup.py --project tensorflow-io --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
+          python setup.py --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --nightly %BUILD_NUMBER%
           ls -la dist
       - uses: actions/upload-artifact@v2
