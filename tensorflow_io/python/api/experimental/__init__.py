@@ -28,6 +28,7 @@ from tensorflow_io.python.api.experimental import streaming
 from tensorflow_io.python.api.experimental import filter
 from tensorflow_io.python.api.experimental import elasticsearch
 from tensorflow_io.python.api.experimental import mongodb
+from tensorflow_io.python.api.experimental import filesystem
 
 
 def oss():
