@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_ARROW_KERNELS_H_
-#define TENSORFLOW_IO_ARROW_KERNELS_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_ARROW_KERNELS_H_
+#define TENSORFLOW_IO_CORE_KERNELS_ARROW_KERNELS_H_
 
 #include "arrow/buffer.h"
 #include "arrow/io/api.h"
@@ -95,4 +95,4 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
 }  // namespace data
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_ARROW_KERNELS_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_ARROW_KERNELS_H_

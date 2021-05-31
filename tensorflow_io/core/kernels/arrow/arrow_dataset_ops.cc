@@ -20,9 +20,9 @@ limitations under the License.
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/public/version.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
-#include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_stream_client.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 
 namespace tensorflow {

@@ -24,8 +24,8 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
 #include "tensorflow/core/platform/env.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 
