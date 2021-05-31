@@ -84,4 +84,4 @@ Status ParseHost(std::string host, std::string* host_address,
 }  // namespace data
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_
