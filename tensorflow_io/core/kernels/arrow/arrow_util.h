@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_ARROW_UTIL_H_
-#define TENSORFLOW_IO_ARROW_UTIL_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_
+#define TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_
 
 #include "arrow/api.h"
 #include "arrow/ipc/api.h"
@@ -84,4 +84,4 @@ Status ParseHost(std::string host, std::string* host_address,
 }  // namespace data
 }  // namespace tensorflow
 
-#endif
+#endif  // TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_

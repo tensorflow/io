@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_ARROW_STREAM_CLIENT_H_
-#define TENSORFLOW_IO_ARROW_STREAM_CLIENT_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_ARROW_STREAM_CLIENT_H_
+#define TENSORFLOW_IO_CORE_KERNELS_ARROW_STREAM_CLIENT_H_
 
 #include "arrow/io/api.h"
 
@@ -43,4 +43,4 @@ class ArrowStreamClient : public arrow::io::InputStream {
 }  // namespace data
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_ARROW_STREAM_CLIENT_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_ARROW_STREAM_CLIENT_H_

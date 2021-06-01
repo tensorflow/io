@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
 
 #include "arrow/array.h"
 #include "arrow/buffer.h"
@@ -23,7 +23,7 @@ limitations under the License.
 #include "arrow/table.h"
 #include "generated/feather_generated.h"
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 
 namespace tensorflow {

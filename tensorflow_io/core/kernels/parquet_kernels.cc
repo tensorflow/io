@@ -16,7 +16,7 @@ limitations under the License.
 #include "parquet/api/reader.h"
 #include "parquet/windows_compatibility.h"
 #include "tensorflow/core/framework/resource_mgr.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
 #include "tensorflow_io/core/kernels/io_kernel.h"
 
 namespace tensorflow {

@@ -111,6 +111,45 @@ cc_library(
 )
 
 cc_library(
+    name = "arrow_ops",
+    srcs = [
+        "kernels/arrow/arrow_dataset_ops.cc",
+        "kernels/arrow/arrow_kernels.cc",
+        "kernels/arrow/arrow_kernels.h",
+        "kernels/arrow/arrow_stream_client.h",
+        "ops/arrow_ops.cc",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "kernels/arrow/arrow_stream_client_windows.cc",
+        ],
+        "//conditions:default": [
+            "kernels/arrow/arrow_stream_client_unix.cc",
+        ],
+    }),
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        ":arrow_util",
+        "//tensorflow_io/core:dataset_ops",
+        "@arrow",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "arrow_util",
+    srcs = ["kernels/arrow/arrow_util.cc"],
+    hdrs = ["kernels/arrow/arrow_util.h"],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@arrow",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "core_ops",
     srcs = [
         "kernels/archive_kernels.cc",
@@ -399,7 +438,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:output_ops",
         "//tensorflow_io/core:sequence_ops",
@@ -447,7 +486,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
     ],
     alwayslink = 1,
@@ -540,7 +579,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
         "@rapidjson",
@@ -733,7 +772,7 @@ cc_binary(
     copts = tf_io_copts(),
     linkshared = 1,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        "//tensorflow_io/core:arrow_ops",
         "//tensorflow_io/bigquery:bigquery_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",

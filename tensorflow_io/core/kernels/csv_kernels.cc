@@ -19,7 +19,7 @@ limitations under the License.
 #include "arrow/table.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/lib/io/buffered_inputstream.h"
-#include "tensorflow_io/arrow/kernels/arrow_kernels.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
 #include "tensorflow_io/core/kernels/io_interface.h"
 #include "tensorflow_io/core/kernels/io_stream.h"
 

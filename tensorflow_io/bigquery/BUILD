@@ -57,7 +57,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_util",
+        "//tensorflow_io/core:arrow_util",
         "@arrow",
         "@avro",
         "@com_github_grpc_grpc//:grpc++",

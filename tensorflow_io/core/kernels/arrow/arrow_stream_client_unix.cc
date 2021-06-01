@@ -22,8 +22,8 @@ limitations under the License.
 #include "arrow/io/api.h"
 #include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/status.h"
-#include "tensorflow_io/arrow/kernels/arrow_stream_client.h"
-#include "tensorflow_io/arrow/kernels/arrow_util.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_stream_client.h"
+#include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 
 namespace tensorflow {
 namespace data {
