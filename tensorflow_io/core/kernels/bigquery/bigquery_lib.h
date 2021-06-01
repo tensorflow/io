@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_
 #define TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_
 
-#include <chrono>
-
 #include <grpcpp/grpcpp.h>
+
+#include <chrono>
 // Inclusion of googleapi related grpc headers, e.g., storage.grpc.pb.h
 // will cause Windows build failures due to the conflict of `OPTIONAL`
 // definition. The following is needed for Windows.
