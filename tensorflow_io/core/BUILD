@@ -914,4 +914,3 @@ cc_binary(
         "//tensorflow_io/core:ffmpeg_2.8_ops",
     ],
 )
-
