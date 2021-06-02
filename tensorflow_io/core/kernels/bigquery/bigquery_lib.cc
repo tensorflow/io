@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
+#include "tensorflow_io/core/kernels/bigquery/bigquery_lib.h"
 
 namespace tensorflow {
 namespace {

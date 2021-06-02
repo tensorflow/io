@@ -19,7 +19,7 @@ limitations under the License.
 #include "arrow/buffer.h"
 #include "arrow/ipc/api.h"
 #include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
+#include "tensorflow_io/core/kernels/bigquery/bigquery_lib.h"
 
 namespace tensorflow {
 namespace data {
