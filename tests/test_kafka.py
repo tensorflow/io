@@ -144,9 +144,7 @@ def test_avro_kafka_dataset_with_resource():
     dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
     # deserialize avro
     dataset = dataset.map(
-        lambda e: tfio.experimental.serialization.decode_avro(
-            e, schema=schema
-        )
+        lambda e: tfio.experimental.serialization.decode_avro(e, schema=schema)
     )
     entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
     np.all(entries == [("value1", 1), ("value2", 2), ("value3", 3)])
