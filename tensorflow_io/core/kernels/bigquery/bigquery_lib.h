@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_BIGQUERY_KERNELS_BIGQUERY_LIB_H_
-#define TENSORFLOW_IO_BIGQUERY_KERNELS_BIGQUERY_LIB_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_
+#define TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_
 
 #include <grpcpp/grpcpp.h>
 // Inclusion of googleapi related grpc headers, e.g., storage.grpc.pb.h
@@ -556,4 +556,4 @@ class BigQueryReaderAvroDatasetIterator
 
 }  // namespace data
 }  // namespace tensorflow
-#endif  // TENSORFLOW_IO_BIGQUERY_KERNELS_BIGQUERY_LIB_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_

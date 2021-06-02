@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/lib/strings/stringprintf.h"
-#include "tensorflow_io/bigquery/kernels/bigquery_lib.h"
+#include "tensorflow_io/core/kernels/bigquery/bigquery_lib.h"
 
 namespace tensorflow {
 namespace {

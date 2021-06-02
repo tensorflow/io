@@ -25,9 +25,9 @@ for high-speed data loading.
 
 
 from tensorflow.python.util.all_util import remove_undocumented
-from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryClient
-from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryReadSession
-from tensorflow_io.bigquery.python.ops.bigquery_api import BigQueryTestClient
+from tensorflow_io.core.python.ops.bigquery_dataset_ops import BigQueryClient
+from tensorflow_io.core.python.ops.bigquery_dataset_ops import BigQueryReadSession
+from tensorflow_io.core.python.ops.bigquery_dataset_ops import BigQueryTestClient
 
 _allowed_symbols = ["BigQueryClient", "BigQueryReadSession", "BigQueryTestClient"]
 
