@@ -868,7 +868,7 @@ cc_binary(
 
 # Have to put test op into prod binary because of https://github.com/grpc/grpc/issues/20034
 # Otherwise whenever 2 dynamically built libraries that are using grpc loaded
-# using _load_library, only first one will work.
+# using _load_library, only first one will work
 cc_library(
     name = "bigquery_ops",
     srcs = [
