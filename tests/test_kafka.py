@@ -130,6 +130,7 @@ def test_avro_kafka_dataset():
     ]
     assert np.all(entries == [("value1", 1, ""), ("value2", 2, "2"), ("value3", 3, "")])
 
+
 def test_kafka_stream_dataset():
     dataset = tfio.IODataset.stream().from_kafka("test").batch(2)
     assert np.all(
