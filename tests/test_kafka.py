@@ -139,14 +139,13 @@ def test_avro_kafka_dataset_with_resource():
         '{"name":"f3","type":["null","string"],"default":null}'
         ']}"'
     )
-    schema_resource = kafka_io.decode_avro_init(schema)
     dataset = kafka_io.KafkaDataset(["avro-test:0"], group="avro-test", eof=True)
     # remove kafka framing
     dataset = dataset.map(lambda e: tf.strings.substr(e, 5, -1))
     # deserialize avro
     dataset = dataset.map(
-        lambda e: kafka_io.decode_avro(
-            e, schema=schema_resource, dtype=[tf.string, tf.int64, tf.string]
+        lambda e: tfio.experimental.serialization.decode_avro(
+            e, schema=schema
         )
     )
     entries = [(f1.numpy(), f2.numpy(), f3.numpy()) for (f1, f2, f3) in dataset]
