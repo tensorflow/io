@@ -23,7 +23,7 @@ import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
-from tensorflow_io.core.python.ops import core_ops as ignite_ops
+from tensorflow_io.core.python.ops import core_ops
 
 
 class Readable(metaclass=abc.ABCMeta):
@@ -783,7 +783,7 @@ class IgniteDataset(data.Dataset):
         return []
 
     def _as_variant_tensor(self):
-        return ignite_ops.io_ignite_dataset(
+        return core_ops.io_ignite_dataset(
             self.cache_name,
             self.host,
             self.port,

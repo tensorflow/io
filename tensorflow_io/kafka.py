@@ -12,26 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Kafka Dataset.
+"""Deprecated Kafka Dataset.
 
 @@KafkaOutputSequence
 @@KafkaDataset
 @@write_kafka
-@@decode_avro
-@@encode_avro
-@@decode_avro_init
 """
 
 
 from tensorflow.python.util.all_util import remove_undocumented
 
-from tensorflow_io.kafka.python.ops.kafka_ops import KafkaOutputSequence
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import KafkaDataset
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import write_kafka
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import decode_avro
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import encode_avro
-from tensorflow_io.kafka.python.ops.kafka_dataset_ops import decode_avro_init
-
+from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import (
+    KafkaOutputSequence,
+)
+from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import KafkaDataset
+from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import write_kafka
 
 _allowed_symbols = [
     "KafkaOutputSequence",

@@ -21,10 +21,6 @@ from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.core.python.ops import core_ops
 
-decode_avro_init = core_ops.io_kafka_decode_avro_init
-decode_avro = core_ops.io_kafka_decode_avro
-encode_avro = core_ops.io_kafka_encode_avro
-
 warnings.warn(
     "implementation of existing tensorflow_io.kafka.KafkaDataset is "
     "deprecated and will be replaced with the implementation in "
@@ -147,6 +143,46 @@ class KafkaDataset(data.Dataset):
             return (dtypes.string, dtypes.string, dtypes.string)
         else:
             return dtypes.string
+
+
+class KafkaOutputSequence:
+    """KafkaOutputSequence"""
+
+    def __init__(self, topic, servers="localhost", configuration=None):
+        """Create a `KafkaOutputSequence`.
+
+        Args:
+            topic: A `tf.string` tensor containing one subscription,
+                in the format of topic:partition.
+            servers: A list of bootstrap servers.
+            configuration: A `tf.string` tensor containing global configuration
+                            properties in [Key=Value] format,
+                            eg. ["enable.auto.commit=false",
+                                "heartbeat.interval.ms=2000"],
+                            please refer to 'Global configuration properties'
+                            in librdkafka doc.
+        """
+        self._topic = topic
+        metadata = list(configuration or [])
+        if servers is not None:
+            metadata.append("bootstrap.servers=%s" % servers)
+        self._resource = core_ops.io_kafka_output_sequence(
+            topic=topic, metadata=metadata
+        )
+
+    def setitem(self, index, item):
+        """Set an indexed item in the `KafkaOutputSequence`.
+
+        Args:
+            index: An index in the sequence. The index tensor must be a scalar.
+            item: the item which is associated with the index in the output sequence.
+                    The item tensor must be a scalar.
+        """
+        core_ops.io_kafka_output_sequence_set_item(self._resource, index, item)
+
+    def flush(self):
+        """Flush the `KafkaOutputSequence`."""
+        core_ops.io_kafka_output_sequence_flush(self._resource)
 
 
 def write_kafka(message, topic, servers="localhost", name=None):
