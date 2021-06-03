@@ -24,8 +24,8 @@ import setuptools
 here = os.path.abspath(os.path.dirname(__file__))
 
 # read package version and require from:
-# tensorflow_io/core/python/ops/version_ops.py
-with open(os.path.join(here, "tensorflow_io/core/python/ops/version_ops.py")) as f:
+# tensorflow_io/python/ops/version_ops.py
+with open(os.path.join(here, "tensorflow_io/python/ops/version_ops.py")) as f:
     entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
     assert sum(e.startswith("version = ") for e in entries) == 1
     assert sum(e.startswith("require = ") for e in entries) == 1

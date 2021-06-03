@@ -285,9 +285,7 @@ class ArrowIOTensorTest(ArrowTestBase):
             return reader.read_all()
 
         def from_py_func(filename):
-            from tensorflow_io.core.python.ops.arrow_io_tensor_ops import (
-                ArrowIOResource,
-            )
+            from tensorflow_io.python.ops.arrow_io_tensor_ops import ArrowIOResource
 
             table_res = ArrowIOResource.from_py_function(read_table, [filename])
             tio = tfio.IOTensor.from_arrow(table_res, spec=spec)

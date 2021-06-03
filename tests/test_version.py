@@ -16,7 +16,7 @@
 
 
 import tensorflow_io as tfio
-from tensorflow_io.core.python.ops import version_ops
+from tensorflow_io.python.ops import version_ops
 
 
 def test_version():
