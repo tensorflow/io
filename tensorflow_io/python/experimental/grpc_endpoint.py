@@ -24,7 +24,7 @@ import tensorflow as tf
 
 # In case test is done with TFIO_DATAPATH specified, the
 # import path need to be extended to capture generated grpc files:
-grpcpath = os.path.join(os.path.dirname(__file__), "..", "..", "grpc")
+grpcpath = os.path.join(os.path.dirname(__file__), "..", "..", "core", "grpc")
 datapath = os.environ.get("TFIO_DATAPATH")
 if datapath is not None:
     grpcpath = os.path.join(datapath, "tensorflow_io", "core", "grpc")
