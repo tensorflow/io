@@ -30,7 +30,7 @@ https://apacheignite.readme.io/v2.6/docs/binary-client-protocol.
 
 
 from tensorflow.python.util.all_util import remove_undocumented
-from tensorflow_io.core.python.ops.ignite_dataset_ops import IgniteDataset
+from tensorflow_io.python.ops.ignite_dataset_ops import IgniteDataset
 
 _allowed_symbols = [
     "IgniteDataset",

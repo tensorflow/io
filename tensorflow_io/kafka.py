@@ -22,11 +22,9 @@
 
 from tensorflow.python.util.all_util import remove_undocumented
 
-from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import (
-    KafkaOutputSequence,
-)
-from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import KafkaDataset
-from tensorflow_io.core.python.ops.kafka_deprecated_dataset_ops import write_kafka
+from tensorflow_io.python.ops.kafka_deprecated_dataset_ops import KafkaOutputSequence
+from tensorflow_io.python.ops.kafka_deprecated_dataset_ops import KafkaDataset
+from tensorflow_io.python.ops.kafka_deprecated_dataset_ops import write_kafka
 
 _allowed_symbols = [
     "KafkaOutputSequence",

@@ -77,6 +77,6 @@ cat .bazelrc
 bazel build -s --verbose_failures -c opt -k \
      --jobs=${N_JOBS} \
      --config=linux_ci_gpu \
-     //tensorflow_io/core:python/ops/libtensorflow_io.so
+     //tensorflow_io:python/ops/libtensorflow_io.so
 
 exit $?

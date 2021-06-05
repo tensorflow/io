@@ -23,10 +23,10 @@
 
 from tensorflow.python.util.all_util import remove_undocumented
 
-from tensorflow_io.core.python.ops.arrow_dataset_ops import ArrowDataset
-from tensorflow_io.core.python.ops.arrow_dataset_ops import ArrowFeatherDataset
-from tensorflow_io.core.python.ops.arrow_dataset_ops import ArrowStreamDataset
-from tensorflow_io.core.python.ops.arrow_dataset_ops import list_feather_columns
+from tensorflow_io.python.ops.arrow_dataset_ops import ArrowDataset
+from tensorflow_io.python.ops.arrow_dataset_ops import ArrowFeatherDataset
+from tensorflow_io.python.ops.arrow_dataset_ops import ArrowStreamDataset
+from tensorflow_io.python.ops.arrow_dataset_ops import list_feather_columns
 
 
 _allowed_symbols = [
