@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#ifndef TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_S3_AWS_LOGGING_H_
-#define TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_S3_AWS_LOGGING_H_
+#ifndef TENSORFLOW_IO_CORE_FILESYSTEMS_S3_AWS_LOGGING_H_
+#define TENSORFLOW_IO_CORE_FILESYSTEMS_S3_AWS_LOGGING_H_
 
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/LogSystemInterface.h>
@@ -67,4 +67,4 @@ class AWSLogSystem : public Aws::Utils::Logging::LogSystemInterface {
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_C_EXPERIMENTAL_FILESYSTEM_PLUGINS_S3_AWS_LOGGING_H_
+#endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_S3_AWS_LOGGING_H_

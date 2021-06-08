@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow_io/core/plugins/file_system_plugins.h"
+#include "tensorflow_io/core/filesystems/filesystem_plugins.h"
 
 #include "absl/strings/ascii.h"
 

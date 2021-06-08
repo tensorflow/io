@@ -8,16 +8,17 @@ load(
 )
 
 cc_library(
-    name = "az",
+    name = "hdfs",
     srcs = [
-        "az_file_system.cc",
+        "hadoop_filesystem.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins:plugins_header",
-        "@com_github_azure_azure_storage_cpplite//:azure",
+        "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@hadoop",
     ],
     alwayslink = 1,
 )

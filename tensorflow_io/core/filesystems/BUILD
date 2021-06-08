@@ -8,9 +8,9 @@ load(
 )
 
 cc_library(
-    name = "plugins_header",
+    name = "filesystem_plugins_header",
     srcs = [
-        "file_system_plugins.h",
+        "filesystem_plugins.h",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
             "@local_config_tf//:stub/libtensorflow_framework.lib",
@@ -28,17 +28,17 @@ cc_library(
 )
 
 cc_library(
-    name = "plugins",
+    name = "filesystem_plugins",
     srcs = [
-        "file_system_plugins.cc",
+        "filesystem_plugins.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins/az",
-        "//tensorflow_io/core/plugins/hdfs",
-        "//tensorflow_io/core/plugins/http",
-        "//tensorflow_io/core/plugins/s3",
+        "//tensorflow_io/core/filesystems/az",
+        "//tensorflow_io/core/filesystems/hdfs",
+        "//tensorflow_io/core/filesystems/http",
+        "//tensorflow_io/core/filesystems/s3",
     ],
     alwayslink = 1,
 )

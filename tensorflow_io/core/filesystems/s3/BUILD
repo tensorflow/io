@@ -8,17 +8,21 @@ load(
 )
 
 cc_library(
-    name = "hdfs",
+    name = "s3",
     srcs = [
-        "hadoop_filesystem.cc",
+        "aws_logging.cc",
+        "aws_logging.h",
+        "s3_filesystem.cc",
+        "s3_filesystem.h",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins:plugins_header",
+        "//tensorflow_io/core/filesystems:filesystem_plugins_header",
+        "@aws-sdk-cpp//:s3",
+        "@aws-sdk-cpp//:transfer",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@hadoop",
     ],
     alwayslink = 1,
 )

@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
-#define TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
+#ifndef TENSORFLOW_IO_CORE_FILESYSTEMS_FILESYSTEM_PLUGINS_H
+#define TENSORFLOW_IO_CORE_FILESYSTEMS_FILESYSTEM_PLUGINS_H
 
 #include <stdlib.h>
 
@@ -53,4 +53,4 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_CORE_PLUGINS_FILE_SYSTEM_PLUGINS_H
+#endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_FILESYSTEM_PLUGINS_H
