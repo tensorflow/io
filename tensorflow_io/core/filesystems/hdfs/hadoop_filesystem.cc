@@ -33,7 +33,7 @@ limitations under the License.
 #include "hdfs/hdfs.h"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
-#include "tensorflow_io/core/plugins/file_system_plugins.h"
+#include "tensorflow_io/core/filesystems/filesystem_plugins.h"
 
 namespace tensorflow {
 namespace io {

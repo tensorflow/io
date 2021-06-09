@@ -50,7 +50,7 @@ cc_binary(
         ],
     }) + select({
         "//tensorflow_io/core:static_build_on": [
-            "//tensorflow_io/core/plugins:plugins",
+            "//tensorflow_io/core/filesystems:filesystem_plugins",
         ],
         "//conditions:default": [],
     }),
@@ -63,7 +63,7 @@ cc_binary(
     deps = select({
         "//tensorflow_io/core:static_build_on": [],
         "//conditions:default": [
-            "//tensorflow_io/core/plugins:plugins",
+            "//tensorflow_io/core/filesystems:filesystem_plugins",
         ],
     }),
 )

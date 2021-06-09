@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow_io/core/plugins/s3/aws_logging.h"
+#include "tensorflow_io/core/filesystems/s3/aws_logging.h"
 
 #include <aws/core/Aws.h>
 #include <aws/core/utils/logging/AWSLogging.h>

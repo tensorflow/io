@@ -10,12 +10,12 @@ load(
 cc_library(
     name = "http",
     srcs = [
-        "http_file_system.cc",
+        "http_filesystem.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins:plugins_header",
+        "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",

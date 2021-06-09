@@ -8,21 +8,16 @@ load(
 )
 
 cc_library(
-    name = "s3",
+    name = "az",
     srcs = [
-        "aws_logging.cc",
-        "aws_logging.h",
-        "s3_filesystem.cc",
-        "s3_filesystem.h",
+        "az_filesystem.cc",
     ],
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/core/plugins:plugins_header",
-        "@aws-sdk-cpp//:s3",
-        "@aws-sdk-cpp//:transfer",
+        "//tensorflow_io/core/filesystems:filesystem_plugins_header",
+        "@com_github_azure_azure_storage_cpplite//:azure",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
     ],
     alwayslink = 1,
 )
