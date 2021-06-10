@@ -20,6 +20,7 @@ import tensorflow as tf
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.python.ops import core_ops
+from tensorflow_io.python.utils import deprecation
 
 warnings.warn(
     "implementation of existing tensorflow_io.kafka.KafkaDataset is "
@@ -30,6 +31,7 @@ warnings.warn(
 )
 
 
+@deprecation.deprecate("Use tfio.IODataset.from_kafka(...) instead")
 class KafkaDataset(data.Dataset):
     """A Kafka Dataset that consumes the messages."""
 
