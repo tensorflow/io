@@ -355,14 +355,15 @@ class EncodeAACFunctionState {
 }  // namespace tensorflow
 
 extern "C" {
-void EncodeAACFunctionFiniFFmpeg(void* state) {
+__attribute__((visibility("default"))) void EncodeAACFunctionFiniFFmpeg(
+    void* state) {
   if (state != nullptr) {
     delete static_cast<tensorflow::data::EncodeAACFunctionState*>(state);
   }
 }
 
-void* EncodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
-                                  const int64_t channels) {
+__attribute__((visibility("default"))) void* EncodeAACFunctionInitFFmpeg(
+    const int64_t codec, const int64_t rate, const int64_t channels) {
   tensorflow::data::FFmpegInit();
   tensorflow::data::EncodeAACFunctionState* state =
       new tensorflow::data::EncodeAACFunctionState(codec, rate, channels);
@@ -374,10 +375,9 @@ void* EncodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
   }
   return nullptr;
 }
-int64_t EncodeAACFunctionCallFFmpeg(void* state, const float* data_in,
-                                    const int64_t size_in,
-                                    char** data_out_chunk,
-                                    int64_t* size_out_chunk, int64_t* chunk) {
+__attribute__((visibility("default"))) int64_t EncodeAACFunctionCallFFmpeg(
+    void* state, const float* data_in, const int64_t size_in,
+    char** data_out_chunk, int64_t* size_out_chunk, int64_t* chunk) {
   if (state != nullptr) {
     return static_cast<tensorflow::data::EncodeAACFunctionState*>(state)->Call(
         data_in, size_in, data_out_chunk, size_out_chunk, chunk);
@@ -385,14 +385,15 @@ int64_t EncodeAACFunctionCallFFmpeg(void* state, const float* data_in,
   return -1;
 }
 
-void DecodeAACFunctionFiniFFmpeg(void* state) {
+__attribute__((visibility("default"))) void DecodeAACFunctionFiniFFmpeg(
+    void* state) {
   if (state != nullptr) {
     delete static_cast<tensorflow::data::DecodeAACFunctionState*>(state);
   }
 }
 
-void* DecodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
-                                  const int64_t channels) {
+__attribute__((visibility("default"))) void* DecodeAACFunctionInitFFmpeg(
+    const int64_t codec, const int64_t rate, const int64_t channels) {
   tensorflow::data::FFmpegInit();
 
   tensorflow::data::DecodeAACFunctionState* state =
@@ -406,12 +407,11 @@ void* DecodeAACFunctionInitFFmpeg(const int64_t codec, const int64_t rate,
   return nullptr;
 }
 
-int64_t DecodeAACFunctionCallFFmpeg(void* state, const int64_t codec,
-                                    const int64_t rate, const int64_t channels,
-                                    const void* data_in_chunk,
-                                    const int64_t* size_in_chunk, int64_t chunk,
-                                    int64_t frames, void* data_out,
-                                    int64_t size_out) {
+__attribute__((visibility("default"))) int64_t DecodeAACFunctionCallFFmpeg(
+    void* state, const int64_t codec, const int64_t rate,
+    const int64_t channels, const void* data_in_chunk,
+    const int64_t* size_in_chunk, int64_t chunk, int64_t frames, void* data_out,
+    int64_t size_out) {
   if (state != nullptr) {
     return static_cast<tensorflow::data::DecodeAACFunctionState*>(state)->Call(
         rate, channels, (const char*)data_in_chunk, size_in_chunk, chunk,

@@ -17,7 +17,7 @@
 
 import os
 import tensorflow as tf
-import tensorflow_io.core.python.ops.archive_ops as archive_io
+import tensorflow_io.python.ops.archive_ops as archive_io
 
 
 def test_gz():

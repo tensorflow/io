@@ -37,12 +37,12 @@ $ bazel run //tools/lint:lint -- bazel clang
 
 Lint check using `black` and `pyupgrade` for an individual python file can be done using:
 ```
-$ bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/core/python/ops/version_ops.py
+$ bazel run //tools/lint:check -- black pyupgrade -- tensorflow_io/python/ops/version_ops.py
 ```
 
 Lint fix an individual python file with black and pyupgrade using:
 ```
-$ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/core/python/ops/version_ops.py
+$ bazel run //tools/lint:lint -- black pyupgrade --  tensorflow_io/python/ops/version_ops.py
 ```
 
 ### Python
@@ -82,11 +82,11 @@ sudo ./configure.sh
 # export BAZEL_OPTIMIZATION=
 
 # Build shared libraries
-bazel build -s --verbose_failures $BAZEL_OPTIMIZATION //tensorflow_io/... //tensorflow_io_plugin_gs/...
+bazel build -s --verbose_failures $BAZEL_OPTIMIZATION //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
 
 # Once build is complete, shared libraries will be available in
-# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
-# to run tests with `pytest`, e.g.:
+# `bazel-bin/tensorflow_io/core`, `bazel-bin/tensorflow_io/python/ops` and
+# it is possible to run tests with `pytest`, e.g.:
 sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization.py
 ```
@@ -136,16 +136,19 @@ sudo python3 -m pip install -U pip
 # Install tensorflow and configure bazel
 sudo ./configure.sh
 
+# Alias python3 to python, needed by bazel
+sudo ln -s /usr/bin/python3 /usr/bin/python
+
 # Add any optimization on bazel command, e.g., --compilation_mode=opt,
 #   --copt=-msse4.2, --remote_cache=, etc.
 # export BAZEL_OPTIMIZATION=
 
 # Build shared libraries
-bazel build -s --verbose_failures $BAZEL_OPTIMIZATION //tensorflow_io/... //tensorflow_io_plugin_gs/...
+bazel build -s --verbose_failures $BAZEL_OPTIMIZATION //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
 
 # Once build is complete, shared libraries will be available in
-# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
-# to run tests with `pytest`, e.g.:
+# `bazel-bin/tensorflow_io/core`, `bazel-bin/tensorflow_io/python/ops` and
+# it is possible to run tests with `pytest`, e.g.:
 sudo python3 -m pip install pytest
 TFIO_DATAPATH=bazel-bin python3 -m pytest -s -v tests/test_serialization.py
 ```
@@ -200,8 +203,8 @@ BAZEL_LINKOPTS="-static-libstdc++ -static-libgcc" BAZEL_LINKLIBS="-lm -l%:libstd
     'bazel build -s --verbose_failures $BAZEL_OPTIMIZATION --//tensorflow_io/core:static_build //tensorflow_io/...'
 
 # Once build is complete, shared libraries will be available in
-# `bazel-bin/tensorflow_io/core/python/ops/` and it is possible
-# to run tests with `pytest`, e.g.:
+# `bazel-bin/tensorflow_io/core`, `bazel-bin/tensorflow_io/python/ops` and
+# it is possible to run tests with `pytest`, e.g.:
 scl enable rh-python36 devtoolset-9 \
     'python3 -m pip install pytest'
 

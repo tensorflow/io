@@ -48,7 +48,7 @@ docker  --version
 export PYTHON_VERSION=3.8
 
 export BAZEL_VERSION=$(cat .bazelversion)
-export BAZEL_OPTIMIZATION="--copt=-msse4.2 --copt=-mavx --compilation_mode=opt --remote_cache=https://storage.googleapis.com/tensorflow-sigs-io --remote_upload_local_results=false"
+export BAZEL_OPTIMIZATION="--config=optimization --config=cache"
 export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 
 docker run -i --rm -v $PWD:/v -w /v --net=host \

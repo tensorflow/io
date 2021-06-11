@@ -18,6 +18,7 @@ cc_library(
     ]),
     defines = [
         "LIBGAV1_MAX_BITDEPTH=8",
+        "LIBGAV1_PUBLIC=",
     ],
     includes = [
         "src",

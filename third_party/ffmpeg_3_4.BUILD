@@ -5,8 +5,13 @@ licenses(["notice"])  # LGPL v2.1+ license
 
 exports_files(["LICENSE.md"])
 
-cc_import(
+cc_library(
     name = "ffmpeg",
+    srcs = [
+        ":stub/libavformat.so",
+        ":stub/libavutil.so",
+        ":stub/libswscale.so",
+    ],
     hdrs = [
         "libavcodec/avcodec.h",
         "libavcodec/version.h",
@@ -52,4 +57,52 @@ genrule(
         "#endif /* AVUTIL_AVCONFIG_H */",
         "EOF",
     ]),
+)
+
+cc_binary(
+    name = "stub/libavformat.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libavformat.57.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libavformat.so.57",
+        ],
+    }),
+    linkshared = 1,
+)
+
+cc_binary(
+    name = "stub/libavutil.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libavutil.55.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libavutil.so.55",
+        ],
+    }),
+    linkshared = 1,
+)
+
+cc_binary(
+    name = "stub/libswscale.so",
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [
+            "-install_name",
+            "libswscale.4.dylib",
+        ],
+        "//conditions:default": [
+            "-Wl,--disable-new-dtags",
+            "-Wl,-soname,libswscale.so.4",
+        ],
+    }),
+    linkshared = 1,
 )

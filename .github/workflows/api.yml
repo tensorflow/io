@@ -7,9 +7,6 @@ on:
   schedule:
     - cron: "0 12 * * *"
 
-env:
-  BAZEL_OPTIMIZATION: --copt=-msse4.2 --copt=-mavx --compilation_mode=opt
-
 jobs:
 
   macos:
@@ -20,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -40,9 +37,11 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -51,7 +50,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           python -m pytest -s -v tests/test_gcs.py
-          python -m pytest -s -v tests/test_filesystem.py
+          python -m pytest -s -v tests/test_standalone_filesystem.py
 
   linux:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
@@ -61,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -80,9 +79,11 @@ jobs:
           python --version
           df -h
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
@@ -91,7 +92,7 @@ jobs:
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
           if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
-          python -m pytest -s -v tests/test_filesystem.py
+          python -m pytest -s -v tests/test_standalone_filesystem.py
 
   windows:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
@@ -101,7 +102,7 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8']
-        version: ['tensorflow==2.5.0rc3:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
+        version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -121,9 +122,11 @@ jobs:
           @echo on
           python --version
           rm -rf tensorflow_io
+          rm -rf tensorflow_io_gcs_filesystem
+          export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-plugin-gs-nightly ; fi
+          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
           python -m pip install pytest-benchmark
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'

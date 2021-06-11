@@ -19,6 +19,8 @@ cc_library(
         "USE_OPENSSL",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
+            "_WIN32",
+            "WIN32",
             "WIN32_LEAN_AND_MEAN",
             'struct_stat="struct _stat64"',
         ],
@@ -31,6 +33,7 @@ cc_library(
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
             "-DEFAULTLIB:Rpcrt4.lib",
+            "-DEFAULTLIB:Bcrypt.lib",
         ],
         "//conditions:default": [],
     }),

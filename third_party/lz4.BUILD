@@ -19,6 +19,7 @@ cc_library(
     hdrs = [],
     defines = [
         "XXH_PRIVATE_API",
+        "LZ4LIB_VISIBILITY=",
     ],
     includes = [
         "lib",

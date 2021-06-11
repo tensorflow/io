@@ -17,11 +17,10 @@
 set -e
 set -o pipefail
 
-HADOOP_VERSION=2.7.0
-docker pull sequenceiq/hadoop-docker:$HADOOP_VERSION
-docker run -d --rm -p 9000:9000 --name=tensorflow-io-hdfs sequenceiq/hadoop-docker:$HADOOP_VERSION
-echo "Waiting for 30 secs until hadoop is up and running"
-sleep 30
-docker logs tensorflow-io-hdfs
+HADOOP_RELEASE_TAG="3.2.1"
+curl -OL https://github.com/big-data-europe/docker-hadoop/archive/refs/tags/$HADOOP_RELEASE_TAG.tar.gz
+tar -xzf $HADOOP_RELEASE_TAG.tar.gz -C /tmp/
+cd /tmp/docker-hadoop-$HADOOP_RELEASE_TAG
+docker-compose up -d
 echo "Hadoop up"
 exit 0

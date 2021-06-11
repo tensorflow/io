@@ -24,8 +24,8 @@ import setuptools
 here = os.path.abspath(os.path.dirname(__file__))
 
 # read package version and require from:
-# tensorflow_io/core/python/ops/version_ops.py
-with open(os.path.join(here, "tensorflow_io/core/python/ops/version_ops.py")) as f:
+# tensorflow_io/python/ops/version_ops.py
+with open(os.path.join(here, "tensorflow_io/python/ops/version_ops.py")) as f:
     entries = [e.strip() for e in f.readlines() if not e.startswith("#")]
     assert sum(e.startswith("version = ") for e in entries) == 1
     assert sum(e.startswith("require = ") for e in entries) == 1
@@ -42,15 +42,16 @@ if "--install-require" in sys.argv:
     print(require)
     sys.exit(0)
 
-subpackages = ["tensorflow-io-plugin-gs"]
+subpackages = ["tensorflow-io-gcs-filesystem"]
 
-assert "--project" in sys.argv, "--project ({} or {}) must be provided".format(
-    "tensorflow-io", ", ".join(subpackages)
-)
-project_idx = sys.argv.index("--project")
-project = sys.argv[project_idx + 1]
-sys.argv.remove("--project")
-sys.argv.pop(project_idx)
+if "--project" in sys.argv:
+    project_idx = sys.argv.index("--project")
+    project = sys.argv[project_idx + 1]
+    sys.argv.remove("--project")
+    sys.argv.pop(project_idx)
+else:
+    project = "tensorflow-io"
+
 assert (
     project.replace("_", "-") == "tensorflow-io"
     or project.replace("_", "-") in subpackages

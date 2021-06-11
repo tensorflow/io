@@ -111,6 +111,94 @@ cc_library(
 )
 
 cc_library(
+    name = "arrow_ops",
+    srcs = [
+        "kernels/arrow/arrow_dataset_ops.cc",
+        "kernels/arrow/arrow_kernels.cc",
+        "kernels/arrow/arrow_kernels.h",
+        "kernels/arrow/arrow_stream_client.h",
+        "ops/arrow_ops.cc",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "kernels/arrow/arrow_stream_client_windows.cc",
+        ],
+        "//conditions:default": [
+            "kernels/arrow/arrow_stream_client_unix.cc",
+        ],
+    }),
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        ":arrow_util",
+        "//tensorflow_io/core:dataset_ops",
+        "@arrow",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "arrow_util",
+    srcs = ["kernels/arrow/arrow_util.cc"],
+    hdrs = ["kernels/arrow/arrow_util.h"],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:dataset_ops",
+        "@arrow",
+    ],
+    alwayslink = 1,
+)
+
+# Have to put test op into prod binary because of https://github.com/grpc/grpc/issues/20034
+# Otherwise whenever 2 dynamically built libraries that are using grpc loaded
+# using _load_library, only first one will work
+cc_library(
+    name = "bigquery_ops",
+    srcs = [
+        "kernels/bigquery/bigquery_dataset_op.cc",
+        "kernels/bigquery/bigquery_kernels.cc",
+        "kernels/tests/bigquery_test_client_op.cc",
+        "ops/bigquery_ops.cc",
+        "ops/bigquery_test_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        ":bigquery_lib_cc",
+        "@arrow",
+        "@avro",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:storage_cc_grpc",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+# A library for use in the bigquery kernels.
+cc_library(
+    name = "bigquery_lib_cc",
+    srcs = ["kernels/bigquery/bigquery_lib.cc"],
+    hdrs = ["kernels/bigquery/bigquery_lib.h"],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "//tensorflow_io/core:arrow_util",
+        "@arrow",
+        "@avro",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/algorithm",
+        "@com_google_absl//absl/container:fixed_array",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/types:variant",
+        "@com_google_googleapis//google/cloud/bigquery/storage/v1beta1:storage_cc_grpc",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "core_ops",
     srcs = [
         "kernels/archive_kernels.cc",
@@ -247,7 +335,7 @@ cc_library(
         "@easyexif",
         "@fmjpeg2koj",
         "@freetype",
-        "@giflib",
+        "@gif",
         "@libavif",
         "@libgeotiff",
         "@libtiff",
@@ -399,7 +487,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
         "//tensorflow_io/core:output_ops",
         "//tensorflow_io/core:sequence_ops",
@@ -447,7 +535,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
     ],
     alwayslink = 1,
@@ -540,7 +628,7 @@ cc_library(
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
-        "//tensorflow_io/arrow:arrow_ops",
+        ":arrow_ops",
         "//tensorflow_io/core:dataset_ops",
         "@arrow",
         "@rapidjson",
@@ -726,103 +814,4 @@ cc_library(
         "@tinyobjloader",
     ],
     alwayslink = 1,
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/arrow:arrow_ops",
-        "//tensorflow_io/bigquery:bigquery_ops",
-        "//tensorflow_io/core:audio_video_ops",
-        "//tensorflow_io/core:avro_ops",
-        "//tensorflow_io/core:orc_ops",
-        "//tensorflow_io/core:cpuinfo",
-        "//tensorflow_io/core:file_ops",
-        "//tensorflow_io/core:grpc_ops",
-        "//tensorflow_io/core:hdf5_ops",
-        "//tensorflow_io/core:image_ops",
-        "//tensorflow_io/core:json_ops",
-        "//tensorflow_io/core:kafka_ops",
-        "//tensorflow_io/core:kinesis_ops",
-        "//tensorflow_io/core:lmdb_ops",
-        "//tensorflow_io/core:numpy_ops",
-        "//tensorflow_io/core:parquet_ops",
-        "//tensorflow_io/core:pcap_ops",
-        "//tensorflow_io/core:pulsar_ops",
-        "//tensorflow_io/core:obj_ops",
-        "//tensorflow_io/core:operation_ops",
-        "//tensorflow_io/core:pubsub_ops",
-        "//tensorflow_io/core:serialization_ops",
-        "//tensorflow_io/core:sql_ops",
-        "//tensorflow_io/core:text_ops",
-        "//tensorflow_io/core:ignite_ops",
-        "//tensorflow_io/core:mongodb_ops",
-        "@local_config_tf//:libtensorflow_framework",
-        "@local_config_tf//:tf_header_lib",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "//conditions:default": [
-            "//tensorflow_io/core:core_ops",
-            "//tensorflow_io/core:elasticsearch_ops",
-            "//tensorflow_io/core:genome_ops",
-            "//tensorflow_io/core:optimization",
-            "//tensorflow_io/core:oss_ops",
-            "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
-        ],
-    }) + select({
-        "//tensorflow_io/core:static_build_on": [
-            "//tensorflow_io/core/plugins:plugins",
-        ],
-        "//conditions:default": [],
-    }),
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_plugins.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = select({
-        "//tensorflow_io/core:static_build_on": [],
-        "//conditions:default": [
-            "//tensorflow_io/core/plugins:plugins",
-        ],
-    }),
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_golang.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/core:prometheus_ops",
-    ],
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_ffmpeg_4.2.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/core:ffmpeg_4.2_ops",
-    ],
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_ffmpeg_3.4.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/core:ffmpeg_3.4_ops",
-    ],
-)
-
-cc_binary(
-    name = "python/ops/libtensorflow_io_ffmpeg_2.8.so",
-    copts = tf_io_copts(),
-    linkshared = 1,
-    deps = [
-        "//tensorflow_io/core:ffmpeg_2.8_ops",
-    ],
 )
