@@ -374,7 +374,9 @@ def fade(input, fade_in, fade_out, mode, name=None):
 
 def _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width):
     assert lowpass_filter_width > 0
-    base_freq = min(rate_in, rate_out)
+    rate_in=tf.cast(rate_in,tf.float32)
+    rate_out=tf.cast(rate_out,tf.float32)
+    base_freq = tf.minimum(rate_in, rate_out)
     # This will perform antialiasing filtering by removing the highest frequencies.
     # At first I thought I only needed this when downsampling, but when upsampling
     # you will get edge artifacts without this, as the edge is equivalent to zero padding,
@@ -398,13 +400,13 @@ def _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width):
     #                 = sum_i x[i + rate_in] sinc(pi * rate_in * (i / rate_in - j / rate_out))
     # so y[j+rate_out] uses the same filter as y[j], but on a shifted version of x by `rate_in`.
     # This will explain the F.conv1d after, with a stride of rate_in.
-    width = math.ceil(lowpass_filter_width * rate_in / base_freq)
+    width = tf.experimental.numpy.ceil(lowpass_filter_width * rate_in / base_freq)
     # If rate_in is still big after GCD reduction, most filters will be very unbalanced, i.e.,
     # they will have a lot of almost zero values to the left or to the right...
     # There is probably a way to evaluate those filters more efficiently, but this is kept for
     # future work.
     idx = tf.range(-width, width + rate_in, dtype=tf.float32)
-    idx = tf.repeat(tf.expand_dims(idx, axis=-1), rate_out, axis=-1)
+    idx = tf.repeat(tf.expand_dims(idx, axis=-1), tf.cast(rate_out,tf.int32), axis=-1)
     aux_i = tf.expand_dims(tf.range(rate_out, dtype=tf.float32), axis=0)
     kernels = (-aux_i / rate_out + idx / rate_in) * base_freq
 
@@ -437,14 +439,14 @@ def resample(input, rate_in, rate_out, lowpass_filter_width=6):
 
     if rate_in == rate_out:
         return waveform
-
-    rate_in = int(rate_in)
-    rate_out = int(rate_out)
-    gcd = math.gcd(rate_in, rate_out)
+    rate_in = tf.cast(rate_in,tf.int32)
+    rate_out = tf.cast(rate_out,tf.int32)
+    gcd = tf.experimental.numpy.gcd(rate_in, rate_out)
     rate_in = rate_in // gcd
     rate_out = rate_out // gcd
 
     kernel, width = _get_sinc_resample_kernel(rate_in, rate_out, lowpass_filter_width)
+    width=tf.cast(width,tf.int32)
 
     ori_shape = waveform.shape
     ori_shape_len = len(ori_shape)
@@ -459,11 +461,11 @@ def resample(input, rate_in, rate_out, lowpass_filter_width=6):
     waveform = tf.expand_dims(waveform, axis=-1)
 
     num_wavs, length, _ = waveform.shape
-
+   
     waveform = tf.pad(waveform, [[0, 0], [width, width + rate_in], [0, 0]])
-    resampled = tf.nn.conv1d(waveform, kernel, stride=rate_in, padding="VALID")
+    resampled = tf.nn.conv1d(waveform, kernel, stride=tf.reshape(rate_in,[1,]), padding="VALID")
     resampled = tf.reshape(resampled, [num_wavs, -1])
-    target_length = int(math.ceil(rate_out * length / rate_in))
+    target_length = tf.cast(tf.experimental.numpy.ceil(rate_out * length / rate_in),tf.int32)
     if ori_shape_len == 1:
         return resampled[0, :target_length]
     elif ori_shape_len == 2:
