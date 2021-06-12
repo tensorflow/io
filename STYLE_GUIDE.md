@@ -1,89 +1,65 @@
-# Coding guidelines and standards
+## Coding guidelines and standards
 
-## Coding Style
+This document is a reference guide for contributing new ops to the tensorflow-io project.
 
-#### C++ 
+### Coding Style
 
-C++ code should conform to [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
+- C++ code should conform to [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
+- Python code should conform to [PEP8](https://www.python.org/dev/peps/pep-0008/).
 
 
-#### Python
-
-Python code should conform to [PEP8](https://www.python.org/dev/peps/pep-0008/).
-
-##### Running Python and Bazel Style Checks
-
-Style checks for Python and Bazel can be run with the following commands
-(docker has to be available):
-
-```sh
-$ bash -x -e .travis/lint.sh
+Style checks for C++, Python and Bazel can be automatically rectified with the following command:
+```
+$ bazel run //tools/lint:lint
 ```
 
-In case there are any Bazel style errors, the following command could be invoked 
-to fix and Bazel style issues:
+### Naming Conventions
 
-```sh
-$ docker run -i -t --rm -v $PWD:/v -w /v --net=host golang:1.12 bash -x -e -c 'go get github.com/bazelbuild/buildtools/buildifier && buildifier $(find . -type f \( -name WORKSPACE -or -name BUILD -or -name *.BUILD \))'
-```
+Any new op that is introduced in Tensorflow I/O should have a pre-defined prefix. Adherence to this guideline ensures that different Tensorflow projects (for e.g Tensorflow I/O) declare their op names that are globally unique, across the entire Tensorflow ecosystem.
 
-After the command is run, any Bazel files with style issues will have been modified and corrected.
+- For details on writing custom ops, please refer this [guide](https://www.tensorflow.org/guide/create_op).
+- For more details on naming custom ops, please refer this [tensorflow RFC](https://github.com/tensorflow/community/pull/126).
 
-
-## Naming Conventions
-
-Any new operation that is introduced in Tensorflow I/O project should be prefixed with a pre-defined text.
-This is done to ensure that different Tensorflow projects (for e.g Tensorflow I/O) declare their operation names that are globally unique,
-across the entire Tensorflow ecosystem. 
-
-For more details on defining custom operations, please refer this [tensorflow RFC](https://github.com/tensorflow/community/pull/126).
-
-Depending on the module's programming language (C++ or python), pre-defined prefix text may vary. This is detailed below.
- 
+Depending on the module's programming language (C++ or python), the pre-defined prefix may vary.
 #### C++
 
-Any new operation that is introduced in C++ module should be prefixed with text “IO>”. 
+The C++ based ops are placed in `tensorflow_io/core/ops` and are prefixed with text `IO>`
+while registering. For instance, a new op named `AudioResample` should be registered as
+`IO>AudioResample`.
 
-for example:
+```cc
+// tensorflow_io/core/ops/audio_ops.cc
+...
+REGISTER_OP("IO>AudioResample")
+    .Input("input: T")
+    .Input("rate_in: int64")
+    .Input("rate_out: int64")
+    .Output("output: T")
+    .Attr("T: type")
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
+      return Status::OK();
+    });
+```
+_Observe how the op name is prefixed with `IO>`_
 
-A new operation named “ReadAvro” should be registered as “IO>ReadAvro”.
+The next step would be to write the kernels for this newly defined op. The kernel implementations are placed in `tensorflow_io/core/kernels` and implement the business logic for the op. Additional details can be found in this [guide](https://www.tensorflow.org/guide/create_op).
+#### Python
 
-##### Regular way:
+Any new op that is introduced in a python module and that which corresponds to an op in C++, must be prefixed with `io_`. This ensures that the C++ op is properly bound to this python target.
+For example, the python equivalent declaration of above mentioned C++ op named `IO>AudioResample` would be `io_audio_resample`.
 
-```text
-REGISTER_OP("ReadAvro")
-                    ...
-                    ...
-                    ...
-     });
+```python
+from tensorflow_io.python.ops import core_ops
+
+def resample(input, rate_in, rate_out, name=None):
+  """resample audio"""
+
+  # implementation logic#
+
+  return core_ops.io_audio_resample(...)
 ```
 
-##### Suggested way:
-
-```text
-REGISTER_OP("IO>ReadAvro")
-                    ...
-                    ...
-                    ...
-     });
-```
-
-Please note in suggested way, how the operation name is prefixed with "IO>".
-
-#### Python 
-
-Any new operation that is introduced in python module and that which corresponds to the operation in C++ module,
-should be prefixed with "io_". This ensures that C++ operation binding is mapped correctly.
-
-for example:
-
-The python equivalent declaration of above operation named “IO>ReadAvro” would be "io_read_avro".
-
-```text
-def read_avro(filename, schema, column, **kwargs):
-  """read_avro"""
-  ...
-  ...
-  ...
-  return core_ops.io_read_avro(...);
-```
+Few things to note:
+- The C++ op name is converted to lowercase and is `_` delimited i.e, `io_audio_resample` is now bound to `IO>AudioResample`.
+- The `io_audio_resample` target is available in `core_ops` This import hierarchy is due to the nature of the build targets defined [here](https://github.com/tensorflow/io/blob/master/tensorflow_io/BUILD)
