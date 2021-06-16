@@ -17,6 +17,8 @@ limitations under the License.
 #define TENSORFLOW_IO_CORE_KERNELS_BIGQUERY_BIGQUERY_LIB_H_
 
 #include <grpcpp/grpcpp.h>
+
+#include <chrono>
 // Inclusion of googleapi related grpc headers, e.g., storage.grpc.pb.h
 // will cause Windows build failures due to the conflict of `OPTIONAL`
 // definition. The following is needed for Windows.
@@ -159,6 +161,10 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
         this->dataset()->offset());
 
     read_rows_context_ = absl::make_unique<::grpc::ClientContext>();
+    // The deadline is for the entire ReadRows (not a single message receipt),
+    // so for larger data sizes it could take many hours to complete.
+    read_rows_context_->set_deadline(std::chrono::system_clock::now() +
+                                     std::chrono::hours(24));
     read_rows_context_->AddMetadata(
         "x-goog-request-params",
         absl::StrCat("read_position.stream.name=",
