@@ -449,20 +449,20 @@ def test_kafka_group_io_dataset_stream_timeout_check():
     )
 
 
-def test_kafka_batch_io_dataset_mini_dataset_size():
+def test_kafka_mini_dataset_size():
     """Test the functionality of batch.num.messages property of
-    KafkaBatchIODataset.
+    KafkaBatchIODataset/KafkaGroupIODataset.
     """
     import tensorflow_io.kafka as kafka_io
 
     # Write new messages to the topic
-    for i in range(10, 10000):
-        message = "{}".format(i)
-        kafka_io.write_kafka(message=message, topic="mini-batch-test")
+    for i in range(200, 10000):
+        message = "D{}".format(i)
+        kafka_io.write_kafka(message=message, topic="key-partition-test")
 
     BATCH_NUM_MESSAGES = 5000
     dataset = tfio.experimental.streaming.KafkaBatchIODataset(
-        topics=["mini-batch-test"],
+        topics=["key-partition-test"],
         group_id="cgminibatchsize",
         servers=None,
         stream_timeout=5000,
