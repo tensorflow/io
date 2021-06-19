@@ -904,6 +904,20 @@ class KafkaGroupReadableResource : public ResourceBase {
       }
     }
 
+    // set max.poll.records configuration
+    std::string batch_num_messages;
+    if ((result = conf->get("batch.num.messages", batch_num_messages)) !=
+        RdKafka::Conf::CONF_OK) {
+      batch_num_messages = "1024";
+      if ((result = conf->set("batch.num.messages", batch_num_messages,
+                              errstr)) != RdKafka::Conf::CONF_OK) {
+        return errors::Internal("failed to set batch.num.messages [",
+                                batch_num_messages, "]:", errstr);
+      }
+    }
+    sscanf(batch_num_messages.c_str(), "%d", &batch_num_messages_);
+    LOG(INFO) << "max num of messages per batch: " << batch_num_messages_;
+
     // Always set enable.partition.eof=true
     if ((result = conf->set("enable.partition.eof", "true", errstr)) !=
         RdKafka::Conf::CONF_OK) {
@@ -947,16 +961,15 @@ class KafkaGroupReadableResource : public ResourceBase {
 
     // Initialize necessary variables
     int64 num_messages = 0;
-    int64 max_num_messages = 1024;
     max_stream_timeout_polls_ = stream_timeout / message_poll_timeout;
 
     // Allocate memory for message_value and key_value vectors
     std::vector<string> message_value, key_value;
-    message_value.reserve(max_num_messages);
-    key_value.reserve(max_num_messages);
+    message_value.reserve(batch_num_messages_);
+    key_value.reserve(batch_num_messages_);
 
     std::unique_ptr<RdKafka::Message> message;
-    while (consumer_.get() != nullptr && num_messages < max_num_messages) {
+    while (consumer_.get() != nullptr && num_messages < batch_num_messages_) {
       if (!kafka_event_cb_.run()) {
         return errors::Internal(
             "failed to consume messages due to broker issue");
@@ -1022,6 +1035,7 @@ class KafkaGroupReadableResource : public ResourceBase {
   KafkaRebalanceCb kafka_rebalance_cb_ = KafkaRebalanceCb();
   int max_stream_timeout_polls_ = -1;
   int stream_timeout_polls_ = -1;
+  int batch_num_messages_ = 1024;
 };
 
 class KafkaGroupReadableInitOp
