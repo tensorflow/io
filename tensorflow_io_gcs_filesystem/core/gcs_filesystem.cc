@@ -1252,8 +1252,9 @@ static void SetConfiguration(const TF_Filesystem* filesystem,
       return;
     }
     std::string name = options[i].name;
-    std::string value = std::string(options[i].value->values[0].buffer_val.buf,
-                                    options[i].value->values[0].buffer_val.buf_length);
+    std::string value =
+        std::string(options[i].value->values[0].buffer_val.buf,
+                    options[i].value->values[0].buffer_val.buf_length);
     std::string message = absl::StrCat(
         "SetConfiguration not implemented for gcs ('gs://') file system: name "
         "= ",
