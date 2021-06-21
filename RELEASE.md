@@ -1,3 +1,19 @@
+# Release 0.19.0
+
+## Major Features
+* Add ffmpeg default thread options.
+* Set deadline for ReadRows request in BigQuery.
+* Allow setting the number of records fetched from kafka in KafkaDataset.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Kota Yamaguchi, Vignesh Kothapalli, Vo Van Nghia, Yong Tang, emkornfield
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.18.0
 
 ## Major Features
