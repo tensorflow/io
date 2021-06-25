@@ -39,7 +39,7 @@ sleep 60
 
 elif [ "$action" == "stop" ]; then
 echo ""
-echo "Removing the tfio elasticsearch container..."
+echo "Removing the tfio mongodb container..."
 echo ""
 docker rm -f tfio-mongodb
 
