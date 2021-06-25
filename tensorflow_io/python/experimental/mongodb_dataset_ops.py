@@ -29,7 +29,6 @@ class _MongoDBHandler:
         self.uri = uri
         self.database = database
         self.collection = collection
-        self.get_healthy_resource()
 
     def get_healthy_resource(self):
         """Retrieve the resource which is connected to a healthy node"""
