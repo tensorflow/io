@@ -27,6 +27,11 @@ class ParquetIODataset(tf.data.Dataset):
         """ParquetIODataset."""
         assert internal
         with tf.name_scope("ParquetIODataset"):
+            if tf.io.gfile.isdir(filename):
+                raise ValueError(
+                    "passing a directory path to 'filename' is not supported. "
+                    "Use 'tf.data.Dataset.list_files()' with a map() operation instead."
+                )
             components, shapes, dtypes = core_ops.io_parquet_readable_info(
                 filename, shared=filename, container="ParquetIODataset"
             )
