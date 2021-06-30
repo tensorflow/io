@@ -57,10 +57,6 @@ class MongoDBReadableResource : public ResourceBase {
       return errors::FailedPrecondition("Failed to initialize the client");
     }
 
-    // Register the application name so we can track it in the profile logs
-    //  on the server. This can also be done from the URI.
-    mongoc_client_set_appname(client_obj_, "tfio-mongo-read");
-
     //  Get a handle on the database "db_name" and collection "coll_name"
 
     database_obj_ = mongoc_client_get_database(client_obj_, database.c_str());
@@ -88,7 +84,9 @@ class MongoDBReadableResource : public ResourceBase {
     int num_records = 0;
     while (num_records < max_num_records) {
       if (mongoc_cursor_next(cursor_obj_, &doc)) {
-        char* record = bson_as_canonical_extended_json(doc, NULL);
+        // Reference for BSON to JSON conversion:
+        // https://github.com/mongodb/specifications/blob/master/source/extended-json.rst#conversion-table
+        char* record = bson_as_relaxed_extended_json(doc, NULL);
         records.emplace_back(record);
         num_records++;
         bson_free(record);
@@ -97,6 +95,11 @@ class MongoDBReadableResource : public ResourceBase {
       }
     }
 
+    if (records.size() == 0) {
+      // resetting the cursor after reaching the end of the collection.
+      cursor_obj_ =
+          mongoc_collection_find_with_opts(collection_obj_, query_, NULL, NULL);
+    }
     TensorShape shape({static_cast<int32>(records.size())});
     Tensor* records_tensor;
     TF_RETURN_IF_ERROR(allocate_func(shape, &records_tensor));
@@ -236,11 +239,6 @@ class MongoDBWritableResource : public ResourceBase {
     if (!client_obj_) {
       return errors::FailedPrecondition("Failed to initialize the client");
     }
-
-    // Register the application name so we can track it in the profile logs
-    //  on the server. This can also be done from the URI.
-
-    mongoc_client_set_appname(client_obj_, "tfio-mongo-write");
 
     //  Get a handle on the database "db_name" and collection "coll_name"
 
