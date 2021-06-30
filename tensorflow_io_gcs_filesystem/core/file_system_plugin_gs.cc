@@ -27,9 +27,6 @@ limitations under the License.
 // tensorflow/tensorflow/c/experimental/filesystem/filesystem_interface.h
 // for definition of `TF_InitPlugin`
 TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
-  const char* env_value = getenv("TF_USE_MODULAR_FILESYSTEM");
-  std::string load_plugin = env_value ? absl::AsciiStrToLower(env_value) : "";
-
   info->plugin_memory_allocate = tensorflow::io::plugin_memory_allocate;
   info->plugin_memory_free = tensorflow::io::plugin_memory_free;
   info->num_schemes = 1;
@@ -37,9 +34,5 @@ TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
       tensorflow::io::plugin_memory_allocate(info->num_schemes *
                                              sizeof(info->ops[0])));
   // Load plugins only when the environment variable is set
-  if (load_plugin == "true" || load_plugin == "1") {
-    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[0], "gs");
-  } else {
-    tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[0], "gse");
-  }
+  tensorflow::io::gs::ProvideFilesystemSupportFor(&info->ops[0], "gs");
 }

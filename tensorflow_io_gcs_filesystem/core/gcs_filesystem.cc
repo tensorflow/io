@@ -1235,6 +1235,37 @@ static void FlushCaches(const TF_Filesystem* filesystem) {
   }
 }
 
+static void SetConfiguration(const TF_Filesystem* filesystem,
+                             const TF_Filesystem_Option* options,
+                             int num_options, TF_Status* status) {
+  for (int i = 0; i < num_options; i++) {
+    if (options[i].value->type_tag != TF_Filesystem_Option_Type_Buffer) {
+      TF_SetStatus(status, TF_INVALID_ARGUMENT,
+                   "SetConfiguration only support buffer type values for gcs "
+                   "('gs://') file system");
+      return;
+    }
+    if (options[i].value->num_values != 1) {
+      TF_SetStatus(status, TF_INVALID_ARGUMENT,
+                   "SetConfiguration only support single option value for gcs "
+                   "('gs://') file system");
+      return;
+    }
+    std::string name = options[i].name;
+    std::string value =
+        std::string(options[i].value->values[0].buffer_val.buf,
+                    options[i].value->values[0].buffer_val.buf_length);
+    std::string message = absl::StrCat(
+        "SetConfiguration not implemented for gcs ('gs://') file system: name "
+        "= ",
+        name, ", value = ", value);
+
+    TF_SetStatus(status, TF_UNIMPLEMENTED, message.c_str());
+    return;
+  }
+  TF_SetStatus(status, TF_OK, "");
+}
+
 }  // namespace tf_gcs_filesystem
 
 void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
@@ -1285,6 +1316,8 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->get_children = tf_gcs_filesystem::GetChildren;
   ops->filesystem_ops->translate_name = tf_gcs_filesystem::TranslateName;
   ops->filesystem_ops->flush_caches = tf_gcs_filesystem::FlushCaches;
+  ops->filesystem_ops->set_filesystem_configuration =
+      tf_gcs_filesystem::SetConfiguration;
 }
 
 }  // namespace gs

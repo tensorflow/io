@@ -21,8 +21,7 @@ cc_binary(
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [],
         "@bazel_tools//src/conditions:darwin": [
-            "-install_name",
-            "@rpath/libtensorflow_framework.2.dylib",
+            "-Wl,-install_name,@rpath/libtensorflow_framework.2.dylib",
         ],
         "//conditions:default": [
             "-Wl,--disable-new-dtags",
