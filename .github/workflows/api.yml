@@ -41,8 +41,8 @@ jobs:
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
-          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
+          python -m pip install tensorflow-io-gcs-filesystem-nightly
+          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1 pyarrow==3.0.0
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
@@ -73,6 +73,7 @@ jobs:
           bash -x -e tests/test_aws/aws_test.sh
           bash -x -e tests/test_azure/start_azure.sh
           bash -x -e tests/test_gcloud/test_gcs.sh gcs-emulator
+          bash -x -e tests/test_hdfs/hdfs_test.sh
       - name: Test Linux
         run: |
           set -x -e
@@ -83,15 +84,27 @@ jobs:
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
-          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1
+          python -m pip install tensorflow-io-gcs-filesystem-nightly
+          python -m pip install pytest-benchmark boto3 google-cloud-storage==1.32.0 azure-storage-blob==12.7.1 pyarrow==3.0.0
           python -m pip freeze
+
+          sudo apt-get -y -qq update
+          sudo apt-get -y -qq install openjdk-8-jdk
+          sudo update-alternatives --config java
+          export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+          curl -OL https://archive.apache.org/dist/hadoop/common/hadoop-2.7.0/hadoop-2.7.0.tar.gz
+          sudo tar -xzf hadoop-2.7.0.tar.gz -C /usr/local
+          sudo chmod 755 -R /usr/local/hadoop-2.7.0
+          export HADOOP_HOME=/usr/local/hadoop-2.7.0
+          export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${JAVA_HOME}/jre/lib/amd64/server:${HADOOP_HOME}/lib/native
+          export CLASSPATH=$(${HADOOP_HOME}/bin/hadoop classpath --glob)
+
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
           python -c 'import tensorflow_io as tfio; print(tfio.version.VERSION)'
           python -m pytest -s -v tests/test_http.py
           python -m pytest -s -v tests/test_s3.py
           python -m pytest -s -v tests/test_azure.py
-          if [[ "${{ matrix.version }}" != "tf-nightly:tensorflow-io" ]]; then python -m pytest -s -v tests/test_gcs.py ; fi
+          python -m pytest -s -v tests/test_gcs.py
           python -m pytest -s -v tests/test_standalone_filesystem.py
 
   windows:
@@ -126,7 +139,7 @@ jobs:
           export TF_USE_MODULAR_FILESYSTEM=1
           echo ${{ matrix.version }} | awk -F: '{print $1}' | xargs python -m pip install -U
           echo ${{ matrix.version }} | awk -F: '{print $2}' | xargs python -m pip install --no-deps -U
-          if [[ "${{ matrix.version }}" == *"tensorflow-io-nightly"* ]]; then python -m pip install tensorflow-io-gcs-filesystem-nightly ; fi
+          python -m pip install tensorflow-io-gcs-filesystem-nightly
           python -m pip install pytest-benchmark
           python -m pip freeze
           python -c 'import tensorflow as tf; print(tf.version.VERSION)'
