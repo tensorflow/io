@@ -437,6 +437,24 @@ class ArrowDatasetTest(ArrowTestBase):
         dataset = arrow_io.ArrowDataset.from_pandas(df, preserve_index=False)
         self.run_test_case(dataset, truth_data)
 
+    def test_batched_arrow_dataset_with_strings(self):
+        import tensorflow_io.arrow as arrow_io
+
+        scalar_data = [
+            [b"1.1", b"2.2", b"3.3", b"4.4"],
+        ]
+        scalar_dtypes = (tf.string,)
+        scalar_shapes = tuple([tf.TensorShape([]) for _ in scalar_dtypes])
+        truth_data = TruthData(scalar_data, scalar_dtypes, scalar_shapes)
+        array = pa.array(
+            scalar_data[0], type=self.get_arrow_type(scalar_dtypes[0], False)
+        )
+        batch = pa.Table.from_pydict({"array": array}).to_batches(2)
+        dataset = arrow_io.ArrowDataset.from_record_batches(
+            batch, batch_size=1, output_types=scalar_dtypes, batch_mode="keep_remainder"
+        )
+        self.run_test_case(dataset, truth_data)
+
     def test_arrow_dataset_with_strings(self):
         """test_arrow_dataset"""
         import tensorflow_io.arrow as arrow_io

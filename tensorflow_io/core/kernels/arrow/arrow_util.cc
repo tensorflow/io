@@ -276,11 +276,13 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   }
 
   virtual arrow::Status Visit(const arrow::StringArray& array) override {
-    if (!array.IsNull(i_)) {
-      out_tensor_->scalar<tstring>()() = array.GetString(i_);
-    } else {
-      out_tensor_->scalar<tstring>()() = "";
+    auto shape = out_tensor_->shape();
+    auto output_flat = out_tensor_->flat<tstring>();
+
+    for (int64 j = 0; j < shape.num_elements(); ++j) {
+      output_flat(j) = array.GetString(i_ + j);
     }
+
     return arrow::Status::OK();
   }
 
