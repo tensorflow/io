@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - R0.19
   pull_request:
     branches:
       - master
+      - R0.19
 
 env:
   REPO_NAME: ${{ github.repository }}
