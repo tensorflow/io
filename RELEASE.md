@@ -1,3 +1,17 @@
+# Release 0.19.1
+
+## Bug Fixes
+* Fixed wheel issue with tensorflow-io-gcs-filesystem by removing temporary build folder.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Gerard Casas Saez, Kota Yamaguchi, Vignesh Kothapalli, Vo Van Nghia, Yong Tang, emkornfield
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.19.0
 
 ## Major Features
