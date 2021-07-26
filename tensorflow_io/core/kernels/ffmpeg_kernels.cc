@@ -669,8 +669,7 @@ class FFmpegVideoStream : public FFmpegStream {
     char* base = ((char*)(value->flat<uint8>().data()));
     int64 datasize = height_ * width_ * channels_;
     for (size_t i = 0; i < frames_.size(); i++) {
-      memcpy(base, reinterpret_cast<char*>(frames_buffer_.front().get()),
-             datasize);
+      memcpy(base, reinterpret_cast<char*>(frames_buffer_[i].get()), datasize);
       base += datasize;
     }
     frames_.clear();
