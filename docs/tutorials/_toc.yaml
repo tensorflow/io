@@ -36,4 +36,5 @@ toc:
   path: /io/tutorials/elasticsearch
 - title: "Avro"
   path: /io/tutorials/avro
-
+- title: "ORC"
+  path: /io/tutorials/orc
