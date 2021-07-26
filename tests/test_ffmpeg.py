@@ -84,6 +84,7 @@ def test_ffmpeg_decode_video(video_path):
     video = tfio.experimental.ffmpeg.decode_video(content, 0)
     assert video.shape == [166, 320, 560, 3]
     assert video.dtype == tf.uint8
+    assert np.abs(video[0] - video[-1]).sum() > 0
 
 
 def test_ffmpeg_decode_video_invalid_content():
