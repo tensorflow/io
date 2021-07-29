@@ -38,3 +38,5 @@ toc:
   path: /io/tutorials/avro
 - title: "ORC"
   path: /io/tutorials/orc
+- title: "MongoDB"
+  path: /io/tutorials/mongodb
