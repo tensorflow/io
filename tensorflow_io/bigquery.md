@@ -90,7 +90,7 @@ def main():
   dataset = dataset.prefetch(10)
   # You can optionally cache dataset, so data is loaded from BigQuery only once
   # during first iteration. For subsequent iterations data is going to be loaded
-  # from cache.
+  # from cache. This is useful when doing model training for multiple epochs.
   dataset = dataset.cache()
 
   row_index = 0
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
 ```
 
-In some cases when when row is too wide (has 30+ columns) or if you are doing batching with large batch sizes it might be benefitial to do batching before interleave to get a better performance. Here is an exaple showing how to do that:
+In some cases when row is too wide (has 30+ columns) or if you are doing batching with large batch sizes it might be beneficial to do batching before interleave to get a better performance. Here is an example showing how to do that:
 
 ```python
 def read_rows(stream):
@@ -124,8 +124,7 @@ dataset = streams_ds.interleave(
 ...
 ```
 
-Connector also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a
-form like
+Connector also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a form like this:
 
 ```python
   { "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.int64},
@@ -135,7 +134,7 @@ form like
   }
 ```
 "mode" is BigQuery column attribute concept, it can be 'repeated', 'nullable' or 'required' (enum BigQueryClient.FieldMode.REPEATED, NULLABLE, REQUIRED).The output field order is unrelated to the order of fields in
-selected_fields. If "mode" not specified, defaults to "nullable". If "output_type" not specified, DT_STRING is implied for all Tensors. 
+selected_fields. If "mode" not specified, defaults to "nullable". If "output_type" not specified, DT_STRING is implied for all Tensors.
 
 'repeated' is currently only supported when data_format = BigQueryClient.DataFormat.AVRO (which is default).
 
