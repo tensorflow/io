@@ -87,9 +87,14 @@ def main():
       data_format=BigQueryClient.DataFormat.AVRO)
   dataset = read_session.parallel_read_rows()
   dataset = dataset.batch(10)
+  dataset = dataset.prefetch(10)
+  # You can optionally cache dataset, so data is loaded from BigQuery only once
+  # during first iteration. For subsequent iterations data is going to be loaded
+  # from cache.
+  dataset = dataset.cache()
 
   row_index = 0
-  for row in dataset.prefetch(10):
+  for row in dataset:
     print("row %d: %s" % (row_index, row))
     row_index += 1
 
