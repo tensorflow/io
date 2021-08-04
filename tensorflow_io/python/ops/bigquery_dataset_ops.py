@@ -100,9 +100,9 @@ class BigQueryClient:
                 If not specified, DT_STRING is implied for all Tensors.
             row_restriction: Optional. SQL text filtering statement, similar to a
                 WHERE clause in a query.
-            requested_streams: Desirable of streams to read data from.
+            requested_streams: Desirable number of streams that can be read in parallel.
                 Must be a positive number. The actual number of streams that
-                BigQuery Streaming API might return may be lower than this number,
+                BigQuery Streaming API returns may be lower than this number,
                 depending on the amount parallelism that is reasonable
                 for the table and the maximum amount of parallelism allowed by the
                 system.
