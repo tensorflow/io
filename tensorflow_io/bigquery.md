@@ -20,7 +20,9 @@ Depending on environment you are using some prerequisites might be already met.
 If you choose to use [service account](https://cloud.google.com/docs/authentication/production)
 authentication, please make sure that GOOGLE_APPLICATION_CREDENTIALS
 environment variable is initialized with a path pointing to JSON file that
-contains your service account key.
+contains your service account key. If you plan to run BigQuery reader from a Google Cloud VM,
+you can just use https://www.googleapis.com/auth/bigquery [scope](https://cloud.google.com/compute/docs/access/create-enable-service-accounts-for-instances#using) to make sure that
+VM has access to BigQuery instead.
 4. [Enable BigQuery Storage API.](https://cloud.google.com/bigquery/docs/reference/storage/#enabling_the_api)
 5. If you see some errors related to roots.pem file in logs, you can solve it via either of the following approaches:
 
@@ -84,6 +86,7 @@ def main():
       row_restriction="num_characters > 1000",
       data_format=BigQueryClient.DataFormat.AVRO)
   dataset = read_session.parallel_read_rows()
+  dataset = dataset.batch(10)
 
   row_index = 0
   for row in dataset.prefetch(10):
@@ -95,7 +98,28 @@ if __name__ == '__main__':
 
 ```
 
-It also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a
+In some cases when when row is too wide (has 30+ columns) or if you are doing batching with large batch sizes it might be benefitial to do batching before interleave to get a better performance. Here is an exaple showing how to do that:
+
+```python
+def read_rows(stream):
+  dataset = read_session.read_rows(stream)
+  dataset = dataset.batch(batch_size)
+  return dataset
+
+client = BigQueryClient()
+read_session = client.read_session(requested_streams=10, ...)
+streams = read_session.get_streams()
+streams_count=len(streams)
+streams_ds = tf.data.Dataset.from_tensor_slices(streams)
+dataset = streams_ds.interleave(
+    read_rows,
+    cycle_length=streams_count,
+    num_parallel_calls=streams_count,
+    deterministic=False)
+...
+```
+
+Connector also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a
 form like
 
 ```python
