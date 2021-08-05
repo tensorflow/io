@@ -100,10 +100,10 @@ class BigQueryClient:
                 If not specified, DT_STRING is implied for all Tensors.
             row_restriction: Optional. SQL text filtering statement, similar to a
                 WHERE clause in a query.
-            requested_streams: Initial number of streams. If unset or 0, we will
-                provide a value of streams so as to produce reasonable throughput.
-                Must be non-negative. The number of streams may be lower than the
-                requested number, depending on the amount parallelism that is reasonable
+            requested_streams: Desirable number of streams that can be read in parallel.
+                Must be a positive number. The actual number of streams that
+                BigQuery Streaming API returns may be lower than this number,
+                depending on the amount parallelism that is reasonable
                 for the table and the maximum amount of parallelism allowed by the
                 system.
 
@@ -130,6 +130,9 @@ class BigQueryClient:
             raise ValueError("`dataset_id` must be a string")
         if not dataset_id:
             raise ValueError("`dataset_id` must be a set")
+
+        if requested_streams is None or requested_streams <= 0:
+            raise ValueError("`requested_streams` must be a positive number")
 
         if isinstance(selected_fields, list):
             if not isinstance(output_types, list):
