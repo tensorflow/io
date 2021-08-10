@@ -1,3 +1,25 @@
+# Release 0.20.0
+
+## Major Features
+* S3 and HDFS file system supports fully migrated from tensorflow to tensorflow-io package.
+* Add tutorial of MongoDB support with tensorflow-io.
+* Add tutorial of ORC support with tensorflow-io
+* Add batched string support for Apache Arrow.
+
+## Bug Fixes
+* Fix decode_video returning only the first frame.
+* Reset mongo cursor after reaching end of collection.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Gerard Casas Saez, Keqiu Hu, Kota Yamaguchi,
+Mark Daoust, Vignesh Kothapalli, Yong Tang, austinzh
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.19.1
 
 ## Bug Fixes
