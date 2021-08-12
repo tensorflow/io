@@ -38,10 +38,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import pathlib
+
 from absl import app
 from absl import flags
 
-import tensorflow_io as tfio
+import tensorflow_io.python.api as tfio
 
 from tensorflow_docs.api_generator import generate_lib
 from tensorflow_docs.api_generator import parser
@@ -93,10 +95,10 @@ def main(argv):
         root_title=PROJECT_FULL_NAME,
         # Replace `tensorflow_docs` with your module, here.
         py_modules=[(PROJECT_SHORT_NAME, tfio)],
+        base_dir=pathlib.Path(tfio.__file__).parents[2],
         code_url_prefix=code_url_prefix,
-        private_map={'tfio': ['__version__', 'utils', 'version', 'core']},
         # This callback cleans up a lot of aliases caused by internal imports.
-        callbacks=[],
+        callbacks=[public_api.explicit_package_contents_filter],
         search_hints=FLAGS.search_hints,
         site_path=FLAGS.site_path)
 
