@@ -50,9 +50,6 @@ from tensorflow_docs.api_generator import parser
 from tensorflow_docs.api_generator import public_api
 from tensorflow_docs.api_generator import utils
 
-# tfio doesn't eagerly import submodules.
-utils.recursive_import(tfio)
-
 PROJECT_SHORT_NAME = 'tfio'
 PROJECT_FULL_NAME = 'TensorFlow I/O'
 
