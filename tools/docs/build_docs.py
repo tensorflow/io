@@ -38,11 +38,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import pathlib
 
 from absl import app
 from absl import flags
 
+os.environ["GENERATING_TF_DOCS"] = "True"
 import tensorflow_io.python.api as tfio
 
 from tensorflow_docs.api_generator import generate_lib
