@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """tensorflow_io"""
+import os
 
 # tensorflow_io.core.python.ops is implicitly imported (along with file system)
 from tensorflow_io.python.ops.io_dataset import IODataset
@@ -23,3 +24,11 @@ from tensorflow_io.python.api import image
 from tensorflow_io.python.api import audio
 from tensorflow_io.python.api import version
 from tensorflow_io.python.api import experimental
+
+if os.environ.get("GENERATING_TF_DOCS", ""):
+    # Mark these as public api for /tools/docs/build_docs.py
+    from tensorflow_io import arrow
+    from tensorflow_io import bigquery
+    from tensorflow_io import ignite
+
+del os
