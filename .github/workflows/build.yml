@@ -256,6 +256,7 @@ jobs:
           set -x -e
           mv bazel-bin/tensorflow_io/.bazelrc .
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --data bazel-bin -q bdist_wheel
+          rm -rf build
           docker run -i --rm --user $(id -u):$(id -g) -v /etc/password:/etc/password -v $PWD:/v -w /v --net=host python:${{ matrix.python }}-slim python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel
       - name: Auditwheel ${{ matrix.python }} Linux
         run: |
