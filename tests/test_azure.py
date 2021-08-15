@@ -15,11 +15,16 @@
 """Tests for Azure File System."""
 
 import os
+import sys
+import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
 # Note: export TF_AZURE_USE_DEV_STORAGE=1 to enable emulation
+
+if sys.platform == "darwin":
+    pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
 class AZFSTest(tf.test.TestCase):
