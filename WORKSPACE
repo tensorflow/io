@@ -477,7 +477,7 @@ http_archive(
     patches = [
         "//third_party:libaprutil1.patch",
     ],
-    sha256 = "4c9ae319cedc16890fc2776920e7d529672dda9c3a9a9abd53bd80c2071b39af",
+    sha256 = "1e4299da5a3eca49cc3acab60600d0d7c0cda2de46d662ca14fadf5ab68a8c4f",
     strip_prefix = "apr-util-1.6.1",
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/apr-util/archive/1.6.1.tar.gz",
