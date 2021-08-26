@@ -31,10 +31,13 @@ cc_library(
         "pulsar-client-cpp/lib/stats/*.h",
         "pulsar-client-cpp/lib/stats/*.cc",
     ]),
-    copts = [
-        "-msse4.2",
-        "-mpclmul",
-    ],
+    copts = select({
+        "@platforms//cpu:x86_64": [
+            "-msse4.2",
+            "-mpclmul",
+        ],
+        "//conditions:default": [],
+    }),
     defines = [
         "_PULSAR_VERSION_=\\\"2.6.1\\\"",
         "WIN32_LEAN_AND_MEAN",
