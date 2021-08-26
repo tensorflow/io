@@ -59,7 +59,6 @@ cc_library(
         "src/port/path.c",
         "src/port/pg_bitutils.c",
         "src/port/pg_crc32c_sb8.c",
-        "src/port/pg_crc32c_sse42_choose.c",
         "src/port/pg_strong_random.c",
         "src/port/pgcheckdir.c",
         "src/port/pgmkdirp.c",
@@ -93,6 +92,11 @@ cc_library(
             "src/port/getpeereid.c",
             "src/port/strlcpy.c",
         ],
+    }) + select({
+        "@platforms//cpu:x86_64": [
+            "src/port/pg_crc32c_sse42_choose.c",
+        ],
+        "//conditions:default": [],
     }),
     hdrs = [
         "config/pg_config.h",
@@ -1179,9 +1183,11 @@ genrule(
             "/* Define to 1 if you have __cpuid. */",
             "/* #undef HAVE__CPUID */",
             "",
+            "#if defined __x86_64__",
             "/* Define to 1 if you have __get_cpuid. */",
             "#define HAVE__GET_CPUID 1",
             "",
+            "#endif",
             "/* Define to 1 if your compiler understands _Static_assert. */",
             "#define HAVE__STATIC_ASSERT 1",
             "",
