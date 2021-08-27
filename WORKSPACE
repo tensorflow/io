@@ -521,7 +521,7 @@ http_archive(
 new_git_repository(
     name = "libgav1",
     build_file = "//third_party:libgav1.BUILD",
-    commit = "6ab7d65a68350ed4ec6aaabfa18715b2d76a231c",
+    commit = "07a59c59d4d180d67ea0ae5269e3c092c87286e5",
     remote = "https://chromium.googlesource.com/codecs/libgav1",
 )
 
