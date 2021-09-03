@@ -205,5 +205,44 @@ def test_parquet_data():
         i += 1
 
 
+def test_parquet_dataset_from_file_pattern():
+    """Test the parquet dataset creation process using a file pattern"""
+    df = pd.DataFrame({"pred_0": 0.1 * np.arange(100), "pred_1": -0.1 * np.arange(100)})
+    df.to_parquet("df_x.parquet")
+    df.to_parquet("df_y.parquet")
+    columns = {
+        "pred_0": tf.TensorSpec(tf.TensorShape([]), tf.double),
+        "pred_1": tf.TensorSpec(tf.TensorShape([]), tf.double),
+    }
+
+    def map_fn(file_location):
+        return tfio.IODataset.from_parquet(file_location, columns=columns)
+
+    ds = tf.data.Dataset.list_files("*.parquet").map(map_fn)
+
+    for d in ds:  # loop over the files
+        for item in d:  # loop over items
+            print(item)
+
+
+def test_parquet_dataset_from_dir_failure():
+    """Test the dataset creation failure when a directory is passed
+    instead of a filename."""
+    dir_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_parquet")
+    columns = {
+        "pred_0": tf.TensorSpec(tf.TensorShape([]), tf.double),
+        "pred_1": tf.TensorSpec(tf.TensorShape([]), tf.double),
+    }
+    try:
+        _ = tfio.IODataset.from_parquet(dir_path, columns=columns)
+    except Exception as e:
+        assert (
+            str(e)
+            == "passing a directory path to 'filename' is not supported. "
+            + "Use 'tf.data.Dataset.list_files()' with a map() operation instead. "
+            + "[Op:IO>ParquetReadableInfo]"
+        )
+
+
 if __name__ == "__main__":
     test.main()

@@ -31,6 +31,12 @@ class ParquetReadableResource : public ResourceBase {
 
   Status Init(const string& input) {
     mutex_lock l(mu_);
+    Status status = env_->IsDirectory(input);
+    if (status.ok()) {
+      return errors::InvalidArgument(
+          "passing a directory path to 'filename' is not supported. ",
+          "Use 'tf.data.Dataset.list_files()' with a map() operation instead.");
+    }
 
     file_.reset(new SizedRandomAccessFile(env_, input, nullptr, 0));
     TF_RETURN_IF_ERROR(file_->GetFileSize(&file_size_));
