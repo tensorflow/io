@@ -357,6 +357,9 @@ typedef struct S3File {
         outfile(Aws::MakeShared<Aws::Utils::TempFile>(
             kS3FileSystemAllocationTag,
 #if defined(_MSC_VER)
+            // On Windows, `Aws::FileSystem::CreateTempFilePath()` return
+            // `C:\Users\username\AppData\Local\Temp\`. Adding template will
+            // cause an error.
             nullptr,
 #else
             "/tmp/_s3_filesystem_XXXXXX",
