@@ -355,9 +355,18 @@ typedef struct S3File {
         s3_client(s3_client),
         transfer_manager(transfer_manager),
         outfile(Aws::MakeShared<Aws::Utils::TempFile>(
-            kS3FileSystemAllocationTag, nullptr, "_s3_filesystem_XXXXXX",
+            kS3FileSystemAllocationTag,
+#if defined(_MSC_VER)
+            // On Windows, `Aws::FileSystem::CreateTempFilePath()` return
+            // `C:\Users\username\AppData\Local\Temp\`. Adding template will
+            // cause an error.
+            nullptr,
+#else
+            "/tmp/_s3_filesystem_XXXXXX",
+#endif
             std::ios_base::binary | std::ios_base::trunc | std::ios_base::in |
-                std::ios_base::out)) {}
+                std::ios_base::out)) {
+  }
 } S3File;
 
 void Cleanup(TF_WritableFile* file) {
