@@ -1,3 +1,18 @@
+# Release 0.21.0
+
+## Bug Fixes
+* Fix temporary file issue in s3
+* Remove extra build directory in python pip packages.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Marcin Juszkiewicz, Mark Daoust, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.20.0
 
 ## Major Features
