@@ -17,6 +17,7 @@ cc_library(
     deps = [
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_google_absl//absl/strings",
+        "@daos",
     ],
     alwayslink = 1,
 )
