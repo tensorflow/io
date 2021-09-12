@@ -19,5 +19,6 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@daos",
     ],
+    linkopts = ["-ldaos"],
     alwayslink = 1,
 )
