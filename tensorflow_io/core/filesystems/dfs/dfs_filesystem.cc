@@ -1,5 +1,9 @@
 #include <string>
 
+extern "C" {
+#include <daos.h>
+}
+
 
 void ParseDFSPath(const std::string& path, std::string* pool_uuid,
                   std::string* cont_uuid, std::string* filename) {
