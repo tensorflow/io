@@ -1,6 +1,7 @@
 #ifndef TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
 #define TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
 
+#include <fcntl.h>
 #include <daos.h>
 #include <daos_fs.h>
 
