@@ -12,6 +12,65 @@
 #include <string>
 #include <iostream>
 
+/** object struct that is instantiated for a DFS open object */
+struct dfs_obj {
+	/** DAOS object ID */
+	daos_obj_id_t		oid;
+	/** DAOS object open handle */
+	daos_handle_t		oh;
+	/** mode_t containing permissions & type */
+	mode_t			mode;
+	/** open access flags */
+	int			flags;
+	/** DAOS object ID of the parent of the object */
+	daos_obj_id_t		parent_oid;
+	/** entry name of the object in the parent */
+	char			name[DFS_MAX_NAME + 1];
+	union {
+		/** Symlink value if object is a symbolic link */
+		char	*value;
+		struct {
+			/** Default object class for all entries in dir */
+			daos_oclass_id_t        oclass;
+			/** Default chunk size for all entries in dir */
+			daos_size_t             chunk_size;
+		} d;
+	};
+};
+
+/** dfs struct that is instantiated for a mounted DFS namespace */
+struct dfs {
+	/** flag to indicate whether the dfs is mounted */
+	bool			mounted;
+	/** flag to indicate whether dfs is mounted with balanced mode (DTX) */
+	bool			use_dtx;
+	/** lock for threadsafety */
+	pthread_mutex_t		lock;
+	/** uid - inherited from container. */
+	uid_t			uid;
+	/** gid - inherited from container. */
+	gid_t			gid;
+	/** Access mode (RDONLY, RDWR) */
+	int			amode;
+	/** Open pool handle of the DFS */
+	daos_handle_t		poh;
+	/** Open container handle of the DFS */
+	daos_handle_t		coh;
+	/** Object ID reserved for this DFS (see oid_gen below) */
+	daos_obj_id_t		oid;
+	/** superblock object OID */
+	daos_obj_id_t		super_oid;
+	/** Open object handle of SB */
+	daos_handle_t		super_oh;
+	/** Root object info */
+	dfs_obj_t		root;
+	/** DFS container attributes (Default chunk size, oclass, etc.) */
+	dfs_attr_t		attr;
+	/** Optional prefix to account for when resolving an absolute path */
+	char			*prefix;
+	daos_size_t		prefix_len;
+};
+
 std::string FormatStorageSize(uint64_t size) {
 	if(size < KILO) {
 		return std::to_string(size);
@@ -30,15 +89,22 @@ std::string FormatStorageSize(uint64_t size) {
 	}
 }
 
-void ParseDFSPath(const std::string& path, std::string* pool_uuid,
+int ParseDFSPath(const std::string& path, std::string* pool_uuid,
                   std::string* cont_uuid, std::string* filename) {
   //parse DFS path in the format of dfs://<pool_uuid>/<cont_uuid>/<filename>
   size_t pool_start = path.find("://") + 3;
+  if(pool_start != 6)
+	return -1;
   size_t cont_start = path.find("/", pool_start) + 1;
+  if(cont_start != 43)
+    return -1;
   size_t file_start = path.find("/", cont_start) + 1;
+  if(file_start != 80)
+	return -1;
   *pool_uuid = path.substr(pool_start, cont_start - pool_start - 1);
   *cont_uuid = path.substr(cont_start, file_start - cont_start - 1);
   *filename = path.substr(file_start);
+  return 0;
 }
 
 int ParseUUID(const std::string& str, uuid_t uuid) {
@@ -51,6 +117,8 @@ class DFS {
     dfs_t* daos_fs;
     daos_handle_t poh;
     daos_handle_t coh;
+
+	DFS() { daos_fs = (dfs_t*)malloc(sizeof(dfs_t)); }
 
     void Connect(const std::string& path, int allow_cont_creation, TF_Status* status) {
       int rc;

@@ -27,9 +27,34 @@ void Init(TF_Filesystem* filesystem, TF_Status* status) {
 
 void Cleanup(TF_Filesystem* filesystem) {
   daos_fini();
-  auto daos_fs =
+  auto daos =
     static_cast<DFS*>(filesystem->plugin_filesystem);
-  delete daos_fs;
+  delete daos;
+}
+
+void PathExists(const TF_Filesystem* filesystem, const char* path,
+                TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool,cont,file;
+  rc = ParseDFSPath(path, &pool, &cont, &file);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+  daos->Connect(path,allow_cont_creation, status);
+  rc = daos->Mount();
+  dfs_obj_t* obj = NULL;
+  file = "/" + file;
+  rc = dfs_lookup(daos->daos_fs,file.c_str(),O_RDONLY, &obj, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+  }
+  else {
+    TF_SetStatus(status, TF_OK, "");
+  }
 }
 
 
@@ -45,6 +70,7 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
       plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
   ops->filesystem_ops->init = tf_dfs_filesystem::Init;
   ops->filesystem_ops->cleanup = tf_dfs_filesystem::Cleanup;
+  ops->filesystem_ops->path_exists = tf_dfs_filesystem::PathExists;
 
 
 
