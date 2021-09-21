@@ -45,10 +45,18 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
     return;
   }
   daos->Connect(path,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return;
+  }
   rc = daos->Mount();
+  if(rc != 0) {
+    return;
+  }
   dfs_obj_t* obj = NULL;
   file = "/" + file;
   rc = dfs_lookup(daos->daos_fs,file.c_str(),O_RDONLY, &obj, NULL, NULL);
+  dfs_release(obj);
   if(rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
   }

@@ -11,6 +11,7 @@
 #include <daos_fs.h>
 #include <string>
 #include <iostream>
+#include <map>
 
 /** object struct that is instantiated for a DFS open object */
 struct dfs_obj {
@@ -71,6 +72,13 @@ struct dfs {
 	daos_size_t		prefix_len;
 };
 
+typedef struct pool_info {
+	daos_handle_t poh;
+	std::map<std::string, daos_handle_t>* containers;
+} pool_info_t;
+
+typedef std::pair<std::string, daos_handle_t> id_handle_t;
+
 std::string FormatStorageSize(uint64_t size) {
 	if(size < KILO) {
 		return std::to_string(size);
@@ -115,37 +123,30 @@ class DFS {
   public:
     bool connected;
     dfs_t* daos_fs;
-    daos_handle_t poh;
-    daos_handle_t coh;
+    id_handle_t pool;
+    id_handle_t container;
+	std::map<std::string,pool_info_t*> pools;
 
-	DFS() { daos_fs = (dfs_t*)malloc(sizeof(dfs_t)); }
+	DFS() { 
+	  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
+	  daos_fs->mounted = false;
+	}
 
     void Connect(const std::string& path, int allow_cont_creation, TF_Status* status) {
       int rc;
-      std::string pool,cont,file;
-      ParseDFSPath(path, &pool, &cont, &file);
-      uuid_t pool_uuid, cont_uuid;
-      ParseUUID(pool, pool_uuid);
-      if(pool_uuid == nullptr) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Parsing Pool UUID");
-        return;
-      }
-      ParseUUID(cont, cont_uuid);
-      if(cont_uuid == nullptr) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Parsing Container UUID");
-        return;
-      }
+      std::string pool_string,cont_string,file;
+      ParseDFSPath(path, &pool_string, &cont_string, &file);
 
-      rc = ConnectPool(pool_uuid);
+      rc = ConnectPool(pool_string, status);
       if(rc) {
         TF_SetStatus(status, TF_INTERNAL,
                     "Error Connecting to Pool");
         return;
       }
 
-      rc = ConnectContainer(cont_uuid, allow_cont_creation);
+	  std::cout << "Pool Size " << pools.size() << std::endl;
+
+      rc = ConnectContainer(cont_string, allow_cont_creation, status);
       if(rc) {
         TF_SetStatus(status, TF_INTERNAL,
                     "Error Connecting to Container");
@@ -158,14 +159,14 @@ class DFS {
 
     void Disconnect(TF_Status* status) {
       int rc;
-      rc = DisconnectContainer();
+      rc = DisconnectContainer(pool.first, container.first);
       if(rc) {
         TF_SetStatus(status, TF_INTERNAL,
                     "Error Disconnecting from Container");
         return;
       }
 
-      rc = DisconnectPool();
+      rc = DisconnectPool(pool.first);
       if(rc) {
         TF_SetStatus(status, TF_INTERNAL,
                     "Error Disconnecting from Pool");
@@ -177,12 +178,23 @@ class DFS {
     }
 
     int Mount() {
-      return dfs_mount(poh, coh, O_RDWR, &daos_fs);
+	  int rc = 0;
+	  if(daos_fs->mounted){
+		  if(daos_fs->poh.cookie == pool.second.cookie && daos_fs->coh.cookie == container.second.cookie){
+			  return rc;
+		  }
+		  rc = Unmount();
+		  if(rc) return rc;
+	  }
+      return dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
     }
 
     int Unmount() {
-      int rc = dfs_umount(daos_fs);
-      daos_fs = NULL;
+	  int rc;
+	  if(!daos_fs->mounted) return 0;
+      rc = dfs_umount(daos_fs);
+	  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
+	  daos_fs->mounted = false;
       return rc;
     }
 
@@ -193,15 +205,11 @@ class DFS {
       if(connected) {
         	memset(&pool_info, 'D', sizeof(daos_pool_info_t));
 	        pool_info.pi_bits = DPI_ALL;
-	        rc = daos_pool_query(poh, NULL, &pool_info, NULL, NULL);
+	        rc = daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
           if(rc) return rc;
-          rc = daos_cont_query(coh,&cont_info, NULL, NULL);
+          rc = daos_cont_query(container.second,&cont_info, NULL, NULL);
           if(rc) return rc;
-          char pool[37];
-          char container[37];
-          uuid_unparse(pool_info.pi_uuid, pool);
-          uuid_unparse(cont_info.ci_uuid, container);
-          std::cout << "Pool " << pool << " ntarget=" << pool_info.pi_ntargets << std::endl;
+          std::cout << "Pool " << pool.first << " ntarget=" << pool_info.pi_ntargets << std::endl;
           std::cout << "Pool space info:" << std::endl;
           std::cout << "- Target(VOS) count:" << pool_info.pi_space.ps_ntargets << std::endl;
           std::cout << "- SCM:" << std::endl;
@@ -210,7 +218,7 @@ class DFS {
           std::cout << "- NVMe:" << std::endl;
           std::cout << "  Total size: " << FormatStorageSize(pool_info.pi_space.ps_space.s_total[1]);
           std::cout << "  Free: " << FormatStorageSize(pool_info.pi_space.ps_space.s_free[1]) << std::endl;
-          std::cout << std::endl << "Connected Container: " << container << std::endl;
+          std::cout << std::endl << "Connected Container: " << container.first << std::endl;
 
           return 0;
 
@@ -219,30 +227,106 @@ class DFS {
       return -1;
     }
 
+	int ClearConnections() {
+		int rc;
+		rc = Unmount();
+		if(rc) return rc;
+		for(auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
+			for(auto cont_it = (*(*pool_it).second->containers).cbegin(); cont_it != (*(*pool_it).second->containers).cend();) {
+				rc = DisconnectContainer((*pool_it).first, (*cont_it++).first);
+				if(rc) return rc;
+			}
+			DisconnectPool((*pool_it++).first);
+			if(rc) return rc;
+		}
+
+		return rc;
+	}
+
     ~DFS() {
       free(daos_fs);
     }
   private:
-    int ConnectPool(uuid_t pool_uuid) {
-      return daos_pool_connect(pool_uuid, 0, DAOS_PC_RW, &poh, NULL, NULL);
+    int ConnectPool(std::string pool_string, TF_Status* status) {
+	  uuid_t pool_uuid;
+	  int rc = 0;
+	  rc = ParseUUID(pool_string, pool_uuid);
+      if(rc) {
+        TF_SetStatus(status, TF_INTERNAL,
+                    "Error Parsing Pool UUID");
+        return rc;
+      }
+
+	  if(pools.find(pool_string) != pools.end()){
+		  pool.first = pool_string;
+		  pool.second = pools[pool_string]->poh;
+		  return rc;
+	  }
+
+	  pool_info_t* po_inf = (pool_info_t*) malloc(sizeof(po_inf));
+	  po_inf->containers = new std::map<std::string,daos_handle_t>();
+	  pools[pool_string] = po_inf;
+      rc = daos_pool_connect(pool_uuid, 0, DAOS_PC_RW, &(po_inf->poh), NULL, NULL);
+	  if(rc == 0){
+	  	pool.first = pool_string;
+	  	pool.second = po_inf->poh;
+	  }
+	  return rc;
     }
 
-    int ConnectContainer(uuid_t cont_uuid, int allow_creation) {
-      int rc = daos_cont_open(poh, cont_uuid, DAOS_COO_RW, &coh, NULL, NULL);
+    int ConnectContainer(std::string cont_string, int allow_creation, TF_Status* status) {
+	  uuid_t cont_uuid;
+	  int rc = 0;
+	  rc = ParseUUID(cont_string, cont_uuid);
+      if(rc) {
+        TF_SetStatus(status, TF_INTERNAL,
+                    "Error Parsing Container UUID");
+        return rc;
+      }
+
+	  pool_info_t* po_inf = pools[pool.first];
+	  if(po_inf->containers->find(cont_string) != po_inf->containers->end()) {
+		  container.first = cont_string;
+		  container.second = (*po_inf->containers)[cont_string];
+		  return rc;
+	  }
+
+	  daos_handle_t coh;
+
+      rc = daos_cont_open(pool.second, cont_uuid, DAOS_COO_RW, &coh, NULL, NULL);
       if(rc == -DER_NONEXIST) {
         if(allow_creation) {
-          rc = dfs_cont_create(poh, cont_uuid, NULL, &coh, NULL);
+          rc = dfs_cont_create(pool.second, cont_uuid, NULL, &coh, NULL);
         }
       }
+	  if(rc == 0){
+	  	container.first = cont_string;
+	  	container.second = coh;
+		(*po_inf->containers)[cont_string] = coh;
+	  }
       return rc;
     }
 
-    int DisconnectPool() {
-      return daos_pool_disconnect(poh, NULL);
+    int DisconnectPool(std:: string pool_string) {
+	  int rc = 0;
+	  daos_handle_t poh = pools[pool_string]->poh;
+      rc = daos_pool_disconnect(poh, NULL);
+	  if(rc == 0){
+		  delete pools[pool_string]->containers;
+		  free(pools[pool_string]);
+		  pools.erase(pool_string);
+	  }
+	  return rc;
     }
 
-    int DisconnectContainer() {
-      return daos_cont_close(coh, 0);
+    int DisconnectContainer(std::string pool_string, std::string cont_string) {
+	   int rc = 0;
+	   daos_handle_t coh = (*pools[pool_string]->containers)[cont_string];
+       rc = daos_cont_close(coh, 0);
+	   if(rc == 0){
+		   pools[pool_string]->containers->erase(cont_string);
+	   }
+	   return rc;
     }
 
 
