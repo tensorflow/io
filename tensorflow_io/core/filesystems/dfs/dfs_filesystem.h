@@ -5,7 +5,11 @@
 #define MEGA 1e6
 #define GEGA 1e9
 #define TERA 1e12
+#define POOL_START 6
+#define CONT_START 43
+#define PATH_START 80
 
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <daos.h>
 #include <daos_fs.h>
@@ -101,13 +105,13 @@ int ParseDFSPath(const std::string& path, std::string* pool_uuid,
                   std::string* cont_uuid, std::string* filename) {
   //parse DFS path in the format of dfs://<pool_uuid>/<cont_uuid>/<filename>
   size_t pool_start = path.find("://") + 3;
-  if(pool_start != 6)
+  if(pool_start != POOL_START)
 	return -1;
   size_t cont_start = path.find("/", pool_start) + 1;
-  if(cont_start != 43)
+  if(cont_start != CONT_START)
     return -1;
   size_t file_start = path.find("/", cont_start) + 1;
-  if(file_start != 80)
+  if(file_start != PATH_START)
 	return -1;
   *pool_uuid = path.substr(pool_start, cont_start - pool_start - 1);
   *cont_uuid = path.substr(cont_start, file_start - cont_start - 1);
@@ -132,10 +136,9 @@ class DFS {
 	  daos_fs->mounted = false;
 	}
 
-    void Connect(const std::string& path, int allow_cont_creation, TF_Status* status) {
+    void Connect(std::string& pool_string, std::string& cont_string, 
+	             int allow_cont_creation, TF_Status* status) {
       int rc;
-      std::string pool_string,cont_string,file;
-      ParseDFSPath(path, &pool_string, &cont_string, &file);
 
       rc = ConnectPool(pool_string, status);
       if(rc) {
@@ -143,8 +146,6 @@ class DFS {
                     "Error Connecting to Pool");
         return;
       }
-
-	  std::cout << "Pool Size " << pools.size() << std::endl;
 
       rc = ConnectContainer(cont_string, allow_cont_creation, status);
       if(rc) {
@@ -154,6 +155,8 @@ class DFS {
       }
 
       connected = true;
+
+	  TF_SetStatus(status, TF_OK, "");
 
     }
 
@@ -174,6 +177,8 @@ class DFS {
       }
 
       connected = false;
+
+	  TF_SetStatus(status, TF_OK, "");
 
     }
 
