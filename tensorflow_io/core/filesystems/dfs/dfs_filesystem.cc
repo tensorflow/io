@@ -148,8 +148,8 @@ static void RecursivelyCreateDir(const TF_Filesystem* filesystem,
 
 }
 
-void DeleteDir(const TF_Filesystem* filesystem, const char* path,
-               bool recursive, TF_Status* status) {
+void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
+               bool recursive, bool is_dir, TF_Status* status) {
   int rc;
   auto daos = 
     static_cast<DFS*>(filesystem->plugin_filesystem);
@@ -173,11 +173,15 @@ void DeleteDir(const TF_Filesystem* filesystem, const char* path,
   dfs_obj_t* parent = NULL;
   dir_path = "/" + dir_path;
   rc = dfs_lookup(daos->daos_fs,dir_path.c_str(),O_RDONLY, &parent, NULL, NULL);
-  dfs_release(parent);
   if(rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
     return;
   }
+  if(!is_dir && S_ISDIR(parent->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+  dfs_release(parent);
 
 
   size_t dir_start = dir_path.rfind("/") + 1;
@@ -202,14 +206,16 @@ void DeleteDir(const TF_Filesystem* filesystem, const char* path,
 void DeleteSingleDir(const TF_Filesystem* filesystem, const char* path,
                      TF_Status* status) {
   bool recursive = false;
-  DeleteDir(filesystem, path, recursive, status);
+  bool is_dir = true;
+  DeleteFileSystemEntry(filesystem, path, recursive,is_dir, status);
 }
 
 void RecursivelyDeleteDir(const TF_Filesystem* filesystem, const char* path,
                           uint64_t* undeleted_files,
                           uint64_t* undeleted_dirs, TF_Status* status) {
   bool recursive = true;
-  DeleteDir(filesystem, path, recursive, status);
+  bool is_dir = true;
+  DeleteFileSystemEntry(filesystem, path, recursive, is_dir,status);
   if(TF_GetCode(status) == TF_NOT_FOUND || TF_GetCode(status) == TF_FAILED_PRECONDITION){
     *undeleted_dirs = 1;
     *undeleted_files = 0;
@@ -302,6 +308,13 @@ int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
     return size;
   }
 }
+
+void DeleteFile(const TF_Filesystem* filesystem, const char* path,
+                TF_Status* status) {
+  bool recursive = false;
+  bool is_dir = false;
+  DeleteFileSystemEntry(filesystem, path, recursive, is_dir, status);
+}
   
 
 
@@ -324,6 +337,7 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->is_directory = tf_dfs_filesystem::IsDir;
   ops->filesystem_ops->delete_recursively = tf_dfs_filesystem::RecursivelyDeleteDir;
   ops->filesystem_ops->get_file_size = tf_dfs_filesystem::GetFileSize;
+  ops->filesystem_ops->delete_file = tf_dfs_filesystem::DeleteFile;
 
 
 
