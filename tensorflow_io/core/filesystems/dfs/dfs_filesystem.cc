@@ -259,6 +259,49 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   return is_dir;
   
 }
+
+int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
+                    TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool,cont,file;
+  rc = ParseDFSPath(path, &pool, &cont, &file);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return -1;
+  }
+  daos->Connect(pool, cont,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+  rc = daos->Mount();
+  if(rc != 0) {
+    TF_SetStatus(status, TF_INTERNAL,
+                "Error Mounting DFS");
+    return -1;
+  }
+  dfs_obj_t* obj = NULL;
+  file = "/" + file;
+  rc = dfs_lookup(daos->daos_fs,file.c_str(),O_RDONLY, &obj, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+  else {
+    if(S_ISDIR(obj->mode)) {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+      return -1;
+    }
+    TF_SetStatus(status, TF_OK, "");
+    daos_size_t size;
+    dfs_get_size(daos->daos_fs, obj, &size);
+    dfs_release(obj);
+    return size;
+  }
+}
   
 
 
@@ -280,6 +323,7 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->recursively_create_dir = tf_dfs_filesystem::RecursivelyCreateDir;
   ops->filesystem_ops->is_directory = tf_dfs_filesystem::IsDir;
   ops->filesystem_ops->delete_recursively = tf_dfs_filesystem::RecursivelyDeleteDir;
+  ops->filesystem_ops->get_file_size = tf_dfs_filesystem::GetFileSize;
 
 
 
