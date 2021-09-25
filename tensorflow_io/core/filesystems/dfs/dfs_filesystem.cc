@@ -9,6 +9,41 @@ namespace io {
 namespace dfs {
 
 
+// SECTION 1. Implementation for `TF_RandomAccessFile`
+// ----------------------------------------------------------------------------
+namespace tf_random_access_file {
+typedef struct DFSRandomAccessFile {
+  std::string dfs_path;
+  dfs_t* daos_fs;
+  DAOS_FILE daos_file;
+  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
+      : dfs_path(std::move(dfs_path)) {
+    daos_fs = file_system;
+    daos_file.file = obj;
+  }
+} DFSRandomAccessFile;
+
+} // tf_random_access_file
+
+
+
+// SECTION 2. Implementation for `TF_WritableFile`
+// ----------------------------------------------------------------------------
+namespace tf_writable_file {
+typedef struct DFSWritableFile {
+  std::string dfs_path;
+  dfs_t* daos_fs;
+  DAOS_FILE daos_file;
+  DFSWritableFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
+      : dfs_path(std::move(dfs_path)) {
+    daos_fs = file_system;
+    daos_file.file = obj;
+  }
+} DFSWritableFile;
+
+} //tf_writable_file
+
+
 // SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
 // ----------------------------------------------------------------------------
 namespace tf_dfs_filesystem {
@@ -26,11 +61,104 @@ void Init(TF_Filesystem* filesystem, TF_Status* status) {
 
 
 void Cleanup(TF_Filesystem* filesystem) {
-  daos_fini();
   auto daos =
     static_cast<DFS*>(filesystem->plugin_filesystem);
   delete daos;
+  daos_fini();
 }
+
+void NewFile(const TF_Filesystem* filesystem, const char* path,
+             mode_t mode, int flags, dfs_obj_t** obj, TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool,cont,file_path;
+  rc = ParseDFSPath(path, &pool, &cont, &file_path);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+  daos->Connect(pool, cont,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return;
+  }
+  rc = daos->Mount();
+  if(rc != 0) {
+    return;
+  }
+
+  file_path = "/" + file_path;
+
+  if(flags  == O_RDONLY) {
+    dfs_obj_t* temp_obj = NULL;
+    rc = dfs_lookup(daos->daos_fs,file_path.c_str(),O_RDONLY, &temp_obj, NULL, NULL);
+    dfs_release(temp_obj);
+    if(rc) {
+     TF_SetStatus(status, TF_NOT_FOUND, "");
+     return;
+    }
+  }
+
+  dfs_obj_t* parent = NULL;
+  size_t file_start = file_path.rfind("/") + 1;
+  std::string file_name = file_path.substr(file_start);
+  std::string parent_path = file_path.substr(0, file_start);
+  if(parent_path != "/") {
+    rc = dfs_lookup(daos->daos_fs,parent_path.c_str(),O_RDONLY, &parent, NULL, NULL);
+    if(rc) {
+      TF_SetStatus(status, TF_NOT_FOUND, "");
+      dfs_release(parent);
+      return;
+    }
+  }
+
+  rc = dfs_open(daos->daos_fs, parent, file_name.c_str(), mode, 
+                flags, 0, 0, NULL, obj);
+  if(rc) {
+    TF_SetStatus(status, TF_INTERNAL, "Error Creating Writable File");
+    return;
+  }
+}
+
+void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
+                     TF_WritableFile* file, TF_Status* status) {
+
+  dfs_obj_t* obj = NULL;
+  NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT, &obj, status);
+  if(TF_GetCode(status) != TF_OK) return;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  file->plugin_file = new tf_writable_file::DFSWritableFile(path,daos->daos_fs,obj);
+  TF_SetStatus(status, TF_OK, "");
+}
+
+void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
+                         TF_RandomAccessFile* file, TF_Status* status) {
+
+  dfs_obj_t* obj = NULL;
+  NewFile(filesystem, path, S_IRUSR | S_IFREG, O_RDONLY, &obj, status);
+  if(TF_GetCode(status) != TF_OK) return;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  file->plugin_file = new tf_random_access_file::DFSRandomAccessFile(path,daos->daos_fs,obj);
+  TF_SetStatus(status, TF_OK, "");
+}
+
+void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
+                       TF_WritableFile* file, TF_Status* status) {
+
+  dfs_obj_t* obj = NULL;
+  NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT | O_APPEND, &obj, status);
+  if(TF_GetCode(status) != TF_OK) return;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  file->plugin_file = new tf_writable_file::DFSWritableFile(path,daos->daos_fs,obj);
+  TF_SetStatus(status, TF_OK, "");
+}
+
+
 
 void PathExists(const TF_Filesystem* filesystem, const char* path,
                 TF_Status* status) {
@@ -330,6 +458,9 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
       plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
   ops->filesystem_ops->init = tf_dfs_filesystem::Init;
   ops->filesystem_ops->cleanup = tf_dfs_filesystem::Cleanup;
+  ops->filesystem_ops->new_random_access_file = tf_dfs_filesystem::NewRandomAccessFile;
+  ops->filesystem_ops->new_writable_file = tf_dfs_filesystem::NewWritableFile;
+  ops->filesystem_ops->new_appendable_file = tf_dfs_filesystem::NewAppendableFile;
   ops->filesystem_ops->path_exists = tf_dfs_filesystem::PathExists;
   ops->filesystem_ops->create_dir = tf_dfs_filesystem::CreateDir;
   ops->filesystem_ops->delete_dir = tf_dfs_filesystem::DeleteSingleDir;
@@ -347,3 +478,4 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
 }  // namespace dfs
 }  // namespace io
 }  // namepsace tensorflow
+

@@ -76,6 +76,39 @@ struct dfs {
 	daos_size_t		prefix_len;
 };
 
+struct dfs_entry {
+	/** mode (permissions + entry type) */
+	mode_t		mode;
+	/** Object ID if not a symbolic link */
+	daos_obj_id_t	oid;
+	/* Time of last access */
+	time_t		atime;
+	/* Time of last modification */
+	time_t		mtime;
+	/* Time of last status change */
+	time_t		ctime;
+	/** chunk size of file */
+	daos_size_t	chunk_size;
+	/** Sym Link value */
+	char		*value;
+};
+
+typedef struct DAOS_FILE {
+	/** A daos object handle that will contain the file handle of the file
+	 *  to write and read */
+	dfs_obj_t *file;
+	/**
+	 * The offset which represents the number of bytes already written/read
+	 * using default functions,
+	 * Modified by seek directly. Incremented naturally by read_dfs_file,
+	 * write_dfs_file functions.
+	 * Won't be modified by read_dfs_file_with_offset,
+	 * write_dfs_file_with_offset.
+	 * A getter with get_daos_file_offset to obtain the offset.
+	 */
+	long offset;
+} DAOS_FILE;
+
 typedef struct pool_info {
 	daos_handle_t poh;
 	std::map<std::string, daos_handle_t>* containers;
@@ -249,6 +282,7 @@ class DFS {
 	}
 
     ~DFS() {
+	  ClearConnections();
       free(daos_fs);
     }
   private:
