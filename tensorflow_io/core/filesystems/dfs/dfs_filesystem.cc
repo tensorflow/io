@@ -91,14 +91,22 @@ void NewFile(const TF_Filesystem* filesystem, const char* path,
 
   file_path = "/" + file_path;
 
-  if(flags  == O_RDONLY) {
-    dfs_obj_t* temp_obj = NULL;
-    rc = dfs_lookup(daos->daos_fs,file_path.c_str(),O_RDONLY, &temp_obj, NULL, NULL);
+  dfs_obj_t* temp_obj = NULL;
+  rc = dfs_lookup(daos->daos_fs,file_path.c_str(),O_RDONLY, &temp_obj, NULL, NULL);
+  if(rc && flags == O_RDONLY) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
     dfs_release(temp_obj);
-    if(rc) {
-     TF_SetStatus(status, TF_NOT_FOUND, "");
-     return;
-    }
+    return;
+  }
+
+  if(temp_obj != NULL && S_ISDIR(temp_obj->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    dfs_release(temp_obj);
+    return;
+  }
+
+  if(temp_obj != NULL) {
+    dfs_release(temp_obj);
   }
 
   dfs_obj_t* parent = NULL;
@@ -110,6 +118,10 @@ void NewFile(const TF_Filesystem* filesystem, const char* path,
     if(rc) {
       TF_SetStatus(status, TF_NOT_FOUND, "");
       dfs_release(parent);
+      return;
+    }
+    if(!S_ISDIR(parent->mode)) {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
       return;
     }
   }
@@ -443,6 +455,118 @@ void DeleteFile(const TF_Filesystem* filesystem, const char* path,
   bool is_dir = false;
   DeleteFileSystemEntry(filesystem, path, recursive, is_dir, status);
 }
+
+void RenameFile(const TF_Filesystem* filesystem, const char* src,
+                const char* dst, TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool_src,cont_src,file_src;
+  rc = ParseDFSPath(src, &pool_src, &cont_src, &file_src);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+
+  std::string pool_dst,cont_dst,file_dst;
+  rc = ParseDFSPath(dst, &pool_dst, &cont_dst, &file_dst);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+
+  if(pool_src != pool_dst || cont_src != cont_dst) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "Non-Matching Pool/Container");
+    return;
+  }
+
+  daos->Connect(pool_src, cont_src,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return;
+  }
+
+  rc = daos->Mount();
+  if(rc != 0) {
+    TF_SetStatus(status, TF_INTERNAL,
+                "Error Mounting DFS");
+    return;
+  }
+
+  file_src = "/" + file_src;
+  file_dst = "/" + file_dst;
+
+  dfs_obj_t* temp_obj = NULL;
+  rc = dfs_lookup(daos->daos_fs,file_src.c_str(),O_RDONLY, &temp_obj, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    dfs_release(temp_obj);
+    return;
+  }
+  else if(S_ISDIR(temp_obj->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    dfs_release(temp_obj);
+    return;
+  }
+
+  dfs_release(temp_obj);
+  temp_obj = NULL;
+  rc = dfs_lookup(daos->daos_fs,file_dst.c_str(),O_RDONLY, &temp_obj, NULL, NULL);
+  if(temp_obj != NULL && S_ISDIR(temp_obj->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    dfs_release(temp_obj);
+    return;
+  }
+
+  dfs_release(temp_obj);
+
+  dfs_obj_t* parent_src = NULL;
+  size_t src_start = file_src.rfind("/") + 1;
+  std::string src_name = file_src.substr(src_start);
+  std::string parent_path_src = file_src.substr(0, src_start);
+  rc = dfs_lookup(daos->daos_fs,parent_path_src.c_str(),O_RDONLY, &parent_src, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    dfs_release(parent_src);
+    return;
+  }
+
+  dfs_obj_t* parent_dst = NULL;
+  size_t dst_start = file_dst.rfind("/") + 1;
+  std::string dst_name = file_dst.substr(dst_start);
+  std::string parent_path_dst = file_dst.substr(0, dst_start);
+  rc = dfs_lookup(daos->daos_fs,parent_path_dst.c_str(),O_RDONLY, &parent_dst, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    dfs_release(parent_dst);
+    return;
+  }
+
+  if(!S_ISDIR(parent_dst->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    dfs_release(parent_dst);
+    return;
+  }
+
+  char* name = (char*)malloc(src_name.size());
+  strcpy(name, src_name.c_str());
+  char* new_name = (char*)malloc(dst_name.size());
+  strcpy(new_name, dst_name.c_str());
+
+  rc = dfs_move(daos->daos_fs, parent_src, name, parent_dst, new_name, NULL);
+  free(name);
+  free(new_name);
+  dfs_release(parent_src);
+  dfs_release(parent_dst);
+  if(rc) {
+    TF_SetStatus(status, TF_INTERNAL, "");
+    return;
+  }
+
+  TF_SetStatus(status, TF_OK, "");  
+
+}
   
 
 
@@ -469,6 +593,7 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->delete_recursively = tf_dfs_filesystem::RecursivelyDeleteDir;
   ops->filesystem_ops->get_file_size = tf_dfs_filesystem::GetFileSize;
   ops->filesystem_ops->delete_file = tf_dfs_filesystem::DeleteFile;
+  ops->filesystem_ops->rename_file = tf_dfs_filesystem::RenameFile;
 
 
 
@@ -478,4 +603,3 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
 }  // namespace dfs
 }  // namespace io
 }  // namepsace tensorflow
-
