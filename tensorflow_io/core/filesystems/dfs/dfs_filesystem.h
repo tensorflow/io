@@ -8,6 +8,7 @@
 #define POOL_START 6
 #define CONT_START 43
 #define PATH_START 80
+#define STACK 24
 
 #include <sys/stat.h>
 #include <fcntl.h>

@@ -567,6 +567,125 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   TF_SetStatus(status, TF_OK, "");  
 
 }
+
+void Stat(const TF_Filesystem* filesystem, const char* path,
+          TF_FileStatistics* stats, TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool,cont,dir_path;
+  rc = ParseDFSPath(path, &pool, &cont, &dir_path);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return;
+  }
+  daos->Connect(pool, cont,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return;
+  }
+  rc = daos->Mount();
+  if(rc != 0) {
+    return;
+  }
+  dfs_obj_t* obj = NULL;
+  dir_path = "/" + dir_path;
+  rc = dfs_lookup(daos->daos_fs,dir_path.c_str(),O_RDONLY, &obj, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return;
+  }
+
+  if(S_ISDIR(obj->mode)) {
+    stats->is_directory = true;
+    stats->length = 0;
+  }
+  else {
+    stats->is_directory = false;
+    daos_size_t size;
+    dfs_get_size(daos->daos_fs, obj, &size);
+    stats->length = size;
+  }
+
+  struct stat stbuf;
+
+  dfs_ostat(daos->daos_fs, obj, &stbuf);
+
+  stats->mtime_nsec = static_cast<int64_t>(stbuf.st_mtime) * 1e9;
+
+  dfs_release(obj);
+
+  TF_SetStatus(status, TF_OK, "");
+  
+}
+
+int GetChildren(const TF_Filesystem* filesystem, const char* path,
+                char*** entries, TF_Status* status) {
+  int rc;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  int allow_cont_creation = 1;
+  std::string pool,cont,dir_path;
+  rc = ParseDFSPath(path, &pool, &cont, &dir_path);
+  if(rc) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return -1;
+  }
+  daos->Connect(pool, cont,allow_cont_creation, status);
+  if(TF_GetCode(status) != TF_OK) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+  rc = daos->Mount();
+  if(rc != 0) {
+    return -1;
+  }
+  dfs_obj_t* obj = NULL;
+  dir_path = "/" + dir_path;
+  rc = dfs_lookup(daos->daos_fs,dir_path.c_str(),O_RDONLY, &obj, NULL, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+
+  if(!S_ISDIR(obj->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return -1;
+  }
+
+  daos_anchor_t anchor = {0};
+  uint32_t nr = STACK;
+  struct dirent* dirs = (struct dirent*) malloc(nr * sizeof(struct dirent));
+
+  rc = dfs_readdir(daos->daos_fs, obj, &anchor, &nr, dirs);
+  if(rc) {
+    TF_SetStatus(status, TF_INTERNAL, "");
+    return -1;
+  }
+
+  *entries = static_cast<char**>(
+    plugin_memory_allocate(nr * sizeof((*entries)[0])));
+
+  for(uint32_t i = 0; i < nr; i++) {
+    (*entries)[i] = strdup(dirs[i].d_name);
+  }
+
+  free(dirs);
+  TF_SetStatus(status, TF_OK, "");
+  return nr;
+
+}
+
+static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
+  return strdup(uri);
+}
+
+void FlushCaches(const TF_Filesystem* filesystem) {
+   auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  daos->ClearConnections();
+}
   
 
 
@@ -594,6 +713,10 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->get_file_size = tf_dfs_filesystem::GetFileSize;
   ops->filesystem_ops->delete_file = tf_dfs_filesystem::DeleteFile;
   ops->filesystem_ops->rename_file = tf_dfs_filesystem::RenameFile;
+  ops->filesystem_ops->stat = tf_dfs_filesystem::Stat;
+  ops->filesystem_ops->get_children = tf_dfs_filesystem::GetChildren;
+  ops->filesystem_ops->translate_name = tf_dfs_filesystem::TranslateName;
+  ops->filesystem_ops->flush_caches = tf_dfs_filesystem::FlushCaches;
 
 
 
