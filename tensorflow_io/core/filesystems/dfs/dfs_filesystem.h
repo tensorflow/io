@@ -135,8 +135,8 @@ std::string FormatStorageSize(uint64_t size) {
 	}
 }
 
-int ParseDFSPath(const std::string& path, std::string* pool_uuid,
-                  std::string* cont_uuid, std::string* filename) {
+int ParseDFSPath(const std::string& path, std::string& pool_string,
+                  std::string& cont_string, std::string& filename) {
   //parse DFS path in the format of dfs://<pool_uuid>/<cont_uuid>/<filename>
   size_t pool_start = path.find("://") + 3;
   if(pool_start != POOL_START)
@@ -147,9 +147,9 @@ int ParseDFSPath(const std::string& path, std::string* pool_uuid,
   size_t file_start = path.find("/", cont_start) + 1;
   if(file_start != PATH_START)
 	return -1;
-  *pool_uuid = path.substr(pool_start, cont_start - pool_start - 1);
-  *cont_uuid = path.substr(cont_start, file_start - cont_start - 1);
-  *filename = path.substr(file_start);
+  pool_string = path.substr(pool_start, cont_start - pool_start - 1);
+  cont_string = path.substr(cont_start, file_start - cont_start - 1);
+  filename = path.substr(file_start);
   return 0;
 }
 
@@ -168,6 +168,37 @@ class DFS {
 	DFS() { 
 	  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
 	  daos_fs->mounted = false;
+	}
+
+	int dfsInit() {
+	  return daos_init();
+	}
+
+	void dfsCleanup() {
+	  Teardown();
+	  daos_fini();
+	}
+
+	int Setup(const std::string& path, std::string& pool_string,
+              std::string& cont_string, std::string& file_path, TF_Status* status) {
+	  int allow_cont_creation = 1;
+	  int rc;
+	  rc = ParseDFSPath(path, pool_string, cont_string, file_path);
+	  if(rc) {
+		TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+		return rc;
+	  }
+	  Connect(pool_string, cont_string,allow_cont_creation, status);
+	  if(TF_GetCode(status) != TF_OK) {
+		TF_SetStatus(status, TF_NOT_FOUND, "");
+		return rc;
+	  }
+	  return Mount();
+	}
+
+	void Teardown() {
+		Unmount();
+		ClearConnections();
 	}
 
     void Connect(std::string& pool_string, std::string& cont_string, 
@@ -267,23 +298,119 @@ class DFS {
     }
 
 	int ClearConnections() {
-		int rc;
-		rc = Unmount();
+	  int rc;
+	  rc = Unmount();
+	  if(rc) return rc;
+	  for(auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
+	    for(auto cont_it = (*(*pool_it).second->containers).cbegin(); cont_it != (*(*pool_it).second->containers).cend();) {
+		  rc = DisconnectContainer((*pool_it).first, (*cont_it++).first);
+		  if(rc) return rc;
+		  }
+		rc = DisconnectPool((*pool_it++).first);
 		if(rc) return rc;
-		for(auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
-			for(auto cont_it = (*(*pool_it).second->containers).cbegin(); cont_it != (*(*pool_it).second->containers).cend();) {
-				rc = DisconnectContainer((*pool_it).first, (*cont_it++).first);
-				if(rc) return rc;
-			}
-			DisconnectPool((*pool_it++).first);
-			if(rc) return rc;
+	  }
+
+	  return rc;
+	}
+
+	void dfsNewFile(std::string &file_path,mode_t mode, int flags, 
+	                dfs_obj_t** obj, TF_Status* status) {
+		int rc;
+		dfs_obj_t* temp_obj;
+		rc = dfsPathExists(file_path, &temp_obj, 0);
+		if(rc && flags == O_RDONLY) {
+			TF_SetStatus(status, TF_NOT_FOUND, "");
+			return;
 		}
+
+		if(temp_obj != NULL && S_ISDIR(temp_obj->mode)) {
+			TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+			dfs_release(temp_obj);
+			return;
+		}
+
+		if(temp_obj != NULL) {
+			dfs_release(temp_obj);
+		}
+
+		dfs_obj_t* parent;
+		rc =dfsFindParent(file_path, &parent);
+		if(rc) {
+		TF_SetStatus(status, TF_NOT_FOUND, "");
+		dfs_release(parent);
+		return;
+		}
+		if(parent != NULL && !S_ISDIR(parent->mode)) {
+		TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+		return;
+		}
+
+		size_t file_start = file_path.rfind("/") + 1;
+		std::string file_name = file_path.substr(file_start);
+
+		rc = dfs_open(daos_fs, parent, file_name.c_str(), mode, 
+						      flags, 0, 0, NULL, obj);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL, "Error Creating Writable File");
+			return;
+		}
+	}
+
+	int dfsPathExists(std::string &file, dfs_obj_t **obj, int release_obj = 1) {
+		(*obj) = NULL;
+		int rc;
+  	if(file.front() != '/') file = "/" + file;
+  	rc = dfs_lookup(daos_fs,file.c_str(),O_RDONLY, obj, NULL, NULL);
+  	if(release_obj) dfs_release(*obj);
+		return rc;
+	}
+
+	int dfsFindParent(std::string &file, dfs_obj_t **parent) {
+		(*parent) = NULL;
+		size_t file_start = file.rfind("/") + 1;
+		std::string parent_path = file.substr(0, file_start);
+		if(parent_path != "/") {
+			return dfs_lookup(daos_fs,parent_path.c_str(),O_RDONLY, parent, NULL, NULL);
+		}
+		else {
+			(*parent) = NULL;
+			return 0;
+		}
+	}
+
+	int dfsCreateDir(std::string &dir_path, TF_Status *status) {
+		dfs_obj_t* temp_obj;
+		int rc;
+		rc = dfsPathExists(dir_path, &temp_obj);
+		if(!rc) {
+			TF_SetStatus(status, TF_ALREADY_EXISTS, "");
+			return rc;
+		}
+
+		size_t dir_start = dir_path.rfind("/") + 1;
+		std::string dir = dir_path.substr(dir_start);
+		dfs_obj_t* parent;
+		rc = dfsFindParent(dir_path, &parent);
+		if(rc) {
+			TF_SetStatus(status, TF_NOT_FOUND, "");
+			return rc;
+		}
+
+		rc = dfs_mkdir(daos_fs,parent,dir.c_str(),S_IWUSR | S_IRUSR,0);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL,
+								  "Error Creating Directory");
+		}
+		else {
+			TF_SetStatus(status, TF_OK, "");
+		}
+
+		dfs_release(parent);
 
 		return rc;
 	}
 
     ~DFS() {
-	  ClearConnections();
       free(daos_fs);
     }
   private:
