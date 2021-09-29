@@ -23,6 +23,45 @@ typedef struct DFSRandomAccessFile {
   }
 } DFSRandomAccessFile;
 
+void Cleanup(TF_RandomAccessFile* file) {
+  auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
+  dfs_release(dfs_file->daos_file.file);
+  dfs_file->daos_fs = nullptr;
+  delete dfs_file;
+}
+
+int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
+             char* buffer, TF_Status* status) {
+
+  d_sg_list_t	rsgl;
+	d_iov_t			iov;
+  int rc;
+  auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
+
+  d_iov_set(&iov, (void*)buffer, n);
+	rsgl.sg_nr = 1;
+	rsgl.sg_iovs = &iov;
+
+  daos_size_t read_size;
+  dfs_file->daos_file.offset = offset;
+
+  rc = dfs_read(dfs_file->daos_fs, dfs_file->daos_file.file, &rsgl, 
+                dfs_file->daos_file.offset, &read_size, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_INTERNAL, "");
+    return read_size;
+  }
+
+  if(read_size != n) {
+    TF_SetStatus(status, TF_OUT_OF_RANGE, "");
+    return read_size;
+  }
+
+  TF_SetStatus(status, TF_OK, "");
+  return read_size;
+
+}
+
 } // tf_random_access_file
 
 
@@ -561,6 +600,11 @@ void FlushCaches(const TF_Filesystem* filesystem) {
 void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   TF_SetFilesystemVersionMetadata(ops);
   ops->scheme = strdup(uri);
+
+  ops->random_access_file_ops = static_cast<TF_RandomAccessFileOps*>(
+      plugin_memory_allocate(TF_RANDOM_ACCESS_FILE_OPS_SIZE));
+  ops->random_access_file_ops->cleanup = tf_random_access_file::Cleanup;
+  ops->random_access_file_ops->read = tf_random_access_file::Read;
 
   ops->writable_file_ops = static_cast<TF_WritableFileOps*>(
       plugin_memory_allocate(TF_WRITABLE_FILE_OPS_SIZE));
