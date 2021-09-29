@@ -41,6 +41,52 @@ typedef struct DFSWritableFile {
   }
 } DFSWritableFile;
 
+void Cleanup(TF_WritableFile* file) {
+  auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
+  dfs_release(dfs_file->daos_file.file);
+  dfs_file->daos_fs = nullptr;
+  delete dfs_file;
+}
+
+void Append(const TF_WritableFile* file, const char* buffer, size_t n,
+            TF_Status* status) {
+  d_sg_list_t	wsgl;
+	d_iov_t			iov;
+  int rc;
+  auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
+
+  d_iov_set(&iov, (void*)buffer, n);
+	wsgl.sg_nr = 1;
+	wsgl.sg_iovs = &iov;
+
+  daos_size_t size;
+  dfs_get_size(dfs_file->daos_fs,dfs_file->daos_file.file, &size);
+  dfs_file->daos_file.offset = size;
+
+  rc = dfs_write(dfs_file->daos_fs, dfs_file->daos_file.file, &wsgl, dfs_file->daos_file.offset, NULL);
+  if(rc) {
+    TF_SetStatus(status, TF_RESOURCE_EXHAUSTED, "");
+  }
+
+  TF_SetStatus(status, TF_OK, "");
+}
+
+int64_t Tell(const TF_WritableFile* file, TF_Status* status) {
+  auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
+
+  TF_SetStatus(status, TF_OK, "");
+
+  return dfs_file->daos_file.offset;
+}
+
+void Close(const TF_WritableFile* file, TF_Status* status) {
+  auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
+  dfs_release(dfs_file->daos_file.file);
+  dfs_file->daos_fs = nullptr;
+  TF_SetStatus(status, TF_OK, "");
+}
+
+
 } //tf_writable_file
 
 
@@ -516,6 +562,13 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   TF_SetFilesystemVersionMetadata(ops);
   ops->scheme = strdup(uri);
 
+  ops->writable_file_ops = static_cast<TF_WritableFileOps*>(
+      plugin_memory_allocate(TF_WRITABLE_FILE_OPS_SIZE));
+  ops->writable_file_ops->cleanup = tf_writable_file::Cleanup;
+  ops->writable_file_ops->append = tf_writable_file::Append;
+  ops->writable_file_ops->tell = tf_writable_file::Tell;
+  ops->writable_file_ops->close = tf_writable_file::Close;
+
   ops->filesystem_ops = static_cast<TF_FilesystemOps*>(
       plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
   ops->filesystem_ops->init = tf_dfs_filesystem::Init;
@@ -544,4 +597,4 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
 
 }  // namespace dfs
 }  // namespace io
-}  // namepsace tensorflow
+}  // namespace tensorflow
