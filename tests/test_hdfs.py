@@ -40,3 +40,54 @@ def test_read_file():
     content = tf.io.read_file("hdfs://{}:9000/file.txt".format(address))
     print("CONTENT: {}".format(content))
     assert content == body
+
+
+@pytest.mark.skipif(
+    sys.platform in ("win32", "darwin"),
+    reason="TODO HDFS not setup properly on macOS/Windows yet",
+)
+def test_append_non_existing_file():
+    """Test case for append a non-existing HDFS file"""
+
+    address = socket.gethostbyname(socket.gethostname())
+    print("ADDRESS: {}".format(address))
+
+    body = b"1234567"
+    filepath = "hdfs://{}:9000/non-existing.txt".format(address)
+    f = tf.io.gfile.GFile(filepath, "a")
+    f.write(body)
+    f.flush()
+
+    content = tf.io.read_file(filepath)
+    print("CONTENT: {}".format(content))
+    assert content == body
+    f.close()
+
+
+@pytest.mark.skipif(
+    sys.platform in ("win32", "darwin", "linux"),
+    reason="TODO HDFS not setup properly on macOS/Windows yet. For linux, current HDFS setup will throw:"
+    "java.io.IOException: Failed to replace a bad datanode on the existing pipeline due to no more"
+    "good datanodes being available to try. ",
+)
+def test_append_existing_file():
+    """Test case for append an existing HDFS file"""
+
+    address = socket.gethostbyname(socket.gethostname())
+    print("ADDRESS: {}".format(address))
+    body1 = b"1234567"
+    body2 = b"7654321"
+
+    # create a new file
+    filepath = "hdfs://{}:9000/to_be_appended.txt".format(address)
+    tf.io.write_file(filepath, body1)
+
+    # append to the file
+    f = tf.io.gfile.GFile(filepath, "a")
+    f.write(body2)
+    f.flush()
+
+    content = tf.io.read_file(filepath)
+    print("CONTENT: {}".format(content))
+    assert content == body1 + body2
+    f.close()
