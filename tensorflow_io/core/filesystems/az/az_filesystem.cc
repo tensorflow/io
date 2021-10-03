@@ -185,10 +185,11 @@ std::string errno_to_string() {
 
 std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
     const std::string& account) {
-  const auto key = std::getenv("TF_AZURE_STORAGE_KEY");
-  if (key != nullptr) {
+  if (const auto key = std::getenv("TF_AZURE_STORAGE_KEY")) {
     return std::make_shared<azure::storage_lite::shared_key_credential>(account,
                                                                         key);
+  } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
+    return std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas);
   } else {
     return std::make_shared<azure::storage_lite::anonymous_credential>();
   }
