@@ -77,7 +77,7 @@ void ParseURI(const absl::string_view& fname, absl::string_view* scheme,
     return;
   }
   *scheme = absl::string_view(fname).substr(0, scheme_chunk);
-  *host = fname.substr(scheme_chunk + 3, host_chunk);
+  *host = fname.substr(scheme_chunk + 3, host_chunk - (scheme_chunk + 3));
   *path = fname.substr(host_chunk, -1);
 }
 
