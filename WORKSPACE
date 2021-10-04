@@ -260,6 +260,7 @@ http_archive(
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
         """sed -i.bak 's/__attribute__((visibility("default")))//g' include/tinyxml2.h """,
+        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(h, CURLOPT_NOSIGNAL, 1);/g' include/http/libcurl_http_client.h """,
         "echo '' >> include/base64.h",
         "echo '#include <stdexcept>' >> include/base64.h",
         "echo '' >> include/utility.h",
