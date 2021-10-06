@@ -145,11 +145,11 @@ int ParseDFSPath(const std::string& path, std::string& pool_string,
   if(cont_start != CONT_START)
     return -1;
   size_t file_start = path.find("/", cont_start) + 1;
-  if(file_start != PATH_START)
+  if(file_start != PATH_START && path.size() > PATH_START)
 	return -1;
   pool_string = path.substr(pool_start, cont_start - pool_start - 1);
   cont_string = path.substr(cont_start, file_start - cont_start - 1);
-  filename = path.substr(file_start);
+  filename = (file_start == PATH_START)? path.substr(file_start) : "";
   return 0;
 }
 
@@ -358,7 +358,12 @@ class DFS {
 
 	int dfsPathExists(std::string &file, dfs_obj_t **obj, int release_obj = 1) {
 		(*obj) = NULL;
-		int rc;
+		int rc = 0;
+		if(file.empty()) {
+			(*obj) = (dfs_obj_t*)malloc(sizeof(dfs_obj_t));
+			(*obj) = &(daos_fs->root);
+			return rc;
+		}
   	if(file.front() != '/') file = "/" + file;
   	rc = dfs_lookup(daos_fs,file.c_str(),O_RDONLY, obj, NULL, NULL);
   	if(release_obj) dfs_release(*obj);

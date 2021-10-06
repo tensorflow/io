@@ -122,6 +122,7 @@ void Close(const TF_WritableFile* file, TF_Status* status) {
   auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
+  dfs_file->daos_file.file = nullptr;
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -299,6 +300,7 @@ void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
   else {
     TF_SetStatus(status, TF_OK, "");
   }
+  dfs_release(parent);
 
 }
 
