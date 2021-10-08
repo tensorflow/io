@@ -8,7 +8,7 @@ REGISTER_OP("BigtableTest")
     .Attr("instance_id: string")
     .Attr("table_id: string")
     .Attr("columns: list(string) >= 1")
-    .Output("zeroed: int32")
+    .Output("zeroed: string")
     .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
     c->set_output(0, c->input(0));
     return Status::OK();

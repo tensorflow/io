@@ -50,12 +50,12 @@ public:
       Tensor *output_tensor = NULL;
       OP_REQUIRES_OK(context, context->allocate_output(0, {5},
                                                        &output_tensor));
-      auto output_flat = output_tensor->flat<string>();
+      auto output_v = output_tensor->vec<tstring>();
 
       // Set all but the first element of the output tensor to 0.
       const int N = 5;
       for (int i = 0; i < N; i++) {
-        output_flat(i) = "123";
+        output_v(i) = "123";
       }
     }
 private:
