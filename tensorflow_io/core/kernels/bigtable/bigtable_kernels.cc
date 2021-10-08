@@ -7,16 +7,31 @@ namespace cbt = ::google::cloud::bigtable;
 
 class ZeroOutOp : public OpKernel {
 public:
-    explicit ZeroOutOp(OpKernelConstruction *context) : OpKernel(context) {}
+    explicit ZeroOutOp(OpKernelConstruction *context) : OpKernel(context) {
+    // Get the index of the value to preserve
+    OP_REQUIRES_OK(context,
+                   context->GetAttr("project_id", &project_id_));
+    OP_REQUIRES_OK(context,
+                   context->GetAttr("instance_id", &instance_id_));
+    OP_REQUIRES_OK(context,
+                   context->GetAttr("table_id", &table_id_));
+    OP_REQUIRES_OK(context,
+                   context->GetAttr("columns", &columns_));
+  }
+
 
     void Compute(OpKernelContext *context) override {
-      // Grab the input tensor
-      const Tensor &input_tensor = context->input(0);
-      auto input = input_tensor.flat<int32>();
 
-      cbt::Table table(cbt::CreateDefaultDataClient("test_project", "test_instance",
+
+      std::cout << "got " << project_id_ << ":" << instance_id_ << ":" << table_id_ << "\n";
+      std::cout << "columns len:" << columns_.size() << "\n";
+
+
+      // Grab the input tensor
+
+      cbt::Table table(cbt::CreateDefaultDataClient(project_id_, instance_id_,
                                                     cbt::ClientOptions()),
-                       "t1");
+                       table_id_);
 
       google::cloud::bigtable::v1::RowReader reader1 = table.ReadRows(
               cbt::RowRange::InfiniteRange(), cbt::Filter::PassAllFilter());
@@ -33,19 +48,21 @@ public:
       }
       // Create an output tensor
       Tensor *output_tensor = NULL;
-      OP_REQUIRES_OK(context, context->allocate_output(0, input_tensor.shape(),
+      OP_REQUIRES_OK(context, context->allocate_output(0, {5},
                                                        &output_tensor));
-      auto output_flat = output_tensor->flat<int32>();
+      auto output_flat = output_tensor->flat<string>();
 
       // Set all but the first element of the output tensor to 0.
-      const int N = input.size();
-      for (int i = 1; i < N; i++) {
-        output_flat(i) = 0;
+      const int N = 5;
+      for (int i = 0; i < N; i++) {
+        output_flat(i) = "123";
       }
-
-      // Preserve the first input value if possible.
-      if (N > 0) output_flat(0) = input(0);
     }
+private:
+    string project_id_;
+    string instance_id_;
+    string table_id_;
+    std::vector<string> columns_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableTest")
