@@ -23,7 +23,7 @@ class DFSTest(tf.test.TestCase):
     def _path_to(self, path):
         return os.path.join(self.path_root, path)
     
-    def _test_exists(self):
+    def test_exists(self):
         self.assertTrue(tf.io.gfile.isdir(self.path_root))
 
     def test_create_file(self):
@@ -96,10 +96,10 @@ class DFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         parent = self._path_to("isdir")
         dir_name = self._path_to("isdir/1")
-        file_name = self._path_to("isdir/5.txt")
+        file_name = self._path_to("7.txt")
         tf.io.gfile.mkdir(parent)
         with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("123")
+            w.write("")
         tf.io.gfile.mkdir(dir_name)
         # Check that directory is a directory.
         self.assertTrue(tf.io.gfile.isdir(dir_name))

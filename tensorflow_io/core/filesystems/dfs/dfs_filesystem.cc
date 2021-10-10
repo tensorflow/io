@@ -337,6 +337,10 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   rc = daos->Setup(path, pool, cont, file, status);
   if(rc) return is_dir;
 
+  if(daos->isRoot(file)){
+    is_dir = true;
+    return is_dir;
+  }
 
   dfs_obj_t* obj;
   rc = daos->dfsPathExists(file, &obj, 0);
@@ -345,10 +349,16 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   }
   else {
     is_dir = S_ISDIR(obj->mode);
-    TF_SetStatus(status, TF_OK, "");
   }
 
   dfs_release(obj);
+
+  if(is_dir) {
+    TF_SetStatus(status, TF_OK, "");
+  }
+  else {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+  }
 
   return is_dir;
   

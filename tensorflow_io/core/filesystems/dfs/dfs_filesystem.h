@@ -359,9 +359,7 @@ class DFS {
 	int dfsPathExists(std::string &file, dfs_obj_t **obj, int release_obj = 1) {
 		(*obj) = NULL;
 		int rc = 0;
-		if(file.empty()) {
-			(*obj) = (dfs_obj_t*)malloc(sizeof(dfs_obj_t));
-			(*obj) = &(daos_fs->root);
+		if(isRoot(file)) {
 			return rc;
 		}
   	if(file.front() != '/') file = "/" + file;
@@ -413,6 +411,10 @@ class DFS {
 		dfs_release(parent);
 
 		return rc;
+	}
+
+	bool isRoot(std::string& file_path) {
+		return file_path.empty();
 	}
 
     ~DFS() {
