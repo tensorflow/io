@@ -154,7 +154,7 @@ jobs:
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          python -m pip install twine delocate
+          python -m pip install twine delocate==0.9.1
           delocate-wheel --version
           ls dist/*
           for f in dist/*.whl; do
@@ -586,7 +586,7 @@ jobs:
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          python -m pip install twine delocate
+          python -m pip install twine delocate==0.9.1
           delocate-wheel --version
           ls dist/*
           for f in dist/*.whl; do
