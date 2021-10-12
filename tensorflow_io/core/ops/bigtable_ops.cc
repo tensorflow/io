@@ -22,6 +22,10 @@ REGISTER_OP("BigtableTest")
 //
 // Add any attrs and input tensors that define the dataset here.
 REGISTER_OP("BigtableDataset")
+    .Attr("project_id: string")
+   .Attr("instance_id: string")
+   .Attr("table_id: string")
+   .Attr("columns: list(string) >= 1")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);

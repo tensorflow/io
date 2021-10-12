@@ -1,3 +1,6 @@
+#include <google/cloud/bigtable/table.h>
+#include <google/cloud/bigtable/table_admin.h>
+
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/op.h"
@@ -7,12 +10,16 @@ using ::tensorflow::DT_STRING;
 using ::tensorflow::PartialTensorShape;
 using ::tensorflow::Status;
 
+namespace cbt = ::google::cloud::bigtable;
+
 class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
  public:
   explicit BigtableDatasetOp(tensorflow::OpKernelConstruction* ctx)
       : DatasetOpKernel(ctx) {
-    // Parse and validate any attrs that define the dataset using
-    // `ctx->GetAttr()`, and store them in member variables.
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
   }
 
   void MakeDataset(tensorflow::OpKernelContext* ctx,
@@ -23,20 +30,31 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
 
     // Create the dataset object, passing any (already-validated) arguments from
     // attrs or input tensors.
-    *output = new Dataset(ctx);
+    *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
   }
 
  private:
+  std::string project_id_;
+  std::string instance_id_;
+  std::string table_id_;
+  std::vector<std::string> columns_;
+
   class Dataset : public tensorflow::data::DatasetBase {
    public:
-    Dataset(tensorflow::OpKernelContext* ctx)
-        : tensorflow::data::DatasetBase(tensorflow::data::DatasetContext(ctx)) {
-    }
+    Dataset(tensorflow::OpKernelContext* ctx, std::string project_id,
+            std::string instance_id, std::string table_id,
+            std::vector<std::string> columns)
+        : tensorflow::data::DatasetBase(tensorflow::data::DatasetContext(ctx)),
+          project_id_(project_id),
+          instance_id_(instance_id),
+          table_id_(table_id),
+          columns_(columns) {}
 
     std::unique_ptr<tensorflow::data::IteratorBase> MakeIteratorInternal(
         const std::string& prefix) const {
       return std::unique_ptr<tensorflow::data::IteratorBase>(new Iterator(
-          {this, tensorflow::strings::StrCat(prefix, "::BigtableDataset")}));
+          {this, tensorflow::strings::StrCat(prefix, "::BigtableDataset")},
+          project_id_, instance_id_, table_id_, columns_.size()));
     }
 
     // Record structure: Each record is represented by a scalar string tensor.
@@ -77,10 +95,23 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
     Status CheckExternalState() const override { return Status::OK(); }
 
    private:
+    std::string project_id_;
+    std::string instance_id_;
+    std::string table_id_;
+    std::vector<std::string> columns_;
+
     class Iterator : public tensorflow::data::DatasetIterator<Dataset> {
      public:
-      explicit Iterator(const Params& params)
-          : DatasetIterator<Dataset>(params), i_(0) {}
+      explicit Iterator(const Params& params, std::string const& project_id,
+                        std::string const& instance_id,
+                        std::string const& table_id, int num_cols)
+          : DatasetIterator<Dataset>(params),
+            data_client_(CreateDataClient(project_id, instance_id)),
+            reader_(CreateTable(this->data_client_, table_id)
+                        ->ReadRows(cbt::RowRange::InfiniteRange(),
+                                   cbt::Filter::PassAllFilter())),
+            it_(this->reader_.begin()),
+            num_cols(num_cols) {}
 
       // Implementation of the reading logic.
       //
@@ -100,16 +131,23 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
         // NOTE: `GetNextInternal()` may be called concurrently, so it is
         // recommended that you protect the iterator state with a mutex.
         tensorflow::mutex_lock l(mu_);
-        if (i_ < 10) {
-          // Create a scalar string tensor and add it to the output.
-          tensorflow::Tensor record_tensor(ctx->allocator({}), DT_STRING, {});
-          record_tensor.scalar<tensorflow::tstring>()() = "MyReader!";
-          out_tensors->emplace_back(std::move(record_tensor));
-          ++i_;
-          *end_of_sequence = false;
-        } else {
+        if (it_ == reader_.end()) {
           *end_of_sequence = true;
+        } else {
+          tensorflow::Tensor record_tensor(ctx->allocator({}), DT_STRING,
+                                           {num_cols});
+          auto record_v = record_tensor.tensor<tensorflow::tstring, 1>();
+          auto const& row = *it_;
+          int counter = 0;
+          for (const auto& cell : row.value().cells()) {
+            record_v(counter++) = cell.value();
+          }
+          out_tensors->emplace_back(std::move(record_tensor));
+          *end_of_sequence = false;
+
+          it_ = std::next(it_);
         }
+
         return Status::OK();
       }
 
@@ -128,12 +166,27 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
       }
 
      private:
+      std::unique_ptr<cbt::Table> CreateTable(
+          std::shared_ptr<cbt::DataClient> const& data_client,
+          std::string const& table_id) {
+        return std::make_unique<cbt::Table>(data_client, table_id);
+      }
+
+      std::shared_ptr<cbt::DataClient> CreateDataClient(
+          std::string const& project_id, std::string const& instance_id) {
+        return cbt::CreateDefaultDataClient(
+            std::move(project_id), std::move(instance_id),
+            cbt::ClientOptions());
+      }
+
       tensorflow::mutex mu_;
-      tensorflow::int64 i_ GUARDED_BY(mu_);
+      std::shared_ptr<cbt::DataClient> data_client_ ;
+      cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
+      cbt::RowReader reader_;
+      int num_cols;
     };
   };
 };
-
 
 // Register the kernel implementation for MyReaderDataset.
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(tensorflow::DEVICE_CPU),
