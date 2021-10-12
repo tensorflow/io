@@ -1,5 +1,4 @@
-#include <google/cloud/bigtable/table.h>
-#include <google/cloud/bigtable/table_admin.h>
+#include "google/cloud/bigtable/table.h"
 
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
@@ -180,9 +179,9 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
       }
 
       tensorflow::mutex mu_;
-      std::shared_ptr<cbt::DataClient> data_client_ ;
+      std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
+      cbt::RowReader reader_ GUARDED_BY(mu_);
       cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
-      cbt::RowReader reader_;
       int num_cols;
     };
   };
