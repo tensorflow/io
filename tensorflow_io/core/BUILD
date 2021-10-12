@@ -179,6 +179,7 @@ cc_library(
     name = "bigtable_ops",
     srcs = [
         "kernels/bigtable/bigtable_kernels.cc",
+        "kernels/bigtable/bigtable_dataset_kernel.cc",
         "ops/bigtable_ops.cc",
     ],
     copts = tf_io_copts(),
