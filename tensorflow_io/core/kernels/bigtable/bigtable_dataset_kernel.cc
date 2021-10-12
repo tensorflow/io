@@ -16,20 +16,18 @@ namespace {
 
 class BigtableDatasetOp : public DatasetOpKernel {
  public:
-  explicit BigtableDatasetOp(OpKernelConstruction* ctx)
-      : DatasetOpKernel(ctx) {
+  explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
   }
 
-  void MakeDataset(OpKernelContext* ctx,
-                   DatasetBase** output) override {
+  void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     // Parse and validate any input tensors that define the dataset using
     // `ctx->input()` or the utility function
     // `ParseScalarArgument<T>(ctx, &arg)`.
-    VLOG(0) << "Make Dataset";
+    VLOG(1) << "Make Dataset";
 
     // Create the dataset object, passing any (already-validated) arguments from
     // attrs or input tensors.
@@ -55,11 +53,11 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const std::string& prefix) const {
-      VLOG(0) << "MakeIteratorInternal. instance=" << project_id_ << ":"
+      VLOG(1) << "MakeIteratorInternal. instance=" << project_id_ << ":"
               << instance_id_ << ":" << table_id_;
-      return std::unique_ptr<IteratorBase>(new Iterator(
-          {this, strings::StrCat(prefix, "::BigtableDataset")},
-          project_id_, instance_id_, table_id_, columns_.size()));
+      return std::unique_ptr<IteratorBase>(
+          new Iterator({this, strings::StrCat(prefix, "::BigtableDataset")},
+                       project_id_, instance_id_, table_id_, columns_));
     }
 
     // Record structure: Each record is represented by a scalar string tensor.
@@ -88,13 +86,12 @@ class BigtableDatasetOp : public DatasetOpKernel {
     // Implement this method if you want to be able to save and restore
     // instances of this dataset (and any iterators over it).
     Status AsGraphDefInternal(SerializationContext* ctx,
-                              DatasetGraphDefBuilder* b,
-                              Node** output) const {
+                              DatasetGraphDefBuilder* b, Node** output) const {
       // Construct nodes to represent any of the input tensors from this
       // object's member variables using `b->AddScalar()` and `b->AddVector()`.
 
-      return errors::Unimplemented(
-          "%s does not support serialization", DebugString());
+      return errors::Unimplemented("%s does not support serialization",
+                                   DebugString());
     }
 
     Status CheckExternalState() const override { return Status::OK(); }
@@ -109,14 +106,17 @@ class BigtableDatasetOp : public DatasetOpKernel {
      public:
       explicit Iterator(const Params& params, std::string const& project_id,
                         std::string const& instance_id,
-                        std::string const& table_id, int num_cols)
+                        std::string const& table_id,
+                        std::vector<std::string> columns)
           : DatasetIterator<Dataset>(params),
             data_client_(CreateDataClient(project_id, instance_id)),
             reader_(CreateTable(this->data_client_, table_id)
-                        ->ReadRows(cbt::RowRange::InfiniteRange(),
-                                   cbt::Filter::PassAllFilter())),
+                        ->ReadRows(
+                            cbt::RowRange::InfiniteRange(),
+                            cbt::Filter::Chain(CreateColumnsFilter(column_map_),
+                                               cbt::Filter::Latest(1)))),
             it_(this->reader_.begin()),
-            num_cols(num_cols) {}
+            column_map_(CreateColumnMap(columns)) {}
 
       // Implementation of the reading logic.
       //
@@ -136,29 +136,30 @@ class BigtableDatasetOp : public DatasetOpKernel {
         // NOTE: `GetNextInternal()` may be called concurrently, so it is
         // recommended that you protect the iterator state with a mutex.
 
-        VLOG(0) << "GetNextInternal";
+        VLOG(1) << "GetNextInternal";
         mutex_lock l(mu_);
         if (it_ == reader_.end()) {
-          VLOG(0) << "End of sequence";
+          VLOG(1) << "End of sequence";
           *end_of_sequence = true;
         } else {
-          VLOG(0) << "alocating tensor";
-          Tensor record_tensor(ctx->allocator({}), DT_STRING,
-                                           {num_cols});
+          VLOG(1) << "alocating tensor";
+          long n_cols = column_map_.size();
+          Tensor record_tensor(ctx->allocator({}), DT_STRING, {n_cols});
           auto record_v = record_tensor.tensor<tstring, 1>();
 
-          VLOG(0) << "getting row";
+          VLOG(1) << "getting row";
           auto const& row = *it_;
-          int counter = 0;
           for (const auto& cell : row.value().cells()) {
-            VLOG(0) << "getting column:" << counter;
-            record_v(counter++) = cell.value();
+            std::pair<std::string, std::string> key(cell.family_name(),
+                                                    cell.column_qualifier());
+            VLOG(1) << "getting column:" << column_map_[key];
+            record_v(column_map_[key]) = cell.value();
           }
-          VLOG(0) << "returning value";
+          VLOG(1) << "returning value";
           out_tensors->emplace_back(std::move(record_tensor));
           *end_of_sequence = false;
 
-          VLOG(0) << "incrementing iterator";
+          VLOG(1) << "incrementing iterator";
           it_ = std::next(it_);
         }
 
@@ -166,15 +167,13 @@ class BigtableDatasetOp : public DatasetOpKernel {
       }
 
      protected:
-      Status SaveInternal(
-          SerializationContext* ctx,
-          IteratorStateWriter* writer) override {
+      Status SaveInternal(SerializationContext* ctx,
+                          IteratorStateWriter* writer) override {
         return errors::Unimplemented("SaveInternal");
       }
 
-      Status RestoreInternal(
-          IteratorContext* ctx,
-          IteratorStateReader* reader) override {
+      Status RestoreInternal(IteratorContext* ctx,
+                             IteratorStateReader* reader) override {
         return errors::Unimplemented(
             "Iterator does not support 'RestoreInternal')");
       }
@@ -183,13 +182,13 @@ class BigtableDatasetOp : public DatasetOpKernel {
       std::unique_ptr<cbt::Table> CreateTable(
           std::shared_ptr<cbt::DataClient> const& data_client,
           std::string const& table_id) {
-        VLOG(0) << "CreateTable";
+        VLOG(1) << "CreateTable";
         return std::make_unique<cbt::Table>(data_client, table_id);
       }
 
       std::shared_ptr<cbt::DataClient> CreateDataClient(
           std::string const& project_id, std::string const& instance_id) {
-        VLOG(0) << "CreateDataClient";
+        VLOG(1) << "CreateDataClient";
         return cbt::CreateDefaultDataClient(std::move(project_id),
                                             std::move(instance_id),
                                             cbt::ClientOptions());
@@ -198,7 +197,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
       cbt::Filter CreateColumnsFilter(
           std::map<std::pair<std::string, std::string>, size_t> const&
               columns) {
-        VLOG(0) << "CreateColumnsFilter";
+        VLOG(1) << "CreateColumnsFilter";
         std::vector<cbt::Filter> filters;
 
         for (const auto& key : columns) {
@@ -210,7 +209,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
         return cbt::Filter::InterleaveFromRange(filters.begin(), filters.end());
       }
 
-      std::pair<std::string, std::string> ColumnNameToPair(
+      static std::pair<std::string, std::string> ColumnNameToPair(
           std::string const& col_name_full) {
         size_t delimiter_pos = col_name_full.find(':');
         if (delimiter_pos == std::string::npos)
@@ -224,11 +223,27 @@ class BigtableDatasetOp : public DatasetOpKernel {
         return pair;
       }
 
+      static std::map<std::pair<std::string, std::string>, size_t>
+      CreateColumnMap(std::vector<std::string> const& columns) {
+        std::map<std::pair<std::string, std::string>, size_t> column_map;
+        size_t index = 0;
+        for (const auto& column_name : columns) {
+          std::pair<std::string, std::string> pair =
+              ColumnNameToPair(column_name);
+          column_map[pair] = index++;
+        }
+        return column_map;
+      }
+
       mutex mu_;
+      // Mapping between column names and their indices in tensors.  We're using
+      // a
+      // regular map because unordered_map cannot hash a pair by default.
+      std::map<std::pair<std::string, std::string>, size_t> column_map_
+          GUARDED_BY(mu_);
       std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
       cbt::RowReader reader_ GUARDED_BY(mu_);
       cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
-      int num_cols;
     };
   };
 };
@@ -236,7 +251,6 @@ class BigtableDatasetOp : public DatasetOpKernel {
 // Register the kernel implementation for MyReaderDataset.
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
-
 
 }  // namespace
 }  // namespace data
