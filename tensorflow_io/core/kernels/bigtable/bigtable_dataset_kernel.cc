@@ -26,6 +26,7 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
     // Parse and validate any input tensors that define the dataset using
     // `ctx->input()` or the utility function
     // `ParseScalarArgument<T>(ctx, &arg)`.
+    VLOG(0) << "Make Dataset";
 
     // Create the dataset object, passing any (already-validated) arguments from
     // attrs or input tensors.
@@ -51,6 +52,7 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
 
     std::unique_ptr<tensorflow::data::IteratorBase> MakeIteratorInternal(
         const std::string& prefix) const {
+    VLOG(0) << "MakeIteratorInternal. instance=" << project_id_ << ":" << instance_id_ << ":" << table_id_ ;
       return std::unique_ptr<tensorflow::data::IteratorBase>(new Iterator(
           {this, tensorflow::strings::StrCat(prefix, "::BigtableDataset")},
           project_id_, instance_id_, table_id_, columns_.size()));
@@ -129,21 +131,31 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
                              bool* end_of_sequence) override {
         // NOTE: `GetNextInternal()` may be called concurrently, so it is
         // recommended that you protect the iterator state with a mutex.
+
+            VLOG(0) << "GetNextInternal";
         tensorflow::mutex_lock l(mu_);
         if (it_ == reader_.end()) {
+            VLOG(0) << "End of sequence";
           *end_of_sequence = true;
         } else {
+
+            VLOG(0) << "alocating tensor";
           tensorflow::Tensor record_tensor(ctx->allocator({}), DT_STRING,
                                            {num_cols});
           auto record_v = record_tensor.tensor<tensorflow::tstring, 1>();
+
+            VLOG(0) << "getting row";
           auto const& row = *it_;
           int counter = 0;
           for (const auto& cell : row.value().cells()) {
+            VLOG(0) << "getting column:" << counter;
             record_v(counter++) = cell.value();
           }
+            VLOG(0) << "returning value";
           out_tensors->emplace_back(std::move(record_tensor));
           *end_of_sequence = false;
 
+            VLOG(0) << "incrementing iterator";
           it_ = std::next(it_);
         }
 
@@ -168,11 +180,13 @@ class BigtableDatasetOp : public tensorflow::data::DatasetOpKernel {
       std::unique_ptr<cbt::Table> CreateTable(
           std::shared_ptr<cbt::DataClient> const& data_client,
           std::string const& table_id) {
+            VLOG(0) << "CreateTable";
         return std::make_unique<cbt::Table>(data_client, table_id);
       }
 
       std::shared_ptr<cbt::DataClient> CreateDataClient(
           std::string const& project_id, std::string const& instance_id) {
+            VLOG(0) << "CreateDataClient";
         return cbt::CreateDefaultDataClient(
             std::move(project_id), std::move(instance_id),
             cbt::ClientOptions());
