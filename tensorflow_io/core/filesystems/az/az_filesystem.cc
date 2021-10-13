@@ -185,14 +185,18 @@ std::string errno_to_string() {
 
 std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
     const std::string& account, const std::string& container) {
-  const std::string sas_account_container_env = "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
+  const std::string sas_account_container_env =
+      "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
   const std::string sas_account_env = "TF_AZURE_STORAGE_" + account + "_SAS";
   if (const auto sas = std::getenv(sas_account_container_env.c_str())) {
-    return std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas);
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
   } else if (const auto sas = std::getenv(sas_account_env.c_str())) {
-    return std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas);
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
   } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
-    return std::make_shared<azure::storage_lite::shared_access_signature_credential>(sas);
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
   } else if (const auto token = std::getenv("TF_AZURE_STORAGE_TOKEN")) {
     return std::make_shared<azure::storage_lite::token_credential>(token);
   } else if (const auto key = std::getenv("TF_AZURE_STORAGE_KEY")) {
@@ -336,7 +340,8 @@ class AzBlobRandomAccessFile {
     auto blob_client = CreateAzBlobClientWrapper(account_, container_);
     auto blob_property = blob_client.get_blob_property(container_, object_);
     if (errno != 0) {
-      std::string error_message = absl::StrCat("Failed to get properties ", errno);
+      std::string error_message =
+          absl::StrCat("Failed to get properties ", errno);
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return 0;
     }
