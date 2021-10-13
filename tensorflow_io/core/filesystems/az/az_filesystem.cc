@@ -197,8 +197,6 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
   } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
     return std::make_shared<
         azure::storage_lite::shared_access_signature_credential>(sas);
-  } else if (const auto token = std::getenv("TF_AZURE_STORAGE_TOKEN")) {
-    return std::make_shared<azure::storage_lite::token_credential>(token);
   } else if (const auto key = std::getenv("TF_AZURE_STORAGE_KEY")) {
     return std::make_shared<azure::storage_lite::shared_key_credential>(account,
                                                                         key);
