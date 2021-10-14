@@ -132,17 +132,16 @@ switched_rules_by_language(
 # Note rules_python is placed earlier as tensorflow's version is older
 http_archive(
     name = "rules_python",
-    sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
-    strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
+    sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
-        "https://github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+        "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
     ],
 )
 
-load("@rules_python//python:pip.bzl", "pip3_import")
+load("@rules_python//python:pip.bzl", "pip_import")
 
-pip3_import(
+pip_import(
     name = "lint_dependencies",
     requirements = "//tools/lint:requirements.txt",
 )
@@ -153,10 +152,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "41b32eeaddcbc02b0583660bcf508469550e4cd0f86b22d2abe72dfebeacde0f",
-    strip_prefix = "tensorflow-2.6.0",
+    sha256 = "bb124905c7fdacd81e7c842b287c169bbf377d29c74c9dacc04f96c9793747bb",
+    strip_prefix = "tensorflow-2.7.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.6.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.7.0.tar.gz",
     ],
 )
 

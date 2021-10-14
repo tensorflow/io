@@ -62,8 +62,6 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
-          export PATH=/usr/bin:$PATH
           echo $PATH
           python3 --version
           python3 -c 'import site; print(site.getsitepackages())'
@@ -117,9 +115,7 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          echo "Bring /usr/bin to front as GitHub does not use system python3 by default"
-          export PATH=/usr/bin:$PATH
-          sudo -E bash -e .github/workflows/build.bazel.sh
+          sudo -E -H bash -e .github/workflows/build.bazel.sh
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -133,7 +129,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -210,7 +206,7 @@ jobs:
     name: Bazel Linux
     runs-on: ubuntu-latest
     container:
-      image: gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010@sha256:3a9b4820021801b1fa7d0592c1738483ac7abc209fc6ee8c9ef06cf2eab2d170
+      image: gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010
       env:
         REPO_NAME: ${{ env.REPO_NAME }}
         EVENT_NAME: ${{ env.EVENT_NAME }}
@@ -229,7 +225,7 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          bash -x -e .github/workflows/build.bazel.sh
+          bash -x -e .github/workflows/build.bazel.sh python3.8
           sudo cp .bazelrc build/tensorflow_io/
       - uses: actions/upload-artifact@v2
         with:
@@ -244,7 +240,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -328,10 +324,10 @@ jobs:
         shell: cmd
         run: |
           @echo on
-          set "BAZEL_OPTIMIZATION=--config=cache"
+          set "BAZEL_OPTIMIZATION="
           if "%EVENT_NAME%" == "push" (
             if "%REPO_NAME%" == "tensorflow/io" (
-              set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+              set "BAZEL_OPTIMIZATION=--remote_upload_local_results=true --google_credentials=service_account_creds.json"
             )
           )
           set /P BAZEL_VERSION=< .bazelversion
@@ -361,7 +357,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -449,10 +445,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: macOS-3.6-wheel
-          path: macOS-3.6-wheel
-      - uses: actions/download-artifact@v1
-        with:
           name: macOS-3.7-wheel
           path: macOS-3.7-wheel
       - uses: actions/download-artifact@v1
@@ -465,10 +457,6 @@ jobs:
           path: macOS-3.9-wheel
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.6-wheel
-          path: Linux-3.6-wheel
-      - uses: actions/download-artifact@v1
-        with:
           name: Linux-3.7-wheel
           path: Linux-3.7-wheel
       - uses: actions/download-artifact@v1
@@ -479,10 +467,6 @@ jobs:
         with:
           name: Linux-3.9-wheel
           path: Linux-3.9-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.6-wheel
-          path: Windows-3.6-wheel
       - uses: actions/download-artifact@v1
         with:
           name: Windows-3.7-wheel
@@ -498,15 +482,12 @@ jobs:
       - run: |
           set -e -x
           mkdir -p wheelhouse
-          cp macOS-3.6-wheel/*.whl wheelhouse/
           cp macOS-3.7-wheel/*.whl wheelhouse/
           cp macOS-3.8-wheel/*.whl wheelhouse/
           cp macOS-3.9-wheel/*.whl wheelhouse/
-          cp Linux-3.6-wheel/*.whl wheelhouse/
           cp Linux-3.7-wheel/*.whl wheelhouse/
           cp Linux-3.8-wheel/*.whl wheelhouse/
           cp Linux-3.9-wheel/*.whl wheelhouse/
-          cp Windows-3.6-wheel/*.whl wheelhouse/
           cp Windows-3.7-wheel/*.whl wheelhouse/
           cp Windows-3.8-wheel/*.whl wheelhouse/
           cp Windows-3.9-wheel/*.whl wheelhouse/
@@ -560,7 +541,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -605,7 +586,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -645,7 +626,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8', '3.9']
+        python: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -683,10 +664,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
-          name: macOS-3.6-nightly
-          path: macOS-3.6-nightly
-      - uses: actions/download-artifact@v1
-        with:
           name: macOS-3.7-nightly
           path: macOS-3.7-nightly
       - uses: actions/download-artifact@v1
@@ -699,10 +676,6 @@ jobs:
           path: macOS-3.9-nightly
       - uses: actions/download-artifact@v1
         with:
-          name: Linux-3.6-nightly
-          path: Linux-3.6-nightly
-      - uses: actions/download-artifact@v1
-        with:
           name: Linux-3.7-nightly
           path: Linux-3.7-nightly
       - uses: actions/download-artifact@v1
@@ -713,10 +686,6 @@ jobs:
         with:
           name: Linux-3.9-nightly
           path: Linux-3.9-nightly
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.6-nightly
-          path: Windows-3.6-nightly
       - uses: actions/download-artifact@v1
         with:
           name: Windows-3.7-nightly
@@ -732,15 +701,12 @@ jobs:
       - run: |
           set -e -x
           mkdir -p dist
-          cp macOS-3.6-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.7-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.9-nightly/tensorflow_io_nightly*.whl dist/
-          cp Linux-3.6-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.7-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_nightly*.whl dist/
-          cp Windows-3.6-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.7-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_nightly*.whl dist/
@@ -754,15 +720,12 @@ jobs:
           set -e -x
           rm -rf dist
           mkdir -p dist
-          cp macOS-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
-          cp Linux-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
-          cp Windows-3.6-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
