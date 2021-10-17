@@ -19,6 +19,8 @@ import subprocess
 import sys
 import pytest
 
+from shutil import which
+
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=unused-import
 
@@ -239,9 +241,15 @@ class AZFSSASTest(tf.test.TestCase, AZFSTestBase):
         ] = "127.0.0.1:10000/devstoreaccount1"
 
         sas_end = subprocess.check_output(["date", "--date", "1 days", r"+%FT%TZ"])
+
+        az_executable = "az"
+
+        if which(az_executable) is None:
+            az_executable = os.path.join(subprocess.check_output(["npm", "bin"]), "az")
+
         os.environ["TF_AZURE_STORAGE_SAS"] = subprocess.check_output(
             [
-                "az",
+                az_executable,
                 "storage",
                 "account",
                 "generate-sas",

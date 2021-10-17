@@ -12,5 +12,5 @@ path_to_az=$(which az)
 if [ -x "$path_to_az" ] ; then
     echo "az is already installed: $path_to_az"
 else
-    npm install -g azure-cli  
+    npm install azure-cli  
 fi
