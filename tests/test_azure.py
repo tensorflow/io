@@ -238,26 +238,34 @@ class AZFSSASTest(tf.test.TestCase, AZFSTestBase):
             "TF_AZURE_STORAGE_BLOB_ENDPOINT"
         ] = "127.0.0.1:10000/devstoreaccount1"
 
-        sas_end = subprocess.check_output(["date", "--date", "1 days", r"+%FT%TZ"])
+        sas_end = (
+            subprocess.check_output(["date", "--date", "1 days", r"+%FT%TZ"])
+            .decode()
+            .rstrip()
+        )
 
-        os.environ["TF_AZURE_STORAGE_SAS"] = subprocess.check_output(
-            [
-                "az",
-                "storage",
-                "account",
-                "generate-sas",
-                "-otsv",
-                "--permissions",
-                "acdlpruw",
-                "--resource-types",
-                "sco",
-                "--services",
-                "b",
-                "--expiry",
-                sas_end,
-                "--account-name",
-                "devstoreaccount1",
-            ]
+        os.environ["TF_AZURE_STORAGE_SAS"] = (
+            subprocess.check_output(
+                [
+                    "az",
+                    "storage",
+                    "account",
+                    "generate-sas",
+                    "-otsv",
+                    "--permissions",
+                    "acdlpruw",
+                    "--resource-types",
+                    "sco",
+                    "--services",
+                    "b",
+                    "--expiry",
+                    sas_end,
+                    "--account-name",
+                    "devstoreaccount1",
+                ]
+            )
+            .decode()
+            .rstrip()
         )
 
 
