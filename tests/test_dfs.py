@@ -68,7 +68,7 @@ class DFSTest(tf.test.TestCase):
         txt_files = tf.io.gfile.glob(self._path_to("wildcard/*.txt"))
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
-            self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), name)
+            self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), self._path_to(name))
         tf.io.gfile.rmtree(self._path_to("wildcard"))
     
     def test_delete_recursively(self):

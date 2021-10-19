@@ -12,11 +12,23 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <daos.h>
 #include <daos_fs.h>
 #include <string>
 #include <iostream>
 #include <map>
+#include <vector>
+
+#include "tensorflow/core/platform/cpu_info.h"
+#include "tensorflow/core/platform/env.h"
+#include "tensorflow/core/platform/file_system.h"
+#include "tensorflow/core/platform/mutex.h"
+#include "tensorflow/core/platform/path.h"
+#include "tensorflow/core/platform/platform.h"
+#include "tensorflow/core/platform/status.h"
+#include "tensorflow/core/platform/str_util.h"
+#include "tensorflow/core/platform/threadpool.h"
 
 /** object struct that is instantiated for a DFS open object */
 struct dfs_obj {
@@ -417,6 +429,26 @@ class DFS {
 		return file_path.empty();
 	}
 
+	int dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children) {
+		int rc = 0;
+		daos_anchor_t anchor = {0};
+		uint32_t nr = STACK;
+		struct dirent* dirs = (struct dirent*) malloc(nr * sizeof(struct dirent));
+
+		rc = dfs_readdir(daos_fs, obj, &anchor, &nr, dirs);
+		if(rc) {
+			return rc;
+		}
+
+		for(uint32_t i = 0; i < nr; i++) {
+			children.push_back(dirs[i].d_name);
+		}
+
+		free(dirs);
+		return rc;
+
+	}
+
     ~DFS() {
       free(daos_fs);
     }
@@ -505,6 +537,102 @@ class DFS {
 
 
 };
+
+void CopyEntries(char*** entries, std::vector<std::string>& results) {
+	*entries = static_cast<char**>(
+			tensorflow::io::plugin_memory_allocate(results.size() * sizeof((*entries)[0])));
+
+	for(uint32_t i = 0; i < results.size(); i++) {
+			(*entries)[i] = static_cast<char*>(
+				tensorflow::io::plugin_memory_allocate(results[i].size() * sizeof(char)));
+			if(results[i][0] == '/') results[i].erase(0,1);
+			strcpy((*entries)[i], results[i].c_str());
+	}
+}
+
+bool Match(const std::string& filename, const std::string& pattern) {
+	return fnmatch(pattern.c_str(), filename.c_str(), FNM_PATHNAME) == 0;
+}
+
+enum Children_Status{NON_MATCHING, MATCHING_DIR, OK};
+
+
+namespace tensorflow {
+namespace internal {
+
+	const int kNumThreads = port::NumSchedulableCPUs();
+	// A globbing pattern can only start with these characters:
+	static const char kGlobbingChars[] = "*?[\\";
+
+	// Make sure that the first entry in `dirs` during glob expansion does not
+	// contain a glob pattern. This is to prevent a corner-case bug where
+	// `<pattern>` would be treated differently than `./<pattern>`.
+	static std::string PatchPattern(const std::string& pattern) {
+		const std::string fixed_prefix =
+				pattern.substr(0, pattern.find_first_of(kGlobbingChars));
+
+		// Patching is needed when there is no directory part in `prefix`
+		if (io::Dirname(fixed_prefix).empty()) {
+			return io::JoinPath(".", pattern);
+		}
+
+		// No patching needed
+		return pattern;
+	}
+
+	static std::vector<std::string> AllDirectoryPrefixes(const std::string& d) {
+		std::vector<std::string> dirs;
+		const std::string patched = PatchPattern(d);
+		StringPiece dir(patched);
+
+		// If the pattern ends with a `/` (or `\\` on Windows), we need to strip it
+		// otherwise we would have one additional matching step and the result set
+		// would be empty.
+		bool is_directory = d[d.size() - 1] == '/';
+		if (is_directory) {
+			dir = io::Dirname(dir);
+		}
+
+		while (!dir.empty()) {
+			dirs.emplace_back(dir);
+			StringPiece new_dir(io::Dirname(dir));
+			// io::Dirname("/") returns "/" so we need to break the loop.
+			// On Windows, io::Dirname("C:\\") would return "C:\\", so we check for
+			// identity of the result instead of checking for dir[0] == `/`.
+			if (dir == new_dir) break;
+			dir = new_dir;
+		}
+
+		// Order the array from parent to ancestor (reverse order).
+		std::reverse(dirs.begin(), dirs.end());
+
+		return dirs;
+	}
+
+	static inline bool IsGlobbingPattern(const std::string& pattern) {
+  	return (pattern.find_first_of(kGlobbingChars) != std::string::npos);
+	}
+
+	static inline int GetFirstGlobbingEntry(const std::vector<std::string>& dirs) {
+		int i = 0;
+		for (const auto& d : dirs) {
+			if (IsGlobbingPattern(d)) {
+				break;
+			}
+			i++;
+		}
+		return i;
+	}
+
+	void ForEach(int first, int last, const std::function<void(int)>& f) {
+		int num_threads = std::min(kNumThreads, last - first);
+		thread::ThreadPool threads(Env::Default(), "ForEach", num_threads);
+		for (int i = first; i < last; i++) {
+			threads.Schedule([f, i] { f(i); });
+		}
+	}
+}
+}
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
 
