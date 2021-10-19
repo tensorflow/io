@@ -127,27 +127,28 @@ class Iterator : public DatasetIterator<Dataset> {
     if (it_ == reader_.end()) {
       VLOG(1) << "End of sequence";
       *end_of_sequence = true;
-    } else {
-      VLOG(1) << "alocating tensor";
-      long n_cols = column_map_.size();
-      Tensor record_tensor(ctx->allocator({}), DT_STRING, {n_cols});
-      auto record_v = record_tensor.tensor<tstring, 1>();
-
-      VLOG(1) << "getting row";
-      auto const& row = *it_;
-      for (const auto& cell : row.value().cells()) {
-        std::pair<std::string, std::string> key(cell.family_name(),
-                                                cell.column_qualifier());
-        VLOG(1) << "getting column:" << column_map_[key];
-        record_v(column_map_[key]) = cell.value();
-      }
-      VLOG(1) << "returning value";
-      out_tensors->emplace_back(std::move(record_tensor));
-      *end_of_sequence = false;
-
-      VLOG(1) << "incrementing iterator";
-      it_ = std::next(it_);
+      return Status::OK();
     }
+
+    VLOG(1) << "alocating tensor";
+    long n_cols = column_map_.size();
+    Tensor res(ctx->allocator({}), DT_STRING, {n_cols});
+    auto res_data = res.tensor<tstring, 1>();
+
+    VLOG(1) << "getting row";
+    auto const& row = *it_;
+    for (const auto& cell : row.value().cells()) {
+      std::pair<std::string, std::string> key(cell.family_name(),
+                                              cell.column_qualifier());
+      VLOG(1) << "getting column:" << column_map_[key];
+      res_data(column_map_[key]) = cell.value();
+    }
+    VLOG(1) << "returning value";
+    out_tensors->emplace_back(std::move(res));
+    *end_of_sequence = false;
+
+    VLOG(1) << "incrementing iterator";
+    it_ = std::next(it_);
 
     return Status::OK();
   }
