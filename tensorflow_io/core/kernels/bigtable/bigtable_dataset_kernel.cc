@@ -115,10 +115,10 @@ class Iterator : public DatasetIterator<Dataset> {
         reader_(
             CreateTable(this->data_client_, table_id)
                 ->ReadRows(cbt::RowRange::InfiniteRange(),
-                           cbt::Filter::Chain(CreateColumnsFilter(column_map_),
+                           cbt::Filter::Chain(CreateColumnsFilter(column_to_idx_),
                                               cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
-        column_map_(CreateColumnMap(columns)) {}
+        column_to_idx_(CreateColumnMap(columns)) {}
 
   Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
                          bool* end_of_sequence) override {
@@ -131,17 +131,17 @@ class Iterator : public DatasetIterator<Dataset> {
     }
 
     VLOG(1) << "alocating tensor";
-    long n_cols = column_map_.size();
+    long n_cols = column_to_idx_.size();
     Tensor res(ctx->allocator({}), DT_STRING, {n_cols});
     auto res_data = res.tensor<tstring, 1>();
 
     VLOG(1) << "getting row";
     auto const& row = *it_;
     for (const auto& cell : row.value().cells()) {
-      std::pair<std::string, std::string> key(cell.family_name(),
+      auto const key = std::make_pair(cell.family_name(),
                                               cell.column_qualifier());
-      VLOG(1) << "getting column:" << column_map_[key];
-      res_data(column_map_[key]) = cell.value();
+      VLOG(1) << "getting column:" << column_to_idx_[key];
+      res_data(column_to_idx_[key]) = std::move(cell.value());
     }
     VLOG(1) << "returning value";
     out_tensors->emplace_back(std::move(res));
@@ -181,7 +181,7 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   cbt::Filter CreateColumnsFilter(
-      std::map<std::pair<std::string, std::string>, size_t> const& columns) {
+      absl::flat_hash_map<std::pair<std::string, std::string>, size_t> const& columns) {
     VLOG(1) << "CreateColumnsFilter";
     std::vector<cbt::Filter> filters;
 
@@ -208,9 +208,9 @@ class Iterator : public DatasetIterator<Dataset> {
     return pair;
   }
 
-  static std::map<std::pair<std::string, std::string>, size_t> CreateColumnMap(
+  static absl::flat_hash_map<std::pair<std::string, std::string>, size_t> CreateColumnMap(
       std::vector<std::string> const& columns) {
-    std::map<std::pair<std::string, std::string>, size_t> column_map;
+    absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_map;
     size_t index = 0;
     for (const auto& column_name : columns) {
       std::pair<std::string, std::string> pair = ColumnNameToPair(column_name);
@@ -220,9 +220,7 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   mutex mu_;
-  // Mapping between column names and their indices in tensors.  We're using
-  // a regular map because unordered_map cannot hash a pair by default.
-  std::map<std::pair<std::string, std::string>, size_t> column_map_
+  absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_to_idx_
       GUARDED_BY(mu_);
   std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
   cbt::RowReader reader_ GUARDED_BY(mu_);
