@@ -39,7 +39,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     VLOG(1) << "Make Dataset";
-    
+
     *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
   }
 
@@ -58,26 +58,31 @@ class BigtableDatasetOp : public DatasetOpKernel {
           project_id_(project_id),
           instance_id_(instance_id),
           table_id_(table_id),
-          columns_(columns) {}
+          columns_(columns) {
+      size_t num_outputs = columns_.size();
+      dtypes_.reserve(num_outputs);
+      output_shapes_.reserve(num_outputs);
+      for (size_t i = 0; i < num_outputs; i++) {
+        dtypes_.push_back(DT_STRING);
+        output_shapes_.push_back({});
+      }
+    }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const std::string& prefix) const {
       VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
               << instance_id_ << ":" << table_id_;
-      return std::unique_ptr<IteratorBase>(
+      return absl::make_unique<IteratorBase>(
           new Iterator({this, strings::StrCat(prefix, "::BigtableDataset")},
                        project_id_, instance_id_, table_id_, columns_));
     }
 
     const DataTypeVector& output_dtypes() const override {
-      static auto* const dtypes = new DataTypeVector({DT_STRING});
-      return *dtypes;
+      return dtypes_;
     }
 
     const std::vector<PartialTensorShape>& output_shapes() const override {
-      static std::vector<PartialTensorShape>* shapes =
-          new std::vector<PartialTensorShape>({{}});
-      return *shapes;
+      return output_shapes_;
     }
 
     std::string DebugString() const override {
@@ -87,7 +92,6 @@ class BigtableDatasetOp : public DatasetOpKernel {
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b, Node** output) const {
-
       return errors::Unimplemented("%s does not support serialization",
                                    DebugString());
     }
@@ -99,6 +103,8 @@ class BigtableDatasetOp : public DatasetOpKernel {
     std::string instance_id_;
     std::string table_id_;
     std::vector<std::string> columns_;
+    DataTypeVector dtypes_;
+    std::vector<PartialTensorShape> output_shapes_;
 
     class Iterator : public DatasetIterator<Dataset> {
      public:
@@ -229,7 +235,6 @@ class BigtableDatasetOp : public DatasetOpKernel {
     };
   };
 };
-
 
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
