@@ -39,7 +39,7 @@ cc_library(
         "//tensorflow_io/core/filesystems/hdfs",
         "//tensorflow_io/core/filesystems/http",
         "//tensorflow_io/core/filesystems/s3",
-	"//tensorflow_io/core/filesystems/dfs",
+	    "//tensorflow_io/core/filesystems/dfs",
     ],
     alwayslink = 1,
 )
