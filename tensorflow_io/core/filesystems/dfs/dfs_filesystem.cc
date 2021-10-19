@@ -122,6 +122,7 @@ void Close(const TF_WritableFile* file, TF_Status* status) {
   auto dfs_file = static_cast<DFSWritableFile*>(file->plugin_file);
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
+  dfs_file->daos_file.file = nullptr;
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -299,6 +300,7 @@ void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
   else {
     TF_SetStatus(status, TF_OK, "");
   }
+  dfs_release(parent);
 
 }
 
@@ -335,6 +337,10 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   rc = daos->Setup(path, pool, cont, file, status);
   if(rc) return is_dir;
 
+  if(daos->isRoot(file)){
+    is_dir = true;
+    return is_dir;
+  }
 
   dfs_obj_t* obj;
   rc = daos->dfsPathExists(file, &obj, 0);
@@ -343,10 +349,16 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   }
   else {
     is_dir = S_ISDIR(obj->mode);
-    TF_SetStatus(status, TF_OK, "");
   }
 
   dfs_release(obj);
+
+  if(is_dir) {
+    TF_SetStatus(status, TF_OK, "");
+  }
+  else {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+  }
 
   return is_dir;
   
@@ -558,24 +570,17 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
     return -1;
   }
 
-  daos_anchor_t anchor = {0};
-  uint32_t nr = STACK;
-  struct dirent* dirs = (struct dirent*) malloc(nr * sizeof(struct dirent));
-
-  rc = dfs_readdir(daos->daos_fs, obj, &anchor, &nr, dirs);
+  std::vector<std::string> children;
+  rc = daos->dfsReadDir(obj, children);
   if(rc) {
     TF_SetStatus(status, TF_INTERNAL, "");
     return -1;
   }
 
-  *entries = static_cast<char**>(
-    plugin_memory_allocate(nr * sizeof((*entries)[0])));
+  uint32_t nr = children.size();
 
-  for(uint32_t i = 0; i < nr; i++) {
-    (*entries)[i] = strdup(dirs[i].d_name);
-  }
+  CopyEntries(entries, children);
 
-  free(dirs);
   TF_SetStatus(status, TF_OK, "");
   return nr;
 
@@ -589,6 +594,130 @@ void FlushCaches(const TF_Filesystem* filesystem) {
    auto daos = 
     static_cast<DFS*>(filesystem->plugin_filesystem);
   daos->ClearConnections();
+}
+
+int GetMatchingPaths(const TF_Filesystem* filesystem, const char* path,
+                     char*** entries, TF_Status* status) {
+  int rc = 0;
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem);
+  std::vector<std::string> results;
+  dfs_obj_t* obj;
+
+  std::string pool,cont,glob;
+  rc = daos->Setup(path, pool, cont, glob, status);
+  if(rc) return -1;
+
+  if(glob.empty()) {
+    TF_SetStatus(status, TF_OK, "");
+    return results.size();
+  }
+
+  std::vector<std::string> dirs = tensorflow::internal::AllDirectoryPrefixes(glob);
+
+  int matching_index = tensorflow::internal::GetFirstGlobbingEntry(dirs);
+
+  if (matching_index == (int)dirs.size()) {
+    if (daos->dfsPathExists(glob, &obj, 1) == 0) {
+      results.emplace_back(glob);
+    }
+
+    TF_SetStatus(status, TF_OK, "");
+    CopyEntries(entries, results);
+    return results.size();
+  }
+
+  std::deque<std::pair<string, int>> expand_queue;
+  std::deque<std::pair<string, int>> next_expand_queue;
+  expand_queue.emplace_back(dirs[matching_index - 1], matching_index - 1);
+
+  mutex result_mutex;
+  mutex queue_mutex;
+
+  while (!expand_queue.empty()) {
+    auto handle_level = [&daos, &results, &dirs, &expand_queue,
+                        &next_expand_queue, &result_mutex,
+                        &queue_mutex, &status](int i) {
+
+      const auto& queue_item = expand_queue.at(i);
+      const std::string& parent = queue_item.first;
+      const int index = queue_item.second + 1;
+      const std::string& match_pattern = dirs[index];
+      int rc;
+
+      dfs_obj_t* obj;
+      std::string parent_string(parent);
+      rc = daos->dfsPathExists(parent_string, &obj, 0);
+      if(rc) {
+        TF_SetStatus(status, TF_NOT_FOUND, "");
+        return;
+      }
+
+      std::vector<std::string> children;
+      rc = daos->dfsReadDir(obj, children);
+      if(rc) {
+        TF_SetStatus(status, TF_INTERNAL, "");
+        return;
+      }
+
+      dfs_release(obj);
+
+      if (children.empty()) {
+        return;
+      }
+
+      std::vector<Children_Status> children_status(children.size());
+
+      auto handle_children = [&daos, &match_pattern, &parent, &children,
+                              &children_status](int j) {
+
+        const std::string path = io::JoinPath(parent, children[j]);
+        if(!Match(path, match_pattern)) {
+          children_status[j] = NON_MATCHING;
+        }
+        else {
+          dfs_obj_t* obj;
+          std::string path_string(path);
+          daos->dfsPathExists(path_string, &obj, 0);
+          if(S_ISDIR(obj->mode)) {
+            children_status[j] = MATCHING_DIR;
+          }
+          else {
+            children_status[j] = OK;
+          }
+
+          dfs_release(obj);
+        }
+      };
+
+      tensorflow::internal::ForEach(0, children.size(), handle_children);
+
+      for (size_t j = 0; j < children.size(); j++) {
+        if (children_status[j] == NON_MATCHING) {
+          continue;
+        }
+
+        const std::string path = io::JoinPath(parent, children[j]);
+        if (index == (int)dirs.size() - 1) {
+          mutex_lock l(result_mutex);
+          results.emplace_back(path);
+        } else if (children_status[j] == MATCHING_DIR) {
+          mutex_lock l(queue_mutex);
+          next_expand_queue.emplace_back(path, index);
+        }
+      }
+    
+    };
+
+    tensorflow::internal::ForEach(0, expand_queue.size(), handle_level);
+
+    std::swap(expand_queue, next_expand_queue);
+  }
+
+  TF_SetStatus(status, TF_OK, "");
+  CopyEntries(entries, results);
+
+  return results.size();
 }
   
 
@@ -633,6 +762,7 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->get_children = tf_dfs_filesystem::GetChildren;
   ops->filesystem_ops->translate_name = tf_dfs_filesystem::TranslateName;
   ops->filesystem_ops->flush_caches = tf_dfs_filesystem::FlushCaches;
+  ops->filesystem_ops->get_matching_paths = tf_dfs_filesystem::GetMatchingPaths;
 
 
 
