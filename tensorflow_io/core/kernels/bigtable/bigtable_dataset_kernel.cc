@@ -1,3 +1,17 @@
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
 #include "google/cloud/bigtable/table.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
@@ -24,13 +38,8 @@ class BigtableDatasetOp : public DatasetOpKernel {
   }
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
-    // Parse and validate any input tensors that define the dataset using
-    // `ctx->input()` or the utility function
-    // `ParseScalarArgument<T>(ctx, &arg)`.
     VLOG(1) << "Make Dataset";
-
-    // Create the dataset object, passing any (already-validated) arguments from
-    // attrs or input tensors.
+    
     *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
   }
 
@@ -53,18 +62,13 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const std::string& prefix) const {
-      VLOG(1) << "MakeIteratorInternal. instance=" << project_id_ << ":"
+      VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
               << instance_id_ << ":" << table_id_;
       return std::unique_ptr<IteratorBase>(
           new Iterator({this, strings::StrCat(prefix, "::BigtableDataset")},
                        project_id_, instance_id_, table_id_, columns_));
     }
 
-    // Record structure: Each record is represented by a scalar string tensor.
-    //
-    // Dataset elements can have a fixed number of components of different
-    // types and shapes; replace the following two methods to customize this
-    // aspect of the dataset.
     const DataTypeVector& output_dtypes() const override {
       static auto* const dtypes = new DataTypeVector({DT_STRING});
       return *dtypes;
@@ -81,14 +85,8 @@ class BigtableDatasetOp : public DatasetOpKernel {
     }
 
    protected:
-    // Optional: Implementation of `GraphDef` serialization for this dataset.
-    //
-    // Implement this method if you want to be able to save and restore
-    // instances of this dataset (and any iterators over it).
     Status AsGraphDefInternal(SerializationContext* ctx,
                               DatasetGraphDefBuilder* b, Node** output) const {
-      // Construct nodes to represent any of the input tensors from this
-      // object's member variables using `b->AddScalar()` and `b->AddVector()`.
 
       return errors::Unimplemented("%s does not support serialization",
                                    DebugString());
@@ -118,24 +116,9 @@ class BigtableDatasetOp : public DatasetOpKernel {
             it_(this->reader_.begin()),
             column_map_(CreateColumnMap(columns)) {}
 
-      // Implementation of the reading logic.
-      //
-      // The example implementation in this file yields the string "MyReader!"
-      // ten times. In general there are three cases:
-      //
-      // 1. If an element is successfully read, store it as one or more tensors
-      //    in `*out_tensors`, set `*end_of_sequence = false` and return
-      //    `Status::OK()`.
-      // 2. If the end of input is reached, set `*end_of_sequence = true` and
-      //    return `Status::OK()`.
-      // 3. If an error occurs, return an error status using one of the helper
-      //    functions from "tensorflow/core/lib/core/errors.h".
       Status GetNextInternal(IteratorContext* ctx,
                              std::vector<Tensor>* out_tensors,
                              bool* end_of_sequence) override {
-        // NOTE: `GetNextInternal()` may be called concurrently, so it is
-        // recommended that you protect the iterator state with a mutex.
-
         VLOG(1) << "GetNextInternal";
         mutex_lock l(mu_);
         if (it_ == reader_.end()) {
@@ -237,8 +220,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
       mutex mu_;
       // Mapping between column names and their indices in tensors.  We're using
-      // a
-      // regular map because unordered_map cannot hash a pair by default.
+      // a regular map because unordered_map cannot hash a pair by default.
       std::map<std::pair<std::string, std::string>, size_t> column_map_
           GUARDED_BY(mu_);
       std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
@@ -248,7 +230,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
   };
 };
 
-// Register the kernel implementation for MyReaderDataset.
+
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
 
