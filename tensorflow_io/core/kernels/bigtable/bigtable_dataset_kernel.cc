@@ -145,9 +145,8 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   mutex mu_;
-  absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_to_idx_
-      GUARDED_BY(mu_);
   std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
+  absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_to_idx_ GUARDED_BY(mu_);
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
 };
@@ -165,12 +164,6 @@ class Dataset : public DatasetBase {
     size_t num_outputs = columns_.size();
     dtypes_.push_back(DT_STRING);
     output_shapes_.push_back({});
-    // dtypes_.reserve(num_outputs);
-    // output_shapes_.reserve(num_outputs);
-    // for (size_t i = 0; i < num_outputs; i++) {
-    //   dtypes_.push_back(DT_STRING);
-    //   output_shapes_.push_back({});
-    // }
   }
 
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
