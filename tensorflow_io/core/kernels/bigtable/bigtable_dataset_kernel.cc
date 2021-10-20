@@ -28,86 +28,11 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-class BigtableDatasetOp : public DatasetOpKernel {
- public:
-  explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
-  }
 
-  void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
-    VLOG(1) << "Make Dataset";
-
-    *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
-  }
-
- private:
-  std::string project_id_;
-  std::string instance_id_;
-  std::string table_id_;
-  std::vector<std::string> columns_;
-};
-
-class Dataset : public DatasetBase {
- public:
-  Dataset(OpKernelContext* ctx, std::string project_id, std::string instance_id,
-          std::string table_id, std::vector<std::string> columns)
-      : DatasetBase(DatasetContext(ctx)),
-        project_id_(project_id),
-        instance_id_(instance_id),
-        table_id_(table_id),
-        columns_(columns) {
-    size_t num_outputs = columns_.size();
-    dtypes_.reserve(num_outputs);
-    output_shapes_.reserve(num_outputs);
-    for (size_t i = 0; i < num_outputs; i++) {
-      dtypes_.push_back(DT_STRING);
-      output_shapes_.push_back({});
-    }
-  }
-
-  std::unique_ptr<IteratorBase> MakeIteratorInternal(
-      const std::string& prefix) const {
-    VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
-            << instance_id_ << ":" << table_id_;
-    return absl::make_unique<IteratorBase>(
-        new Iterator({this, strings::StrCat(prefix, "::BigtableDataset")},
-                     project_id_, instance_id_, table_id_, columns_));
-  }
-
-  const DataTypeVector& output_dtypes() const override { return dtypes_; }
-
-  const std::vector<PartialTensorShape>& output_shapes() const override {
-    return output_shapes_;
-  }
-
-  std::string DebugString() const override {
-    return "BigtableDatasetOp::Dataset";
-  }
-
- protected:
-  Status AsGraphDefInternal(SerializationContext* ctx,
-                            DatasetGraphDefBuilder* b, Node** output) const {
-    return errors::Unimplemented("%s does not support serialization",
-                                 DebugString());
-  }
-
-  Status CheckExternalState() const override { return Status::OK(); }
-
- private:
-  std::string project_id_;
-  std::string instance_id_;
-  std::string table_id_;
-  std::vector<std::string> columns_;
-  DataTypeVector dtypes_;
-  std::vector<PartialTensorShape> output_shapes_;
-};
-
+template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
-  explicit Iterator(const Params& params, std::string const& project_id,
+  explicit Iterator(const typename DatasetIterator<Dataset>::Params& params, std::string const& project_id,
                     std::string const& instance_id, std::string const& table_id,
                     std::vector<std::string> columns)
       : DatasetIterator<Dataset>(params),
@@ -226,6 +151,89 @@ class Iterator : public DatasetIterator<Dataset> {
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
 };
+
+
+class Dataset : public DatasetBase {
+ public:
+  Dataset(OpKernelContext* ctx, std::string project_id, std::string instance_id,
+          std::string table_id, std::vector<std::string> columns)
+      : DatasetBase(DatasetContext(ctx)),
+        project_id_(project_id),
+        instance_id_(instance_id),
+        table_id_(table_id),
+        columns_(columns) {
+    size_t num_outputs = columns_.size();
+    dtypes_.push_back(DT_STRING);
+    output_shapes_.push_back({});
+    // dtypes_.reserve(num_outputs);
+    // output_shapes_.reserve(num_outputs);
+    // for (size_t i = 0; i < num_outputs; i++) {
+    //   dtypes_.push_back(DT_STRING);
+    //   output_shapes_.push_back({});
+    // }
+  }
+
+  std::unique_ptr<IteratorBase> MakeIteratorInternal(
+      const std::string& prefix) const {
+    VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
+            << instance_id_ << ":" << table_id_;
+    return  std::unique_ptr<IteratorBase>(
+        new Iterator<Dataset>({this, strings::StrCat(prefix, "::BigtableDataset")},
+                     project_id_, instance_id_, table_id_, columns_));
+  }
+
+  const DataTypeVector& output_dtypes() const override { return dtypes_; }
+
+  const std::vector<PartialTensorShape>& output_shapes() const override {
+    return output_shapes_;
+  }
+
+  std::string DebugString() const override {
+    return "BigtableDatasetOp::Dataset";
+  }
+
+ protected:
+  Status AsGraphDefInternal(SerializationContext* ctx,
+                            DatasetGraphDefBuilder* b, Node** output) const {
+    return errors::Unimplemented("%s does not support serialization",
+                                 DebugString());
+  }
+
+  Status CheckExternalState() const override { return Status::OK(); }
+
+ private:
+  std::string project_id_;
+  std::string instance_id_;
+  std::string table_id_;
+  std::vector<std::string> columns_;
+  DataTypeVector dtypes_;
+  std::vector<PartialTensorShape> output_shapes_;
+};
+
+
+class BigtableDatasetOp : public DatasetOpKernel {
+ public:
+  explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
+  }
+
+  void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
+    VLOG(1) << "Make Dataset";
+
+    *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
+  }
+
+ private:
+  std::string project_id_;
+  std::string instance_id_;
+  std::string table_id_;
+  std::vector<std::string> columns_;
+};
+
+
 
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
