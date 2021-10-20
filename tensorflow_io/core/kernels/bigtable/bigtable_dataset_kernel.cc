@@ -28,20 +28,20 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-
 template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
-  explicit Iterator(const typename DatasetIterator<Dataset>::Params& params, std::string const& project_id,
+  explicit Iterator(const typename DatasetIterator<Dataset>::Params& params,
+                    std::string const& project_id,
                     std::string const& instance_id, std::string const& table_id,
                     std::vector<std::string> columns)
       : DatasetIterator<Dataset>(params),
         data_client_(CreateDataClient(project_id, instance_id)),
-        reader_(
-            CreateTable(this->data_client_, table_id)
-                ->ReadRows(cbt::RowRange::InfiniteRange(),
-                           cbt::Filter::Chain(CreateColumnsFilter(column_to_idx_),
-                                              cbt::Filter::Latest(1)))),
+        reader_(CreateTable(this->data_client_, table_id)
+                    ->ReadRows(
+                        cbt::RowRange::InfiniteRange(),
+                        cbt::Filter::Chain(CreateColumnsFilter(column_to_idx_),
+                                           cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
         columns_(CreateColumnPairs(columns)),
         column_to_idx_(CreateColumnMap(columns_)) {}
@@ -64,10 +64,16 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "getting row";
     auto const& row = *it_;
     for (const auto& cell : row.value().cells()) {
-      auto const key = std::make_pair(cell.family_name(),
-                                              cell.column_qualifier());
-      VLOG(1) << "getting column:" << column_to_idx_[key];
-      res_data(column_to_idx_[key]) = std::move(cell.value());
+      auto const key =
+          std::make_pair(cell.family_name(), cell.column_qualifier());
+      auto const column_idx = column_map_.find(key);
+      if (column_idx != column_to_idx_.end()) {
+        VLOG(1) << "getting column:" << *column_idx;
+        res_data(*column_idx) = std::move(cell.value());
+      } else {
+        VLOG(1) << "column " << cell.family_name() << ":"
+                << cell.column_qualifier() << " not found";
+      }
     }
     VLOG(1) << "returning value";
     out_tensors->emplace_back(std::move(res));
@@ -107,13 +113,15 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   cbt::Filter CreateColumnsFilter(
-      absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> const& columns) {
+      absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+                          size_t> const& columns) {
     VLOG(1) << "CreateColumnsFilter";
     std::vector<cbt::Filter> filters;
 
     for (const auto& key : columns) {
       std::pair<std::string, std::string> column = key.first;
-      cbt::Filter f = cbt::Filter::ColumnName(std::move(column.first), std::move(column.second));
+      cbt::Filter f = cbt::Filter::ColumnName(std::move(column.first),
+                                              std::move(column.second));
       filters.push_back(std::move(f));
     }
 
@@ -134,15 +142,22 @@ class Iterator : public DatasetIterator<Dataset> {
     return pair;
   }
 
-  static std::vector<std::pair<std::string, std::string>> CreateColumnPairs(std::vector<std::string> const& columns){
-    std::vector<std::pair<std::string, std::string>> columnPairs(columns.size());
-    std::transform(columns.begin(), columns.end(), columnPairs.begin(), &ColumnNameToPair);
+  static std::vector<std::pair<std::string, std::string>> CreateColumnPairs(
+      std::vector<std::string> const& columns) {
+    std::vector<std::pair<std::string, std::string>> columnPairs(
+        columns.size());
+    std::transform(columns.begin(), columns.end(), columnPairs.begin(),
+                   &ColumnNameToPair);
     return columnPairs;
   }
 
-  static absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> CreateColumnMap(
+  static absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+                             size_t>
+  CreateColumnMap(
       std::vector<std::pair<std::string, std::string>> const& columns) {
-    absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> column_map;
+    absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+                        size_t>
+        column_map;
     size_t index = 0;
     for (const auto& column : columns) {
       auto const pair = std::make_pair(column.first, column.second);
@@ -156,9 +171,9 @@ class Iterator : public DatasetIterator<Dataset> {
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
   std::vector<std::pair<std::string, std::string>> columns_;
-  absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> column_to_idx_ GUARDED_BY(mu_);
+  absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t>
+      column_to_idx_ GUARDED_BY(mu_);
 };
-
 
 class Dataset : public DatasetBase {
  public:
@@ -178,9 +193,9 @@ class Dataset : public DatasetBase {
       const std::string& prefix) const {
     VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
             << instance_id_ << ":" << table_id_;
-    return  std::unique_ptr<IteratorBase>(
-        new Iterator<Dataset>({this, strings::StrCat(prefix, "::BigtableDataset")},
-                     project_id_, instance_id_, table_id_, columns_));
+    return std::unique_ptr<IteratorBase>(new Iterator<Dataset>(
+        {this, strings::StrCat(prefix, "::BigtableDataset")}, project_id_,
+        instance_id_, table_id_, columns_));
   }
 
   const DataTypeVector& output_dtypes() const override { return dtypes_; }
@@ -211,7 +226,6 @@ class Dataset : public DatasetBase {
   std::vector<PartialTensorShape> output_shapes_;
 };
 
-
 class BigtableDatasetOp : public DatasetOpKernel {
  public:
   explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
@@ -233,8 +247,6 @@ class BigtableDatasetOp : public DatasetOpKernel {
   std::string table_id_;
   std::vector<std::string> columns_;
 };
-
-
 
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
