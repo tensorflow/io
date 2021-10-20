@@ -43,7 +43,8 @@ class Iterator : public DatasetIterator<Dataset> {
                            cbt::Filter::Chain(CreateColumnsFilter(column_to_idx_),
                                               cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
-        column_to_idx_(CreateColumnMap(columns)) {}
+        columns_(CreateColumnPairs(columns)),
+        column_to_idx_(CreateColumnMap(columns_)) {}
 
   Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
                          bool* end_of_sequence) override {
@@ -106,7 +107,7 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   cbt::Filter CreateColumnsFilter(
-      absl::flat_hash_map<std::pair<std::string, std::string>, size_t> const& columns) {
+      absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> const& columns) {
     VLOG(1) << "CreateColumnsFilter";
     std::vector<cbt::Filter> filters;
 
@@ -133,12 +134,18 @@ class Iterator : public DatasetIterator<Dataset> {
     return pair;
   }
 
-  static absl::flat_hash_map<std::pair<std::string, std::string>, size_t> CreateColumnMap(
-      std::vector<std::string> const& columns) {
-    absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_map;
+  static std::vector<std::pair<std::string, std::string>> CreateColumnPairs(std::vector<std::string> const& columns){
+    std::vector<std::pair<std::string, std::string>> columnPairs(columns.size());
+    std::transform(columns.begin(), columns.end(), columnPairs.begin(), &ColumnNameToPair);
+    return columnPairs;
+  }
+
+  static absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> CreateColumnMap(
+      std::vector<std::pair<std::string, std::string>> const& columns) {
+    absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> column_map;
     size_t index = 0;
-    for (const auto& column_name : columns) {
-      std::pair<std::string, std::string> pair = ColumnNameToPair(column_name);
+    for (const auto& column : columns) {
+      auto const pair = std::make_pair(column.first, column.second);
       column_map[pair] = index++;
     }
     return column_map;
@@ -146,9 +153,10 @@ class Iterator : public DatasetIterator<Dataset> {
 
   mutex mu_;
   std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
-  absl::flat_hash_map<std::pair<std::string, std::string>, size_t> column_to_idx_ GUARDED_BY(mu_);
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
+  std::vector<std::pair<std::string, std::string>> columns_;
+  absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t> column_to_idx_ GUARDED_BY(mu_);
 };
 
 
