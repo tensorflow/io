@@ -5,11 +5,9 @@ from tensorflow_io.python.ops import core_ops
 from tensorflow.python.framework import dtypes
 import tensorflow as tf
 
-import collections
 
-
-class MyDataset(dataset_ops.DatasetSource):
-    """_BigQueryDataset represents a dataset that retrieves keys and values."""
+class BigtableDataset(dataset_ops.DatasetSource):
+    """_BigTableDataset represents a dataset that retrieves keys and values."""
 
     def __init__(self, project_id:str, instance_id:str, table_id:str, columns:List[str]):
         self._project_id = project_id

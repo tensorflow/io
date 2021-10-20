@@ -111,8 +111,8 @@ class Iterator : public DatasetIterator<Dataset> {
     std::vector<cbt::Filter> filters;
 
     for (const auto& key : columns) {
-      std::pair<std::string, std::string> pair = key.first;
-      cbt::Filter f = cbt::Filter::ColumnName(pair.first, pair.second);
+      std::pair<std::string, std::string> column = key.first;
+      cbt::Filter f = cbt::Filter::ColumnName(std::move(column.first), std::move(column.second));
       filters.push_back(std::move(f));
     }
 
