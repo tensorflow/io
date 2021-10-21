@@ -184,9 +184,20 @@ std::string errno_to_string() {
 }
 
 std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
-    const std::string& account) {
-  const auto key = std::getenv("TF_AZURE_STORAGE_KEY");
-  if (key != nullptr) {
+    const std::string& account, const std::string& container) {
+  const std::string sas_account_container_env =
+      "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
+  const std::string sas_account_env = "TF_AZURE_STORAGE_" + account + "_SAS";
+  if (const auto sas = std::getenv(sas_account_container_env.c_str())) {
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
+  } else if (const auto sas = std::getenv(sas_account_env.c_str())) {
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
+  } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
+    return std::make_shared<
+        azure::storage_lite::shared_access_signature_credential>(sas);
+  } else if (const auto key = std::getenv("TF_AZURE_STORAGE_KEY")) {
     return std::make_shared<azure::storage_lite::shared_key_credential>(account,
                                                                         key);
   } else {
@@ -195,7 +206,7 @@ std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
 }
 
 azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
-    const std::string& account) {
+    const std::string& account, const std::string& container) {
   azure::storage_lite::logger::set_logger(
       [](azure::storage_lite::log_level level, const std::string& log_msg) {
         switch (level) {
@@ -232,7 +243,7 @@ azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
   const auto blob_endpoint =
       std::string(blob_endpoint_env ? blob_endpoint_env : "");
 
-  auto credentials = get_credential(account);
+  auto credentials = get_credential(account, container);
   auto storage_account = std::make_shared<azure::storage_lite::storage_account>(
       account, credentials, use_https, blob_endpoint);
   auto blob_client =
@@ -324,10 +335,12 @@ class AzBlobRandomAccessFile {
       TF_SetStatus(status, TF_OK, "");
       return 0;
     }
-    auto blob_client = CreateAzBlobClientWrapper(account_);
+    auto blob_client = CreateAzBlobClientWrapper(account_, container_);
     auto blob_property = blob_client.get_blob_property(container_, object_);
     if (errno != 0) {
-      TF_SetStatus(status, TF_INTERNAL, "Failed to get properties");
+      std::string error_message =
+          absl::StrCat("Failed to get properties ", errno);
+      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return 0;
     }
     int64_t file_size = blob_property.size;
@@ -433,7 +446,7 @@ class AzBlobWritableFile {
       return;
     }
 
-    auto blob_client = CreateAzBlobClientWrapper(account_);
+    auto blob_client = CreateAzBlobClientWrapper(account_, container_);
     blob_client.upload_file_to_blob(tmp_content_filename_, container_, object_);
     if (errno != 0) {
       std::string error_message =
@@ -476,7 +489,7 @@ Status GetMatchingPaths(const std::string& pattern, std::vector<std::string>* re
   TF_RETURN_IF_ERROR(
       ParseAzBlobPathClass(fixed_prefix, true, &account, &container, &object));
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   std::vector<std::string> blobs;
   TF_RETURN_IF_ERROR(ListResources(fixed_prefix, "", blob_client, &blobs));
@@ -637,7 +650,7 @@ static void CreateDir(const TF_Filesystem* filesystem, const char* path,
   }
 
   // Blob storage has virtual folders. We can make sure the container exists
-  auto blob_client_wrapper = CreateAzBlobClientWrapper(account);
+  auto blob_client_wrapper = CreateAzBlobClientWrapper(account, container);
 
   if (blob_client_wrapper.container_exists(container)) {
     TF_SetStatus(status, TF_OK, "");
@@ -667,7 +680,7 @@ static void DeleteFile(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   blob_client.delete_blob(container, object);
   if (errno != 0) {
@@ -698,7 +711,7 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   // Check container exists
   // Just pull out the first path component representing the container
@@ -764,7 +777,7 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(src_account);
+  auto blob_client = CreateAzBlobClientWrapper(src_account, src_container);
 
   blob_client.start_copy(src_container, src_object, dst_container, dst_object);
   if (errno != 0) {
@@ -860,7 +873,7 @@ static void PathExists(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
   auto blob_exists = blob_client.blob_exists(container, object);
   if (errno != 0) {
     std::string error_message = absl::StrCat(
@@ -889,7 +902,7 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
     return false;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   if (container.empty()) {
     TF_SetStatus(status, TF_UNIMPLEMENTED,
@@ -935,7 +948,7 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   if (IsDirectory(filesystem, path, status)) {
     stats->length = 0;
@@ -972,7 +985,7 @@ static int GetChildren(const TF_Filesystem* filesystem, const char* path,
     return 0;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
 
   std::string continuation_token;
   if (container.empty()) {
@@ -1049,7 +1062,7 @@ static int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
     return 0;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account);
+  auto blob_client = CreateAzBlobClientWrapper(account, container);
   auto blob_property = blob_client.get_blob_property(container, object);
   if (errno != 0) {
     std::string error_message = absl::StrCat(

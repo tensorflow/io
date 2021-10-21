@@ -15,6 +15,7 @@
 """Tests for Azure File System."""
 
 import os
+import subprocess
 import sys
 import pytest
 
@@ -27,21 +28,12 @@ if sys.platform == "darwin":
     pytest.skip("TODO: skip macOS", allow_module_level=True)
 
 
-class AZFSTest(tf.test.TestCase):
+class AZFSTestBase:
     """[summary]
 
     Args:
       test {[type]} -- [description]
     """
-
-    def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
-
-        os.environ["TF_AZURE_USE_DEV_STORAGE"] = "1"
-
-        self.account = "devstoreaccount1"
-        self.container = "aztest"
-        self.path_root = "az://" + os.path.join(self.account, self.container)
-        super().__init__(methodName)
 
     def _path_to(self, path):
         return os.path.join(self.path_root, path)
@@ -59,7 +51,9 @@ class AZFSTest(tf.test.TestCase):
         a path of the form
         az://<account>.blob.core.windows.net/<container>/<path>
         """
-        file_name = self.account + ".blob.core.windows.net" + self.container
+        file_name = "az://" + os.path.join(
+            self.account + ".blob.core.windows.net", self.container
+        )
         if not tf.io.gfile.isdir(file_name):
             tf.io.gfile.makedirs(file_name)
 
@@ -206,6 +200,83 @@ class AZFSTest(tf.test.TestCase):
             assert v1.numpy() == expected[i][1]
             i += 1
         assert i == 2
+
+
+class AZFSTest(tf.test.TestCase, AZFSTestBase):
+    """Run tests for azfs backend using account key authentication."""
+
+    def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
+
+        self.account = "devstoreaccount1"
+        self.container = "aztest"
+        self.path_root = "az://" + os.path.join(self.account, self.container)
+        super().__init__(methodName)
+
+    def setUp(self):
+        super().setUp()
+
+        os.environ["TF_AZURE_USE_DEV_STORAGE"] = "1"
+
+
+class AZFSSASTest(tf.test.TestCase, AZFSTestBase):
+    """Run tests for azfs backend using shared access signature authentication."""
+
+    def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
+        self.account = "devstoreaccount1"
+        self.container = "aztest"
+        self.path_root = "az://" + os.path.join(self.account, self.container)
+        super().__init__(methodName)
+
+    def setUp(self):
+        super().setUp()
+
+        if "TF_AZURE_USE_DEV_STORAGE" in os.environ:
+            del os.environ["TF_AZURE_USE_DEV_STORAGE"]
+
+        os.environ["TF_AZURE_STORAGE_USE_HTTP"] = "1"
+        os.environ[
+            "TF_AZURE_STORAGE_BLOB_ENDPOINT"
+        ] = "127.0.0.1:10000/devstoreaccount1"
+
+        sas_end = (
+            subprocess.check_output(["date", "--date", "1 days", r"+%FT%TZ"])
+            .decode()
+            .rstrip()
+        )
+
+        env = os.environ.copy()
+        env["AZURE_STORAGE_CONNECTION_STRING"] = (
+            "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+            "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+            "QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;"
+            "TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
+        )
+
+        os.environ["TF_AZURE_STORAGE_SAS"] = (
+            subprocess.check_output(
+                [
+                    "az",
+                    "storage",
+                    "account",
+                    "generate-sas",
+                    "-otsv",
+                    "--permissions",
+                    "acdlpruw",
+                    "--resource-types",
+                    "sco",
+                    "--services",
+                    "b",
+                    "--expiry",
+                    sas_end,
+                    "--account-name",
+                    "devstoreaccount1",
+                ],
+                env=env,
+            )
+            .decode()
+            .rstrip()
+        )
 
 
 if __name__ == "__main__":
