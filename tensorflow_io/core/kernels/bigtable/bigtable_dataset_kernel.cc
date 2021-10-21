@@ -26,6 +26,93 @@ using ::tensorflow::Status;
 namespace cbt = ::google::cloud::bigtable;
 
 namespace tensorflow {
+namespace {
+
+
+class BigtableClientResource : public ResourceBase {
+ public:
+  explicit BigtableClientResource(std::string const& project_id,
+                                  std::string const& instance_id)
+      : data_client_(CreateDataClient(project_id, instance_id)) {}
+
+  std::shared_ptr<cbt::DataClient> CreateDataClient(
+      std::string const& project_id, std::string const& instance_id) {
+    VLOG(1) << "CreateDataClient";
+    return cbt::CreateDefaultDataClient(
+        std::move(project_id), std::move(instance_id), cbt::ClientOptions());
+  }
+
+  std::unique_ptr<cbt::Table> CreateTable(std::string const& table_id) {
+    VLOG(1) << "CreateTable";
+    return std::make_unique<cbt::Table>(data_client_, table_id);
+  }
+
+  string DebugString() const override { return "BigtableClientResource"; }
+
+ private:
+  mutex mu_;
+  std::shared_ptr<cbt::DataClient> data_client_ TF_GUARDED_BY(mu_);
+};
+
+
+
+class BigtableClientOp : public OpKernel {
+ public:
+  explicit BigtableClientOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
+    VLOG(1) << "BigtableClientOp ctor";
+  }
+
+  ~BigtableClientOp() override {
+    if (cinfo_.resource_is_private_to_kernel()) {
+      if (!cinfo_.resource_manager()
+               ->Delete<BigtableClientResource>(cinfo_.container(),
+                                                cinfo_.name())
+               .ok()) {
+        // Do nothing; the resource can have been deleted by session resets.
+        VLOG(1) << "BigtableClientOp dtor";
+      }
+    }
+  }
+
+  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
+    VLOG(1) << "BigtableClientOp compute";
+    mutex_lock l(mu_);
+    if (!initialized_) {
+      ResourceMgr* mgr = ctx->resource_manager();
+      OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
+      BigtableClientResource* resource;
+      OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigtableClientResource>(
+                              cinfo_.container(), cinfo_.name(), &resource,
+                              [this, ctx](BigtableClientResource** ret)
+                                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                                    *ret = new BigtableClientResource(
+                                        project_id_, instance_id_);
+                                    return Status::OK();
+                                  }));
+      core::ScopedUnref resource_cleanup(resource);
+      initialized_ = true;
+    }
+    OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
+                            ctx, 0, cinfo_.container(), cinfo_.name(),
+                            TypeIndex::Make<BigtableClientResource>()));
+  }
+
+ private:
+  mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  bool initialized_ TF_GUARDED_BY(mu_) = false;
+  string project_id_;
+  string instance_id_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableClient").Device(DEVICE_CPU),
+                        BigtableClientOp);
+} // namespace
+
+
+
 namespace data {
 namespace {
 
