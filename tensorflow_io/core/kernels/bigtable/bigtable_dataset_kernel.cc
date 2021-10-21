@@ -66,10 +66,10 @@ class Iterator : public DatasetIterator<Dataset> {
     for (const auto& cell : row.value().cells()) {
       auto const key =
           std::make_pair(cell.family_name(), cell.column_qualifier());
-      auto const column_idx = column_map_.find(key);
+      auto const column_idx = column_to_idx_.find(key);
       if (column_idx != column_to_idx_.end()) {
-        VLOG(1) << "getting column:" << *column_idx;
-        res_data(*column_idx) = std::move(cell.value());
+        VLOG(1) << "getting column:" << column_idx->second;
+        res_data(column_idx->second) = std::move(cell.value());
       } else {
         VLOG(1) << "column " << cell.family_name() << ":"
                 << cell.column_qualifier() << " not found";
@@ -130,6 +130,8 @@ class Iterator : public DatasetIterator<Dataset> {
 
   static std::pair<std::string, std::string> ColumnNameToPair(
       std::string const& col_name_full) {
+
+    VLOG(1) << "ColumnNameToPair" << col_name_full;
     size_t delimiter_pos = col_name_full.find(':');
     if (delimiter_pos == std::string::npos)
       throw std::invalid_argument("Invalid column name:" + col_name_full +
@@ -144,6 +146,7 @@ class Iterator : public DatasetIterator<Dataset> {
 
   static std::vector<std::pair<std::string, std::string>> CreateColumnPairs(
       std::vector<std::string> const& columns) {
+    VLOG(1) << "CreateColumnPairs" ;
     std::vector<std::pair<std::string, std::string>> columnPairs(
         columns.size());
     std::transform(columns.begin(), columns.end(), columnPairs.begin(),
@@ -155,6 +158,7 @@ class Iterator : public DatasetIterator<Dataset> {
                              size_t>
   CreateColumnMap(
       std::vector<std::pair<std::string, std::string>> const& columns) {
+    VLOG(1) << "CreateColumnMap" ;
     absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
                         size_t>
         column_map;
@@ -184,7 +188,6 @@ class Dataset : public DatasetBase {
         instance_id_(instance_id),
         table_id_(table_id),
         columns_(columns) {
-    size_t num_outputs = columns_.size();
     dtypes_.push_back(DT_STRING);
     output_shapes_.push_back({});
   }
