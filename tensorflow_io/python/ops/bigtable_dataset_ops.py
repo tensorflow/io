@@ -6,6 +6,19 @@ from tensorflow.python.framework import dtypes
 import tensorflow as tf
 
 
+
+class BigtableClient:
+    """BigtableClient is the entrypoint for interacting with Cloud Bigtable in TF.
+
+    BigtableClient encapsulates a connection to Cloud Bigtable, and exposes the
+    `readSession` method to initiate a Bigtable read session.
+    """
+
+    def __init__(self):
+        """Creates a BigtableClient to start Bigtable read sessions."""
+        self._client_resource = core_ops.io_big_table_client()
+
+
 class BigtableDataset(dataset_ops.DatasetSource):
     """_BigTableDataset represents a dataset that retrieves keys and values."""
 
