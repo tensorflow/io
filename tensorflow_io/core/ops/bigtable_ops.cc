@@ -17,17 +17,6 @@ limitations under the License.
 
 using namespace tensorflow;
 
-REGISTER_OP("BigtableTest")
-    .Attr("project_id: string")
-    .Attr("instance_id: string")
-    .Attr("table_id: string")
-    .Attr("columns: list(string) >= 1")
-    .Output("zeroed: string")
-    .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
-      c->set_output(0, c->input(0));
-      return Status::OK();
-    });
-
 REGISTER_OP("BigtableClient")
     .Attr("project_id: string")
     .Attr("instance_id: string")
