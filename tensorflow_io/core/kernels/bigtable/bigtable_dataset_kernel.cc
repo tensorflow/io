@@ -26,6 +26,7 @@ using ::tensorflow::Status;
 namespace cbt = ::google::cloud::bigtable;
 
 namespace tensorflow {
+namespace data {
 namespace {
 
 
@@ -109,12 +110,7 @@ class BigtableClientOp : public OpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("BigtableClient").Device(DEVICE_CPU),
                         BigtableClientOp);
-} // namespace
 
-
-
-namespace data {
-namespace {
 
 template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
