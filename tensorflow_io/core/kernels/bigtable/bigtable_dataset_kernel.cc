@@ -20,7 +20,7 @@ limitations under the License.
 
 using ::tensorflow::DT_STRING;
 using ::tensorflow::PartialTensorShape;
-using ::tensorflow::Status;
+using ::tensorflow::Status; 
 
 namespace cbt = ::google::cloud::bigtable;
 
@@ -37,13 +37,13 @@ class Iterator : public DatasetIterator<Dataset> {
                     std::vector<std::string> columns)
       : DatasetIterator<Dataset>(params),
         data_client_(CreateDataClient(project_id, instance_id)),
+        columns_(CreateColumnPairs(columns)),
         reader_(CreateTable(this->data_client_, table_id)
                     ->ReadRows(
                         cbt::RowRange::InfiniteRange(),
-                        cbt::Filter::Chain(CreateColumnsFilter(column_to_idx_),
+                        cbt::Filter::Chain(CreateColumnsFilter(columns_),
                                            cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
-        columns_(CreateColumnPairs(columns)),
         column_to_idx_(CreateColumnMap(columns_)) {}
 
   Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
@@ -64,8 +64,7 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "getting row";
     auto const& row = *it_;
     for (const auto& cell : row.value().cells()) {
-      auto const key =
-          std::make_pair(cell.family_name(), cell.column_qualifier());
+      std::pair<std::string const&, std::string const&> key(cell.family_name(), cell.column_qualifier());
       auto const column_idx = column_to_idx_.find(key);
       if (column_idx != column_to_idx_.end()) {
         VLOG(1) << "getting column:" << column_idx->second;
@@ -113,15 +112,13 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   cbt::Filter CreateColumnsFilter(
-      absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
-                          size_t> const& columns) {
+      std::vector<std::pair<std::string, std::string>> const& columns) {
     VLOG(1) << "CreateColumnsFilter";
     std::vector<cbt::Filter> filters;
 
-    for (const auto& key : columns) {
-      std::pair<std::string, std::string> column = key.first;
-      cbt::Filter f = cbt::Filter::ColumnName(std::move(column.first),
-                                              std::move(column.second));
+    for (const auto& column : columns) {
+      cbt::Filter f = cbt::Filter::ColumnName(column.first,
+                                              column.second);
       filters.push_back(std::move(f));
     }
 
@@ -149,6 +146,10 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "CreateColumnPairs" ;
     std::vector<std::pair<std::string, std::string>> columnPairs(
         columns.size());
+    
+    // for(int i=0; i<columns.size(); i++){
+    //   columnPairs[i] = ColumnNameToPair(columns[i]);
+    // }
     std::transform(columns.begin(), columns.end(), columnPairs.begin(),
                    &ColumnNameToPair);
     return columnPairs;
@@ -164,17 +165,17 @@ class Iterator : public DatasetIterator<Dataset> {
         column_map;
     size_t index = 0;
     for (const auto& column : columns) {
-      auto const pair = std::make_pair(column.first, column.second);
-      column_map[pair] = index++;
+      std::pair<std::string const&, std::string const&> key(column.first, column.second);
+      column_map[key] = index++;
     }
     return column_map;
   }
 
   mutex mu_;
   std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
+  std::vector<std::pair<std::string, std::string>> columns_;
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
-  std::vector<std::pair<std::string, std::string>> columns_;
   absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t>
       column_to_idx_ GUARDED_BY(mu_);
 };
