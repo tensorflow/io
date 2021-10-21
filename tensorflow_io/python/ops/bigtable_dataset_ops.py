@@ -18,24 +18,26 @@ class BigtableClient:
         """Creates a BigtableClient to start Bigtable read sessions."""
         self._client_resource = core_ops.bigtable_client(project_id, instance_id)
     
-    def create_dataset(self, table_id, columns):
-      return BigtableDataset(self._client_resource,  table_id, columns)
+    def get_table(self, table_id):
+      return BigtableTable(self._client_resource,  table_id)
 
 
+class BigtableTable:
 
-class BigtableDataset(dataset_ops.DatasetSource):
+  def __init__(self, client_resource,  table_id:str):
+      self._table_id = table_id
+      self._client_resource = client_resource
+  
+  def read_rows(self, columns:List[str]):
+    return _BigtableDataset(self._client_resource, self._table_id, columns)
+
+
+class _BigtableDataset(dataset_ops.DatasetSource):
     """_BigTableDataset represents a dataset that retrieves keys and values."""
 
     def __init__(self, client_resource,  table_id:str, columns:List[str]):
         self._table_id = table_id
         self._columns = columns
-        selected_fields = columns
-        output_types = [dtypes.string]
-
-        tensor_shapes = list(
-            [] for _ in selected_fields
-        )
-
         self._element_spec = tf.TensorSpec(shape=[len(columns)], dtype=dtypes.string)
 
 
