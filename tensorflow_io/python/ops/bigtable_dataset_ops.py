@@ -14,17 +14,19 @@ class BigtableClient:
     `readSession` method to initiate a Bigtable read session.
     """
 
-    def __init__(self):
+    def __init__(self, project_id, instance_id):
         """Creates a BigtableClient to start Bigtable read sessions."""
-        self._client_resource = core_ops.io_big_table_client()
+        self._client_resource = core_ops.bigtable_client(project_id, instance_id)
+    
+    def create_dataset(self, table_id, columns):
+      return BigtableDataset(self._client_resource,  table_id, columns)
+
 
 
 class BigtableDataset(dataset_ops.DatasetSource):
     """_BigTableDataset represents a dataset that retrieves keys and values."""
 
-    def __init__(self, project_id:str, instance_id:str, table_id:str, columns:List[str]):
-        self._project_id = project_id
-        self._instance_id = instance_id
+    def __init__(self, client_resource,  table_id:str, columns:List[str]):
         self._table_id = table_id
         self._columns = columns
         selected_fields = columns
@@ -37,7 +39,7 @@ class BigtableDataset(dataset_ops.DatasetSource):
         self._element_spec = tf.TensorSpec(shape=[len(columns)], dtype=dtypes.string)
 
 
-        variant_tensor = core_ops.bigtable_dataset(project_id, instance_id, table_id, columns)
+        variant_tensor = core_ops.bigtable_dataset(client_resource, table_id, columns)
         super().__init__(variant_tensor)
 
     @property

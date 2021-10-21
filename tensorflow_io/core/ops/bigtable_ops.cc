@@ -37,8 +37,7 @@ REGISTER_OP("BigtableClient")
     .SetShapeFn(shape_inference::ScalarShape);
 
 REGISTER_OP("BigtableDataset")
-    .Attr("project_id: string")
-    .Attr("instance_id: string")
+    .Input("client: resource")
     .Attr("table_id: string")
     .Attr("columns: list(string) >= 1")
     .Output("handle: variant")

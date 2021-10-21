@@ -116,13 +116,11 @@ template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
   explicit Iterator(const typename DatasetIterator<Dataset>::Params& params,
-                    std::string const& project_id,
-                    std::string const& instance_id, std::string const& table_id,
+                    std::string const& table_id,
                     std::vector<std::string> columns)
       : DatasetIterator<Dataset>(params),
-        data_client_(CreateDataClient(project_id, instance_id)),
         columns_(CreateColumnPairs(columns)),
-        reader_(CreateTable(this->data_client_, table_id)
+        reader_(this->dataset()->client_resource()->CreateTable(table_id)
                     ->ReadRows(cbt::RowRange::InfiniteRange(),
                                cbt::Filter::Chain(CreateColumnsFilter(columns_),
                                                   cbt::Filter::Latest(1)))),
@@ -228,10 +226,6 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "CreateColumnPairs";
     std::vector<std::pair<std::string, std::string>> columnPairs(
         columns.size());
-
-    // for(int i=0; i<columns.size(); i++){
-    //   columnPairs[i] = ColumnNameToPair(columns[i]);
-    // }
     std::transform(columns.begin(), columns.end(), columnPairs.begin(),
                    &ColumnNameToPair);
     return columnPairs;
@@ -265,24 +259,27 @@ class Iterator : public DatasetIterator<Dataset> {
 
 class Dataset : public DatasetBase {
  public:
-  Dataset(OpKernelContext* ctx, std::string project_id, std::string instance_id,
+  Dataset(OpKernelContext* ctx, BigtableClientResource *client_resource,
           std::string table_id, std::vector<std::string> columns)
       : DatasetBase(DatasetContext(ctx)),
-        project_id_(project_id),
-        instance_id_(instance_id),
+        client_resource_(client_resource),
         table_id_(table_id),
         columns_(columns) {
+
+      client_resource_->Ref();
     dtypes_.push_back(DT_STRING);
     output_shapes_.push_back({});
   }
 
+  ~Dataset(){
+      client_resource_->Unref();
+  }
+
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
       const std::string& prefix) const {
-    VLOG(1) << "MakeIteratorInternal. table=" << project_id_ << ":"
-            << instance_id_ << ":" << table_id_;
+    VLOG(1) << "MakeIteratorInternal. table=" << table_id_;
     return std::unique_ptr<IteratorBase>(new Iterator<Dataset>(
-        {this, strings::StrCat(prefix, "::BigtableDataset")}, project_id_,
-        instance_id_, table_id_, columns_));
+        {this, strings::StrCat(prefix, "::BigtableDataset")}, table_id_, columns_));
   }
 
   const DataTypeVector& output_dtypes() const override { return dtypes_; }
@@ -294,6 +291,10 @@ class Dataset : public DatasetBase {
   std::string DebugString() const override {
     return "BigtableDatasetOp::Dataset";
   }
+  
+  BigtableClientResource *client_resource() const {
+      return client_resource_;
+    }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
@@ -305,8 +306,7 @@ class Dataset : public DatasetBase {
   Status CheckExternalState() const override { return Status::OK(); }
 
  private:
-  std::string project_id_;
-  std::string instance_id_;
+  BigtableClientResource *client_resource_;
   std::string table_id_;
   std::vector<std::string> columns_;
   DataTypeVector dtypes_;
@@ -316,21 +316,20 @@ class Dataset : public DatasetBase {
 class BigtableDatasetOp : public DatasetOpKernel {
  public:
   explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
-    OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
   }
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     VLOG(1) << "Make Dataset";
-
-    *output = new Dataset(ctx, project_id_, instance_id_, table_id_, columns_);
+    BigtableClientResource *client_resource;
+    OP_REQUIRES_OK(
+        ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &client_resource));
+    core::ScopedUnref scoped_unref(client_resource);
+    *output = new Dataset(ctx, client_resource, table_id_, columns_);
   }
 
  private:
-  std::string project_id_;
-  std::string instance_id_;
   std::string table_id_;
   std::vector<std::string> columns_;
 };
