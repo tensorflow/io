@@ -122,7 +122,7 @@ class Iterator : public DatasetIterator<Dataset> {
                 cbt::Filter::Chain(CreateColumnsFilter(columns_),
                                    cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
-        column_to_idx_(CreateColumnMap(columns_)) {}
+        column_to_idx_(CreateColumnToIdxMap(columns_)) {}
 
   Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
                          bool* end_of_sequence) override {
@@ -232,9 +232,9 @@ class Iterator : public DatasetIterator<Dataset> {
 
   static absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
                              size_t>
-  CreateColumnMap(
+  CreateColumnToIdxMap(
       std::vector<std::pair<std::string, std::string>> const& columns) {
-    VLOG(1) << "CreateColumnMap";
+    VLOG(1) << "CreateColumnToIdxMap";
     absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
                         size_t>
         column_map;
