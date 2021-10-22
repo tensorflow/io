@@ -133,6 +133,7 @@ class Iterator : public DatasetIterator<Dataset> {
       *end_of_sequence = true;
       return Status::OK();
     }
+    *end_of_sequence = false;
 
     VLOG(1) << "alocating tensor";
     long const kNumCols = column_to_idx_.size();
@@ -151,11 +152,11 @@ class Iterator : public DatasetIterator<Dataset> {
       } else {
         VLOG(1) << "column " << cell.family_name() << ":"
                 << cell.column_qualifier() << " not found";
+        errors::IsNotFound("Bigtable returned unexpected column.");
       }
     }
     VLOG(1) << "returning value";
     out_tensors->emplace_back(std::move(res));
-    *end_of_sequence = false;
 
     VLOG(1) << "incrementing iterator";
     it_ = std::next(it_);
