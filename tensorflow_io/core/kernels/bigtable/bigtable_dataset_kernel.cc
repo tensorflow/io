@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include "absl/memory/memory.h"
 #include "google/cloud/bigtable/table.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
@@ -29,7 +30,6 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-
 class BigtableClientResource : public ResourceBase {
  public:
   explicit BigtableClientResource(std::string const& project_id,
@@ -39,23 +39,20 @@ class BigtableClientResource : public ResourceBase {
   std::shared_ptr<cbt::DataClient> CreateDataClient(
       std::string const& project_id, std::string const& instance_id) {
     VLOG(1) << "CreateDataClient";
-    return cbt::CreateDefaultDataClient(
-        std::move(project_id), std::move(instance_id), cbt::ClientOptions());
+    return cbt::CreateDefaultDataClient(project_id, instance_id,
+                                        cbt::ClientOptions());
   }
 
-  std::unique_ptr<cbt::Table> CreateTable(std::string const& table_id) {
+  cbt::Table CreateTable(std::string const& table_id) {
     VLOG(1) << "CreateTable";
-    return std::make_unique<cbt::Table>(data_client_, table_id);
+    return cbt::Table(data_client_, table_id);
   }
 
   string DebugString() const override { return "BigtableClientResource"; }
 
  private:
-  mutex mu_;
-  std::shared_ptr<cbt::DataClient> data_client_ TF_GUARDED_BY(mu_);
+  std::shared_ptr<cbt::DataClient> data_client_;
 };
-
-
 
 class BigtableClientOp : public OpKernel {
  public:
@@ -66,13 +63,13 @@ class BigtableClientOp : public OpKernel {
   }
 
   ~BigtableClientOp() override {
+    VLOG(1) << "BigtableClientOp dtor";
     if (cinfo_.resource_is_private_to_kernel()) {
       if (!cinfo_.resource_manager()
                ->Delete<BigtableClientResource>(cinfo_.container(),
                                                 cinfo_.name())
                .ok()) {
         // Do nothing; the resource can have been deleted by session resets.
-        VLOG(1) << "BigtableClientOp dtor";
       }
     }
   }
@@ -111,19 +108,19 @@ class BigtableClientOp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("BigtableClient").Device(DEVICE_CPU),
                         BigtableClientOp);
 
-
 template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
   explicit Iterator(const typename DatasetIterator<Dataset>::Params& params,
                     std::string const& table_id,
-                    std::vector<std::string> columns)
+                    std::vector<std::string> const& columns)
       : DatasetIterator<Dataset>(params),
-        columns_(CreateColumnPairs(columns)),
-        reader_(this->dataset()->client_resource()->CreateTable(table_id)
-                    ->ReadRows(cbt::RowRange::InfiniteRange(),
-                               cbt::Filter::Chain(CreateColumnsFilter(columns_),
-                                                  cbt::Filter::Latest(1)))),
+        columns_(ColumnsToFamiliesAndQualifiers(columns)),
+        reader_(
+            this->dataset()->client_resource()->CreateTable(table_id).ReadRows(
+                cbt::RowRange::InfiniteRange(),
+                cbt::Filter::Chain(CreateColumnsFilter(columns_),
+                                   cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
         column_to_idx_(CreateColumnMap(columns_)) {}
 
@@ -138,8 +135,8 @@ class Iterator : public DatasetIterator<Dataset> {
     }
 
     VLOG(1) << "alocating tensor";
-    long n_cols = column_to_idx_.size();
-    Tensor res(ctx->allocator({}), DT_STRING, {n_cols});
+    long const kNumCols = column_to_idx_.size();
+    Tensor res(ctx->allocator({}), DT_STRING, {kNumCols});
     auto res_data = res.tensor<tstring, 1>();
 
     VLOG(1) << "getting row";
@@ -183,7 +180,7 @@ class Iterator : public DatasetIterator<Dataset> {
       std::shared_ptr<cbt::DataClient> const& data_client,
       std::string const& table_id) {
     VLOG(1) << "CreateTable";
-    return std::make_unique<cbt::Table>(data_client, table_id);
+    return absl::make_unique<cbt::Table>(data_client, table_id);
   }
 
   std::shared_ptr<cbt::DataClient> CreateDataClient(
@@ -206,11 +203,12 @@ class Iterator : public DatasetIterator<Dataset> {
     return cbt::Filter::InterleaveFromRange(filters.begin(), filters.end());
   }
 
-  static std::pair<std::string, std::string> ColumnNameToPair(
+  static std::pair<std::string, std::string> ColumnToFamilyAndQualifier(
       std::string const& col_name_full) {
-    VLOG(1) << "ColumnNameToPair" << col_name_full;
+    VLOG(1) << "ColumnToFamilyAndQualifier" << col_name_full;
     size_t delimiter_pos = col_name_full.find(':');
-    if (delimiter_pos == std::string::npos)
+    if (delimiter_pos == std::string::npos || delimiter_pos == 0 ||
+        delimiter_pos + 1 >= col_name_full.size())
       throw std::invalid_argument("Invalid column name:" + col_name_full +
                                   "\nColumn name must be in format " +
                                   "column_family:column_name.");
@@ -221,13 +219,13 @@ class Iterator : public DatasetIterator<Dataset> {
     return pair;
   }
 
-  static std::vector<std::pair<std::string, std::string>> CreateColumnPairs(
-      std::vector<std::string> const& columns) {
-    VLOG(1) << "CreateColumnPairs";
+  static std::vector<std::pair<std::string, std::string>>
+  ColumnsToFamiliesAndQualifiers(std::vector<std::string> const& columns) {
+    VLOG(1) << "ColumnsToFamiliesAndQualifiers";
     std::vector<std::pair<std::string, std::string>> columnPairs(
         columns.size());
     std::transform(columns.begin(), columns.end(), columnPairs.begin(),
-                   &ColumnNameToPair);
+                   &ColumnToFamilyAndQualifier);
     return columnPairs;
   }
 
@@ -239,7 +237,7 @@ class Iterator : public DatasetIterator<Dataset> {
     absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
                         size_t>
         column_map;
-    size_t index = 0;
+    std::size_t index = 0;
     for (const auto& column : columns) {
       std::pair<std::string const&, std::string const&> key(column.first,
                                                             column.second);
@@ -249,37 +247,40 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   mutex mu_;
-  std::shared_ptr<cbt::DataClient> data_client_ GUARDED_BY(mu_);
+  const std::shared_ptr<cbt::DataClient> data_client_;
   std::vector<std::pair<std::string, std::string>> columns_;
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
-  absl::flat_hash_map<std::pair<std::string const&, std::string const&>, size_t>
-      column_to_idx_ GUARDED_BY(mu_);
+  // we're using an abseil map because the default std::map doesn't know how to
+  // hash a pair.
+  const absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+                            size_t>
+      column_to_idx_;
 };
 
 class Dataset : public DatasetBase {
  public:
-  Dataset(OpKernelContext* ctx, BigtableClientResource *client_resource,
+  Dataset(OpKernelContext* ctx, BigtableClientResource* client_resource,
           std::string table_id, std::vector<std::string> columns)
       : DatasetBase(DatasetContext(ctx)),
         client_resource_(client_resource),
         table_id_(table_id),
         columns_(columns) {
-
-      client_resource_->Ref();
+    client_resource_->Ref();
     dtypes_.push_back(DT_STRING);
     output_shapes_.push_back({});
   }
 
-  ~Dataset(){
-      client_resource_->Unref();
-  }
+  ~Dataset() { client_resource_->Unref(); }
 
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
-      const std::string& prefix) const {
+      const std::string& prefix) const override {
     VLOG(1) << "MakeIteratorInternal. table=" << table_id_;
-    return std::unique_ptr<IteratorBase>(new Iterator<Dataset>(
-        {this, strings::StrCat(prefix, "::BigtableDataset")}, table_id_, columns_));
+    auto ret_ptr = absl::make_unique<Iterator<Dataset>>(
+        typename DatasetIterator<Dataset>::Params{
+            this, strings::StrCat(prefix, "::BigtableDataset")},
+        table_id_, columns_);
+    return ret_ptr;
   }
 
   const DataTypeVector& output_dtypes() const override { return dtypes_; }
@@ -291,10 +292,8 @@ class Dataset : public DatasetBase {
   std::string DebugString() const override {
     return "BigtableDatasetOp::Dataset";
   }
-  
-  BigtableClientResource *client_resource() const {
-      return client_resource_;
-    }
+
+  BigtableClientResource* client_resource() const { return client_resource_; }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
@@ -306,7 +305,7 @@ class Dataset : public DatasetBase {
   Status CheckExternalState() const override { return Status::OK(); }
 
  private:
-  BigtableClientResource *client_resource_;
+  BigtableClientResource* client_resource_;
   std::string table_id_;
   std::vector<std::string> columns_;
   DataTypeVector dtypes_;
@@ -322,7 +321,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     VLOG(1) << "Make Dataset";
-    BigtableClientResource *client_resource;
+    BigtableClientResource* client_resource;
     OP_REQUIRES_OK(
         ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &client_resource));
     core::ScopedUnref scoped_unref(client_resource);
