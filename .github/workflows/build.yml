@@ -413,6 +413,7 @@ jobs:
           python --version
           (cd wheel && ls tensorflow_io_gcs_filesystem-*.whl | xargs python -m pip install && cd ..)
           (cd wheel && ls tensorflow_io-*.whl | xargs python -m pip install && cd ..)
+          (grep tensorflow tensorflow_io/python/ops/version_ops.py | sed -e "s/require = //g" | xargs python -m pip install)
       - name: Test ${{ matrix.python }} Windows
         shell: cmd
         run: |

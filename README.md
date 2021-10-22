@@ -83,6 +83,16 @@ People who are a little more adventurous can also try our nightly binaries:
 $ pip install tensorflow-io-nightly
 ```
 
+To ensure you have a version of TensorFlow that is compatible with TensorFlow-IO,
+you can specify the `tensorflow` extra requirement during install:
+
+```
+pip install tensorflow-io[tensorflow]
+```
+
+Similar extras exist for the `tensorflow-gpu`, `tensorflow-cpu` and `tensorflow-rocm`
+packages.
+
 ### Docker Images
 
 In addition to the pip packages, the docker images can be used to quickly get started.
