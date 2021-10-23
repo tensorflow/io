@@ -256,23 +256,26 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_azure_azure_storage_cpplite",
+    name = "libxml_archive",
+    build_file = "@//third_party:libxml.BUILD",
+    sha256 = "f63c5e7d30362ed28b38bfa1ac6313f9a80230720b7fb6c80575eeab3ff5900c",
+    strip_prefix = "libxml2-2.9.7",
+    urls = [
+        "https://mirror.bazel.build/xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+        "http://xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_azure_azure_sdk_for_cpp",
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
-        """sed -i.bak 's/__attribute__((visibility("default")))//g' include/tinyxml2.h """,
-        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(h, CURLOPT_NOSIGNAL, 1);/g' include/http/libcurl_http_client.h """,
-        "echo '' >> include/base64.h",
-        "echo '#include <stdexcept>' >> include/base64.h",
-        "echo '' >> include/utility.h",
-        "echo '#if defined(_MSC_VER)' >> include/utility.h",
-        "echo '#include <Rpc.h>' >> include/utility.h",
-        "echo '#endif' >> include/utility.h",
+        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(newHandle, CURLOPT_NOSIGNAL, 1);/g' sdk/core/azure-core/src/http/curl/curl.cpp """,
     ],
-    sha256 = "25f34354fb0400ffe1b5a5c09c793c9fc8104d375910f6c84ab10fa50c0059cb",
-    strip_prefix = "azure-storage-cpplite-0.3.0",
+    sha256 = "59057317235816b870d268251cb24e4dda19e9dc3c907e3ff402a4e0ad47e83b",
+    strip_prefix = "azure-sdk-for-cpp-azure-storage-blobs_12.2.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
-        "https://github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
+        "https://github.com/Azure/azure-sdk-for-cpp/archive/refs/tags/azure-storage-blobs_12.2.0.tar.gz",
     ],
 )
 
