@@ -33,7 +33,7 @@ class BigtableTable:
 
 
 class _BigtableDataset(dataset_ops.DatasetSource):
-    """_BigTableDataset represents a dataset that retrieves keys and values."""
+    """_BigtableDataset represents a dataset that retrieves keys and values."""
 
     def __init__(self, client_resource,  table_id:str, columns:List[str]):
         self._table_id = table_id

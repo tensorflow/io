@@ -32,18 +32,18 @@ namespace {
 
 class BigtableClientResource : public ResourceBase {
  public:
-  explicit BigtableClientResource(std::string const& project_id,
-                                  std::string const& instance_id)
+  explicit BigtableClientResource(const std::string & project_id,
+                                  const std::string & instance_id)
       : data_client_(CreateDataClient(project_id, instance_id)) {}
 
   std::shared_ptr<cbt::DataClient> CreateDataClient(
-      std::string const& project_id, std::string const& instance_id) {
+      const std::string & project_id, const std::string & instance_id) {
     VLOG(1) << "CreateDataClient";
     return cbt::CreateDefaultDataClient(project_id, instance_id,
                                         cbt::ClientOptions());
   }
 
-  cbt::Table CreateTable(std::string const& table_id) {
+  cbt::Table CreateTable(const std::string & table_id) {
     VLOG(1) << "CreateTable";
     return cbt::Table(data_client_, table_id);
   }
@@ -112,8 +112,8 @@ template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
   explicit Iterator(const typename DatasetIterator<Dataset>::Params& params,
-                    std::string const& table_id,
-                    std::vector<std::string> const& columns)
+                    const std::string & table_id,
+                    const std::vector<std::string> & columns)
       : DatasetIterator<Dataset>(params),
         columns_(ColumnsToFamiliesAndQualifiers(columns)),
         reader_(
@@ -136,23 +136,22 @@ class Iterator : public DatasetIterator<Dataset> {
     *end_of_sequence = false;
 
     VLOG(1) << "alocating tensor";
-    long const kNumCols = column_to_idx_.size();
+    const std::size_t kNumCols = column_to_idx_.size();
     Tensor res(ctx->allocator({}), DT_STRING, {kNumCols});
     auto res_data = res.tensor<tstring, 1>();
 
     VLOG(1) << "getting row";
-    auto const& row = *it_;
+    const auto & row = *it_;
     for (const auto& cell : row.value().cells()) {
-      std::pair<std::string const&, std::string const&> key(
+      std::pair<const std::string &, const std::string &> key(
           cell.family_name(), cell.column_qualifier());
-      auto const column_idx = column_to_idx_.find(key);
+      const auto column_idx = column_to_idx_.find(key);
       if (column_idx != column_to_idx_.end()) {
         VLOG(1) << "getting column:" << column_idx->second;
         res_data(column_idx->second) = std::move(cell.value());
       } else {
-        VLOG(1) << "column " << cell.family_name() << ":"
-                << cell.column_qualifier() << " not found";
-        errors::IsNotFound("Bigtable returned unexpected column.");
+        VLOG(ERROR) << "column " << cell.family_name() << ":"
+                << cell.column_qualifier() << " was unexpectedly read from bigtable";
       }
     }
     VLOG(1) << "returning value";
@@ -177,22 +176,8 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
  private:
-  std::unique_ptr<cbt::Table> CreateTable(
-      std::shared_ptr<cbt::DataClient> const& data_client,
-      std::string const& table_id) {
-    VLOG(1) << "CreateTable";
-    return absl::make_unique<cbt::Table>(data_client, table_id);
-  }
-
-  std::shared_ptr<cbt::DataClient> CreateDataClient(
-      std::string const& project_id, std::string const& instance_id) {
-    VLOG(1) << "CreateDataClient";
-    return cbt::CreateDefaultDataClient(
-        std::move(project_id), std::move(instance_id), cbt::ClientOptions());
-  }
-
   cbt::Filter CreateColumnsFilter(
-      std::vector<std::pair<std::string, std::string>> const& columns) {
+      const std::vector<std::pair<std::string, std::string>> & columns) {
     VLOG(1) << "CreateColumnsFilter";
     std::vector<cbt::Filter> filters;
 
@@ -205,23 +190,18 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   static std::pair<std::string, std::string> ColumnToFamilyAndQualifier(
-      std::string const& col_name_full) {
+      const std::string & col_name_full) {
     VLOG(1) << "ColumnToFamilyAndQualifier" << col_name_full;
-    size_t delimiter_pos = col_name_full.find(':');
-    if (delimiter_pos == std::string::npos || delimiter_pos == 0 ||
-        delimiter_pos + 1 >= col_name_full.size())
+    std::vector<std::string> result_vector = absl::StrSplit(col_name_full, ":");
+    if (result_vector.size() != 2 || result_vector[0].empty())
       throw std::invalid_argument("Invalid column name:" + col_name_full +
                                   "\nColumn name must be in format " +
                                   "column_family:column_name.");
-    std::string col_family = col_name_full.substr(0, delimiter_pos);
-    std::string col_name =
-        col_name_full.substr(delimiter_pos + 1, col_name_full.length());
-    std::pair<std::string, std::string> pair(col_family, col_name);
-    return pair;
+    return std::make_pair(result_vector[0], result_vector[1]);
   }
 
   static std::vector<std::pair<std::string, std::string>>
-  ColumnsToFamiliesAndQualifiers(std::vector<std::string> const& columns) {
+  ColumnsToFamiliesAndQualifiers(const std::vector<std::string> & columns) {
     VLOG(1) << "ColumnsToFamiliesAndQualifiers";
     std::vector<std::pair<std::string, std::string>> columnPairs(
         columns.size());
@@ -230,17 +210,17 @@ class Iterator : public DatasetIterator<Dataset> {
     return columnPairs;
   }
 
-  static absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+  static absl::flat_hash_map<std::pair<const std::string &, const std::string &>,
                              size_t>
   CreateColumnToIdxMap(
-      std::vector<std::pair<std::string, std::string>> const& columns) {
+      const std::vector<std::pair<std::string, std::string>> & columns) {
     VLOG(1) << "CreateColumnToIdxMap";
-    absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+    absl::flat_hash_map<std::pair<const std::string &, const std::string &>,
                         size_t>
         column_map;
     std::size_t index = 0;
     for (const auto& column : columns) {
-      std::pair<std::string const&, std::string const&> key(column.first,
+      std::pair<const std::string &, const std::string &> key(column.first,
                                                             column.second);
       column_map[key] = index++;
     }
@@ -252,9 +232,8 @@ class Iterator : public DatasetIterator<Dataset> {
   std::vector<std::pair<std::string, std::string>> columns_;
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
-  // we're using an abseil map because the default std::map doesn't know how to
-  // hash a pair.
-  const absl::flat_hash_map<std::pair<std::string const&, std::string const&>,
+  // we're using a map with const refs to avoid copying strings when searching for a value.
+  const absl::flat_hash_map<std::pair<const std::string &, const std::string &>,
                             size_t>
       column_to_idx_;
 };
@@ -265,23 +244,20 @@ class Dataset : public DatasetBase {
           std::string table_id, std::vector<std::string> columns)
       : DatasetBase(DatasetContext(ctx)),
         client_resource_(client_resource),
+        scoped_unref(client_resource_),
         table_id_(table_id),
         columns_(columns) {
-    client_resource_->Ref();
     dtypes_.push_back(DT_STRING);
     output_shapes_.push_back({});
   }
 
-  ~Dataset() { client_resource_->Unref(); }
-
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
       const std::string& prefix) const override {
     VLOG(1) << "MakeIteratorInternal. table=" << table_id_;
-    auto ret_ptr = absl::make_unique<Iterator<Dataset>>(
+    return absl::make_unique<Iterator<Dataset>>(
         typename DatasetIterator<Dataset>::Params{
             this, strings::StrCat(prefix, "::BigtableDataset")},
         table_id_, columns_);
-    return ret_ptr;
   }
 
   const DataTypeVector& output_dtypes() const override { return dtypes_; }
@@ -298,7 +274,7 @@ class Dataset : public DatasetBase {
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
-                            DatasetGraphDefBuilder* b, Node** output) const {
+                            DatasetGraphDefBuilder* b, Node** output) const override {
     return errors::Unimplemented("%s does not support serialization",
                                  DebugString());
   }
@@ -307,6 +283,7 @@ class Dataset : public DatasetBase {
 
  private:
   BigtableClientResource* client_resource_;
+  core::ScopedUnref scoped_unref;
   std::string table_id_;
   std::vector<std::string> columns_;
   DataTypeVector dtypes_;
