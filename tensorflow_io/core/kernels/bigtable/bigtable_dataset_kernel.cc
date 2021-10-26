@@ -36,13 +36,6 @@ class BigtableClientResource : public ResourceBase {
                                   const std::string & instance_id)
       : data_client_(CreateDataClient(project_id, instance_id)) {}
 
-  std::shared_ptr<cbt::DataClient> CreateDataClient(
-      const std::string & project_id, const std::string & instance_id) {
-    VLOG(1) << "CreateDataClient";
-    return cbt::CreateDefaultDataClient(project_id, instance_id,
-                                        cbt::ClientOptions());
-  }
-
   cbt::Table CreateTable(const std::string & table_id) {
     VLOG(1) << "CreateTable";
     return cbt::Table(data_client_, table_id);
@@ -51,6 +44,12 @@ class BigtableClientResource : public ResourceBase {
   string DebugString() const override { return "BigtableClientResource"; }
 
  private:
+  std::shared_ptr<cbt::DataClient> CreateDataClient(
+      const std::string & project_id, const std::string & instance_id) {
+    VLOG(1) << "CreateDataClient";
+    return cbt::CreateDefaultDataClient(project_id, instance_id,
+                                        cbt::ClientOptions());
+  }
   std::shared_ptr<cbt::DataClient> data_client_;
 };
 
@@ -137,7 +136,7 @@ class Iterator : public DatasetIterator<Dataset> {
 
     VLOG(1) << "alocating tensor";
     const std::size_t kNumCols = column_to_idx_.size();
-    Tensor res(ctx->allocator({}), DT_STRING, {kNumCols});
+    Tensor res(ctx->allocator({}), DT_STRING, {(long) kNumCols});
     auto res_data = res.tensor<tstring, 1>();
 
     VLOG(1) << "getting row";
@@ -150,7 +149,7 @@ class Iterator : public DatasetIterator<Dataset> {
         VLOG(1) << "getting column:" << column_idx->second;
         res_data(column_idx->second) = std::move(cell.value());
       } else {
-        VLOG(ERROR) << "column " << cell.family_name() << ":"
+        LOG(ERROR) << "column " << cell.family_name() << ":"
                 << cell.column_qualifier() << " was unexpectedly read from bigtable";
       }
     }
@@ -244,7 +243,7 @@ class Dataset : public DatasetBase {
           std::string table_id, std::vector<std::string> columns)
       : DatasetBase(DatasetContext(ctx)),
         client_resource_(client_resource),
-        scoped_unref(client_resource_),
+        client_resource_unref_(client_resource_),
         table_id_(table_id),
         columns_(columns) {
     dtypes_.push_back(DT_STRING);
@@ -283,9 +282,9 @@ class Dataset : public DatasetBase {
 
  private:
   BigtableClientResource* client_resource_;
-  core::ScopedUnref scoped_unref;
-  std::string table_id_;
-  std::vector<std::string> columns_;
+  const core::ScopedUnref client_resource_unref_;
+  const std::string table_id_;
+  const std::vector<std::string> columns_;
   DataTypeVector dtypes_;
   std::vector<PartialTensorShape> output_shapes_;
 };
@@ -302,7 +301,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
     BigtableClientResource* client_resource;
     OP_REQUIRES_OK(
         ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &client_resource));
-    core::ScopedUnref scoped_unref(client_resource);
+    core::ScopedUnref client_resource_unref_(client_resource);
     *output = new Dataset(ctx, client_resource, table_id_, columns_);
   }
 
