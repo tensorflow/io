@@ -38,4 +38,16 @@ REGISTER_OP("BigtableEmptyRowset")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("rowset: resource")
+    .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
+
+
+REGISTER_OP("BigtablePrintRowset")
+    .Input("resource: resource")
+    .Output("output: string")
+    .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("BigtableAppendRowset")
+    .Attr("row_key: string")
+    .Input("resource: resource")
+    .SetShapeFn(shape_inference::UnchangedShape);
