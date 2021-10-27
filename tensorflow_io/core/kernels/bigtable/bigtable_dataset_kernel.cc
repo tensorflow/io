@@ -377,9 +377,9 @@ class BigtablePrintRowsetOp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("BigtablePrintRowset").Device(DEVICE_CPU),
                         BigtablePrintRowsetOp);
 
-class BigtableAppendRowsetOp : public OpKernel {
+class BigtableRowsetAppendStrOp : public OpKernel {
  public:
-  explicit BigtableAppendRowsetOp(OpKernelConstruction* context)
+  explicit BigtableRowsetAppendStrOp(OpKernelConstruction* context)
       : OpKernel(context) {
     OP_REQUIRES_OK(context, context->GetAttr("row_key", &row_key_));
   }
@@ -398,8 +398,8 @@ class BigtableAppendRowsetOp : public OpKernel {
   std::string row_key_;
 };
 
-REGISTER_KERNEL_BUILDER(Name("BigtableAppendRowset").Device(DEVICE_CPU),
-                        BigtableAppendRowsetOp);
+REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendStr").Device(DEVICE_CPU),
+                        BigtableRowsetAppendStrOp);
 
 }  // namespace
 }  // namespace data
