@@ -162,8 +162,7 @@ CreateAzBlobClientWrapper(const std::string& account,
 
   const std::string schema = use_https ? "https://" : "http://";
 
-  const std::string url =
-      schema + account + blob_endpoint + "/" + container;
+  const std::string url = schema + account + blob_endpoint + "/" + container;
 
   const std::string sas_account_container_env =
       "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
@@ -217,20 +216,18 @@ void ListResources(const std::string& dir, const std::string& delimiter,
 
   try {
     for (auto response = blob_client.ListBlobsByHierarchy(delimiter, options);
-        response.HasPage(); response.MoveToNextPage()) {
+         response.HasPage(); response.MoveToNextPage()) {
       std::transform(response.Blobs.begin(), response.Blobs.end(),
-                    std::back_inserter(*results),
-                    [](auto const& list_blob_item) -> std::string {
-                      return list_blob_item.Name;
-                    });
+                     std::back_inserter(*results),
+                     [](auto const& list_blob_item) -> std::string {
+                       return list_blob_item.Name;
+                     });
     }
   } catch (const Azure::Storage::StorageException& e) {
-    
-      std::string error_message =
-          absl::StrCat("Failed to get blobs of ", dir,
-                                                 " (", e.ErrorCode,  ")");
-      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-      return;
+    std::string error_message =
+        absl::StrCat("Failed to get blobs of ", dir, " (", e.ErrorCode, ")");
+    TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
+    return;
   }
 
   TF_SetStatus(status, TF_OK, "");
@@ -279,8 +276,8 @@ class AzBlobRandomAccessFile {
       download_options.Range.Value().Length = bytes_to_read;
 
       try {
-      blob_client.DownloadTo(reinterpret_cast<uint8_t*>(buffer), bytes_to_read,
-                             download_options);
+        blob_client.DownloadTo(reinterpret_cast<uint8_t*>(buffer),
+                               bytes_to_read, download_options);
       } catch (const Azure::Storage::StorageException& e) {
         std::string error_message = absl::StrCat(
             "Failed to get contents of az://", account_, kAzBlobEndpoint, "/",
@@ -364,9 +361,9 @@ class AzBlobWritableFile {
     try {
       blob_client.UploadFrom(tmp_content_filename_);
     } catch (const Azure::Storage::StorageException& e) {
-      std::string error_message = absl::StrCat(
-          "Failed to upload to az://", account_, "/", container_,
-          "/", object_, " (", e.ErrorCode, ")");
+      std::string error_message =
+          absl::StrCat("Failed to upload to az://", account_, "/", container_,
+                       "/", object_, " (", e.ErrorCode, ")");
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
@@ -592,7 +589,8 @@ static void DeleteFile(const TF_Filesystem* filesystem, const char* path,
   try {
     auto response = blob_client.Delete();
   } catch (const Azure::Storage::StorageException& e) {
-    std::string error_message = absl::StrCat("Failed to delete ", path, "(", e.ErrorCode, ")");
+    std::string error_message =
+        absl::StrCat("Failed to delete ", path, "(", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
@@ -626,7 +624,8 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
     try {
       blob_container_client->Delete();
     } catch (const Azure::Storage::StorageException& e) {
-      std::string error_message = absl::StrCat("Error deleting ", path, " (", e.ErrorCode, ")");
+      std::string error_message =
+          absl::StrCat("Error deleting ", path, " (", e.ErrorCode, ")");
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
@@ -643,8 +642,8 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
       try {
         child_client.Delete();
       } catch (const Azure::Storage::StorageException& e) {
-        std::string error_message = absl::StrCat("Failed to delete ", child,
-                                                 " (", e.ErrorCode, ")");
+        std::string error_message =
+            absl::StrCat("Failed to delete ", child, " (", e.ErrorCode, ")");
         TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
         return;
       }
@@ -696,7 +695,7 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
                                 "/" + src_object;
 
     auto res = blob_client.StartCopyFromUri(src_uri);
-    
+
     // Wait until copy completes
     // Status can be success, pending, aborted or failed
     res.PollUntilDone(std::chrono::seconds(1));
@@ -726,9 +725,8 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
   try {
     src_blob_client.Delete();
   } catch (const Azure::Storage::StorageException& e) {
-    std::string error_message =
-        absl::StrCat("Failed to get delete after copy of ", src, " (",
-                     e.ErrorCode, ")");
+    std::string error_message = absl::StrCat(
+        "Failed to get delete after copy of ", src, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
@@ -798,8 +796,8 @@ static void PathExists(const TF_Filesystem* filesystem, const char* path,
       TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
       return;
     } else {
-      std::string error_message =
-          absl::StrCat("Failed to check if ", path, " exists (", e.ErrorCode,  ")");
+      std::string error_message = absl::StrCat("Failed to check if ", path,
+                                               " exists (", e.ErrorCode, ")");
       TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
       return;
     }
@@ -866,7 +864,8 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
         // all good
       } else {
         std::string error_message =
-            absl::StrCat("Failed to check if ", path, " exists (", e.StatusCode, " ", e.Message, " ", e.ErrorCode,  ")");
+            absl::StrCat("Failed to check if ", path, " exists (", e.StatusCode,
+                         " ", e.Message, " ", e.ErrorCode, ")");
         TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
         return false;
       }
@@ -909,8 +908,8 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
     auto az_last_modified = blob_property.Value.LastModified.time_since_epoch();
     stats->mtime_nsec = duration_cast<nanoseconds>(az_last_modified).count();
   } catch (const Azure::Storage::StorageException& e) {
-    std::string error_message = absl::StrCat(
-        "Failed to get file stats for ", path, " (", e.ErrorCode, ")");
+    std::string error_message = absl::StrCat("Failed to get file stats for ",
+                                             path, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
     return;
   }
@@ -988,8 +987,8 @@ static int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_OK, "");
     return blob_property.Value.BlobSize;
   } catch (const Azure::Storage::StorageException& e) {
-    std::string error_message = absl::StrCat(
-        "Failed to get properties of ", path, " (", e.ErrorCode, ")");
+    std::string error_message = absl::StrCat("Failed to get properties of ",
+                                             path, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return 0;
   }
