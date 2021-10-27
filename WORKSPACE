@@ -62,11 +62,11 @@ http_archive(
 http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "7ebab01b06c555f4b6514453dc3e1667f810ef91d1d4d2d3aa29bb9fcb40a900",
-    strip_prefix = "googleapis-541b1ded4abadcc38e8178680b0677f65594ea6f",
+    sha256 = "a53e15405f81d5a32594d7f6486e649131fadda5431cf28377dff4ae54d45d16",
+    strip_prefix = "googleapis-d4d09eb3aec152015f35717102f9b423988b94f7",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
-        "https://github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
+        "https://github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
     ],
 )
 
