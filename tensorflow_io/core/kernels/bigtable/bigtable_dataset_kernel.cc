@@ -314,33 +314,77 @@ class BigtableRowsetResource : public ResourceBase {
   cbt::RowSet row_set_;
 };
 
-class BigtableEmptyRowsetOp : public OpKernel {
+class BigtableRowRangeResource : public ResourceBase {
  public:
-  explicit BigtableEmptyRowsetOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+  explicit BigtableRowRangeResource(cbt::RowRange const& row_range)
+      : row_range_(std::move(row_range)) {
+    VLOG(1) << "BigtableRowsetResource ctor";
+  }
+
+  ~BigtableRowRangeResource() { VLOG(1) << "BigtableRowsetResource dtor"; }
+
+  std::string PrintRowRange() {
+    std::string res;
+    google::protobuf::TextFormat::PrintToString(row_range_.as_proto(), &res);
+    return res;
+  }
+
+  string DebugString() const override { return "BigtableRowRangeResource"; }
+
+  cbt::RowRange row_range_;
+};
+
+template <typename T>
+class MutableResourceOpKernel : public OpKernel {
+ public:
+  explicit MutableResourceOpKernel(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override TF_LOCKS_EXCLUDED(mu_) {
+    mutex_lock l(mu_);
+    ResourceMgr* mgr = context->resource_manager();
+    OP_REQUIRES_OK(context, cinfo_.Init(mgr, def()));
+
+    T* resource;
+    OP_REQUIRES_OK(context,
+                   mgr->LookupOrCreate<T>(
+                       cinfo_.container(), cinfo_.name(), &resource,
+                       [this](T** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                         Status s = CreateResource(ret);
+                         if (!s.ok() && *ret != nullptr) {
+                           CHECK((*ret)->Unref());
+                         }
+                         return s;
+                       }));
+
+    OP_REQUIRES_OK(context, MakeResourceHandleToOutput(
+                                context, 0, cinfo_.container(), cinfo_.name(),
+                                TypeIndex::Make<T>()));
+  }
+
+ protected:
+  // Variables accessible from subclasses.
+  mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+
+ private:
+  virtual Status CreateResource(T** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+};
+
+class BigtableEmptyRowsetOp
+    : public MutableResourceOpKernel<BigtableRowsetResource> {
+ public:
+  explicit BigtableEmptyRowsetOp(OpKernelConstruction* ctx)
+      : MutableResourceOpKernel<BigtableRowsetResource>(ctx) {
     VLOG(1) << "BigtableEmptyRowsetOp ctor ";
   }
 
  private:
-  void Compute(OpKernelContext* ctx) override {
-    VLOG(1) << "BigtableEmptyRowsetOp compute";
-    mutex_lock l(mu_);
-    ResourceMgr* mgr = ctx->resource_manager();
-    OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
-    BigtableRowsetResource* resource;
-    VLOG(1) << "BigtableEmptyRowsetOp compute container:" << cinfo_.container()
-            << " name:" << cinfo_.name();
-    OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigtableRowsetResource>(
-                            cinfo_.container(), cinfo_.name(), &resource,
-                            [this, ctx](BigtableRowsetResource** ret)
-                                TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                                  *ret =
-                                      new BigtableRowsetResource(cbt::RowSet());
-                                  return Status::OK();
-                                }));
-    core::ScopedUnref resource_cleanup(resource);
-    OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
-                            ctx, 0, cinfo_.container(), cinfo_.name(),
-                            TypeIndex::Make<BigtableRowsetResource>()));
+  Status CreateResource(BigtableRowsetResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new BigtableRowsetResource(cbt::RowSet());
+    return Status::OK();
   }
 
  private:
@@ -400,6 +444,29 @@ class BigtableRowsetAppendStrOp : public OpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendStr").Device(DEVICE_CPU),
                         BigtableRowsetAppendStrOp);
+
+class BigtableEmptyRowrangeOp
+    : public MutableResourceOpKernel<BigtableRowRangeResource> {
+ public:
+  explicit BigtableEmptyRowrangeOp(OpKernelConstruction* ctx)
+      : MutableResourceOpKernel<BigtableRowRangeResource>(ctx) {
+    VLOG(1) << "BigtableEmptyRowrangeOp ctor ";
+  }
+
+ private:
+  Status CreateResource(BigtableRowRangeResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new BigtableRowRangeResource(cbt::RowRange::Empty());
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowRange").Device(DEVICE_CPU),
+                        BigtableEmptyRowrangeOp);
 
 }  // namespace
 }  // namespace data

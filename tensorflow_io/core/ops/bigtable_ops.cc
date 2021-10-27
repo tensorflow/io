@@ -51,3 +51,10 @@ REGISTER_OP("BigtableRowsetAppendStr")
     .Attr("row_key: string")
     .Input("resource: resource")
     .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("BigtableEmptyRowRange")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("rowrange: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
