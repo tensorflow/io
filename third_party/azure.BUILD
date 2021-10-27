@@ -43,12 +43,12 @@ cc_library(
             "BUILD_TRANSPORT_WINHTTP_ADAPTER",
         ],
         "//conditions:default": [
-            "BUILD_CURL_HTTP_TRANSPORT_ADAPTER"
+            "BUILD_CURL_HTTP_TRANSPORT_ADAPTER",
         ],
     }),
     includes = [
         "sdk/core/azure-core/inc/",
-        "sdk/storage/azure-storage-blobs/inc/"
+        "sdk/storage/azure-storage-blobs/inc/",
         "sdk/storage/azure-storage-common/inc/",
     ],
     linkopts = [],
