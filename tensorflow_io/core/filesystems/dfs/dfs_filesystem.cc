@@ -130,6 +130,18 @@ void Close(const TF_WritableFile* file, TF_Status* status) {
 } //tf_writable_file
 
 
+// SECTION 3. Implementation for `TF_ReadOnlyMemoryRegion`
+// ----------------------------------------------------------------------------
+namespace tf_read_only_memory_region {
+void Cleanup(TF_ReadOnlyMemoryRegion* region) {}
+
+const void* Data(const TF_ReadOnlyMemoryRegion* region) { return nullptr; }
+
+uint64_t Length(const TF_ReadOnlyMemoryRegion* region) { return 0; }
+
+}  // namespace tf_read_only_memory_region
+
+
 // SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
 // ----------------------------------------------------------------------------
 namespace tf_dfs_filesystem {
@@ -741,6 +753,13 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->writable_file_ops->append = tf_writable_file::Append;
   ops->writable_file_ops->tell = tf_writable_file::Tell;
   ops->writable_file_ops->close = tf_writable_file::Close;
+
+  ops->read_only_memory_region_ops = static_cast<TF_ReadOnlyMemoryRegionOps*>(
+      plugin_memory_allocate(TF_READ_ONLY_MEMORY_REGION_OPS_SIZE));
+  ops->read_only_memory_region_ops->cleanup =
+      tf_read_only_memory_region::Cleanup;
+  ops->read_only_memory_region_ops->data = tf_read_only_memory_region::Data;
+  ops->read_only_memory_region_ops->length = tf_read_only_memory_region::Length;
 
   ops->filesystem_ops = static_cast<TF_FilesystemOps*>(
       plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
