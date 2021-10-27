@@ -270,12 +270,13 @@ http_archive(
     name = "com_github_azure_azure_sdk_for_cpp",
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
+        # patch can be removed once https://github.com/googleapis/google-cloud-cpp/issues/7462 is fixed
         """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(newHandle, CURLOPT_NOSIGNAL, 1);/g' sdk/core/azure-core/src/http/curl/curl.cpp """,
     ],
-    sha256 = "59057317235816b870d268251cb24e4dda19e9dc3c907e3ff402a4e0ad47e83b",
-    strip_prefix = "azure-sdk-for-cpp-azure-storage-blobs_12.2.0",
+    sha256 = "ec9cb17cab24e940895eb2249c096f500f69383edfa66b20cb6456414767ce99",
+    strip_prefix = "azure-sdk-for-cpp-9dac89c67564c64748ebb72b9de55c548db51eff",
     urls = [
-        "https://github.com/Azure/azure-sdk-for-cpp/archive/refs/tags/azure-storage-blobs_12.2.0.tar.gz",
+        "https://github.com/Azure/azure-sdk-for-cpp/archive/9dac89c67564c64748ebb72b9de55c548db51eff.tar.gz",
     ],
 )
 
