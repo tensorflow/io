@@ -32,3 +32,10 @@ REGISTER_OP("BigtableDataset")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
+
+
+REGISTER_OP("BigtableEmptyRowset")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("rowset: resource")
+    .SetShapeFn(shape_inference::ScalarShape);

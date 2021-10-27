@@ -28,7 +28,7 @@ class BigtableTable:
       self._table_id = table_id
       self._client_resource = client_resource
   
-  def read_rows(self, columns:List[str]):
+  def read_rows(self, columns:List[str], row_set):
     return _BigtableDataset(self._client_resource, self._table_id, columns)
 
 
