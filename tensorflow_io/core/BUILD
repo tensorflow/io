@@ -175,6 +175,23 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "bigtable_ops",
+    srcs = [
+        "kernels/bigtable/bigtable_dataset_kernel.cc",
+        "ops/bigtable_ops.cc",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        "@com_github_googleapis_google_cloud_cpp//:bigtable_client",
+        "@com_github_grpc_grpc//:grpc++",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
 # A library for use in the bigquery kernels.
 cc_library(
     name = "bigquery_lib_cc",
