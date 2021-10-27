@@ -55,55 +55,27 @@ class BigtableClientResource : public ResourceBase {
   std::shared_ptr<cbt::DataClient> data_client_;
 };
 
-class BigtableClientOp : public OpKernel {
+class BigtableClientOp : public ResourceOpKernel<BigtableClientResource> {
  public:
-  explicit BigtableClientOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+  explicit BigtableClientOp(OpKernelConstruction* ctx)
+      : ResourceOpKernel<BigtableClientResource>(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("project_id", &project_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
     VLOG(1) << "BigtableClientOp ctor";
   }
 
-  ~BigtableClientOp() override {
-    VLOG(1) << "BigtableClientOp dtor";
-    if (cinfo_.resource_is_private_to_kernel()) {
-      if (!cinfo_.resource_manager()
-               ->Delete<BigtableClientResource>(cinfo_.container(),
-                                                cinfo_.name())
-               .ok()) {
-        // Do nothing; the resource can have been deleted by session resets.
-      }
-    }
-  }
-
   void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     VLOG(1) << "BigtableClientOp compute";
-    mutex_lock l(mu_);
-    if (!initialized_) {
-      ResourceMgr* mgr = ctx->resource_manager();
-      OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
-      BigtableClientResource* resource;
-      VLOG(1) << "BigtableClientOp compute container:" << cinfo_.container()
-              << " name:" << cinfo_.name();
-      OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigtableClientResource>(
-                              cinfo_.container(), cinfo_.name(), &resource,
-                              [this, ctx](BigtableClientResource** ret)
-                                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                                    *ret = new BigtableClientResource(
-                                        project_id_, instance_id_);
-                                    return Status::OK();
-                                  }));
-      core::ScopedUnref resource_cleanup(resource);
-      initialized_ = true;
-    }
-    OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
-                            ctx, 0, cinfo_.container(), cinfo_.name(),
-                            TypeIndex::Make<BigtableClientResource>()));
+    ResourceOpKernel<BigtableClientResource>::Compute(ctx);
+  }
+
+  Status CreateResource(BigtableClientResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new BigtableClientResource(project_id_, instance_id_);
+    return Status::OK();
   }
 
  private:
-  mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
-  bool initialized_ TF_GUARDED_BY(mu_) = false;
   string project_id_;
   string instance_id_;
 };
@@ -323,59 +295,66 @@ REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
 class BigtableRowsetResource : public ResourceBase {
  public:
   explicit BigtableRowsetResource(cbt::RowSet const& row_set) {
-      VLOG(1) << "BigtableRowsetResource ctor";
+    VLOG(1) << "BigtableRowsetResource ctor";
     row_set_ = std::move(row_set);
   }
 
-  ~BigtableRowsetResource(){
-      VLOG(1) << "BigtableRowsetResource dtor";
-  }
+  ~BigtableRowsetResource() { VLOG(1) << "BigtableRowsetResource dtor"; }
 
   std::string PrintRowSet() {
-  std::string res;
-  google::protobuf::TextFormat::PrintToString(row_set_.as_proto(), &res);
-  return res;
-    }
-
-  void Append(std::string const& row_key){
-      row_set_.Append(row_key);
+    std::string res;
+    google::protobuf::TextFormat::PrintToString(row_set_.as_proto(), &res);
+    return res;
   }
+
+  void Append(std::string const& row_key) { row_set_.Append(row_key); }
 
   string DebugString() const override { return "BigtableRowsetResource"; }
 
   cbt::RowSet row_set_;
 };
 
-class BigtableEmptyRowsetOp : public ResourceOpKernel<BigtableRowsetResource> {
+class BigtableEmptyRowsetOp : public OpKernel {
  public:
-  explicit BigtableEmptyRowsetOp(OpKernelConstruction* ctx) : ResourceOpKernel<BigtableRowsetResource>(ctx) {
-      VLOG(1) << "BigtableEmptyRowsetOp ctor ";
+  explicit BigtableEmptyRowsetOp(OpKernelConstruction* ctx) : OpKernel(ctx) {
+    VLOG(1) << "BigtableEmptyRowsetOp ctor ";
   }
 
  private:
-  void Compute(OpKernelContext* context) override {
-    ResourceOpKernel<BigtableRowsetResource>::Compute(context);
-  }
-
-  Status CreateResource(BigtableRowsetResource** resource)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *resource = new BigtableRowsetResource(std::move(cbt::RowSet()));
-    return Status::OK();
+  void Compute(OpKernelContext* ctx) override {
+    VLOG(1) << "BigtableEmptyRowsetOp compute";
+    mutex_lock l(mu_);
+    ResourceMgr* mgr = ctx->resource_manager();
+    OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
+    BigtableRowsetResource* resource;
+    VLOG(1) << "BigtableEmptyRowsetOp compute container:" << cinfo_.container()
+            << " name:" << cinfo_.name();
+    OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigtableRowsetResource>(
+                            cinfo_.container(), cinfo_.name(), &resource,
+                            [this, ctx](BigtableRowsetResource** ret)
+                                TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                                  *ret =
+                                      new BigtableRowsetResource(cbt::RowSet());
+                                  return Status::OK();
+                                }));
+    core::ScopedUnref resource_cleanup(resource);
+    OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
+                            ctx, 0, cinfo_.container(), cinfo_.name(),
+                            TypeIndex::Make<BigtableRowsetResource>()));
   }
 
  private:
   mutable mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowset").Device(DEVICE_CPU),
                         BigtableEmptyRowsetOp);
 
-
-
 class BigtablePrintRowsetOp : public OpKernel {
  public:
-  explicit BigtablePrintRowsetOp(OpKernelConstruction* context) : OpKernel(context) {
-  }
+  explicit BigtablePrintRowsetOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
 
   void Compute(OpKernelContext* context) override {
     BigtableRowsetResource* resource;
@@ -383,14 +362,12 @@ class BigtablePrintRowsetOp : public OpKernel {
                    GetResourceFromContext(context, "resource", &resource));
     core::ScopedUnref unref(resource);
 
-    
-      // Create an output tensor
-      Tensor *output_tensor = NULL;
-      OP_REQUIRES_OK(context, context->allocate_output(0, {1},
-                                                       &output_tensor));
-      auto output_v = output_tensor->tensor<tstring, 1>();
+    // Create an output tensor
+    Tensor* output_tensor = NULL;
+    OP_REQUIRES_OK(context, context->allocate_output(0, {1}, &output_tensor));
+    auto output_v = output_tensor->tensor<tstring, 1>();
 
-      output_v(0) = resource->PrintRowSet();
+    output_v(0) = resource->PrintRowSet();
   }
 
  private:
@@ -400,12 +377,11 @@ class BigtablePrintRowsetOp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("BigtablePrintRowset").Device(DEVICE_CPU),
                         BigtablePrintRowsetOp);
 
-
 class BigtableAppendRowsetOp : public OpKernel {
  public:
-  explicit BigtableAppendRowsetOp(OpKernelConstruction* context) : OpKernel(context) {
-    OP_REQUIRES_OK(context,
-                   context->GetAttr("row_key", &row_key_));
+  explicit BigtableAppendRowsetOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+    OP_REQUIRES_OK(context, context->GetAttr("row_key", &row_key_));
   }
 
   void Compute(OpKernelContext* context) override {
