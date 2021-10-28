@@ -309,6 +309,9 @@ class BigtableRowsetResource : public ResourceBase {
 
   void AppendStr(std::string const& row_key) { row_set_.Append(row_key); }
   void AppendRowRange(cbt::RowRange const& row_range) { row_set_.Append(row_range); }
+  cbt::RowSet Intersect(cbt::RowRange const& row_range) {
+      return row_set_.Intersect(row_range);
+  }
 
   string DebugString() const override { return "BigtableRowsetResource"; }
 
@@ -394,7 +397,6 @@ class BigtableEmptyRowRangeOp
 
  private:
   mutable mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowRange").Device(DEVICE_CPU),
@@ -450,7 +452,6 @@ class BigtableRowRangeOp
 
  private:
   mutable mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
   std::string left_row_key_ TF_GUARDED_BY(mu_);
   bool left_open_ TF_GUARDED_BY(mu_);
   std::string right_row_key_ TF_GUARDED_BY(mu_);
@@ -504,7 +505,6 @@ class BigtableEmptyRowsetOp
 
  private:
   mutable mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowset").Device(DEVICE_CPU),
@@ -591,7 +591,75 @@ REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendRowRange").Device(DEVICE_CPU),
                         BigtableRowsetAppendRowRangeOp);
 
 
+class BigtablePrefixRowRangeOp
+    : public MutableResourceOpKernel<BigtableRowRangeResource> {
+ public:
+  explicit BigtablePrefixRowRangeOp(OpKernelConstruction* ctx)
+      : MutableResourceOpKernel<BigtableRowRangeResource>(ctx) {
+    VLOG(1) << "BigtablePrefixRowRangeOp ctor ";
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("prefix_str", &prefix_str_));
+  }
 
+ private:
+  Status CreateResource(BigtableRowRangeResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new BigtableRowRangeResource(cbt::RowRange::Prefix(prefix_str_));
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  std::string prefix_str_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtablePrefixRowRange").Device(DEVICE_CPU),
+                        BigtablePrefixRowRangeOp);
+
+
+class BigtableRowsetIntersectOp : public OpKernel {
+ public:
+  explicit BigtableRowsetIntersectOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override TF_LOCKS_EXCLUDED(mu_) {
+    mutex_lock l(mu_);
+    ResourceMgr* mgr = context->resource_manager();
+    OP_REQUIRES_OK(context, cinfo_.Init(mgr, def()));
+
+
+    BigtableRowsetResource* row_set_resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "row_set_resource", &row_set_resource));
+    core::ScopedUnref row_set_resource_unref(row_set_resource);
+
+    BigtableRowRangeResource* row_range_resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "row_range_resource", &row_range_resource));
+    core::ScopedUnref row_range_resource_unref(row_range_resource);
+
+
+    BigtableRowsetResource* result_resource;
+    OP_REQUIRES_OK(context,
+                   mgr->LookupOrCreate<BigtableRowsetResource>(
+                       cinfo_.container(), cinfo_.name(), &result_resource,
+                       [this,row_set_resource,row_range_resource](BigtableRowsetResource** ret) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+                           *ret = new BigtableRowsetResource(row_set_resource->Intersect(row_range_resource->RowRange()));
+                            return Status::OK();
+                       }));
+
+    OP_REQUIRES_OK(context, MakeResourceHandleToOutput(
+                                context, 0, cinfo_.container(), cinfo_.name(),
+                                TypeIndex::Make<BigtableRowsetResource>()));
+  }
+
+ protected:
+  // Variables accessible from subclasses.
+  mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableRowsetIntersect").Device(DEVICE_CPU),
+                        BigtableRowsetIntersectOp);
 
 
 }  // namespace

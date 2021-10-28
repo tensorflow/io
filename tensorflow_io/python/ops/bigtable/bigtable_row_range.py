@@ -14,12 +14,23 @@
 
 """Module implementing basic functions for obtaining BigTable RowRanges"""
 
-def infinite() -> pbt_C.RowRange:
+from tensorflow_io.python.ops import core_ops
+
+
+class RowRange:
+    def __init__(self, impl) -> None:
+        self._impl = impl
+    
+    def __repr__(self) -> str:
+        return core_ops.bigtable_print_row_range(self._impl).numpy()[0].decode()
+
+
+def infinite():
   """Create a infinite row range."""
-  return pbt_C.infinite_row_range()
+  return RowRange(core_ops.bigtable_row_range("", False, "", False))
 
 
-def starting_at(row_key: str) -> pbt_C.RowRange:
+def starting_at(row_key: str):
   """Create a row range staring at given row (inclusive).
 
   Args:
@@ -27,10 +38,9 @@ def starting_at(row_key: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range which starts at `row_key` (inclusive).
   """
-  return pbt_C.starting_at_row_range(row_key)
+  return RowRange(core_ops.bigtable_row_range(row_key, False, "", False))
 
-
-def ending_at(row_key: str) -> pbt_C.RowRange:
+def ending_at(row_key: str):
   """Create a row range ending at given row (inclusive).
 
   Args:
@@ -38,15 +48,14 @@ def ending_at(row_key: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range which ends at `row_key` (inclusive).
   """
-  return pbt_C.ending_at_row_range(row_key)
+  return RowRange(core_ops.bigtable_row_range("", False, row_key, False))
 
 
-def empty() -> pbt_C.RowRange:
+def empty():
   """Create an empty row range."""
-  return pbt_C.empty_row_range()
+  return RowRange(core_ops.bigtable_empty_row_range())
 
-
-def prefix(prefix_str: str) -> pbt_C.RowRange:
+def prefix(prefix_str: str):
   """Create a range of all rows starting with a given prefix.
 
   Args:
@@ -54,10 +63,10 @@ def prefix(prefix_str: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range of all rows starting with the given prefix.
   """
-  return pbt_C.prefix_row_range(prefix_str)
+  return RowRange(core_ops.bigtable_prefix_row_range(prefix_str))
 
 
-def right_open(start: str, end: str) -> pbt_C.RowRange:
+def right_open(start: str, end: str):
   """Create a row range exclusive at the start and inclusive at the end.
 
   Args:
@@ -66,10 +75,10 @@ def right_open(start: str, end: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range between the `start` and `end`.
   """
-  return pbt_C.right_open_row_range(start, end)
+  return RowRange(core_ops.bigtable_row_range(start, False, end, True))
 
 
-def left_open(start: str, end: str) -> pbt_C.RowRange:
+def left_open(start: str, end: str):
   """Create a row range inclusive at the start and exclusive at the end.
 
   Args:
@@ -78,10 +87,10 @@ def left_open(start: str, end: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range between the `start` and `end`.
   """
-  return pbt_C.left_open_row_range(start, end)
+  return RowRange(core_ops.bigtable_row_range(start, True, end, False))
 
 
-def open_range(start: str, end: str) -> pbt_C.RowRange:
+def open_range(start: str, end: str):
   """Create a row range exclusive at both the start and the end.
 
   Args:
@@ -90,10 +99,9 @@ def open_range(start: str, end: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range between the `start` and `end`.
   """
-  return pbt_C.open_row_range(start, end)
+  return RowRange(core_ops.bigtable_row_range(start, True, end, True))
 
-
-def closed_range(start: str, end: str) -> pbt_C.RowRange:
+def closed_range(start: str, end: str):
   """Create a row range inclusive at both the start and the end.
 
   Args:
@@ -102,4 +110,4 @@ def closed_range(start: str, end: str) -> pbt_C.RowRange:
   Returns:
     RowRange: The row range between the `start` and `end`.
   """
-  return pbt_C.closed_row_range(start, end)
+  return RowRange(core_ops.bigtable_row_range(start, False, end, False))

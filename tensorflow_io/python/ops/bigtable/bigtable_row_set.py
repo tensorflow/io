@@ -13,16 +13,31 @@
 # limitations under the License.
 
 """Module implementing basic functions for obtaining BigTable RowSets"""
-from . import pbt_C
+
+from tensorflow_io.python.ops import core_ops
+from . import bigtable_row_range
 from typing import Union
 
+class RowSet:
+    def __init__(self, impl):
+        self._impl = impl
 
-def empty() -> pbt_C.RowSet:
+    def __repr__(self) -> str:
+        return core_ops.bigtable_print_rowset(self._impl).numpy()[0].decode()
+    
+    def append(self, row_or_range):
+        if isinstance(row_or_range, str):
+            core_ops.bigtable_rowset_append_str(self._impl, row_or_range)
+        else:
+            core_ops.bigtable_rowset_append_row_range(self._impl, row_or_range._impl)
+
+
+def empty():
   """Create an empty row set."""
-  return pbt_C.RowSet()
+  return RowSet(core_ops.bigtable_empty_rowset())
 
 
-def from_rows_or_ranges(*args: Union[str, pbt_C.RowRange]) -> pbt_C.RowSet:
+def from_rows_or_ranges(*args: Union[str, bigtable_row_range.RowRange]):
   """ Create a set from a row range.
 
   Args:
@@ -31,14 +46,14 @@ def from_rows_or_ranges(*args: Union[str, pbt_C.RowRange]) -> pbt_C.RowSet:
   Returns:
     RowSet: a set of rows containing the given row range.
   """
-  row_set = pbt_C.RowSet()
+  row_set = empty()
   for row_or_range in args:
     row_set.append(row_or_range)
 
   return row_set
 
 
-def intersect(row_set, row_range: pbt_C.RowRange) -> pbt_C.RowSet:
+def intersect(row_set, row_range):
   """ Modify a row set by intersecting its contents with a row range.
 
   All rows intersecting with the given range will be removed from the set
@@ -53,4 +68,4 @@ def intersect(row_set, row_range: pbt_C.RowRange) -> pbt_C.RowSet:
   Returns:
     RowSet: an intersection of the given row set and row range.
   """
-  return row_set.intersect(row_range)
+  return RowSet(core_ops.bigtable_rowset_intersect(row_set._impl, row_range._impl))
