@@ -157,12 +157,17 @@ CreateAzBlobClientWrapper(const std::string& account,
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
   const auto use_https = use_http_env == nullptr;
   const auto blob_endpoint_env = std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT");
-  const auto blob_endpoint =
-      std::string(blob_endpoint_env ? blob_endpoint_env : kAzBlobEndpoint);
-
   const std::string schema = use_https ? "https://" : "http://";
 
-  const std::string url = schema + account + blob_endpoint + "/" + container;
+  auto blob_endpoint =
+      std::string(blob_endpoint_env ? blob_endpoint_env
+                                    : schema + account + kAzBlobEndpoint);
+
+  if (blob_endpoint.find("://") == std::string::npos) {
+    blob_endpoint = schema + blob_endpoint;
+  }
+
+  const std::string url = blob_endpoint + "/" + container;
 
   const std::string sas_account_container_env =
       "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
@@ -209,6 +214,10 @@ void ListResources(const std::string& dir, const std::string& delimiter,
     TF_SetStatus(status, TF_FAILED_PRECONDITION,
                  "Cannot list resources for non specified container");
     return;
+  }
+
+  if (!object.empty() && object.back() != '/') {
+    object += "/";
   }
 
   Azure::Storage::Blobs::ListBlobsOptions options;
@@ -632,7 +641,7 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
   } else {
     // Delete all blobs under dirname prefix
     std::vector<std::string> children;
-    ListResources(path, "", *blob_container_client, &children, status);
+    ListResources(path, "/", *blob_container_client, &children, status);
     if (TF_GetCode(status) != TF_OK) {
       return;
     }
