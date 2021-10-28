@@ -74,3 +74,9 @@ REGISTER_OP("BigtableRowsetAppendStr")
     .Attr("row_key: string")
     .Input("resource: resource")
     .SetShapeFn(shape_inference::UnchangedShape);
+
+REGISTER_OP("BigtableRowsetAppendRowRange")
+    .Input("row_set_resource: resource")
+    .Input("row_range_resource: resource")
+    .SetShapeFn(shape_inference::UnchangedShape);
+

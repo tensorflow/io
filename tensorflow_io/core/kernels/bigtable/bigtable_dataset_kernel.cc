@@ -307,7 +307,8 @@ class BigtableRowsetResource : public ResourceBase {
     return res;
   }
 
-  void Append(std::string const& row_key) { row_set_.Append(row_key); }
+  void AppendStr(std::string const& row_key) { row_set_.Append(row_key); }
+  void AppendRowRange(cbt::RowRange const& row_range) { row_set_.Append(row_range); }
 
   string DebugString() const override { return "BigtableRowsetResource"; }
 
@@ -327,6 +328,10 @@ class BigtableRowRangeResource : public ResourceBase {
     std::string res;
     google::protobuf::TextFormat::PrintToString(row_range_.as_proto(), &res);
     return res;
+  }
+
+  cbt::RowRange& RowRange(){
+      return row_range_;
   }
 
   string DebugString() const override { return "BigtableRowRangeResource"; }
@@ -544,7 +549,7 @@ class BigtableRowsetAppendStrOp : public OpKernel {
                    GetResourceFromContext(context, "resource", &resource));
     core::ScopedUnref unref(resource);
 
-    resource->Append(row_key_);
+    resource->AppendStr(row_key_);
   }
 
  private:
@@ -554,6 +559,36 @@ class BigtableRowsetAppendStrOp : public OpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendStr").Device(DEVICE_CPU),
                         BigtableRowsetAppendStrOp);
+
+
+class BigtableRowsetAppendRowRangeOp : public OpKernel {
+ public:
+  explicit BigtableRowsetAppendRowRangeOp(OpKernelConstruction* context)
+      : OpKernel(context) {
+  }
+
+  void Compute(OpKernelContext* context) override {
+    BigtableRowsetResource* row_set_resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "row_set_resource", &row_set_resource));
+    core::ScopedUnref row_set_resource_unref(row_set_resource);
+
+
+    BigtableRowRangeResource* row_range_resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "row_range_resource", &row_range_resource));
+    core::ScopedUnref row_range_resource_unref(row_range_resource);
+
+    row_set_resource->AppendRowRange(row_range_resource->RowRange());
+  }
+
+ private:
+  mutable mutex mu_;
+  std::string row_key_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendRowRange").Device(DEVICE_CPU),
+                        BigtableRowsetAppendRowRangeOp);
 
 
 
