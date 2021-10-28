@@ -41,6 +41,29 @@ REGISTER_OP("BigtableEmptyRowset")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
 
+REGISTER_OP("BigtableEmptyRowRange")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("rowrange: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtableRowRange")
+    .Attr("left_row_key: string")
+    .Attr("left_open: bool")
+    .Attr("right_row_key: string")
+    .Attr("right_open: bool")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("rowrange: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+
+REGISTER_OP("BigtablePrintRowRange")
+    .Input("resource: resource")
+    .Output("output: string")
+    .SetShapeFn(shape_inference::UnchangedShape);
 
 REGISTER_OP("BigtablePrintRowset")
     .Input("resource: resource")
@@ -51,10 +74,3 @@ REGISTER_OP("BigtableRowsetAppendStr")
     .Attr("row_key: string")
     .Input("resource: resource")
     .SetShapeFn(shape_inference::UnchangedShape);
-
-REGISTER_OP("BigtableEmptyRowRange")
-    .Attr("container: string = ''")
-    .Attr("shared_name: string = ''")
-    .Output("rowrange: resource")
-    .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);

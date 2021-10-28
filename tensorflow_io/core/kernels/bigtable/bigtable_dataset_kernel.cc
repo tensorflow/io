@@ -372,6 +372,116 @@ class MutableResourceOpKernel : public OpKernel {
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 };
 
+class BigtableEmptyRowRangeOp
+    : public MutableResourceOpKernel<BigtableRowRangeResource> {
+ public:
+  explicit BigtableEmptyRowRangeOp(OpKernelConstruction* ctx)
+      : MutableResourceOpKernel<BigtableRowRangeResource>(ctx) {
+    VLOG(1) << "BigtableEmptyRowRangeOp ctor ";
+  }
+
+ private:
+  Status CreateResource(BigtableRowRangeResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+    *resource = new BigtableRowRangeResource(cbt::RowRange::Empty());
+    return Status::OK();
+  }
+
+ private:
+  mutable mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowRange").Device(DEVICE_CPU),
+                        BigtableEmptyRowRangeOp);
+
+class BigtableRowRangeOp
+    : public MutableResourceOpKernel<BigtableRowRangeResource> {
+ public:
+  explicit BigtableRowRangeOp(OpKernelConstruction* ctx)
+      : MutableResourceOpKernel<BigtableRowRangeResource>(ctx) {
+    VLOG(1) << "BigtableRowRangeOp ctor ";
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("left_row_key", &left_row_key_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("left_open", &left_open_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("right_row_key", &right_row_key_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("right_open", &right_open_));
+  }
+
+ private:
+  Status CreateResource(BigtableRowRangeResource** resource)
+      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+
+    VLOG(1) << "BigtableRowRangeOp constructing row_range:"  << (left_open_ ? "(" : "[")<< left_row_key_ << ":" << right_row_key_ << (right_open_ ? ")" : "]");
+    
+    // both empty - infinite
+    if(left_row_key_.empty() && right_row_key_.empty()){
+        *resource = new BigtableRowRangeResource(cbt::RowRange::InfiniteRange());
+        return Status::OK();
+    }
+    
+    // open
+    if(left_open_ && right_open_){
+        *resource = new BigtableRowRangeResource(cbt::RowRange::Open(left_row_key_, right_row_key_));
+        return Status::OK();
+    }
+    // closed
+    if(!left_open_ && !right_open_){
+        *resource = new BigtableRowRangeResource(cbt::RowRange::Closed(left_row_key_, right_row_key_));
+        return Status::OK();
+    }
+    // right_open
+    if(!left_open_ && right_open_){
+        *resource = new BigtableRowRangeResource(cbt::RowRange::RightOpen(left_row_key_, right_row_key_));
+        return Status::OK();
+    }
+    // left_open
+    if(left_open_ && !right_open_){
+        *resource = new BigtableRowRangeResource(cbt::RowRange::LeftOpen(left_row_key_, right_row_key_));
+        return Status::OK();
+    }
+    // will never reach this;
+    throw std::exception();
+  }
+
+ private:
+  mutable mutex mu_;
+  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
+  std::string left_row_key_ TF_GUARDED_BY(mu_);
+  bool left_open_ TF_GUARDED_BY(mu_);
+  std::string right_row_key_ TF_GUARDED_BY(mu_);
+  bool right_open_ TF_GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableRowRange").Device(DEVICE_CPU),
+                        BigtableRowRangeOp);
+
+
+class BigtablePrintRowRangeOp : public OpKernel {
+ public:
+  explicit BigtablePrintRowRangeOp(OpKernelConstruction* context)
+      : OpKernel(context) {}
+
+  void Compute(OpKernelContext* context) override {
+    BigtableRowRangeResource* resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "resource", &resource));
+    core::ScopedUnref unref(resource);
+
+    // Create an output tensor
+    Tensor* output_tensor = NULL;
+    OP_REQUIRES_OK(context, context->allocate_output(0, {1}, &output_tensor));
+    auto output_v = output_tensor->tensor<tstring, 1>();
+
+    output_v(0) = resource->PrintRowRange();
+  }
+
+ private:
+  mutable mutex mu_;
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtablePrintRowRange").Device(DEVICE_CPU),
+                        BigtablePrintRowRangeOp);
+
 class BigtableEmptyRowsetOp
     : public MutableResourceOpKernel<BigtableRowsetResource> {
  public:
@@ -445,28 +555,9 @@ class BigtableRowsetAppendStrOp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("BigtableRowsetAppendStr").Device(DEVICE_CPU),
                         BigtableRowsetAppendStrOp);
 
-class BigtableEmptyRowrangeOp
-    : public MutableResourceOpKernel<BigtableRowRangeResource> {
- public:
-  explicit BigtableEmptyRowrangeOp(OpKernelConstruction* ctx)
-      : MutableResourceOpKernel<BigtableRowRangeResource>(ctx) {
-    VLOG(1) << "BigtableEmptyRowrangeOp ctor ";
-  }
 
- private:
-  Status CreateResource(BigtableRowRangeResource** resource)
-      TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-    *resource = new BigtableRowRangeResource(cbt::RowRange::Empty());
-    return Status::OK();
-  }
 
- private:
-  mutable mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
-};
 
-REGISTER_KERNEL_BUILDER(Name("BigtableEmptyRowRange").Device(DEVICE_CPU),
-                        BigtableEmptyRowrangeOp);
 
 }  // namespace
 }  // namespace data
