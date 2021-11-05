@@ -14,21 +14,68 @@ limitations under the License.
 ==============================================================================*/
 #include "absl/memory/memory.h"
 #include "google/cloud/bigtable/table.h"
+#include "google/cloud/bigtable/table_admin.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/resource_mgr.h"
-
-using ::tensorflow::DT_STRING;
-using ::tensorflow::PartialTensorShape;
-using ::tensorflow::Status;
+#include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow_io/core/kernels/bigtable/bigtable_row_set.h"
 
 namespace cbt = ::google::cloud::bigtable;
 
 namespace tensorflow {
 namespace data {
 namespace {
+
+tensorflow::error::Code GoogleCloudErrorCodeToTfErrorCode(::google::cloud::StatusCode code) {
+  switch (code) {
+    case ::google::cloud::StatusCode::kOk:
+      return ::tensorflow::error::OK;
+    case ::google::cloud::StatusCode::kCancelled:
+      return ::tensorflow::error::CANCELLED;
+    case ::google::cloud::StatusCode::kInvalidArgument:
+      return ::tensorflow::error::INVALID_ARGUMENT;
+    case ::google::cloud::StatusCode::kDeadlineExceeded:
+      return ::tensorflow::error::DEADLINE_EXCEEDED;
+    case ::google::cloud::StatusCode::kNotFound:
+      return ::tensorflow::error::NOT_FOUND;
+    case ::google::cloud::StatusCode::kAlreadyExists:
+      return ::tensorflow::error::ALREADY_EXISTS;
+    case ::google::cloud::StatusCode::kPermissionDenied:
+      return ::tensorflow::error::PERMISSION_DENIED;
+    case ::google::cloud::StatusCode::kUnauthenticated:
+      return ::tensorflow::error::UNAUTHENTICATED;
+    case ::google::cloud::StatusCode::kResourceExhausted:
+      return ::tensorflow::error::RESOURCE_EXHAUSTED;
+    case ::google::cloud::StatusCode::kFailedPrecondition:
+      return ::tensorflow::error::FAILED_PRECONDITION;
+    case ::google::cloud::StatusCode::kAborted:
+      return ::tensorflow::error::ABORTED;
+    case ::google::cloud::StatusCode::kOutOfRange:
+      return ::tensorflow::error::OUT_OF_RANGE;
+    case ::google::cloud::StatusCode::kUnimplemented:
+      return ::tensorflow::error::UNIMPLEMENTED;
+    case ::google::cloud::StatusCode::kInternal:
+      return ::tensorflow::error::INTERNAL;
+    case ::google::cloud::StatusCode::kUnavailable:
+      return ::tensorflow::error::UNAVAILABLE;
+    case ::google::cloud::StatusCode::kDataLoss:
+      return ::tensorflow::error::DATA_LOSS;
+    default:
+      return ::tensorflow::error::UNKNOWN;
+  }
+}
+
+Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
+  if (status.ok()) {
+    return Status::OK();
+  }
+  return Status(GoogleCloudErrorCodeToTfErrorCode(status.code()),
+                strings::StrCat("Error reading from Cloud Bigtable: ",
+                                status.message()));
+}
 
 class BigtableClientResource : public ResourceBase {
  public:
@@ -61,45 +108,22 @@ class BigtableClientOp : public OpKernel {
     VLOG(1) << "BigtableClientOp ctor";
   }
 
-  ~BigtableClientOp() override {
-    VLOG(1) << "BigtableClientOp dtor";
-    if (cinfo_.resource_is_private_to_kernel()) {
-      if (!cinfo_.resource_manager()
-               ->Delete<BigtableClientResource>(cinfo_.container(),
-                                                cinfo_.name())
-               .ok()) {
-        // Do nothing; the resource can have been deleted by session resets.
-      }
-    }
-  }
-
   void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     VLOG(1) << "BigtableClientOp compute";
-    mutex_lock l(mu_);
-    if (!initialized_) {
-      ResourceMgr* mgr = ctx->resource_manager();
-      OP_REQUIRES_OK(ctx, cinfo_.Init(mgr, def()));
-      BigtableClientResource* resource;
-      OP_REQUIRES_OK(ctx, mgr->LookupOrCreate<BigtableClientResource>(
-                              cinfo_.container(), cinfo_.name(), &resource,
-                              [this, ctx](BigtableClientResource** ret)
-                                  TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-                                    *ret = new BigtableClientResource(
-                                        project_id_, instance_id_);
-                                    return Status::OK();
-                                  }));
-      core::ScopedUnref resource_cleanup(resource);
-      initialized_ = true;
-    }
+    ResourceMgr* mgr = ctx->resource_manager();
+    ContainerInfo cinfo;
+    OP_REQUIRES_OK(ctx, cinfo.Init(mgr, def()));
+
+    BigtableClientResource* resource =
+        new BigtableClientResource(project_id_, instance_id_);
+    OP_REQUIRES_OK(ctx, mgr->Create<BigtableClientResource>(
+                            cinfo.container(), cinfo.name(), resource));
     OP_REQUIRES_OK(ctx, MakeResourceHandleToOutput(
-                            ctx, 0, cinfo_.container(), cinfo_.name(),
+                            ctx, 0, cinfo.container(), cinfo.name(),
                             TypeIndex::Make<BigtableClientResource>()));
   }
 
  private:
-  mutex mu_;
-  ContainerInfo cinfo_ TF_GUARDED_BY(mu_);
-  bool initialized_ TF_GUARDED_BY(mu_) = false;
   string project_id_;
   string instance_id_;
 };
@@ -141,6 +165,10 @@ class Iterator : public DatasetIterator<Dataset> {
 
     VLOG(1) << "getting row";
     const auto& row = *it_;
+    if (!row.ok()) {
+      LOG(ERROR) << row.status().message();
+      return GoogleCloudStatusToTfStatus(row.status());
+    }
     for (const auto& cell : row.value().cells()) {
       std::pair<const std::string&, const std::string&> key(
           cell.family_name(), cell.column_qualifier());

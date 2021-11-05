@@ -32,3 +32,64 @@ REGISTER_OP("BigtableDataset")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
+
+
+REGISTER_OP("BigtableEmptyRowSet")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("row_set: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtableEmptyRowRange")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("row_range: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtablePrefixRowRange")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Attr("prefix: string")
+    .Output("row_range: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtableRowRange")
+    .Attr("left_row_key: string")
+    .Attr("left_open: bool")
+    .Attr("right_row_key: string")
+    .Attr("right_open: bool")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("row_range: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtablePrintRowRange")
+    .Input("row_range: resource")
+    .Output("row_range_str: string")
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtablePrintRowSet")
+    .Input("row_set: resource")
+    .Output("row_set_str: string")
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtableRowSetAppendRow")
+    .Attr("row_key: string")
+    .Input("row_set: resource");
+
+REGISTER_OP("BigtableRowSetAppendRowRange")
+    .Input("row_set: resource")
+    .Input("row_range: resource");
+
+REGISTER_OP("BigtableRowSetIntersect")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Input("row_set: resource")
+    .Input("row_range: resource")
+    .Output("result_row_set: resource")
+    .SetShapeFn(shape_inference::ScalarShape);
+
