@@ -21,6 +21,16 @@ HADOOP_RELEASE_TAG="3.2.1"
 curl -OL https://github.com/big-data-europe/docker-hadoop/archive/refs/tags/$HADOOP_RELEASE_TAG.tar.gz
 tar -xzf $HADOOP_RELEASE_TAG.tar.gz -C /tmp/
 cd /tmp/docker-hadoop-$HADOOP_RELEASE_TAG
+# Add following properties
+# to prevent following error when closing the hdfs client:
+#
+# java.io.IOException: Failed to replace a bad datanode on the existing pipeline due to no more good datanodes
+# being available to try.
+
+echo "
+HDFS_CONF_dfs_client_block_write_replace___datanode___on___failure_enable=true
+HDFS_CONF_dfs_client_block_write_replace___datanode___on___failure_policy=NEVER" >> hadoop.env
+
 docker-compose up -d
 echo "Hadoop up"
 exit 0
