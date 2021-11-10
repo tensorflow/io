@@ -15,23 +15,31 @@
 # ==============================================================================
 set -e -x
 
-export TENSORFLOW_INSTALL="$(python3 setup.py --install-require)"
+
+PYTHON=python3
+if [[ $# == 1 ]]; then
+    PYTHON=$1
+fi
+$PYTHON --version
+
+export TENSORFLOW_INSTALL="$($PYTHON setup.py --install-require)"
 
 export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
 export BAZEL_VERSION=$(cat .bazelversion)
+export PYTHON_BIN_PATH=`which $PYTHON`
 curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
 bazel version
 
-python3 -m pip --version
+$PYTHON -m pip --version
 
-python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade setuptools
-python3 -m pip --version
+$PYTHON -m pip install --upgrade pip
+$PYTHON -m pip install --upgrade setuptools
+$PYTHON -m pip --version
 
-python3 -m pip install -q ${TENSORFLOW_INSTALL}
+$PYTHON -m pip install -q ${TENSORFLOW_INSTALL}
 
-python3 tools/build/configure.py
+$PYTHON tools/build/configure.py
 
 cat .bazelrc
 
