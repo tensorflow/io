@@ -1,3 +1,20 @@
+# Release 0.22.0
+
+## Bug Fixes
+* Fix hdfs file system append error.
+* Add support for Azure Shared Access Signatures.
+* Fix several Azure file system related issues.
+* Update Dicom tutorial to include tag examples.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Cheng Ren, Jan Bernlöhr, Vignesh Kothapalli, Yong Tang, Z_Wael
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.21.0
 
 ## Bug Fixes
