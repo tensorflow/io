@@ -15,6 +15,7 @@
 """pyupgrade"""
 import sys
 import pyupgrade
+from pyupgrade._main import main
 
 print("pyupgrade: ", sys.argv)
-sys.exit(pyupgrade.main(sys.argv[1:]))
+sys.exit(main(sys.argv[1:]))
