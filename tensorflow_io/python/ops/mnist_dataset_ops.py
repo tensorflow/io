@@ -23,7 +23,7 @@ class MNISTLabelIODataset(tf.data.Dataset):
 
     def __init__(self, filename):
         """Create a MNISTLabelDataset.
-        
+
         Args:
             filename: A `tf.string` tensor containing filename.
         """
@@ -48,12 +48,11 @@ class MNISTLabelIODataset(tf.data.Dataset):
 
 
 class MNISTImageIODataset(tf.data.Dataset):
-    """A MNISTImageIODataset
-  """
+    """A MNISTImageIODataset"""
 
     def __init__(self, filename):
         """Create a MNISTImageDataset.
-        
+
         Args:
             filename: A `tf.string` tensor containing filename.
         """

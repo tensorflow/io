@@ -92,7 +92,7 @@ class FFmpegIOTensor(
             resource, columns = ffmpeg_ops.io_ffmpeg_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             columns = [column.decode() for column in columns.numpy().tolist()]
             elements = []
@@ -128,5 +128,5 @@ class FFmpegIOTensor(
                     elements.append(
                         FFmpegSubtitleIOTensor(spec, function, internal=internal)
                     )
-            spec = tuple([e.spec for e in elements])
+            spec = tuple(e.spec for e in elements)
             super().__init__(spec, columns, elements, internal=internal)

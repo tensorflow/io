@@ -135,8 +135,7 @@ def test_io_tensor_json():
 
 
 def test_json_dataset():
-    """Test case for JSON Dataset.
-  """
+    """Test case for JSON Dataset."""
     x_test = [[1.1, 2], [2.1, 3]]
     y_test = [[2.2, 3], [1.2, 3]]
     feature_filename = os.path.join(

@@ -22,7 +22,7 @@ from tensorflow_io.python.experimental import serialization_ops
 
 class _ElasticsearchHandler:
     """Utility class to facilitate API queries and state management of
-        session data.
+    session data.
     """
 
     def __init__(self, nodes, index, doc_type, headers_dict):
@@ -57,19 +57,19 @@ class _ElasticsearchHandler:
 
             # Additional sanity check
             url_obj = urlparse(node)
-            base_url = "{}://{}".format(url_obj.scheme, url_obj.netloc)
+            base_url = f"{url_obj.scheme}://{url_obj.netloc}"
             self.base_urls.append(base_url)
 
     def prepare_connection_data(self):
         """Prepares the healthcheck and resource urls from the base_urls"""
 
         self.healthcheck_urls = [
-            "{}/_cluster/health".format(base_url) for base_url in self.base_urls
+            f"{base_url}/_cluster/health" for base_url in self.base_urls
         ]
         self.request_urls = []
         for base_url in self.base_urls:
             if self.doc_type is None:
-                request_url = "{}/{}/_search?scroll=1m".format(base_url, self.index)
+                request_url = f"{base_url}/{self.index}/_search?scroll=1m"
             else:
                 request_url = "{}/{}/{}/_search?scroll=1m".format(
                     base_url, self.index, self.doc_type
@@ -82,7 +82,7 @@ class _ElasticsearchHandler:
                 for key, value in self.headers_dict.items():
                     if key.lower() == "content-type":
                         continue
-                    self.headers.append("{}={}".format(key, value))
+                    self.headers.append(f"{key}={value}")
             else:
                 raise ValueError(
                     "Headers should be a dict of key:value pairs. Got: ", self.headers
@@ -101,7 +101,7 @@ class _ElasticsearchHandler:
                     request_url=request_url,
                     headers=self.headers,
                 )
-                print("Connection successful: {}".format(healthcheck_url))
+                print(f"Connection successful: {healthcheck_url}")
                 dtypes = []
                 for dtype in raw_dtypes:
                     if dtype == "DT_INT32":
@@ -116,7 +116,7 @@ class _ElasticsearchHandler:
                         dtypes.append(tf.bool)
                 return resource, columns.numpy(), dtypes, request_url
             except Exception:
-                print("Skipping node: {}".format(healthcheck_url))
+                print(f"Skipping node: {healthcheck_url}")
                 continue
         else:
             raise ConnectionError(

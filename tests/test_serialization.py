@@ -121,7 +121,10 @@ def fixture_avro():
         pytest.param("json", tfio.experimental.serialization.decode_json),
         pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
-    ids=["json", "avro",],
+    ids=[
+        "json",
+        "avro",
+    ],
 )
 def test_serialization_decode(fixture_lookup, serialization_fixture, decode_function):
     """test_serialization_decode"""
@@ -146,7 +149,9 @@ def test_serialization_decode(fixture_lookup, serialization_fixture, decode_func
             tfio.experimental.serialization.decode_avro,
         ),
     ],
-    ids=["avro",],
+    ids=[
+        "avro",
+    ],
 )
 def test_serialization_encode(
     fixture_lookup, serialization_fixture, encode_function, decode_function
@@ -171,7 +176,10 @@ def test_serialization_encode(
         pytest.param("json", tfio.experimental.serialization.decode_json),
         pytest.param("avro", tfio.experimental.serialization.decode_avro),
     ],
-    ids=["json", "avro",],
+    ids=[
+        "json",
+        "avro",
+    ],
 )
 def test_serialization_decode_in_dataset(
     fixture_lookup, serialization_fixture, decode_function

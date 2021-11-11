@@ -393,10 +393,14 @@ def test_decode_tiff_multipage():
 def test_decode_jp2():
     """Test case for decode_jp2"""
     filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.jp2",
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "Jelly-Beans.jp2",
     )
     png_filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_image", "Jelly-Beans.jp2.png",
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "Jelly-Beans.jp2.png",
     )
     png = tf.image.decode_png(tf.io.read_file(png_filename))
 
@@ -418,7 +422,9 @@ def test_decode_jp2_uint16():
     data = np.reshape(data, [512, 512, 1])
 
     filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_image", "img.jp2",
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_image",
+        "img.jp2",
     )
 
     contents = tf.io.read_file(filename)

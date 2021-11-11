@@ -32,7 +32,7 @@ def test_hdf5():
     def create_datasets(runpath, cnt=10):
         os.makedirs(runpath, exist_ok=True)
         for i in range(cnt):
-            f = h5py.File("{}/file_{}.h5".format(runpath, i), "w")
+            f = h5py.File(f"{runpath}/file_{i}.h5", "w")
             total_samples = np.random.randint(50000, 100000)
             f.create_dataset("features", data=np.random.random((total_samples, 60)))
             f.create_dataset("targets", data=np.random.random((total_samples, 3)))
@@ -43,7 +43,7 @@ def test_hdf5():
 
     for i in range(2):
         cnt = 0
-        for p in glob.glob("{}/*.h5".format(runpath)):
+        for p in glob.glob(f"{runpath}/*.h5"):
             try:
                 features = tfio.IODataset.from_hdf5(p, "/features")
                 targets = tfio.IODataset.from_hdf5(p, "/targets")
@@ -53,11 +53,11 @@ def test_hdf5():
                     cnt += t[0].shape[0]
 
             except Exception as e:
-                print("Failed going through {}".format(p))
+                print(f"Failed going through {p}")
                 raise e
-            print("Success going through {}".format(p))
+            print(f"Success going through {p}")
 
-    print("Iterated {} items".format(cnt))
+    print(f"Iterated {cnt} items")
 
     shutil.rmtree(runpath)
 
@@ -68,7 +68,7 @@ def test_hdf5_grouped():
     def create_datasets(runpath, cnt=10):
         os.makedirs(runpath, exist_ok=True)
         for i in range(cnt):
-            f = h5py.File("{}/file_{}.h5".format(runpath, i), "w")
+            f = h5py.File(f"{runpath}/file_{i}.h5", "w")
             total_samples = np.random.randint(50000, 100000)
             grp = f.create_group("sample_group")
             grp.create_dataset("features", data=np.random.random((total_samples, 60)))
@@ -80,7 +80,7 @@ def test_hdf5_grouped():
 
     for i in range(2):
         cnt = 0
-        for p in glob.glob("{}/*.h5".format(runpath)):
+        for p in glob.glob(f"{runpath}/*.h5"):
             try:
                 features = tfio.IODataset.from_hdf5(p, "/sample_group/features")
                 targets = tfio.IODataset.from_hdf5(p, "/sample_group/targets")
@@ -90,11 +90,11 @@ def test_hdf5_grouped():
                     cnt += t[0].shape[0]
 
             except Exception as e:
-                print("Failed going through {}".format(p))
+                print(f"Failed going through {p}")
                 raise e
-            print("Success going through {}".format(p))
+            print(f"Success going through {p}")
 
-    print("Iterated {} items".format(cnt))
+    print(f"Iterated {cnt} items")
 
     shutil.rmtree(runpath)
 
@@ -103,7 +103,7 @@ def test_hdf5_graph():
     """test_hdf5_graph: GitHub issue 898"""
 
     def create_datasets(runpath, cnt=10):
-        filenames = ["{}/file_{}.h5".format(runpath, i) for i in range(cnt)]
+        filenames = [f"{runpath}/file_{i}.h5" for i in range(cnt)]
         samples = [np.random.randint(50000, 100000) for _ in range(cnt)]
         os.makedirs(runpath, exist_ok=True)
         for filename, sample in zip(filenames, samples):
@@ -129,9 +129,9 @@ def test_hdf5_graph():
 
     print("Iterated items")
     for filename in filenames:
-        print("File: {}".format(filename))
-    print("Samples: {}".format(samples))
-    print("Entries: {}".format(entries))
+        print(f"File: {filename}")
+    print(f"Samples: {samples}")
+    print(f"Entries: {entries}")
     assert np.array_equal(entries, samples)
 
     shutil.rmtree(runpath)
@@ -145,14 +145,14 @@ def test_hdf5_bool():
         [True, False, True, False, True, False, True, False, True, False]
     )
 
-    with h5py.File("{}/my_data.h5".format(runpath), "w") as h5_obj:
+    with h5py.File(f"{runpath}/my_data.h5", "w") as h5_obj:
         h5_obj["my_bool_data"] = boolean_data
 
-    with h5py.File("{}/my_data.h5".format(runpath), "r") as h5_obj:
+    with h5py.File(f"{runpath}/my_data.h5", "r") as h5_obj:
         print(h5_obj["my_bool_data"].shape, h5_obj["my_bool_data"].dtype)
 
     spec = {"/my_bool_data": tf.TensorSpec(shape=(None,), dtype=tf.bool)}
-    h5_tensors = tfio.IOTensor.from_hdf5("{}/my_data.h5".format(runpath), spec=spec)
+    h5_tensors = tfio.IOTensor.from_hdf5(f"{runpath}/my_data.h5", spec=spec)
 
     print("H5 DATA: ", h5_tensors("/my_bool_data").to_tensor())
 
@@ -162,20 +162,18 @@ def test_hdf5_bool():
     dtype = h5py.special_dtype(enum=(np.int16, mapping))
     enum_data = np.asarray([0, 1, 2, 3])
 
-    with h5py.File("{}/my_enum_data.h5".format(runpath), "w") as h5_obj:
+    with h5py.File(f"{runpath}/my_enum_data.h5", "w") as h5_obj:
         dset = h5_obj.create_dataset("my_enum_data", [4], dtype=dtype)
         dset = enum_data
 
-    with h5py.File("{}/my_enum_data.h5".format(runpath), "r") as h5_obj:
+    with h5py.File(f"{runpath}/my_enum_data.h5", "r") as h5_obj:
         print(h5_obj["my_enum_data"].shape, h5_obj["my_enum_data"].dtype)
 
     spec = {"/my_enum_data": tf.TensorSpec(shape=(None,), dtype=tf.bool)}
     with pytest.raises(
         tf.errors.InvalidArgumentError, match=r".*unsupported data class for enum.*"
     ):
-        h5_tensors = tfio.IOTensor.from_hdf5(
-            "{}/my_enum_data.h5".format(runpath), spec=spec
-        )
+        h5_tensors = tfio.IOTensor.from_hdf5(f"{runpath}/my_enum_data.h5", spec=spec)
 
     shutil.rmtree(runpath)
 

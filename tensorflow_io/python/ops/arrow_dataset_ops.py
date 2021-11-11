@@ -133,7 +133,7 @@ class ArrowBaseDataset(dataset_ops.DatasetV2):
             columns=self._columns,
             batch_size=self._batch_size,
             batch_mode=self._batch_mode,
-            **self._flat_structure
+            **self._flat_structure,
         )
         super().__init__(variant_tensor)
 
@@ -542,7 +542,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
         # Create a UDS server by default if not Windows
         if os.name != "nt":
             sock_path = os.path.join(tempfile.gettempdir(), "arrow_io_stream.sock")
-            endpoint = "unix://{}".format(sock_path)
+            endpoint = f"unix://{sock_path}"
             try:
                 os.unlink(sock_path)
             except OSError:
@@ -555,7 +555,7 @@ class ArrowStreamDataset(ArrowBaseDataset):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.bind(("127.0.0.1", 0))
             host_addr, port = sock.getsockname()
-            endpoint = "{}:{}".format(host_addr, port)
+            endpoint = f"{host_addr}:{port}"
         sock.listen(1)
 
         def run_server():

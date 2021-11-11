@@ -118,7 +118,7 @@ class NumpyFileIODataset(tf.data.Dataset):
                 # if indices is continuously, then construct a tuple, otherwise a dict.
                 if indices is not None:
                     entries = dict(zip(indices, entries))
-                    entries = tuple([entries[index] for index in sorted(indices)])
+                    entries = tuple(entries[index] for index in sorted(indices))
                 else:
                     indices = [index.numpy().decode() for index in tf.unstack(arrays)]
                     entries = dict(zip(indices, entries))
@@ -130,14 +130,12 @@ class NumpyFileIODataset(tf.data.Dataset):
                 assert spec is not None
                 if isinstance(spec, tuple):
                     entries = tuple(
-                        [
-                            tf.TensorSpec(
-                                None,
-                                (v if isinstance(v, tf.dtypes.DType) else v.dtype),
-                                "arr_{}".format(i),
-                            )
-                            for i, v in enumerate(spec)
-                        ]
+                        tf.TensorSpec(
+                            None,
+                            (v if isinstance(v, tf.dtypes.DType) else v.dtype),
+                            f"arr_{i}",
+                        )
+                        for i, v in enumerate(spec)
                     )
                 else:
                     entries = {

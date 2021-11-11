@@ -60,7 +60,7 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-ac
             resource, columns = core_ops.io_csv_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             columns = [column.decode() for column in columns.numpy().tolist()]
             elements = []
@@ -75,7 +75,7 @@ class CSVIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-ac
                 elements.append(
                     io_tensor_ops.BaseIOTensor(spec, function, internal=internal)
                 )
-            spec = tuple([e.spec for e in elements])
+            spec = tuple(e.spec for e in elements)
 
             self._resource = resource
             super().__init__(spec, columns, elements, internal=internal)

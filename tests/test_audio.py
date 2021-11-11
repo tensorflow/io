@@ -222,7 +222,9 @@ def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func, num_parallel_c
 
 @pytest.mark.parametrize(
     ("io_dataset_func"),
-    [pytest.param(lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0")),],
+    [
+        pytest.param(lambda f: tfio.IODataset.graph(tf.int16).from_ffmpeg(f, "a:0")),
+    ],
     ids=["from_ffmpeg"],
 )
 def test_audio_io_dataset_with_dataset(audio_data, io_dataset_func):

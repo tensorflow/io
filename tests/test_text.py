@@ -122,8 +122,7 @@ def test_text_output_sequence():
 
 
 def test_re2_extract():
-    """test_text_input
-  """
+    """test_text_input"""
     filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_text", "lorem.txt"
     )

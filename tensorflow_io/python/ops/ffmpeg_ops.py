@@ -40,7 +40,7 @@ def _load_libraries(p):
             if v is not None:
                 return v, l
         except NotImplementedError as e:
-            warnings.warn("could not load {}: {}".format(library, e))
+            warnings.warn(f"could not load {library}: {e}")
         NotImplementedError
     raise NotImplementedError("could not find ffmpeg after search through ", p)
 

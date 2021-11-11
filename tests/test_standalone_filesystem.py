@@ -620,7 +620,7 @@ def test_gfile_listdir(fs, patchs, monkeypatch):
         write(join(childrens[0], f"subchild_{i}"), body)
 
     entries = tf.io.gfile.listdir(dname)
-    assert sorted(childrens) == sorted([join(dname, entry) for entry in entries])
+    assert sorted(childrens) == sorted(join(dname, entry) for entry in entries)
 
 
 @pytest.mark.parametrize(

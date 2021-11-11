@@ -24,7 +24,7 @@ _DEFAULT_READER_SCHEMA = ""
 
 def _require(condition: bool, err_msg: str = None) -> None:
     """Checks if the specified condition is true else raises exception
-    
+
     Args:
         condition: The condition to test
         err_msg: If specified, it's the error message to use if condition is not true.
@@ -79,37 +79,37 @@ def _create_dataset_reader(
     block_length=1,
 ):
     """
-    This creates a dataset reader which reads records from multiple files and interleaves them together
-```
-dataset = Dataset.range(1, 6)  # ==> [ 1, 2, 3, 4, 5 ]
-# NOTE: New lines indicate "block" boundaries.
-dataset = dataset.interleave(
-    lambda x: Dataset.from_tensors(x).repeat(6),
-    cycle_length=2, block_length=4)
-list(dataset.as_numpy_iterator())
-```
-Results in the following output:
-[1,1,1,1,
- 2,2,2,2,
- 1,1,
- 2,2,
- 3,3,3,3,
- 4,4,4,4,
- 3,4,
- 5,5,5,5,
- 5,5,
-]
-    Args:
-        dataset_creator: Initializer for AvroDatasetRecord
-        filenames: A `tf.data.Dataset` iterator of filenames to read
-        cycle_length: The number of files to be processed in parallel. This is used by `Dataset.Interleave`.
-        We set this equal to `block_length`, so that each time n number of records are returned for each of the n
-        files.
-        num_parallel_calls: Number of threads spawned by the interleave call.
-        deterministic: Sets whether the interleaved records are written in deterministic order. in tf.interleave this is default true
-        block_length: Sets the number of output on the output tensor. Defaults to 1
-    Returns:
-        A dataset iterator with an interleaved list of parsed avro records.
+        This creates a dataset reader which reads records from multiple files and interleaves them together
+    ```
+    dataset = Dataset.range(1, 6)  # ==> [ 1, 2, 3, 4, 5 ]
+    # NOTE: New lines indicate "block" boundaries.
+    dataset = dataset.interleave(
+        lambda x: Dataset.from_tensors(x).repeat(6),
+        cycle_length=2, block_length=4)
+    list(dataset.as_numpy_iterator())
+    ```
+    Results in the following output:
+    [1,1,1,1,
+     2,2,2,2,
+     1,1,
+     2,2,
+     3,3,3,3,
+     4,4,4,4,
+     3,4,
+     5,5,5,5,
+     5,5,
+    ]
+        Args:
+            dataset_creator: Initializer for AvroDatasetRecord
+            filenames: A `tf.data.Dataset` iterator of filenames to read
+            cycle_length: The number of files to be processed in parallel. This is used by `Dataset.Interleave`.
+            We set this equal to `block_length`, so that each time n number of records are returned for each of the n
+            files.
+            num_parallel_calls: Number of threads spawned by the interleave call.
+            deterministic: Sets whether the interleaved records are written in deterministic order. in tf.interleave this is default true
+            block_length: Sets the number of output on the output tensor. Defaults to 1
+        Returns:
+            A dataset iterator with an interleaved list of parsed avro records.
 
     """
 
