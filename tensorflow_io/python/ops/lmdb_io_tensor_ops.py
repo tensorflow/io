@@ -41,7 +41,7 @@ class LMDBIOTensor(io_tensor_ops._KeyValueIOTensor):  # pylint: disable=protecte
             resource = core_ops.io_lmdb_mapping_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             spec = (
                 tf.TensorSpec(tf.TensorShape([None]), tf.string),

@@ -66,7 +66,7 @@ class ArrowTestBase(tf.test.TestCase):
             tf.dtypes.float32,
             tf.dtypes.float64,
         )
-        cls.scalar_shapes = tuple([tf.TensorShape([]) for _ in cls.scalar_dtypes])
+        cls.scalar_shapes = tuple(tf.TensorShape([]) for _ in cls.scalar_dtypes)
 
         cls.list_fixed_data = [
             [[1, 1], [2, 2], [3, 3], [4, 4]],
@@ -81,7 +81,7 @@ class ArrowTestBase(tf.test.TestCase):
             tf.dtypes.float64,
         )
         cls.list_fixed_shapes = tuple(
-            [tf.TensorShape([None]) for _ in cls.list_fixed_dtypes]
+            tf.TensorShape([None]) for _ in cls.list_fixed_dtypes
         )
 
         cls.list_var_data = [
@@ -141,7 +141,7 @@ class ArrowTestBase(tf.test.TestCase):
             )
             for col in range(len(truth_data.output_types))
         ]
-        names = ["{}_[{}]".format(i, a.type) for i, a in enumerate(arrays)]
+        names = [f"{i}_[{a.type}]" for i, a in enumerate(arrays)]
         return pa.RecordBatch.from_arrays(arrays, names)
 
 
@@ -152,9 +152,9 @@ class ArrowIOTensorTest(ArrowTestBase):
     def setUpClass(cls):  # pylint: disable=invalid-name
         """setUpClass"""
         super().setUpClass()
-        cls.scalar_shapes = tuple([tf.TensorShape([len(c)]) for c in cls.scalar_data])
+        cls.scalar_shapes = tuple(tf.TensorShape([len(c)]) for c in cls.scalar_data)
         cls.list_fixed_shapes = tuple(
-            [tf.TensorShape([len(c), len(c[0])]) for c in cls.list_fixed_data]
+            tf.TensorShape([len(c), len(c[0])]) for c in cls.list_fixed_data
         )
 
     def make_table(self, truth_data):
@@ -426,8 +426,8 @@ class ArrowDatasetTest(ArrowTestBase):
         columns = (1, 3, len(truth_data.output_types) - 1)
         dataset = arrow_io.ArrowDataset.from_record_batches(
             batch,
-            tuple([truth_data.output_types[c] for c in columns]),
-            tuple([truth_data.output_shapes[c] for c in columns]),
+            tuple(truth_data.output_types[c] for c in columns),
+            tuple(truth_data.output_shapes[c] for c in columns),
             columns=columns,
         )
         self.run_test_case(dataset, truth_data)
@@ -444,7 +444,7 @@ class ArrowDatasetTest(ArrowTestBase):
             [b"1.1", b"2.2", b"3.3", b"4.4"],
         ]
         scalar_dtypes = (tf.string,)
-        scalar_shapes = tuple([tf.TensorShape([]) for _ in scalar_dtypes])
+        scalar_shapes = tuple(tf.TensorShape([]) for _ in scalar_dtypes)
         truth_data = TruthData(scalar_data, scalar_dtypes, scalar_shapes)
         array = pa.array(
             scalar_data[0], type=self.get_arrow_type(scalar_dtypes[0], False)
@@ -463,7 +463,7 @@ class ArrowDatasetTest(ArrowTestBase):
             [b"1.1", b"2.2", b"3.3", b"4.4"],
         ]
         scalar_dtypes = (tf.dtypes.string,)
-        scalar_shapes = tuple([tf.TensorShape([]) for _ in scalar_dtypes])
+        scalar_shapes = tuple(tf.TensorShape([]) for _ in scalar_dtypes)
         truth_data = TruthData(scalar_data, scalar_dtypes, scalar_shapes)
 
         batch = self.make_record_batch(truth_data)
@@ -540,7 +540,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # test single file with 'file://' prefix
         dataset = arrow_io.ArrowFeatherDataset(
-            "file://{}".format(f.name),
+            f"file://{f.name}",
             list(range(len(truth_data.output_types))),
             truth_data.output_types,
             truth_data.output_shapes,
@@ -583,7 +583,7 @@ class ArrowDatasetTest(ArrowTestBase):
         sock.bind(("127.0.0.1", 0))
         sock.listen(1)
         host_addr, port = sock.getsockname()
-        host = "{}:{}".format(host_addr, port)
+        host = f"{host_addr}:{port}"
 
         def run_server(num_batches):
             conn, _ = sock.accept()
@@ -655,7 +655,7 @@ class ArrowDatasetTest(ArrowTestBase):
         server = threading.Thread(target=run_server, args=(num_batches,))
         server.start()
 
-        endpoint = "unix://{}".format(host)
+        endpoint = f"unix://{host}"
 
         dataset = arrow_io.ArrowStreamDataset.from_schema(endpoint, batch.schema)
         truth_data_mult = TruthData(
@@ -683,7 +683,7 @@ class ArrowDatasetTest(ArrowTestBase):
         batch = self.make_record_batch(truth_data)
 
         hosts = [
-            os.path.join(tempfile.gettempdir(), "arrow_io_stream_{}".format(i))
+            os.path.join(tempfile.gettempdir(), f"arrow_io_stream_{i}")
             for i in range(1, 3)
         ]
 
@@ -717,7 +717,7 @@ class ArrowDatasetTest(ArrowTestBase):
             return server
 
         servers = [start_server(h) for h in hosts]
-        endpoints = ["unix://{}".format(h) for h in hosts]
+        endpoints = [f"unix://{h}" for h in hosts]
 
         dataset = arrow_io.ArrowStreamDataset.from_schema(endpoints, batch.schema)
         truth_data_mult = TruthData(
@@ -866,7 +866,7 @@ class ArrowDatasetTest(ArrowTestBase):
 
         dataset = arrow_io.ArrowDataset.from_record_batches(
             batch,
-            tuple([tf.dtypes.int32 for _ in truth_data.output_types]),
+            tuple(tf.dtypes.int32 for _ in truth_data.output_types),
             truth_data.output_shapes,
         )
         with self.assertRaisesRegex(tf.errors.OpError, "Arrow type mismatch"):

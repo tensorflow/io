@@ -61,7 +61,7 @@ class OSSFSTest(test.TestCase):
         gfile.DeleteRecursively(get_oss_path(""))
 
     def test_file_operations(self):
-        """ Test file operations"""
+        """Test file operations"""
 
         f = get_oss_path("test_file_operations")
         self.assertFalse(gfile.Exists(f))
@@ -87,7 +87,7 @@ class OSSFSTest(test.TestCase):
         self.assertTrue(gfile.Exists(f3))
 
     def test_dir_operations(self):
-        """ Test directory operations"""
+        """Test directory operations"""
 
         d = get_oss_path("d1/d2/d3/d4")
         gfile.MakeDirs(d)

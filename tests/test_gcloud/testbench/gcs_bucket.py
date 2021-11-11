@@ -133,7 +133,7 @@ class GcsBucket:
             "utf-8"
         )
         self.resumable_uploads[upload_id] = upload
-        location = "{}?uploadType=resumable&upload_id={}".format(upload_url, upload_id)
+        location = f"{upload_url}?uploadType=resumable&upload_id={upload_id}"
         response = flask.make_response("")
         response.headers["Location"] = location
         return response

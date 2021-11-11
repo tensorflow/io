@@ -227,7 +227,7 @@ def lookup_object(bucket_name, object_name):
     object_path, gcs_object = get_object(bucket_name, object_name, None)
     if gcs_object is None:
         raise error_response.ErrorResponse(
-            "Object {} in {} not found".format(object_name, bucket_name),
+            f"Object {object_name} in {bucket_name} not found",
             status_code=404,
         )
     return object_path, gcs_object

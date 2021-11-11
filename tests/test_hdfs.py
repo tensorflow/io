@@ -32,13 +32,13 @@ def test_read_file():
     """Test case for reading HDFS"""
 
     address = socket.gethostbyname(socket.gethostname())
-    print("ADDRESS: {}".format(address))
+    print(f"ADDRESS: {address}")
 
     body = b"1234567"
-    tf.io.write_file("hdfs://{}:9000/file.txt".format(address), body)
+    tf.io.write_file(f"hdfs://{address}:9000/file.txt", body)
 
-    content = tf.io.read_file("hdfs://{}:9000/file.txt".format(address))
-    print("CONTENT: {}".format(content))
+    content = tf.io.read_file(f"hdfs://{address}:9000/file.txt")
+    print(f"CONTENT: {content}")
     assert content == body
 
 
@@ -50,16 +50,16 @@ def test_append_non_existing_file():
     """Test case for append a non-existing HDFS file"""
 
     address = socket.gethostbyname(socket.gethostname())
-    print("ADDRESS: {}".format(address))
+    print(f"ADDRESS: {address}")
 
     body = b"1234567"
-    filepath = "hdfs://{}:9000/non-existing.txt".format(address)
+    filepath = f"hdfs://{address}:9000/non-existing.txt"
     f = tf.io.gfile.GFile(filepath, "a")
     f.write(body)
     f.flush()
 
     content = tf.io.read_file(filepath)
-    print("CONTENT: {}".format(content))
+    print(f"CONTENT: {content}")
     assert content == body
     f.close()
 
@@ -74,12 +74,12 @@ def test_append_existing_file():
     """Test case for append an existing HDFS file"""
 
     address = socket.gethostbyname(socket.gethostname())
-    print("ADDRESS: {}".format(address))
+    print(f"ADDRESS: {address}")
     body1 = b"1234567"
     body2 = b"7654321"
 
     # create a new file
-    filepath = "hdfs://{}:9000/to_be_appended.txt".format(address)
+    filepath = f"hdfs://{address}:9000/to_be_appended.txt"
     tf.io.write_file(filepath, body1)
 
     # append to the file
@@ -88,6 +88,6 @@ def test_append_existing_file():
     f.flush()
 
     content = tf.io.read_file(filepath)
-    print("CONTENT: {}".format(content))
+    print(f"CONTENT: {content}")
     assert content == body1 + body2
     f.close()

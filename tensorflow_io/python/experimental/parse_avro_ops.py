@@ -357,7 +357,7 @@ def _features_to_raw_params(features, types):
                     types,
                 )
             else:
-                raise ValueError("Invalid feature {}:{}.".format(key, feature))
+                raise ValueError(f"Invalid feature {key}:{feature}.")
     return (
         sparse_keys,
         sparse_types,
@@ -374,7 +374,7 @@ def _handle_fixedlen_feature(
 ):
     """handle_fixedlen_feature"""
     if tf.io.FixedLenFeature not in types:
-        raise ValueError("Unsupported FixedLenFeature {}.".format(feature))
+        raise ValueError(f"Unsupported FixedLenFeature {feature}.")
     if not feature.dtype:
         raise ValueError("Missing type for feature %s." % key)
     if feature.shape is None:
@@ -391,11 +391,11 @@ def _handle_sparse_feature(
 ):
     """handle_sparse_feature"""
     if tf.io.SparseFeature not in types:
-        raise ValueError("Unsupported SparseFeature {}.".format(feature))
+        raise ValueError(f"Unsupported SparseFeature {feature}.")
     if not feature.index_key:
-        raise ValueError("Missing index_key for SparseFeature {}.".format(feature))
+        raise ValueError(f"Missing index_key for SparseFeature {feature}.")
     if not feature.value_key:
-        raise ValueError("Missing value_key for SparseFeature {}.".format(feature))
+        raise ValueError(f"Missing value_key for SparseFeature {feature}.")
     if not feature.dtype:
         raise ValueError("Missing type for feature %s." % key)
     index_keys = feature.index_key
@@ -442,7 +442,7 @@ def _handle_varlen_feature(
 ):
     """handle_varlen_feature"""
     if tensorflow_io.experimental.columnar.VarLenFeatureWithRank not in types:
-        raise ValueError("Unsupported VarLenFeatureWithRank {}.".format(feature))
+        raise ValueError(f"Unsupported VarLenFeatureWithRank {feature}.")
     if not feature.dtype:
         raise ValueError("Missing type for VarLenFeatureWithRank %s." % key)
     if not feature.rank:

@@ -341,7 +341,7 @@ def fade(input, fade_in, fade_out, mode, name=None):
     elif mode == "exponential":
         factor_in = tf.math.expm1(factor_in) / tf.math.expm1(1.0)
     else:
-        raise ValueError("{} mode not supported".format(mode))
+        raise ValueError(f"{mode} mode not supported")
 
     factor_in = tf.concat([factor_in, ones_in], axis=0)
 
@@ -354,7 +354,7 @@ def fade(input, fade_in, fade_out, mode, name=None):
     elif mode == "exponential":
         factor_out = tf.math.expm1(factor_out) / tf.math.expm1(1.0)
     else:
-        raise ValueError("{} mode not supported".format(mode))
+        raise ValueError(f"{mode} mode not supported")
 
     factor_out = tf.concat([ones_out, factor_out], axis=0)
 

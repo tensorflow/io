@@ -64,12 +64,12 @@ class _IOTensorIterablePartitionedFunction:
             # if stop is not None then resolved partitions have to cover stop
             # if stop is None then all partitions has to be resolved
             if stop is not None:
-                if stop <= sum([e.shape[0] for e in self._partitions]):
+                if stop <= sum(e.shape[0] for e in self._partitions):
                     break
             # resolve one step
             partition = self._function()
             if partition.shape[0] == 0:
-                self._length = sum([e.shape[0] for e in self._partitions])
+                self._length = sum(e.shape[0] for e in self._partitions)
             else:
                 self._partitions.append(partition)
             partitions_indices = (
@@ -95,7 +95,7 @@ class _IOTensorIterablePartitionedFunction:
             # resolve until length is available
             partition = self._function()
             if partition.shape[0] == 0:
-                self._length = sum([e.shape[0] for e in self._partitions])
+                self._length = sum(e.shape[0] for e in self._partitions)
             else:
                 self._partitions.append(partition)
             partitions_indices = (
@@ -179,12 +179,12 @@ class _IOTensor:
     def __repr__(self):
         meta = "".join(
             [
-                ", {}={}".format(k, repr(v.__get__(self)))
+                f", {k}={repr(v.__get__(self))}"
                 for k, v in self.__class__.__dict__.items()
                 if isinstance(v, _IOTensorMeta)
             ]
         )
-        return "<{}: spec={}{}>".format(self.__class__.__name__, self.spec, meta)
+        return f"<{self.__class__.__name__}: spec={self.spec}{meta}>"
 
 
 class BaseIOTensor(_IOTensor):

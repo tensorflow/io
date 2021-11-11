@@ -109,7 +109,7 @@ class KafkaIOLayerHelper:
     """KafkaIOLayerHelper"""
 
     def func(self):
-        channel = "e{}e".format(time.time())
+        channel = f"e{time.time()}e"
         self._topic = "io-layer-test-" + channel
         return tfio.experimental.IOLayer.kafka(self._topic)
 
@@ -124,7 +124,12 @@ class KafkaIOLayerHelper:
 
 
 @pytest.mark.parametrize(
-    ("helper"), [(TextIOLayerHelper()), (KafkaIOLayerHelper()),], ids=["text", "kafka"],
+    ("helper"),
+    [
+        (TextIOLayerHelper()),
+        (KafkaIOLayerHelper()),
+    ],
+    ids=["text", "kafka"],
 )
 def test_io_layer(fashion_mnist, helper):
     """test_text_io_layer"""

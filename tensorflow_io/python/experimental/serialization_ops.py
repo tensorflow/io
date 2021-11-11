@@ -39,11 +39,11 @@ def named_spec(specs, name=""):
 
     if isinstance(specs, dict):
         for k in specs.keys():
-            named_spec(specs[k], "{}/{}".format(name, k))
+            named_spec(specs[k], f"{name}/{k}")
         return
 
     for k, _ in enumerate(specs):
-        named_spec(specs[k], "{}/{}".format(name, k))
+        named_spec(specs[k], f"{name}/{k}")
     return
 
 

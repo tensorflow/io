@@ -93,14 +93,14 @@ class AZFSTestBase:
         """Test glob patterns"""
         for ext in [".txt", ".md"]:
             for i in range(3):
-                file_path = self._path_to("wildcard/{}{}".format(i, ext))
+                file_path = self._path_to(f"wildcard/{i}{ext}")
                 with tf.io.gfile.GFile(file_path, "w") as f:
                     f.write("")
 
         txt_files = tf.io.gfile.glob(self._path_to("wildcard/*.txt"))
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
-            self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), name)
+            self.assertEqual(self._path_to(f"wildcard/{i}.txt"), name)
 
         tf.io.gfile.rmtree(self._path_to("wildcard"))
 
@@ -141,7 +141,7 @@ class AZFSTestBase:
         """Test list directory."""
         # Setup and check preconditions.
         dir_name = self._path_to("listdir")
-        file_names = [self._path_to("listdir/{}".format(i)) for i in range(1, 4)]
+        file_names = [self._path_to(f"listdir/{i}") for i in range(1, 4)]
 
         for file_name in file_names:
             with tf.io.gfile.GFile(file_name, "w") as w:

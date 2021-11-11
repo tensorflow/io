@@ -36,10 +36,8 @@ class TIFFIOTensor(
             # we can only handle RGBA so fix shape as 4 for now,
             # until decode_tiff is updated.
             spec = tuple(
-                [
-                    tf.TensorSpec(tf.TensorShape(shape.tolist()[0:2] + [4]), dtype)
-                    for (shape, dtype) in zip(shapes.numpy(), dtypes.numpy())
-                ]
+                tf.TensorSpec(tf.TensorShape(shape.tolist()[0:2] + [4]), dtype)
+                for (shape, dtype) in zip(shapes.numpy(), dtypes.numpy())
             )
             columns = [i for i, _ in enumerate(spec)]
             elements = [

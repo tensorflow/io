@@ -430,7 +430,7 @@ class IgniteClient(TcpClient):
             if err_msg is None:
                 raise RuntimeError("Scan Query Error [status=%s]" % status)
             raise RuntimeError(
-                "Scan Query Error [status={}, message='{}']".format(status, err_msg)
+                f"Scan Query Error [status={status}, message='{err_msg}']"
             )
 
         self.read_long()  # Cursor id

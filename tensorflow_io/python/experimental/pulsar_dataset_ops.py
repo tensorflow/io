@@ -54,13 +54,11 @@ class PulsarIODataset(tf.data.Dataset):
         """
         with tf.name_scope("PulsarIODataset"):
             if timeout <= 0:
-                raise ValueError(
-                    "Invalid timeout value: {}, must be > 0".format(timeout)
-                )
+                raise ValueError(f"Invalid timeout value: {timeout}, must be > 0")
 
             if poll_timeout <= 0:
                 raise ValueError(
-                    "Invalid poll_timeout value: {}, must be > 0".format(poll_timeout)
+                    f"Invalid poll_timeout value: {poll_timeout}, must be > 0"
                 )
 
             if poll_timeout > timeout:

@@ -26,22 +26,20 @@ pytest.skip("ignite+java 10 is failing", allow_module_level=True)
 class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
     """The Apache Ignite servers have to setup before the test and tear down
 
-     after the test manually. The docker engine has to be installed.
+    after the test manually. The docker engine has to be installed.
 
-     To setup Apache Ignite servers:
-     $ bash start_ignite.sh
+    To setup Apache Ignite servers:
+    $ bash start_ignite.sh
 
-     To tear down Apache Ignite servers:
-     $ bash stop_ignite.sh
-  """
+    To tear down Apache Ignite servers:
+    $ bash stop_ignite.sh
+    """
 
     def prefix(self):
         pass
 
     def test_create_file(self):
-        """Test create file.
-
-    """
+        """Test create file."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_create_file")
         file_name = self.prefix() + ":///test_create_file/1"
@@ -57,9 +55,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(file_name))
 
     def test_write_read_file(self):
-        """Test write/read file.
-
-    """
+        """Test write/read file."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_write_read_file")
         file_name = self.prefix() + ":///test_write_read_file/1"
@@ -82,9 +78,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(file_name))
 
     def test_delete_recursively(self):
-        """Test delete recursively.
-
-    """
+        """Test delete recursively."""
         # Setup and check preconditions.
         dir_name = self.prefix() + ":///test_delete_recursively"
         file_name = self.prefix() + ":///test_delete_recursively/1"
@@ -102,9 +96,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(file_name))
 
     def test_copy(self):
-        """Test copy.
-
-    """
+        """Test copy."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_copy")
         src_file_name = self.prefix() + ":///test_copy/1"
@@ -131,9 +123,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(dst_file_name))
 
     def test_is_directory(self):
-        """Test is directory.
-
-    """
+        """Test is directory."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_is_directory")
         dir_name = self.prefix() + ":///test_is_directory/1"
@@ -147,9 +137,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.IsDirectory(file_name))
 
     def test_list_directory(self):
-        """Test list directory.
-
-    """
+        """Test list directory."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_list_directory")
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_list_directory/2")
@@ -176,9 +164,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
             self.assertTrue(e in ls_result, msg="Result doesn't contain '%s'" % e)
 
     def test_make_dirs(self):
-        """Test make dirs.
-
-    """
+        """Test make dirs."""
         # Setup and check preconditions.
         dir_name = self.prefix() + ":///test_make_dirs/"
         self.assertFalse(tf.compat.v1.gfile.Exists(dir_name))
@@ -192,9 +178,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(dir_name))
 
     def test_remove(self):
-        """Test remove.
-
-    """
+        """Test remove."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_remove")
         file_name = self.prefix() + ":///test_remove/1"
@@ -208,9 +192,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(file_name))
 
     def test_rename_file(self):
-        """Test rename file.
-
-    """
+        """Test rename file."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_rename_file")
         src_file_name = self.prefix() + ":///test_rename_file/1"
@@ -232,9 +214,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
         self.assertFalse(tf.compat.v1.gfile.Exists(dst_file_name))
 
     def test_rename_dir(self):
-        """Test rename dir.
-
-    """
+        """Test rename dir."""
         # Setup and check preconditions.
         tf.compat.v1.gfile.MkDir(self.prefix() + ":///test_rename_dir")
         src_dir_name = self.prefix() + ":///test_rename_dir/1"
@@ -254,8 +234,7 @@ class __TestFS:  # pylint: disable=invalid-name,old-style-class,no-init
 
 @pytest.mark.skipif(platform.uname()[0] == "Darwin", reason=None)
 class TestGGFS(tf.test.TestCase, __TestFS):
-    """Test GGFS.
-  """
+    """Test GGFS."""
 
     def setUp(self):  # pylint: disable=invalid-name
         os.environ["IGNITE_PORT"] = "10801"
@@ -266,8 +245,7 @@ class TestGGFS(tf.test.TestCase, __TestFS):
 
 
 class TestIGFS(tf.test.TestCase, __TestFS):
-    """Test IGFS.
-  """
+    """Test IGFS."""
 
     def prefix(self):
         return "igfs"
@@ -276,14 +254,14 @@ class TestIGFS(tf.test.TestCase, __TestFS):
 class IgniteDatasetTest(tf.test.TestCase):
     """The Apache Ignite servers have to setup before the test and tear down
 
-     after the test manually. The docker engine has to be installed.
+    after the test manually. The docker engine has to be installed.
 
-     To setup Apache Ignite servers:
-     $ bash start_ignite.sh
+    To setup Apache Ignite servers:
+    $ bash start_ignite.sh
 
-     To tear down Apache Ignite servers:
-     $ bash stop_ignite.sh
-  """
+    To tear down Apache Ignite servers:
+    $ bash stop_ignite.sh
+    """
 
     def test_ignite_dataset_with_plain_client(self):
         """Test Ignite Dataset with plain client."""
