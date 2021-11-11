@@ -592,11 +592,11 @@ http_archive(
 http_archive(
     name = "libwebp",
     build_file = "//third_party:libwebp.BUILD",
-    sha256 = "424faab60a14cb92c2a062733b6977b4cc1e875a6398887c5911b3a1a6c56c51",
-    strip_prefix = "libwebp-1.1.0",
+    sha256 = "01bcde6a40a602294994050b81df379d71c40b7e39c819c024d079b3c56307f4",
+    strip_prefix = "libwebp-1.2.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
-        "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/webmproject/libwebp/archive/v1.2.1.tar.gz",
+        "https://github.com/webmproject/libwebp/archive/v1.2.1.tar.gz",
     ],
 )
 
