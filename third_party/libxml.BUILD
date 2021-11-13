@@ -32,8 +32,8 @@ genrule(
         "include/libxml/xmlversion.h",
     ],
     cmd = "./$(location configure) --silent --without-lzma " +
-          "&& cp --verbose config.h $(location config.h) " +
-          "&& cp --verbose include/libxml/xmlversion.h $(location include/libxml/xmlversion.h)",
+          "&& cp -v config.h $(location config.h) " +
+          "&& cp -v include/libxml/xmlversion.h $(location include/libxml/xmlversion.h)",
 )
 
 cc_library(
