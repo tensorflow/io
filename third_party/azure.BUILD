@@ -56,8 +56,12 @@ cc_library(
     deps = [
         "@boringssl//:crypto",
         "@boringssl//:ssl",
-        "@curl",
-        "@libxml_archive//:libxml",
-        "@zlib",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+        ],
+        "//conditions:default": [
+            "@curl",
+            "@libxml_archive//:libxml",
+        ],
+    }),
 )
