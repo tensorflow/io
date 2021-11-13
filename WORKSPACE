@@ -272,6 +272,9 @@ http_archive(
     patch_cmds = [
         # patch can be removed once https://github.com/googleapis/google-cloud-cpp/issues/7462 is fixed
         """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(newHandle, CURLOPT_NOSIGNAL, 1);/g' sdk/core/azure-core/src/http/curl/curl.cpp """,
+        # link to winhttp on win32
+        """sed -i.bak 's/#include "azure/core/http/win_http_transport.hpp"/#include "azure/core/http/win_http_transport.hpp"\n#pragma comment(lib, "winhttp.lib")/g' sdk/core/azure-core/src/http/winhttp/win_http_transport.cpp """,
+        """sed -i.bak 's/#include "azure/core/http/win_http_transport.hpp"/#include "azure/core/http/win_http_transport.hpp"\n#pragma comment(lib, "winhttp.lib")/g' sdk/core/azure-core/src/http/transport_policy.cpp """,
     ],
     sha256 = "ec9cb17cab24e940895eb2249c096f500f69383edfa66b20cb6456414767ce99",
     strip_prefix = "azure-sdk-for-cpp-9dac89c67564c64748ebb72b9de55c548db51eff",
