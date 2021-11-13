@@ -136,7 +136,7 @@ void ParseAzBlobPath(const std::string& fname, bool empty_object_ok,
 }
 
 std::string CreateAzBlobUrl(const std::string& account,
-                          const std::string& container) {
+                            const std::string& container) {
   const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
   if (use_dev_account != nullptr) {
     return "http://127.0.0.1:10000/" + account + "/" + container;
@@ -650,8 +650,22 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
   } else {
     // Delete all blobs under dirname prefix
     std::vector<std::string> children;
-    ListResources(path, "/", *blob_container_client, &children, status);
-    if (TF_GetCode(status) != TF_OK) {
+
+    try {
+      Azure::Storage::Blobs::ListBlobsOptions options;
+      options.Prefix = object;
+
+      for (auto response = blob_container_client->ListBlobs(options);
+           response.HasPage(); response.MoveToNextPage()) {
+        for (auto const& list_blob_item : response.Blobs) {
+          children.push_back(list_blob_item.Name);
+        }
+      }
+    } catch (const Azure::Storage::StorageException& e) {
+      std::string error_message =
+          absl::StrCat("Failed to list blobs in ", container, "/", object, " (",
+                       e.ErrorCode, ")");
+      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
 
