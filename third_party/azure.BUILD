@@ -23,8 +23,6 @@ cc_library(
         "sdk/core/azure-core/src/*.cpp",
         "sdk/core/azure-core/src/cryptography/*.cpp",
         "sdk/core/azure-core/src/http/*.cpp",
-        "sdk/core/azure-core/src/http/curl/*.cpp",
-        "sdk/core/azure-core/src/http/curl/*.hpp",
         "sdk/core/azure-core/src/io/*.cpp",
         "sdk/core/azure-core/src/private/*.hpp",
         "sdk/storage/azure-storage-blobs/inc/azure/storage/*.hpp",
@@ -36,7 +34,15 @@ cc_library(
         "sdk/storage/azure-storage-common/inc/azure/storage/common/internal/*.hpp",
         "sdk/storage/azure-storage-common/src/*.cpp",
         "sdk/storage/azure-storage-common/src/private/*.hpp",
-    ]),
+    ]) + select({
+        "@bazel_tools//src/conditions:windows": [
+            "sdk/core/azure-core/src/http/winhttp/*.cpp",
+        ],
+        "//conditions:default": glob([
+            "sdk/core/azure-core/src/http/curl/*.cpp",
+            "sdk/core/azure-core/src/http/curl/*.hpp",
+        ]),
+    }),
     hdrs = [],
     defines = [] + select({
         "@bazel_tools//src/conditions:windows": [
