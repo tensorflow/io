@@ -36,7 +36,7 @@ cc_library(
         "sdk/storage/azure-storage-common/src/private/*.hpp",
     ]) + select({
         "@bazel_tools//src/conditions:windows": [
-            "sdk/core/azure-core/src/http/winhttp/*.cpp",
+            "sdk/core/azure-core/src/http/winhttp/win_http_transport.cpp",
         ],
         "//conditions:default": glob([
             "sdk/core/azure-core/src/http/curl/*.cpp",
