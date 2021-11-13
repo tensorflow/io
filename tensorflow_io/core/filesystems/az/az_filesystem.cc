@@ -135,23 +135,11 @@ void ParseAzBlobPath(const std::string& fname, bool empty_object_ok,
   return;
 }
 
-std::shared_ptr<Azure::Storage::Blobs::BlobContainerClient>
-CreateAzBlobClientWrapper(const std::string& account,
+std::string CreateAzBlobUrl(const std::string& account,
                           const std::string& container) {
   const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
   if (use_dev_account != nullptr) {
-    std::string account_key =
-        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
-        "K1SZFPTOtr/KBHBeksoGMGw==";
-    auto credential =
-        std::make_shared<Azure::Storage::StorageSharedKeyCredential>(
-            account, account_key);
-
-    const std::string url =
-        "http://127.0.0.1:10000/" + account + "/" + container;
-
-    return std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
-        url, credential);
+    return "http://127.0.0.1:10000/" + account + "/" + container;
   }
 
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
@@ -167,7 +155,28 @@ CreateAzBlobClientWrapper(const std::string& account,
     blob_endpoint = schema + blob_endpoint;
   }
 
-  const std::string url = blob_endpoint + "/" + container;
+  return blob_endpoint + "/" + container;
+}
+
+std::shared_ptr<Azure::Storage::Blobs::BlobContainerClient>
+CreateAzBlobClientWrapper(const std::string& account,
+                          const std::string& container) {
+  const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
+  if (use_dev_account != nullptr) {
+    std::string account_key =
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
+        "K1SZFPTOtr/KBHBeksoGMGw==";
+    auto credential =
+        std::make_shared<Azure::Storage::StorageSharedKeyCredential>(
+            account, account_key);
+
+    const std::string url = CreateAzBlobUrl(account, container);
+
+    return std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url, credential);
+  }
+
+  const std::string url = CreateAzBlobUrl(account, container);
 
   const std::string sas_account_container_env =
       "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
@@ -699,9 +708,8 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
   auto blob_client = blob_container_client->GetBlobClient(dst_object);
 
   try {
-    const std::string src_uri = "https://" + src_account +
-                                std::string{kAzBlobEndpoint} + src_container +
-                                "/" + src_object;
+    const std::string src_uri =
+        CreateAzBlobUrl(src_account, src_container) + "/" + src_object;
 
     auto res = blob_client.StartCopyFromUri(src_uri);
 
