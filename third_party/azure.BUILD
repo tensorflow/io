@@ -57,17 +57,25 @@ cc_library(
         "sdk/storage/azure-storage-blobs/inc/",
         "sdk/storage/azure-storage-common/inc/",
     ],
-    linkopts = [],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:Bcrypt.lib",
+            "-DEFAULTLIB:Crypt32.lib",
+            "-DEFAULTLIB:WebServices.lib",
+            "-DEFAULTLIB:Winhttp.lib",
+        ],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         "@boringssl//:crypto",
         "@boringssl//:ssl",
+        "@libxml_archive//:libxml",
+        "@zlib",
     ] + select({
-        "@bazel_tools//src/conditions:windows": [
-        ],
+        "@bazel_tools//src/conditions:windows": [],
         "//conditions:default": [
             "@curl",
-            "@libxml_archive//:libxml",
         ],
     }),
 )
