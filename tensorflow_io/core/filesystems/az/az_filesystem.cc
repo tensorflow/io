@@ -27,11 +27,8 @@ limitations under the License.
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "blob/blob_client.h"
-#include "logging.h"
-#include "storage_account.h"
-#include "storage_credential.h"
-#include "storage_errno.h"
+#include "azure/storage/blobs/blob_container_client.hpp"
+#include "azure/storage/blobs/block_blob_client.hpp"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/filesystems/filesystem_plugins.h"
@@ -138,123 +135,78 @@ void ParseAzBlobPath(const std::string& fname, bool empty_object_ok,
   return;
 }
 
-std::string errno_to_string() {
-  switch (errno) {
-    /* common errors */
-    case invalid_parameters:
-      return "invalid_parameters";
-    /* client level */
-    case client_init_fail:
-      return "client_init_fail";
-    case client_already_init:
-      return "client_already_init";
-    case client_not_init:
-      return "client_not_init";
-    /* container level */
-    case container_already_exists:
-      return "container_already_exists";
-    case container_not_exists:
-      return "container_not_exists";
-    case container_name_invalid:
-      return "container_name_invalid";
-    case container_create_fail:
-      return "container_create_fail";
-    case container_delete_fail:
-      return "container_delete_fail";
-    /* blob level */
-    case blob_already_exists:
-      return "blob__already_exists";
-    case blob_not_exists:
-      return "blob_not_exists";
-    case blob_name_invalid:
-      return "blob_name_invalid";
-    case blob_delete_fail:
-      return "blob_delete_fail";
-    case blob_list_fail:
-      return "blob_list_fail";
-    case blob_copy_fail:
-      return "blob_copy_fail";
-    case blob_no_content_range:
-      return "blob_no_content_range";
-    /* unknown error */
-    case unknown_error:
-    default:
-      return "unknown_error - " + std::to_string(errno);
-  }
-}
-
-std::shared_ptr<azure::storage_lite::storage_credential> get_credential(
-    const std::string& account, const std::string& container) {
-  const std::string sas_account_container_env =
-      "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
-  const std::string sas_account_env = "TF_AZURE_STORAGE_" + account + "_SAS";
-  if (const auto sas = std::getenv(sas_account_container_env.c_str())) {
-    return std::make_shared<
-        azure::storage_lite::shared_access_signature_credential>(sas);
-  } else if (const auto sas = std::getenv(sas_account_env.c_str())) {
-    return std::make_shared<
-        azure::storage_lite::shared_access_signature_credential>(sas);
-  } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
-    return std::make_shared<
-        azure::storage_lite::shared_access_signature_credential>(sas);
-  } else if (const auto key = std::getenv("TF_AZURE_STORAGE_KEY")) {
-    return std::make_shared<azure::storage_lite::shared_key_credential>(account,
-                                                                        key);
-  } else {
-    return std::make_shared<azure::storage_lite::anonymous_credential>();
-  }
-}
-
-azure::storage_lite::blob_client_wrapper CreateAzBlobClientWrapper(
-    const std::string& account, const std::string& container) {
-  azure::storage_lite::logger::set_logger(
-      [](azure::storage_lite::log_level level, const std::string& log_msg) {
-        switch (level) {
-          case azure::storage_lite::log_level::info:
-            TF_Log(TF_INFO, log_msg.c_str());
-            break;
-          case azure::storage_lite::log_level::error:
-          case azure::storage_lite::log_level::critical:
-            TF_Log(TF_ERROR, log_msg.c_str());
-            break;
-          case azure::storage_lite::log_level::warn:
-            TF_Log(TF_WARNING, log_msg.c_str());
-            break;
-          case azure::storage_lite::log_level::trace:
-          case azure::storage_lite::log_level::debug:
-          default:
-            break;
-        }
-      });
-
+std::string CreateAzBlobUrl(const std::string& account,
+                            const std::string& container) {
   const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
   if (use_dev_account != nullptr) {
-    auto storage_account =
-        azure::storage_lite::storage_account::development_storage_account();
-    auto blob_client =
-        std::make_shared<azure::storage_lite::blob_client>(storage_account, 10);
-    azure::storage_lite::blob_client_wrapper blob_client_wrapper(blob_client);
-    return blob_client_wrapper;
+    return "http://127.0.0.1:10000/" + account + "/" + container;
   }
 
   const auto use_http_env = std::getenv("TF_AZURE_STORAGE_USE_HTTP");
   const auto use_https = use_http_env == nullptr;
   const auto blob_endpoint_env = std::getenv("TF_AZURE_STORAGE_BLOB_ENDPOINT");
-  const auto blob_endpoint =
-      std::string(blob_endpoint_env ? blob_endpoint_env : "");
+  const std::string schema = use_https ? "https://" : "http://";
 
-  auto credentials = get_credential(account, container);
-  auto storage_account = std::make_shared<azure::storage_lite::storage_account>(
-      account, credentials, use_https, blob_endpoint);
-  auto blob_client =
-      std::make_shared<azure::storage_lite::blob_client>(storage_account, 10);
-  azure::storage_lite::blob_client_wrapper blob_client_wrapper(blob_client);
+  auto blob_endpoint =
+      std::string(blob_endpoint_env ? blob_endpoint_env
+                                    : schema + account + kAzBlobEndpoint);
 
-  return blob_client_wrapper;
+  if (blob_endpoint.find("://") == std::string::npos) {
+    blob_endpoint = schema + blob_endpoint;
+  }
+
+  return blob_endpoint + "/" + container;
+}
+
+std::shared_ptr<Azure::Storage::Blobs::BlobContainerClient>
+CreateAzBlobClientWrapper(const std::string& account,
+                          const std::string& container) {
+  const auto use_dev_account = std::getenv("TF_AZURE_USE_DEV_STORAGE");
+  if (use_dev_account != nullptr) {
+    std::string account_key =
+        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
+        "K1SZFPTOtr/KBHBeksoGMGw==";
+    auto credential =
+        std::make_shared<Azure::Storage::StorageSharedKeyCredential>(
+            account, account_key);
+
+    const std::string url = CreateAzBlobUrl(account, container);
+
+    return std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url, credential);
+  }
+
+  const std::string url = CreateAzBlobUrl(account, container);
+
+  const std::string sas_account_container_env =
+      "TF_AZURE_STORAGE_" + account + "_" + container + "_SAS";
+  const std::string sas_account_env = "TF_AZURE_STORAGE_" + account + "_SAS";
+  std::shared_ptr<Azure::Storage::Blobs::BlobContainerClient> client;
+
+  if (const auto sas = std::getenv(sas_account_container_env.c_str())) {
+    client = std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url + "?" + sas);
+  } else if (const auto sas = std::getenv(sas_account_env.c_str())) {
+    client = std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url + "?" + sas);
+  } else if (const auto sas = std::getenv("TF_AZURE_STORAGE_SAS")) {
+    client = std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url + "?" + sas);
+  } else if (const auto account_key = std::getenv("TF_AZURE_STORAGE_KEY")) {
+    auto credential =
+        std::make_shared<Azure::Storage::StorageSharedKeyCredential>(
+            account, account_key);
+    client = std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(
+        url, credential);
+  } else {
+    client = std::make_shared<Azure::Storage::Blobs::BlobContainerClient>(url);
+  }
+
+  return client;
 }
 
 void ListResources(const std::string& dir, const std::string& delimiter,
-                   azure::storage_lite::blob_client_wrapper& blob_client,
+                   Azure::Storage::Blobs::BlobContainerClient& blob_client,
                    std::vector<std::string>* results, TF_Status* status) {
   if (!results) {
     TF_SetStatus(status, TF_INTERNAL, "results cannot be null");
@@ -267,54 +219,33 @@ void ListResources(const std::string& dir, const std::string& delimiter,
     return;
   }
 
-  std::string continuation_token;
-
   if (container.empty()) {
-    std::vector<azure::storage_lite::list_containers_item> containers;
-    do {
-      auto list_containers_response =
-          blob_client.list_containers_segmented("", continuation_token);
-      if (errno != 0) {
-        std::string error_message =
-            absl::StrCat("Failed to get containers of account ", dir, " (",
-                         errno_to_string(), ")");
-        TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-        return;
-      }
+    TF_SetStatus(status, TF_FAILED_PRECONDITION,
+                 "Cannot list resources for non specified container");
+    return;
+  }
 
-      containers.insert(containers.end(), list_containers_response.begin(),
-                        list_containers_response.end());
-    } while (!continuation_token.empty());
+  if (!object.empty() && object.back() != '/') {
+    object += "/";
+  }
 
-    std::transform(
-        std::begin(containers), std::end(containers),
-        std::back_inserter(*results),
-        [](azure::storage_lite::list_containers_item list_container_item)
-            -> std::string { return list_container_item.name; });
+  Azure::Storage::Blobs::ListBlobsOptions options;
+  options.Prefix = object;
 
-  } else {
-    std::vector<azure::storage_lite::list_blobs_segmented_item> blobs;
-    do {
-      auto list_blobs_response = blob_client.list_blobs_segmented(
-          container, delimiter, continuation_token, object);
-      if (errno != 0) {
-        std::string error_message = absl::StrCat("Failed to get blobs of ", dir,
-                                                 " (", errno_to_string(), ")");
-        TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-        return;
-      }
-
-      blobs.insert(blobs.end(), list_blobs_response.blobs.begin(),
-                   list_blobs_response.blobs.end());
-
-      continuation_token = list_blobs_response.next_marker;
-    } while (!continuation_token.empty());
-
-    results->reserve(blobs.size());
-    std::transform(
-        blobs.begin(), blobs.end(), std::back_inserter(*results),
-        [](azure::storage_lite::list_blobs_segmented_item list_blob_item)
-            -> std::string { return list_blob_item.name; });
+  try {
+    for (auto response = blob_client.ListBlobsByHierarchy(delimiter, options);
+         response.HasPage(); response.MoveToNextPage()) {
+      std::transform(response.Blobs.begin(), response.Blobs.end(),
+                     std::back_inserter(*results),
+                     [](auto const& list_blob_item) -> std::string {
+                       return list_blob_item.Name;
+                     });
+    }
+  } catch (const Azure::Storage::StorageException& e) {
+    std::string error_message =
+        absl::StrCat("Failed to get blobs of ", dir, " (", e.ErrorCode, ")");
+    TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
+    return;
   }
 
   TF_SetStatus(status, TF_OK, "");
@@ -335,15 +266,19 @@ class AzBlobRandomAccessFile {
       TF_SetStatus(status, TF_OK, "");
       return 0;
     }
-    auto blob_client = CreateAzBlobClientWrapper(account_, container_);
-    auto blob_property = blob_client.get_blob_property(container_, object_);
-    if (errno != 0) {
+    auto blob_container_client =
+        CreateAzBlobClientWrapper(account_, container_);
+    auto blob_client = blob_container_client->GetBlobClient(object_);
+    int64_t file_size;
+    try {
+      auto blob_property = blob_client.GetProperties();
+      file_size = blob_property.Value.BlobSize;
+    } catch (const Azure::Storage::StorageException& e) {
       std::string error_message =
-          absl::StrCat("Failed to get properties ", errno);
+          absl::StrCat("Failed to get properties ", e.ErrorCode);
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return 0;
     }
-    int64_t file_size = blob_property.size;
 
     size_t bytes_to_read = n;
     if (offset >= file_size) {
@@ -353,29 +288,21 @@ class AzBlobRandomAccessFile {
     }
 
     if (bytes_to_read > 0) {
-      std::ostringstream oss;
-      // https://stackoverflow.com/a/12481580
-#ifndef __APPLE__
-      oss.rdbuf()->pubsetbuf(buffer, bytes_to_read);
-#endif
+      Azure::Storage::Blobs::DownloadBlobToOptions download_options;
+      download_options.Range = Azure::Core::Http::HttpRange();
+      download_options.Range.Value().Offset = offset;
+      download_options.Range.Value().Length = bytes_to_read;
 
-      blob_client.download_blob_to_stream(container_, object_, offset,
-                                          bytes_to_read, oss);
-      if (errno != 0) {
+      try {
+        blob_client.DownloadTo(reinterpret_cast<uint8_t*>(buffer),
+                               bytes_to_read, download_options);
+      } catch (const Azure::Storage::StorageException& e) {
         std::string error_message = absl::StrCat(
             "Failed to get contents of az://", account_, kAzBlobEndpoint, "/",
-            container_, "/", object_, " (", errno_to_string(), ")");
+            container_, "/", object_, " (", e.ErrorCode, ")");
         TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
         return 0;
       }
-
-#ifdef __APPLE__
-      auto blob_string = oss.str();
-      if (buffer != nullptr) {
-        std::copy(blob_string.begin(), blob_string.end(), buffer);
-      }
-      bytes_to_read = blob_string.size();
-#endif
     }
 
     if (bytes_to_read < n) {
@@ -446,12 +373,15 @@ class AzBlobWritableFile {
       return;
     }
 
-    auto blob_client = CreateAzBlobClientWrapper(account_, container_);
-    blob_client.upload_file_to_blob(tmp_content_filename_, container_, object_);
-    if (errno != 0) {
+    auto blob_container_client =
+        CreateAzBlobClientWrapper(account_, container_);
+    auto blob_client = blob_container_client->GetBlockBlobClient(object_);
+    try {
+      blob_client.UploadFrom(tmp_content_filename_);
+    } catch (const Azure::Storage::StorageException& e) {
       std::string error_message =
           absl::StrCat("Failed to upload to az://", account_, "/", container_,
-                       "/", object_, " (", errno_to_string(), ")");
+                       "/", object_, " (", e.ErrorCode, ")");
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
@@ -652,18 +582,8 @@ static void CreateDir(const TF_Filesystem* filesystem, const char* path,
   // Blob storage has virtual folders. We can make sure the container exists
   auto blob_client_wrapper = CreateAzBlobClientWrapper(account, container);
 
-  if (blob_client_wrapper.container_exists(container)) {
-    TF_SetStatus(status, TF_OK, "");
-    return;
-  }
+  blob_client_wrapper->CreateIfNotExists();
 
-  blob_client_wrapper.create_container(container);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat(
-        "Failed to create directory ", path, " (", errno_to_string(), ")");
-    TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-    return;
-  }
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -680,12 +600,15 @@ static void DeleteFile(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
 
-  blob_client.delete_blob(container, object);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat(
-        "Failed to delete ", path, ": ", errno, "(", errno_to_string(), ")");
+  auto blob_client = blob_container_client->GetBlobClient(object);
+
+  try {
+    auto response = blob_client.Delete();
+  } catch (const Azure::Storage::StorageException& e) {
+    std::string error_message =
+        absl::StrCat("Failed to delete ", path, "(", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
@@ -711,31 +634,48 @@ static void DeleteDir(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
 
   // Check container exists
   // Just pull out the first path component representing the container
   if (object.empty()) {
-    blob_client.delete_container(container);
-    if (errno != 0) {
+    try {
+      blob_container_client->Delete();
+    } catch (const Azure::Storage::StorageException& e) {
       std::string error_message =
-          absl::StrCat("Error deleting ", path, " (", errno_to_string(), ")");
+          absl::StrCat("Error deleting ", path, " (", e.ErrorCode, ")");
       TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
   } else {
     // Delete all blobs under dirname prefix
     std::vector<std::string> children;
-    ListResources(path, "", blob_client, &children, status);
-    if (TF_GetCode(status) != TF_OK) {
+
+    try {
+      Azure::Storage::Blobs::ListBlobsOptions options;
+      options.Prefix = object;
+
+      for (auto response = blob_container_client->ListBlobs(options);
+           response.HasPage(); response.MoveToNextPage()) {
+        for (auto const& list_blob_item : response.Blobs) {
+          children.push_back(list_blob_item.Name);
+        }
+      }
+    } catch (const Azure::Storage::StorageException& e) {
+      std::string error_message =
+          absl::StrCat("Failed to list blobs in ", container, "/", object, " (",
+                       e.ErrorCode, ")");
+      TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
       return;
     }
 
     for (const auto& child : children) {
-      blob_client.delete_blob(container, child);
-      if (errno != 0) {
-        std::string error_message = absl::StrCat("Failed to delete ", child,
-                                                 " (", errno_to_string(), ")");
+      auto child_client = blob_container_client->GetBlobClient(child);
+      try {
+        child_client.Delete();
+      } catch (const Azure::Storage::StorageException& e) {
+        std::string error_message =
+            absl::StrCat("Failed to delete ", child, " (", e.ErrorCode, ")");
         TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
         return;
       }
@@ -777,46 +717,47 @@ static void RenameFile(const TF_Filesystem* filesystem, const char* src,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(src_account, src_container);
+  auto blob_container_client =
+      CreateAzBlobClientWrapper(dst_account, dst_container);
+  auto blob_client = blob_container_client->GetBlobClient(dst_object);
 
-  blob_client.start_copy(src_container, src_object, dst_container, dst_object);
-  if (errno != 0) {
+  try {
+    const std::string src_uri =
+        CreateAzBlobUrl(src_account, src_container) + "/" + src_object;
+
+    auto res = blob_client.StartCopyFromUri(src_uri);
+
+    // Wait until copy completes
+    // Status can be success, pending, aborted or failed
+    res.PollUntilDone(std::chrono::seconds(1));
+  } catch (const Azure::Storage::StorageException& e) {
     std::string error_message =
         absl::StrCat("Failed to start rename from ", src, " to ", dst, " (",
-                     errno_to_string(), ")");
+                     e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
 
-  // Wait until copy completes
-  // Status can be success, pending, aborted or failed
-  std::string copy_status;
-  do {
-    if (!copy_status.empty()) {
-#if defined(_MSC_VER)
-      Sleep(1000);
-#else
-      sleep(1);
-#endif
-    }
-    const auto dst_blob_property =
-        blob_client.get_blob_property(dst_container, dst_object);
-    copy_status = dst_blob_property.copy_status;
-  } while (copy_status.find("pending") == 0 && !copy_status.empty());
+  auto properties = blob_client.GetProperties().Value;
+  auto copy_status = properties.CopyStatus.Value();
 
-  if (copy_status.find("success") == std::string::npos) {
+  if (copy_status != Azure::Storage::Blobs::Models::CopyStatus::Success) {
     std::string error_message =
         absl::StrCat("Process of renaming from ", src, " to ", dst,
-                     " resulted in status of ", copy_status);
+                     " resulted in status of ", copy_status.ToString());
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
 
-  blob_client.delete_blob(src_container, src_object);
-  if (errno != 0) {
-    std::string error_message =
-        absl::StrCat("Failed to get delete after copy of ", src, " (",
-                     errno_to_string(), ")");
+  auto src_blob_container_client =
+      CreateAzBlobClientWrapper(src_account, src_container);
+  auto src_blob_client = blob_container_client->GetBlobClient(src_object);
+
+  try {
+    src_blob_client.Delete();
+  } catch (const Azure::Storage::StorageException& e) {
+    std::string error_message = absl::StrCat(
+        "Failed to get delete after copy of ", src, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return;
   }
@@ -873,19 +814,24 @@ static void PathExists(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
-  auto blob_exists = blob_client.blob_exists(container, object);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat(
-        "Failed to check if ", path, " exists (", errno_to_string(), ")");
-    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
-    return;
-  }
-  if (!blob_exists) {
-    std::string error_message =
-        absl::StrCat("The specified path ", path, " was not found");
-    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
-    return;
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
+  auto blob_client = blob_container_client->GetBlobClient(object);
+
+  try {
+    auto blob_properties = blob_client.GetProperties();
+  } catch (const Azure::Storage::StorageException& e) {
+    if (e.StatusCode == Azure::Core::Http::HttpStatusCode::NotFound &&
+        (e.ErrorCode == "BlobNotFound" || e.ErrorCode == "ContainerNotFound")) {
+      std::string error_message =
+          absl::StrCat("The specified path ", path, " was not found");
+      TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+      return;
+    } else {
+      std::string error_message = absl::StrCat("Failed to check if ", path,
+                                               " exists (", e.ErrorCode, ")");
+      TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+      return;
+    }
   }
   TF_SetStatus(status, TF_OK, "");
 }
@@ -902,8 +848,6 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
     return false;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
-
   if (container.empty()) {
     TF_SetStatus(status, TF_UNIMPLEMENTED,
                  "Currently account exists check is not implemented");
@@ -916,22 +860,46 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
     //                                      account, " was not found.");
   }
 
-  auto container_exists = blob_client.container_exists(container);
-  if (!container_exists) {
-    std::string error_message =
-        absl::StrCat("The specified folder ", path, " was not found");
-    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
-    return false;
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
+
+  try {
+    blob_container_client->GetProperties();
+  } catch (const Azure::Storage::StorageException& e) {
+    if (e.StatusCode == Azure::Core::Http::HttpStatusCode::NotFound &&
+        (e.ErrorCode == "BlobNotFound" || e.ErrorCode == "ContainerNotFound")) {
+      std::string error_message =
+          absl::StrCat("The specified folder ", path, " was not found");
+      TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+      return false;
+    } else {
+      std::string error_message = absl::StrCat("Failed to check if ", path,
+                                               " exists (", e.ErrorCode, ")");
+      TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+      return false;
+    }
   }
 
   if (!object.empty()) {
     // Lastly check fname doesn't point to a file
-    auto blob_exists = blob_client.blob_exists(container, object);
-    if (blob_exists) {
+    auto blob_client = blob_container_client->GetBlobClient(object);
+
+    try {
+      auto blob_properties = blob_client.GetProperties();
+
       std::string error_message =
           absl::StrCat("The specified folder ", path, " is not a directory");
       TF_SetStatus(status, TF_FAILED_PRECONDITION, error_message.c_str());
       return false;
+    } catch (const Azure::Storage::StorageException& e) {
+      if (e.StatusCode == Azure::Core::Http::HttpStatusCode::NotFound) {
+        // all good
+      } else {
+        std::string error_message =
+            absl::StrCat("Failed to check if ", path, " exists (", e.StatusCode,
+                         " ", e.Message, " ", e.ErrorCode, ")");
+        TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+        return false;
+      }
     }
   }
   TF_SetStatus(status, TF_OK, "");
@@ -948,7 +916,7 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
 
   if (IsDirectory(filesystem, path, status)) {
     stats->length = 0;
@@ -962,17 +930,20 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
     return;
   }
 
-  auto blob_property = blob_client.get_blob_property(container, object);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat(
-        "Failed to get file stats for ", path, " (", errno_to_string(), ")");
+  auto blob_client = blob_container_client->GetBlobClient(object);
+  try {
+    auto blob_property = blob_client.GetProperties();
+
+    stats->length = blob_property.Value.BlobSize;
+
+    auto az_last_modified = blob_property.Value.LastModified.time_since_epoch();
+    stats->mtime_nsec = duration_cast<nanoseconds>(az_last_modified).count();
+  } catch (const Azure::Storage::StorageException& e) {
+    std::string error_message = absl::StrCat("Failed to get file stats for ",
+                                             path, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
     return;
   }
-
-  stats->length = blob_property.size;
-  stats->mtime_nsec =
-      duration_cast<nanoseconds>(seconds(blob_property.last_modified)).count();
   stats->is_directory = false;
   TF_SetStatus(status, TF_OK, "");
 }
@@ -980,67 +951,63 @@ static void Stat(const TF_Filesystem* filesystem, const char* path,
 static int GetChildren(const TF_Filesystem* filesystem, const char* path,
                        char*** entries, TF_Status* status) {
   std::string account, container, object;
-  ParseAzBlobPath(path, false, &account, &container, &object, status);
+  ParseAzBlobPath(path, true, &account, &container, &object, status);
   if (TF_GetCode(status) != TF_OK) {
     return 0;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
-
-  std::string continuation_token;
   if (container.empty()) {
-    std::vector<std::string> result;
-    // TODO: iterate while continuation_token isn't empty
-    auto list_containers =
-        blob_client.list_containers_segmented("", continuation_token, INT_MAX);
-    std::transform(
-        begin(list_containers), end(list_containers),
-        std::back_inserter(result),
-        [](azure::storage_lite::list_containers_item item) -> std::string {
-          return item.name;
-        });
-
-    int num_entries = result.size();
-    *entries = static_cast<char**>(
-        plugin_memory_allocate(num_entries * sizeof((*entries)[0])));
-    for (int i = 0; i < num_entries; i++) {
-      (*entries)[i] = static_cast<char*>(
-          plugin_memory_allocate(strlen(result[i].c_str()) + 1));
-      memcpy((*entries)[i], result[i].c_str(), strlen(result[i].c_str()) + 1);
-    }
-    TF_SetStatus(status, TF_OK, "");
-    return num_entries;
+    std::string error_message =
+        absl::StrCat("Cannot iterate containers in ", path);
+    TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
+    return 0;
   }
+
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
 
   if (!object.empty() && object.back() != '/') {
     object += "/";
   }
 
-  auto list_blobs = blob_client.list_blobs_segmented(
-      container, "/", continuation_token, object);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat("Failed to get child of ", path,
-                                             " (", errno_to_string(), ")");
-    TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
-    return 0;
+  std::vector<std::string> result;
+  Azure::Storage::Blobs::ListBlobsOptions options;
+  options.Prefix = object;
+
+  for (auto response =
+           blob_container_client->ListBlobsByHierarchy("/", options);
+       response.HasPage(); response.MoveToNextPage()) {
+    std::transform(response.Blobs.begin(), response.Blobs.end(),
+                   std::back_inserter(result),
+                   [&object](auto const& list_blob_item) -> std::string {
+                     // Remove the prefix from the name
+                     auto blob_name = list_blob_item.Name;
+                     blob_name.erase(0, object.size());
+                     // Remove the trailing slash from folders
+                     if (blob_name.back() == '/') {
+                       blob_name.pop_back();
+                     }
+                     return blob_name;
+                   });
   }
 
-  std::vector<std::string> result;
-  auto blobs = list_blobs.blobs;
-  result.reserve(blobs.size());
-  std::transform(
-      std::begin(blobs), std::end(blobs), std::back_inserter(result),
-      [&object](azure::storage_lite::list_blobs_segmented_item list_blob_item)
-          -> std::string {
-        // Remove the prefix from the name
-        auto blob_name = list_blob_item.name;
-        blob_name.erase(0, object.size());
-        // Remove the trailing slash from folders
-        if (blob_name.back() == '/') {
-          blob_name.pop_back();
-        }
-        return blob_name;
-      });
+  // workaround for https://github.com/Azure/azure-sdk-for-cpp/issues/3103
+  // manually add folders (this is super inefficient)
+  for (auto response = blob_container_client->ListBlobs(options);
+       response.HasPage(); response.MoveToNextPage()) {
+    for (auto const& list_blob_item : response.Blobs) {
+      auto blob_name = list_blob_item.Name;
+      blob_name.erase(0, object.size());
+      const auto found_slash = blob_name.find('/');
+      if (found_slash == std::string::npos) {
+        continue;
+      }
+      blob_name = blob_name.substr(0, found_slash);
+
+      if (std::find(result.begin(), result.end(), blob_name) == result.end()) {
+        result.push_back(blob_name);
+      }
+    }
+  }
 
   int num_entries = result.size();
   *entries = static_cast<char**>(
@@ -1062,17 +1029,19 @@ static int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
     return 0;
   }
 
-  auto blob_client = CreateAzBlobClientWrapper(account, container);
-  auto blob_property = blob_client.get_blob_property(container, object);
-  if (errno != 0) {
-    std::string error_message = absl::StrCat(
-        "Failed to get properties of ", path, " (", errno_to_string(), ")");
+  auto blob_container_client = CreateAzBlobClientWrapper(account, container);
+  auto blob_client = blob_container_client->GetBlobClient(object);
+  try {
+    auto blob_property = blob_client.GetProperties();
+
+    TF_SetStatus(status, TF_OK, "");
+    return blob_property.Value.BlobSize;
+  } catch (const Azure::Storage::StorageException& e) {
+    std::string error_message = absl::StrCat("Failed to get properties of ",
+                                             path, " (", e.ErrorCode, ")");
     TF_SetStatus(status, TF_INTERNAL, error_message.c_str());
     return 0;
   }
-
-  TF_SetStatus(status, TF_OK, "");
-  return blob_property.size;
 }
 
 static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {

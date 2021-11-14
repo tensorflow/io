@@ -255,23 +255,32 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_azure_azure_storage_cpplite",
+    name = "libxml_archive",
+    build_file = "@//third_party:libxml.BUILD",
+    patch_cmds_win = [
+        """sed -i 's/define LIBXML_ICONV_ENABLED/undef LIBXML_ICONV_ENABLED/g' include/libxml/xmlversion.h""",
+        """sed -i 's/define LIBXML_LZMA_ENABLED/undef LIBXML_LZMA_ENABLED/g' include/libxml/xmlversion.h""",
+    ],
+    sha256 = "f63c5e7d30362ed28b38bfa1ac6313f9a80230720b7fb6c80575eeab3ff5900c",
+    strip_prefix = "libxml2-2.9.7",
+    urls = [
+        "https://mirror.bazel.build/xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+        "http://xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_azure_azure_sdk_for_cpp",
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
-        """sed -i.bak 's/__attribute__((visibility("default")))//g' include/tinyxml2.h """,
-        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(h, CURLOPT_NOSIGNAL, 1);/g' include/http/libcurl_http_client.h """,
-        "echo '' >> include/base64.h",
-        "echo '#include <stdexcept>' >> include/base64.h",
-        "echo '' >> include/utility.h",
-        "echo '#if defined(_MSC_VER)' >> include/utility.h",
-        "echo '#include <Rpc.h>' >> include/utility.h",
-        "echo '#endif' >> include/utility.h",
+        # patch can be removed once https://github.com/googleapis/google-cloud-cpp/issues/7462 is fixed
+        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(newHandle, CURLOPT_NOSIGNAL, 1);/g' sdk/core/azure-core/src/http/curl/curl.cpp """,
+        """sed -i.bak 's/include <windows.h>/include <windows.h>\\'$'\\n''#include <wincrypt.h>/g' sdk/core/azure-core/src/base64.cpp """,
     ],
-    sha256 = "25f34354fb0400ffe1b5a5c09c793c9fc8104d375910f6c84ab10fa50c0059cb",
-    strip_prefix = "azure-storage-cpplite-0.3.0",
+    sha256 = "ec9cb17cab24e940895eb2249c096f500f69383edfa66b20cb6456414767ce99",
+    strip_prefix = "azure-sdk-for-cpp-9dac89c67564c64748ebb72b9de55c548db51eff",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
-        "https://github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
+        "https://github.com/Azure/azure-sdk-for-cpp/archive/9dac89c67564c64748ebb72b9de55c548db51eff.tar.gz",
     ],
 )
 
