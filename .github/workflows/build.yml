@@ -324,10 +324,10 @@ jobs:
         shell: cmd
         run: |
           @echo on
-          set "BAZEL_OPTIMIZATION="
+          set "BAZEL_OPTIMIZATION=--config=cache"
           if "%EVENT_NAME%" == "push" (
             if "%REPO_NAME%" == "tensorflow/io" (
-              set "BAZEL_OPTIMIZATION=--remote_upload_local_results=true --google_credentials=service_account_creds.json"
+              set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
             )
           )
           set /P BAZEL_VERSION=< .bazelversion
