@@ -77,9 +77,9 @@ if "--nightly" in sys.argv:
 
 install_requires = []
 if project == "tensorflow-io":
-    install_requires = [require] + ["{}=={}".format(e, version) for e in subpackages]
+    install_requires = ["{}=={}".format(e, version) for e in subpackages]
 elif project == "tensorflow-io-nightly":
-    install_requires = [require] + [
+    install_requires = [
         "{}-nightly=={}".format(e, version) for e in subpackages
     ]
 
@@ -176,6 +176,12 @@ setuptools.setup(
     packages=setuptools.find_packages(where=".", exclude=exclude),
     python_requires=">=3.6, <3.10",
     install_requires=install_requires,
+    extras_require={
+        "tensorflow": [require],
+        "tensorflow-gpu": [require.replace('tensorflow', 'tensorflow-gpu')],
+        "tensorflow-cpu": [require.replace('tensorflow', 'tensorflow-cpu')],
+        "tensorflow-rocm": [require.replace('tensorflow', 'tensorflow-rocm')],
+    },
     package_data={".": ["*.so"],},
     project_urls={
         "Source": "https://github.com/tensorflow/io",
