@@ -798,7 +798,6 @@ static void MultiPartCopy(const Aws::String& source,
   create_multipart_upload_request.WithBucket(bucket_dst).WithKey(object_dst);
 
   GetS3Client(s3_file);
-  GetTransferManager(Aws::Transfer::TransferDirection::UPLOAD, s3_file);
 
   auto create_multipart_upload_outcome =
       s3_file->s3_client->CreateMultipartUpload(
@@ -942,6 +941,7 @@ void CopyFile(const TF_Filesystem* filesystem, const char* src, const char* dst,
   if (TF_GetCode(status) != TF_OK) return;
 
   auto s3_file = static_cast<S3File*>(filesystem->plugin_filesystem);
+  GetTransferManager(Aws::Transfer::TransferDirection::UPLOAD, s3_file);
   auto chunk_size =
       s3_file->multi_part_chunk_sizes[Aws::Transfer::TransferDirection::UPLOAD];
   size_t num_parts = 1;
