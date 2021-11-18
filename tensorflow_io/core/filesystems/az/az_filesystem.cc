@@ -988,25 +988,17 @@ static int GetChildren(const TF_Filesystem* filesystem, const char* path,
                      }
                      return blob_name;
                    });
-  }
-
-  // workaround for https://github.com/Azure/azure-sdk-for-cpp/issues/3103
-  // manually add folders (this is super inefficient)
-  for (auto response = blob_container_client->ListBlobs(options);
-       response.HasPage(); response.MoveToNextPage()) {
-    for (auto const& list_blob_item : response.Blobs) {
-      auto blob_name = list_blob_item.Name;
-      blob_name.erase(0, object.size());
-      const auto found_slash = blob_name.find('/');
-      if (found_slash == std::string::npos) {
-        continue;
-      }
-      blob_name = blob_name.substr(0, found_slash);
-
-      if (std::find(result.begin(), result.end(), blob_name) == result.end()) {
-        result.push_back(blob_name);
-      }
-    }
+    std::transform(response.BlobPrefixes.begin(), response.BlobPrefixes.end(),
+                   std::back_inserter(result),
+                   [&object](std::string blob_prefix) -> std::string {
+                     // Remove the prefix from the name
+                     blob_prefix.erase(0, object.size());
+                     // Remove the trailing slash from folders
+                     if (blob_prefix.back() == '/') {
+                       blob_prefix.pop_back();
+                     }
+                     return blob_prefix;
+                   });
   }
 
   int num_entries = result.size();
