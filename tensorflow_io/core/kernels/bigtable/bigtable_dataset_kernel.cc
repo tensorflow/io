@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 #include "absl/memory/memory.h"
+#include "google/cloud/bigtable/row_set.h"
 #include "google/cloud/bigtable/table.h"
 #include "google/cloud/bigtable/table_admin.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
@@ -29,7 +30,8 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-tensorflow::error::Code GoogleCloudErrorCodeToTfErrorCode(::google::cloud::StatusCode code) {
+tensorflow::error::Code GoogleCloudErrorCodeToTfErrorCode(
+    ::google::cloud::StatusCode code) {
   switch (code) {
     case ::google::cloud::StatusCode::kOk:
       return ::tensorflow::error::OK;
@@ -72,21 +74,24 @@ Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
   if (status.ok()) {
     return Status::OK();
   }
-  return Status(GoogleCloudErrorCodeToTfErrorCode(status.code()),
-                strings::StrCat("Error reading from Cloud Bigtable: ",
-                                status.message()));
+  return Status(
+      GoogleCloudErrorCodeToTfErrorCode(status.code()),
+      strings::StrCat("Error reading from Cloud Bigtable: ", status.message()));
 }
 
 class BigtableClientResource : public ResourceBase {
  public:
   explicit BigtableClientResource(const std::string& project_id,
                                   const std::string& instance_id)
-      : data_client_(CreateDataClient(project_id, instance_id)) {}
-
-  cbt::Table CreateTable(const std::string& table_id) {
-    VLOG(1) << "CreateTable";
-    return cbt::Table(data_client_, table_id);
+      : data_client_(CreateDataClient(project_id, instance_id)) {
+    VLOG(1) << "BigtableClientResource ctor";
   }
+
+  const std::shared_ptr<cbt::DataClient>& data_client() const {
+    return data_client_;
+  }
+
+  ~BigtableClientResource() { VLOG(1) << "BigtableClientResource dtor"; }
 
   string DebugString() const override { return "BigtableClientResource"; }
 
@@ -107,6 +112,8 @@ class BigtableClientOp : public OpKernel {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("instance_id", &instance_id_));
     VLOG(1) << "BigtableClientOp ctor";
   }
+
+  ~BigtableClientOp() { VLOG(1) << "BigtableClientOp dtor"; }
 
   void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
     VLOG(1) << "BigtableClientOp compute";
@@ -135,17 +142,17 @@ template <typename Dataset>
 class Iterator : public DatasetIterator<Dataset> {
  public:
   explicit Iterator(const typename DatasetIterator<Dataset>::Params& params,
-                    const std::string& table_id,
                     const std::vector<std::string>& columns)
       : DatasetIterator<Dataset>(params),
         columns_(ColumnsToFamiliesAndQualifiers(columns)),
-        reader_(
-            this->dataset()->client_resource().CreateTable(table_id).ReadRows(
-                cbt::RowRange::InfiniteRange(),
-                cbt::Filter::Chain(CreateColumnsFilter(columns_),
-                                   cbt::Filter::Latest(1)))),
+        reader_(this->dataset()->CreateTable().ReadRows(
+            this->dataset()->row_set(),
+            cbt::Filter::Chain(CreateColumnsFilter(columns_),
+                               cbt::Filter::Latest(1)))),
         it_(this->reader_.begin()),
-        column_to_idx_(CreateColumnToIdxMap(columns_)) {}
+        column_to_idx_(CreateColumnToIdxMap(columns_)) {
+    VLOG(1) << "DatasetIterator ctor";
+  }
 
   Status GetNextInternal(IteratorContext* ctx, std::vector<Tensor>* out_tensors,
                          bool* end_of_sequence) override {
@@ -256,7 +263,6 @@ class Iterator : public DatasetIterator<Dataset> {
   }
 
   mutex mu_;
-  const std::shared_ptr<cbt::DataClient> data_client_;
   const std::vector<std::pair<std::string, std::string>> columns_;
   cbt::RowReader reader_ GUARDED_BY(mu_);
   cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
@@ -269,11 +275,13 @@ class Iterator : public DatasetIterator<Dataset> {
 
 class Dataset : public DatasetBase {
  public:
-  Dataset(OpKernelContext* ctx, BigtableClientResource* client_resource,
-          std::string table_id, std::vector<std::string> columns)
+  Dataset(OpKernelContext* ctx,
+          const std::shared_ptr<cbt::DataClient>& data_client,
+          cbt::RowSet row_set, std::string table_id,
+          std::vector<std::string> columns)
       : DatasetBase(DatasetContext(ctx)),
-        client_resource_(*client_resource),
-        client_resource_unref_(client_resource),
+        data_client_(data_client),
+        row_set_(std::move(row_set)),
         table_id_(table_id),
         columns_(columns) {
     dtypes_.push_back(DT_STRING);
@@ -286,7 +294,7 @@ class Dataset : public DatasetBase {
     return absl::make_unique<Iterator<Dataset>>(
         typename DatasetIterator<Dataset>::Params{
             this, strings::StrCat(prefix, "::BigtableDataset")},
-        table_id_, columns_);
+        columns_);
   }
 
   const DataTypeVector& output_dtypes() const override { return dtypes_; }
@@ -299,7 +307,17 @@ class Dataset : public DatasetBase {
     return "BigtableDatasetOp::Dataset";
   }
 
-  BigtableClientResource& client_resource() const { return client_resource_; }
+  const std::shared_ptr<cbt::DataClient>& data_client() const {
+    return data_client_;
+  }
+  const cbt::RowSet& row_set() const { return row_set_; }
+
+  cbt::Table CreateTable() const {
+    VLOG(1) << "CreateTable";
+    cbt::Table table(data_client_, table_id_);
+    VLOG(1) << "table crated";
+    return table;
+  }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
@@ -312,8 +330,8 @@ class Dataset : public DatasetBase {
   Status CheckExternalState() const override { return Status::OK(); }
 
  private:
-  BigtableClientResource& client_resource_;
-  const core::ScopedUnref client_resource_unref_;
+  std::shared_ptr<cbt::DataClient> const& data_client_;
+  const cbt::RowSet row_set_;
   const std::string table_id_;
   const std::vector<std::string> columns_;
   DataTypeVector dtypes_;
@@ -330,10 +348,17 @@ class BigtableDatasetOp : public DatasetOpKernel {
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
     VLOG(1) << "Make Dataset";
     BigtableClientResource* client_resource;
-    OP_REQUIRES_OK(
-        ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &client_resource));
-    core::ScopedUnref client_resource_unref_(client_resource);
-    *output = new Dataset(ctx, client_resource, table_id_, columns_);
+    OP_REQUIRES_OK(ctx,
+                   GetResourceFromContext(ctx, "client", &client_resource));
+    core::ScopedUnref unref_client(client_resource);
+
+    io::BigtableRowSetResource* row_set_resource;
+    OP_REQUIRES_OK(ctx,
+                   GetResourceFromContext(ctx, "row_set", &row_set_resource));
+    core::ScopedUnref row_set_resource_unref_(row_set_resource);
+
+    *output = new Dataset(ctx, client_resource->data_client(),
+                          row_set_resource->row_set(), table_id_, columns_);
   }
 
  private:
@@ -343,6 +368,138 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
                         BigtableDatasetOp);
+
+// Return the index of the tablet that a worker should start with. Each worker
+// start with their first tablet and finish on tablet before next worker's first
+// tablet. Each worker should get num_tablets/num_workers rounded down, plus at
+// most one. If we simply round up, then the last worker may be starved.
+// Consider an example where there's 100 tablets and 11 workers. If we give
+// round_up(100/11) to each one, then first 10 workers get 10 tablets each, and
+// the last one gets nothing.
+int GetWorkerStartIndex(size_t num_tablets, size_t num_workers,
+                        size_t worker_id) {
+  // if there's more workers than tablets, workers get one tablet each or less.
+  if (num_tablets <= num_workers) return std::min(num_tablets, worker_id);
+  // tablets_per_worker: minimum tablets each worker should obtain.
+  size_t const tablets_per_worker = num_tablets / num_workers;
+  // surplus_tablets: excess that has to be evenly distributed among the workers
+  // so that no worker gets more than tablets_per_worker + 1.
+  size_t const surplus_tablets = num_tablets % num_workers;
+  size_t const workers_before = worker_id;
+  return tablets_per_worker * workers_before +
+         std::min(surplus_tablets, workers_before);
+}
+
+bool RowSetIntersectsRange(cbt::RowSet const& row_set,
+                           std::string const& start_key,
+                           std::string const& end_key) {
+  auto range = cbt::RowRange::Range(start_key, end_key);
+  return !row_set.Intersect(range).IsEmpty();
+}
+
+class BigtableSplitRowSetEvenlyOp : public OpKernel {
+ public:
+  explicit BigtableSplitRowSetEvenlyOp(OpKernelConstruction* ctx)
+      : OpKernel(ctx) {
+    VLOG(1) << "BigtableSplitRowSetEvenlyOp ctor ";
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("num_splits", &num_splits_));
+  }
+
+  void Compute(OpKernelContext* context) override {
+    mutex_lock l(mu_);
+
+    ResourceMgr* mgr = context->resource_manager();
+    ContainerInfo cinfo;
+    OP_REQUIRES_OK(context, cinfo.Init(mgr, def()));
+
+    BigtableClientResource* client_resource;
+    OP_REQUIRES_OK(context,
+                   GetResourceFromContext(context, "client", &client_resource));
+    core::ScopedUnref unref_client(client_resource);
+
+    io::BigtableRowSetResource* row_set_resource;
+    OP_REQUIRES_OK(
+        context, GetResourceFromContext(context, "row_set", &row_set_resource));
+    core::ScopedUnref unref_row_set(row_set_resource);
+
+    VLOG(1) << "BigtableSplitRowSetEvenlyOp got RowSet: "
+            << row_set_resource->ToString();
+    if (row_set_resource->row_set().IsEmpty()) {
+      OP_REQUIRES_OK(context,
+                     errors::FailedPrecondition("row_set cannot be empty!"));
+    }
+
+    auto table = cbt::Table(client_resource->data_client(), table_id_);
+    auto maybe_sample_row_keys = table.SampleRows();
+    OP_REQUIRES_OK(context,
+                   GoogleCloudStatusToTfStatus(maybe_sample_row_keys.status()));
+
+    auto& sample_row_keys = maybe_sample_row_keys.value();
+
+    std::vector<std::pair<std::string, std::string>> tablets;
+
+    std::string start_key;
+    for (auto& sample_row_key : sample_row_keys) {
+      auto& end_key = sample_row_key.row_key;
+      tablets.emplace_back(start_key, end_key);
+      start_key = std::move(end_key);
+    }
+    if (!start_key.empty() || tablets.size() == 0) {
+      tablets.emplace_back(start_key, "");
+    }
+    tablets.erase(
+        std::remove_if(
+            tablets.begin(), tablets.end(),
+            [row_set_resource](std::pair<std::string, std::string> const& p) {
+              return !RowSetIntersectsRange(row_set_resource->row_set(),
+                                            p.first, p.second);
+            }),
+        tablets.end());
+
+    VLOG(1) << "got array of tablets of size:" << tablets.size();
+
+    size_t output_size = std::min<std::size_t>(tablets.size(), num_splits_);
+
+    Tensor* output_tensor = NULL;
+    OP_REQUIRES_OK(context,
+                   context->allocate_output(0, {static_cast<long>(output_size)},
+                                            &output_tensor));
+    auto output_v = output_tensor->tensor<ResourceHandle, 1>();
+
+    for (size_t i = 0; i < output_size; i++) {
+      size_t start_idx = GetWorkerStartIndex(tablets.size(), output_size, i);
+      size_t next_worker_start_idx =
+          GetWorkerStartIndex(tablets.size(), output_size, i + 1);
+      size_t end_idx = next_worker_start_idx - 1;
+      start_key = tablets.at(start_idx).first;
+      std::string end_key = tablets.at(end_idx).second;
+      io::BigtableRowSetResource* work_chunk_row_set =
+          new io::BigtableRowSetResource(row_set_resource->Intersect(
+              cbt::RowRange::RightOpen(start_key, end_key)));
+
+      std::string container_name = cinfo.name() + std::to_string(i);
+
+      VLOG(1) << "creating resource:" << cinfo.container() << ":"
+              << container_name;
+
+      OP_REQUIRES_OK(
+          context, mgr->Create<io::BigtableRowSetResource>(
+                       cinfo.container(), container_name, work_chunk_row_set));
+      output_v(i) = MakeResourceHandle(
+          cinfo.container(), container_name, *context->device(),
+          TypeIndex::Make<io::BigtableRowSetResource>());
+    }
+  }
+
+ private:
+  mutable mutex mu_;
+  std::string table_id_ GUARDED_BY(mu_);
+  int num_splits_ GUARDED_BY(mu_);
+};
+
+REGISTER_KERNEL_BUILDER(Name("BigtableSplitRowSetEvenly").Device(DEVICE_CPU),
+                        BigtableSplitRowSetEvenlyOp);
 
 }  // namespace
 }  // namespace data

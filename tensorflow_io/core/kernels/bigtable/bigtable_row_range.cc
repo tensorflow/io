@@ -132,8 +132,7 @@ class BigtablePrefixRowRangeOp
   }
 
  private:
-  StatusOr<BigtableRowRangeResource*> CreateResource()
-       override {
+  StatusOr<BigtableRowRangeResource*> CreateResource() override {
     return new BigtableRowRangeResource(cbt::RowRange::Prefix(prefix_));
   }
 

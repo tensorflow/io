@@ -16,7 +16,6 @@ limitations under the License.
 #ifndef BIGTABLE_ROW_SET_H
 #define BIGTABLE_ROW_SET_H
 
-
 #include "google/cloud/bigtable/table.h"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/resource_mgr.h"
@@ -49,6 +48,8 @@ class BigtableRowSetResource : public ResourceBase {
       google::cloud::bigtable::RowRange const& row_range) {
     return row_set_.Intersect(row_range);
   }
+
+  google::cloud::bigtable::RowSet const& row_set() { return row_set_; }
 
   string DebugString() const override {
     return "BigtableRowSetResource:{" + ToString() + "}";

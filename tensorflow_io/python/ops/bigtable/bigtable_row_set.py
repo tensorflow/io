@@ -14,7 +14,6 @@
 
 """Module implementing basic functions for obtaining BigTable RowSets"""
 
-from tensorflow.python.framework import dtypes
 from tensorflow_io.python.ops import core_ops
 from . import bigtable_row_range
 from typing import Union
@@ -31,9 +30,7 @@ class RowSet:
         if isinstance(row_or_range, str):
             core_ops.bigtable_row_set_append_row(self._impl, row_or_range)
         else:
-            core_ops.bigtable_row_set_append_row_range(
-                self._impl, row_or_range._impl
-            )
+            core_ops.bigtable_row_set_append_row_range(self._impl, row_or_range._impl)
 
 
 def empty():
@@ -72,6 +69,4 @@ def intersect(row_set: RowSet, row_range: bigtable_row_range.RowRange):
     Returns:
       RowSet: an intersection of the given row set and row range.
     """
-    return RowSet(
-        core_ops.bigtable_row_set_intersect(row_set._impl, row_range._impl)
-    )
+    return RowSet(core_ops.bigtable_row_set_intersect(row_set._impl, row_range._impl))
