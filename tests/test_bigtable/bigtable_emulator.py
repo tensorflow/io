@@ -67,9 +67,7 @@ def _get_cbt_emulator_path():
 
 
 def _get_cbt_cli_path():
-    return _get_cbt_binary_path(
-        CBT_CLI_PATH_ENV_VAR, CBT_CLI_SEARCH_PATHS, "cbt cli"
-    )
+    return _get_cbt_binary_path(CBT_CLI_PATH_ENV_VAR, CBT_CLI_SEARCH_PATHS, "cbt cli")
 
 
 def _extract_emulator_addr_from_output(emulator_output):
@@ -82,9 +80,7 @@ def _extract_emulator_addr_from_output(emulator_output):
             for word in words:
                 if re.fullmatch("[a-z.0-9]+:[0-9]+", word):
                     return word
-            raise RuntimeError(
-                f"Failed to find CBT emulator in the line {line}"
-            )
+            raise RuntimeError(f"Failed to find CBT emulator in the line {line}")
 
 
 class BigtableEmulator:
