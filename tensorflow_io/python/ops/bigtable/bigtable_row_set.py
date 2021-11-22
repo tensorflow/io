@@ -15,11 +15,13 @@
 """Module implementing basic functions for obtaining BigTable RowSets"""
 
 from tensorflow_io.python.ops import core_ops
-from . import bigtable_row_range
+from tensorflow_io.python.ops.bigtable import bigtable_row_range
 from typing import Union
 
 
 class RowSet:
+    """Python wrapper for google::cloud::bigtable::RowSet"""
+
     def __init__(self, impl):
         self._impl = impl
 
@@ -33,12 +35,12 @@ class RowSet:
             core_ops.bigtable_row_set_append_row_range(self._impl, row_or_range._impl)
 
 
-def empty():
+def empty() -> RowSet:
     """Create an empty row set."""
     return RowSet(core_ops.bigtable_empty_row_set())
 
 
-def from_rows_or_ranges(*args: Union[str, bigtable_row_range.RowRange]):
+def from_rows_or_ranges(*args: Union[str, bigtable_row_range.RowRange]) -> RowSet:
     """Create a set from a row range.
 
     Args:
@@ -54,7 +56,7 @@ def from_rows_or_ranges(*args: Union[str, bigtable_row_range.RowRange]):
     return row_set
 
 
-def intersect(row_set: RowSet, row_range: bigtable_row_range.RowRange):
+def intersect(row_set: RowSet, row_range: bigtable_row_range.RowRange) -> RowSet:
     """Modify a row set by intersecting its contents with a row range.
 
     All rows intersecting with the given range will be removed from the set

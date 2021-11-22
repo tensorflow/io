@@ -40,7 +40,19 @@ class BigtableClient:
 
 
 class BigtableTable:
-    def __init__(self, client_resource, table_id: str):
+    """Entry point for reading data from Cloud Bigtable.
+      Prefetches the sample_row_keys and creates a list with them.
+      Each sample is a range open from the right, represented as a pair of two
+      row_keys: the first key included in the sample and the first that is
+      too big.
+    """
+
+    def __init__(self, client_resource: tf.Tensor, table_id: str):
+        """
+    Args:
+        client_resource: Resource holding a reference to BigtableClient.
+        table_id (str): The ID of the table.
+    """
         self._table_id = table_id
         self._client_resource = client_resource
 
@@ -51,6 +63,15 @@ class BigtableTable:
         filter: filters.BigtableFilter = filters.latest(),
         output_type=tf.string,
     ):
+        """Retrieves values from Google Bigtable.
+        Args:
+            columns (List[str]): the list of columns to read from; the order on
+                this list will determine the order in the output tensors
+            row_set (RowSet): set of rows to read.
+        
+        Returns:
+            A `tf.data.Dataset` returning the cell contents.
+        """
         return _BigtableDataset(
             self._client_resource,
             self._table_id,
@@ -70,6 +91,17 @@ class BigtableTable:
         filter: filters.BigtableFilter = filters.latest(),
         output_type=tf.string,
     ):
+        """Retrieves values from Google Bigtable in parallel. The ammount of work is split between workers
+        based on SampleRowKeys.
+        Args:
+            columns (List[str]): the list of columns to read from; the order on
+                this list will determine the order in the output tensors
+            num_parallel_calls: number of workers assigned to reading the data.
+            row_set (RowSet): set of rows to read.
+        
+        Returns:
+            A `tf.data.Dataset` returning the cell contents.
+        """
 
         samples = core_ops.bigtable_split_row_set_evenly(
             self._client_resource,
