@@ -16,9 +16,11 @@
 # pylint: disable=C0114
 # disable class docstring for tests
 # pylint: disable=C0115
+from tensorflow_io.python.ops import core_ops
 import tensorflow_io.python.ops.bigtable.bigtable_row_range as row_range
 import tensorflow_io.python.ops.bigtable.bigtable_row_set as row_set
 from tensorflow import test
+import tensorflow as tf
 
 
 class RowRangeTest(test.TestCase):
@@ -104,14 +106,10 @@ class TestRowSet(test.TestCase):
         self.assertEqual(expected, repr(r_set))
 
     def test_intersect(self):
-        r_set = row_set.from_rows_or_ranges(
-            row_range.open_range("row1", "row5")
-        )
+        r_set = row_set.from_rows_or_ranges(row_range.open_range("row1", "row5"))
         r_set = row_set.intersect(r_set, row_range.closed_range("row3", "row7"))
         expected = (
-            "row_ranges {\n"
-            + '  start_key_closed: "row3"\n'
-            + "  end_key_open: "
+            "row_ranges {\n" + '  start_key_closed: "row3"\n' + "  end_key_open: "
             '"row5"\n' + "}\n"
         )
         self.assertEqual(expected, repr(r_set))

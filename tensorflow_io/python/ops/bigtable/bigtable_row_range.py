@@ -15,7 +15,6 @@
 """Module implementing basic functions for obtaining BigTable RowRanges"""
 
 from tensorflow_io.python.ops import core_ops
-import tensorflow
 
 
 class RowRange:

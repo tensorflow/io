@@ -27,12 +27,12 @@ REGISTER_OP("BigtableClient")
 
 REGISTER_OP("BigtableDataset")
     .Input("client: resource")
+    .Input("row_set: resource")
     .Attr("table_id: string")
     .Attr("columns: list(string) >= 1")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
-
 
 REGISTER_OP("BigtableEmptyRowSet")
     .Attr("container: string = ''")
@@ -93,3 +93,16 @@ REGISTER_OP("BigtableRowSetIntersect")
     .Output("result_row_set: resource")
     .SetShapeFn(shape_inference::ScalarShape);
 
+REGISTER_OP("BigtableSplitRowSetEvenly")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Input("client: resource")
+    .Input("row_set: resource")
+    .Attr("table_id: string")
+    .Attr("num_splits: int")
+    .Output("samples: resource")
+    .SetIsStateful()
+    .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
+      c->set_output(0, c->Vector(c->UnknownDim()));
+      return tensorflow::Status::OK();
+    });
