@@ -22,6 +22,7 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
+#include "tensorflow_io/core/kernels/bigtable/serialization.h"
 #include "tensorflow_io/core/kernels/bigtable/bigtable_row_set.h"
 #include "tensorflow_io/core/kernels/bigtable/bigtable_version_filters.h"
 
@@ -169,8 +170,8 @@ class Iterator : public DatasetIterator<Dataset> {
 
     VLOG(1) << "alocating tensor";
     const std::size_t kNumCols = column_to_idx_.size();
-    Tensor res(ctx->allocator({}), DT_STRING, {(long)kNumCols});
-    auto res_data = res.tensor<tstring, 1>();
+    const DataType dtype = this->dataset()->output_type();
+    Tensor res(ctx->allocator({}), dtype, {(long)kNumCols});
 
     VLOG(1) << "getting row";
     const auto& row = *it_;
@@ -184,7 +185,8 @@ class Iterator : public DatasetIterator<Dataset> {
       const auto column_idx = column_to_idx_.find(key);
       if (column_idx != column_to_idx_.end()) {
         VLOG(1) << "getting column:" << column_idx->second;
-        res_data(column_idx->second) = std::move(cell.value());
+        TF_RETURN_IF_ERROR(
+            io::PutCellValueInTensor(res, column_idx->second, dtype, cell));
       } else {
         LOG(ERROR) << "column " << cell.family_name() << ":"
                    << cell.column_qualifier()
@@ -280,14 +282,15 @@ class Dataset : public DatasetBase {
   Dataset(OpKernelContext* ctx,
           const std::shared_ptr<cbt::DataClient>& data_client,
           cbt::RowSet row_set, cbt::Filter filter, std::string table_id,
-          std::vector<std::string> columns)
+          std::vector<std::string> columns, DataType output_type)
       : DatasetBase(DatasetContext(ctx)),
         data_client_(data_client),
         row_set_(std::move(row_set)),
         filter_(std::move(filter)),
+        output_type_(std::move(output_type)),
         table_id_(table_id),
         columns_(columns) {
-    dtypes_.push_back(DT_STRING);
+    dtypes_.push_back({output_type_});
     output_shapes_.push_back({});
   }
 
@@ -305,6 +308,8 @@ class Dataset : public DatasetBase {
   const std::vector<PartialTensorShape>& output_shapes() const override {
     return output_shapes_;
   }
+
+  const DataType output_type() const { return output_type_; }
 
   std::string DebugString() const override {
     return "BigtableDatasetOp::Dataset";
@@ -338,6 +343,7 @@ class Dataset : public DatasetBase {
   std::shared_ptr<cbt::DataClient> const& data_client_;
   const cbt::RowSet row_set_;
   cbt::Filter filter_;
+  DataType output_type_;
   const std::string table_id_;
   const std::vector<std::string> columns_;
   DataTypeVector dtypes_;
@@ -349,6 +355,7 @@ class BigtableDatasetOp : public DatasetOpKernel {
   explicit BigtableDatasetOp(OpKernelConstruction* ctx) : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("table_id", &table_id_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("columns", &columns_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("output_type", &output_type_));
   }
 
   void MakeDataset(OpKernelContext* ctx, DatasetBase** output) override {
@@ -370,12 +377,13 @@ class BigtableDatasetOp : public DatasetOpKernel {
 
     *output = new Dataset(ctx, client_resource->data_client(),
                           row_set_resource->row_set(),
-                          filter_resource->filter(), table_id_, columns_);
+                          filter_resource->filter(), table_id_, columns_, output_type_);
   }
 
  private:
   std::string table_id_;
   std::vector<std::string> columns_;
+  DataType output_type_;
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableDataset").Device(DEVICE_CPU),
