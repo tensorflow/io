@@ -2,6 +2,7 @@ from typing import List
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import tensor_spec
 from tensorflow_io.python.ops import core_ops
+import tensorflow_io.python.ops.bigtable.bigtable_version_filters as filters
 from tensorflow.python.framework import dtypes
 import tensorflow as tf
 from tensorflow.python.data.ops import dataset_ops
@@ -34,14 +35,22 @@ class BigtableTable:
         self._table_id = table_id
         self._client_resource = client_resource
 
-    def read_rows(self, columns: List[str], row_set: RowSet):
-        return _BigtableDataset(self._client_resource, self._table_id, columns, row_set)
+    def read_rows(
+        self,
+        columns: List[str],
+        row_set: RowSet,
+        filter: filters.BigtableFilter = filters.latest(),
+    ):
+        return _BigtableDataset(
+            self._client_resource, self._table_id, columns, row_set, filter
+        )
 
     def parallel_read_rows(
         self,
         columns: List[str],
         num_parallel_calls=tf.data.AUTOTUNE,
         row_set: RowSet = from_rows_or_ranges(infinite()),
+        filter: filters.BigtableFilter = filters.latest(),
     ):
 
         print("calling parallel read_rows with row_set:", row_set)
@@ -50,7 +59,7 @@ class BigtableTable:
         )
 
         def map_func(idx):
-            return self.read_rows(columns, RowSet(samples[idx]))
+            return self.read_rows(columns, RowSet(samples[idx]), filter)
 
         # We interleave a dataset of sample's indexes instead of a dataset of
         # samples, because Dataset.from_tensor_slices attempts to copy the
@@ -69,14 +78,20 @@ class _BigtableDataset(dataset_ops.DatasetSource):
     """_BigtableDataset represents a dataset that retrieves keys and values."""
 
     def __init__(
-        self, client_resource, table_id: str, columns: List[str], row_set: RowSet,
+        self,
+        client_resource,
+        table_id: str,
+        columns: List[str],
+        row_set: RowSet,
+        filter,
     ):
         self._table_id = table_id
         self._columns = columns
+        self._filter = filter
         self._element_spec = tf.TensorSpec(shape=[len(columns)], dtype=dtypes.string)
 
         variant_tensor = core_ops.bigtable_dataset(
-            client_resource, row_set._impl, table_id, columns
+            client_resource, row_set._impl, filter._impl, table_id, columns
         )
         super().__init__(variant_tensor)
 
