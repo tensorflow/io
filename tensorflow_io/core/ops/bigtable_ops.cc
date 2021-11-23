@@ -28,6 +28,7 @@ REGISTER_OP("BigtableClient")
 REGISTER_OP("BigtableDataset")
     .Input("client: resource")
     .Input("row_set: resource")
+    .Input("filter: resource")
     .Attr("table_id: string")
     .Attr("columns: list(string) >= 1")
     .Output("handle: variant")
@@ -106,3 +107,24 @@ REGISTER_OP("BigtableSplitRowSetEvenly")
       c->set_output(0, c->Vector(c->UnknownDim()));
       return tensorflow::Status::OK();
     });
+
+REGISTER_OP("BigtableLatestFilter")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Output("filter: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtableTimestampRangeFilter")
+    .Attr("container: string = ''")
+    .Attr("shared_name: string = ''")
+    .Attr("start_ts_us: int")
+    .Attr("end_ts_us: int")
+    .Output("filter: resource")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape);
+
+REGISTER_OP("BigtablePrintFilter")
+    .Input("filter: resource")
+    .Output("output: string")
+    .SetShapeFn(shape_inference::ScalarShape);

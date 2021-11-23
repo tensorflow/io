@@ -185,6 +185,8 @@ cc_library(
         "kernels/bigtable/bigtable_row_range.h",
         "kernels/bigtable/bigtable_row_set.cc",
         "kernels/bigtable/bigtable_row_set.h",
+        "kernels/bigtable/bigtable_version_filters.cc",
+        "kernels/bigtable/bigtable_version_filters.h",
         "ops/bigtable_ops.cc",
     ],
     copts = tf_io_copts(),
