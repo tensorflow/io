@@ -1,18 +1,27 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import List
 from tensorflow.python.data.ops import dataset_ops
 from tensorflow.python.framework import tensor_spec
 from tensorflow_io.python.ops import core_ops
 import tensorflow_io.python.ops.bigtable.bigtable_version_filters as filters
+import tensorflow_io.python.ops.bigtable.bigtable_row_set as bigtable_row_set
+import tensorflow_io.python.ops.bigtable.bigtable_row_range as bigtable_row_range
 from tensorflow.python.framework import dtypes
 import tensorflow as tf
 from tensorflow.python.data.ops import dataset_ops
-
-from tensorflow_io.python.ops.bigtable.bigtable_row_set import (
-    from_rows_or_ranges,
-    RowSet,
-    intersect,
-)
-from tensorflow_io.python.ops.bigtable.bigtable_row_range import infinite
 
 
 class BigtableClient:
@@ -38,28 +47,38 @@ class BigtableTable:
     def read_rows(
         self,
         columns: List[str],
-        row_set: RowSet,
+        row_set: bigtable_row_set.RowSet,
         filter: filters.BigtableFilter = filters.latest(),
+        output_type=tf.string,
     ):
         return _BigtableDataset(
-            self._client_resource, self._table_id, columns, row_set, filter
+            self._client_resource,
+            self._table_id,
+            columns,
+            row_set,
+            filter,
+            output_type,
         )
 
     def parallel_read_rows(
         self,
         columns: List[str],
         num_parallel_calls=tf.data.AUTOTUNE,
-        row_set: RowSet = from_rows_or_ranges(infinite()),
+        row_set: bigtable_row_set.RowSet = bigtable_row_set.from_rows_or_ranges(
+            bigtable_row_range.infinite()
+        ),
         filter: filters.BigtableFilter = filters.latest(),
+        output_type=tf.string,
     ):
 
-        print("calling parallel read_rows with row_set:", row_set)
         samples = core_ops.bigtable_split_row_set_evenly(
             self._client_resource, row_set._impl, self._table_id, num_parallel_calls,
         )
 
         def map_func(idx):
-            return self.read_rows(columns, RowSet(samples[idx]), filter)
+            return self.read_rows(
+                columns, bigtable_row_set.RowSet(samples[idx]), filter, output_type
+            )
 
         # We interleave a dataset of sample's indexes instead of a dataset of
         # samples, because Dataset.from_tensor_slices attempts to copy the
@@ -82,16 +101,17 @@ class _BigtableDataset(dataset_ops.DatasetSource):
         client_resource,
         table_id: str,
         columns: List[str],
-        row_set: RowSet,
+        row_set: bigtable_row_set.RowSet,
         filter,
+        output_type,
     ):
         self._table_id = table_id
         self._columns = columns
         self._filter = filter
-        self._element_spec = tf.TensorSpec(shape=[len(columns)], dtype=dtypes.string)
+        self._element_spec = tf.TensorSpec(shape=[len(columns)], dtype=output_type)
 
         variant_tensor = core_ops.bigtable_dataset(
-            client_resource, row_set._impl, filter._impl, table_id, columns
+            client_resource, row_set._impl, filter._impl, table_id, columns, output_type
         )
         super().__init__(variant_tensor)
 

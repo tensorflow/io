@@ -31,6 +31,7 @@ REGISTER_OP("BigtableDataset")
     .Input("filter: resource")
     .Attr("table_id: string")
     .Attr("columns: list(string) >= 1")
+    .Attr("output_type: type")
     .Output("handle: variant")
     .SetIsStateful()
     .SetShapeFn(shape_inference::ScalarShape);
