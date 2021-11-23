@@ -48,8 +48,8 @@ def _get_cbt_binary_path(env_var_name, search_paths, description):
     if res is not None:
         if not os.path.isfile(res):
             raise OSError(
-                    f"{description} specified in the {env_var_name} "
-                    "environment variable does not exist"
+                f"{description} specified in the {env_var_name} "
+                "environment variable does not exist"
             )
         return res
     for candidate in search_paths:
