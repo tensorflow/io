@@ -33,6 +33,12 @@ import tensorflow_io.python.ops.bigtable.bigtable_version_filters as filters
 import tensorflow_io.python.ops.bigtable.bigtable_row_set as row_set
 import tensorflow_io.python.ops.bigtable.bigtable_row_range as row_range
 
-_allowed_symbols = ["BigtableClient", "BigtableTable", "filters", "row_set", "row_range"]
+_allowed_symbols = [
+    "BigtableClient",
+    "BigtableTable",
+    "filters",
+    "row_set",
+    "row_range",
+]
 
 remove_undocumented(__name__, _allowed_symbols)
