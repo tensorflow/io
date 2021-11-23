@@ -22,9 +22,9 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-#include "tensorflow_io/core/kernels/bigtable/serialization.h"
 #include "tensorflow_io/core/kernels/bigtable/bigtable_row_set.h"
 #include "tensorflow_io/core/kernels/bigtable/bigtable_version_filters.h"
+#include "tensorflow_io/core/kernels/bigtable/serialization.h"
 
 namespace cbt = ::google::cloud::bigtable;
 
@@ -375,9 +375,9 @@ class BigtableDatasetOp : public DatasetOpKernel {
                    GetResourceFromContext(ctx, "filter", &filter_resource));
     core::ScopedUnref filter_resource_unref_(filter_resource);
 
-    *output = new Dataset(ctx, client_resource->data_client(),
-                          row_set_resource->row_set(),
-                          filter_resource->filter(), table_id_, columns_, output_type_);
+    *output = new Dataset(
+        ctx, client_resource->data_client(), row_set_resource->row_set(),
+        filter_resource->filter(), table_id_, columns_, output_type_);
   }
 
  private:
