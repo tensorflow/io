@@ -102,7 +102,7 @@ class BigtableRowSetAppendRowRangeOp : public OpKernel {
   }
 
  private:
-  mutable mutex mu_;
+  mutex mu_;
   std::string row_key_;
 };
 

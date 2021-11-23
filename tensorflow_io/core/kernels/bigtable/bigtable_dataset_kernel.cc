@@ -133,6 +133,7 @@ class BigtableClientOp : public OpKernel {
   }
 
  private:
+  mutex mu_;
   string project_id_;
   string instance_id_;
 };
@@ -513,7 +514,7 @@ class BigtableSplitRowSetEvenlyOp : public OpKernel {
   }
 
  private:
-  mutable mutex mu_;
+  mutex mu_;
   std::string table_id_ GUARDED_BY(mu_);
   int num_splits_ GUARDED_BY(mu_);
 };
