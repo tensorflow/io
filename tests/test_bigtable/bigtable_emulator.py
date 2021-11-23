@@ -47,17 +47,15 @@ def _get_cbt_binary_path(env_var_name, search_paths, description):
     res = os.environ.get(env_var_name)
     if res is not None:
         if not os.path.isfile(res):
-            raise EnvironmentError(
-                (
+            raise OSError(
                     f"{description} specified in the {env_var_name} "
                     "environment variable does not exist"
-                )
             )
         return res
     for candidate in search_paths:
         if os.path.isfile(candidate):
             return candidate
-    raise EnvironmentError(f"Could not find {description}")
+    raise OSError(f"Could not find {description}")
 
 
 def _get_cbt_emulator_path():
