@@ -163,7 +163,8 @@ REGISTER_OP("BigtableSplitRowSetEvenly")
     .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Vector(c->UnknownDim()));
       return tensorflow::Status::OK();
-    }).Doc(R"doc(
+    })
+    .Doc(R"doc(
 Retrieves SampleRowKeys from bigtable, checks which tablets contain row keys 
 from the row_set specified by the user and returns a RowSet that represents 
 chunks of work for each worker.
@@ -180,7 +181,11 @@ REGISTER_OP("BigtableLatestFilter")
     .Attr("shared_name: string = ''")
     .Output("filter: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableFilterResource representing a Filter passing only the latest 
+value.
+)doc");
 
 REGISTER_OP("BigtableTimestampRangeFilter")
     .Attr("container: string = ''")
@@ -189,9 +194,21 @@ REGISTER_OP("BigtableTimestampRangeFilter")
     .Attr("end_ts_us: int")
     .Output("filter: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableFilterResource representing Filter passing values created 
+between `start_ts_us` and `end_ts_us`.
+
+start_timestamp: The start of the row range (inclusive) in microseconds since 
+epoch.
+end_timestamp: The end of the row range (exclusive) in microseconds since 
+epoch.
+)doc");
 
 REGISTER_OP("BigtablePrintFilter")
     .Input("filter: resource")
     .Output("output: string")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Returns a string representing the filter.
+)doc");
