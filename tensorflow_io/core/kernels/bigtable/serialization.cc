@@ -17,6 +17,7 @@ limitations under the License.
 #include "tensorflow_io/core/kernels/bigtable/serialization.h"
 
 #include "rpc/xdr.h"
+#include "rpc/types.h"
 #include "tensorflow/core/platform/errors.h"
 #include "tensorflow/core/platform/statusor.h"
 
