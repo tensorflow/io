@@ -123,7 +123,20 @@ REGISTER_OP("BigtableTimestampRangeFilter")
     .Attr("end_ts_us: int")
     .Output("filter: resource")
     .SetIsStateful()
+<<<<<<< Updated upstream
     .SetShapeFn(shape_inference::ScalarShape);
+=======
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableFilterResource representing Filter passing values created 
+between `start_ts_us` and `end_ts_us`.
+
+start_ts_us: The start of the row range (inclusive) in microseconds since 
+epoch.
+end_ts_us: The end of the row range (exclusive) in microseconds since 
+epoch.
+)doc");
+>>>>>>> Stashed changes
 
 REGISTER_OP("BigtablePrintFilter")
     .Input("filter: resource")
