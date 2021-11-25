@@ -199,10 +199,8 @@ REGISTER_OP("BigtableTimestampRangeFilter")
 Creates a BigtableFilterResource representing Filter passing values created 
 between `start_ts_us` and `end_ts_us`.
 
-start_timestamp: The start of the row range (inclusive) in microseconds since 
-epoch.
-end_timestamp: The end of the row range (exclusive) in microseconds since 
-epoch.
+start_ts_us: The start of the row range (inclusive) in microseconds since epoch.
+end_ts_us: The end of the row range (exclusive) in microseconds since epoch.
 )doc");
 
 REGISTER_OP("BigtablePrintFilter")
