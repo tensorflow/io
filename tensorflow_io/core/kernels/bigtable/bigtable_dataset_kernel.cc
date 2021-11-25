@@ -117,7 +117,7 @@ class BigtableClientOp : public OpKernel {
 
   ~BigtableClientOp() { VLOG(1) << "BigtableClientOp dtor"; }
 
-  void Compute(OpKernelContext* ctx) override TF_LOCKS_EXCLUDED(mu_) {
+  void Compute(OpKernelContext* ctx) override {
     VLOG(1) << "BigtableClientOp compute";
     ResourceMgr* mgr = ctx->resource_manager();
     ContainerInfo cinfo;
@@ -133,7 +133,6 @@ class BigtableClientOp : public OpKernel {
   }
 
  private:
-  mutex mu_;
   string project_id_;
   string instance_id_;
 };
