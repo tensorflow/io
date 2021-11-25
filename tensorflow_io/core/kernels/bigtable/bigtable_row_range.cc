@@ -90,7 +90,7 @@ class BigtableRowRangeOp
   }
 
  private:
-  mutable mutex mu_;
+  mutex mu_;
   std::string left_row_key_ TF_GUARDED_BY(mu_);
   bool left_open_ TF_GUARDED_BY(mu_);
   std::string right_row_key_ TF_GUARDED_BY(mu_);
