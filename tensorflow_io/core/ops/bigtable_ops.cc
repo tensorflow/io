@@ -23,7 +23,10 @@ REGISTER_OP("BigtableClient")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("client: resource")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableClientResource representing a connection to Google Bigtable.
+)doc");
 
 REGISTER_OP("BigtableDataset")
     .Input("client: resource")
@@ -34,21 +37,37 @@ REGISTER_OP("BigtableDataset")
     .Attr("output_type: type")
     .Output("handle: variant")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableDataset used for iterating through values from the specified
+table.
+
+row_set: BigtableRowSetResource representing a RowSet the user wishes to 
+retrieve.
+table_id: ID of the table user wants to read from.
+columns: List of names of the columns user wants to retrieve in format 
+'column_family:column_name'
+)doc");
 
 REGISTER_OP("BigtableEmptyRowSet")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("row_set: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableRowSetResource representing empty RowSet.
+)doc");
 
 REGISTER_OP("BigtableEmptyRowRange")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("row_range: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableRowRangeResource representing empty RowRange.
+)doc");
 
 REGISTER_OP("BigtablePrefixRowRange")
     .Attr("container: string = ''")
@@ -56,7 +75,11 @@ REGISTER_OP("BigtablePrefixRowRange")
     .Attr("prefix: string")
     .Output("row_range: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableRowRangeResource representing RowRange of all RowKeys 
+starting with the given prefix.
+)doc");
 
 REGISTER_OP("BigtableRowRange")
     .Attr("left_row_key: string")
@@ -67,25 +90,51 @@ REGISTER_OP("BigtableRowRange")
     .Attr("shared_name: string = ''")
     .Output("row_range: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableRowRangeResource representing RowRange starting at 
+`left_row_key`, ending at `right_row_key`. If left or right row_key is empty, 
+the range is assumed to continue infinitely.
+
+left_open: specifies whether to exclude `left_row_key`.
+right_open: specifies whether to exclude `right_row_key`.
+)doc");
 
 REGISTER_OP("BigtablePrintRowRange")
     .Input("row_range: resource")
     .Output("row_range_str: string")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Returns a string representing a RowRange.
+)doc");
 
 REGISTER_OP("BigtablePrintRowSet")
     .Input("row_set: resource")
     .Output("row_set_str: string")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Returns a string representing a RowSet.
+)doc");
 
 REGISTER_OP("BigtableRowSetAppendRow")
     .Attr("row_key: string")
-    .Input("row_set: resource");
+    .Input("row_set: resource")
+    .Doc(R"doc(
+Modifies the RowSet to include one more row.
+
+row_set: BigtableRowSetResource to append to
+row_key: string representing a RowKey to append
+)doc");
 
 REGISTER_OP("BigtableRowSetAppendRowRange")
     .Input("row_set: resource")
-    .Input("row_range: resource");
+    .Input("row_range: resource")
+    .Doc(R"doc(
+Modifies the RowSet to include one more range.
+
+row_set: BigtableRowSetResource to append to
+row_range: BigtableRowRangeResource to append
+)doc");
 
 REGISTER_OP("BigtableRowSetIntersect")
     .Attr("container: string = ''")
@@ -93,7 +142,14 @@ REGISTER_OP("BigtableRowSetIntersect")
     .Input("row_set: resource")
     .Input("row_range: resource")
     .Output("result_row_set: resource")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Intersects the RowSet with a RowRange and returns a new RowSet.
+
+row_set: BigtableRowSetResource to intersect
+row_range: BigtableRowRangeResource to intersect with
+result_row_set: result of the intersection
+)doc");
 
 REGISTER_OP("BigtableSplitRowSetEvenly")
     .Attr("container: string = ''")
@@ -107,14 +163,29 @@ REGISTER_OP("BigtableSplitRowSetEvenly")
     .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Vector(c->UnknownDim()));
       return tensorflow::Status::OK();
-    });
+    })
+    .Doc(R"doc(
+Retrieves SampleRowKeys from bigtable, checks which tablets contain row keys 
+from the row_set specified by the user and returns a RowSet that represents 
+chunks of work for each worker.
+
+client: BigtableClientResource.
+row_set: BigtableRowSetResource representing the RowSet specified by the user.
+table_id: ID of the table user intends to read from.
+num_splits: number of workers between who we split the work.
+samples: Tensor of RowSets representing chunks of work.
+)doc");
 
 REGISTER_OP("BigtableLatestFilter")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
     .Output("filter: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableFilterResource representing a Filter passing only the latest 
+value.
+)doc");
 
 REGISTER_OP("BigtableTimestampRangeFilter")
     .Attr("container: string = ''")
@@ -123,9 +194,21 @@ REGISTER_OP("BigtableTimestampRangeFilter")
     .Attr("end_ts_us: int")
     .Output("filter: resource")
     .SetIsStateful()
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a BigtableFilterResource representing Filter passing values created 
+between `start_ts_us` and `end_ts_us`.
+
+start_timestamp: The start of the row range (inclusive) in microseconds since 
+epoch.
+end_timestamp: The end of the row range (exclusive) in microseconds since 
+epoch.
+)doc");
 
 REGISTER_OP("BigtablePrintFilter")
     .Input("filter: resource")
     .Output("output: string")
-    .SetShapeFn(shape_inference::ScalarShape);
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Returns a string representing the filter.
+)doc");
