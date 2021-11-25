@@ -72,7 +72,10 @@ class BigtableTable:
     ):
 
         samples = core_ops.bigtable_split_row_set_evenly(
-            self._client_resource, row_set._impl, self._table_id, num_parallel_calls,
+            self._client_resource,
+            row_set._impl,
+            self._table_id,
+            num_parallel_calls,
         )
 
         def map_func(idx):

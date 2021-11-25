@@ -27,7 +27,6 @@ limitations under the License.
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow_io/core/kernels/bigtable/bigtable_resource_kernel.h"
 
-
 namespace tensorflow {
 namespace io {
 
@@ -55,7 +54,6 @@ class BigtableFilterResource : public ResourceBase {
  private:
   const google::cloud::bigtable::Filter filter_;
 };
-
 
 }  // namespace io
 }  // namespace tensorflow

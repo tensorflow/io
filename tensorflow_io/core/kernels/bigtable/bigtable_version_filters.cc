@@ -35,7 +35,7 @@ class BigtableLatestFilterOp
 
 REGISTER_KERNEL_BUILDER(Name("BigtableLatestFilter").Device(DEVICE_CPU),
                         BigtableLatestFilterOp);
-    
+
 class BigtableTimestampRangeFilterOp
     : public AbstractBigtableResourceOp<BigtableFilterResource> {
  public:
@@ -48,7 +48,8 @@ class BigtableTimestampRangeFilterOp
 
  private:
   StatusOr<BigtableFilterResource*> CreateResource() override {
-    return new BigtableFilterResource(cbt::Filter::TimestampRangeMicros(start_ts_us_, end_ts_us_));
+    return new BigtableFilterResource(
+        cbt::Filter::TimestampRangeMicros(start_ts_us_, end_ts_us_));
   }
 
  private:
@@ -82,5 +83,5 @@ class BigtablePrintFilterOp : public OpKernel {
 REGISTER_KERNEL_BUILDER(Name("BigtablePrintFilter").Device(DEVICE_CPU),
                         BigtablePrintFilterOp);
 
-} // namespace io
-} // namespace tensorflow
+}  // namespace io
+}  // namespace tensorflow
