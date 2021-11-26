@@ -16,12 +16,14 @@ limitations under the License.
 
 #include "tensorflow_io/core/kernels/bigtable/serialization.h"
 
+#include "rpc/types.h"
 #include "rpc/xdr.h"
 #include "tensorflow/core/platform/errors.h"
 #include "tensorflow/core/platform/statusor.h"
 
 namespace tensorflow {
 namespace io {
+namespace {
 
 inline StatusOr<float> BytesToFloat(std::string const& s) {
   float v;
@@ -126,5 +128,6 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
   return Status::OK();
 }
 
+}  // namespace
 }  // namespace io
 }  // namespace tensorflow
