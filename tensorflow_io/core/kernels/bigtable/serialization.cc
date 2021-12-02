@@ -16,16 +16,73 @@ limitations under the License.
 
 #include "tensorflow_io/core/kernels/bigtable/serialization.h"
 
-#include "rpc/types.h"
-#include "rpc/xdr.h"
 #include "tensorflow/core/platform/errors.h"
 #include "tensorflow/core/platform/statusor.h"
+
+namespace cbt = ::google::cloud::bigtable;
 
 namespace tensorflow {
 namespace io {
 namespace {
 
-inline StatusOr<float> BytesToFloat(std::string const& s) {
+#ifdef _WIN32
+
+#include <winsock.h>
+
+inline StatusOr<int32_t> BytesToInt32(const cbt::Cell& cell) {
+  std::string const& bytes = cell.value();
+  union {
+    char bytes[4];
+    int32_t res;
+  } u;
+  if (bytes.size() != 4U) {
+    return errors::InvalidArgument("Invalid int32 representation.");
+  }
+  memcpy(u.bytes, bytes.data(), 4);
+  return ntohl(u.res);
+}
+
+inline StatusOr<int64_t> BytesToInt64(const cbt::Cell& cell) {
+  auto maybe_value = cell.decode_big_endian_integer<int64_t>();
+  if (!maybe_value.ok()) {
+    return errors::InvalidArgument("Invalid int32 representation.");
+  }
+  return maybe_value.value();
+}
+
+inline StatusOr<float> BytesToFloat(const cbt::Cell& cell) {
+  auto const int_rep = BytesToInt32(cell);
+  if (!int_rep.ok()) {
+    return int_rep;
+  }
+  union {
+    float res;
+    int32_t int_rep;
+  } u;
+  u.int_rep = *int_rep;
+  return u.res;
+}
+
+inline StatusOr<double> BytesToDouble(const cbt::Cell& cell) {
+  auto const int_rep = BytesToInt64(cell);
+  if (!int_rep.ok()) {
+    return int_rep;
+  }
+  union {
+    double res;
+    int64_t int_rep;
+  } u;
+  u.int_rep = *int_rep;
+  return u.res;
+}
+
+#else  // _WIN32
+
+#include "rpc/types.h"
+#include "rpc/xdr.h"
+
+inline StatusOr<float> BytesToFloat(const cbt::Cell& cell) {
+  std::string const& s = cell.value();
   float v;
   XDR xdrs;
   xdrmem_create(&xdrs, const_cast<char*>(s.data()), sizeof(v), XDR_DECODE);
@@ -35,7 +92,8 @@ inline StatusOr<float> BytesToFloat(std::string const& s) {
   return v;
 }
 
-inline StatusOr<double> BytesToDouble(std::string const& s) {
+inline StatusOr<double> BytesToDouble(const cbt::Cell& cell) {
+  std::string const& s = cell.value();
   double v;
   XDR xdrs;
   xdrmem_create(&xdrs, const_cast<char*>(s.data()), sizeof(v), XDR_DECODE);
@@ -45,7 +103,8 @@ inline StatusOr<double> BytesToDouble(std::string const& s) {
   return v;
 }
 
-inline StatusOr<int64_t> BytesToInt64(std::string const& s) {
+inline StatusOr<int64_t> BytesToInt64(const cbt::Cell& cell) {
+  std::string const& s = cell.value();
   int64_t v;
   XDR xdrs;
   xdrmem_create(&xdrs, const_cast<char*>(s.data()), sizeof(v), XDR_DECODE);
@@ -55,7 +114,8 @@ inline StatusOr<int64_t> BytesToInt64(std::string const& s) {
   return v;
 }
 
-inline StatusOr<int32_t> BytesToInt32(std::string const& s) {
+inline StatusOr<int32_t> BytesToInt32(const cbt::Cell& cell) {
+  std::string const& s = cell.value();
   int32_t v;
   XDR xdrs;
   xdrmem_create(&xdrs, const_cast<char*>(s.data()), sizeof(v), XDR_DECODE);
@@ -65,15 +125,17 @@ inline StatusOr<int32_t> BytesToInt32(std::string const& s) {
   return v;
 }
 
-inline StatusOr<bool_t> BytesToBool(std::string const& s) {
-  bool_t v;
-  XDR xdrs;
-  xdrmem_create(&xdrs, const_cast<char*>(s.data()), sizeof(v), XDR_DECODE);
-  if (!xdr_bool(&xdrs, &v)) {
-    return errors::InvalidArgument("Error reading bool from byte array.");
+#endif  // _WIN32
+
+inline StatusOr<bool> BytesToBool(const cbt::Cell& cell) {
+  std::string const& bytes = cell.value();
+  if (bytes.size() != 1U) {
+    return errors::InvalidArgument("Invalid bool representation.");
   }
-  return v;
+  return (*bytes.data()) != 0;
 }
+
+}  // namespace
 
 Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
                             google::cloud::bigtable::Cell const& cell) {
@@ -84,7 +146,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     } break;
     case DT_BOOL: {
       auto tensor_data = tensor.tensor<bool, 1>();
-      auto maybe_parsed_data = BytesToBool(cell.value());
+      auto maybe_parsed_data = BytesToBool(cell);
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
@@ -92,7 +154,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     } break;
     case DT_INT32: {
       auto tensor_data = tensor.tensor<int32_t, 1>();
-      auto maybe_parsed_data = BytesToInt32(cell.value());
+      auto maybe_parsed_data = BytesToInt32(cell);
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
@@ -100,7 +162,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     } break;
     case DT_INT64: {
       auto tensor_data = tensor.tensor<int64_t, 1>();
-      auto maybe_parsed_data = BytesToInt64(cell.value());
+      auto maybe_parsed_data = BytesToInt64(cell);
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
@@ -108,7 +170,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     } break;
     case DT_FLOAT: {
       auto tensor_data = tensor.tensor<float, 1>();
-      auto maybe_parsed_data = BytesToFloat(cell.value());
+      auto maybe_parsed_data = BytesToFloat(cell);
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
@@ -116,7 +178,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     } break;
     case DT_DOUBLE: {
       auto tensor_data = tensor.tensor<double, 1>();
-      auto maybe_parsed_data = BytesToDouble(cell.value());
+      auto maybe_parsed_data = BytesToDouble(cell);
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
@@ -128,6 +190,5 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
   return Status::OK();
 }
 
-}  // namespace
 }  // namespace io
 }  // namespace tensorflow
