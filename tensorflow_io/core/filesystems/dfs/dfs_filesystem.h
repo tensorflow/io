@@ -224,101 +224,101 @@ class DFS {
 		ClearConnections();
 	}
 
-    void Connect(std::string& pool_string, std::string& cont_string, 
-	             int allow_cont_creation, TF_Status* status) {
-      int rc;
+	void Connect(std::string& pool_string, std::string& cont_string, 
+							int allow_cont_creation, TF_Status* status) {
+		int rc;
 
-      rc = ConnectPool(pool_string, status);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Connecting to Pool");
-        return;
-      }
+		rc = ConnectPool(pool_string, status);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL,
+									"Error Connecting to Pool");
+			return;
+		}
 
-      rc = ConnectContainer(cont_string, allow_cont_creation, status);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Connecting to Container");
-        return;
-      }
+		rc = ConnectContainer(cont_string, allow_cont_creation, status);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL,
+									"Error Connecting to Container");
+			return;
+		}
 
-      connected = true;
+		connected = true;
 
-	  TF_SetStatus(status, TF_OK, "");
+	TF_SetStatus(status, TF_OK, "");
 
-    }
+	}
 
-    void Disconnect(TF_Status* status) {
-      int rc;
-      rc = DisconnectContainer(pool.first, container.first);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Disconnecting from Container");
-        return;
-      }
+	void Disconnect(TF_Status* status) {
+		int rc;
+		rc = DisconnectContainer(pool.first, container.first);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL,
+									"Error Disconnecting from Container");
+			return;
+		}
 
-      rc = DisconnectPool(pool.first);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Disconnecting from Pool");
-        return;
-      }
+		rc = DisconnectPool(pool.first);
+		if(rc) {
+			TF_SetStatus(status, TF_INTERNAL,
+									"Error Disconnecting from Pool");
+			return;
+		}
 
-      connected = false;
+		connected = false;
 
-	  TF_SetStatus(status, TF_OK, "");
+	TF_SetStatus(status, TF_OK, "");
 
-    }
+	}
 
-    int Mount() {
-	  int rc = 0;
-	  if(daos_fs->mounted){
-		  if(daos_fs->poh.cookie == pool.second.cookie && daos_fs->coh.cookie == container.second.cookie){
-			  return rc;
-		  }
-		  rc = Unmount();
-		  if(rc) return rc;
-	  }
-      return dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
-    }
+	int Mount() {
+	int rc = 0;
+	if(daos_fs->mounted){
+		if(daos_fs->poh.cookie == pool.second.cookie && daos_fs->coh.cookie == container.second.cookie){
+			return rc;
+		}
+		rc = Unmount();
+		if(rc) return rc;
+	}
+		return dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
+	}
 
-    int Unmount() {
-	  int rc;
-	  if(!daos_fs->mounted) return 0;
-      rc = dfs_umount(daos_fs);
-	  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
-	  daos_fs->mounted = false;
-      return rc;
-    }
+	int Unmount() {
+	int rc;
+	if(!daos_fs->mounted) return 0;
+		rc = dfs_umount(daos_fs);
+	daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
+	daos_fs->mounted = false;
+		return rc;
+	}
 
-    int Query() {
-      int rc;
-      daos_pool_info_t pool_info;
-      daos_cont_info_t cont_info;
-      if(connected) {
-        	memset(&pool_info, 'D', sizeof(daos_pool_info_t));
-	        pool_info.pi_bits = DPI_ALL;
-	        rc = daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
-          if(rc) return rc;
-          rc = daos_cont_query(container.second,&cont_info, NULL, NULL);
-          if(rc) return rc;
-          std::cout << "Pool " << pool.first << " ntarget=" << pool_info.pi_ntargets << std::endl;
-          std::cout << "Pool space info:" << std::endl;
-          std::cout << "- Target(VOS) count:" << pool_info.pi_space.ps_ntargets << std::endl;
-          std::cout << "- SCM:" << std::endl;
-          std::cout << "  Total size: " << FormatStorageSize(pool_info.pi_space.ps_space.s_total[0]);
-          std::cout << "  Free: " << FormatStorageSize(pool_info.pi_space.ps_space.s_free[0]) << std::endl;
-          std::cout << "- NVMe:" << std::endl;
-          std::cout << "  Total size: " << FormatStorageSize(pool_info.pi_space.ps_space.s_total[1]);
-          std::cout << "  Free: " << FormatStorageSize(pool_info.pi_space.ps_space.s_free[1]) << std::endl;
-          std::cout << std::endl << "Connected Container: " << container.first << std::endl;
+	int Query() {
+		int rc;
+		daos_pool_info_t pool_info;
+		daos_cont_info_t cont_info;
+		if(connected) {
+				memset(&pool_info, 'D', sizeof(daos_pool_info_t));
+				pool_info.pi_bits = DPI_ALL;
+				rc = daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
+				if(rc) return rc;
+				rc = daos_cont_query(container.second,&cont_info, NULL, NULL);
+				if(rc) return rc;
+				std::cout << "Pool " << pool.first << " ntarget=" << pool_info.pi_ntargets << std::endl;
+				std::cout << "Pool space info:" << std::endl;
+				std::cout << "- Target(VOS) count:" << pool_info.pi_space.ps_ntargets << std::endl;
+				std::cout << "- SCM:" << std::endl;
+				std::cout << "  Total size: " << FormatStorageSize(pool_info.pi_space.ps_space.s_total[0]);
+				std::cout << "  Free: " << FormatStorageSize(pool_info.pi_space.ps_space.s_free[0]) << std::endl;
+				std::cout << "- NVMe:" << std::endl;
+				std::cout << "  Total size: " << FormatStorageSize(pool_info.pi_space.ps_space.s_total[1]);
+				std::cout << "  Free: " << FormatStorageSize(pool_info.pi_space.ps_space.s_free[1]) << std::endl;
+				std::cout << std::endl << "Connected Container: " << container.first << std::endl;
 
-          return 0;
+				return 0;
 
-      }
+		}
 
-      return -1;
-    }
+		return -1;
+	}
 
 	int ClearConnections() {
 	  int rc;
