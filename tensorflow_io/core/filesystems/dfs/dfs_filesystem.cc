@@ -1,4 +1,3 @@
-#include "absl/synchronization/mutex.h"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/filesystems/filesystem_plugins.h"
@@ -141,21 +140,12 @@ uint64_t Length(const TF_ReadOnlyMemoryRegion* region) { return 0; }
 
 }  // namespace tf_read_only_memory_region
 
-
 // SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
 // ----------------------------------------------------------------------------
 namespace tf_dfs_filesystem {
 
 void Init(TF_Filesystem* filesystem, TF_Status* status) {
   filesystem->plugin_filesystem = new DFS();
-  auto daos =
-    static_cast<DFS*>(filesystem->plugin_filesystem);
-  int rc = daos->dfsInit();
-  if(rc) {
-    TF_SetStatus(status, TF_INTERNAL,
-                "Error Initializing DAOS API");
-    return;
-  }
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -171,7 +161,11 @@ void NewFile(const TF_Filesystem* filesystem, const char* path,
              mode_t mode, int flags, dfs_obj_t** obj, TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   std::string pool,cont,file_path;
   rc = daos->Setup(path, pool, cont, file_path, status);
   if(rc) return;
@@ -186,7 +180,11 @@ void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
   NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT, &obj, status);
   if(TF_GetCode(status) != TF_OK) return;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   file->plugin_file = new tf_writable_file::DFSWritableFile(path,daos->daos_fs,obj);
   TF_SetStatus(status, TF_OK, "");
 }
@@ -198,7 +196,11 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
   NewFile(filesystem, path, S_IRUSR | S_IFREG, O_RDONLY, &obj, status);
   if(TF_GetCode(status) != TF_OK) return;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   file->plugin_file = new tf_random_access_file::DFSRandomAccessFile(path,daos->daos_fs,obj);
   TF_SetStatus(status, TF_OK, "");
 }
@@ -210,7 +212,11 @@ void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
   NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT | O_APPEND, &obj, status);
   if(TF_GetCode(status) != TF_OK) return;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   file->plugin_file = new tf_writable_file::DFSWritableFile(path,daos->daos_fs,obj);
   TF_SetStatus(status, TF_OK, "");
 }
@@ -221,7 +227,11 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
                 TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   std::string pool,cont,file;
   daos->Setup(path, pool, cont, file, status);
   dfs_obj_t* obj;
@@ -238,7 +248,11 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
                TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   std::string pool,cont,dir_path;
   rc = daos->Setup(path, pool, cont, dir_path, status);
   if(rc) return;
@@ -251,7 +265,11 @@ static void RecursivelyCreateDir(const TF_Filesystem* filesystem,
   int rc;
   std::string pool,cont,dir_path;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   rc = daos->Setup(path, pool, cont, dir_path, status);
   if(rc) return;
 
@@ -278,7 +296,11 @@ void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
   int rc;
   std::string pool,cont,dir_path;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   rc = daos->Setup(path, pool, cont, dir_path, status);
   if(rc) return;
 
@@ -345,9 +367,14 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   bool is_dir = false;
   std::string pool, cont, file;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return is_dir;
+  }
   rc = daos->Setup(path, pool, cont, file, status);
   if(rc) return is_dir;
+
 
   if(daos->isRoot(file)){
     is_dir = true;
@@ -380,7 +407,11 @@ int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
                     TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return -1;
+  }
   std::string pool, cont, file;
   rc = daos->Setup(path, pool, cont, file, status);
   if(rc) return -1;
@@ -416,7 +447,11 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
                 const char* dst, TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   int allow_cont_creation = 1;
   std::string pool_src,cont_src,file_src;
   rc = ParseDFSPath(src, pool_src, cont_src, file_src);
@@ -526,7 +561,11 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
           TF_FileStatistics* stats, TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return;
+  }
   std::string pool,cont,dir_path;
   rc = daos->Setup(path, pool, cont, dir_path, status);
   if(rc) return;
@@ -565,7 +604,11 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
                 char*** entries, TF_Status* status) {
   int rc;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return -1;
+  }
   std::string pool,cont,dir_path;
   rc = daos->Setup(path, pool, cont, dir_path, status);
   if(rc) return -1;
@@ -603,8 +646,11 @@ static char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
 }
 
 void FlushCaches(const TF_Filesystem* filesystem) {
-   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+  auto daos = 
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    return;
+  }
   daos->ClearConnections();
 }
 
@@ -612,7 +658,11 @@ int GetMatchingPaths(const TF_Filesystem* filesystem, const char* path,
                      char*** entries, TF_Status* status) {
   int rc = 0;
   auto daos = 
-    static_cast<DFS*>(filesystem->plugin_filesystem);
+    static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+  if(!daos) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
+    return -1;
+  }
   std::vector<std::string> results;
   dfs_obj_t* obj;
 

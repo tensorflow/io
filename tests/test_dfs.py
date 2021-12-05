@@ -15,8 +15,8 @@ class DFSTest(tf.test.TestCase):
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
 
-        self.pool = os.environ["POOL_ID"]
-        self.container = os.environ["CONT_ID"]
+        self.pool = "TEST_POOL"
+        self.container = "TEST_CONT"
         self.path_root = "dfs://" + os.path.join(self.pool, self.container)
         super().__init__(methodName)
 

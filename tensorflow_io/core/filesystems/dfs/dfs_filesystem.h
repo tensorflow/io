@@ -154,14 +154,10 @@ int ParseDFSPath(const std::string& path, std::string& pool_string,
   if(pool_start != POOL_START)
 	return -1;
   size_t cont_start = path.find("/", pool_start) + 1;
-  if(cont_start != CONT_START)
-    return -1;
   size_t file_start = path.find("/", cont_start) + 1;
-  if(file_start != PATH_START && path.size() > PATH_START)
-	return -1;
   pool_string = path.substr(pool_start, cont_start - pool_start - 1);
   cont_string = path.substr(cont_start, file_start - cont_start - 1);
-  filename = (file_start == PATH_START)? path.substr(file_start) : "";
+  filename = file_start < cont_start ? "" : path.substr(file_start);
   return 0;
 }
 
@@ -175,11 +171,23 @@ class DFS {
     dfs_t* daos_fs;
     id_handle_t pool;
     id_handle_t container;
-	std::map<std::string,pool_info_t*> pools;
+	  std::map<std::string,pool_info_t*> pools;
 
 	DFS() { 
 	  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
 	  daos_fs->mounted = false;
+		is_initialized = false;
+	}
+
+	DFS* Load() {
+		if(!is_initialized) {
+			int rc = dfsInit();
+  		if(rc) {
+    		return nullptr;
+  		}
+			is_initialized = true;
+		}
+		return this;
 	}
 
 	int dfsInit() {
@@ -188,7 +196,10 @@ class DFS {
 
 	void dfsCleanup() {
 	  Teardown();
-	  daos_fini();
+		if(is_initialized){
+	  	daos_fini();
+			is_initialized = false;
+		}
 	}
 
 	int Setup(const std::string& path, std::string& pool_string,
@@ -453,15 +464,9 @@ class DFS {
       free(daos_fs);
     }
   private:
+		bool is_initialized;
     int ConnectPool(std::string pool_string, TF_Status* status) {
-	  uuid_t pool_uuid;
 	  int rc = 0;
-	  rc = ParseUUID(pool_string, pool_uuid);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Parsing Pool UUID");
-        return rc;
-      }
 
 	  if(pools.find(pool_string) != pools.end()){
 		  pool.first = pool_string;
@@ -472,7 +477,7 @@ class DFS {
 	  pool_info_t* po_inf = (pool_info_t*) malloc(sizeof(po_inf));
 	  po_inf->containers = new std::map<std::string,daos_handle_t>();
 	  pools[pool_string] = po_inf;
-      rc = daos_pool_connect(pool_uuid, 0, DAOS_PC_RW, &(po_inf->poh), NULL, NULL);
+      rc = daos_pool_connect(pool_string.c_str(), NULL, DAOS_PC_RW, &(po_inf->poh), NULL, NULL);
 	  if(rc == 0){
 	  	pool.first = pool_string;
 	  	pool.second = po_inf->poh;
@@ -481,14 +486,7 @@ class DFS {
     }
 
     int ConnectContainer(std::string cont_string, int allow_creation, TF_Status* status) {
-	  uuid_t cont_uuid;
 	  int rc = 0;
-	  rc = ParseUUID(cont_string, cont_uuid);
-      if(rc) {
-        TF_SetStatus(status, TF_INTERNAL,
-                    "Error Parsing Container UUID");
-        return rc;
-      }
 
 	  pool_info_t* po_inf = pools[pool.first];
 	  if(po_inf->containers->find(cont_string) != po_inf->containers->end()) {
@@ -499,10 +497,11 @@ class DFS {
 
 	  daos_handle_t coh;
 
-      rc = daos_cont_open(pool.second, cont_uuid, DAOS_COO_RW, &coh, NULL, NULL);
+      rc = daos_cont_open(pool.second, cont_string.c_str(), DAOS_COO_RW, &coh, NULL, NULL);
       if(rc == -DER_NONEXIST) {
         if(allow_creation) {
-          rc = dfs_cont_create(pool.second, cont_uuid, NULL, &coh, NULL);
+          rc = dfs_cont_create_with_label(pool.second, cont_string.c_str(), NULL, NULL, 
+					                                &coh, NULL);
         }
       }
 	  if(rc == 0){
@@ -556,9 +555,9 @@ bool Match(const std::string& filename, const std::string& pattern) {
 
 enum Children_Status{NON_MATCHING, MATCHING_DIR, OK};
 
-
 namespace tensorflow {
 namespace internal {
+
 
 	const int kNumThreads = port::NumSchedulableCPUs();
 	// A globbing pattern can only start with these characters:
@@ -631,8 +630,12 @@ namespace internal {
 			threads.Schedule([f, i] { f(i); });
 		}
 	}
+
 }
 }
+
+
+
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
 

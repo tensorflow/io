@@ -278,11 +278,11 @@ http_archive(
 http_archive(
     name = "daos",
     build_file = "//third_party:daos.BUILD",
-    sha256 = "81a946ab2b495912e4d97182af41a48982c40e9511ce50514a5a2d31ddc8faf2",
-    strip_prefix = "daos-1.3.102-tb",
+    sha256 = "6fb24cf72a1d07d9f9efcd738bba210e927b25526a5f01763ad39d0aabee5f76",
+    strip_prefix = "daos-1.3.106-tb",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/daos-stack/daos/archive/refs/tags/v1.3.102-tb.tar.gz",
-        "https://github.com/daos-stack/daos/archive/refs/tags/v1.3.102-tb.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/daos-stack/daos/archive/refs/tags/v1.3.106-tb.tar.gz",
+        "https://github.com/daos-stack/daos/archive/refs/tags/v1.3.106-tb.tar.gz",
     ],
 )
 
