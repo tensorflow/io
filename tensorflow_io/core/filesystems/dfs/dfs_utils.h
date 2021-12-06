@@ -15,6 +15,7 @@
 #include <fnmatch.h>
 #include <daos.h>
 #include <daos_fs.h>
+#include <daos_uns.h>
 #include <string>
 #include <iostream>
 #include <map>

@@ -19,15 +19,20 @@ std::string FormatStorageSize(uint64_t size) {
 }
 
 int ParseDFSPath(const std::string& path, std::string& pool_string,
-                  std::string& cont_string, std::string& filename) {
+                 std::string& cont_string, std::string& filename) {
   size_t pool_start = path.find("://") + 3;
-  if(pool_start != POOL_START)
-	return -1;
-  size_t cont_start = path.find("/", pool_start) + 1;
-  size_t file_start = path.find("/", cont_start) + 1;
-  pool_string = path.substr(pool_start, cont_start - pool_start - 1);
-  cont_string = path.substr(cont_start, file_start - cont_start - 1);
-  filename = file_start < cont_start ? "" : path.substr(file_start);
+  struct duns_attr_t* attr = (struct duns_attr_t*)malloc(sizeof(struct duns_attr_t));
+  attr->da_flags = DUNS_NO_PREFIX | DUNS_NO_CHECK_PATH;
+  attr->da_no_prefix = true;
+  attr->da_rel_path = NULL;
+  std::string direct_path = path.substr(pool_start-1);
+  int rc = duns_resolve_path(direct_path.c_str(), attr);
+  if(rc) {
+    return rc;
+  }
+  pool_string = attr->da_pool;
+  cont_string = attr->da_cont;
+  filename = attr->da_rel_path == NULL ? "" : attr->da_rel_path;
   return 0;
 }
 
