@@ -1,7 +1,4 @@
-#include "tensorflow/c/logging.h"
-#include "tensorflow/c/tf_status.h"
-#include "tensorflow_io/core/filesystems/filesystem_plugins.h"
-#include "tensorflow_io/core/filesystems/dfs/dfs_filesystem.h"
+#include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 
 namespace tensorflow {
 namespace io {

@@ -15,13 +15,19 @@ class DFSTest(tf.test.TestCase):
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
 
-        self.pool = "TEST_POOL"
-        self.container = "TEST_CONT"
+        self.pool = os.environ["POOL_LABEL"]
+        self.pool_uuid = os.environ["POOL_UUID"]
+        self.container = os.environ["CONT_LABEL"]
+        self.container_uuid = os.environ["CONT_UUID"]
         self.path_root = "dfs://" + os.path.join(self.pool, self.container)
+        self.path_root_with_uuid = "dfs://" + os.path.join(self.pool_uuid, self.container_uuid)
         super().__init__(methodName)
 
     def _path_to(self, path):
         return os.path.join(self.path_root, path)
+    
+    def _uuid_path_to(self, path):
+        return os.path.join(self.path_root_with_uuid, path)
     
     def test_exists(self):
         self.assertTrue(tf.io.gfile.isdir(self.path_root))
@@ -43,6 +49,22 @@ class DFSTest(tf.test.TestCase):
         """Test write/read file."""
         # Setup and check preconditions.
         file_name = self._path_to("writereadfile")
+        if tf.io.gfile.exists(file_name):
+            tf.io.gfile.remove(file_name)
+
+        # Write data.
+        with tf.io.gfile.GFile(file_name, "w") as w:
+            w.write("Hello\n, world!")
+
+        # Read data.
+        with tf.io.gfile.GFile(file_name, "r") as r:
+            file_read = r.read()
+            self.assertEqual(file_read, "Hello\n, world!")
+    
+    def test_write_read_file_uuid(self):
+        """Test write/read file."""
+        # Setup and check preconditions.
+        file_name = self._uuid_path_to("writereadfile")
         if tf.io.gfile.exists(file_name):
             tf.io.gfile.remove(file_name)
 

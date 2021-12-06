@@ -11,7 +11,8 @@ cc_library(
     name = "dfs",
     srcs = [
         "dfs_filesystem.cc",
-        "dfs_filesystem.h"
+        "dfs_utils.h",
+        "dfs_utils.cc"
     ],
     copts = tf_io_copts(),
     linkstatic = True,
