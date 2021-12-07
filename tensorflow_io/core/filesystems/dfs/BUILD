@@ -20,6 +20,6 @@ cc_library(
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@daos",
     ],
-    linkopts = ["-ldaos", "-luuid", "-ldfs", "-lduns"],
+    linkopts = ["-L/opt/daos/lib64 -ldaos", "-luuid", "-ldfs", "-lduns"],
     alwayslink = 1,
 )
