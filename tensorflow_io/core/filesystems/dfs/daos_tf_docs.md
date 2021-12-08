@@ -65,6 +65,13 @@ Assuming you are in a terminal in the repository root directory:
     ```
     export LD_LIBRARY_PATH="<path-to-library>:$LD_LIBARY_PATH"
     ```
+  * Make sure the environment variable **CPLUS_INCLUDE_PATH** and **C_INCLUDE_PATH** includes the paths to:
+    * The tensorflow headers (usually in /usr/local/lib64/python3.6/site-packages/tensorflow/include)
+  * If not, find the required headers and add their paths to the environment variable
+    ```
+    export CPLUS_INCLUDE_PATH="<path-to-headers>:$CPLUS_INCLUDE_PATH"
+    export C_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$C_INCLUDE_PATH
+    ```
 
 * Build the project using bazel
   ```
