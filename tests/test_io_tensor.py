@@ -428,7 +428,13 @@ def fixture_arrow_graph():
 
 # scalar is a special IOTensor that is alias to Tensor
 @pytest.mark.parametrize(
-    ("io_tensor_fixture"), [pytest.param("hdf5_scalar"),], ids=["hdf5",],
+    ("io_tensor_fixture"),
+    [
+        pytest.param("hdf5_scalar"),
+    ],
+    ids=[
+        "hdf5",
+    ],
 )
 def test_io_tensor_scalar(fixture_lookup, io_tensor_fixture):
     """test_io_tensor_scalar"""
@@ -485,7 +491,13 @@ def test_io_tensor_slice(fixture_lookup, io_tensor_fixture):
 
 # full slicing/index across multiple dimensions
 @pytest.mark.parametrize(
-    ("io_tensor_fixture"), [pytest.param("hdf5_multiple_dimension"),], ids=["hdf5",],
+    ("io_tensor_fixture"),
+    [
+        pytest.param("hdf5_multiple_dimension"),
+    ],
+    ids=[
+        "hdf5",
+    ],
 )
 def test_io_tensor_slice_multiple_dimension(fixture_lookup, io_tensor_fixture):
     """test_io_tensor_slice_multiple_dimension"""
@@ -654,7 +666,9 @@ def test_io_tensor_meta_in_dataset(fixture_lookup, io_tensor_fixture):
 
 
 # This is the basic benchmark for IOTensor.
-@pytest.mark.benchmark(group="io_tensor",)
+@pytest.mark.benchmark(
+    group="io_tensor",
+)
 @pytest.mark.parametrize(
     ("io_tensor_fixture"),
     [

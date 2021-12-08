@@ -266,7 +266,11 @@ class BigQueryReadSession:
         )
 
     def parallel_read_rows(
-        self, cycle_length=None, sloppy=False, block_length=1, num_parallel_calls=None,
+        self,
+        cycle_length=None,
+        sloppy=False,
+        block_length=1,
+        num_parallel_calls=None,
     ):
         """Retrieves rows from the BigQuery service in parallel streams.
 
@@ -340,7 +344,12 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         output_types = list(output_types)
 
         tensor_shapes = list(
-            [None,] if repeated else [] for repeated in selected_fields_repeated
+            [
+                None,
+            ]
+            if repeated
+            else []
+            for repeated in selected_fields_repeated
         )
 
         self._element_spec = collections.OrderedDict(

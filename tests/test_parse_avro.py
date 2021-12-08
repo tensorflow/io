@@ -200,7 +200,7 @@ class AvroDatasetTestBase(tf.test.TestCase):
         if isinstance(expected, tuple):
             assert isinstance(
                 expected, tuple
-            ), "Found type {} but expected type {}".format(type(actual), tuple)
+            ), f"Found type {type(actual)} but expected type {tuple}"
             assert (
                 len(expected) == 2
             ), "Found {} components in expected dataset but must have {}".format(
@@ -248,9 +248,9 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
 
     def test_inval_num_parallel_calls(self):
         """test_inval_num_parallel_calls
-            This function tests that value errors are raised upon
-            the passing of invalid values for num_parallel_calls which
-            includes zero values and values greater than num_parallel_reads
+        This function tests that value errors are raised upon
+        the passing of invalid values for num_parallel_calls which
+        includes zero values and values greater than num_parallel_reads
         """
 
         NUM_PARALLEL_READS = 1
@@ -445,7 +445,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         features,
         reader_schema,
         batch_size,
-        **kwargs
+        **kwargs,
     ):
         """_test_pass_dataset"""
         filenames = AvroDatasetTestBase._setup_files(
@@ -1835,7 +1835,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
 
     @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_variable_length(self):
-        """ test_filter_with_variable_length"""
+        """test_filter_with_variable_length"""
         reader_schema = """
           {
              "type": "record",

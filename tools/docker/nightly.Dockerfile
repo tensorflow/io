@@ -21,5 +21,6 @@ FROM python:${PYTHON_VERSION}
 # tfio package name and version for pip install
 ARG TFIO_PACKAGE=tensorflow-io-nightly
 ARG TFIO_PACKAGE_VERSION=
+ARG TENSORFLOW_VARIANT=tensorflow
 
-RUN pip install ${TFIO_PACKAGE}${TFIO_PACKAGE_VERSION:+==${TFIO_PACKAGE_VERSION}}
+RUN pip install ${TFIO_PACKAGE}${TFIO_PACKAGE_VERSION:+==${TFIO_PACKAGE_VERSION}}[${TENSORFLOW_VARIANT}]

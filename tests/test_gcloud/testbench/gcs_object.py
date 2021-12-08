@@ -107,7 +107,7 @@ class GcsObjectVersion:
         expected = base64.b64encode(hashlib.md5(self.media).digest()).decode("utf-8")
         if actual != expected:
             raise error_response.ErrorResponse(
-                "Mismatched MD5 hash expected={}, actual={}".format(expected, actual)
+                f"Mismatched MD5 hash expected={expected}, actual={actual}"
             )
 
     def _validate_crc32c(self):
@@ -184,7 +184,7 @@ class GcsObjectVersion:
             "md5": self.metadata.get("md5Hash", ""),
             "crc32c": self.metadata.get("crc32c", ""),
         }
-        hashes = ["{}={}".format(key, val) for key, val in hashes.items() if val]
+        hashes = [f"{key}={val}" for key, val in hashes.items() if val]
         return ",".join(hashes)
 
 
@@ -250,17 +250,17 @@ class GcsObject:
     @classmethod
     def _remove_non_writable_keys(cls, metadata):
         """Remove the keys from metadata (an update or patch) that are not
-         writable.
+        writable.
 
-         Both `Objects: patch` and `Objects: update` either ignore non-writable
-         keys or return 400 if the key does not match the current value. In
-         the testbench we simply always ignore them, to make life easier.
+        Both `Objects: patch` and `Objects: update` either ignore non-writable
+        keys or return 400 if the key does not match the current value. In
+        the testbench we simply always ignore them, to make life easier.
 
-         :param metadata:dict a dictionary representing a patch or
-             update to the metadata.
-         :return metadata but with only any non-writable keys removed.
-         :rtype: dict
-         """
+        :param metadata:dict a dictionary representing a patch or
+            update to the metadata.
+        :return metadata but with only any non-writable keys removed.
+        :rtype: dict
+        """
         writeable_keys = {
             "acl",
             "cacheControl",

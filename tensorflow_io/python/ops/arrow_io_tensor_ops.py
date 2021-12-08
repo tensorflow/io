@@ -262,20 +262,22 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-
                 shape = tf.TensorShape(shape.numpy())
                 dtype = tf.as_dtype(dtype.numpy())
                 spec = tf.TensorSpec(shape, dtype, column)
-                function = _ArrowIOTensorComponentFunction(  # pylint: disable=protected-access
-                    core_ops.io_arrow_readable_read,
-                    resource,
-                    column_index,
-                    column,
-                    shape,
-                    dtype,
+                function = (
+                    _ArrowIOTensorComponentFunction(  # pylint: disable=protected-access
+                        core_ops.io_arrow_readable_read,
+                        resource,
+                        column_index,
+                        column,
+                        shape,
+                        dtype,
+                    )
                 )
                 elements.append(
                     ArrowBaseIOTensor(
                         shape, dtype, spec, function, arrow_resource, internal=internal
                     )
                 )
-            spec = tuple([e.spec for e in elements])
+            spec = tuple(e.spec for e in elements)
         else:
             assert spec is not None
             columns, entries = zip(*spec.items())

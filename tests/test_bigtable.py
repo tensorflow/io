@@ -45,7 +45,7 @@ def bigtable_func(project_id, instance_id, table_id):
     # [END bigtable_hw_connect]
 
     # [START bigtable_hw_create_table]
-    print("Creating the {} table.".format(table_id))
+    print(f"Creating the {table_id} table.")
     table = instance.table(table_id)
 
     print("Creating column family cf1 with Max Version GC rule...")
@@ -57,7 +57,7 @@ def bigtable_func(project_id, instance_id, table_id):
     if not table.exists():
         table.create(column_families=column_families)
     else:
-        print("Table {} already exists.".format(table_id))
+        print(f"Table {table_id} already exists.")
     # [END bigtable_hw_create_table]
 
     # [START bigtable_hw_write_rows]
@@ -76,7 +76,7 @@ def bigtable_func(project_id, instance_id, table_id):
         # the best performance, see the documentation:
         #
         #     https://cloud.google.com/bigtable/docs/schema-design
-        row_key = "greeting{}".format(i).encode()
+        row_key = f"greeting{i}".encode()
         row = table.direct_row(row_key)
         row.set_cell(
             column_family_id, column, value, timestamp=datetime.datetime.utcnow()
@@ -110,7 +110,7 @@ def bigtable_func(project_id, instance_id, table_id):
     # [END bigtable_hw_scan_with_filter]
 
     # [START bigtable_hw_delete_table]
-    print("Deleting the {} table.".format(table_id))
+    print(f"Deleting the {table_id} table.")
     table.delete()
     # [END bigtable_hw_delete_table]
 

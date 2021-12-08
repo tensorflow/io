@@ -43,7 +43,9 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     """Fake server for Cloud BigQuery Storage API."""
 
     def __init__(
-        self, avro_schema, rows_per_stream,
+        self,
+        avro_schema,
+        rows_per_stream,
     ):
         self._project_id = ""
         self._table_id = ""
@@ -286,7 +288,12 @@ class BigqueryOpsTest(test.TestCase):
         "repeated_float": [1000.0, 700.0, 1200.0],
         "repeated_double": [101.0, 10.1, 0.3, 1.4],
         "repeated_string": ["string1", "string2", "string3", "string4"],
-        "repeated_string": ["string1", "string2", "string3", "string4",],
+        "repeated_string": [
+            "string1",
+            "string2",
+            "string3",
+            "string4",
+        ],
         "repeated_double": [101.0, 10.1, 0.3, 1.4],
     }
 

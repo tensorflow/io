@@ -68,7 +68,7 @@ def _load_library(filename, lib="op"):
             errs.append(str(e))
     raise NotImplementedError(
         "unable to open file: "
-        + "{}, from paths: {}\ncaused by: {}".format(filename, filenames, errs)
+        + f"{filename}, from paths: {filenames}\ncaused by: {errs}"
     )
 
 
@@ -95,10 +95,10 @@ core_ops = LazyLoader("core_ops", "libtensorflow_io.so")
 try:
     plugin_ops = _load_library("libtensorflow_io_plugins.so", "fs")
 except NotImplementedError as e:
-    warnings.warn("unable to load libtensorflow_io_plugins.so: {}".format(e))
+    warnings.warn(f"unable to load libtensorflow_io_plugins.so: {e}")
     # Note: load libtensorflow_io.so imperatively in case of statically linking
     try:
         core_ops = _load_library("libtensorflow_io.so")
         plugin_ops = _load_library("libtensorflow_io.so", "fs")
     except NotImplementedError as e:
-        warnings.warn("file system plugins are not loaded: {}".format(e))
+        warnings.warn(f"file system plugins are not loaded: {e}")

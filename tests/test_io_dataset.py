@@ -151,7 +151,7 @@ def fixture_pubsub(request):
     """fixture_pubsub"""
     from google.cloud import pubsub_v1  # pylint: disable=import-outside-toplevel
 
-    channel = "e{}e".format(int(time.time()))
+    channel = f"e{int(time.time())}e"
 
     os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8085"
     publisher = pubsub_v1.PublisherClient()
@@ -160,7 +160,7 @@ def fixture_pubsub(request):
     # print('Topic created: {}'.format(topic))
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(
-        "pubsub-project", "pubsub_subscription_{}".format(channel)
+        "pubsub-project", f"pubsub_subscription_{channel}"
     )
     subscription = subscriber.create_subscription(
         request={
@@ -169,22 +169,22 @@ def fixture_pubsub(request):
             "retain_acked_messages": True,
         }
     )
-    print("Subscription created: {}".format(subscription))
+    print(f"Subscription created: {subscription}")
     for n in range(0, 10):
-        data_v = "Message number {}".format(n)
+        data_v = f"Message number {n}"
         # Data must be a bytestring
         data_v = data_v.encode("utf-8")
         # When you publish a message, the client returns a future.
         future = publisher.publish(topic_path, data=data_v)
-        print("Published {} of message ID {}.".format(data_v, future.result()))
+        print(f"Published {data_v} of message ID {future.result()}.")
     print("Published messages.")
 
     def fin():
         subscription_path = subscriber.subscription_path(
-            "pubsub-project", "pubsub_subscription_{}".format(channel)
+            "pubsub-project", f"pubsub_subscription_{channel}"
         )
         subscriber.delete_subscription(request={"subscription": subscription_path})
-        print("Subscription {} deleted.".format(subscription_path))
+        print(f"Subscription {subscription_path} deleted.")
 
     request.addfinalizer(fin)
 
@@ -199,7 +199,7 @@ def fixture_pubsub(request):
         v = v.map(lambda e: e.data)
         return v
 
-    expected = ["Message number {}".format(n).encode() for n in range(10)]
+    expected = [f"Message number {n}".encode() for n in range(10)]
 
     return args, func, expected
 
@@ -259,9 +259,15 @@ def fixture_prometheus_graph():
             5,
             offset=offset,
             spec={
-                "coredns": {"localhost:9153": {"up": tf.TensorSpec([], tf.float64),},},
+                "coredns": {
+                    "localhost:9153": {
+                        "up": tf.TensorSpec([], tf.float64),
+                    },
+                },
                 "prometheus": {
-                    "localhost:9090": {"up": tf.TensorSpec([], tf.float64),},
+                    "localhost:9090": {
+                        "up": tf.TensorSpec([], tf.float64),
+                    },
                 },
             },
             endpoint="http://localhost:9090",
@@ -323,7 +329,7 @@ def fixture_kinesis(request):
     )
 
     # Setup the Kinesis with 1 shard.
-    stream_name = "kinesis_e{}e".format(time.time())
+    stream_name = f"kinesis_e{time.time()}e"
     client.create_stream(StreamName=stream_name, ShardCount=1)
     # Wait until stream exists, default is 10 * 18 seconds.
     client.get_waiter("stream_exists").wait(StreamName=stream_name)
@@ -1147,7 +1153,12 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
     [
         pytest.param("mnist"),
         pytest.param("mnist_gz"),
-        pytest.param("lmdb", marks=[pytest.mark.xfail(reason="TODO"),],),
+        pytest.param(
+            "lmdb",
+            marks=[
+                pytest.mark.xfail(reason="TODO"),
+            ],
+        ),
         pytest.param(
             "prometheus",
             marks=[
@@ -1186,7 +1197,12 @@ def test_io_dataset_basic(fixture_lookup, io_dataset_fixture):
         pytest.param("numpy_file_dict"),
         pytest.param("kafka"),
         pytest.param("kafka_avro"),
-        pytest.param("kafka_stream", marks=[pytest.mark.xfail(reason="TODO"),],),
+        pytest.param(
+            "kafka_stream",
+            marks=[
+                pytest.mark.xfail(reason="TODO"),
+            ],
+        ),
         pytest.param(
             "sql",
             marks=[
@@ -1280,7 +1296,12 @@ def test_io_dataset_basic_operation(fixture_lookup, io_dataset_fixture):
     [
         pytest.param("mnist"),
         pytest.param("mnist_gz"),
-        pytest.param("lmdb", marks=[pytest.mark.xfail(reason="TODO"),],),
+        pytest.param(
+            "lmdb",
+            marks=[
+                pytest.mark.xfail(reason="TODO"),
+            ],
+        ),
         pytest.param(
             "prometheus",
             marks=[
@@ -1380,8 +1401,20 @@ def test_io_dataset_for_training(fixture_lookup, io_dataset_fixture):
         pytest.param("mnist", 2),
         pytest.param("mnist_gz", None),
         pytest.param("mnist_gz", 2),
-        pytest.param("lmdb", None, marks=[pytest.mark.skip(reason="TODO"),],),
-        pytest.param("lmdb", 2, marks=[pytest.mark.skip(reason="TODO"),],),
+        pytest.param(
+            "lmdb",
+            None,
+            marks=[
+                pytest.mark.skip(reason="TODO"),
+            ],
+        ),
+        pytest.param(
+            "lmdb",
+            2,
+            marks=[
+                pytest.mark.skip(reason="TODO"),
+            ],
+        ),
         pytest.param(
             "prometheus_graph",
             None,
@@ -1549,7 +1582,9 @@ def test_io_dataset_in_dataset_parallel(
 #   --benchmark-only
 #   --benchmark-skip
 #   --benchmark-disable
-@pytest.mark.benchmark(group="io_dataset",)
+@pytest.mark.benchmark(
+    group="io_dataset",
+)
 @pytest.mark.parametrize(
     ("io_dataset_fixture"),
     [
@@ -1634,7 +1669,13 @@ def test_io_dataset_benchmark(benchmark, fixture_lookup, io_dataset_fixture):
 
 
 @pytest.mark.parametrize(
-    ("io_dataset_fixture"), [pytest.param("to_file"),], ids=["to_file",],
+    ("io_dataset_fixture"),
+    [
+        pytest.param("to_file"),
+    ],
+    ids=[
+        "to_file",
+    ],
 )
 def test_io_dataset_to(fixture_lookup, io_dataset_fixture):
     """test_io_dataset_to"""
@@ -1649,11 +1690,17 @@ def test_io_dataset_to(fixture_lookup, io_dataset_fixture):
     assert (entries) == 1000
 
     lines = data_func(args)
-    return np.all(lines == ["{}\n".format(i) for i in range(1000)])
+    return np.all(lines == [f"{i}\n" for i in range(1000)])
 
 
 @pytest.mark.parametrize(
-    ("io_dataset_fixture"), [pytest.param("to_file"),], ids=["to_file",],
+    ("io_dataset_fixture"),
+    [
+        pytest.param("to_file"),
+    ],
+    ids=[
+        "to_file",
+    ],
 )
 def test_io_dataset_to_in_dataset(fixture_lookup, io_dataset_fixture):
     """test_io_dataset_to_in_dataset"""
@@ -1675,4 +1722,4 @@ def test_io_dataset_to_in_dataset(fixture_lookup, io_dataset_fixture):
     assert entries == [1000]
 
     lines = data_func(args)
-    return np.all(lines == ["{}\n".format(i) for i in range(1000)])
+    return np.all(lines == [f"{i}\n" for i in range(1000)])

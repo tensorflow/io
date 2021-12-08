@@ -43,7 +43,7 @@ def test_read_file():
 
     # Setup the S3 bucket and key
     key_name = "TEST"
-    bucket_name = "s3e{}e".format(time.time())
+    bucket_name = f"s3e{time.time()}e"
 
     client.create_bucket(Bucket=bucket_name)
     client.put_object(Bucket=bucket_name, Key=key_name, Body=body)
@@ -53,5 +53,5 @@ def test_read_file():
 
     os.environ["S3_ENDPOINT"] = "http://localhost:4566"
 
-    content = tf.io.read_file("s3://{}/{}".format(bucket_name, key_name))
+    content = tf.io.read_file(f"s3://{bucket_name}/{key_name}")
     assert content == body

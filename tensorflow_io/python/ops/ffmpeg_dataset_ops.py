@@ -127,7 +127,7 @@ class FFmpegIODataset(io_dataset_ops._IODataset):  # pylint: disable=protected-a
             resource, _ = ffmpeg_ops.io_ffmpeg_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             shape, dtype, _ = ffmpeg_ops.io_ffmpeg_readable_spec(resource, stream)
             shape = tf.TensorShape([None if e < 0 else e for e in shape.numpy()])

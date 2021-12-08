@@ -355,9 +355,18 @@ typedef struct S3File {
         s3_client(s3_client),
         transfer_manager(transfer_manager),
         outfile(Aws::MakeShared<Aws::Utils::TempFile>(
-            kS3FileSystemAllocationTag, nullptr, "_s3_filesystem_XXXXXX",
+            kS3FileSystemAllocationTag,
+#if defined(_MSC_VER)
+            // On Windows, `Aws::FileSystem::CreateTempFilePath()` return
+            // `C:\Users\username\AppData\Local\Temp\`. Adding template will
+            // cause an error.
+            nullptr,
+#else
+            "/tmp/_s3_filesystem_XXXXXX",
+#endif
             std::ios_base::binary | std::ios_base::trunc | std::ios_base::in |
-                std::ios_base::out)) {}
+                std::ios_base::out)) {
+  }
 } S3File;
 
 void Cleanup(TF_WritableFile* file) {
@@ -789,7 +798,6 @@ static void MultiPartCopy(const Aws::String& source,
   create_multipart_upload_request.WithBucket(bucket_dst).WithKey(object_dst);
 
   GetS3Client(s3_file);
-  GetTransferManager(Aws::Transfer::TransferDirection::UPLOAD, s3_file);
 
   auto create_multipart_upload_outcome =
       s3_file->s3_client->CreateMultipartUpload(
@@ -933,6 +941,7 @@ void CopyFile(const TF_Filesystem* filesystem, const char* src, const char* dst,
   if (TF_GetCode(status) != TF_OK) return;
 
   auto s3_file = static_cast<S3File*>(filesystem->plugin_filesystem);
+  GetTransferManager(Aws::Transfer::TransferDirection::UPLOAD, s3_file);
   auto chunk_size =
       s3_file->multi_part_chunk_sizes[Aws::Transfer::TransferDirection::UPLOAD];
   size_t num_parts = 1;

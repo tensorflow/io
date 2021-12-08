@@ -55,7 +55,7 @@ def is_container_running():
 def test_create_index():
     """Create an index in the cluster"""
 
-    create_index_url = "{}/{}".format(NODE, INDEX)
+    create_index_url = f"{NODE}/{INDEX}"
     res = requests.put(create_index_url, headers=HEADERS)
     assert res.status_code == 200
 
@@ -73,7 +73,7 @@ def test_create_index():
 def test_populate_data(record):
     """Populate the index with data"""
 
-    put_item_url = "{}/{}/{}".format(NODE, INDEX, DOC_TYPE)
+    put_item_url = f"{NODE}/{INDEX}/{DOC_TYPE}"
     data = {}
     for idx, attr in enumerate(ATTRS):
         data[attr] = record[idx]
@@ -199,6 +199,6 @@ def test_elasticsearch_io_dataset_training():
 def test_cleanup():
     """Clean up the index"""
 
-    delete_index_url = "{}/{}".format(NODE, INDEX)
+    delete_index_url = f"{NODE}/{INDEX}"
     res = requests.delete(delete_index_url, headers=HEADERS)
     assert res.status_code == 200

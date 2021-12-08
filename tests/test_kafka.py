@@ -90,7 +90,7 @@ def test_kafka_output_sequence():
         def flush(self):
             self._sequence.flush()
 
-    channel = "e{}e".format(time.time())
+    channel = f"e{time.time()}e"
     topic = "test_" + channel
 
     # By default batch size is 32
@@ -195,8 +195,8 @@ def test_kafka_group_io_dataset_primary_cg():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(10)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(10))
     )
 
 
@@ -210,7 +210,7 @@ def test_kafka_group_io_dataset_primary_cg_no_lag():
         servers="localhost:9092",
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
-    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+    assert np.all(sorted(k.numpy() for (k, _) in dataset) == [])
 
 
 def test_kafka_group_io_dataset_primary_cg_new_topic():
@@ -228,8 +228,8 @@ def test_kafka_group_io_dataset_primary_cg_new_topic():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(10)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(10))
     )
 
 
@@ -242,7 +242,7 @@ def test_kafka_group_io_dataset_resume_primary_cg():
 
     # Write new messages to the topic
     for i in range(10, 100):
-        message = "D{}".format(i)
+        message = f"D{i}"
         kafka_io.write_kafka(message=message, topic="key-partition-test")
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
@@ -252,8 +252,8 @@ def test_kafka_group_io_dataset_resume_primary_cg():
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(10, 100)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(10, 100))
     )
 
 
@@ -266,7 +266,7 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
 
     # Write new messages to the topic
     for i in range(10, 100):
-        message = "D{}".format(i)
+        message = f"D{i}"
         kafka_io.write_kafka(message=message, topic="key-test")
     # Read only the newly sent 90 messages
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
@@ -276,8 +276,8 @@ def test_kafka_group_io_dataset_resume_primary_cg_new_topic():
         configuration=["session.timeout.ms=7000", "max.poll.interval.ms=8000"],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(10, 100)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(10, 100))
     )
 
 
@@ -298,8 +298,8 @@ def test_kafka_group_io_dataset_secondary_cg():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(100)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(100))
     )
 
 
@@ -319,7 +319,7 @@ def test_kafka_group_io_dataset_tertiary_cg_multiple_topics():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
+        sorted(k.numpy() for (k, _) in dataset)
         == sorted([("D" + str(i)).encode() for i in range(100)] * 2)
     )
 
@@ -339,8 +339,8 @@ def test_kafka_group_io_dataset_auto_offset_reset():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(100)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(100))
     )
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
@@ -353,7 +353,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
             "auto.offset.reset=latest",
         ],
     )
-    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+    assert np.all(sorted(k.numpy() for (k, _) in dataset) == [])
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
         topics=["key-partition-test"],
@@ -366,8 +366,8 @@ def test_kafka_group_io_dataset_auto_offset_reset():
         ],
     )
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(100)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(100))
     )
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
@@ -380,7 +380,7 @@ def test_kafka_group_io_dataset_auto_offset_reset():
             "conf.topic.auto.offset.reset=latest",
         ],
     )
-    assert np.all(sorted([k.numpy() for (k, _) in dataset]) == [])
+    assert np.all(sorted(k.numpy() for (k, _) in dataset) == [])
 
 
 def test_kafka_group_io_dataset_invalid_stream_timeout():
@@ -419,7 +419,7 @@ def test_kafka_group_io_dataset_stream_timeout_check():
         # Write new messages to the topic in a background thread
         time.sleep(6)
         for i in range(100, 200):
-            message = "D{}".format(i)
+            message = f"D{i}"
             kafka_io.write_kafka(message=message, topic="key-partition-test")
 
     dataset = tfio.experimental.streaming.KafkaGroupIODataset(
@@ -444,8 +444,8 @@ def test_kafka_group_io_dataset_stream_timeout_check():
     # At the end, after the timeout has occurred, we must have the old 100 messages
     # along with the new 100 messages
     assert np.all(
-        sorted([k.numpy() for (k, _) in dataset])
-        == sorted([("D" + str(i)).encode() for i in range(200)])
+        sorted(k.numpy() for (k, _) in dataset)
+        == sorted(("D" + str(i)).encode() for i in range(200))
     )
 
 
@@ -457,7 +457,7 @@ def test_kafka_mini_dataset_size():
 
     # Write new messages to the topic
     for i in range(200, 10000):
-        message = "D{}".format(i)
+        message = f"D{i}"
         kafka_io.write_kafka(message=message, topic="key-partition-test")
 
     BATCH_NUM_MESSAGES = 5000
@@ -470,7 +470,7 @@ def test_kafka_mini_dataset_size():
             "session.timeout.ms=7000",
             "max.poll.interval.ms=8000",
             "auto.offset.reset=earliest",
-            "batch.num.messages={}".format(BATCH_NUM_MESSAGES),
+            f"batch.num.messages={BATCH_NUM_MESSAGES}",
         ],
     )
     for mini_d in dataset:

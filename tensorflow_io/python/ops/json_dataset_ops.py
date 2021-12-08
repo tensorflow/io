@@ -59,7 +59,7 @@ class JSONIODataset(tf.compat.v2.data.Dataset):
                 filename,
                 metadata=metadata,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             columns = columns if columns is not None else columns_v.numpy()
 

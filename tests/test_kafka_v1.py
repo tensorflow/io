@@ -269,7 +269,7 @@ class KafkaDatasetTest(tf.test.TestCase):
 
         import tensorflow_io.kafka as kafka_io  # pylint: disable=wrong-import-position
 
-        channel = "e{}e".format(time.time())
+        channel = f"e{time.time()}e"
 
         # Start with reading test topic, replace `D` with `e(time)e`,
         # and write to test_e(time)e` topic.
@@ -445,7 +445,8 @@ class KafkaDatasetTest(tf.test.TestCase):
             )
             for i in range(5):
                 self.assertEqual(
-                    (("D" + str(i * 2)).encode(), (b"K0")), sess.run(get_next),
+                    (("D" + str(i * 2)).encode(), (b"K0")),
+                    sess.run(get_next),
                 )
             with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)
@@ -457,7 +458,8 @@ class KafkaDatasetTest(tf.test.TestCase):
             )
             for i in range(5):
                 self.assertEqual(
-                    (("D" + str(i * 2 + 1)).encode(), (b"K1")), sess.run(get_next),
+                    (("D" + str(i * 2 + 1)).encode(), (b"K1")),
+                    sess.run(get_next),
                 )
             with self.assertRaises(tf.errors.OutOfRangeError):
                 sess.run(get_next)

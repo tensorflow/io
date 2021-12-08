@@ -19,22 +19,22 @@ import functools
 
 def deprecate(message):
     """a decorator to aid in deprecating python api endpoints and
-  suggesting alternatives.
+    suggesting alternatives.
 
-  Args:
-    message: A description of the deprecation activity and an
-      alternative endpoint that can be used (if applicable).
+    Args:
+      message: A description of the deprecation activity and an
+        alternative endpoint that can be used (if applicable).
 
-  Example:
+    Example:
 
-  ```
-  from tensorflow_io.python.utils import deprecation
+    ```
+    from tensorflow_io.python.utils import deprecation
 
-  @deprecation.deprecate("Use new_func instead")
-  def old_func():
-    return 1
-  ```
-  """
+    @deprecation.deprecate("Use new_func instead")
+    def old_func():
+      return 1
+    ```
+    """
 
     def deprecated_wrapper(func_or_class):
         """Deprecation wrapper."""
