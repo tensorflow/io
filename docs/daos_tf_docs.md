@@ -77,7 +77,7 @@ Assuming you are in a terminal in the repository root directory:
   ```
   bazel build -s --verbose_failures //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
   ```
-  This should take a few minutes. Note that sandboxing may result in build failures when using Docker Containers for DAOS due to mounting issues, if that’s the case, add **--spawn_strategy=standalone** to the above build command to bypass sandboxing.
+  This should take a few minutes. Note that sandboxing may result in build failures when using Docker Containers for DAOS due to mounting issues, if that’s the case, add **--spawn_strategy=standalone** to the above build command to bypass sandboxing. (When disabling sandbox, an error may be thrown for an undefined type z_crc_t due to a conflict in header files. Please find the crypt.h file in the bazel cache in subdirectory /external/zlib/contrib/minizip/crypt.h and add the following line to the file **typedef unsigned long z_crc_t;** then re-build)
 
 
 
@@ -102,5 +102,5 @@ Assuming you are in a terminal in the repository root directory:
 
 ## Example
 
-Please refer to [the DAOS notebook example in the tutorials folder in docs folder.](./../../../../docs/tutorials/daos.ipynb)
+Please refer to [the DAOS notebook example in the tutorials folder in docs folder.](tutorials/daos.ipynb)
 
