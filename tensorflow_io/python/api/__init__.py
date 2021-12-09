@@ -1,4 +1,4 @@
-# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from tensorflow_io.python.api import image
 from tensorflow_io.python.api import audio
 from tensorflow_io.python.api import version
 from tensorflow_io.python.api import experimental
+from tensorflow_io.python.api import bigtable
 
 if os.environ.get("GENERATING_TF_DOCS", ""):
     # Mark these as public api for /tools/docs/build_docs.py

@@ -12,33 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Cloud Bigtable Client for TensorFlow.
+"""tensorflow_io.bigtable"""
 
-This package allows TensorFlow to interface directly with Cloud Bigtable
-for high-speed data loading.
-
-@@BigtableClient
-@@BigtableTable
-@@RowRange
-@@RowSet
-
-
-"""
-
-
-from tensorflow.python.util.all_util import remove_undocumented
 from tensorflow_io.python.ops.bigtable.bigtable_dataset_ops import BigtableClient
 from tensorflow_io.python.ops.bigtable.bigtable_dataset_ops import BigtableTable
 import tensorflow_io.python.ops.bigtable.bigtable_version_filters as filters
 import tensorflow_io.python.ops.bigtable.bigtable_row_set as row_set
 import tensorflow_io.python.ops.bigtable.bigtable_row_range as row_range
-
-_allowed_symbols = [
-    "BigtableClient",
-    "BigtableTable",
-    "filters",
-    "row_set",
-    "row_range",
-]
-
-remove_undocumented(__name__, _allowed_symbols)
