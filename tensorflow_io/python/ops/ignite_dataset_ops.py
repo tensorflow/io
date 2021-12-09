@@ -18,12 +18,19 @@ import abc
 import socket
 import ssl
 import struct
+import warnings
 
 import tensorflow as tf
 
 from tensorflow import dtypes
 from tensorflow.compat.v1 import data
 from tensorflow_io.python.ops import core_ops
+
+warnings.warn(
+    "implementation of IgniteDataset has been "
+    "deprecated and will be removed in future releases",
+    DeprecationWarning,
+)
 
 
 class Readable(metaclass=abc.ABCMeta):
