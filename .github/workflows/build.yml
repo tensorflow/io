@@ -341,9 +341,10 @@ jobs:
           cat .bazelrc
           bazel build -s %BAZEL_OPTIMIZATION% //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           if %errorlevel% neq 0 exit /b %errorlevel%
-          mkdir build
+          mkdir -p build
           cp -r bazel-bin/tensorflow_io build
           cp -r bazel-bin/tensorflow_io_gcs_filesystem build
+          bash -c "find build -not -name '*.so' -type f | xargs rm -rf"
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
