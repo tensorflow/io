@@ -150,12 +150,12 @@ class BigQueryClient:
                         "length of `output_types` must be a same as the "
                         "length of `selected_fields`"
                     )
-            else:
                 output_types = [dtypes.string] * len(selected_fields)
             # Repeated fields are not supported if selected_fields is list
             selected_fields_repeated = [False] * len(selected_fields)
 
             if default_values is None:
+                default_values = []
                 for output_type in output_types:
                     default_values.append(self._get_default_value_for_type(output_type))
             else:
