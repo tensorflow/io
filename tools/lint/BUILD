@@ -42,12 +42,13 @@ py_binary(
     main = "black_python.py",
     deps = [
         requirement("black"),
-        requirement("regex"),
-        requirement("appdirs"),
         requirement("click"),
-        requirement("toml"),
-        requirement("typed_ast"),
+        requirement("mypy-extensions"),
         requirement("pathspec"),
+        requirement("platformdirs"),
+        requirement("regex"),
+        requirement("tomli"),
+        requirement("typing-extensions"),
     ],
 )
 

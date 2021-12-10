@@ -34,7 +34,7 @@ def write_config():
         elif opt_regex.match(arg):
             opt_list.append(arg)
         else:
-            print("WARNING: Unexpected cflag item {}".format(arg))
+            print(f"WARNING: Unexpected cflag item {arg}")
 
     if len(include_list) != 1:
         print(
@@ -58,7 +58,7 @@ def write_config():
             elif libdir_regex.match(arg):
                 libdir_list.append(arg)
             else:
-                print("WARNING: Unexpected link flag item {}".format(arg))
+                print(f"WARNING: Unexpected link flag item {arg}")
 
         if len(library_list) != 1 or len(libdir_list) != 1:
             print(
@@ -74,11 +74,11 @@ def write_config():
         with open(".bazelrc", "w") as bazel_rc:
             bazel_rc.write('build --copt="-fvisibility=hidden"\n')
             for opt in opt_list:
-                bazel_rc.write('build --copt="{}"\n'.format(opt))
+                bazel_rc.write(f'build --copt="{opt}"\n')
             header_dir = include_list[0][2:]
             if sys.platform == "win32":
                 header_dir = header_dir.replace("\\", "/")
-            bazel_rc.write('build --action_env TF_HEADER_DIR="{}"\n'.format(header_dir))
+            bazel_rc.write(f'build --action_env TF_HEADER_DIR="{header_dir}"\n')
 
             if sys.platform == "win32":
                 library_dir = include_list[0][2:-7] + "python"
@@ -86,7 +86,7 @@ def write_config():
             else:
                 library_dir = libdir_list[0][2:]
             bazel_rc.write(
-                'build --action_env TF_SHARED_LIBRARY_DIR="{}"\n'.format(library_dir)
+                f'build --action_env TF_SHARED_LIBRARY_DIR="{library_dir}"\n'
             )
             if sys.platform == "win32":
                 library_name = "_pywrap_tensorflow_internal.lib"
@@ -99,7 +99,7 @@ def write_config():
                 else:
                     library_name = "lib" + library_name + ".so"
             bazel_rc.write(
-                'build --action_env TF_SHARED_LIBRARY_NAME="{}"\n'.format(library_name)
+                f'build --action_env TF_SHARED_LIBRARY_NAME="{library_name}"\n'
             )
             bazel_rc.write('build --cxxopt="-std=c++14"\n')
             for argv in sys.argv[1:]:

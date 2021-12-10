@@ -64,7 +64,11 @@ def test_video_io_dataset(video_data, io_dataset_func):
 
 @pytest.mark.parametrize(
     ("io_dataset_func"),
-    [pytest.param(lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),)],
+    [
+        pytest.param(
+            lambda f: tfio.IODataset.graph(tf.uint8).from_ffmpeg(f, "v:0"),
+        )
+    ],
     ids=["from_ffmpeg"],
 )
 def test_video_io_dataset_with_dataset(video_data, io_dataset_func):

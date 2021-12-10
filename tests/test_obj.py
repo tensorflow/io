@@ -25,7 +25,9 @@ import tensorflow_io as tfio
 def test_decode_obj():
     """Test case for decode obj"""
     filename = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "test_obj", "sample.obj",
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_obj",
+        "sample.obj",
     )
     filename = "file://" + filename
 

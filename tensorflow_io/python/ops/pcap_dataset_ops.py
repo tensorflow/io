@@ -36,7 +36,7 @@ class PcapIODataset(tf.data.Dataset):
             resource = core_ops.io_pcap_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
 
             dataset = tf.data.Dataset.range(0, sys.maxsize, capacity)

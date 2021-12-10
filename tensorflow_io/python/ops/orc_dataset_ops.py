@@ -55,7 +55,7 @@ class ORCIODataset(tf.data.Dataset):
             resource, columns_v = core_ops.io_orc_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             columns = columns if columns is not None else columns_v.numpy()
             columns_dataset = []

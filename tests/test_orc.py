@@ -24,8 +24,7 @@ import tensorflow_io as tfio
 
 
 def test_orc_input():
-    """test_pcap_input
-    """
+    """test_pcap_input"""
     print("Testing ORCDataset")
     orc_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_orc", "iris.orc"

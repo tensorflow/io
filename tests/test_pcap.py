@@ -23,8 +23,7 @@ import tensorflow_io as tfio
 
 
 def test_pcap_input():
-    """test_pcap_input
-  """
+    """test_pcap_input"""
     print("Testing PcapDataset")
     pcap_filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "test_pcap", "http.pcap"

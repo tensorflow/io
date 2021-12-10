@@ -95,9 +95,9 @@ clang_format_func() {
 pyupgrade_func() {
   echo $1 $2
   if [[ "$1" == "lint" ]]; then
-    $pyupgrade_path --exit-zero-even-if-changed --py3-only $2
+    $pyupgrade_path --exit-zero-even-if-changed --py37-plus $2
   else
-    $pyupgrade_path --py3-only $2
+    $pyupgrade_path --py37-plus $2
   fi
 }
 

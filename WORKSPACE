@@ -132,17 +132,16 @@ switched_rules_by_language(
 # Note rules_python is placed earlier as tensorflow's version is older
 http_archive(
     name = "rules_python",
-    sha256 = "c911dc70f62f507f3a361cbc21d6e0d502b91254382255309bc60b7a0f48de28",
-    strip_prefix = "rules_python-38f86fb55b698c51e8510c807489c9f4e047480e",
+    sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
-        "https://github.com/bazelbuild/rules_python/archive/38f86fb55b698c51e8510c807489c9f4e047480e.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+        "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
     ],
 )
 
-load("@rules_python//python:pip.bzl", "pip3_import")
+load("@rules_python//python:pip.bzl", "pip_import")
 
-pip3_import(
+pip_import(
     name = "lint_dependencies",
     requirements = "//tools/lint:requirements.txt",
 )
@@ -153,10 +152,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "41b32eeaddcbc02b0583660bcf508469550e4cd0f86b22d2abe72dfebeacde0f",
-    strip_prefix = "tensorflow-2.6.0",
+    sha256 = "bb124905c7fdacd81e7c842b287c169bbf377d29c74c9dacc04f96c9793747bb",
+    strip_prefix = "tensorflow-2.7.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.6.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.7.0.tar.gz",
     ],
 )
 
@@ -256,22 +255,32 @@ http_archive(
 )
 
 http_archive(
-    name = "com_github_azure_azure_storage_cpplite",
+    name = "libxml_archive",
+    build_file = "@//third_party:libxml.BUILD",
+    patch_cmds_win = [
+        """sed -i 's/define LIBXML_ICONV_ENABLED/undef LIBXML_ICONV_ENABLED/g' include/libxml/xmlversion.h""",
+        """sed -i 's/define LIBXML_LZMA_ENABLED/undef LIBXML_LZMA_ENABLED/g' include/libxml/xmlversion.h""",
+    ],
+    sha256 = "f63c5e7d30362ed28b38bfa1ac6313f9a80230720b7fb6c80575eeab3ff5900c",
+    strip_prefix = "libxml2-2.9.7",
+    urls = [
+        "https://mirror.bazel.build/xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+        "http://xmlsoft.org/sources/libxml2-2.9.7.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "com_github_azure_azure_sdk_for_cpp",
     build_file = "//third_party:azure.BUILD",
     patch_cmds = [
-        """sed -i.bak 's/__attribute__((visibility("default")))//g' include/tinyxml2.h """,
-        "echo '' >> include/base64.h",
-        "echo '#include <stdexcept>' >> include/base64.h",
-        "echo '' >> include/utility.h",
-        "echo '#if defined(_MSC_VER)' >> include/utility.h",
-        "echo '#include <Rpc.h>' >> include/utility.h",
-        "echo '#endif' >> include/utility.h",
+        # patch can be removed once https://github.com/googleapis/google-cloud-cpp/issues/7462 is fixed
+        """sed -i.bak 's/curl_easy_init();/curl_easy_init();curl_easy_setopt(newHandle, CURLOPT_NOSIGNAL, 1);/g' sdk/core/azure-core/src/http/curl/curl.cpp """,
+        """sed -i.bak 's/include <windows.h>/include <windows.h>\\'$'\\n''#include <wincrypt.h>/g' sdk/core/azure-core/src/base64.cpp """,
     ],
-    sha256 = "25f34354fb0400ffe1b5a5c09c793c9fc8104d375910f6c84ab10fa50c0059cb",
-    strip_prefix = "azure-storage-cpplite-0.3.0",
+    sha256 = "ec9cb17cab24e940895eb2249c096f500f69383edfa66b20cb6456414767ce99",
+    strip_prefix = "azure-sdk-for-cpp-9dac89c67564c64748ebb72b9de55c548db51eff",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
-        "https://github.com/Azure/azure-storage-cpplite/archive/v0.3.0.tar.gz",
+        "https://github.com/Azure/azure-sdk-for-cpp/archive/9dac89c67564c64748ebb72b9de55c548db51eff.tar.gz",
     ],
 )
 
@@ -603,11 +612,11 @@ http_archive(
 http_archive(
     name = "libwebp",
     build_file = "//third_party:libwebp.BUILD",
-    sha256 = "424faab60a14cb92c2a062733b6977b4cc1e875a6398887c5911b3a1a6c56c51",
-    strip_prefix = "libwebp-1.1.0",
+    sha256 = "01bcde6a40a602294994050b81df379d71c40b7e39c819c024d079b3c56307f4",
+    strip_prefix = "libwebp-1.2.1",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
-        "https://github.com/webmproject/libwebp/archive/v1.1.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/webmproject/libwebp/archive/v1.2.1.tar.gz",
+        "https://github.com/webmproject/libwebp/archive/v1.2.1.tar.gz",
     ],
 )
 

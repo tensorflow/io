@@ -57,7 +57,8 @@ Assuming you are in a terminal in the repository root directory:
   $ ln -s /usr/bin/python3 /usr/bin/python
   ```
 
-* At this point, all libraries and dependencies should be installed.  
+* At this point, all libraries and dependencies should be installed.
+  * Make sure the environment variable **LIBRARY_PATH** includes the paths to all daos libraries  
   * Make sure the environment variable **LD_LIBRARY_PATH** includes the paths to:
     * All daos libraries
     * The tensorflow framework (libtensorflow and libtensorflow_framework)
@@ -65,12 +66,19 @@ Assuming you are in a terminal in the repository root directory:
     ```
     export LD_LIBRARY_PATH="<path-to-library>:$LD_LIBARY_PATH"
     ```
+  * Make sure the environment variable **CPLUS_INCLUDE_PATH** and **C_INCLUDE_PATH** includes the paths to:
+    * The tensorflow headers (usually in /usr/local/lib64/python3.6/site-packages/tensorflow/include)
+  * If not, find the required headers and add their paths to the environment variable
+    ```
+    export CPLUS_INCLUDE_PATH="<path-to-headers>:$CPLUS_INCLUDE_PATH"
+    export C_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$C_INCLUDE_PATH
+    ```
 
 * Build the project using bazel
   ```
-  bazel build -s --verbose_failures //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
+  bazel build --action_env=LIBRARY_PATH=$LIBRARY_PATH -s --verbose_failures --spawn_strategy=standalone //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
   ```
-  This should take a few minutes. Note that sandboxing may result in build failures when using Docker Containers for DAOS due to mounting issues, if that’s the case, add **--spawn_strategy=standalone** to the above build command to bypass sandboxing.
+  This should take a few minutes. Note that sandboxing may result in build failures when using Docker Containers for DAOS due to mounting issues, if that’s the case, add **--spawn_strategy=standalone** to the above build command to bypass sandboxing. (When disabling sandbox, an error may be thrown for an undefined type z_crc_t due to a conflict in header files. Please find the crypt.h file in the bazel cache in subdirectory /external/zlib/contrib/minizip/crypt.h and add the following line to the file **typedef unsigned long z_crc_t;** then re-build)
 
 
 
@@ -95,5 +103,5 @@ Assuming you are in a terminal in the repository root directory:
 
 ## Example
 
-Please refer to [the DAOS notebook example in the tutorials folder in docs folder.](./../../../../docs/tutorials/daos.ipynb)
+Please refer to [the DAOS notebook example in the tutorials folder in docs folder.](tutorials/daos.ipynb)
 

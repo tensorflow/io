@@ -241,12 +241,12 @@ class IODataset(io_dataset.IODataset):
     def from_video(cls, filename):
         """Creates an `GraphIODataset` from a video file.
 
-          Args:
-            filename: A string, the sql query string.
-            name: A name prefix for the IODataset (optional).
+        Args:
+          filename: A string, the sql query string.
+          name: A name prefix for the IODataset (optional).
 
-          Returns:
-            A `IODataset`.
+        Returns:
+          A `IODataset`.
         """
         return video_dataset_ops.VideoIODataset(filename)
 

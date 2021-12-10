@@ -156,10 +156,10 @@ def objects_list(bucket_name):
     versions_parameter = flask.request.args.get("versions")
     all_versions = versions_parameter is not None and bool(versions_parameter)
     prefixes = set()
-    prefix = flask.request.args.get("prefix", "", type(""))
-    delimiter = flask.request.args.get("delimiter", "", type(""))
-    start_offset = flask.request.args.get("startOffset", "", type(""))
-    end_offset = flask.request.args.get("endOffset", "", type(""))
+    prefix = flask.request.args.get("prefix", "", str)
+    delimiter = flask.request.args.get("delimiter", "", str)
+    start_offset = flask.request.args.get("startOffset", "", str)
+    end_offset = flask.request.args.get("endOffset", "", str)
     bucket_link = bucket_name + "/o/"
     for name, o in testbench_utils.all_objects():
         if name.find(bucket_link + prefix) != 0:

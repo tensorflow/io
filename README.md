@@ -83,6 +83,16 @@ People who are a little more adventurous can also try our nightly binaries:
 $ pip install tensorflow-io-nightly
 ```
 
+To ensure you have a version of TensorFlow that is compatible with TensorFlow-IO,
+you can specify the `tensorflow` extra requirement during install:
+
+```
+pip install tensorflow-io[tensorflow]
+```
+
+Similar extras exist for the `tensorflow-gpu`, `tensorflow-cpu` and `tensorflow-rocm`
+packages.
+
 ### Docker Images
 
 In addition to the pip packages, the docker images can be used to quickly get started.
@@ -116,6 +126,8 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.22.0 | 2.7.x | Nov 10, 2021 |
+| 0.21.0 | 2.6.x | Sep 12, 2021 |
 | 0.20.0 | 2.6.x | Aug 11, 2021 |
 | 0.19.1 | 2.5.x | Jul 25, 2021 |
 | 0.19.0 | 2.5.x | Jun 25, 2021 |

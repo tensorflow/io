@@ -635,10 +635,29 @@ void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
   std::string scheme, namenode, hdfs_path;
   ParseHadoopPath(path, &scheme, &namenode, &hdfs_path);
 
-  auto handle = libhdfs->hdfsOpenFile(fs, hdfs_path.c_str(),
-                                      O_WRONLY | O_APPEND, 0, 0, 0);
-  if (handle == nullptr) return TF_SetStatusFromIOError(status, errno, path);
+  // Behavior of this method should follow the contract defined in:
+  // https://github.com/tensorflow/tensorflow/blob/v2.6.0/tensorflow/core/platform/file_system.h#L106
+  // Specifically, as follows:
+  // Creates an object that either appends to an existing file, or
+  // writes to a new file (if the file does not exist to begin with).
 
+  bool fileExists = (libhdfs->hdfsExists(fs, hdfs_path.c_str()) == 0);
+  // (O_WRONLY | O_APPEND) only works with existing file in libhdfs,
+  // for non-existing file, it will throw error, so we need to check file
+  // existence here.
+  //
+  // O_WRONLY will always overwrite the file in libhdfs:
+  // Check
+  // https://github.com/apache/hadoop/blob/03cfc852791c14fad39db4e5b14104a276c08e59/hadoop-hdfs-project/hadoop-hdfs-native-client/src/main/native/libhdfs/include/hdfs/hdfs.h#L416
+
+  // Please note there's potential race condition here
+  // where file is deleted/created b/w file existence check is performed and
+  // hdfsOpenFile is called.
+  auto libHDFSMode = fileExists ? (O_WRONLY | O_APPEND) : O_WRONLY;
+
+  auto handle =
+      libhdfs->hdfsOpenFile(fs, hdfs_path.c_str(), libHDFSMode, 0, 0, 0);
+  if (handle == nullptr) return TF_SetStatusFromIOError(status, errno, path);
   file->plugin_file =
       new tf_writable_file::HDFSWritableFile(hdfs_path, fs, libhdfs, handle);
   TF_SetStatus(status, TF_OK, "");

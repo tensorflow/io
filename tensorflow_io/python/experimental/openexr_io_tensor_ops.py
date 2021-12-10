@@ -52,7 +52,7 @@ class EXRIOTensor(
                     dtypes.pop()
                     channels.pop()
                 spec = tuple(
-                    [tf.TensorSpec(tf.TensorShape(shape), dtype) for dtype in dtypes]
+                    tf.TensorSpec(tf.TensorShape(shape), dtype) for dtype in dtypes
                 )
                 columns = [channel.decode() for channel in channels]
                 elements = [
@@ -66,6 +66,6 @@ class EXRIOTensor(
                     EXRPartIOTensor(spec, columns, elements, internal=internal)
                 )
                 index += 1
-            spec = tuple([part.spec for part in parts])
+            spec = tuple(part.spec for part in parts)
             columns = [i for i, _ in enumerate(parts)]
             super().__init__(spec, columns, parts, internal=internal)

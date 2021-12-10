@@ -43,12 +43,12 @@ class LMDBIODataset(tf.compat.v2.data.Dataset):
             mapping = core_ops.io_lmdb_mapping_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             resource = core_ops.io_lmdb_readable_init(
                 filename,
                 container=scope,
-                shared_name="{}/{}".format(filename, uuid.uuid4().hex),
+                shared_name=f"{filename}/{uuid.uuid4().hex}",
             )
             capacity = kwargs.get("capacity", 4096)
             dataset = tf.compat.v2.data.Dataset.range(0, sys.maxsize, capacity)
