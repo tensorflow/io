@@ -168,7 +168,9 @@ class BigQueryClient:
                         "length of `default_values` must be a same as the "
                         "length of `selected_fields`"
                     )
-                default_values = [str(default_value) for default_value in default_values]
+                default_values = [
+                    str(default_value) for default_value in default_values
+                ]
         elif isinstance(selected_fields, dict):
             _selected_fields = []
             selected_fields_repeated = []
@@ -225,7 +227,6 @@ class BigQueryClient:
             schema,
             self._client_resource,
         )
-
 
     def _get_default_value_for_type(self, output_type):
         if output_type == tf.string:
@@ -371,7 +372,9 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
-            zip(selected_fields, selected_fields_repeated, output_types, default_values),
+            zip(
+                selected_fields, selected_fields_repeated, output_types, default_values
+            ),
             key=itemgetter(0),
         )
         selected_fields, selected_fields_repeated, output_types, default_values = list(

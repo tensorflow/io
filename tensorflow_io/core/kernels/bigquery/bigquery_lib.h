@@ -183,11 +183,11 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
   }
 
   virtual Status EnsureHasRow(bool *end_of_sequence) = 0;
-  virtual Status ReadRecord(IteratorContext *ctx,
-                            std::vector<Tensor> *out_tensors,
-                            const std::vector<string> &columns,
-                            const std::vector<DataType> &output_types,
-                            const std::vector<absl::any> &typed_default_values) = 0;
+  virtual Status ReadRecord(
+      IteratorContext *ctx, std::vector<Tensor> *out_tensors,
+      const std::vector<string> &columns,
+      const std::vector<DataType> &output_types,
+      const std::vector<absl::any> &typed_default_values) = 0;
   int current_row_index_ = 0;
   mutex mu_;
   std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
@@ -525,22 +525,28 @@ class BigQueryReaderAvroDatasetIterator
         case avro::AVRO_NULL:
           switch (output_types[i]) {
             case DT_BOOL:
-              ((*out_tensors)[i]).scalar<bool>()() = absl::any_cast<bool>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<bool>()() =
+                  absl::any_cast<bool>(typed_default_values[i]);
               break;
             case DT_INT32:
-              ((*out_tensors)[i]).scalar<int32>()() = absl::any_cast<int32>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<int32>()() =
+                  absl::any_cast<int32>(typed_default_values[i]);
               break;
             case DT_INT64:
-              ((*out_tensors)[i]).scalar<int64>()() = absl::any_cast<int64>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<int64>()() =
+                  absl::any_cast<int64>(typed_default_values[i]);
               break;
             case DT_FLOAT:
-              ((*out_tensors)[i]).scalar<float>()() = absl::any_cast<float>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<float>()() =
+                  absl::any_cast<float>(typed_default_values[i]);
               break;
             case DT_DOUBLE:
-              ((*out_tensors)[i]).scalar<double>()() = absl::any_cast<double>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<double>()() =
+                  absl::any_cast<double>(typed_default_values[i]);
               break;
             case DT_STRING:
-              ((*out_tensors)[i]).scalar<tstring>()() = absl::any_cast<string>(typed_default_values[i]);
+              ((*out_tensors)[i]).scalar<tstring>()() =
+                  absl::any_cast<string>(typed_default_values[i]);
               break;
             default:
               return errors::InvalidArgument(

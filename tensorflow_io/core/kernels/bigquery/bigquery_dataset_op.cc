@@ -60,8 +60,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     for (uint64 i = 0; i < num_outputs; ++i) {
       output_shapes.push_back({});
       output_types_vector.push_back(output_types_[i]);
-      const DataType& output_type = output_types_[i];
-      const string& default_value = default_values_[i];
+      const DataType &output_type = output_types_[i];
+      const string &default_value = default_values_[i];
       switch (output_type) {
         case DT_FLOAT:
           typed_default_values_.push_back(absl::any(std::stof(default_value)));
@@ -82,7 +82,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
           typed_default_values_.push_back(absl::any(default_value));
           break;
         default:
-          ctx->CtxFailure(errors::InvalidArgument("Unsupported output_type:", output_type));
+          ctx->CtxFailure(
+              errors::InvalidArgument("Unsupported output_type:", output_type));
           break;
       }
     }
@@ -110,8 +111,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
                      string stream, string schema,
                      std::vector<string> selected_fields,
                      std::vector<DataType> output_types,
-                     std::vector<absl::any> typed_default_values,
-                     int64 offset_,
+                     std::vector<absl::any> typed_default_values, int64 offset_,
                      apiv1beta1::DataFormat data_format)
         : DatasetBase(DatasetContext(ctx)),
           client_resource_(client_resource),
@@ -180,7 +180,9 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
     const std::vector<DataType> &output_types() const { return output_types_; }
 
-    const std::vector<absl::any> &typed_default_values() const { return typed_default_values_; }
+    const std::vector<absl::any> &typed_default_values() const {
+      return typed_default_values_;
+    }
 
     const std::unique_ptr<avro::ValidSchema> &avro_schema() const {
       return avro_schema_;

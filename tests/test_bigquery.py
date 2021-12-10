@@ -293,94 +293,94 @@ class BigqueryOpsTest(test.TestCase):
     }
 
     SELECTED_FIELDS_LIST = [
-                    "string",
-                    "boolean",
-                    "int",
-                    "long",
-                    "float",
-                    "double",
-                ]
+        "string",
+        "boolean",
+        "int",
+        "long",
+        "float",
+        "double",
+    ]
 
     OUTPUT_TYPES_LIST = [
-                    dtypes.string,
-                    dtypes.bool,
-                    dtypes.int32,
-                    dtypes.int64,
-                    dtypes.float32,
-                    dtypes.float64,
-                ]
+        dtypes.string,
+        dtypes.bool,
+        dtypes.int32,
+        dtypes.int64,
+        dtypes.float32,
+        dtypes.float64,
+    ]
 
     SELECTED_FIELDS_DICT = {
-                    "string": {"output_type": dtypes.string},
-                    "boolean": {"output_type": dtypes.bool},
-                    "int": {"output_type": dtypes.int32},
-                    "long": {"output_type": dtypes.int64},
-                    "float": {"output_type": dtypes.float32},
-                    "double": {"output_type": dtypes.float64},
-                    "repeated_bool": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.bool,
-                    },
-                    "repeated_int": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.int32,
-                    },
-                    "repeated_long": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.int64,
-                    },
-                    "repeated_float": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.float32,
-                    },
-                    "repeated_double": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.float64,
-                    },
-                    "repeated_string": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.string,
-                    },
-                }
+        "string": {"output_type": dtypes.string},
+        "boolean": {"output_type": dtypes.bool},
+        "int": {"output_type": dtypes.int32},
+        "long": {"output_type": dtypes.int64},
+        "float": {"output_type": dtypes.float32},
+        "double": {"output_type": dtypes.float64},
+        "repeated_bool": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.bool,
+        },
+        "repeated_int": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.int32,
+        },
+        "repeated_long": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.int64,
+        },
+        "repeated_float": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.float32,
+        },
+        "repeated_double": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.float64,
+        },
+        "repeated_string": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.string,
+        },
+    }
 
     SELECTED_FIELDS_DICT_WITH_DEFAULTS = {
-                    "string": {"output_type": dtypes.string, "default_value": "abc"},
-                    "boolean": {"output_type": dtypes.bool, "default_value": True},
-                    "int": {"output_type": dtypes.int32, "default_value": 10},
-                    "long": {"output_type": dtypes.int64, "default_value": 100},
-                    "float": {"output_type": dtypes.float32, "default_value": 100.0},
-                    "double": {"output_type": dtypes.float64, "default_value": 1000.0},
-                    "repeated_bool": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.bool,
-                        "default_value": True
-                    },
-                    "repeated_int": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.int32,
-                        "default_value": -10
-                    },
-                    "repeated_long": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.int64,
-                        "default_value": -100
-                    },
-                    "repeated_float": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.float32,
-                        "default_value": -1000.01
-                    },
-                    "repeated_double": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.float64,
-                        "default_value": -1000.001
-                    },
-                    "repeated_string": {
-                        "mode": BigQueryClient.FieldMode.REPEATED,
-                        "output_type": dtypes.string,
-                        "default_value": "def"
-                    },
-                }
+        "string": {"output_type": dtypes.string, "default_value": "abc"},
+        "boolean": {"output_type": dtypes.bool, "default_value": True},
+        "int": {"output_type": dtypes.int32, "default_value": 10},
+        "long": {"output_type": dtypes.int64, "default_value": 100},
+        "float": {"output_type": dtypes.float32, "default_value": 100.0},
+        "double": {"output_type": dtypes.float64, "default_value": 1000.0},
+        "repeated_bool": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.bool,
+            "default_value": True,
+        },
+        "repeated_int": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.int32,
+            "default_value": -10,
+        },
+        "repeated_long": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.int64,
+            "default_value": -100,
+        },
+        "repeated_float": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.float32,
+            "default_value": -1000.01,
+        },
+        "repeated_double": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.float64,
+            "default_value": -1000.001,
+        },
+        "repeated_string": {
+            "mode": BigQueryClient.FieldMode.REPEATED,
+            "output_type": dtypes.string,
+            "default_value": "def",
+        },
+    }
 
     CUSTOM_DEFAULT_VALUES = {
         "boolean": True,
@@ -438,16 +438,18 @@ class BigqueryOpsTest(test.TestCase):
         """setUpClass"""
         cls.server.stop()
 
-    def _get_read_session(self, client, selected_fields, output_types=None, requested_streams=2):
-            return client.read_session(
-                self.PARENT,
-                self.GCP_PROJECT_ID,
-                self.TABLE_ID,
-                self.DATASET_ID,
-                selected_fields=selected_fields,
-                output_types=output_types,
-                requested_streams=2,
-            )
+    def _get_read_session(
+        self, client, selected_fields, output_types=None, requested_streams=2
+    ):
+        return client.read_session(
+            self.PARENT,
+            self.GCP_PROJECT_ID,
+            self.TABLE_ID,
+            self.DATASET_ID,
+            selected_fields=selected_fields,
+            output_types=output_types,
+            requested_streams=2,
+        )
 
     def test_fake_server(self):
         """Fake server test."""
@@ -492,8 +494,8 @@ class BigqueryOpsTest(test.TestCase):
         """Test for reading rows."""
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
         read_session = self._get_read_session(
-            client,
-            selected_fields=self.SELECTED_FIELDS_DICT)
+            client, selected_fields=self.SELECTED_FIELDS_DICT
+        )
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
@@ -524,7 +526,8 @@ class BigqueryOpsTest(test.TestCase):
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
 
         read_session = self._get_read_session(
-            client, selected_fields=self.SELECTED_FIELDS_DICT_WITH_DEFAULTS)
+            client, selected_fields=self.SELECTED_FIELDS_DICT_WITH_DEFAULTS
+        )
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
@@ -545,7 +548,8 @@ class BigqueryOpsTest(test.TestCase):
         read_session = self._get_read_session(
             client,
             selected_fields=self.SELECTED_FIELDS_LIST,
-            output_types=self.OUTPUT_TYPES_LIST)
+            output_types=self.OUTPUT_TYPES_LIST,
+        )
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
@@ -579,8 +583,8 @@ class BigqueryOpsTest(test.TestCase):
         """Test for reading rows with offset."""
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
         read_session = self._get_read_session(
-            client,
-            selected_fields=self.SELECTED_FIELDS_DICT)
+            client, selected_fields=self.SELECTED_FIELDS_DICT
+        )
 
         streams_list = read_session.get_streams()
         self.assertEqual(len(streams_list), 2)
@@ -596,8 +600,8 @@ class BigqueryOpsTest(test.TestCase):
         """Test for reading rows in parallel."""
         client = BigQueryTestClient(BigqueryOpsTest.server.endpoint())
         read_session = self._get_read_session(
-            client,
-            selected_fields=self.SELECTED_FIELDS_DICT)
+            client, selected_fields=self.SELECTED_FIELDS_DICT
+        )
 
         dataset = read_session.parallel_read_rows()
         itr = iter(dataset)
