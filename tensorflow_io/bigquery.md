@@ -57,7 +57,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow_io.bigquery import BigQueryClient
 from tensorflow_io.bigquery import BigQueryReadSession
 
-GCP_PROJECT_ID = '<FILL_ME_IN>'
+GCP_PROJECT_ID = "<FILL_ME_IN>"
 DATASET_GCP_PROJECT_ID = "bigquery-public-data"
 DATASET_ID = "samples"
 TABLE_ID = "wikipedia"
@@ -68,20 +68,29 @@ def main():
   read_session = client.read_session(
       "projects/" + GCP_PROJECT_ID,
       DATASET_GCP_PROJECT_ID, TABLE_ID, DATASET_ID,
-      ["title",
+      selected_fields=["title",
        "id",
        "num_characters",
        "language",
        "timestamp",
        "wp_namespace",
        "contributor_username"],
-      [dtypes.string,
+      output_types=[dtypes.string,
        dtypes.int64,
        dtypes.int64,
        dtypes.string,
        dtypes.int64,
        dtypes.int64,
        dtypes.string],
+      default_values=[
+        "",
+        0,
+        0,
+        "",
+        0,
+        0,
+        ""
+      ],
       requested_streams=2,
       row_restriction="num_characters > 1000",
       data_format=BigQueryClient.DataFormat.AVRO)
@@ -98,8 +107,8 @@ def main():
     print("row %d: %s" % (row_index, row))
     row_index += 1
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+  main()
 
 ```
 
@@ -127,10 +136,10 @@ dataset = streams_ds.interleave(
 Connector also supports reading BigQuery column with repeated mode (each field contains array of values with primitive type: Integer, Float, Boolean, String, but RECORD is not supported). In this case, selected_fields needs be a dictionary in a form like this:
 
 ```python
-  { "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.int64},
-    "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, output_type: dtypes.string},
+  { "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, "output_type": dtypes.int64},
+    "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, "output_type": dtypes.string, "default_value", "<default_value>"},
     ...
-    "field_x_name": {"mode": BigQueryClient.FieldMode.REQUIRED, output_type: dtypes.string}
+    "field_x_name": {"mode": BigQueryClient.FieldMode.REQUIRED, "output_type": dtypes.string}
   }
 ```
 "mode" is BigQuery column attribute concept, it can be 'repeated', 'nullable' or 'required' (enum BigQueryClient.FieldMode.REPEATED, NULLABLE, REQUIRED).The output field order is unrelated to the order of fields in
@@ -144,7 +153,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow_io.bigquery import BigQueryClient
 from tensorflow_io.bigquery import BigQueryReadSession
 
-GCP_PROJECT_ID = '<FILL_ME_IN>'
+GCP_PROJECT_ID = "<FILL_ME_IN>"
 DATASET_GCP_PROJECT_ID = "bigquery-public-data"
 DATASET_ID = "certain_dataset"
 TABLE_ID = "certain_table_with_repeated_field"
@@ -156,10 +165,10 @@ def main():
       "projects/" + GCP_PROJECT_ID,
       DATASET_GCP_PROJECT_ID, TABLE_ID, DATASET_ID,
       selected_fiels={
-          "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.int64},
-          "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, output_type: dtypes.string},
-          "field_c_name": {"mode": BigQueryClient.FieldMode.REQUIRED, output_type: dtypes.string}
-          "field_d_name": {"mode": BigQueryClient.FieldMode.REPEATED, output_type: dtypes.string}
+          "field_a_name": {"mode": BigQueryClient.FieldMode.REPEATED, "output_type": dtypes.int64},
+          "field_b_name": {"mode": BigQueryClient.FieldMode.NULLABLE, "output_type": dtypes.string, "default_value": ""},
+          "field_c_name": {"mode": BigQueryClient.FieldMode.REQUIRED, "output_type": dtypes.string}
+          "field_d_name": {"mode": BigQueryClient.FieldMode.REPEATED, "output_type": dtypes.string}
         }
       requested_streams=2,
       row_restriction="num_characters > 1000",
@@ -171,8 +180,8 @@ def main():
     print("row %d: %s" % (row_index, row))
     row_index += 1
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+  main()
 ```
 
 Then each field of a repeated column becomes a rank-1 variable length Tensor. If you want to 
