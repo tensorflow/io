@@ -22,17 +22,18 @@ int ParseDFSPath(const std::string& path, std::string& pool_string,
                  std::string& cont_string, std::string& filename) {
   size_t pool_start = path.find("://") + 3;
   struct duns_attr_t* attr = (struct duns_attr_t*)malloc(sizeof(struct duns_attr_t));
-  attr->da_flags = DUNS_NO_PREFIX | DUNS_NO_CHECK_PATH;
-  attr->da_no_prefix = true;
   attr->da_rel_path = NULL;
-  std::string direct_path = path.substr(pool_start-1);
+  attr->da_flags = 0;
+  attr->da_no_prefix = false;
+  std::string direct_path = "daos://" + path.substr(pool_start);
   int rc = duns_resolve_path(direct_path.c_str(), attr);
   if(rc) {
     return rc;
   }
   pool_string = attr->da_pool;
   cont_string = attr->da_cont;
-  filename = attr->da_rel_path == NULL ? "" : attr->da_rel_path;
+  filename = attr->da_rel_path == NULL? "" : attr->da_rel_path;
+  duns_destroy_attr(attr);
   return 0;
 }
 
