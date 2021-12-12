@@ -24,8 +24,8 @@ import tensorflow_io as tfio  # pylint: disable=unused-import
 
 # Note: export TF_AZURE_USE_DEV_STORAGE=1 to enable emulation
 
-if sys.platform == "darwin":
-    pytest.skip("TODO: skip macOS", allow_module_level=True)
+if sys.platform in ("darwin", "linux"):
+    pytest.skip("TODO: flaky on macOS and Linux", allow_module_level=True)
 
 
 class AZFSTestBase:
