@@ -45,6 +45,7 @@ class DFSTest(tf.test.TestCase):
         self.assertTrue(tf.io.gfile.exists(file_name))
 
         tf.io.gfile.remove(file_name)
+        
     def test_write_read_file(self):
         """Test write/read file."""
         # Setup and check preconditions.
