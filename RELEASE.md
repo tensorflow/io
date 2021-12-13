@@ -1,3 +1,23 @@
+# Release 0.23.0
+
+## Bug Fixes
+* TensorFlow is not a hard requirement to tensorflow-io, to allow alternative
+  dependency packages like tensorflow-rocm.
+* Migrate azure blob storage binding to azure storage sdk.
+* Fix chunk size initialization in s3 storage.
+* Enable python 3.10 support.
+* IgniteDataset is deprecated and will be removed in future releases.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Jan Bernlöhr, Johnu George, Luca Toscano, Lukas Geiger, Mark McDonald,
+Vansh Sharma, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.22.0
 
 ## Bug Fixes
