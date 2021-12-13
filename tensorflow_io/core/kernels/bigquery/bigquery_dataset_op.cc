@@ -73,7 +73,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
           typed_default_values_.push_back(absl::any(std::stoi(default_value)));
           break;
         case DT_INT64:
-          typed_default_values_.push_back(absl::any(std::stol(default_value)));
+          typed_default_values_.push_back(absl::any(std::stoll(default_value)));
           break;
         case DT_BOOL:
           typed_default_values_.push_back(absl::any(default_value == "True"));

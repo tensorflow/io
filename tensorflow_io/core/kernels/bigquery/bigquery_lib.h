@@ -530,11 +530,11 @@ class BigQueryReaderAvroDatasetIterator
               break;
             case DT_INT32:
               ((*out_tensors)[i]).scalar<int32>()() =
-                  absl::any_cast<int32>(typed_default_values[i]);
+                  absl::any_cast<int32_t>(typed_default_values[i]);
               break;
             case DT_INT64:
               ((*out_tensors)[i]).scalar<int64>()() =
-                  absl::any_cast<int64>(typed_default_values[i]);
+                  absl::any_cast<int64_t>(typed_default_values[i]);
               break;
             case DT_FLOAT:
               ((*out_tensors)[i]).scalar<float>()() =
