@@ -7,13 +7,14 @@
 * Fix chunk size initialization in s3 storage.
 * Enable python 3.10 support.
 * IgniteDataset is deprecated and will be removed in future releases.
+* Adding an option to specify default values for nullable fields in BigQuery
 
 ## Thanks to our Contributors
 
 This release contains contributions from many people:
 
-Jan Bernlöhr, Johnu George, Luca Toscano, Lukas Geiger, Mark McDonald,
-Vansh Sharma, Vignesh Kothapalli, Yong Tang
+Aleksey Vlasenko, Jan Bernlöhr, Johnu George, Luca Toscano, Lukas Geiger,
+Mark McDonald, Vansh Sharma, Vignesh Kothapalli, Yong Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
