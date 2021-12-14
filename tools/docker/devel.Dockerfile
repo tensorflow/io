@@ -1,6 +1,6 @@
 FROM tensorflow/tensorflow:custom-op-ubuntu16
 
-RUN rm -f /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_6-xenial.list && apt-get update && \
+RUN rm -f /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_7-xenial.list && apt-get update && \
     apt-get install -y \
     git \
     gcc \
@@ -23,7 +23,7 @@ RUN curl -sL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSI
 
 ARG CONDA_OS=Linux
 
-# Miniconda - Python 3.6, 64-bit, x86, latest
+# Miniconda - Python 3.7, 64-bit, x86, latest
 RUN curl -sL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o mconda-install.sh && \
     bash -x mconda-install.sh -b -p miniconda && \
     rm mconda-install.sh
@@ -32,7 +32,7 @@ ENV PATH="/miniconda/bin:$PATH"
 
 ARG CONDA_ADD_PACKAGES=""
 
-RUN conda create -y -q -n tfio-dev python=3.6 ${CONDA_ADD_PACKAGES}
+RUN conda create -y -q -n tfio-dev python=3.7 ${CONDA_ADD_PACKAGES}
 
 ARG ARROW_VERSION=0.16.0
 
@@ -48,6 +48,7 @@ RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     pylint \
     boto3 \
     google-cloud-pubsub==0.39.1 \
+    google-cloud-bigquery-storage==1.1.0 \
     pyarrow==${ARROW_VERSION} \
     pandas \
     fastavro \
