@@ -68,6 +68,7 @@ class BigQueryClient:
         dataset_id,
         selected_fields,
         output_types=None,
+        default_values=None,
         row_restriction="",
         requested_streams=1,
         data_format: DataFormat = DataFormat.AVRO,
@@ -84,10 +85,10 @@ class BigQueryClient:
             selected_fields: This can be a list or a dict. If a list, it has
                 names of the fields in the table that should be read. If a dict,
                 it should be in a form like, i.e:
-                { "field_a_name": {"mode": "repeated", output_type: dtypes.int64},
-                "field_b_name": {"mode": "nullable", output_type: dtypes.string},
+                { "field_a_name": {"mode": "repeated", "output_type": dtypes.int64},
+                "field_b_name": {"mode": "nullable", "output_type": dtypes.int32, "default_value": 0},
                 ...
-                "field_x_name": {"mode": "repeated", output_type: dtypes.string}
+                "field_x_name": {"mode": "repeated", "output_type": dtypes.string, "default_value": ""}
                 }
                 "mode" is BigQuery column attribute, it can be 'repeated', 'nullable' or 'required'.
                 The output field order is unrelated to the order of fields in
@@ -98,6 +99,10 @@ class BigQueryClient:
                 if selected_fields is a dictionary, this output_types information is
                 included in selected_fields as described above.
                 If not specified, DT_STRING is implied for all Tensors.
+            default_values: Default values to use when underlying tensor is "null"
+                in the same sequence as selected_fields. If not sepecified,
+                meaningful defaults are going to be used
+                (0 for numerices, empty string for strings, and False for booleans).
             row_restriction: Optional. SQL text filtering statement, similar to a
                 WHERE clause in a query.
             requested_streams: Desirable number of streams that can be read in parallel.
@@ -135,27 +140,45 @@ class BigQueryClient:
             raise ValueError("`requested_streams` must be a positive number")
 
         if isinstance(selected_fields, list):
-            if not isinstance(output_types, list):
-                raise ValueError(
-                    "`output_types` must be a list if selected_fields is list"
-                )
-            if output_types and len(output_types) != len(selected_fields):
-                raise ValueError(
-                    "lengths of `output_types` must be a same as the "
-                    "length of `selected_fields`"
-                )
-            if not output_types:
+            if output_types is None:
+                if not isinstance(output_types, list):
+                    raise ValueError(
+                        "`output_types` must be a list if selected_fields is list"
+                    )
+                if len(output_types) != len(selected_fields):
+                    raise ValueError(
+                        "length of `output_types` must be a same as the "
+                        "length of `selected_fields`"
+                    )
                 output_types = [dtypes.string] * len(selected_fields)
-            # Repeated field is not supported if selected_fields is list
+            # Repeated fields are not supported if selected_fields is list
             selected_fields_repeated = [False] * len(selected_fields)
 
+            if default_values is None:
+                default_values = []
+                for output_type in output_types:
+                    default_values.append(self._get_default_value_for_type(output_type))
+            else:
+                if not isinstance(default_values, list):
+                    raise ValueError(
+                        "`default_values` must be a list if selected_fields is list"
+                    )
+                if len(default_values) != len(selected_fields):
+                    raise ValueError(
+                        "length of `default_values` must be a same as the "
+                        "length of `selected_fields`"
+                    )
+                default_values = [
+                    str(default_value) for default_value in default_values
+                ]
         elif isinstance(selected_fields, dict):
             _selected_fields = []
             selected_fields_repeated = []
             output_types = []
-            for field in selected_fields:
+            default_values = []
+            for field, field_attr_dict in selected_fields.items():
                 _selected_fields.append(field)
-                mode = selected_fields[field].get("mode", self.FieldMode.NULLABLE)
+                mode = field_attr_dict.get("mode", self.FieldMode.NULLABLE)
                 if mode == self.FieldMode.REPEATED:
                     selected_fields_repeated.append(True)
                 elif mode == self.FieldMode.NULLABLE or mode == self.FieldMode.REQUIRED:
@@ -164,9 +187,13 @@ class BigQueryClient:
                     raise ValueError(
                         "mode needs be BigQueryClient.FieldMode.NULLABLE, FieldMode.REQUIRED or FieldMode.REPEATED"
                     )
-                output_types.append(
-                    selected_fields[field].get("output_type", dtypes.string)
-                )
+                output_type = field_attr_dict.get("output_type", dtypes.string)
+                output_types.append(output_type)
+                if "default_value" in field_attr_dict:
+                    default_value = str(field_attr_dict["default_value"])
+                else:
+                    default_value = self._get_default_value_for_type(output_type)
+                default_values.append(default_value)
             selected_fields = _selected_fields
         else:
             raise ValueError("`selected_fields` must be a list or dict.")
@@ -181,6 +208,7 @@ class BigQueryClient:
             data_format=data_format.value,
             selected_fields=selected_fields,
             output_types=output_types,
+            default_values=default_values,
             row_restriction=row_restriction,
         )
         return BigQueryReadSession(
@@ -191,6 +219,7 @@ class BigQueryClient:
             selected_fields,
             selected_fields_repeated,
             output_types,
+            default_values,
             row_restriction,
             requested_streams,
             data_format,
@@ -198,6 +227,12 @@ class BigQueryClient:
             schema,
             self._client_resource,
         )
+
+    def _get_default_value_for_type(self, output_type):
+        if output_type == tf.string:
+            return ""
+        else:
+            return str(output_type.as_numpy_dtype())
 
 
 class BigQueryReadSession:
@@ -212,6 +247,7 @@ class BigQueryReadSession:
         selected_fields,
         selected_fields_repeated,
         output_types,
+        default_values,
         row_restriction,
         requested_streams,
         data_format,
@@ -226,6 +262,7 @@ class BigQueryReadSession:
         self._selected_fields = selected_fields
         self._selected_fields_repeated = selected_fields_repeated
         self._output_types = output_types
+        self._default_values = default_values
         self._row_restriction = row_restriction
         self._requested_streams = requested_streams
         self._data_format = data_format
@@ -259,6 +296,7 @@ class BigQueryReadSession:
             self._selected_fields,
             self._selected_fields_repeated,
             self._output_types,
+            self._default_values,
             self._schema,
             self._data_format,
             stream,
@@ -325,6 +363,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         selected_fields,
         selected_fields_repeated,
         output_types,
+        default_values,
         schema,
         data_format,
         stream,
@@ -333,15 +372,18 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
         # selected_fields and corresponding output_types have to be sorted because
         # of b/141251314
         sorted_fields_with_types = sorted(
-            zip(selected_fields, selected_fields_repeated, output_types),
+            zip(
+                selected_fields, selected_fields_repeated, output_types, default_values
+            ),
             key=itemgetter(0),
         )
-        selected_fields, selected_fields_repeated, output_types = list(
+        selected_fields, selected_fields_repeated, output_types, default_values = list(
             zip(*sorted_fields_with_types)
         )
         selected_fields = list(selected_fields)
         selected_fields_repeated = list(selected_fields_repeated)
         output_types = list(output_types)
+        default_values = list(default_values)
 
         tensor_shapes = list(
             [
@@ -366,6 +408,7 @@ class _BigQueryDataset(dataset_ops.DatasetSource):
             client=client_resource,
             selected_fields=selected_fields,
             output_types=output_types,
+            default_values=default_values,
             schema=schema,
             data_format=data_format.value,
             stream=stream,

@@ -16,6 +16,7 @@ limitations under the License.
 #include <memory>
 #include <vector>
 
+#include "absl/types/any.h"
 #include "arrow/buffer.h"
 #include "arrow/ipc/api.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -30,6 +31,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   explicit BigQueryDatasetOp(OpKernelConstruction *ctx) : DatasetOpKernel(ctx) {
     OP_REQUIRES_OK(ctx, ctx->GetAttr("selected_fields", &selected_fields_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("output_types", &output_types_));
+    OP_REQUIRES_OK(ctx, ctx->GetAttr("default_values", &default_values_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("offset", &offset_));
     string data_format_str;
     OP_REQUIRES_OK(ctx, ctx->GetAttr("data_format", &data_format_str));
@@ -54,20 +56,53 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     output_shapes.reserve(num_outputs);
     DataTypeVector output_types_vector;
     output_types_vector.reserve(num_outputs);
+    typed_default_values_.reserve(num_outputs);
     for (uint64 i = 0; i < num_outputs; ++i) {
       output_shapes.push_back({});
       output_types_vector.push_back(output_types_[i]);
+      const DataType &output_type = output_types_[i];
+      const string &default_value = default_values_[i];
+      switch (output_type) {
+        case DT_FLOAT:
+          typed_default_values_.push_back(absl::any(std::stof(default_value)));
+          break;
+        case DT_DOUBLE:
+          typed_default_values_.push_back(absl::any(std::stod(default_value)));
+          break;
+        case DT_INT32:
+          int32_t value_int32_t;
+          strings::safe_strto32(default_value, &value_int32_t);
+          typed_default_values_.push_back(absl::any(value_int32_t));
+          break;
+        case DT_INT64:
+          int64_t value_int64_t;
+          strings::safe_strto64(default_value, &value_int64_t);
+          typed_default_values_.push_back(absl::any(value_int64_t));
+          break;
+        case DT_BOOL:
+          typed_default_values_.push_back(absl::any(default_value == "True"));
+          break;
+        case DT_STRING:
+          typed_default_values_.push_back(absl::any(default_value));
+          break;
+        default:
+          ctx->CtxFailure(
+              errors::InvalidArgument("Unsupported output_type:", output_type));
+          break;
+      }
     }
 
     *output = new Dataset(ctx, client_resource, output_types_vector,
                           std::move(output_shapes), std::move(stream),
                           std::move(schema), selected_fields_, output_types_,
-                          offset_, data_format_);
+                          typed_default_values_, offset_, data_format_);
   }
 
  private:
   std::vector<string> selected_fields_;
   std::vector<DataType> output_types_;
+  std::vector<string> default_values_;
+  std::vector<absl::any> typed_default_values_;
   int64 offset_;
   apiv1beta1::DataFormat data_format_;
 
@@ -79,7 +114,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
                      std::vector<PartialTensorShape> output_shapes,
                      string stream, string schema,
                      std::vector<string> selected_fields,
-                     std::vector<DataType> output_types, int64 offset_,
+                     std::vector<DataType> output_types,
+                     std::vector<absl::any> typed_default_values, int64 offset_,
                      apiv1beta1::DataFormat data_format)
         : DatasetBase(DatasetContext(ctx)),
           client_resource_(client_resource),
@@ -88,6 +124,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
           stream_(stream),
           selected_fields_(selected_fields),
           output_types_(output_types),
+          typed_default_values_(typed_default_values),
           offset_(offset_),
           avro_schema_(absl::make_unique<avro::ValidSchema>()),
           data_format_(data_format) {
@@ -147,6 +184,10 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
     const std::vector<DataType> &output_types() const { return output_types_; }
 
+    const std::vector<absl::any> &typed_default_values() const {
+      return typed_default_values_;
+    }
+
     const std::unique_ptr<avro::ValidSchema> &avro_schema() const {
       return avro_schema_;
     }
@@ -180,6 +221,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     const string stream_;
     const std::vector<string> selected_fields_;
     const std::vector<DataType> output_types_;
+    const std::vector<absl::any> typed_default_values_;
     const std::unique_ptr<avro::ValidSchema> avro_schema_;
     const int64 offset_;
     std::shared_ptr<::arrow::Schema> arrow_schema_;

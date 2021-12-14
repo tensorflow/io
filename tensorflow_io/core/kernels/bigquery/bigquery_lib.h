@@ -26,6 +26,7 @@ limitations under the License.
 #include <Windows.h>
 #undef OPTIONAL
 #endif
+#include "absl/types/any.h"
 #include "api/Compiler.hh"
 #include "api/DataFile.hh"
 #include "api/Decoder.hh"
@@ -127,7 +128,8 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
 
     auto status =
         ReadRecord(ctx, out_tensors, this->dataset()->selected_fields(),
-                   this->dataset()->output_types());
+                   this->dataset()->output_types(),
+                   this->dataset()->typed_default_values());
     current_row_index_++;
     return status;
   }
@@ -181,10 +183,11 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
   }
 
   virtual Status EnsureHasRow(bool *end_of_sequence) = 0;
-  virtual Status ReadRecord(IteratorContext *ctx,
-                            std::vector<Tensor> *out_tensors,
-                            const std::vector<string> &columns,
-                            const std::vector<DataType> &output_types) = 0;
+  virtual Status ReadRecord(
+      IteratorContext *ctx, std::vector<Tensor> *out_tensors,
+      const std::vector<string> &columns,
+      const std::vector<DataType> &output_types,
+      const std::vector<absl::any> &typed_default_values) = 0;
   int current_row_index_ = 0;
   mutex mu_;
   std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
@@ -245,7 +248,8 @@ class BigQueryReaderArrowDatasetIterator
 
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
                     const std::vector<string> &columns,
-                    const std::vector<DataType> &output_types)
+                    const std::vector<DataType> &output_types,
+                    const std::vector<absl::any> &typed_default_values)
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     out_tensors->clear();
     out_tensors->reserve(columns.size());
@@ -253,7 +257,6 @@ class BigQueryReaderArrowDatasetIterator
     if (this->current_row_index_ == 0 && this->column_indices_.empty()) {
       this->column_indices_.resize(columns.size());
       for (size_t i = 0; i < columns.size(); ++i) {
-        DataType output_type = output_types[i];
         auto column_name = this->record_batch_->column_name(i);
         auto it = std::find(columns.begin(), columns.end(), column_name);
         if (it == columns.end()) {
@@ -337,7 +340,8 @@ class BigQueryReaderAvroDatasetIterator
 
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
                     const std::vector<string> &columns,
-                    const std::vector<DataType> &output_types)
+                    const std::vector<DataType> &output_types,
+                    const std::vector<absl::any> &typed_default_values)
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     avro::decode(*this->decoder_, *this->datum_);
     if (this->datum_->type() != avro::AVRO_RECORD) {
@@ -521,22 +525,28 @@ class BigQueryReaderAvroDatasetIterator
         case avro::AVRO_NULL:
           switch (output_types[i]) {
             case DT_BOOL:
-              ((*out_tensors)[i]).scalar<bool>()() = false;
+              ((*out_tensors)[i]).scalar<bool>()() =
+                  absl::any_cast<bool>(typed_default_values[i]);
               break;
             case DT_INT32:
-              ((*out_tensors)[i]).scalar<int32>()() = 0;
+              ((*out_tensors)[i]).scalar<int32>()() =
+                  absl::any_cast<int32_t>(typed_default_values[i]);
               break;
             case DT_INT64:
-              ((*out_tensors)[i]).scalar<int64>()() = 0l;
+              ((*out_tensors)[i]).scalar<int64>()() =
+                  absl::any_cast<int64_t>(typed_default_values[i]);
               break;
             case DT_FLOAT:
-              ((*out_tensors)[i]).scalar<float>()() = 0.0f;
+              ((*out_tensors)[i]).scalar<float>()() =
+                  absl::any_cast<float>(typed_default_values[i]);
               break;
             case DT_DOUBLE:
-              ((*out_tensors)[i]).scalar<double>()() = 0.0;
+              ((*out_tensors)[i]).scalar<double>()() =
+                  absl::any_cast<double>(typed_default_values[i]);
               break;
             case DT_STRING:
-              ((*out_tensors)[i]).scalar<tstring>()() = "";
+              ((*out_tensors)[i]).scalar<tstring>()() =
+                  absl::any_cast<string>(typed_default_values[i]);
               break;
             default:
               return errors::InvalidArgument(
