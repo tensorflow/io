@@ -714,6 +714,63 @@ cc_library(
 )
 
 cc_library(
+    name = "ignite_ops",
+    srcs = [
+        "kernels/ignite/client/ignite_byte_swapper.h",
+        "kernels/ignite/client/ignite_client.h",
+        "kernels/ignite/client/ignite_plain_client.h",
+        "kernels/ignite/client/ignite_ssl_wrapper.cc",
+        "kernels/ignite/client/ignite_ssl_wrapper.h",
+        "kernels/ignite/dataset/ignite_binary_object_parser.cc",
+        "kernels/ignite/dataset/ignite_binary_object_parser.h",
+        "kernels/ignite/dataset/ignite_dataset.cc",
+        "kernels/ignite/dataset/ignite_dataset.h",
+        "kernels/ignite/dataset/ignite_dataset_iterator.cc",
+        "kernels/ignite/dataset/ignite_dataset_iterator.h",
+        "kernels/ignite/dataset/ignite_dataset_ops.cc",
+        "kernels/ignite/ggfs/ggfs.cc",
+        "kernels/ignite/ggfs/ggfs.h",
+        "kernels/ignite/ggfs/ggfs_client.cc",
+        "kernels/ignite/ggfs/ggfs_client.h",
+        "kernels/ignite/ggfs/ggfs_random_access_file.cc",
+        "kernels/ignite/ggfs/ggfs_random_access_file.h",
+        "kernels/ignite/ggfs/ggfs_writable_file.cc",
+        "kernels/ignite/ggfs/ggfs_writable_file.h",
+        "kernels/ignite/igfs/igfs.cc",
+        "kernels/ignite/igfs/igfs.h",
+        "kernels/ignite/igfs/igfs_client.cc",
+        "kernels/ignite/igfs/igfs_client.h",
+        "kernels/ignite/igfs/igfs_extended_tcp_client.cc",
+        "kernels/ignite/igfs/igfs_extended_tcp_client.h",
+        "kernels/ignite/igfs/igfs_messages.cc",
+        "kernels/ignite/igfs/igfs_messages.h",
+        "kernels/ignite/igfs/igfs_random_access_file.cc",
+        "kernels/ignite/igfs/igfs_random_access_file.h",
+        "kernels/ignite/igfs/igfs_writable_file.cc",
+        "kernels/ignite/igfs/igfs_writable_file.h",
+        "ops/ignite_ops.cc",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "kernels/ignite/client/ignite_plain_client_windows.cc",
+        ],
+        "//conditions:default": [
+            "kernels/ignite/client/ignite_plain_client_unix.cc",
+        ],
+    }),
+    copts = tf_io_copts(),
+    defines = [
+        "WIN32_LEAN_AND_MEAN",
+    ],
+    linkstatic = True,
+    deps = [
+        "@boringssl//:ssl",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "pulsar_ops",
     srcs = [
         "kernels/pulsar_kernel.cc",
