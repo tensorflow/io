@@ -1,3 +1,17 @@
+# Release 0.23.1
+
+## Major Features and Bug Fixes
+* A bug preventing correct installation with python 3.10 has been fixed.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.23.0
 
 ## Bug Fixes
