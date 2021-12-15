@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,23 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""tensorflow_io"""
-import os
 
-# tensorflow_io.core.python.ops is implicitly imported (along with file system)
-from tensorflow_io.python.ops.io_dataset import IODataset
-from tensorflow_io.python.ops.io_tensor import IOTensor
-
-from tensorflow_io.python.api import genome
-from tensorflow_io.python.api import image
-from tensorflow_io.python.api import audio
-from tensorflow_io.python.api import version
-from tensorflow_io.python.api import experimental
-
-if os.environ.get("GENERATING_TF_DOCS", ""):
-    # Mark these as public api for /tools/docs/build_docs.py
-    from tensorflow_io import arrow
-    from tensorflow_io import bigquery
-    from tensorflow_io import ignite
-
-del os
+docker rm -f ignite-plain
+docker rm -f ignite-igfs
+docker rm -f gridgain-ce-ml
