@@ -11,7 +11,7 @@
 
 ## Features
 
-* Providing a plugin utilizing the DAOS DFS layer to provide efficient utilization for Intel's filesystem.
+* Providing a plugin utilizing the DAOS DFS layer to provide efficient utilization for Intel's filesystem. The Read-Only Memory Region remains unsupported.
 
 ## Prerequisites
 
