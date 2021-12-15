@@ -1,8 +1,7 @@
-# Release 0.24.0
+# Release 0.23.1
 
 ## Major Features and Bug Fixes
 * A bug preventing correct installation with python 3.10 has been fixed.
-* IgniteDataset has been removed after deprecation in last version.
 
 ## Thanks to our Contributors
 
