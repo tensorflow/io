@@ -155,6 +155,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
@@ -165,7 +166,7 @@ setuptools.setup(
     ],
     keywords="tensorflow io machine learning",
     packages=setuptools.find_packages(where=".", exclude=exclude),
-    python_requires=">=3.6, <3.10",
+    python_requires=">=3.7, <3.11",
     install_requires=install_requires,
     extras_require={
         "tensorflow": [require],
