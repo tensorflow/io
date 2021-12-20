@@ -422,6 +422,7 @@ http_archive(
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
         "https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
+        "http://www.mirrorservice.org/sites/download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz",
     ],
 )
 
