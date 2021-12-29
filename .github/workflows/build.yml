@@ -153,8 +153,10 @@ jobs:
           python -m pip install twine delocate==0.9.1
           delocate-wheel --version
           ls dist/*
+          mkdir -p wheelhouse
           for f in dist/*.whl; do
-            delocate-wheel -w wheelhouse  $f
+            echo "disable delocate due to build breaks: delocate-wheel -w wheelhouse  $f"
+            cp $f wheelhouse
           done
           ls wheelhouse/*
       - uses: actions/upload-artifact@v2
@@ -587,8 +589,10 @@ jobs:
           python -m pip install twine delocate==0.9.1
           delocate-wheel --version
           ls dist/*
+          mkdir -p wheelhouse
           for f in dist/*.whl; do
-            delocate-wheel -w wheelhouse  $f
+            echo "disable delocate due to build breaks: delocate-wheel -w wheelhouse  $f"
+            cp $f wheelhouse
           done
           ls wheelhouse/*
       - uses: actions/upload-artifact@v2
