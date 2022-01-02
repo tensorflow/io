@@ -1,3 +1,38 @@
+# Release 0.23.1
+
+## Major Features and Bug Fixes
+* A bug preventing correct installation with python 3.10 has been fixed.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.23.0
+
+## Bug Fixes
+* TensorFlow is not a hard requirement to tensorflow-io, to allow alternative
+  dependency packages like tensorflow-rocm.
+* Migrate azure blob storage binding to azure storage sdk.
+* Fix chunk size initialization in s3 storage.
+* Enable python 3.10 support.
+* IgniteDataset is deprecated and will be removed in future releases.
+* Adding an option to specify default values for nullable fields in BigQuery
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Jan Bernlöhr, Johnu George, Luca Toscano, Lukas Geiger,
+Mark McDonald, Vansh Sharma, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.22.0
 
 ## Bug Fixes
