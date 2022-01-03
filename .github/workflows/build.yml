@@ -326,7 +326,7 @@ jobs:
         shell: cmd
         run: |
           @echo on
-          set "BAZEL_OPTIMIZATION=--config=cache"
+          set "BAZEL_OPTIMIZATION="
           if "%EVENT_NAME%" == "push" (
             if "%REPO_NAME%" == "tensorflow/io" (
               set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
