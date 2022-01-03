@@ -1071,7 +1071,15 @@ def fixture_video_mp4():
                 ),
             ],
         ),
-        pytest.param("pubsub"),
+        pytest.param(
+            "pubsub",
+            marks=[
+                pytest.mark.skipif(
+                    sys.platform in ("win32", "darwin"),
+                    reason="TODO pubsub face issues on macOS/Windows",
+                ),
+            ],
+        ),
         pytest.param("hdf5"),
         pytest.param("grpc"),
         pytest.param("numpy"),

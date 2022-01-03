@@ -170,7 +170,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
+        python: ['3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -276,7 +276,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
+        python: ['3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -326,7 +326,7 @@ jobs:
         shell: cmd
         run: |
           @echo on
-          set "BAZEL_OPTIMIZATION=--config=cache"
+          set "BAZEL_OPTIMIZATION="
           if "%EVENT_NAME%" == "push" (
             if "%REPO_NAME%" == "tensorflow/io" (
               set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
@@ -391,7 +391,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9']
+        python: ['3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
