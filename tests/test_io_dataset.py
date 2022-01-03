@@ -156,7 +156,7 @@ def fixture_pubsub(request):
     os.environ["PUBSUB_EMULATOR_HOST"] = "localhost:8085"
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path("pubsub-project", "pubsub_topic_" + channel)
-    publisher.create_topic(request={"name": topic_path})
+    publisher.create_topic(name=topic_path)
     # print('Topic created: {}'.format(topic))
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(
