@@ -1,17 +1,19 @@
+"""
+Tests for Tensorflow-IO DFS Plugin
+"""
 import os
 import sys
 import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio
-from tensorflow.python.lib.io import _pywrap_file_io
-from tensorflow.python.util import compat
 
 if sys.platform in ["darwin", "win32"]:
     pytest.skip("Incompatible", allow_module_level=True)
 
 
 class DFSTest(tf.test.TestCase):
+    """Test Class for DFS"""
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
 
@@ -25,11 +27,12 @@ class DFSTest(tf.test.TestCase):
 
     def _path_to(self, path):
         return os.path.join(self.path_root, path)
-    
+
     def _uuid_path_to(self, path):
         return os.path.join(self.path_root_with_uuid, path)
-    
+
     def test_exists(self):
+        """Test Root exists"""
         self.assertTrue(tf.io.gfile.isdir(self.path_root))
 
     def test_create_file(self):
@@ -39,13 +42,13 @@ class DFSTest(tf.test.TestCase):
         if tf.io.gfile.exists(file_name):
             tf.io.gfile.remove(file_name)
         # Create file.
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("")
         # Check that file was created.
         self.assertTrue(tf.io.gfile.exists(file_name))
 
         tf.io.gfile.remove(file_name)
-        
+
     def test_write_read_file(self):
         """Test write/read file."""
         # Setup and check preconditions.
@@ -54,14 +57,14 @@ class DFSTest(tf.test.TestCase):
             tf.io.gfile.remove(file_name)
 
         # Write data.
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("Hello\n, world!")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("Hello\n, world!")
 
         # Read data.
-        with tf.io.gfile.GFile(file_name, "r") as r:
-            file_read = r.read()
+        with tf.io.gfile.GFile(file_name, "r") as read_file:
+            file_read = read_file.read()
             self.assertEqual(file_read, "Hello\n, world!")
-    
+
     def test_write_read_file_uuid(self):
         """Test write/read file."""
         # Setup and check preconditions.
@@ -70,14 +73,14 @@ class DFSTest(tf.test.TestCase):
             tf.io.gfile.remove(file_name)
 
         # Write data.
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("Hello\n, world!")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("Hello\n, world!")
 
         # Read data.
-        with tf.io.gfile.GFile(file_name, "r") as r:
-            file_read = r.read()
+        with tf.io.gfile.GFile(file_name, "r") as read_file:
+            file_read = read_file.read()
             self.assertEqual(file_read, "Hello\n, world!")
-    
+
     def test_wildcard_matching(self):
         """Test glob patterns"""
         dir_name = self._path_to("wildcard")
@@ -85,15 +88,15 @@ class DFSTest(tf.test.TestCase):
         for ext in [".txt", ".md"]:
             for i in range(3):
                 file_path = self._path_to("wildcard/{}{}".format(i, ext))
-                with tf.io.gfile.GFile(file_path, "w") as f:
-                    f.write("")
+                with tf.io.gfile.GFile(file_path, "w") as write_file:
+                    write_file.write("")
 
         txt_files = tf.io.gfile.glob(self._path_to("wildcard/*.txt"))
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
             self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), self._path_to(name))
         tf.io.gfile.rmtree(self._path_to("wildcard"))
-    
+
     def test_delete_recursively(self):
         """Test delete recursively."""
         # Setup and check preconditions.
@@ -101,8 +104,8 @@ class DFSTest(tf.test.TestCase):
         file_name = self._path_to("recursive/1")
 
         tf.io.gfile.mkdir(dir_name)
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("")
 
         self.assertTrue(tf.io.gfile.isdir(dir_name))
         self.assertTrue(tf.io.gfile.exists(file_name))
@@ -113,7 +116,7 @@ class DFSTest(tf.test.TestCase):
         # Check that directory was deleted.
         self.assertFalse(tf.io.gfile.exists(dir_name))
         self.assertFalse(tf.io.gfile.exists(file_name))
-    
+
     def test_is_directory(self):
         """Test is directory."""
         # Setup and check preconditions.
@@ -121,14 +124,14 @@ class DFSTest(tf.test.TestCase):
         dir_name = self._path_to("isdir/1")
         file_name = self._path_to("7.txt")
         tf.io.gfile.mkdir(parent)
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("")
         tf.io.gfile.mkdir(dir_name)
         # Check that directory is a directory.
         self.assertTrue(tf.io.gfile.isdir(dir_name))
         # Check that file is not a directory.
         self.assertFalse(tf.io.gfile.isdir(file_name))
-    
+
     def test_list_directory(self):
         """Test list directory."""
         # Setup and check preconditions.
@@ -137,15 +140,15 @@ class DFSTest(tf.test.TestCase):
         file_names = [self._path_to("listdir/{}".format(i)) for i in range(1, 4)]
 
         for file_name in file_names:
-            with tf.io.gfile.GFile(file_name, "w") as w:
-                w.write("")
+            with tf.io.gfile.GFile(file_name, "w") as write_file:
+                write_file.write("")
         # Get list of files in directory.
         ls_result = tf.io.gfile.listdir(dir_name)
         # Check that list of files is correct.
         self.assertEqual(len(file_names), len(ls_result))
-        for e in ["1", "2", "3"]:
-            self.assertTrue(e in ls_result)
-    
+        for element in ["1", "2", "3"]:
+            self.assertTrue(element in ls_result)
+
     def test_make_dirs(self):
         """Test make dirs."""
         # Setup and check preconditions.
@@ -166,13 +169,13 @@ class DFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         file_name = self._path_to("file_to_be_removed")
         self.assertFalse(tf.io.gfile.exists(file_name))
-        with tf.io.gfile.GFile(file_name, "w") as w:
-            w.write("")
+        with tf.io.gfile.GFile(file_name, "w") as write_file:
+            write_file.write("")
         self.assertTrue(tf.io.gfile.exists(file_name))
         # Remove file.
         tf.io.gfile.remove(file_name)
         # Check that file was removed.
         self.assertFalse(tf.io.gfile.exists(file_name))
-    
+
 if __name__ == "__main__":
     tf.test.main()
