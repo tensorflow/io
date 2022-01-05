@@ -22,7 +22,9 @@ class DFSTest(tf.test.TestCase):
         self.container = os.environ["CONT_LABEL"]
         self.container_uuid = os.environ["CONT_UUID"]
         self.path_root = "dfs://" + os.path.join(self.pool, self.container)
-        self.path_root_with_uuid = "dfs://" + os.path.join(self.pool_uuid, self.container_uuid)
+        self.path_root_with_uuid = "dfs://" + os.path.join(
+            self.pool_uuid, self.container_uuid
+        )
         super().__init__(methodName)
 
     def _path_to(self, path):
@@ -94,7 +96,9 @@ class DFSTest(tf.test.TestCase):
         txt_files = tf.io.gfile.glob(self._path_to("wildcard/*.txt"))
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
-            self.assertEqual(self._path_to("wildcard/{}.txt".format(i)), self._path_to(name))
+            self.assertEqual(
+                self._path_to("wildcard/{}.txt".format(i)), self._path_to(name)
+            )
         tf.io.gfile.rmtree(self._path_to("wildcard"))
 
     def test_delete_recursively(self):
@@ -176,6 +180,7 @@ class DFSTest(tf.test.TestCase):
         tf.io.gfile.remove(file_name)
         # Check that file was removed.
         self.assertFalse(tf.io.gfile.exists(file_name))
+
 
 if __name__ == "__main__":
     tf.test.main()

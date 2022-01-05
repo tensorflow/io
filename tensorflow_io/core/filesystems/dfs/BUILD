@@ -11,15 +11,20 @@ cc_library(
     name = "dfs",
     srcs = [
         "dfs_filesystem.cc",
+        "dfs_utils.cc",
         "dfs_utils.h",
-        "dfs_utils.cc"
     ],
     copts = tf_io_copts(),
+    linkopts = [
+        "-ldaos",
+        "-luuid",
+        "-ldfs",
+        "-lduns",
+    ],
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@daos",
     ],
-    linkopts = ["-ldaos", "-luuid", "-ldfs", "-lduns"],
     alwayslink = 1,
 )
