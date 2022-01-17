@@ -50,7 +50,7 @@ def spectrogram(input, nfft, window, stride, name=None):
 
 
 def inverse_spectrogram(spectrogram, nfft, window, stride,
-                        iterations=10):
+                        iterations=30):
     """
     Generate audio waveform from spectrogram using Griffin-Lim algorithm.
     This is an adaptation of the method introduced in
