@@ -225,7 +225,9 @@ class Iterator : public DatasetIterator<Dataset> {
       filters.push_back(std::move(f));
     }
 
-    return cbt::Filter::InterleaveFromRange(filters.begin(), filters.end());
+    return filters.size() > 1 ? cbt::Filter::InterleaveFromRange(
+                                    filters.begin(), filters.end())
+                              : filters[0];
   }
 
   static std::pair<std::string, std::string> ColumnToFamilyAndQualifier(

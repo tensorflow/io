@@ -57,7 +57,7 @@ class BigtableTable:
         self,
         columns: List[str],
         row_set: bigtable_row_set.RowSet,
-        filter: filters.BigtableFilter = filters.latest(),
+        filter: filters.BigtableFilter = None,
         output_type=tf.string,
     ):
         """Retrieves values from Google Bigtable sorted by RowKeys.
@@ -69,23 +69,24 @@ class BigtableTable:
         Returns:
             A `tf.data.Dataset` returning the cell contents.
         """
+
+        # Python initializes the default arguments once at the start of the
+        # program. If the fork happens after that (for instance when we run
+        # tests using xdist) the program deadlocks and hangs. That is why we
+        # have to make sure, all default arguments are initialized on each
+        # invocation.
+        if filter is None:
+            filter = filters.latest()
         return _BigtableDataset(
-            self._client_resource,
-            self._table_id,
-            columns,
-            row_set,
-            filter,
-            output_type,
+            self._client_resource, self._table_id, columns, row_set, filter, output_type
         )
 
     def parallel_read_rows(
         self,
         columns: List[str],
         num_parallel_calls=tf.data.AUTOTUNE,
-        row_set: bigtable_row_set.RowSet = bigtable_row_set.from_rows_or_ranges(
-            bigtable_row_range.infinite()
-        ),
-        filter: filters.BigtableFilter = filters.latest(),
+        row_set: bigtable_row_set.RowSet = None,
+        filter: filters.BigtableFilter = None,
         output_type=tf.string,
     ):
         """Retrieves values from Google Bigtable in parallel. The ammount of work
@@ -101,11 +102,17 @@ class BigtableTable:
             A `tf.data.Dataset` returning the cell contents.
         """
 
+        # We have to make sure that all the default arguments are initialized
+        # on each invocation. For more info see read_rows method.
+        if row_set is None:
+            row_set = bigtable_row_set.from_rows_or_ranges(
+                bigtable_row_range.infinite()
+            )
+        if filter is None:
+            filter = filters.latest()
+
         samples = core_ops.bigtable_split_row_set_evenly(
-            self._client_resource,
-            row_set._impl,
-            self._table_id,
-            num_parallel_calls,
+            self._client_resource, row_set._impl, self._table_id, num_parallel_calls
         )
 
         def map_func(idx):
