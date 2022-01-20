@@ -39,7 +39,8 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   }
   using DatasetOpKernel::DatasetOpKernel;
 
-  Status InputDatasets(std::vector<const DatasetBase*>* inputs) const override {
+  Status InputDatasets(
+      std::vector<const DatasetBase *> *inputs) const override {
     return Status::OK();
   }
 
