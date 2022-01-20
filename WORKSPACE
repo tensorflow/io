@@ -304,11 +304,11 @@ http_archive(
 http_archive(
     name = "dcmtk",
     build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "a05178665f21896dbb0974106dba1ad144975414abd760b4cf8f5cc979f9beb9",
-    strip_prefix = "dcmtk-3.6.5",
+    sha256 = "fa8e34b1a5de101df8916eb22eaffd8f7d1b2ff001a88f819fbfbde01fe5af7d",
+    strip_prefix = "dcmtk-DCMTK-3.6.5-_20210308",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/dicom.offis.de/download/dcmtk/dcmtk365/dcmtk-3.6.5.tar.gz",
-        "https://dicom.offis.de/download/dcmtk/dcmtk365/dcmtk-3.6.5.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
+        "https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
     ],
 )
 
