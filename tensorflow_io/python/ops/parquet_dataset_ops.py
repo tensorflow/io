@@ -81,7 +81,8 @@ class ParquetIODataset(tf.data.Dataset):
                 indices_start = tf.data.Dataset.range(0, shape[0], step)
                 indices_stop = indices_start.skip(1).concatenate(
                     tf.data.Dataset.from_tensor_slices(
-                        tf.convert_to_tensor([shape[0]], tf.int64))
+                        tf.convert_to_tensor([shape[0]], tf.int64)
+                    )
                 )
                 dataset = tf.data.Dataset.zip((indices_start, indices_stop))
 
