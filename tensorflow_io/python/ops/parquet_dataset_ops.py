@@ -59,9 +59,12 @@ class ParquetIODataset(tf.data.Dataset):
                 return dtype
 
             if columns is not None:
-                shapes = [shape_f(shapes, components, column) for column in columns]
                 if tf.executing_eagerly():
+                    shapes = [shape_f(shapes, components, column) for column in columns]
                     dtypes = [dtype_f(dtypes, components, column) for column in columns]
+                else:
+                    with tf.compat.v1.Session() as sess:
+                        shapes = shapes.eval(session=sess)
                 components = columns
             else:
                 shapes = tf.unstack(shapes)
@@ -77,7 +80,8 @@ class ParquetIODataset(tf.data.Dataset):
                 step = 4096
                 indices_start = tf.data.Dataset.range(0, shape[0], step)
                 indices_stop = indices_start.skip(1).concatenate(
-                    tf.data.Dataset.from_tensor_slices([shape[0]])
+                    tf.data.Dataset.from_tensor_slices(
+                        tf.convert_to_tensor([shape[0]], tf.int64))
                 )
                 dataset = tf.data.Dataset.zip((indices_start, indices_stop))
 
