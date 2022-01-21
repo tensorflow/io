@@ -141,6 +141,41 @@ def test_parquet_dataset_ordered_dict():
     )
 
 
+def test_parquet_dataset_columns_cannot_be_none_in_graph_execution():
+    """Test case to ensure columns cannot be None in graph mode"""
+
+    @tf.function(autograph=False)
+    def read_parquet():
+        return tfio.IODataset.from_parquet(filename, columns=None)
+
+    try:
+        parquet = read_parquet()
+    except ValueError as e:
+        assert "can only be a dictionary in graph execution" in str(e)
+
+
+def test_parquet_dataset_columns_cannot_be_list_in_graph_execution():
+    """Test case to ensure columns cannot be a list in graph mode"""
+
+    @tf.function(autograph=False)
+    def read_parquet():
+        columns = [
+            "boolean_field",
+            "int32_field",
+            "int64_field",
+            "float_field",
+            "double_field",
+            "ba_field",
+            "flba_field",
+        ]
+        return tfio.IODataset.from_parquet(filename, columns)
+
+    try:
+        parquet = read_parquet()
+    except ValueError as e:
+        assert "can only be a dictionary in graph execution" in str(e)
+
+
 def test_parquet_dataset_ordered_dict_in_graph_execution():
     """Test case for order and dict of parquet dataset"""
 

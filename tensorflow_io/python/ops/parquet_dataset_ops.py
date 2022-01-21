@@ -48,8 +48,12 @@ class ParquetIODataset(tf.data.Dataset):
                 return dtype
 
             if not tf.executing_eagerly():
-                assert columns is not None
-                assert isinstance(columns, dict)
+                if columns is None or not isinstance(columns, dict):
+                    raise ValueError(
+                        "The `columns` parameter can only be "
+                        "a dictionary in graph execution, mapping "
+                        "feature names to `tf.TensorSpec`."
+                    )
                 shapes = [shape_f(shapes, components, column) for column in columns]
                 dtypes = [
                     spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
