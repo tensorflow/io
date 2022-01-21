@@ -43,7 +43,7 @@ filename = "file://" + filename
 # Column 2 (int64): Equal to row_index * 1000 * 1000 * 1000 * 1000.
 # Column 4 (float): Equal to row_index * 1.1.
 # Column 5 (double): Equal to row_index * 1.1111111.
-def test_parquet():
+def test_parquet_sample():
     """Test case for read_parquet."""
     parquet = tfio.IOTensor.from_parquet(filename)
     columns = [
