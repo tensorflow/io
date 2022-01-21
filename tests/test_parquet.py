@@ -141,6 +141,36 @@ def test_parquet_dataset_ordered_dict():
     )
 
 
+def test_parquet_dataset_ordered_dict_in_graph_execution():
+    """Test case for order and dict of parquet dataset"""
+
+    @tf.function(autograph=False)
+    def read_parquet():
+        columns = {
+            "boolean_field": tf.TensorSpec(shape=(), dtype=tf.bool),
+            "int32_field": tf.TensorSpec(shape=(), dtype=tf.int32),
+            "int64_field": tf.TensorSpec(shape=(), dtype=tf.int64),
+            "float_field": tf.TensorSpec(shape=(), dtype=tf.float32),
+            "double_field": tf.TensorSpec(shape=(), dtype=tf.float64),
+            "ba_field": tf.TensorSpec(shape=(), dtype=tf.string),
+            "flba_field": tf.TensorSpec(shape=(), dtype=tf.string),
+        }
+        return tfio.IODataset.from_parquet(filename, columns)
+
+    parquet = read_parquet()
+    assert parquet.element_spec == collections.OrderedDict(
+        [
+            ("boolean_field", tf.TensorSpec(shape=(), dtype=tf.bool)),
+            ("int32_field", tf.TensorSpec(shape=(), dtype=tf.int32)),
+            ("int64_field", tf.TensorSpec(shape=(), dtype=tf.int64)),
+            ("float_field", tf.TensorSpec(shape=(), dtype=tf.float32)),
+            ("double_field", tf.TensorSpec(shape=(), dtype=tf.float64)),
+            ("ba_field", tf.TensorSpec(shape=(), dtype=tf.string)),
+            ("flba_field", tf.TensorSpec(shape=(), dtype=tf.string)),
+        ]
+    )
+
+
 def test_parquet_graph():
     """Test case for parquet in graph mode."""
 
