@@ -49,8 +49,7 @@ def spectrogram(input, nfft, window, stride, name=None):
     )
 
 
-def inverse_spectrogram(spectrogram, nfft, window, stride,
-                        iterations=30):
+def inverse_spectrogram(spectrogram, nfft, window, stride, iterations=30):
     """
     Generate audio waveform from spectrogram using Griffin-Lim algorithm.
     This is an adaptation of the method introduced in
@@ -78,9 +77,7 @@ def inverse_spectrogram(spectrogram, nfft, window, stride,
 
     S = tf.expand_dims(spectrogram, 0)
     S_complex = tf.identity(tf.cast(S, dtype=tf.complex64))
-    y = tf.signal.inverse_stft(
-        S_complex, window, stride, nfft
-    )
+    y = tf.signal.inverse_stft(S_complex, window, stride, nfft)
     for i in range(iterations):
         estimated_spectrogram = tf.signal.stft(
             y,
@@ -93,17 +90,12 @@ def inverse_spectrogram(spectrogram, nfft, window, stride,
 
         # 1e-8 is for numerical stability and works rather well
         angles = estimated_spectrogram / tf.cast(
-            tf.maximum(1e-8, tf.abs(estimated_spectrogram)),
-            tf.complex64
+            tf.maximum(1e-8, tf.abs(estimated_spectrogram)), tf.complex64
         )
-        y = tf.signal.inverse_stft(
-            S_complex * angles, window, stride, nfft
-        )
+        y = tf.signal.inverse_stft(S_complex * angles, window, stride, nfft)
     # correct the magnitude of y to match the input spectrogram
     if iterations > 0:
-        amplitude_correction = tf.reduce_max(
-            tf.abs(S)
-        ) / tf.reduce_max(
+        amplitude_correction = tf.reduce_max(tf.abs(S)) / tf.reduce_max(
             tf.abs(estimated_spectrogram)
         )
         y = y * amplitude_correction
