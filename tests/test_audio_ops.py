@@ -818,15 +818,12 @@ def test_audio_ops_in_graph(fixture_lookup, io_data_fixture):
 
 
 @pytest.mark.skipif(
-    sys.platform in ("win32", "darwin"),
-    reason="no lame for darwin or win32",
+    sys.platform in ("win32", "darwin"), reason="no lame for darwin or win32",
 )
 def test_encode_mp3_mono():
     """test_encode_mp3_mono"""
     path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_audio",
-        "mono_10khz.wav",
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
     )
     audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
     assert audio.shape == [5760, 1]
@@ -838,9 +835,7 @@ def test_spectrogram():
     """test_spectrogram"""
 
     path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_audio",
-        "mono_10khz.wav",
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
     )
     audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
     assert audio.shape == [5760, 1]
@@ -888,17 +883,15 @@ def test_spectrogram():
 @pytest.mark.parametrize(
     "audio_file, shape, spectrogram_shape",
     [
-        ('mono_10khz.wav', [5760, 1], [45, 513]),
-        ('gs-16b-2c-44100hz.wav', [698368, 2], [5456, 513])
-    ]
+        ("mono_10khz.wav", [5760, 1], [45, 513]),
+        ("gs-16b-2c-44100hz.wav", [698368, 2], [5456, 513]),
+    ],
 )
 def test_inverse_spectrogram(audio_file, shape, spectrogram_shape):
     """test inverse spectrogram"""
 
     path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_audio",
-        audio_file,
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", audio_file,
     )
 
     audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
@@ -909,13 +902,11 @@ def test_inverse_spectrogram(audio_file, shape, spectrogram_shape):
     nfft = 1024
     window = 1024
     stride = 128
-    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window,
-                                  stride=stride)
+    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=stride)
     assert spec.shape == spectrogram_shape
 
     reconst_audio = tfio.audio.inverse_spectrogram(
-        spec, nfft=nfft, window=window,
-        stride=stride, iterations=30
+        spec, nfft=nfft, window=window, stride=stride, iterations=30
     )
 
     # check that the reconstruction statistics is not
@@ -926,7 +917,7 @@ def test_inverse_spectrogram(audio_file, shape, spectrogram_shape):
         lambda z: tf.sqrt(tf.reduce_max(tf.abs(z))),
         lambda z: tf.sqrt(tf.reduce_max(tf.square(z))),
         lambda z: tf.sqrt(tf.reduce_mean(tf.square(z))),
-        lambda z: tf.sqrt(tf.math.reduce_std(tf.square(z)))
+        lambda z: tf.sqrt(tf.math.reduce_std(tf.square(z))),
     ]
     for check_op in check_ops:
         check_res = check_op(audio) - check_op(reconst_audio)
@@ -937,9 +928,7 @@ def test_fade():
     """test_fade"""
 
     path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "test_audio",
-        "mono_10khz.wav",
+        os.path.dirname(os.path.abspath(__file__)), "test_audio", "mono_10khz.wav",
     )
     audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
     assert audio.shape == [5760, 1]
