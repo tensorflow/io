@@ -39,6 +39,10 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   }
   using DatasetOpKernel::DatasetOpKernel;
 
+  Status InputDatasets(std::vector<const DatasetBase *> *inputs) const {
+    return Status::OK();
+  }
+
   void MakeDataset(OpKernelContext *ctx, DatasetBase **output) override {
     tstring stream;
     OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "stream", &stream));
