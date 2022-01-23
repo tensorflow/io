@@ -31,22 +31,11 @@ class ParquetIODataset(tf.data.Dataset):
                 filename, shared=filename, container="ParquetIODataset"
             )
 
-            if not tf.executing_eagerly():
-                assert columns is not None
-                assert isinstance(columns, dict)
-                dtypes = [
-                    spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
-                    for column, spec in columns.items()
-                ]
-                columns = list(columns.keys())
-            else:
-                columns = (
-                    None
-                    if columns is None
-                    else (
-                        list(columns.keys()) if isinstance(columns, dict) else columns
-                    )
-                )
+            def component_f(components, column):
+                component = tf.boolean_mask(
+                    components, tf.math.equal(components, column)
+                )[0]
+                return component
 
             def shape_f(shapes, components, column):
                 shape = tf.boolean_mask(shapes, tf.math.equal(components, column))[0]
@@ -58,15 +47,32 @@ class ParquetIODataset(tf.data.Dataset):
                 dtype = tf.as_dtype(dtype.numpy())
                 return dtype
 
-            if columns is not None:
+            if not tf.executing_eagerly():
+                if columns is None or not isinstance(columns, dict):
+                    raise ValueError(
+                        "The `columns` parameter can only be "
+                        "a dictionary in graph execution, mapping "
+                        "feature names to `tf.TensorSpec`."
+                    )
                 shapes = [shape_f(shapes, components, column) for column in columns]
-                if tf.executing_eagerly():
-                    dtypes = [dtype_f(dtypes, components, column) for column in columns]
-                components = columns
+                dtypes = [
+                    spec if isinstance(spec, tf.dtypes.DType) else spec.dtype
+                    for column, spec in columns.items()
+                ]
+                components = [component_f(components, column) for column in columns]
+                column_names = list(columns.keys())
+            elif columns is not None:
+                shapes = [shape_f(shapes, components, column) for column in columns]
+                dtypes = [dtype_f(dtypes, components, column) for column in columns]
+                components = (
+                    list(columns.keys()) if isinstance(columns, dict) else columns
+                )
+                column_names = components
             else:
                 shapes = tf.unstack(shapes)
                 dtypes = [tf.as_dtype(dtype.numpy()) for dtype in tf.unstack(dtypes)]
                 components = [component.numpy() for component in tf.unstack(components)]
+                column_names = components
 
             self._filename = filename
             self._components = components
@@ -77,7 +83,9 @@ class ParquetIODataset(tf.data.Dataset):
                 step = 4096
                 indices_start = tf.data.Dataset.range(0, shape[0], step)
                 indices_stop = indices_start.skip(1).concatenate(
-                    tf.data.Dataset.from_tensor_slices([shape[0]])
+                    tf.data.Dataset.from_tensor_slices(
+                        tf.convert_to_tensor([shape[0]], tf.int64)
+                    )
                 )
                 dataset = tf.data.Dataset.zip((indices_start, indices_stop))
 
@@ -103,8 +111,16 @@ class ParquetIODataset(tf.data.Dataset):
                 for component, shape, dtype in entries
             ]
             self._dataset = tf.data.Dataset.zip(
-                collections.OrderedDict(list(zip(components, datasets)))
+                collections.OrderedDict(list(zip(column_names, datasets)))
             )
+
+            # Override the default `element_spec` with given specs if available.
+            if isinstance(columns, dict) and all(
+                isinstance(val, tf.TensorSpec) for val in columns.values()
+            ):
+                self._element_spec = collections.OrderedDict(columns)
+            else:
+                self._element_spec = None
 
             super().__init__(
                 self._dataset._variant_tensor
@@ -115,4 +131,6 @@ class ParquetIODataset(tf.data.Dataset):
 
     @property
     def element_spec(self):
+        if self._element_spec:
+            return self._element_spec
         return self._dataset.element_spec
