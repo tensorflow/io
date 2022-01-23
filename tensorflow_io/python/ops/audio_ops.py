@@ -73,7 +73,7 @@ def inverse_spectrogram(spectrogram, nfft, window, stride, iterations=30):
     Returns:
       An 1-D waveform audio tensor.
     """
-    # TODO: Support multiple spectrograms
+    # TODO: Support multiple inv spectrograms
 
     S = tf.expand_dims(spectrogram, 0)
     S_complex = tf.identity(tf.cast(S, dtype=tf.complex64))
