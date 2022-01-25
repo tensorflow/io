@@ -102,10 +102,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "b43866fe6b7b29f0a66d3a4c7c7addd5ec8f1229a78e6ef83b2ed3d5f3b631f1",
-    strip_prefix = "tensorflow-2.8.0-rc0",
+    sha256 = "b82f7659754c93ddcabe24390368a6ffd84510e01136be1290e16760e3668176",
+    strip_prefix = "tensorflow-2.8.0-rc1",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.8.0-rc0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.8.0-rc1.tar.gz",
     ],
 )
 
