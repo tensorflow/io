@@ -59,14 +59,26 @@ http_archive(
 )
 
 # Note com_google_googleapis is placed earlier as we need to adjust switched_rules_by_language option
+# Note we have to change one word in the field_behavior.proto so it compiles on WINDOWS
+# for more infor please refer to https://github.com/protocolbuffers/protobuf/issues/7076
+# Because of a bug in protocol buffers (protocolbuffers/protobuf#7076), new versions of this project
+# fail to compile on Windows. The problem hinges on OPTIONAL being defined as an empty string under
+# Windows. This makes the preprocessor remove every mention of OPTIONAL from the code, which causes
+# compilation failures. This temporary workaround renames the name of the protobuf value OPTIONAL to
+# OPIONAL. This should be safe as it does not affect the generated protobufs.
 http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
-    sha256 = "7ebab01b06c555f4b6514453dc3e1667f810ef91d1d4d2d3aa29bb9fcb40a900",
-    strip_prefix = "googleapis-541b1ded4abadcc38e8178680b0677f65594ea6f",
+    patch_cmds = [
+        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/api/field_behavior.proto""",
+        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1beta2/pubsub.proto""",
+        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1/pubsub.proto""",
+    ],
+    sha256 = "a53e15405f81d5a32594d7f6486e649131fadda5431cf28377dff4ae54d45d16",
+    strip_prefix = "googleapis-d4d09eb3aec152015f35717102f9b423988b94f7",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
-        "https://github.com/googleapis/googleapis/archive/541b1ded4abadcc38e8178680b0677f65594ea6f.zip",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
+        "https://github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
     ],
 )
 
