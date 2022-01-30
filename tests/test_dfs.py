@@ -89,7 +89,7 @@ class DFSTest(tf.test.TestCase):
         tf.io.gfile.mkdir(dir_name)
         for ext in [".txt", ".md"]:
             for i in range(3):
-                file_path = self._path_to("wildcard/{}{}".format(i, ext))
+                file_path = self._path_to(f"wildcard/{i}{ext}")
                 with tf.io.gfile.GFile(file_path, "w") as write_file:
                     write_file.write("")
 
@@ -97,7 +97,7 @@ class DFSTest(tf.test.TestCase):
         self.assertEqual(3, len(txt_files))
         for i, name in enumerate(txt_files):
             self.assertEqual(
-                self._path_to("wildcard/{}.txt".format(i)), self._path_to(name)
+                self._path_to(f"wildcard/{i}.txt"), self._path_to(name)
             )
         tf.io.gfile.rmtree(self._path_to("wildcard"))
 
@@ -141,7 +141,7 @@ class DFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         dir_name = self._path_to("listdir")
         tf.io.gfile.mkdir(dir_name)
-        file_names = [self._path_to("listdir/{}".format(i)) for i in range(1, 4)]
+        file_names = [self._path_to(f"listdir/{i}") for i in range(1, 4)]
 
         for file_name in file_names:
             with tf.io.gfile.GFile(file_name, "w") as write_file:
