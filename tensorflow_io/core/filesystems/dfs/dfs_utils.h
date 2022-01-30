@@ -24,15 +24,6 @@
 
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
-#include "tensorflow/core/platform/cpu_info.h"
-#include "tensorflow/core/platform/env.h"
-#include "tensorflow/core/platform/file_system.h"
-#include "tensorflow/core/platform/mutex.h"
-#include "tensorflow/core/platform/path.h"
-#include "tensorflow/core/platform/platform.h"
-#include "tensorflow/core/platform/status.h"
-#include "tensorflow/core/platform/str_util.h"
-#include "tensorflow/core/platform/threadpool.h"
 #include "tensorflow_io/core/filesystems/filesystem_plugins.h"
 
 /** object struct that is instantiated for a DFS open object */
@@ -208,79 +199,5 @@ class DFS {
 };
 
 void CopyEntries(char*** entries, std::vector<std::string>& results);
-
-bool Match(const std::string& filename, const std::string& pattern);
-
-namespace tensorflow {
-namespace internal {
-
-const int kNumThreads = port::NumSchedulableCPUs();
-// A globbing pattern can only start with these characters:
-static const char kGlobbingChars[] = "*?[\\";
-
-// Make sure that the first entry in `dirs` during glob expansion does not
-// contain a glob pattern. This is to prevent a corner-case bug where
-// `<pattern>` would be treated differently than `./<pattern>`.
-static std::string PatchPattern(const std::string& pattern) {
-  const std::string fixed_prefix =
-      pattern.substr(0, pattern.find_first_of(kGlobbingChars));
-
-  // Patching is needed when there is no directory part in `prefix`
-  if (io::Dirname(fixed_prefix).empty()) {
-    return io::JoinPath(".", pattern);
-  }
-
-  // No patching needed
-  return pattern;
-}
-
-static inline bool IsGlobbingPattern(const std::string& pattern) {
-  return (pattern.find_first_of(kGlobbingChars) != std::string::npos);
-}
-
-static inline int GetFirstGlobbingEntry(const std::vector<std::string>& dirs) {
-  int i = 0;
-  for (const auto& d : dirs) {
-    if (IsGlobbingPattern(d)) {
-      break;
-    }
-    i++;
-  }
-  return i;
-}
-
-static std::vector<std::string> AllDirectoryPrefixes(const std::string& d) {
-  std::vector<std::string> dirs;
-  const std::string patched = PatchPattern(d);
-  StringPiece dir(patched);
-
-  // If the pattern ends with a `/` (or `\\` on Windows), we need to strip it
-  // otherwise we would have one additional matching step and the result set
-  // would be empty.
-  bool is_directory = d[d.size() - 1] == '/';
-  if (is_directory) {
-    dir = io::Dirname(dir);
-  }
-
-  while (!dir.empty()) {
-    dirs.emplace_back(dir);
-    StringPiece new_dir(io::Dirname(dir));
-    // io::Dirname("/") returns "/" so we need to break the loop.
-    // On Windows, io::Dirname("C:\\") would return "C:\\", so we check for
-    // identity of the result instead of checking for dir[0] == `/`.
-    if (dir == new_dir) break;
-    dir = new_dir;
-  }
-
-  // Order the array from parent to ancestor (reverse order).
-  std::reverse(dirs.begin(), dirs.end());
-
-  return dirs;
-}
-
-void ForEach(int first, int last, const std::function<void(int)>& f);
-
-}  // namespace internal
-}  // namespace tensorflow
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
