@@ -18,7 +18,7 @@ jobs:
       - name: Download Artifact
         run: |
           set -x -e
-          COMMIT=$(git rev-list -n 1 HEAD) #${RELEASE}
+          COMMIT=$(git rev-list -n 1 master) #${RELEASE}
           WORKFLOW=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
