@@ -8,6 +8,8 @@ on:
         description: "Release (e.g., v0.22.0)"
         required: true
 
+permissions: read-all
+
 jobs:
   artifact-release:
     runs-on: ubuntu-latest
