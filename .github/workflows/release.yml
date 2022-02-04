@@ -18,7 +18,7 @@ jobs:
       - name: Download Artifact
         run: |
           set -x -e
-          git rev-list -n 1 ${RELEASE}
+          git rev-list -n 1 HEAD #${RELEASE}
           curl \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/tensorflow/io/actions/artifacts | jq .
