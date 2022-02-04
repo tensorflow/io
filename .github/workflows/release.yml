@@ -11,7 +11,7 @@ on:
 permissions: read-all
 
 jobs:
-  artifact-release:
+  artifact-link:
     runs-on: ubuntu-latest
     env:
       RELEASE: ${{ github.event.inputs.release }}
@@ -38,9 +38,30 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/runs/${RUN}/artifacts \
               | jq -r '.artifacts | map(select(.name=="tensorflow-io-release"))[0].archive_download_url')
-          curl -vv \
+          echo "::set-output link=archive::${ARCHIVE}"
+        id: artifact
+    outputs:
+      link: ${{ steps.artifact.outputs.link }}
+
+  artifact-release:
+    runs-on: ubuntu-latest
+    needs:
+      - artifact-link
+    runs-on: ubuntu-latest
+    env:
+      RELEASE: ${{ github.event.inputs.release }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download Artifact
+        run: |
+          set -x -e
+          curl ${{ needs.artifact-link.outputs.link }}
+          curl -s -vv \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-            -o archive.zip -L ${ARCHIVE}
+            -o archive.zip \
+            ${{ needs.artifact-link.outputs.link }}
           ls -la
           unzip archive.zip
           ls -la
