@@ -1,0 +1,23 @@
+name: Artifact Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release (e.g., v0.22.0)"
+        required: true
+
+jobs:
+  artifact-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE: ${{ github.event.inputs.release }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download Artifact
+        run: |
+          set -x -e
+          git rev-list -n 1 ${RELEASE}
+          curl \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/tensorflow/io/actions/artifacts | jq .
