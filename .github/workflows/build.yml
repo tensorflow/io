@@ -182,6 +182,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: |
           set -x -e
+          python -m pip install pip==21.3.1
           python -m pip install -U wheel setuptools
           python --version
       - name: Setup ${{ matrix.python }} macOS
