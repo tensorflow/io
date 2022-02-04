@@ -21,14 +21,17 @@ jobs:
           COMMIT=$(git rev-list -n 1 HEAD) #${RELEASE}
           WORKFLOW=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' \
+            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/workflows \
-              | jq -r '.workflows[] | select(.name=="GitHub CI") | .id[0]')
+              | jq -r '.workflows | map(select(.name=="GitHub CI"))[0]')
           RUN=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' 
+            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/workflows/${WORKFLOW}/runs \
               | jq -r ".workflow_runs[] | select(.head_sha==\"${COMMIT}\") | .id[0]")
           ARCHIVE=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' 
+            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/runs/${RUN}/artifacts \
               | jq -r '.artifacts[] | select(.name=="tensorflow-io-release") | .archive_download_url[0]')
           curl -o archive.zip -L ${ARCHIVE}
