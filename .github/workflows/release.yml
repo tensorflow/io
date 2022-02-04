@@ -65,6 +65,10 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Download Artifact2
+        run: |
+          set -x -e
+          require=$(grep 'require = ' tensorflow_io/python/ops/version_ops.py | sed -E 's@^.*require = "@@g' | sed -E 's@".*$@@g')
       - name: Download Artifact
         run: |
           set -x -e
@@ -73,6 +77,7 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             -o archive.zip \
             ${{ needs.info.outputs.archive }}
+          head archive.zip
           ls -la
           unzip archive.zip
           ls -la
@@ -95,6 +100,7 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             -o archive.zip \
             ${{ needs.info.outputs.archive }}
+          head archive.zip
           ls -la
           unzip archive.zip
           ls -la
