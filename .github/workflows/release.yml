@@ -40,6 +40,14 @@ jobs:
               | jq -r '.artifacts | map(select(.name=="tensorflow-io-release"))[0].archive_download_url')
           echo "::set-output name=commit::${COMMIT}"
           echo "::set-output name=archive::${ARCHIVE}"
+          curl -s -vv \
+            -H 'Authorization: Bearer ${{ secrets.ACTIONS_ARTIFACT_TOKEN }}' \
+            -o archive.zip \
+            ${ARCHIVE}
+          head archive.zip
+          ls -la
+          unzip archive.zip
+          ls -la
         id: artifact
     outputs:
       commit: ${{ steps.artifact.outputs.commit }}
