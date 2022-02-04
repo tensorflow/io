@@ -74,7 +74,7 @@ jobs:
           set -x -e
           curl ${{ needs.info.outputs.archive }}
           curl -s -vv \
-            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            -H 'Authorization: Bearer ${{ secrets.ACTIONS_ARTIFACT_TOKEN }}' \
             -o archive.zip \
             ${{ needs.info.outputs.archive }}
           head archive.zip
@@ -97,7 +97,7 @@ jobs:
           set -x -e
           curl ${{ needs.info.outputs.archive }}
           curl -s -vv \
-            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            -H 'Authorization: Bearer ${{ secrets.ACTIONS_ARTIFACT_TOKEN }}' \
             -o archive.zip \
             ${{ needs.info.outputs.archive }}
           head archive.zip
