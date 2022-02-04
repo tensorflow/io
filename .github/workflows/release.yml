@@ -38,11 +38,12 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/runs/${RUN}/artifacts \
               | jq -r '.artifacts | map(select(.name=="tensorflow-io-release"))[0].archive_download_url')
-          echo "::set-output link=archive::${ARCHIVE}"
+          echo "::set-output name=commit::${COMMIT}"
+          echo "::set-output name=archive::${ARCHIVE}"
         id: artifact
     outputs:
       commit: ${{ steps.artifact.outputs.commit }}
-      link: ${{ steps.artifact.outputs.link }}
+      archive: ${{ steps.artifact.outputs.archive }}
 
   test:
     runs-on: ubuntu-latest
@@ -52,7 +53,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: ${{ steps.artifact.outputs.commit }}
+          ref: ${{ needs.info.outputs.commit }}
       - name: Download Artifact
         run: |
           set -x -e
@@ -60,7 +61,29 @@ jobs:
           curl -s -vv \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             -o archive.zip \
-            ${{ needs.artifact-link.outputs.link }}
+            ${{ needs.info.outputs.archive }}
+          ls -la
+          unzip archive.zip
+          ls -la
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - test
+      - info
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.info.outputs.commit }}
+      - name: Download Artifact
+        run: |
+          set -x -e
+          curl ${{ needs.info.outputs.link }}
+          curl -s -vv \
+            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            -o archive.zip \
+            ${{ needs.info.outputs.archive }}
           ls -la
           unzip archive.zip
           ls -la
