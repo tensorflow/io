@@ -33,6 +33,10 @@ jobs:
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/workflows/${WORKFLOW}/runs \
               | jq -r ".workflow_runs | map(select(.head_sha==\"${COMMIT}\"))[0].id")
+          curl -vv -s \
+            -H 'Accept: application/vnd.github.v3+json' \
+            -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+            https://api.github.com/repos/tensorflow/io/actions/runs/${RUN}/artifacts
           ARCHIVE=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
