@@ -23,12 +23,12 @@ jobs:
             -H 'Accept: application/vnd.github.v3+json' \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/workflows \
-              | jq -r '.workflows | map(select(.name=="GitHub CI"))[0]')
+              | jq -r '.workflows | map(select(.name=="GitHub CI"))[0].id')
           RUN=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' 
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/workflows/${WORKFLOW}/runs \
-              | jq -r ".workflow_runs[] | select(.head_sha==\"${COMMIT}\") | .id[0]")
+              | jq -r ".workflow_runs | map(select(.head_sha==\"${COMMIT}\"))[0].id")
           ARCHIVE=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' 
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
