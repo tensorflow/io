@@ -35,7 +35,7 @@ jobs:
             -H 'Accept: application/vnd.github.v3+json' \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             https://api.github.com/repos/tensorflow/io/actions/runs/${RUN}/artifacts \
-              | jq -r '.artifacts[] | select(.name=="tensorflow-io-release") | .archive_download_url[0]')
+              | jq -r '.artifacts | map(select(.name=="tensorflow-io-release"))[0].archive_download_url')
           curl -o archive.zip -L ${ARCHIVE}
           ls -la
           unzip archive.zip
