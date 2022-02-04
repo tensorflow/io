@@ -11,7 +11,7 @@ on:
 permissions: read-all
 
 jobs:
-  artifact-link:
+  info:
     runs-on: ubuntu-latest
     env:
       RELEASE: ${{ github.event.inputs.release }}
@@ -41,23 +41,22 @@ jobs:
           echo "::set-output link=archive::${ARCHIVE}"
         id: artifact
     outputs:
+      commit: ${{ steps.artifact.outputs.commit }}
       link: ${{ steps.artifact.outputs.link }}
 
-  artifact-release:
+  test:
     runs-on: ubuntu-latest
     needs:
-      - artifact-link
-    runs-on: ubuntu-latest
-    env:
-      RELEASE: ${{ github.event.inputs.release }}
+      - info
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+          ref: ${{ steps.artifact.outputs.commit }}
       - name: Download Artifact
         run: |
           set -x -e
-          curl ${{ needs.artifact-link.outputs.link }}
+          curl ${{ needs.info.outputs.link }}
           curl -s -vv \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
             -o archive.zip \
