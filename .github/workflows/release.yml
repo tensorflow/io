@@ -15,10 +15,12 @@ jobs:
       RELEASE: ${{ github.event.inputs.release }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Download Artifact
         run: |
           set -x -e
-          COMMIT=$(git rev-list -n 1 master) #${RELEASE}
+          COMMIT=c1f14ed0db0e95511a1c4ff5a58a485e93fb241e #$(git rev-list -n 1 ${RELEASE})
           WORKFLOW=$(curl -s \
             -H 'Accept: application/vnd.github.v3+json' \
             -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
