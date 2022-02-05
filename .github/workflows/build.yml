@@ -22,10 +22,6 @@ jobs:
         run: |
           set -x -e
           git log --pretty -1
-          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
-          BAZEL_VERSION=$(cat .bazelversion)
-          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo python3 -m pip install -U numpy
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade black clang
       - name: Run Lint Script for Docs
@@ -324,17 +320,13 @@ jobs:
       - name: Bazel on Windows
         env:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
-        shell: cmd
+        shell: bash
         run: |
-          @echo on
-          set "BAZEL_OPTIMIZATION="
-          if "%EVENT_NAME%" == "push" (
-            if "%REPO_NAME%" == "tensorflow/io" (
-              set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-            )
-          )
-          set /P BAZEL_VERSION=< .bazelversion
-          curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
+          set -x -e
+          export BAZEL_OPTIMIZATION="--config=cache"
+          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
+            export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           bazel version
           python3 --version
           python3 -m pip install wheel setuptools
@@ -342,8 +334,7 @@ jobs:
           python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s %BAZEL_OPTIMIZATION% //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
-          if %errorlevel% neq 0 exit /b %errorlevel%
+          bazel build -s ${BAZEL_OPTIMIZATION} //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           mkdir -p build
           cp -r bazel-bin/tensorflow_io build
           cp -r bazel-bin/tensorflow_io_gcs_filesystem build
