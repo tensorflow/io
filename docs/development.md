@@ -131,9 +131,9 @@ sudo apt-get -y -qq update
 sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
 
 # Install Bazelisk (manage bazel version implicitly)
-$ curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
-$ sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
-$ sudo chmod +x /usr/local/bin/bazel
+curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
+sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 
 # Upgrade pip
 sudo python3 -m pip install -U pip
@@ -187,9 +187,9 @@ sudo yum install -y centos-release-scl
 sudo yum install -y devtoolset-9 git rh-python36 make
 
 # Install Bazelisk (manage bazel version implicitly)
-$ curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
-$ sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
-$ sudo chmod +x /usr/local/bin/bazel
+curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
+sudo mv bazelisk-linux-amd64 /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 
 # Upgrade pip
 scl enable rh-python36 devtoolset-9 \
