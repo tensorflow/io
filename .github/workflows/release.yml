@@ -1,0 +1,28 @@
+name: Release Bot
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    name: README.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - run: git tag
+      - run: python3 tools/release/note_create.py
+      - run: git diff
+      - run: python3 tools/release/note_update.py
+      - run: git diff
+      - uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: Update RELEASE.md [bot]
+          branch: bot-RELEASE.md
+          delete-branch: true
+          title: 'Update RELEASE.md [bot]'
+          body: |
+            README.md: auto-updated by .github/workflows/release.yml
