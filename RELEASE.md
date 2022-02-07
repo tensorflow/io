@@ -11,8 +11,8 @@
 
 This release contains contributions from many people:
 
-Aleksey Vlasenko, Andrew Goodbody, Douglas Coimbra de Andrade, Marek Dopiera,
-Pierre Dulac, Vignesh Kothapalli, Yong Tang
+Andrew Goodbody, Douglas Coimbra de Andrade, Marek Dopiera, Pierre Dulac,
+Vignesh Kothapalli, Yong Tang
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
