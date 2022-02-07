@@ -16,7 +16,7 @@ curr = tuple(map(int, (entries[0][0].split("."))))
 if curr[2] == 0:
     last = tuple([curr[0], curr[1] - 1, 0])
 else:
-    last = tuple([curr[0], curr[1], 0])
+    last = tuple([curr[0], curr[1], curr[2] - 1])
 
 print(
     "[Authors {} => {}]:\n".format(".".join(map(str, last)), ".".join(map(str, curr)))
