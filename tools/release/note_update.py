@@ -10,10 +10,13 @@ for index, line in enumerate(note.split("\n")):
     if re.match(r"^# Release [\d\.]+", line):
         entries.append((line[len("# Release ") :].rstrip(), index))
 
-# Find current version and last version
+# Find current version
 curr = tuple(map(int, (entries[0][0].split("."))))
-# Find last minor version
-last = tuple([curr[0], curr[1] - 1, curr[2]])
+# Find last version, padded to patch version of 0
+if curr[2] == 0:
+    last = tuple([curr[0], curr[1] - 1, 0])
+else:
+    last = tuple([curr[0], curr[1], 0])
 
 print(
     "[Authors {} => {}]:\n".format(".".join(map(str, last)), ".".join(map(str, curr)))
