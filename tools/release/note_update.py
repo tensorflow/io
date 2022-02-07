@@ -1,3 +1,17 @@
+# Copyright 2022 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
 import re
 import pathlib
 import subprocess
@@ -13,10 +27,7 @@ for index, line in enumerate(note.split("\n")):
 # Find current version
 curr = tuple(map(int, (entries[0][0].split("."))))
 # Find last version, padded to patch version of 0
-if curr[2] == 0:
-    last = tuple([curr[0], curr[1] - 1, 0])
-else:
-    last = tuple([curr[0], curr[1], curr[2] - 1])
+last = tuple(map(int, (entries[1][0].split("."))))
 
 print(
     "[Authors {} => {}]:\n".format(".".join(map(str, last)), ".".join(map(str, curr)))
