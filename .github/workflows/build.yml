@@ -509,6 +509,47 @@ jobs:
           name: tensorflow-io-release
           path: wheelhouse
 
+  release-candidate:
+    name: Release Candidate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [lint, release]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v1
+        with:
+          name: tensorflow-io-release
+          path: wheelhouse
+      - run: |
+          set -x -e
+          sha256sum wheelhouse/*.whl | sort -u > wheelhouse.sha256
+          git rev-parse --verify HEAD > wheelhouse.commit
+          grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g' > wheelhouse.version
+          cat wheelhouse.sha256
+          cat wheelhouse.commit
+          cat wheelhouse.version
+          echo "::set-output name=version::$(cat wheelhouse.version)"
+        id: info
+      - run: |-
+          cat <<EOF > Dockerfile
+          FROM gcr.io/distroless/base-debian11
+          COPY wheelhouse /wheelhouse
+          COPY wheelhouse.sha256 /wheelhouse.sha256
+          COPY wheelhouse.commit /wheelhouse.commit
+          COPY wheelhouse.version /wheelhouse.version
+          EOF
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/login-action@v1
+        with:
+          username: tfsigio
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          load: true
+          tags: tfsigio/candidate:${{ steps.info.outputs.version }}
+
   docker-release:
     name: Docker Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
