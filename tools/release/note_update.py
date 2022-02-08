@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import re
+import sys
 import pathlib
 import subprocess
 import textwrap
@@ -24,8 +25,23 @@ for index, line in enumerate(note.split("\n")):
     if re.match(r"^# Release [\d\.]+", line):
         entries.append((line[len("# Release ") :].rstrip(), index))
 
+tag = (
+    subprocess.run(
+        ["git", "tag", "-l", f"v{entries[0][0]}"],
+        capture_output=True,
+        check=True,
+    )
+    .stdout.decode("utf-8")
+    .strip()
+)
+if tag == f"v{entries[0][0]}":
+    print("[The latest version in RELEASE.md {} has already been released. No Update]")
+    sys.exit(0)
+
 # Find current version
 curr = tuple(map(int, (entries[0][0].split("."))))
+
+
 # Find last version, padded to patch version of 0
 last = tuple(map(int, (entries[1][0].split("."))))
 
@@ -35,7 +51,7 @@ print(
 logs = subprocess.run(
     ["git", "shortlog", "v{}..HEAD".format(".".join(map(str, last))), "-s"],
     capture_output=True,
-    check=False,
+    check=True,
 ).stdout.decode("utf-8")
 
 authors = [e.split("\t")[1].strip() for e in logs.rstrip().split("\n")]
