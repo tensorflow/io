@@ -72,8 +72,8 @@ jobs:
             echo "${COMMIT} != $(cat wheelhouse.commit)"
             exit 1
           fi
-          if [[ "${VERSION}" != "$(cat wheelhouse.version)" ]]; then
-            echo "${VERSION} != $(cat wheelhouse.version)"
+          if [[ "${VERSION}" != "v$(cat wheelhouse.version)" ]]; then
+            echo "${VERSION} != v$(cat wheelhouse.version)"
             exit 1
           fi
 
