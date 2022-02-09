@@ -61,7 +61,7 @@ jobs:
       - run: |
           set -x -e
           docker pull tfsigio/candidate:${{ steps.info.outputs.version }}
-          docker create -it storage tfsigio/candidate:${{ steps.info.outputs.version }} bash
+          docker create -it --name storage tfsigio/candidate:${{ steps.info.outputs.version }} bash
           docker cp storage:/wheelhouse .
           docker cp storage:/wheelhouse.sha256 .
           docker cp storage:/wheelhouse.commit .
