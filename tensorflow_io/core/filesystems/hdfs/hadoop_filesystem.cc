@@ -313,10 +313,11 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
     // concurrent readers.
     absl::MutexLock l(&hdfs_file->mu);
     auto handle = hdfs_file->handle;
-    // Max read length is INT_MAX-2, for hdfsPread function take a parameter
-    // of int32. -2 offset can avoid JVM OutOfMemoryError.
+    // Max read length is INT_MAX-2.
+    // Actual max array size in java depends on JVM's implentation
+    // So we choose INT_MAX-8, which is the maximum "safe" number.
     size_t read_n =
-        (std::min)(n, static_cast<size_t>(std::numeric_limits<int>::max() - 2));
+        (std::min)(n, static_cast<size_t>(std::numeric_limits<int>::max() - 8));
     int64_t r = libhdfs->hdfsPread(fs, handle, static_cast<tOffset>(offset),
                                    dst, static_cast<tSize>(read_n));
     if (r > 0) {
@@ -389,9 +390,11 @@ void Append(const TF_WritableFile* file, const char* buffer, size_t n,
 
   size_t cur_pos = 0, write_len = 0;
   bool retry = false;
-  // max() - 2 can avoid OutOfMemoryError in JVM .
+
+  // Actual max array size in java depends on JVM's implentation
+  // So we choose INT_MAX-8, which is the maximum "safe" number.
   static const size_t max_len_once =
-      static_cast<size_t>(std::numeric_limits<tSize>::max() - 2);
+      static_cast<size_t>(std::numeric_limits<tSize>::max() - 8);
   while (cur_pos < n) {
     write_len = (std::min)(n - cur_pos, max_len_once);
     tSize w = libhdfs->hdfsWrite(fs, handle, buffer + cur_pos,
