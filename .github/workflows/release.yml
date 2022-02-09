@@ -9,6 +9,9 @@ on:
       version:
         description: "Version (e.g., v0.24.0)"
         required: true
+      commit:
+        description: "Commit (e.g., )"
+        required: true
 
 jobs:
   note:
@@ -47,11 +50,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - run: |
           set -x -e
+          #COMMIT=$(git rev-parse --quiet --verify ${{ github.event.inputs.commit }})
           #if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
           #  echo "${{ github.event.inputs.version }} already released"
           #  exit 1
           #fi
           #VERSION=${{ github.event.inputs.version }}
+
+          COMMIT=92b44e180674a8af0e12e405530f7343e3e693e4
           VERSION=v0.24.0
           docker pull tfsigio/candidate:${VERSION:1}
           docker create -it --name storage tfsigio/candidate:${VERSION:1} bash
@@ -62,16 +68,15 @@ jobs:
 
           sha256sum wheelhouse/*.whl | sort -u | diff wheelhouse.sha256 -
 
-          COMMIT=$(cat wheelhouse.commit)
-          if [[ "${COMMIT}" != "$(git tag -l ${COMMIT})" ]]; then
-            echo "${COMMIT} does not exist"
+          if [[ "${COMMIT}" != "$(cat wheelhouse.commit)" ]]; then
+            echo "${COMMIT} != $(cat wheelhouse.commit)"
             exit 1
           fi
-
           if [[ "${VERSION}" != "$(cat wheelhouse.version)" ]]; then
             echo "${VERSION} != $(cat wheelhouse.version)"
             exit 1
           fi
+
           python3 tools/release/note_take.py ${VERSION}
 
           echo "::set-output name=commit::${COMMIT}"
