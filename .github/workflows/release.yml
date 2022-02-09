@@ -41,28 +41,47 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: |
-          set -x -e
-          #if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
-          #  echo "${{ github.event.inputs.version }} already released"
-          #  exit 1
-          #fi
-          VERSION=$(grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g')
-          #if [[ "v${VERSION}" != "${{ github.event.inputs.version }}" ]]; then
-          #  echo "v${VERSION} != ${{ github.event.inputs.version }}"
-          #  exit 1
-          #fi
-          echo "::set-output name=version::${VERSION}"
-        id: info
       - uses: docker/login-action@v1
         with:
           username: tfsigio
           password: ${{ secrets.DOCKER_PASSWORD }}
       - run: |
           set -x -e
-          docker pull tfsigio/candidate:${{ steps.info.outputs.version }}
-          docker create -it --name storage tfsigio/candidate:${{ steps.info.outputs.version }} bash
+          #if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
+          #  echo "${{ github.event.inputs.version }} already released"
+          #  exit 1
+          #fi
+          #VERSION=${{ github.event.inputs.version }}
+          VERSION=v0.24.0
+          docker pull tfsigio/candidate:${VERSION:1}
+          docker create -it --name storage tfsigio/candidate:${VERSION:1} bash
           docker cp storage:/wheelhouse .
           docker cp storage:/wheelhouse.sha256 .
           docker cp storage:/wheelhouse.commit .
           docker cp storage:/wheelhouse.version .
+
+          sha256sum wheelhouse | sort -u | diff wheelhouse.sha256 -
+
+          COMMIT=$(cat /wheelhouse.commit)
+          if [[ "${COMMIT}" != "$(git tag -l ${COMMIT})" ]]; then
+            echo "${COMMIT} does not exist"
+            exit 1
+          fi
+
+          if [[ "${VERSION}" != "$(cat /wheelhouse.version)" ]]; then
+            echo "${VERSION} != $(cat /wheelhouse.version)"
+            exit 1
+          fi
+          python3 tools/release/note_take.py ${VERSION}
+
+          echo "::set-output name=commit::${COMMIT}"
+          echo "::set-output name=version::${VERSION}"
+        id: info
+      - run: |
+          set -x -e
+          echo ${{ steps.info.outputs.commit }}
+          echo ${{ steps.info.outputs.version }}
+          cat CURRENT.md
+
+
+          
