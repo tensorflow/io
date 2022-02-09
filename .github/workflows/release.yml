@@ -60,7 +60,7 @@ jobs:
           docker cp storage:/wheelhouse.commit .
           docker cp storage:/wheelhouse.version .
 
-          sha256sum wheelhouse | sort -u | diff wheelhouse.sha256 -
+          sha256sum wheelhouse/*.whl | sort -u | diff wheelhouse.sha256 -
 
           COMMIT=$(cat /wheelhouse.commit)
           if [[ "${COMMIT}" != "$(git tag -l ${COMMIT})" ]]; then
