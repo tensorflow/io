@@ -62,7 +62,7 @@ jobs:
 
           sha256sum wheelhouse/*.whl | sort -u | diff wheelhouse.sha256 -
 
-          COMMIT=$(cat /wheelhouse.commit)
+          COMMIT=$(cat wheelhouse.commit)
           if [[ "${COMMIT}" != "$(git tag -l ${COMMIT})" ]]; then
             echo "${COMMIT} does not exist"
             exit 1
