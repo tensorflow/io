@@ -2,8 +2,8 @@ name: Release Bot
 
 on:
   push:
-    branches:
-      - master
+  #  branches:
+  #    - master
   workflow_dispatch:
     inputs:
       version:
