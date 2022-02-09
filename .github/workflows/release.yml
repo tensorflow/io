@@ -47,11 +47,6 @@ jobs:
             echo "${{ github.event.inputs.version }} already released"
             exit 1
           fi
-          VERSION=$(grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g')
-          if [[ "v${VERSION}" != "${{ github.event.inputs.version }}" ]]; then
-            echo "v${VERSION} != ${{ github.event.inputs.version }}"
-            exit 1
-          fi
           echo "::set-output name=version::${VERSION}"
         id: info
       - uses: docker/login-action@v1
