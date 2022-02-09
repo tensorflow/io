@@ -43,9 +43,6 @@ jobs:
           fetch-depth: 0
       - run: |
           set -x -e
-          if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
-            echo "${{ github.event.inputs.version }} already released"
-            exit 1
-          fi
+          echo "${{ github.event.inputs.version }} already released"
           echo "::set-output name=version::${VERSION}"
         id: info
