@@ -14,7 +14,7 @@ jobs:
   note:
     name: README.md
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: false
     steps:
       - uses: actions/checkout@v2
         with:
