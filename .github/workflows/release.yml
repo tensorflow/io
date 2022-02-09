@@ -36,7 +36,7 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: github.event_name != 'push'
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v2
         with:
@@ -44,5 +44,14 @@ jobs:
       - run: |
           set -x -e
           echo "${{ github.event.inputs.version }} already released"
+          VERSION=$(grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g')
           echo "::set-output name=version::${VERSION}"
         id: info
+      - uses: docker/login-action@v1
+        with:
+          username: tfsigio
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: |
+          set -x -e
+          docker pull tfsigio/candidate:${{ steps.info.outputs.version }}
+          docker images
