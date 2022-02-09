@@ -4,11 +4,17 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g., v0.24.0)"
+        required: true
 
 jobs:
-  release:
+  note:
     name: README.md
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v2
         with:
@@ -26,3 +32,32 @@ jobs:
           title: 'Update RELEASE.md [bot]'
           body: |
             README.md: auto-updated by .github/workflows/release.yml
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - run: |
+          set -x -e
+          if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
+            echo "${{ github.event.inputs.version }} already released"
+            exit 1
+          fi
+          VERSION=$(grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g')
+          if [[ "v${VERSION}" != "${{ github.event.inputs.version }}" ]]; then
+            echo "v${VERSION} != ${{ github.event.inputs.version }}"
+            exit 1
+          fi
+          echo "::set-output name=version::${VERSION}"
+        id: info
+      - uses: docker/login-action@v1
+        with:
+          username: tfsigio
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run:: |
+          docker pull tfsigio/candidate:${{ steps.info.outputs.version }}
+          docker images
