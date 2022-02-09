@@ -547,7 +547,6 @@ jobs:
         with:
           context: .
           push: true
-          load: true
           tags: tfsigio/candidate:${{ steps.info.outputs.version }}
 
   docker-release:
