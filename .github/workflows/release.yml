@@ -49,10 +49,3 @@ jobs:
           fi
           echo "::set-output name=version::${VERSION}"
         id: info
-      - uses: docker/login-action@v1
-        with:
-          username: tfsigio
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - run:: |
-          docker pull tfsigio/candidate:${{ steps.info.outputs.version }}
-          docker images
