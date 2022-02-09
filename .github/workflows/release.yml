@@ -41,8 +41,3 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: |
-          set -x -e
-          echo "${{ github.event.inputs.version }} already released"
-          echo "::set-output name=version::${VERSION}"
-        id: info
