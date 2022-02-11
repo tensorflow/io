@@ -146,6 +146,10 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
             assert np.all(audio_tensor_value == audio_value_value)
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
@@ -176,6 +180,10 @@ def test_audio_io_dataset(audio_data, io_dataset_func):
     assert i == 5760
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 @pytest.mark.parametrize(
     ("io_tensor_func", "num_parallel_calls"),
     [
@@ -220,6 +228,10 @@ def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func, num_parallel_c
     assert item == 2
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
