@@ -22,7 +22,7 @@ TAR_FILE="apache-pulsar-${VERSION}-bin.tar.gz"
 
 echo "Downloading pulsar ${VERSION}"
 if [[ ! -f ${TAR_FILE} ]]; then
-  curl --retry 10 -sSOL "https://archive.apache.org/dist/pulsar/pulsar-${VERSION}/${TAR_FILE}"
+  curl --retry 10 --max-time 120 -sSOL "https://archive.apache.org/dist/pulsar/pulsar-${VERSION}/${TAR_FILE}"
 fi
 
 tar -xzf ${TAR_FILE}
