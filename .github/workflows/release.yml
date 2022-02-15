@@ -65,8 +65,13 @@ jobs:
           tag_name: ${{ steps.info.outputs.tag }}
           target_commitish: ${{ steps.info.outputs.commit }}
           draft: true
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
       #- uses: pypa/gh-action-pypi-publish@master
       #  with:
       #    user: __token__
-      #    password: ${{ secrets.github_tensorflow_io_nightly }}
+      #    password: ${{ secrets.PYPI_TOKEN }}
           
