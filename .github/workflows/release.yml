@@ -1,28 +1,77 @@
-name: Release Bot
+name: Release
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g., v0.24.0)"
+        required: true
+      commit:
+        description: "Commit (e.g., 92b44e1)"
+        required: true
 
 jobs:
   release:
-    name: README.md
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: git tag
-      - run: python3 tools/release/note_create.py
-      - run: git diff
-      - run: python3 tools/release/note_update.py
-      - run: git diff
-      - uses: peter-evans/create-pull-request@v3
+      - run: |
+          set -x -e
+          COMMIT=$(git rev-parse --quiet --verify ${{ github.event.inputs.commit }})
+          if [[ "$(git tag -l ${{ github.event.inputs.version }})" == "${{ github.event.inputs.version }}" ]]; then
+            echo "${{ github.event.inputs.version }} already released"
+            exit 1
+          fi
+          VERSION=${{ github.event.inputs.version }}
+
+          docker pull tfsigio/candidate:${VERSION:1}
+          docker create -it --name storage tfsigio/candidate:${VERSION:1} bash
+          docker cp storage:/wheelhouse .
+          docker cp storage:/wheelhouse.sha256 .
+          docker cp storage:/wheelhouse.commit .
+          docker cp storage:/wheelhouse.version .
+
+          sha256sum wheelhouse/*.whl | sort -u | diff wheelhouse.sha256 -
+          mv wheelhouse dist
+
+          if [[ "${COMMIT}" != "$(cat wheelhouse.commit)" ]]; then
+            echo "${COMMIT} != $(cat wheelhouse.commit)"
+            exit 1
+          fi
+          if [[ "${VERSION}" != "v$(cat wheelhouse.version)" ]]; then
+            echo "${VERSION} != v$(cat wheelhouse.version)"
+            exit 1
+          fi
+
+          python3 tools/release/note_take.py ${VERSION}
+
+          echo "::set-output name=tag::${VERSION}"
+          echo "::set-output name=name::TensorFlow I/O ${VERSION:1}"
+          echo "::set-output name=commit::${COMMIT}"
+        id: info
+      - run: |
+          set -x -e
+          echo ${{ steps.info.outputs.tag }}
+          echo ${{ steps.info.outputs.name }}
+          echo ${{ steps.info.outputs.commit }}
+          cat CURRENT.md
+      - uses: softprops/action-gh-release@v1
         with:
-          commit-message: Update RELEASE.md [bot]
-          branch: bot-RELEASE.md
-          delete-branch: true
-          title: 'Update RELEASE.md [bot]'
-          body: |
-            README.md: auto-updated by .github/workflows/release.yml
+          body_path: CURRENT.md
+          name: ${{ steps.info.outputs.name }}
+          tag_name: ${{ steps.info.outputs.tag }}
+          target_commitish: ${{ steps.info.outputs.commit }}
+          draft: true
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+      #- uses: pypa/gh-action-pypi-publish@master
+      #  with:
+      #    user: __token__
+      #    password: ${{ secrets.PYPI_TOKEN }}
+          
