@@ -217,7 +217,8 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
     return;
   }
   std::string pool, cont, file;
-  daos->Setup(path, pool, cont, file, status);
+  rc = daos->Setup(path, pool, cont, file, status);
+  if(rc) return;
   dfs_obj_t* obj;
   rc = daos->dfsPathExists(file, &obj);
   if (rc) {

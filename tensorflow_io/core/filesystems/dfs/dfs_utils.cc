@@ -96,7 +96,7 @@ int DFS::Setup(const std::string& path, std::string& pool_string,
   Connect(pool_string, cont_string, allow_cont_creation, status);
   if (TF_GetCode(status) != TF_OK) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
-    return rc;
+    return -1;
   }
   return Mount();
 }
@@ -351,13 +351,13 @@ int DFS::ConnectPool(std::string pool_string, TF_Status* status) {
   }
 
   pool_info_t* po_inf = (pool_info_t*)malloc(sizeof(po_inf));
-  po_inf->containers = new std::map<std::string, daos_handle_t>();
-  pools[pool_string] = po_inf;
   rc = daos_pool_connect(pool_string.c_str(), NULL, DAOS_PC_RW, &(po_inf->poh),
                          NULL, NULL);
   if (rc == 0) {
     pool.first = pool_string;
     pool.second = po_inf->poh;
+    po_inf->containers = new std::map<std::string, daos_handle_t>();
+    pools[pool_string] = po_inf;
   }
   return rc;
 }
