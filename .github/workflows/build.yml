@@ -305,7 +305,7 @@ jobs:
 
   windows-bazel:
     name: Bazel Windows
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
       - uses: egor-tensin/vs-shell@v2
