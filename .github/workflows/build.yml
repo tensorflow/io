@@ -15,7 +15,7 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Run Lint Script for Bazel/Pyupgrade/Black/Clang
@@ -43,7 +43,7 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macOS-11
     steps:
       - uses: actions/checkout@v2
       - name: GCP
@@ -67,7 +67,7 @@ jobs:
 
   linux:
     name: Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
       env:
@@ -96,7 +96,7 @@ jobs:
 
   macos-bazel:
     name: Bazel macOS
-    runs-on: macos-latest
+    runs-on: macOS-11
     steps:
       - uses: actions/checkout@v2
       - name: GCP
@@ -122,7 +122,7 @@ jobs:
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
     needs: macos-bazel
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']
@@ -163,7 +163,7 @@ jobs:
   macos-test:
     name: Test ${{ matrix.python }} macOS
     needs: macos-wheel
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.8', '3.9']
@@ -203,7 +203,7 @@ jobs:
 
   linux-bazel:
     name: Bazel Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010
       env:
@@ -236,7 +236,7 @@ jobs:
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
     needs: linux-bazel
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']
@@ -305,7 +305,7 @@ jobs:
 
   windows-bazel:
     name: Bazel Windows
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
       - uses: egor-tensin/vs-shell@v2
@@ -574,7 +574,7 @@ jobs:
   build-number:
     name: Build Number
     if: github.event_name == 'push'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - run: |
           set -e -x
@@ -589,7 +589,7 @@ jobs:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
     needs: [build-number, macos-wheel]
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']
