@@ -11,48 +11,75 @@ typedef struct DFSRandomAccessFile {
   std::string dfs_path;
   dfs_t* daos_fs;
   DAOS_FILE daos_file;
-  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
+  std::vector<ReadBuffer> buffers;
+  daos_size_t file_size;
+  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, daos_handle_t eqh,
+                      dfs_obj_t* obj, size_t num_of_buffers)
       : dfs_path(std::move(dfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
+    dfs_get_size(daos_fs, obj, &file_size);
+    for(size_t i = 0; i < num_of_buffers; i++) {
+      buffers.push_back(ReadBuffer(eqh, BUFF_SIZE));
+    }
   }
 } DFSRandomAccessFile;
 
 void Cleanup(TF_RandomAccessFile* file) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
+  for(auto& read_buf: dfs_file->buffers) {
+    read_buf.AbortEvent();
+  }
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
   delete dfs_file;
 }
 
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
-             char* buffer, TF_Status* status) {
-  d_sg_list_t rsgl;
-  d_iov_t iov;
-  int rc;
+             char* ret, TF_Status* status) {
+  int rc = 0;
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
+  int counter = 0;
+  for(auto& read_buf: dfs_file->buffers) {
+    if(read_buf.CacheHit(offset, n)){
+      rc = read_buf.CopyData(ret, offset, n);
+      if (rc) {
+        TF_SetStatus(status, TF_INTERNAL, "");
+        return 0;
+      }
 
-  d_iov_set(&iov, (void*)buffer, n);
-  rsgl.sg_nr = 1;
-  rsgl.sg_iovs = &iov;
+      if (offset + n > dfs_file->file_size) {
+        TF_SetStatus(status, TF_OUT_OF_RANGE, "");
+        return dfs_file->file_size - offset;
+      }
 
-  daos_size_t read_size;
-  dfs_file->daos_file.offset = offset;
-
-  rc = dfs_read(dfs_file->daos_fs, dfs_file->daos_file.file, &rsgl,
-                dfs_file->daos_file.offset, &read_size, NULL);
-  if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "");
-    return read_size;
+      TF_SetStatus(status, TF_OK, "");
+      return n;
+    }
+    counter++;
   }
 
-  if (read_size != n) {
+  dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file, offset);
+  rc = dfs_file->buffers[0].CopyData(ret, offset, n);
+  size_t curr_offset = offset + BUFF_SIZE;
+  for(size_t i = 1; i < dfs_file->buffers.size(); i++) {
+    if(curr_offset > dfs_file->file_size) break;
+    dfs_file->buffers[i].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file, curr_offset);
+    curr_offset += BUFF_SIZE;
+  }
+
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL, "");
+    return 0;
+  }
+
+  if (offset + n > dfs_file->file_size) {
     TF_SetStatus(status, TF_OUT_OF_RANGE, "");
-    return read_size;
+    return dfs_file->file_size - offset;
   }
 
   TF_SetStatus(status, TF_OK, "");
-  return read_size;
+  return n;
 }
 
 }  // namespace tf_random_access_file
@@ -187,8 +214,10 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
-  file->plugin_file =
-      new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj);
+  auto random_access_file =  new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, daos->mEventQueueHandle, 
+                                                                            obj, NUM_OF_BUFFERS);
+  random_access_file->buffers[0].ReadSync(daos->daos_fs, random_access_file->daos_file.file, 0);
+  file->plugin_file = random_access_file;
   TF_SetStatus(status, TF_OK, "");
 }
 

@@ -9,6 +9,8 @@
 #define CONT_START 43
 #define PATH_START 80
 #define STACK 24
+#define NUM_OF_BUFFERS 2
+#define BUFF_SIZE 10*1024*1024
 
 #include <daos.h>
 #include <daos_fs.h>
@@ -136,13 +138,14 @@ int ParseDFSPath(const std::string& path, std::string& pool_string,
 
 int ParseUUID(const std::string& str, uuid_t uuid);
 
-class DFS {
+class DFS { 
  public:
   bool connected;
   dfs_t* daos_fs;
   id_handle_t pool;
   id_handle_t container;
   std::map<std::string, pool_info_t*> pools;
+  daos_handle_t mEventQueueHandle{};
 
   DFS();
 
@@ -199,5 +202,45 @@ class DFS {
 };
 
 void CopyEntries(char*** entries, std::vector<std::string>& results);
+
+
+class ReadBuffer {
+  public:
+  ReadBuffer(daos_handle_t eqh, size_t size);
+
+  ReadBuffer(ReadBuffer&&);
+
+  ~ReadBuffer();
+
+  bool
+  CacheHit(size_t pos, size_t off);
+
+  int
+  WaitEvent();
+
+  int
+  AbortEvent();
+
+  int
+  ReadAsync(dfs_t* dfs, dfs_obj_t* file, size_t off);
+
+  int
+  ReadSync(dfs_t* dfs, dfs_obj_t* file, size_t off);
+
+  int
+  CopyData(char* ret, size_t off, size_t n);
+
+  int
+  CopyFromCache(char* ret, size_t off, size_t n, daos_size_t file_size, TF_Status* status);
+
+  private:
+    char* buffer;
+    size_t buffer_offset;
+    size_t buffer_size;
+    daos_handle_t eqh;
+    daos_event_t* event;
+    bool  valid;
+    daos_size_t read_size;
+};
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
