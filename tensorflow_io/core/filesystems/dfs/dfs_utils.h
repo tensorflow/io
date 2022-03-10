@@ -206,14 +206,14 @@ void CopyEntries(char*** entries, std::vector<std::string>& results);
 
 class ReadBuffer {
   public:
-  ReadBuffer(daos_handle_t eqh, size_t size);
+  ReadBuffer(size_t id, daos_handle_t eqh, size_t size);
 
   ReadBuffer(ReadBuffer&&);
 
   ~ReadBuffer();
 
   bool
-  CacheHit(size_t pos, size_t off);
+  CacheHit(const size_t pos, const size_t off);
 
   int
   WaitEvent();
@@ -222,18 +222,19 @@ class ReadBuffer {
   AbortEvent();
 
   int
-  ReadAsync(dfs_t* dfs, dfs_obj_t* file, size_t off);
+  ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 
   int
-  ReadSync(dfs_t* dfs, dfs_obj_t* file, size_t off);
+  ReadSync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 
   int
-  CopyData(char* ret, size_t off, size_t n);
+  CopyData(char* ret, const size_t offset, const size_t n);
 
   int
-  CopyFromCache(char* ret, size_t off, size_t n, daos_size_t file_size, TF_Status* status);
+  CopyFromCache(char* ret, const size_t off, const size_t n, const daos_size_t file_size, TF_Status* status);
 
   private:
+    size_t id;
     char* buffer;
     size_t buffer_offset;
     size_t buffer_size;
