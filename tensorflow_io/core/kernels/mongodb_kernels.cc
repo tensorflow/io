@@ -39,9 +39,6 @@ class MongoDBReadableResource : public ResourceBase {
     //   Required to initialize libmongoc's internals
     mongoc_init();
 
-    // Log the uri
-    LOG(INFO) << "Connecting to: " << uri;
-
     // Create a MongoDB URI object from the given string
 
     uri_obj_ = mongoc_uri_new_with_error(uri.c_str(), &error_);
@@ -128,7 +125,7 @@ class MongoDBReadableResource : public ResourceBase {
       return errors::FailedPrecondition(
           "Failed to ping the mongo cluster due to: ", error_.message);
     }
-    LOG(ERROR) << "Ping Successful";
+    LOG(INFO) << "MongoDB connection ping successful";
 
     return Status::OK();
   }
@@ -222,9 +219,6 @@ class MongoDBWritableResource : public ResourceBase {
     //   Required to initialize libmongoc's internals
     mongoc_init();
 
-    // Log the uri
-    LOG(INFO) << "Connecting to: " << uri;
-
     // Create a MongoDB URI object from the given string
 
     uri_obj_ = mongoc_uri_new_with_error(uri.c_str(), &error_);
@@ -308,7 +302,7 @@ class MongoDBWritableResource : public ResourceBase {
       return errors::FailedPrecondition(
           "Failed to ping the mongo cluster due to: ", error_.message);
     }
-    LOG(INFO) << "Ping Successful";
+    LOG(INFO) << "MongoDB connection ping successful";
 
     return Status::OK();
   }
