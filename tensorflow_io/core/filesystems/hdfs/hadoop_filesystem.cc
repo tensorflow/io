@@ -241,7 +241,7 @@ class LibHDFS {
       if (TF_GetCode(status) == TF_OK) {
         return;
       } else {
-        TF_Log(TF_FATAL, "HadoopFileSystem load error: %s", TF_Message(status));
+        TF_Log(TF_ERROR, "HadoopFileSystem load error: %s", TF_Message(status));
       }
     }
 
