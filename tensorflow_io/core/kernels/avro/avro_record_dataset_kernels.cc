@@ -56,6 +56,10 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     VLOG(7) << "Buffer size " << buffer_size / 1024 << "kBy";
   }
 
+  Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
+    return Status::OK();
+  }
+
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
       const string& prefix) const override {
     return absl::make_unique<Iterator>(Iterator::Params{

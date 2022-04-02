@@ -34,7 +34,7 @@ fi
 curl -sSOL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-236.0.0-darwin-x86_64.tar.gz
 tar -xzf google-cloud-sdk-236.0.0-darwin-x86_64.tar.gz
 google-cloud-sdk/install.sh -q
-google-cloud-sdk/bin/gcloud -q components install beta
+google-cloud-sdk/bin/gcloud -q components install beta bigtable cbt
 google-cloud-sdk/bin/gcloud -q components install pubsub-emulator
 google-cloud-sdk/bin/gcloud -q components update beta
 google-cloud-sdk/bin/gcloud -q beta emulators pubsub start &

@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""version_ops"""
+"""tensorflow_io.bigtable"""
 
-version = "0.24.0"
-require = "tensorflow>=2.8.0,<2.9.0"
+from tensorflow_io.python.ops.bigtable.bigtable_dataset_ops import BigtableClient
+from tensorflow_io.python.ops.bigtable.bigtable_dataset_ops import BigtableTable
+import tensorflow_io.python.ops.bigtable.bigtable_version_filters as filters
+import tensorflow_io.python.ops.bigtable.bigtable_row_set as row_set
+import tensorflow_io.python.ops.bigtable.bigtable_row_range as row_range

@@ -16,6 +16,7 @@
 
 from tensorflow_io.python.ops.audio_ops import (  # pylint: disable=unused-import
     spectrogram,
+    inverse_spectrogram,
     melscale,
     dbscale,
     remix,

@@ -1,3 +1,22 @@
+# Release 0.24.0
+
+## Major Features and Bug Fixes
+* Added Bigtable dataset support.
+* Added tfio.audio.inverse_spectrogram.
+* Fixed decode_json empty lists segmentation issue.
+* Fix parquet unknown shape issue in graph execution.
+* Removed IgniteDataset.
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aleksey Vlasenko, Andrew Goodbody, Douglas Coimbra de Andrade, Marek Dopiera,
+Pierre Dulac, Vignesh Kothapalli, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.23.1
 
 ## Major Features and Bug Fixes

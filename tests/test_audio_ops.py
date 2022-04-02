@@ -885,6 +885,52 @@ def test_spectrogram():
     spec = tfio.audio.time_mask(spec, param=10)
 
 
+@pytest.mark.parametrize(
+    "audio_file, shape, spectrogram_shape",
+    [
+        ("mono_10khz.wav", [5760, 1], [45, 513]),
+        ("gs-16b-2c-44100hz.wav", [698368, 2], [5456, 513]),
+    ],
+)
+def test_inverse_spectrogram(audio_file, shape, spectrogram_shape):
+    """test inverse spectrogram"""
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "test_audio",
+        audio_file,
+    )
+
+    audio = tfio.audio.decode_wav(tf.io.read_file(path), dtype=tf.int16)
+    assert audio.shape == shape
+    # pick only one channel
+    audio = tf.cast(audio[:, 0], tf.float32) / 32768.0
+
+    nfft = 1024
+    window = 1024
+    stride = 128
+    spec = tfio.audio.spectrogram(audio, nfft=nfft, window=window, stride=stride)
+    assert spec.shape == spectrogram_shape
+
+    reconst_audio = tfio.audio.inverse_spectrogram(
+        spec, nfft=nfft, window=window, stride=stride, iterations=30
+    )
+
+    # check that the reconstruction statistics is not
+    # too different from the original
+    check_ops = [
+        tf.reduce_mean,
+        tf.math.reduce_std,
+        lambda z: tf.sqrt(tf.reduce_max(tf.abs(z))),
+        lambda z: tf.sqrt(tf.reduce_max(tf.square(z))),
+        lambda z: tf.sqrt(tf.reduce_mean(tf.square(z))),
+        lambda z: tf.sqrt(tf.math.reduce_std(tf.square(z))),
+    ]
+    for check_op in check_ops:
+        check_res = check_op(audio) - check_op(reconst_audio)
+        assert tf.abs(check_res) < 0.1
+
+
 def test_fade():
     """test_fade"""
 

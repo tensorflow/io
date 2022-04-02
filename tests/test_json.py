@@ -213,5 +213,16 @@ def test_json_keras():
     model.fit(dataset, epochs=5)
 
 
+def test_json_empty():
+    """Test case for GitHub issue 1605."""
+    spec = {
+        "user_id": tf.TensorSpec(shape=(), dtype=tf.string),
+        "actions": tf.TensorSpec(shape=(None,), dtype=tf.string),
+    }
+    tfio.experimental.serialization.decode_json(
+        b'{"user_id":"0000asdasdasdasdas dasdasdasdasdasd","actions":[]}\n', spec
+    )
+
+
 if __name__ == "__main__":
     test.main()

@@ -24,11 +24,14 @@ $PYTHON --version
 
 export TENSORFLOW_INSTALL="$($PYTHON setup.py --install-require)"
 
-export BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
-export BAZEL_VERSION=$(cat .bazelversion)
 export PYTHON_BIN_PATH=`which $PYTHON`
-curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
+
+if [[ $(uname) == "Linux" ]]; then
+  curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
+  mv bazelisk-linux-amd64 /usr/local/bin/bazel
+  chmod +x /usr/local/bin/bazel
+fi
+
 bazel version
 
 $PYTHON -m pip --version
