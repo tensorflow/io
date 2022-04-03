@@ -9,8 +9,8 @@
 #define CONT_START 43
 #define PATH_START 80
 #define STACK 24
-#define NUM_OF_BUFFERS 2
-#define BUFF_SIZE 10*1024*1024
+#define NUM_OF_BUFFERS 256
+#define BUFF_SIZE 4*1024*1024
 
 #include <daos.h>
 #include <daos_fs.h>
@@ -130,7 +130,9 @@ typedef std::pair<std::string, daos_handle_t> id_handle_t;
 // enum used while wildcard matching
 enum Children_Status { NON_MATCHING, MATCHING_DIR, OK };
 
-std::string FormatStorageSize(uint64_t size);
+std::string GetStorageString(uint64_t size);
+
+size_t GetStorageSize(std::string size);
 
 // parse DFS path in the format of dfs://<pool_uuid>/<cont_uuid>/<filename>
 int ParseDFSPath(const std::string& path, std::string& pool_string,
@@ -240,6 +242,8 @@ class ReadBuffer {
     size_t buffer_size;
     daos_handle_t eqh;
     daos_event_t* event;
+    d_sg_list_t rsgl;
+    d_iov_t iov;
     bool  valid;
     daos_size_t read_size;
 };

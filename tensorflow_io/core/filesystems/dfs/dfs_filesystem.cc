@@ -14,13 +14,31 @@ typedef struct DFSRandomAccessFile {
   std::vector<ReadBuffer> buffers;
   daos_size_t file_size;
   DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, daos_handle_t eqh,
-                      dfs_obj_t* obj, size_t num_of_buffers)
+                      dfs_obj_t* obj)
       : dfs_path(std::move(dfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
     dfs_get_size(daos_fs, obj, &file_size);
+    size_t num_of_buffers;
+    size_t buff_size;
+
+    if(char* env_num_of_buffers = std::getenv("TF_IO_DAOS_NUM_OF_BUFFERS")) {
+      num_of_buffers = atoi(env_num_of_buffers);
+    }
+    else {
+      num_of_buffers = NUM_OF_BUFFERS;
+    }
+
+    if(char* env_buff_size = std::getenv("TF_IO_DAOS_BUFFER_SIZE")) {
+      buff_size = GetStorageSize(env_buff_size);
+    }
+    else {
+      buff_size = BUFF_SIZE;
+    }
+    std::cout << buff_size / 1024 / 1024 << std::endl;
+    std::cout << num_of_buffers << std::endl;
     for(size_t i = 0; i < num_of_buffers; i++) {
-      buffers.push_back(ReadBuffer(i, eqh, BUFF_SIZE));
+      buffers.push_back(ReadBuffer(i, eqh, buff_size));
     }
   }
 } DFSRandomAccessFile;
@@ -37,20 +55,20 @@ void Cleanup(TF_RandomAccessFile* file) {
 
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
              char* ret, TF_Status* status) {
-  int rc = 0;
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
   for(auto& read_buf: dfs_file->buffers) {
     if(read_buf.CacheHit(offset, n))
       return read_buf.CopyFromCache(ret, offset, n, dfs_file->file_size, status);
   }
 
-  dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file, offset);
   size_t curr_offset = offset + BUFF_SIZE;
   for(size_t i = 1; i < dfs_file->buffers.size(); i++) {
     if(curr_offset > dfs_file->file_size) break;
     dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs, dfs_file->daos_file.file, curr_offset);
     curr_offset += BUFF_SIZE;
   }
+
+  dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file, offset);
 
   return dfs_file->buffers[0].CopyFromCache(ret, offset, n, dfs_file->file_size, status);
 }
@@ -157,7 +175,6 @@ void NewFile(const TF_Filesystem* filesystem, const char* path, mode_t mode,
   std::string pool, cont, file_path;
   rc = daos->Setup(path, pool, cont, file_path, status);
   if (rc) return;
-
   daos->dfsNewFile(file_path, mode, flags, obj, status);
 }
 
@@ -188,7 +205,7 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
     return;
   }
   auto random_access_file =  new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, daos->mEventQueueHandle, 
-                                                                            obj, NUM_OF_BUFFERS);
+                                                                            obj);
   random_access_file->buffers[0].ReadAsync(daos->daos_fs, random_access_file->daos_file.file, 0);
   file->plugin_file = random_access_file;
   TF_SetStatus(status, TF_OK, "");

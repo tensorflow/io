@@ -1,6 +1,6 @@
 #include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 
-std::string FormatStorageSize(uint64_t size) {
+std::string GetStorageString(uint64_t size) {
   if (size < KILO) {
     return std::to_string(size);
   } else if (size < MEGA) {
@@ -14,18 +14,55 @@ std::string FormatStorageSize(uint64_t size) {
   }
 }
 
+size_t GetStorageSize(std::string size) {
+  char size_char = size.back();
+  size_t curr_scale = 1;
+  switch (size_char)
+  {
+  case 'K':
+    size.pop_back();
+    curr_scale *= 1024;
+    return (size_t) atoi(size.c_str()) * curr_scale;
+    break;
+  case 'M':
+    size.pop_back();
+    curr_scale *= 1024 * 1024;
+    return (size_t) atoi(size.c_str()) * curr_scale;
+    break;
+  case 'G':
+    size.pop_back();
+    curr_scale *= 1024 * 1024 * 1024;
+    return (size_t) atoi(size.c_str()) * curr_scale;
+    break;
+  case 'T':
+    size.pop_back();
+    curr_scale *= 1024 * 1024 * 1024;
+    return (size_t) atoi(size.c_str()) * curr_scale * 1024;
+    break;
+  default:
+    return atoi(size.c_str());
+    break;
+  }
+}
+
 int ParseDFSPath(const std::string& path, std::string& pool_string,
                  std::string& cont_string, std::string& filename) {
   size_t pool_start = path.find("://") + 3;
   struct duns_attr_t* attr =
       (struct duns_attr_t*)malloc(sizeof(struct duns_attr_t));
   attr->da_rel_path = NULL;
-  attr->da_flags = 0;
-  attr->da_no_prefix = false;
-  std::string direct_path = "daos://" + path.substr(pool_start);
+  attr->da_flags = 1;
+  attr->da_no_prefix = true;
+  std::string direct_path = "/" + path.substr(pool_start);
   int rc = duns_resolve_path(direct_path.c_str(), attr);
-  if (rc) {
-    return rc;
+  if (rc == 2) {
+    attr->da_rel_path = NULL;
+    attr->da_flags = 0;
+    attr->da_no_prefix = false;
+    direct_path = "daos://" + path.substr(pool_start);
+    rc = duns_resolve_path(direct_path.c_str(), attr);
+    if(rc)
+      return rc;
   }
   pool_string = attr->da_pool;
   cont_string = attr->da_cont;
@@ -113,7 +150,7 @@ void DFS::Teardown() {
   do {
     ret = daos_eq_poll(mEventQueueHandle, 1, -1, 1, &(temp_event));
   } while(ret == 1); 
-  int rc = daos_eq_destroy(mEventQueueHandle, 0);
+  daos_eq_destroy(mEventQueueHandle, 0);
   Unmount();
   ClearConnections();
 }
@@ -198,15 +235,15 @@ int DFS::Query() {
               << std::endl;
     std::cout << "- SCM:" << std::endl;
     std::cout << "  Total size: "
-              << FormatStorageSize(pool_info.pi_space.ps_space.s_total[0]);
+              << GetStorageString(pool_info.pi_space.ps_space.s_total[0]);
     std::cout << "  Free: "
-              << FormatStorageSize(pool_info.pi_space.ps_space.s_free[0])
+              << GetStorageString(pool_info.pi_space.ps_space.s_free[0])
               << std::endl;
     std::cout << "- NVMe:" << std::endl;
     std::cout << "  Total size: "
-              << FormatStorageSize(pool_info.pi_space.ps_space.s_total[1]);
+              << GetStorageString(pool_info.pi_space.ps_space.s_total[1]);
     std::cout << "  Free: "
-              << FormatStorageSize(pool_info.pi_space.ps_space.s_free[1])
+              << GetStorageString(pool_info.pi_space.ps_space.s_free[1])
               << std::endl;
     std::cout << std::endl
               << "Connected Container: " << container.first << std::endl;
@@ -429,18 +466,15 @@ ReadBuffer::ReadBuffer(size_t id, daos_handle_t eqh, size_t size): id(id), buffe
     buffer = new char[size];
     buffer_offset = 0;
     event = new daos_event_t;
-    int rc = daos_event_init(event, eqh,nullptr);
-    if(rc) std::cout << "Failed to init" << std::endl;
+    daos_event_init(event, eqh,nullptr);
     valid = false;
 }
 
 ReadBuffer::~ReadBuffer() {
     if(event != nullptr) {
       bool event_status;
-      int rc = daos_event_test(event, 0, &event_status);
-      if(rc) std::cout << "Failed to Test while destroying" << std::endl;
-      rc = daos_event_fini(event);
-      if(rc) std::cout << "Failed to Finalize" << std::endl;
+      daos_event_test(event, 0, &event_status);
+      daos_event_fini(event);
     }
     delete [] buffer;
     delete event;
@@ -467,8 +501,7 @@ int
 ReadBuffer::WaitEvent() {
   if(valid) return 0; 
   bool event_status;
-  int rc = daos_event_test(event, -1, &event_status);
-  if(rc) std::cout << "Failed to Wait" << std::endl;
+  daos_event_test(event, -1, &event_status);
   if(event_status) {
     valid = true;
     return 0;
@@ -479,8 +512,7 @@ ReadBuffer::WaitEvent() {
 int
 ReadBuffer::AbortEvent() {
   bool event_status = false;
-  int rc = daos_event_test(event, 0, &event_status);
-  if(rc) std::cout << "Failed to check event status" << std::endl;
+  daos_event_test(event, 0, &event_status);
   if(!event_status)
     return daos_event_abort(event);
   else
@@ -491,8 +523,6 @@ int
 ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   int rc = AbortEvent();
   if(rc) return rc;
-  d_sg_list_t rsgl;
-  d_iov_t iov;
   d_iov_set(&iov, (void*)buffer, buffer_size);
   rsgl.sg_nr = 1;
   rsgl.sg_iovs = &iov;
@@ -500,14 +530,13 @@ ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   buffer_offset = off;
   dfs_read(daos_fs, file, &rsgl,
            buffer_offset, &read_size, event);
+  return 0;
 }
 
 int
 ReadBuffer::ReadSync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   int rc = AbortEvent();
   if(rc) return rc;
-  d_sg_list_t rsgl;
-  d_iov_t iov;
   d_iov_set(&iov, (void*)buffer, buffer_size);
   rsgl.sg_nr = 1;
   rsgl.sg_iovs = &iov;
