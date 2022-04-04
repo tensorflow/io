@@ -33,8 +33,6 @@ typedef struct DFSRandomAccessFile {
     } else {
       buff_size = BUFF_SIZE;
     }
-    std::cout << buff_size / 1024 / 1024 << std::endl;
-    std::cout << num_of_buffers << std::endl;
     for (size_t i = 0; i < num_of_buffers; i++) {
       buffers.push_back(ReadBuffer(i, eqh, buff_size));
     }
