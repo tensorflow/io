@@ -10,7 +10,7 @@
 #define PATH_START 80
 #define STACK 24
 #define NUM_OF_BUFFERS 256
-#define BUFF_SIZE 4*1024*1024
+#define BUFF_SIZE 4 * 1024 * 1024
 
 #include <daos.h>
 #include <daos_fs.h>
@@ -140,7 +140,7 @@ int ParseDFSPath(const std::string& path, std::string& pool_string,
 
 int ParseUUID(const std::string& str, uuid_t uuid);
 
-class DFS { 
+class DFS {
  public:
   bool connected;
   dfs_t* daos_fs;
@@ -205,47 +205,40 @@ class DFS {
 
 void CopyEntries(char*** entries, std::vector<std::string>& results);
 
-
 class ReadBuffer {
-  public:
+ public:
   ReadBuffer(size_t id, daos_handle_t eqh, size_t size);
 
   ReadBuffer(ReadBuffer&&);
 
   ~ReadBuffer();
 
-  bool
-  CacheHit(const size_t pos, const size_t off);
+  bool CacheHit(const size_t pos, const size_t off);
 
-  int
-  WaitEvent();
+  int WaitEvent();
 
-  int
-  AbortEvent();
+  int AbortEvent();
 
-  int
-  ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
+  int ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 
-  int
-  ReadSync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
+  int ReadSync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 
-  int
-  CopyData(char* ret, const size_t offset, const size_t n);
+  int CopyData(char* ret, const size_t offset, const size_t n);
 
-  int
-  CopyFromCache(char* ret, const size_t off, const size_t n, const daos_size_t file_size, TF_Status* status);
+  int CopyFromCache(char* ret, const size_t off, const size_t n,
+                    const daos_size_t file_size, TF_Status* status);
 
-  private:
-    size_t id;
-    char* buffer;
-    size_t buffer_offset;
-    size_t buffer_size;
-    daos_handle_t eqh;
-    daos_event_t* event;
-    d_sg_list_t rsgl;
-    d_iov_t iov;
-    bool  valid;
-    daos_size_t read_size;
+ private:
+  size_t id;
+  char* buffer;
+  size_t buffer_offset;
+  size_t buffer_size;
+  daos_handle_t eqh;
+  daos_event_t* event;
+  d_sg_list_t rsgl;
+  d_iov_t iov;
+  bool valid;
+  daos_size_t read_size;
 };
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_
