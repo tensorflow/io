@@ -33,6 +33,10 @@ def fixture_video_data():
     return path, value
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [
@@ -62,6 +66,10 @@ def test_video_io_dataset(video_data, io_dataset_func):
     assert i == 166
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 @pytest.mark.parametrize(
     ("io_dataset_func"),
     [

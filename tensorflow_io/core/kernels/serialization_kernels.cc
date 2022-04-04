@@ -107,7 +107,9 @@ class DecodeJSONOp : public OpKernel {
                              std::vector<int64>& tensor_shape_vector) {
     if (entry->IsArray()) {
       tensor_shape_vector.push_back(entry->Size());
-      getTensorShape(&(*entry)[0], tensor_shape_vector);
+      if (entry->Size() != 0) {
+        getTensorShape(&(*entry)[0], tensor_shape_vector);
+      }
     }
   }
 

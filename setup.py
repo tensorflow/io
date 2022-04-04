@@ -173,6 +173,7 @@ setuptools.setup(
         "tensorflow-gpu": [require.replace("tensorflow", "tensorflow-gpu")],
         "tensorflow-cpu": [require.replace("tensorflow", "tensorflow-cpu")],
         "tensorflow-rocm": [require.replace("tensorflow", "tensorflow-rocm")],
+        "tensorflow-aarch64": [require.replace("tensorflow", "tensorflow-aarch64")],
     },
     package_data={
         ".": ["*.so"],

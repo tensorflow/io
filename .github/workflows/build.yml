@@ -15,17 +15,13 @@ env:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Run Lint Script for Bazel/Pyupgrade/Black/Clang
         run: |
           set -x -e
           git log --pretty -1
-          BAZEL_OS=$(uname | tr '[:upper:]' '[:lower:]')
-          BAZEL_VERSION=$(cat .bazelversion)
-          curl -sSOL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
-          sudo bash -e bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh
           sudo python3 -m pip install -U numpy
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade black clang
       - name: Run Lint Script for Docs
@@ -47,7 +43,7 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macOS-11
     steps:
       - uses: actions/checkout@v2
       - name: GCP
@@ -71,7 +67,7 @@ jobs:
 
   linux:
     name: Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: ubuntu:20.04
       env:
@@ -100,7 +96,7 @@ jobs:
 
   macos-bazel:
     name: Bazel macOS
-    runs-on: macos-latest
+    runs-on: macOS-11
     steps:
       - uses: actions/checkout@v2
       - name: GCP
@@ -126,7 +122,7 @@ jobs:
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
     needs: macos-bazel
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']
@@ -167,7 +163,7 @@ jobs:
   macos-test:
     name: Test ${{ matrix.python }} macOS
     needs: macos-wheel
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.8', '3.9']
@@ -182,6 +178,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: |
           set -x -e
+          python -m pip install pip==21.3.1
           python -m pip install -U wheel setuptools
           python --version
       - name: Setup ${{ matrix.python }} macOS
@@ -206,7 +203,7 @@ jobs:
 
   linux-bazel:
     name: Bazel Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     container:
       image: gcr.io/tensorflow-testing/nosla-ubuntu16.04-manylinux2010
       env:
@@ -239,7 +236,7 @@ jobs:
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
     needs: linux-bazel
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']
@@ -308,7 +305,7 @@ jobs:
 
   windows-bazel:
     name: Bazel Windows
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
       - uses: egor-tensin/vs-shell@v2
@@ -323,17 +320,13 @@ jobs:
       - name: Bazel on Windows
         env:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
-        shell: cmd
+        shell: bash
         run: |
-          @echo on
-          set "BAZEL_OPTIMIZATION="
-          if "%EVENT_NAME%" == "push" (
-            if "%REPO_NAME%" == "tensorflow/io" (
-              set "BAZEL_OPTIMIZATION=%BAZEL_OPTIMIZATION% --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-            )
-          )
-          set /P BAZEL_VERSION=< .bazelversion
-          curl -sSL -o bazel.exe https://github.com/bazelbuild/bazel/releases/download/%BAZEL_VERSION%/bazel-%BAZEL_VERSION%-windows-x86_64.exe
+          set -x -e
+          export BAZEL_OPTIMIZATION="--config=cache"
+          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
+            export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           bazel version
           python3 --version
           python3 -m pip install wheel setuptools
@@ -341,8 +334,7 @@ jobs:
           python3 setup.py --install-require | xargs python3 -m pip install
           python3 tools/build/configure.py
           cat .bazelrc
-          bazel build -s %BAZEL_OPTIMIZATION% //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
-          if %errorlevel% neq 0 exit /b %errorlevel%
+          bazel build -s ${BAZEL_OPTIMIZATION} //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so  //tensorflow_io_gcs_filesystem/...
           mkdir -p build
           cp -r bazel-bin/tensorflow_io build
           cp -r bazel-bin/tensorflow_io_gcs_filesystem build
@@ -517,6 +509,46 @@ jobs:
           name: tensorflow-io-release
           path: wheelhouse
 
+  release-candidate:
+    name: Release Candidate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [lint, release]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v1
+        with:
+          name: tensorflow-io-release
+          path: wheelhouse
+      - run: |
+          set -x -e
+          sha256sum wheelhouse/*.whl | sort -u > wheelhouse.sha256
+          git rev-parse --verify HEAD > wheelhouse.commit
+          grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g' > wheelhouse.version
+          cat wheelhouse.sha256
+          cat wheelhouse.commit
+          cat wheelhouse.version
+          echo "::set-output name=version::$(cat wheelhouse.version)"
+        id: info
+      - run: |-
+          cat <<EOF > Dockerfile
+          FROM gcr.io/distroless/base-debian11
+          COPY wheelhouse /wheelhouse
+          COPY wheelhouse.sha256 /wheelhouse.sha256
+          COPY wheelhouse.commit /wheelhouse.commit
+          COPY wheelhouse.version /wheelhouse.version
+          EOF
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/login-action@v1
+        with:
+          username: tfsigio
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: tfsigio/candidate:${{ steps.info.outputs.version }}
+
   docker-release:
     name: Docker Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -542,7 +574,7 @@ jobs:
   build-number:
     name: Build Number
     if: github.event_name == 'push'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - run: |
           set -e -x
@@ -557,7 +589,7 @@ jobs:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
     needs: [build-number, macos-wheel]
-    runs-on: macos-latest
+    runs-on: macOS-11
     strategy:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10']

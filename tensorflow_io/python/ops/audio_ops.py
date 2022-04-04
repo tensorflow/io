@@ -49,6 +49,59 @@ def spectrogram(input, nfft, window, stride, name=None):
     )
 
 
+def inverse_spectrogram(spectrogram, nfft, window, stride, iterations=30):
+    """
+    Generate audio waveform from spectrogram using Griffin-Lim algorithm.
+    This is an adaptation of the method introduced in
+    D. Griffin and Jae Lim, "Signal estimation from modified
+    short-time Fourier transform,"
+
+    Args:
+      spectrogram: A spectrogram with shape (None, nfft // 2 + 1).
+          The first dimension depends on window and stride.
+          The second contains half of the absolute values
+          of the Fourier transforms because the FFT of a real
+          signal is symmetrical.
+      nfft: Size of FFT.
+      window: Size of window.
+      stride: Size of hops between windows.
+      iterations: number of Griffin-Lim iterations.
+          Change this to higher values if the reconstructed phase
+          is not appropriate (i.e., the audio is coming out
+          echoed or otherwise `weird`)
+
+    Returns:
+      An 1-D waveform audio tensor.
+    """
+    # TODO: Support multiple inv spectrograms
+
+    S = tf.expand_dims(spectrogram, 0)
+    S_complex = tf.identity(tf.cast(S, dtype=tf.complex64))
+    y = tf.signal.inverse_stft(S_complex, window, stride, nfft)
+    for i in range(iterations):
+        estimated_spectrogram = tf.signal.stft(
+            y,
+            frame_length=window,
+            frame_step=stride,
+            fft_length=nfft,
+            window_fn=tf.signal.hann_window,
+            pad_end=False,
+        )
+
+        # 1e-8 is for numerical stability and works rather well
+        angles = estimated_spectrogram / tf.cast(
+            tf.maximum(1e-8, tf.abs(estimated_spectrogram)), tf.complex64
+        )
+        y = tf.signal.inverse_stft(S_complex * angles, window, stride, nfft)
+    # correct the magnitude of y to match the input spectrogram
+    if iterations > 0:
+        amplitude_correction = tf.reduce_max(tf.abs(S)) / tf.reduce_max(
+            tf.abs(estimated_spectrogram)
+        )
+        y = y * amplitude_correction
+    return tf.squeeze(y, 0)
+
+
 def melscale(input, rate, mels, fmin, fmax, name=None):
     """
     Turn spectrogram into mel scale spectrogram

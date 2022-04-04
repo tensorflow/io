@@ -14,12 +14,9 @@ RUN rm -f /etc/apt/sources.list.d/jonathonf-ubuntu-python-3_7-xenial.list && apt
     ffmpeg \
     dnsutils
 
-ARG BAZEL_VERSION=3.7.2
-ARG BAZEL_OS=linux
-
-RUN curl -sL https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-${BAZEL_OS}-x86_64.sh -o bazel-install.sh && \
-    bash -x bazel-install.sh && \
-    rm bazel-install.sh
+RUN curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64 && \
+    mv bazelisk-linux-amd64 /usr/local/bin/bazel && \
+    chmod +x /usr/local/bin/bazel
 
 ARG CONDA_OS=Linux
 

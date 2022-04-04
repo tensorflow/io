@@ -37,6 +37,10 @@ def fixture_audio_path():
     )
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 def test_ffmpeg_io_tensor_audio(audio_path):
     """test_ffmpeg_io_tensor_audio"""
     audio = tfio.IOTensor.from_audio(audio_path)
@@ -78,6 +82,10 @@ def _test_ffmpeg_io_tensor_mkv(video_path):
     assert video("v:0").to_tensor().shape == [166, 320, 560, 3]
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 def test_ffmpeg_decode_video(video_path):
     """test_ffmpeg_decode_video"""
     content = tf.io.read_file(video_path)
@@ -87,6 +95,10 @@ def test_ffmpeg_decode_video(video_path):
     assert np.abs(video[0] - video[-1]).sum() > 0
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 def test_ffmpeg_decode_video_invalid_content():
     """test_ffmpeg_decode_video_invalid_content"""
     content = tf.constant(b"bad-video")
@@ -94,6 +106,10 @@ def test_ffmpeg_decode_video_invalid_content():
         tfio.experimental.ffmpeg.decode_video(content, 0)
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="TODO: macOS on GitHub use ffmpeg 5.0, needs update",
+)
 def test_ffmpeg_decode_video_invalid_index(video_path):
     """test_ffmpeg_decode_video_invalid_index"""
     content = tf.io.read_file(video_path)

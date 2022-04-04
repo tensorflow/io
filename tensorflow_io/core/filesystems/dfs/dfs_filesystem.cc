@@ -11,48 +11,68 @@ typedef struct DFSRandomAccessFile {
   std::string dfs_path;
   dfs_t* daos_fs;
   DAOS_FILE daos_file;
-  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
+  std::vector<ReadBuffer> buffers;
+  daos_size_t file_size;
+  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system,
+                      daos_handle_t eqh, dfs_obj_t* obj)
       : dfs_path(std::move(dfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
+    dfs_get_size(daos_fs, obj, &file_size);
+    size_t num_of_buffers;
+    size_t buff_size;
+
+    if (char* env_num_of_buffers = std::getenv("TF_IO_DAOS_NUM_OF_BUFFERS")) {
+      num_of_buffers = atoi(env_num_of_buffers);
+    } else {
+      num_of_buffers = NUM_OF_BUFFERS;
+    }
+
+    if (char* env_buff_size = std::getenv("TF_IO_DAOS_BUFFER_SIZE")) {
+      buff_size = GetStorageSize(env_buff_size);
+    } else {
+      buff_size = BUFF_SIZE;
+    }
+    std::cout << buff_size / 1024 / 1024 << std::endl;
+    std::cout << num_of_buffers << std::endl;
+    for (size_t i = 0; i < num_of_buffers; i++) {
+      buffers.push_back(ReadBuffer(i, eqh, buff_size));
+    }
   }
 } DFSRandomAccessFile;
 
 void Cleanup(TF_RandomAccessFile* file) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
+  for (auto& read_buf : dfs_file->buffers) {
+    read_buf.AbortEvent();
+  }
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
   delete dfs_file;
 }
 
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
-             char* buffer, TF_Status* status) {
-  d_sg_list_t rsgl;
-  d_iov_t iov;
-  int rc;
+             char* ret, TF_Status* status) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
-
-  d_iov_set(&iov, (void*)buffer, n);
-  rsgl.sg_nr = 1;
-  rsgl.sg_iovs = &iov;
-
-  daos_size_t read_size;
-  dfs_file->daos_file.offset = offset;
-
-  rc = dfs_read(dfs_file->daos_fs, dfs_file->daos_file.file, &rsgl,
-                dfs_file->daos_file.offset, &read_size, NULL);
-  if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "");
-    return read_size;
+  for (auto& read_buf : dfs_file->buffers) {
+    if (read_buf.CacheHit(offset, n))
+      return read_buf.CopyFromCache(ret, offset, n, dfs_file->file_size,
+                                    status);
   }
 
-  if (read_size != n) {
-    TF_SetStatus(status, TF_OUT_OF_RANGE, "");
-    return read_size;
+  size_t curr_offset = offset + BUFF_SIZE;
+  for (size_t i = 1; i < dfs_file->buffers.size(); i++) {
+    if (curr_offset > dfs_file->file_size) break;
+    dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs, dfs_file->daos_file.file,
+                                   curr_offset);
+    curr_offset += BUFF_SIZE;
   }
 
-  TF_SetStatus(status, TF_OK, "");
-  return read_size;
+  dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file,
+                                offset);
+
+  return dfs_file->buffers[0].CopyFromCache(ret, offset, n, dfs_file->file_size,
+                                            status);
 }
 
 }  // namespace tf_random_access_file
@@ -157,7 +177,6 @@ void NewFile(const TF_Filesystem* filesystem, const char* path, mode_t mode,
   std::string pool, cont, file_path;
   rc = daos->Setup(path, pool, cont, file_path, status);
   if (rc) return;
-
   daos->dfsNewFile(file_path, mode, flags, obj, status);
 }
 
@@ -187,8 +206,11 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
-  file->plugin_file =
-      new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj);
+  auto random_access_file = new tf_random_access_file::DFSRandomAccessFile(
+      path, daos->daos_fs, daos->mEventQueueHandle, obj);
+  random_access_file->buffers[0].ReadAsync(
+      daos->daos_fs, random_access_file->daos_file.file, 0);
+  file->plugin_file = random_access_file;
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -218,7 +240,7 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
   }
   std::string pool, cont, file;
   rc = daos->Setup(path, pool, cont, file, status);
-  if(rc) return;
+  if (rc) return;
   dfs_obj_t* obj;
   rc = daos->dfsPathExists(file, &obj);
   if (rc) {
