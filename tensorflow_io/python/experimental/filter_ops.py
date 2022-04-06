@@ -22,7 +22,7 @@ import tensorflow as tf
 def pad(input, ksize, mode, constant_values):
     input = tf.convert_to_tensor(input)
     ksize = tf.convert_to_tensor(ksize)
-    mode = "CONSTANT" if mode is None else upper(mode)
+    mode = "CONSTANT" if mode is None else str.upper(mode)
     constant_values = (
         tf.zeros([], dtype=input.dtype)
         if constant_values is None
