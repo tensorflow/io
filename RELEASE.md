@@ -1,13 +1,15 @@
 # Release 0.25.0
 
 ## Major Features and Bug Fixes
-* <TODO>
+* Decrease max bytes read from hdfs
+* Hide mongodb connection uri from being logged
+* Update log level from fetal to error when loading the libhdfs.so failed
 
 ## Thanks to our Contributors
 
 This release contains contributions from many people:
 
-Stan Chen, Vignesh Kothapalli, Yong Tang, trabenx, yleeeee
+Junfan Zhang, Stan Chen, Vignesh Kothapalli, Yong Tang, trabenx, yleeeee
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
