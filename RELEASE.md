@@ -1,3 +1,17 @@
+# Release 0.25.0
+
+## Major Features and Bug Fixes
+* <TODO>
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Stan Chen, Vignesh Kothapalli, Yong Tang, trabenx, yleeeee
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.24.0
 
 ## Major Features and Bug Fixes
