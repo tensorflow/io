@@ -92,7 +92,7 @@ genrule(
     srcs = ["c++/include/orc/orc-config.hh.in"],
     outs = ["c++/include/orc/orc-config.hh"],
     cmd = ("sed " +
-           "-e 's/@ORC_VERSION@/1.6.7/g' " +
+           "-e 's/@ORC_VERSION@/1.6.14/g' " +
            "-e 's/cmakedefine/define/g' " +
            "$< >$@"),
 )
