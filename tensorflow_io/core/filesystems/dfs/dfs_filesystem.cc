@@ -164,7 +164,7 @@ void Cleanup(TF_Filesystem* filesystem) {
   delete daos;
 }
 
-void NewFile(const TF_Filesystem* filesystem, const char* path, mode_t mode,
+void NewFile(const TF_Filesystem* filesystem, const char* path, File_Mode mode,
              int flags, dfs_obj_t** obj, TF_Status* status) {
   int rc;
   auto daos = static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
@@ -181,8 +181,7 @@ void NewFile(const TF_Filesystem* filesystem, const char* path, mode_t mode,
 void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
                      TF_WritableFile* file, TF_Status* status) {
   dfs_obj_t* obj = NULL;
-  NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT, &obj,
-          status);
+  NewFile(filesystem, path, WRITE, S_IWUSR | S_IFREG, &obj, status);
   if (TF_GetCode(status) != TF_OK) return;
   auto daos = static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
   if (!daos) {
@@ -197,7 +196,7 @@ void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
 void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
                          TF_RandomAccessFile* file, TF_Status* status) {
   dfs_obj_t* obj = NULL;
-  NewFile(filesystem, path, S_IRUSR | S_IFREG, O_RDONLY, &obj, status);
+  NewFile(filesystem, path, READ, S_IRUSR | S_IFREG, &obj, status);
   if (TF_GetCode(status) != TF_OK) return;
   auto daos = static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
   if (!daos) {
@@ -215,8 +214,7 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
 void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
                        TF_WritableFile* file, TF_Status* status) {
   dfs_obj_t* obj = NULL;
-  NewFile(filesystem, path, S_IWUSR | S_IFREG, O_WRONLY | O_CREAT | O_APPEND,
-          &obj, status);
+  NewFile(filesystem, path, APPEND, S_IWUSR | S_IFREG, &obj, status);
   if (TF_GetCode(status) != TF_OK) return;
   auto daos = static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
   if (!daos) {
@@ -296,41 +294,19 @@ void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
   int rc;
   std::string pool, cont, dir_path;
   auto daos = static_cast<DFS*>(filesystem->plugin_filesystem)->Load();
+
   if (!daos) {
     TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
+
   rc = daos->Setup(path, pool, cont, dir_path, status);
-  if (rc) return;
-
-  dfs_obj_t* temp_obj;
-  rc = daos->dfsPathExists(dir_path, &temp_obj, 0);
   if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
-    return;
-  }
-  if (!is_dir && S_ISDIR(temp_obj->mode)) {
-    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-    return;
-  }
-  dfs_release(temp_obj);
-
-  size_t dir_start = dir_path.rfind("/") + 1;
-  std::string dir = dir_path.substr(dir_start);
-  dfs_obj_t* parent;
-  rc = daos->dfsFindParent(dir_path, &parent);
-  if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
+    TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
 
-  rc = dfs_remove(daos->daos_fs, parent, dir.c_str(), recursive, NULL);
-  if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "Error Deleting Directory");
-  } else {
-    TF_SetStatus(status, TF_OK, "");
-  }
-  dfs_release(parent);
+  daos->dfsDeleteObject(dir_path, is_dir, recursive, status);
 }
 
 void DeleteSingleDir(const TF_Filesystem* filesystem, const char* path,
@@ -596,11 +572,13 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   rc = daos->dfsPathExists(dir_path, &obj, 0);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
+    dfs_release(obj);
     return -1;
   }
 
   if (!S_ISDIR(obj->mode)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    dfs_release(obj);
     return -1;
   }
 
@@ -608,6 +586,7 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   rc = daos->dfsReadDir(obj, children);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "");
+    dfs_release(obj);
     return -1;
   }
 

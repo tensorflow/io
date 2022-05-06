@@ -127,8 +127,7 @@ typedef struct pool_info {
 
 typedef std::pair<std::string, daos_handle_t> id_handle_t;
 
-// enum used while wildcard matching
-enum Children_Status { NON_MATCHING, MATCHING_DIR, OK };
+enum File_Mode { READ, WRITE, APPEND };
 
 std::string GetStorageString(uint64_t size);
 
@@ -176,7 +175,7 @@ class DFS {
 
   int ClearConnections();
 
-  void dfsNewFile(std::string& file_path, mode_t mode, int flags,
+  void dfsNewFile(std::string& file_path, File_Mode mode, int flags,
                   dfs_obj_t** obj, TF_Status* status);
 
   int dfsPathExists(std::string& file, dfs_obj_t** obj, int release_obj = 1);
@@ -184,6 +183,9 @@ class DFS {
   int dfsFindParent(std::string& file, dfs_obj_t** parent);
 
   int dfsCreateDir(std::string& dir_path, TF_Status* status);
+
+  int dfsDeleteObject(std::string& dir_path, bool is_dir, bool recursive,
+                      TF_Status* status);
 
   bool isRoot(std::string& file_path);
 

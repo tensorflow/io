@@ -22,25 +22,33 @@ size_t GetStorageSize(std::string size) {
       size.pop_back();
       curr_scale *= 1024;
       return (size_t)atoi(size.c_str()) * curr_scale;
-      break;
     case 'M':
       size.pop_back();
       curr_scale *= 1024 * 1024;
       return (size_t)atoi(size.c_str()) * curr_scale;
-      break;
     case 'G':
       size.pop_back();
       curr_scale *= 1024 * 1024 * 1024;
       return (size_t)atoi(size.c_str()) * curr_scale;
-      break;
     case 'T':
       size.pop_back();
       curr_scale *= 1024 * 1024 * 1024;
       return (size_t)atoi(size.c_str()) * curr_scale * 1024;
-      break;
     default:
       return atoi(size.c_str());
-      break;
+  }
+}
+
+mode_t GetFlags(File_Mode mode) {
+  switch (mode) {
+    case READ:
+      return O_RDONLY;
+    case WRITE:
+      return O_WRONLY | O_CREAT;
+    case APPEND:
+      return O_WRONLY | O_APPEND | O_CREAT;
+    default:
+      return -1;
   }
 }
 
@@ -74,8 +82,8 @@ int ParseUUID(const std::string& str, uuid_t uuid) {
 }
 
 void CopyEntries(char*** entries, std::vector<std::string>& results) {
-  *entries = static_cast<char**>(tensorflow::io::plugin_memory_allocate(
-      results.size() * sizeof((*entries)[0])));
+  *entries = static_cast<char**>(
+      tensorflow::io::plugin_memory_allocate(results.size() * sizeof(char*)));
 
   for (uint32_t i = 0; i < results.size(); i++) {
     (*entries)[i] = static_cast<char*>(tensorflow::io::plugin_memory_allocate(
@@ -267,10 +275,47 @@ int DFS::ClearConnections() {
   return rc;
 }
 
-void DFS::dfsNewFile(std::string& file_path, mode_t mode, int flags,
+int DFS::dfsDeleteObject(std::string& dir_path, bool is_dir, bool recursive,
+                         TF_Status* status) {
+  dfs_obj_t* temp_obj;
+  int rc = dfsPathExists(dir_path, &temp_obj, 0);
+  if (rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+  if (!is_dir && S_ISDIR(temp_obj->mode)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    return -1;
+  }
+  dfs_release(temp_obj);
+
+  size_t dir_start = dir_path.rfind("/") + 1;
+  std::string dir = dir_path.substr(dir_start);
+  dfs_obj_t* parent;
+  rc = dfsFindParent(dir_path, &parent);
+  if (rc) {
+    TF_SetStatus(status, TF_NOT_FOUND, "");
+    return -1;
+  }
+
+  rc = dfs_remove(daos_fs, parent, dir.c_str(), recursive, NULL);
+
+  dfs_release(parent);
+
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL, "Error Deleting Existing Object");
+  } else {
+    TF_SetStatus(status, TF_OK, "");
+  }
+
+  return rc;
+}
+
+void DFS::dfsNewFile(std::string& file_path, File_Mode file_mode, int flags,
                      dfs_obj_t** obj, TF_Status* status) {
   int rc;
   dfs_obj_t* temp_obj;
+  mode_t open_flags;
   rc = dfsPathExists(file_path, &temp_obj, 0);
   if (rc && flags == O_RDONLY) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
@@ -287,6 +332,13 @@ void DFS::dfsNewFile(std::string& file_path, mode_t mode, int flags,
     dfs_release(temp_obj);
   }
 
+  if (!rc && file_mode == WRITE) {
+    rc = dfsDeleteObject(file_path, false, false, status);
+    if (rc) return;
+  }
+
+  open_flags = GetFlags(file_mode);
+
   dfs_obj_t* parent;
   rc = dfsFindParent(file_path, &parent);
   if (rc) {
@@ -302,8 +354,8 @@ void DFS::dfsNewFile(std::string& file_path, mode_t mode, int flags,
   size_t file_start = file_path.rfind("/") + 1;
   std::string file_name = file_path.substr(file_start);
 
-  rc = dfs_open(daos_fs, parent, file_name.c_str(), mode, flags, 0, 0, NULL,
-                obj);
+  rc = dfs_open(daos_fs, parent, file_name.c_str(), flags, open_flags, 0, 0,
+                NULL, obj);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Creating Writable File");
     return;
@@ -372,14 +424,17 @@ int DFS::dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children) {
   daos_anchor_t anchor = {0};
   uint32_t nr = STACK;
   struct dirent* dirs = (struct dirent*)malloc(nr * sizeof(struct dirent));
+  while (!daos_anchor_is_eof(&anchor)) {
+    rc = dfs_readdir(daos_fs, obj, &anchor, &nr, dirs);
+    if (rc) {
+      return rc;
+    }
 
-  rc = dfs_readdir(daos_fs, obj, &anchor, &nr, dirs);
-  if (rc) {
-    return rc;
-  }
-
-  for (uint32_t i = 0; i < nr; i++) {
-    children.push_back(dirs[i].d_name);
+    for (uint32_t i = 0; i < nr; i++) {
+      // std::cout << "Before File " << dirs[i].d_name << std::endl;
+      children.emplace_back(dirs[i].d_name);
+      // std::cout << "After File " << dirs[i].d_name  << std::endl;
+    }
   }
 
   free(dirs);
@@ -498,11 +553,11 @@ int ReadBuffer::WaitEvent() {
   if (valid) return 0;
   bool event_status;
   daos_event_test(event, -1, &event_status);
-  if (event_status) {
+  if (event_status && event->ev_error == DER_SUCCESS) {
     valid = true;
     return 0;
   }
-  return -1;
+  return event->ev_error;
 }
 
 int ReadBuffer::AbortEvent() {
@@ -535,7 +590,7 @@ int ReadBuffer::ReadSync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   valid = false;
   buffer_offset = off;
   rc = dfs_read(daos_fs, file, &rsgl, off, &read_size, NULL);
-  valid = true;
+  if (!rc) valid = true;
   return rc;
 }
 
