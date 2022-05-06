@@ -431,9 +431,7 @@ int DFS::dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children) {
     }
 
     for (uint32_t i = 0; i < nr; i++) {
-      // std::cout << "Before File " << dirs[i].d_name << std::endl;
       children.emplace_back(dirs[i].d_name);
-      // std::cout << "After File " << dirs[i].d_name  << std::endl;
     }
   }
 
