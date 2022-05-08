@@ -139,7 +139,7 @@ class DFSTest(tf.test.TestCase):
         # Setup and check preconditions.
         dir_name = self._path_to("listdir")
         tf.io.gfile.mkdir(dir_name)
-        file_names = [self._path_to(f"listdir/{i}") for i in range(1, 4)]
+        file_names = [self._path_to(f"listdir/{i}") for i in range(1, 33)]
 
         for file_name in file_names:
             with tf.io.gfile.GFile(file_name, "w") as write_file:

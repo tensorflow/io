@@ -515,6 +515,7 @@ ReadBuffer::ReadBuffer(size_t id, daos_handle_t eqh, size_t size)
     : id(id), buffer_size(size), eqh(eqh) {
   buffer = new char[size];
   buffer_offset = 0;
+  initialized = false;
   event = new daos_event_t;
   daos_event_init(event, eqh, nullptr);
   valid = false;
@@ -540,11 +541,12 @@ ReadBuffer::ReadBuffer(ReadBuffer&& read_buffer) {
   valid = false;
   read_buffer.buffer = nullptr;
   read_buffer.event = nullptr;
+  initialized = false;
 }
 
-bool ReadBuffer::CacheHit(const size_t pos, const size_t len) {
-  return pos >= buffer_offset && len <= buffer_size &&
-         (pos + len <= buffer_offset + buffer_size);
+bool ReadBuffer::CacheHit(const size_t pos) {
+  return pos >= buffer_offset && (pos < buffer_offset + buffer_size) &&
+         initialized;
 }
 
 int ReadBuffer::WaitEvent() {
@@ -575,6 +577,7 @@ int ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   rsgl.sg_iovs = &iov;
   valid = false;
   buffer_offset = off;
+  initialized = true;
   dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
   return 0;
 }
@@ -587,23 +590,29 @@ int ReadBuffer::ReadSync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   rsgl.sg_iovs = &iov;
   valid = false;
   buffer_offset = off;
+  initialized = true;
   rc = dfs_read(daos_fs, file, &rsgl, off, &read_size, NULL);
   if (!rc) valid = true;
   return rc;
 }
 
-int ReadBuffer::CopyData(char* ret, const size_t off, const size_t n) {
+int ReadBuffer::CopyData(char* ret, const size_t ret_offset, const size_t off,
+                         const size_t n) {
   int rc = WaitEvent();
   if (rc) return rc;
-  memcpy(ret, buffer + (off - buffer_offset), n);
+  memcpy(ret + ret_offset, buffer + (off - buffer_offset), n);
   return 0;
 }
 
-int ReadBuffer::CopyFromCache(char* ret, const size_t off, const size_t n,
+int ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
+                              const size_t off, const size_t n,
                               const daos_size_t file_size, TF_Status* status) {
   size_t read_size;
   read_size = off + n > file_size ? file_size - off : n;
-  int rc = CopyData(ret, off, read_size);
+  read_size = off + read_size > buffer_offset + buffer_size
+                  ? buffer_offset + buffer_size - off
+                  : read_size;
+  int rc = CopyData(ret, ret_offset, off, read_size);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "");
     return 0;

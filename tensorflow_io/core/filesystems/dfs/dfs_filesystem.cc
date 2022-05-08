@@ -52,25 +52,49 @@ void Cleanup(TF_RandomAccessFile* file) {
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
              char* ret, TF_Status* status) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
-  for (auto& read_buf : dfs_file->buffers) {
-    if (read_buf.CacheHit(offset, n))
-      return read_buf.CopyFromCache(ret, offset, n, dfs_file->file_size,
-                                    status);
+  if (offset > dfs_file->file_size) return -1;
+  size_t ret_offset = 0;
+  size_t curr_offset = offset;
+  int64_t total_bytes = 0;
+  size_t ret_size = offset + n;
+  while (curr_offset < ret_size && curr_offset < dfs_file->file_size) {
+    size_t read_bytes = 0;
+    for (auto& read_buf : dfs_file->buffers) {
+      if (read_buf.CacheHit(curr_offset)) {
+        read_bytes = read_buf.CopyFromCache(ret, ret_offset, offset, n,
+                                            dfs_file->file_size, status);
+      }
+    }
+
+    if (read_bytes > 0) {
+      curr_offset += read_bytes;
+      ret_offset += read_bytes;
+      total_bytes += read_bytes;
+      n -= read_bytes;
+      continue;
+    }
+
+    size_t async_offset = curr_offset + BUFF_SIZE;
+    for (size_t i = 1; i < dfs_file->buffers.size(); i++) {
+      if (async_offset > dfs_file->file_size) break;
+      dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs,
+                                     dfs_file->daos_file.file, async_offset);
+      async_offset += BUFF_SIZE;
+    }
+
+    dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file,
+                                  curr_offset);
+
+    read_bytes = dfs_file->buffers[0].CopyFromCache(
+        ret, ret_offset, curr_offset, n, dfs_file->file_size, status);
+
+    curr_offset += read_bytes;
+    ret_offset += read_bytes;
+    total_bytes += read_bytes;
+    n -= read_bytes;
   }
 
-  size_t curr_offset = offset + BUFF_SIZE;
-  for (size_t i = 1; i < dfs_file->buffers.size(); i++) {
-    if (curr_offset > dfs_file->file_size) break;
-    dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs, dfs_file->daos_file.file,
-                                   curr_offset);
-    curr_offset += BUFF_SIZE;
-  }
-
-  dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file,
-                                offset);
-
-  return dfs_file->buffers[0].CopyFromCache(ret, offset, n, dfs_file->file_size,
-                                            status);
+  return total_bytes;
 }
 
 }  // namespace tf_random_access_file
