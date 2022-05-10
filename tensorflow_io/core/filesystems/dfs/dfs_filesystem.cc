@@ -55,7 +55,7 @@ void Cleanup(TF_RandomAccessFile* file) {
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
              char* ret, TF_Status* status) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
-  if (offset > dfs_file->file_size) {
+  if (offset >= dfs_file->file_size) {
     TF_SetStatus(status, TF_OUT_OF_RANGE, "");
     return -1;
   }
