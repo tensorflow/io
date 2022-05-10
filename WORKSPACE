@@ -6,11 +6,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "zlib",
     build_file = "//third_party:zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
+    sha256 = "91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9",
+    strip_prefix = "zlib-1.2.12",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-        "https://zlib.net/zlib-1.2.11.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.12.tar.gz",
+        "https://zlib.net/zlib-1.2.12.tar.gz",
     ],
 )
 
@@ -114,10 +114,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "66b953ae7fba61fd78969a2e24e350b26ec116cf2e6a7eb93d02c63939c6f9f7",
-    strip_prefix = "tensorflow-2.8.0",
+    sha256 = "a1b621ad986f270939d9182a866ac787f7a729d229a931488a7230056580a39e",
+    strip_prefix = "tensorflow-2.9.0-rc2",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.8.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.9.0-rc2.tar.gz",
     ],
 )
 
