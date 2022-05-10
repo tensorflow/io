@@ -107,6 +107,7 @@ genrule(
             "-e 's/cmakedefine HAS_PREAD/undef HAS_PREAD/g' " +
             "-e 's/cmakedefine NEEDS_REDUNDANT_MOVE/undef NEEDS_REDUNDANT_MOVE/g' " +
             "-e 's/cmakedefine NEEDS_Z_PREFIX/undef NEEDS_Z_PREFIX/g' " +
+            "-e 's/cmakedefine HAS_BUILTIN_OVERFLOW_CHECK/undef HAS_BUILTIN_OVERFLOW_CHECK/g' " +
             "-e 's/cmakedefine/define/g' " +
             "$< >$@"
         ),
