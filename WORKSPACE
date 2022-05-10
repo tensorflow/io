@@ -591,10 +591,10 @@ http_archive(
     patch_cmds = [
         "tar -xzf c++/libs/libhdfspp/libhdfspp.tar.gz -C c++/libs/libhdfspp",
     ],
-    sha256 = "abdffe48b8d2e7776c3b541ee2241401e49774941ca4a8c759e5d795daec8a45",
-    strip_prefix = "orc-rel-release-1.6.7",
+    sha256 = "39d983f4c7feb8ea1e8ab8e3e53e9afc643282b7a500b3a93c91aa6490f65c17",
+    strip_prefix = "orc-rel-release-1.6.14",
     urls = [
-        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
+        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.14.tar.gz",
     ],
 )
 

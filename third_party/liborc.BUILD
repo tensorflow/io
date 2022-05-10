@@ -92,7 +92,7 @@ genrule(
     srcs = ["c++/include/orc/orc-config.hh.in"],
     outs = ["c++/include/orc/orc-config.hh"],
     cmd = ("sed " +
-           "-e 's/@ORC_VERSION@/1.6.7/g' " +
+           "-e 's/@ORC_VERSION@/1.6.14/g' " +
            "-e 's/cmakedefine/define/g' " +
            "$< >$@"),
 )
@@ -107,6 +107,7 @@ genrule(
             "-e 's/cmakedefine HAS_PREAD/undef HAS_PREAD/g' " +
             "-e 's/cmakedefine NEEDS_REDUNDANT_MOVE/undef NEEDS_REDUNDANT_MOVE/g' " +
             "-e 's/cmakedefine NEEDS_Z_PREFIX/undef NEEDS_Z_PREFIX/g' " +
+            "-e 's/cmakedefine HAS_BUILTIN_OVERFLOW_CHECK/undef HAS_BUILTIN_OVERFLOW_CHECK/g' " +
             "-e 's/cmakedefine/define/g' " +
             "$< >$@"
         ),
