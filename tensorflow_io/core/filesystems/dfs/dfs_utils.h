@@ -146,7 +146,6 @@ class DFS {
   id_handle_t pool;
   id_handle_t container;
   std::map<std::string, pool_info_t*> pools;
-  daos_handle_t mEventQueueHandle{};
 
   DFS();
 
@@ -220,6 +219,8 @@ class ReadBuffer {
   int WaitEvent();
 
   int AbortEvent();
+
+  int FinalizeEvent();
 
   int ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 

@@ -13,14 +13,15 @@ typedef struct DFSRandomAccessFile {
   DAOS_FILE daos_file;
   std::vector<ReadBuffer> buffers;
   daos_size_t file_size;
-  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system,
-                      daos_handle_t eqh, dfs_obj_t* obj)
+  daos_handle_t mEventQueueHandle{};
+  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
       : dfs_path(std::move(dfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
     dfs_get_size(daos_fs, obj, &file_size);
     size_t num_of_buffers;
     size_t buff_size;
+    int rc = daos_eq_create(&mEventQueueHandle);
 
     if (char* env_num_of_buffers = std::getenv("TF_IO_DAOS_NUM_OF_BUFFERS")) {
       num_of_buffers = atoi(env_num_of_buffers);
@@ -34,16 +35,18 @@ typedef struct DFSRandomAccessFile {
       buff_size = BUFF_SIZE;
     }
     for (size_t i = 0; i < num_of_buffers; i++) {
-      buffers.push_back(ReadBuffer(i, eqh, buff_size));
+      buffers.push_back(ReadBuffer(i, mEventQueueHandle, buff_size));
     }
   }
 } DFSRandomAccessFile;
 
 void Cleanup(TF_RandomAccessFile* file) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
-  for (auto& read_buf : dfs_file->buffers) {
-    read_buf.AbortEvent();
+  for (auto& buffer : dfs_file->buffers) {
+    buffer.FinalizeEvent();
   }
+
+  daos_eq_destroy(dfs_file->mEventQueueHandle, 0);
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
   delete dfs_file;
@@ -52,7 +55,11 @@ void Cleanup(TF_RandomAccessFile* file) {
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
              char* ret, TF_Status* status) {
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
-  if (offset > dfs_file->file_size) return -1;
+  if (offset > dfs_file->file_size) {
+    TF_SetStatus(status, TF_OUT_OF_RANGE, "");
+    return -1;
+  }
+
   size_t ret_offset = 0;
   size_t curr_offset = offset;
   int64_t total_bytes = 0;
@@ -61,7 +68,7 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
     size_t read_bytes = 0;
     for (auto& read_buf : dfs_file->buffers) {
       if (read_buf.CacheHit(curr_offset)) {
-        read_bytes = read_buf.CopyFromCache(ret, ret_offset, offset, n,
+        read_bytes = read_buf.CopyFromCache(ret, ret_offset, curr_offset, n,
                                             dfs_file->file_size, status);
       }
     }
@@ -92,6 +99,12 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
     ret_offset += read_bytes;
     total_bytes += read_bytes;
     n -= read_bytes;
+
+    if (curr_offset >= dfs_file->file_size) {
+      for (size_t i = 0; i < dfs_file->buffers.size(); i++) {
+        dfs_file->buffers[i].WaitEvent();
+      }
+    }
   }
 
   return total_bytes;
@@ -227,8 +240,8 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
-  auto random_access_file = new tf_random_access_file::DFSRandomAccessFile(
-      path, daos->daos_fs, daos->mEventQueueHandle, obj);
+  auto random_access_file =
+      new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj);
   random_access_file->buffers[0].ReadAsync(
       daos->daos_fs, random_access_file->daos_file.file, 0);
   file->plugin_file = random_access_file;

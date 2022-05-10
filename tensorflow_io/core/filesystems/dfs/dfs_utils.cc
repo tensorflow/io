@@ -116,11 +116,7 @@ DFS* DFS::Load() {
   return this;
 }
 
-int DFS::dfsInit() {
-  int rc = daos_init();
-  if (rc) return rc;
-  return daos_eq_create(&mEventQueueHandle);
-}
+int DFS::dfsInit() { return daos_init(); }
 
 void DFS::dfsCleanup() {
   Teardown();
@@ -149,12 +145,6 @@ int DFS::Setup(const std::string& path, std::string& pool_string,
 }
 
 void DFS::Teardown() {
-  daos_event_t* temp_event;
-  int ret;
-  do {
-    ret = daos_eq_poll(mEventQueueHandle, 1, -1, 1, &(temp_event));
-  } while (ret == 1);
-  daos_eq_destroy(mEventQueueHandle, 0);
   Unmount();
   ClearConnections();
 }
@@ -542,6 +532,18 @@ ReadBuffer::ReadBuffer(ReadBuffer&& read_buffer) {
   read_buffer.buffer = nullptr;
   read_buffer.event = nullptr;
   initialized = false;
+}
+
+int ReadBuffer::FinalizeEvent() {
+  int rc = 0;
+  if (event != nullptr) {
+    bool event_status;
+    daos_event_test(event, 0, &event_status);
+    rc = daos_event_fini(event);
+  }
+  delete event;
+  event = nullptr;
+  return rc;
 }
 
 bool ReadBuffer::CacheHit(const size_t pos) {
