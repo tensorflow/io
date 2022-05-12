@@ -107,16 +107,20 @@ class JSONReadable : public IOReadableInterface {
 
     ::arrow::Status status;
 
-    status = ::arrow::json::TableReader::Make(
+    auto reader_result = ::arrow::json::TableReader::Make(
         ::arrow::default_memory_pool(), json_file_,
         ::arrow::json::ReadOptions::Defaults(),
-        ::arrow::json::ParseOptions::Defaults(), &reader_);
-    if (!status.ok()) {
+        ::arrow::json::ParseOptions::Defaults());
+    if (!reader_result.ok()) {
       return errors::InvalidArgument("unable to make a TableReader: ", status);
+    } else {
+      reader_ = reader_result.ValueOrDie();
     }
-    status = reader_->Read(&table_);
-    if (!status.ok()) {
+    auto table_result = reader_->Read();
+    if (!table_result.ok()) {
       return errors::InvalidArgument("unable to read table: ", status);
+    } else {
+      table_ = table_result.ValueOrDie();
     }
 
     shapes_.clear();

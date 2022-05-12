@@ -10,6 +10,8 @@ cc_library(
     hdrs = glob(
         [
             "include/xsimd/*.hpp",
+            "include/xsimd/arch/*.hpp",
+            "include/xsimd/arch/generic/*.hpp",
             "include/xsimd/config/*.hpp",
             "include/xsimd/math/*.hpp",
             "include/xsimd/memory/*.hpp",

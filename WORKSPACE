@@ -158,16 +158,11 @@ http_archive(
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    patch_cmds = [
-        # TODO: Remove the fowllowing once arrow issue is resolved.
-        """sed -i.bak 's/type_traits/std::max<int16_t>(sizeof(int16_t), type_traits/g' cpp/src/parquet/column_reader.cc""",
-        """sed -i.bak 's/value_byte_size/value_byte_size)/g' cpp/src/parquet/column_reader.cc""",
-    ],
-    sha256 = "a27971e2a71c412ae43d998b7b6d06201c7a3da382c804dcdc4a8126ccbabe67",
-    strip_prefix = "arrow-apache-arrow-4.0.0",
+    sha256 = "57e13c62f27b710e1de54fd30faed612aefa22aa41fa2c0c3bacd204dd18a8f3",
+    strip_prefix = "arrow-apache-arrow-7.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
     ],
 )
 
@@ -851,10 +846,10 @@ http_archive(
 http_archive(
     name = "xsimd",
     build_file = "//third_party:xsimd.BUILD",
-    sha256 = "45337317c7f238fe0d64bb5d5418d264a427efc53400ddf8e6a964b6bcb31ce9",
-    strip_prefix = "xsimd-7.5.0",
+    sha256 = "21b4700e9ef70f6c9a86952047efd8272317df4e6fee35963de9394fd9c5677f",
+    strip_prefix = "xsimd-8.0.1",
     urls = [
-        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/7.5.0.tar.gz",
+        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/8.0.1.tar.gz",
     ],
 )
 
