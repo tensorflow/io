@@ -84,6 +84,8 @@ cc_library(
             "cpp/src/**/stream_to_file.cc",
             "cpp/src/arrow/util/bpacking_avx2.cc",
             "cpp/src/arrow/util/bpacking_avx512.cc",
+            "cpp/src/arrow/util/bpacking_neon.cc",
+            "cpp/src/arrow/util/tracing_internal.cc",
         ],
     ),
     hdrs = [
