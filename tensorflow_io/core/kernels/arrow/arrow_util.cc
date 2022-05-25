@@ -12,8 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-
 #include "tensorflow_io/core/kernels/arrow/arrow_util.h"
+
+#include <list>
 
 #include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/api.h"
@@ -466,6 +467,78 @@ Status ParseHost(std::string host, std::string* host_address,
 
   *host_address = host.substr(0, sep_pos);
   *host_port = host.substr(sep_pos + 1);
+
+  return Status::OK();
+}
+
+std::shared_ptr<ads::Dataset> GetS3Dataset(
+    const std::string& access_key, const std::string& secret_key,
+    const std::string& endpoint_override,
+    const std::vector<std::string>& parquet_files) {
+  afs::EnsureS3Initialized();
+
+  afs::S3Options s3Options =
+      afs::S3Options::FromAccessKey(access_key, secret_key);
+  s3Options.endpoint_override = endpoint_override;
+  s3Options.scheme = "http";
+
+  std::shared_ptr<afs::S3FileSystem> s3fs =
+      afs::S3FileSystem::Make(s3Options).ValueOrDie();
+  auto format = std::make_shared<ads::ParquetFileFormat>();
+  ads::FileSystemFactoryOptions options;
+
+  auto factory =
+      ads::FileSystemDatasetFactory::Make(s3fs, parquet_files, format, options)
+          .ValueOrDie();
+  return factory->Finish().ValueOrDie();
+}
+
+Status GetColumns(const std::shared_ptr<ads::Dataset>& dataset,
+                  const std::vector<std::string>& column_names,
+                  std::vector<int32>& column_cols) {
+  std::vector<int32> v_cols;
+  std::list<int32> l_cols;
+  int column_count = column_names.size();
+  column_cols.reserve(column_count);
+  v_cols.reserve(column_count);
+  auto schema = dataset->schema();
+  for (const auto& name : column_names) {
+    int index = schema->GetFieldIndex(name);
+    if (index != -1) {
+      v_cols.push_back(index);
+
+      auto iter = l_cols.begin();
+      if (l_cols.empty()) {
+        l_cols.insert(iter, index);
+      } else {
+        while (iter != l_cols.end()) {
+          if (*iter > index) {
+            l_cols.insert(iter, index);
+            break;
+          }
+          iter++;
+        }
+        if (iter == l_cols.end()) {
+          l_cols.insert(iter, index);
+        }
+      }
+    } else {
+      return errors::InvalidArgument("Column name: " + name +
+                                     " does not exist");
+    }
+  }
+
+  for (const auto& v_index : v_cols) {
+    int32 index = 0;
+    for (const auto& l_index : l_cols) {
+      if (v_index == l_index) {
+        column_cols.push_back(index);
+        break;
+      } else {
+        index++;
+      }
+    }
+  }
 
   return Status::OK();
 }

@@ -937,6 +937,201 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   };
 };
 
+class ArrowS3DatasetOp : public ArrowOpKernelBase {
+ public:
+  explicit ArrowS3DatasetOp(OpKernelConstruction* ctx)
+      : ArrowOpKernelBase(ctx) {}
+
+  virtual void MakeArrowDataset(
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
+      const DataTypeVector& output_types,
+      const std::vector<PartialTensorShape>& output_shapes,
+      ArrowDatasetBase** output) override {
+    tstring aws_access_key;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "aws_access_key",
+                                                     &aws_access_key));
+
+    tstring aws_secret_key;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "aws_secret_key",
+                                                     &aws_secret_key));
+
+    tstring aws_endpoint_override;
+    OP_REQUIRES_OK(ctx,
+                   ParseScalarArgument<tstring>(ctx, "aws_endpoint_override",
+                                                &aws_endpoint_override));
+
+    const Tensor* parquet_files_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("parquet_files", &parquet_files_tensor));
+    OP_REQUIRES(
+        ctx, parquet_files_tensor->dims() <= 1,
+        errors::InvalidArgument("`parquet_files` must be a scalar or vector."));
+    std::vector<string> parquet_files;
+    parquet_files.reserve(parquet_files_tensor->NumElements());
+    for (int i = 0; i < parquet_files_tensor->NumElements(); ++i) {
+      parquet_files.push_back(parquet_files_tensor->flat<tstring>()(i));
+    }
+
+    const Tensor* column_names_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("column_names", &column_names_tensor));
+    OP_REQUIRES(
+        ctx, column_names_tensor->dims() <= 1,
+        errors::InvalidArgument("`column_names` must be a scalar or vector."));
+    std::vector<string> column_names;
+    column_names.reserve(column_names_tensor->NumElements());
+    for (int i = 0; i < column_names_tensor->NumElements(); ++i) {
+      column_names.push_back(column_names_tensor->flat<tstring>()(i));
+    }
+
+    std::vector<int32> column_cols;
+    auto s3Dataset = ArrowUtil::GetS3Dataset(
+        aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files);
+    auto status = ArrowUtil::GetColumns(s3Dataset, column_names, column_cols);
+
+    int64 offset;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<int64>(ctx, "offset", &offset));
+
+    int64 max_rows;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<int64>(ctx, "max_rows", &max_rows));
+
+    *output =
+        new Dataset(ctx, aws_access_key, aws_secret_key, aws_endpoint_override,
+                    parquet_files, column_names, offset, max_rows, column_cols,
+                    batch_size, batch_mode, output_types_, output_shapes_);
+  }
+
+ private:
+  class Dataset : public ArrowDatasetBase {
+   public:
+    Dataset(OpKernelContext* ctx, const std::string& aws_access_key,
+            const std::string& aws_secret_key,
+            const std::string& aws_endpoint_override,
+            const std::vector<std::string>& parquet_files,
+            const std::vector<std::string>& column_names, int64 offset,
+            int64 max_rows, const std::vector<int32> columns,
+            const int64 batch_size, const ArrowBatchMode batch_mode,
+            const DataTypeVector& output_types,
+            const std::vector<PartialTensorShape>& output_shapes)
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
+          aws_access_key_(aws_access_key),
+          aws_secret_key_(aws_secret_key),
+          aws_endpoint_override_(aws_endpoint_override),
+          parquet_files_(parquet_files),
+          column_names_(column_names),
+          offset_(offset),
+          max_rows_(max_rows) {}
+
+    string DebugString() const override { return "ArrowS3DatasetOp::Dataset"; }
+    Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
+      return Status::OK();
+    }
+    Status CheckExternalState() const override { return Status::OK(); }
+
+   protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* aws_access_key = nullptr;
+      tstring access_key = aws_access_key_;
+      TF_RETURN_IF_ERROR(b->AddScalar(access_key, &aws_access_key));
+      Node* aws_secret_key = nullptr;
+      tstring secret_key = aws_secret_key_;
+      TF_RETURN_IF_ERROR(b->AddScalar(secret_key, &aws_secret_key));
+      Node* aws_endpoint_override = nullptr;
+      tstring endpoint_override = aws_endpoint_override_;
+      TF_RETURN_IF_ERROR(
+          b->AddScalar(endpoint_override, &aws_endpoint_override));
+      Node* parquet_files = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(parquet_files_, &parquet_files));
+      Node* column_names = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(column_names_, &column_names));
+      Node* offset = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(offset_, &offset));
+      Node* max_rows = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(max_rows_, &max_rows));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      Node* batch_size = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
+      Node* batch_mode = nullptr;
+      tstring batch_mode_str;
+      TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
+      TF_RETURN_IF_ERROR(b->AddDataset(
+          this,
+          {aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files,
+           column_names, offset, max_rows, columns, batch_size, batch_mode},
+          output));
+      return Status::OK();
+    }
+
+    std::unique_ptr<IteratorBase> MakeIteratorInternal(
+        const string& prefix) const override {
+      return std::unique_ptr<IteratorBase>(
+          new Iterator({this, strings::StrCat(prefix, "::ArrowS3")}));
+    }
+
+   private:
+    class Iterator : public ArrowBaseIterator<Dataset> {
+     public:
+      explicit Iterator(const Params& params)
+          : ArrowBaseIterator<Dataset>(params) {}
+
+     private:
+      Status SetupStreamsLocked(Env* env)
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        auto parquet_dataset = ArrowUtil::GetS3Dataset(
+            dataset()->aws_access_key_, dataset()->aws_secret_key_,
+            dataset()->aws_endpoint_override_, dataset()->parquet_files_);
+        auto scanner_builder = parquet_dataset->NewScan().ValueOrDie();
+        using arrow::compute::and_;
+        using arrow::compute::field_ref;
+        using arrow::compute::greater_equal;
+        using arrow::compute::literal;
+        arrow::compute::Expression filter_rowstokeep = and_(
+            {greater_equal(field_ref(arrow::FieldRef(K_ROW_INDEX_COLUMN_NAME)),
+                           literal(dataset()->offset_)),
+             less(field_ref(arrow::FieldRef(K_ROW_INDEX_COLUMN_NAME)),
+                  literal(dataset()->offset_ + dataset()->max_rows_))});
+
+        scanner_builder->Project(dataset()->column_names_);
+        if (dataset()->max_rows_ > 0) {
+          scanner_builder->Filter(filter_rowstokeep);
+        }
+        scanner_builder->BatchSize(K_DEFAULT_BATCH_SIZE);
+        auto scanner = scanner_builder->Finish().ValueOrDie();
+        reader_ = scanner->ToRecordBatchReader().ValueOrDie();
+        CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        return Status::OK();
+      }
+
+      Status NextStreamLocked(Env* env)
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
+        CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        return Status::OK();
+      }
+
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::ResetStreamsLocked();
+        reader_.reset();
+      }
+
+      size_t current_endpoint_idx_ TF_GUARDED_BY(mu_) = 0;
+      std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ TF_GUARDED_BY(mu_);
+    };
+
+    const std::string aws_access_key_;
+    const std::string aws_secret_key_;
+    const std::string aws_endpoint_override_;
+    const std::vector<std::string> parquet_files_;
+    const std::vector<std::string> column_names_;
+    const int64 offset_;
+    const int64 max_rows_;
+  };
+};  // class ArrowS3DatasetOp
+
 REGISTER_KERNEL_BUILDER(Name("IO>ArrowZeroCopyDataset").Device(DEVICE_CPU),
                         ArrowZeroCopyDatasetOp);
 
@@ -948,6 +1143,9 @@ REGISTER_KERNEL_BUILDER(Name("IO>ArrowFeatherDataset").Device(DEVICE_CPU),
 
 REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
+
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowS3Dataset").Device(DEVICE_CPU),
+                        ArrowS3DatasetOp);
 
 }  // namespace data
 }  // namespace tensorflow
