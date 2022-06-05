@@ -1,6 +1,6 @@
-#include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
-
 #include <stdio.h>
+
+#include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 #undef NDEBUG
 #include <cassert>
 
@@ -8,14 +8,13 @@ namespace tensorflow {
 namespace io {
 namespace dfs {
 
-
 // SECTION 1. Implementation for `TF_RandomAccessFile`
 // ----------------------------------------------------------------------------
 namespace tf_random_access_file {
 typedef struct DFSRandomAccessFile {
   std::string dfs_path;
   dfs_t* daos_fs;
-  dfs_obj_t *daos_file;
+  dfs_obj_t* daos_file;
   std::vector<ReadBuffer> buffers;
   daos_size_t file_size;
   daos_handle_t mEventQueueHandle{};
@@ -77,7 +76,7 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
       if (read_buf.CacheHit(curr_offset)) {
         read_bytes = read_buf.CopyFromCache(ret, ret_offset, curr_offset, n,
                                             dfs_file->file_size, status);
-	break;
+        break;
       }
     }
 
@@ -96,8 +95,8 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
     size_t async_offset = curr_offset;
     for (size_t i = 0; i < dfs_file->buffers.size(); i++) {
       if (async_offset > dfs_file->file_size) break;
-      dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs,
-                                     dfs_file->daos_file, async_offset);
+      dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs, dfs_file->daos_file,
+                                     async_offset);
       async_offset += BUFF_SIZE;
     }
   }
@@ -113,7 +112,7 @@ namespace tf_writable_file {
 typedef struct DFSWritableFile {
   std::string dfs_path;
   dfs_t* daos_fs;
-  dfs_obj_t *daos_file;
+  dfs_obj_t* daos_file;
   daos_size_t file_size;
   bool size_known;
 
@@ -121,10 +120,10 @@ typedef struct DFSWritableFile {
       : dfs_path(std::move(dfs_path)) {
     daos_fs = file_system;
     daos_file = obj;
-    size_known=false;
+    size_known = false;
   }
 
-  int get_file_size(daos_size_t &size) {
+  int get_file_size(daos_size_t& size) {
     if (!size_known) {
       int rc = dfs_get_size(daos_fs, daos_file, &file_size);
       if (rc != 0) {
@@ -141,9 +140,7 @@ typedef struct DFSWritableFile {
     size_known = true;
   }
 
-  void unset_file_size(void) {
-    size_known = false;
-  }
+  void unset_file_size(void) { size_known = false; }
 } DFSWritableFile;
 
 void Cleanup(TF_WritableFile* file) {
@@ -171,8 +168,8 @@ void Append(const TF_WritableFile* file, const char* buffer, size_t n,
     return;
   }
 
-  rc = dfs_write(dfs_file->daos_fs, dfs_file->daos_file, &wsgl,
-                 cur_file_size, NULL);
+  rc = dfs_write(dfs_file->daos_fs, dfs_file->daos_file, &wsgl, cur_file_size,
+                 NULL);
   if (rc) {
     TF_SetStatus(status, TF_RESOURCE_EXHAUSTED, "");
     dfs_file->unset_file_size();
@@ -274,8 +271,8 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
   }
   auto random_access_file =
       new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj);
-  random_access_file->buffers[0].ReadAsync(
-      daos->daos_fs, random_access_file->daos_file, 0);
+  random_access_file->buffers[0].ReadAsync(daos->daos_fs,
+                                           random_access_file->daos_file, 0);
   file->plugin_file = random_access_file;
   TF_SetStatus(status, TF_OK, "");
 }

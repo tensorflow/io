@@ -556,7 +556,8 @@ int ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
   assert(rc == 0);
   rc = daos_event_init(event, eqh, nullptr);
   assert(rc == 0);
-  event->ev_error = dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
+  event->ev_error =
+      dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
   return 0;
 }
 
@@ -571,8 +572,9 @@ int ReadBuffer::CopyData(char* ret, const size_t ret_offset, const size_t off,
 }
 
 int64_t ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
-                              const size_t off, const size_t n,
-                              const daos_size_t file_size, TF_Status* status) {
+                                  const size_t off, const size_t n,
+                                  const daos_size_t file_size,
+                                  TF_Status* status) {
   size_t read_size;
   read_size = off + n > file_size ? file_size - off : n;
   read_size = off + read_size > buffer_offset + buffer_size

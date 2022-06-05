@@ -208,8 +208,8 @@ class ReadBuffer {
                const size_t n);
 
   int64_t CopyFromCache(char* ret, const size_t ret_offset, const size_t off,
-                    const size_t n, const daos_size_t file_size,
-                    TF_Status* status);
+                        const size_t n, const daos_size_t file_size,
+                        TF_Status* status);
 
  private:
   size_t id;
