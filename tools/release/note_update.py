@@ -55,6 +55,7 @@ logs = subprocess.run(
 ).stdout.decode("utf-8")
 
 authors = [e.split("\t")[1].strip() for e in logs.rstrip().split("\n")]
+authors = list(filter(lambda e: e != "github-actions[bot]", authors))
 # Replace " " with "@" to allow text wrap without break names, then replace back
 authors = textwrap.fill(", ".join([e.replace(" ", "@") for e in authors]), 80).replace(
     "@", " "

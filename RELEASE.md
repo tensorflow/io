@@ -1,3 +1,33 @@
+# Release 0.26.0
+
+## Major Features and Bug Fixes
+* Updated arrow version to 7.0.0
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+372046933, Colin, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.25.0
+
+## Major Features and Bug Fixes
+* Decrease max bytes read from hdfs
+* Hide mongodb connection uri from being logged
+* Update log level from fetal to error when loading the libhdfs.so failed
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Junfan Zhang, Stan Chen, Vignesh Kothapalli, Yong Tang, trabenx, yleeeee
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.24.0
 
 ## Major Features and Bug Fixes

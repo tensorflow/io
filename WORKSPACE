@@ -6,11 +6,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "zlib",
     build_file = "//third_party:zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
+    patch_cmds = ["""sed -i.bak '29i\\'$'\\n#include<zconf.h>\\n' contrib/minizip/crypt.h"""],
+    sha256 = "91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9",
+    strip_prefix = "zlib-1.2.12",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-        "https://zlib.net/zlib-1.2.11.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.12.tar.gz",
+        "https://zlib.net/zlib-1.2.12.tar.gz",
     ],
 )
 
@@ -114,10 +115,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "66b953ae7fba61fd78969a2e24e350b26ec116cf2e6a7eb93d02c63939c6f9f7",
-    strip_prefix = "tensorflow-2.8.0",
+    sha256 = "8087cb0c529f04a4bfe480e49925cd64a904ad16d8ec66b98e2aacdfd53c80ff",
+    strip_prefix = "tensorflow-2.9.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.8.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.9.0.tar.gz",
     ],
 )
 
@@ -157,16 +158,11 @@ http_archive(
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    patch_cmds = [
-        # TODO: Remove the fowllowing once arrow issue is resolved.
-        """sed -i.bak 's/type_traits/std::max<int16_t>(sizeof(int16_t), type_traits/g' cpp/src/parquet/column_reader.cc""",
-        """sed -i.bak 's/value_byte_size/value_byte_size)/g' cpp/src/parquet/column_reader.cc""",
-    ],
-    sha256 = "a27971e2a71c412ae43d998b7b6d06201c7a3da382c804dcdc4a8126ccbabe67",
-    strip_prefix = "arrow-apache-arrow-4.0.0",
+    sha256 = "57e13c62f27b710e1de54fd30faed612aefa22aa41fa2c0c3bacd204dd18a8f3",
+    strip_prefix = "arrow-apache-arrow-7.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
     ],
 )
 
@@ -601,10 +597,10 @@ http_archive(
     patch_cmds = [
         "tar -xzf c++/libs/libhdfspp/libhdfspp.tar.gz -C c++/libs/libhdfspp",
     ],
-    sha256 = "abdffe48b8d2e7776c3b541ee2241401e49774941ca4a8c759e5d795daec8a45",
-    strip_prefix = "orc-rel-release-1.6.7",
+    sha256 = "39d983f4c7feb8ea1e8ab8e3e53e9afc643282b7a500b3a93c91aa6490f65c17",
+    strip_prefix = "orc-rel-release-1.6.14",
     urls = [
-        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.7.tar.gz",
+        "https://github.com/apache/orc/archive/refs/tags/rel/release-1.6.14.tar.gz",
     ],
 )
 
@@ -861,10 +857,10 @@ http_archive(
 http_archive(
     name = "xsimd",
     build_file = "//third_party:xsimd.BUILD",
-    sha256 = "45337317c7f238fe0d64bb5d5418d264a427efc53400ddf8e6a964b6bcb31ce9",
-    strip_prefix = "xsimd-7.5.0",
+    sha256 = "21b4700e9ef70f6c9a86952047efd8272317df4e6fee35963de9394fd9c5677f",
+    strip_prefix = "xsimd-8.0.1",
     urls = [
-        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/7.5.0.tar.gz",
+        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/8.0.1.tar.gz",
     ],
 )
 
