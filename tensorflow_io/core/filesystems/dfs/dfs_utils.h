@@ -104,22 +104,6 @@ struct dfs_entry {
   char* value;
 };
 
-typedef struct DAOS_FILE {
-  /** A daos object handle that will contain the file handle of the file
-   *  to write and read */
-  dfs_obj_t* file;
-  /**
-   * The offset which represents the number of bytes already written/read
-   * using default functions,
-   * Modified by seek directly. Incremented naturally by read_dfs_file,
-   * write_dfs_file functions.
-   * Won't be modified by read_dfs_file_with_offset,
-   * write_dfs_file_with_offset.
-   * A getter with get_daos_file_offset to obtain the offset.
-   */
-  long offset;
-} DAOS_FILE;
-
 typedef struct pool_info {
   daos_handle_t poh;
   std::map<std::string, daos_handle_t>* containers;
@@ -216,20 +200,14 @@ class ReadBuffer {
 
   bool CacheHit(const size_t pos);
 
-  int WaitEvent();
-
-  int AbortEvent();
-
-  int FinalizeEvent();
+  void WaitEvent();
 
   int ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
-
-  int ReadSync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
 
   int CopyData(char* ret, const size_t ret_offset, const size_t offset,
                const size_t n);
 
-  int CopyFromCache(char* ret, const size_t ret_offset, const size_t off,
+  int64_t CopyFromCache(char* ret, const size_t ret_offset, const size_t off,
                     const size_t n, const daos_size_t file_size,
                     TF_Status* status);
 
@@ -242,9 +220,7 @@ class ReadBuffer {
   daos_event_t* event;
   d_sg_list_t rsgl;
   d_iov_t iov;
-  bool valid;
   daos_size_t read_size;
-  bool initialized;
 };
 
 #endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_DFS_DFS_FILESYSTEM_H_

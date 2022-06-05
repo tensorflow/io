@@ -1,5 +1,9 @@
 #include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 
+#include <stdio.h>
+#undef NDEBUG
+#include <cassert>
+
 std::string GetStorageString(uint64_t size) {
   if (size < KILO) {
     return std::to_string(size);
@@ -138,7 +142,6 @@ int DFS::Setup(const std::string& path, std::string& pool_string,
   }
   Connect(pool_string, cont_string, allow_cont_creation, status);
   if (TF_GetCode(status) != TF_OK) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
     return -1;
   }
   return Mount();
@@ -504,21 +507,22 @@ int DFS::DisconnectContainer(std::string pool_string, std::string cont_string) {
 ReadBuffer::ReadBuffer(size_t id, daos_handle_t eqh, size_t size)
     : id(id), buffer_size(size), eqh(eqh) {
   buffer = new char[size];
-  buffer_offset = 0;
-  initialized = false;
+  buffer_offset = ULONG_MAX;
   event = new daos_event_t;
-  daos_event_init(event, eqh, nullptr);
-  valid = false;
+  int rc = daos_event_init(event, eqh, nullptr);
+  assert(rc == 0);
 }
 
 ReadBuffer::~ReadBuffer() {
   if (event != nullptr) {
-    bool event_status;
-    daos_event_test(event, 0, &event_status);
-    daos_event_fini(event);
+    WaitEvent();
+    int rc = daos_event_fini(event);
+    assert(rc == 0);
+    delete event;
   }
-  delete[] buffer;
-  delete event;
+  if (buffer != nullptr) {
+    delete[] buffer;
+  }
 }
 
 ReadBuffer::ReadBuffer(ReadBuffer&& read_buffer) {
@@ -526,87 +530,47 @@ ReadBuffer::ReadBuffer(ReadBuffer&& read_buffer) {
   buffer_size = read_buffer.buffer_size;
   buffer = std::move(read_buffer.buffer);
   event = std::move(read_buffer.event);
-  buffer_offset = 0;
+  buffer_offset = ULONG_MAX;
   id = read_buffer.id;
-  valid = false;
   read_buffer.buffer = nullptr;
   read_buffer.event = nullptr;
-  initialized = false;
-}
-
-int ReadBuffer::FinalizeEvent() {
-  int rc = 0;
-  if (event != nullptr) {
-    bool event_status;
-    daos_event_test(event, 0, &event_status);
-    rc = daos_event_fini(event);
-  }
-  delete event;
-  event = nullptr;
-  return rc;
 }
 
 bool ReadBuffer::CacheHit(const size_t pos) {
-  return pos >= buffer_offset && (pos < buffer_offset + buffer_size) &&
-         initialized;
+  return pos >= buffer_offset && (pos < buffer_offset + buffer_size);
 }
 
-int ReadBuffer::WaitEvent() {
-  if (valid) return 0;
+void ReadBuffer::WaitEvent() {
   bool event_status;
-  daos_event_test(event, -1, &event_status);
-  if (event_status && event->ev_error == DER_SUCCESS) {
-    valid = true;
-    return 0;
-  }
-  return event->ev_error;
-}
-
-int ReadBuffer::AbortEvent() {
-  bool event_status = false;
-  daos_event_test(event, 0, &event_status);
-  if (!event_status)
-    return daos_event_abort(event);
-  else
-    return 0;
+  int rc = daos_event_test(event, DAOS_EQ_WAIT, &event_status);
+  assert(rc == 0 && event_status == true);
 }
 
 int ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
-  int rc = AbortEvent();
-  if (rc) return rc;
+  WaitEvent();
   d_iov_set(&iov, (void*)buffer, buffer_size);
   rsgl.sg_nr = 1;
   rsgl.sg_iovs = &iov;
-  valid = false;
   buffer_offset = off;
-  initialized = true;
-  dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
+  int rc = daos_event_fini(event);
+  assert(rc == 0);
+  rc = daos_event_init(event, eqh, nullptr);
+  assert(rc == 0);
+  event->ev_error = dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
   return 0;
-}
-
-int ReadBuffer::ReadSync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off) {
-  int rc = AbortEvent();
-  if (rc) return rc;
-  d_iov_set(&iov, (void*)buffer, buffer_size);
-  rsgl.sg_nr = 1;
-  rsgl.sg_iovs = &iov;
-  valid = false;
-  buffer_offset = off;
-  initialized = true;
-  rc = dfs_read(daos_fs, file, &rsgl, off, &read_size, NULL);
-  if (!rc) valid = true;
-  return rc;
 }
 
 int ReadBuffer::CopyData(char* ret, const size_t ret_offset, const size_t off,
                          const size_t n) {
-  int rc = WaitEvent();
-  if (rc) return rc;
+  WaitEvent();
+  if (event->ev_error != DER_SUCCESS) {
+    return event->ev_error;
+  }
   memcpy(ret + ret_offset, buffer + (off - buffer_offset), n);
   return 0;
 }
 
-int ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
+int64_t ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
                               const size_t off, const size_t n,
                               const daos_size_t file_size, TF_Status* status) {
   size_t read_size;
@@ -616,15 +580,15 @@ int ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
                   : read_size;
   int rc = CopyData(ret, ret_offset, off, read_size);
   if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "");
-    return 0;
+    TF_SetStatusFromIOError(status, rc, "I/O error on dfs_read() call");
+    return -1;
   }
 
   if (off + n > file_size) {
     TF_SetStatus(status, TF_OUT_OF_RANGE, "");
-    return read_size;
+  } else {
+    TF_SetStatus(status, TF_OK, "");
   }
 
-  TF_SetStatus(status, TF_OK, "");
-  return read_size;
+  return static_cast<int64_t>(read_size);
 }
