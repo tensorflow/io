@@ -20,8 +20,8 @@
 #include <sys/stat.h>
 
 #include <iostream>
-#include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "tensorflow/c/logging.h"
@@ -106,20 +106,16 @@ struct dfs_entry {
 
 typedef struct pool_info {
   daos_handle_t poh;
-  std::map<std::string, daos_handle_t>* containers;
+  std::unordered_map<std::string, daos_handle_t>* containers;
 } pool_info_t;
 
 typedef std::pair<std::string, daos_handle_t> id_handle_t;
 
-enum File_Mode { READ, WRITE, APPEND };
+enum File_Mode { READ, WRITE, APPEND, READWRITE };
 
 std::string GetStorageString(uint64_t size);
 
 size_t GetStorageSize(std::string size);
-
-// parse DFS path in the format of dfs://<pool_uuid>/<cont_uuid>/<filename>
-int ParseDFSPath(const std::string& path, std::string& pool_string,
-                 std::string& cont_string, std::string& filename);
 
 int ParseUUID(const std::string& str, uuid_t uuid);
 
@@ -129,7 +125,10 @@ class DFS {
   dfs_t* daos_fs;
   id_handle_t pool;
   id_handle_t container;
-  std::map<std::string, pool_info_t*> pools;
+  daos_handle_t mEventQueueHandle;
+  std::unordered_map<std::string, pool_info_t*> pools;
+  std::unordered_map<std::string, dfs_obj_t*> path_map;
+  static std::unordered_map<std::string, daos_size_t> size_map;
 
   DFS();
 
@@ -138,6 +137,9 @@ class DFS {
   int dfsInit();
 
   void dfsCleanup();
+
+  int ParseDFSPath(const std::string& path, std::string& pool_string,
+                   std::string& cont_string, std::string& filename);
 
   int Setup(const std::string& path, std::string& pool_string,
             std::string& cont_string, std::string& file_path,
@@ -158,21 +160,27 @@ class DFS {
 
   int ClearConnections();
 
-  void dfsNewFile(std::string& file_path, File_Mode mode, int flags,
+  void dfsNewFile(std::string file_path, File_Mode mode, int flags,
                   dfs_obj_t** obj, TF_Status* status);
 
-  int dfsPathExists(std::string& file, dfs_obj_t** obj, int release_obj = 1);
+  int dfsPathExists(std::string file, dfs_obj_t** obj,
+                    bool isDirectory = false);
 
-  int dfsFindParent(std::string& file, dfs_obj_t** parent);
+  int dfsFindParent(std::string file, dfs_obj_t** parent);
 
   int dfsCreateDir(std::string& dir_path, TF_Status* status);
 
-  int dfsDeleteObject(std::string& dir_path, bool is_dir, bool recursive,
+  int dfsDeleteObject(std::string dir_path, bool is_dir, bool recursive,
                       TF_Status* status);
 
   bool isRoot(std::string& file_path);
 
   int dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children);
+
+  int dfsLookUp(std::string dir_path, dfs_obj_t** obj,
+                bool isDirectory = false);
+
+  dfs_obj_t* lookup_insert_dir(const char* name, mode_t* mode);
 
   ~DFS();
 
@@ -202,7 +210,8 @@ class ReadBuffer {
 
   void WaitEvent();
 
-  int ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off);
+  int ReadAsync(dfs_t* dfs, dfs_obj_t* file, const size_t off,
+                const size_t file_size);
 
   int CopyData(char* ret, const size_t ret_offset, const size_t offset,
                const size_t n);
