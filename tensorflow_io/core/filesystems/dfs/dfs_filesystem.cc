@@ -1,5 +1,4 @@
 #include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
-
 namespace tensorflow {
 namespace io {
 namespace dfs {
@@ -13,40 +12,81 @@ typedef struct DFSRandomAccessFile {
   DAOS_FILE daos_file;
   std::vector<ReadBuffer> buffers;
   daos_size_t file_size;
-  daos_handle_t mEventQueueHandle{};
-  DFSRandomAccessFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
-      : dfs_path(std::move(dfs_path)) {
+  bool caching;
+  size_t buff_size;
+  size_t num_of_buffers;
+  DFSRandomAccessFile(std::string aDfs_path, dfs_t* file_system, dfs_obj_t* obj, daos_handle_t eq_handle)
+      : dfs_path(std::move(aDfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
-    dfs_get_size(daos_fs, obj, &file_size);
-    size_t num_of_buffers;
-    size_t buff_size;
-    int rc = daos_eq_create(&mEventQueueHandle);
+    if(DFS::size_map.count(aDfs_path) == 0) {
+    	dfs_get_size(daos_fs, obj, &file_size);
+	DFS::size_map[aDfs_path] = file_size;
+    }
+    else {
+	    file_size = DFS::size_map[aDfs_path];
+    }
+    if(char* env_caching = std::getenv("TF_IO_DAOS_CACHING")) {
+      caching = atoi(env_caching) > 0;
+    }
+    else {
+      caching = false;
+    }
 
-    if (char* env_num_of_buffers = std::getenv("TF_IO_DAOS_NUM_OF_BUFFERS")) {
-      num_of_buffers = atoi(env_num_of_buffers);
-    } else {
+    if(caching) {
+      if (char* env_num_of_buffers = std::getenv("TF_IO_DAOS_NUM_OF_BUFFERS")) {
+        num_of_buffers = atoi(env_num_of_buffers);
+      } else {
       num_of_buffers = NUM_OF_BUFFERS;
-    }
+      }
 
-    if (char* env_buff_size = std::getenv("TF_IO_DAOS_BUFFER_SIZE")) {
-      buff_size = GetStorageSize(env_buff_size);
-    } else {
-      buff_size = BUFF_SIZE;
+      if (char* env_buff_size = std::getenv("TF_IO_DAOS_BUFFER_SIZE")) {
+        buff_size = GetStorageSize(env_buff_size);
+      } else {
+        buff_size = BUFF_SIZE;
+      }
+      for (size_t i = 0; i < num_of_buffers; i++) {
+        buffers.push_back(ReadBuffer(i, eq_handle, buff_size));
+      }
     }
-    for (size_t i = 0; i < num_of_buffers; i++) {
-      buffers.push_back(ReadBuffer(i, mEventQueueHandle, buff_size));
-    }
+  }
+
+  int64_t ReadNoCache(uint64_t offset, size_t n, char* buffer, TF_Status* status) {
+      int rc;
+      d_sg_list_t rsgl;
+      d_iov_t iov;
+      d_iov_set(&iov, (void*)buffer, n);
+      rsgl.sg_nr = 1;
+      rsgl.sg_iovs = &iov;
+
+      daos_size_t read_size;
+      daos_file.offset = offset;
+
+      rc = dfs_read(daos_fs, daos_file.file, &rsgl,
+                    daos_file.offset, &read_size, NULL);
+      if (rc) {
+        TF_SetStatus(status, TF_INTERNAL, "");
+        return read_size;
+      }
+
+      if (read_size != n) {
+        TF_SetStatus(status, TF_OUT_OF_RANGE, "");
+        return read_size;
+      }
+
+      TF_SetStatus(status, TF_OK, "");
+      return read_size;
+
   }
 } DFSRandomAccessFile;
 
 void Cleanup(TF_RandomAccessFile* file) {
+
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
   for (auto& buffer : dfs_file->buffers) {
     buffer.FinalizeEvent();
   }
 
-  daos_eq_destroy(dfs_file->mEventQueueHandle, 0);
   dfs_release(dfs_file->daos_file.file);
   dfs_file->daos_fs = nullptr;
   delete dfs_file;
@@ -54,10 +94,15 @@ void Cleanup(TF_RandomAccessFile* file) {
 
 int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
              char* ret, TF_Status* status) {
+	
   auto dfs_file = static_cast<DFSRandomAccessFile*>(file->plugin_file);
   if (offset >= dfs_file->file_size) {
     TF_SetStatus(status, TF_OUT_OF_RANGE, "");
     return -1;
+  }
+
+  if(!dfs_file->caching) {
+    return dfs_file->ReadNoCache(offset, n, ret, status);
   }
 
   size_t ret_offset = 0;
@@ -70,27 +115,27 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
       if (read_buf.CacheHit(curr_offset)) {
         read_bytes = read_buf.CopyFromCache(ret, ret_offset, curr_offset, n,
                                             dfs_file->file_size, status);
+        curr_offset += read_bytes;
+        ret_offset += read_bytes;
+        total_bytes += read_bytes;
+        n -= read_bytes;
       }
     }
 
-    if (read_bytes > 0) {
-      curr_offset += read_bytes;
-      ret_offset += read_bytes;
-      total_bytes += read_bytes;
-      n -= read_bytes;
-      continue;
-    }
+    if(curr_offset >= ret_size || curr_offset >= dfs_file->file_size) break;
 
-    size_t async_offset = curr_offset + BUFF_SIZE;
-    for (size_t i = 1; i < dfs_file->buffers.size(); i++) {
+    size_t async_offset = curr_offset + dfs_file->buff_size;
+    for (size_t i = 1; i < dfs_file->buffers.size(); i++) {    
       if (async_offset > dfs_file->file_size) break;
       dfs_file->buffers[i].ReadAsync(dfs_file->daos_fs,
-                                     dfs_file->daos_file.file, async_offset);
-      async_offset += BUFF_SIZE;
+                                     dfs_file->daos_file.file, async_offset,
+                                     dfs_file->file_size);
+      async_offset += dfs_file->buff_size;
     }
 
     dfs_file->buffers[0].ReadSync(dfs_file->daos_fs, dfs_file->daos_file.file,
-                                  curr_offset);
+                                  curr_offset,
+                                  dfs_file->file_size);
 
     read_bytes = dfs_file->buffers[0].CopyFromCache(
         ret, ret_offset, curr_offset, n, dfs_file->file_size, status);
@@ -119,8 +164,8 @@ typedef struct DFSWritableFile {
   std::string dfs_path;
   dfs_t* daos_fs;
   DAOS_FILE daos_file;
-  DFSWritableFile(std::string dfs_path, dfs_t* file_system, dfs_obj_t* obj)
-      : dfs_path(std::move(dfs_path)) {
+  DFSWritableFile(std::string aDfs_path, dfs_t* file_system, dfs_obj_t* obj)
+      : dfs_path(std::move(aDfs_path)) {
     daos_fs = file_system;
     daos_file.file = obj;
   }
@@ -211,6 +256,7 @@ void NewFile(const TF_Filesystem* filesystem, const char* path, File_Mode mode,
   }
   std::string pool, cont, file_path;
   rc = daos->Setup(path, pool, cont, file_path, status);
+
   if (rc) return;
   daos->dfsNewFile(file_path, mode, flags, obj, status);
 }
@@ -241,9 +287,16 @@ void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
     return;
   }
   auto random_access_file =
-      new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj);
-  random_access_file->buffers[0].ReadAsync(
-      daos->daos_fs, random_access_file->daos_file.file, 0);
+      new tf_random_access_file::DFSRandomAccessFile(path, daos->daos_fs, obj, daos->mEventQueueHandle);
+  if(random_access_file->caching) {
+            size_t async_offset = 0;
+      for(size_t i = 0; i < random_access_file->num_of_buffers; i++) {
+          if (async_offset > random_access_file->file_size) break;
+            random_access_file->buffers[i].ReadAsync(
+      daos->daos_fs, random_access_file->daos_file.file, async_offset, random_access_file->file_size);
+      async_offset += random_access_file->buff_size;
+      }
+  }
   file->plugin_file = random_access_file;
   TF_SetStatus(status, TF_OK, "");
 }
@@ -275,12 +328,15 @@ void PathExists(const TF_Filesystem* filesystem, const char* path,
   rc = daos->Setup(path, pool, cont, file, status);
   if (rc) return;
   dfs_obj_t* obj;
+  
   rc = daos->dfsPathExists(file, &obj);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
   } else {
     TF_SetStatus(status, TF_OK, "");
   }
+
+  dfs_release(obj);
 }
 
 void CreateDir(const TF_Filesystem* filesystem, const char* path,
@@ -342,7 +398,6 @@ void DeleteFileSystemEntry(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_INTERNAL, "Error initializng DAOS API");
     return;
   }
-
   daos->dfsDeleteObject(dir_path, is_dir, recursive, status);
 }
 
@@ -388,14 +443,12 @@ bool IsDir(const TF_Filesystem* filesystem, const char* path,
   }
 
   dfs_obj_t* obj;
-  rc = daos->dfsPathExists(file, &obj, 0);
+  rc = daos->dfsPathExists(file, &obj, true);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
   } else {
     is_dir = S_ISDIR(obj->mode);
   }
-
-  dfs_release(obj);
 
   if (is_dir) {
     TF_SetStatus(status, TF_OK, "");
@@ -417,13 +470,16 @@ int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
   std::string pool, cont, file;
   rc = daos->Setup(path, pool, cont, file, status);
   if (rc) return -1;
-
+  if(DFS::size_map.count(path) != 0) {
+    return DFS::size_map[path];
+  }
   dfs_obj_t* obj;
-  rc = daos->dfsPathExists(file, &obj, 0);
+  rc = daos->dfsPathExists(file, &obj, false);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
     return -1;
-  } else {
+  } 
+  else {
     if (S_ISDIR(obj->mode)) {
       TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
       return -1;
@@ -431,6 +487,8 @@ int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
     TF_SetStatus(status, TF_OK, "");
     daos_size_t size;
     dfs_get_size(daos->daos_fs, obj, &size);
+	  DFS::size_map[path] = size;
+
     dfs_release(obj);
     return size;
   }
@@ -453,14 +511,14 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   }
   int allow_cont_creation = 1;
   std::string pool_src, cont_src, file_src;
-  rc = ParseDFSPath(src, pool_src, cont_src, file_src);
+  rc = ParseDFSPath(src, pool_src, cont_src, file_src, daos->pools);
   if (rc) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
     return;
   }
 
   std::string pool_dst, cont_dst, file_dst;
-  rc = ParseDFSPath(dst, pool_dst, cont_dst, file_dst);
+  rc = ParseDFSPath(dst, pool_dst, cont_dst, file_dst, daos->pools);
   if (rc) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
     return;
@@ -487,23 +545,22 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   file_dst = "/" + file_dst;
 
   dfs_obj_t* temp_obj;
-  rc = daos->dfsPathExists(file_src, &temp_obj, 0);
+  rc = daos->dfsPathExists(file_src, &temp_obj, false);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
     return;
   } else {
     if (S_ISDIR(temp_obj->mode)) {
       TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-      dfs_release(temp_obj);
       return;
     }
   }
 
   dfs_release(temp_obj);
-  rc = daos->dfsPathExists(file_dst, &temp_obj, 0);
+
+  rc = daos->dfsPathExists(file_dst, &temp_obj, false);
   if (!rc && S_ISDIR(temp_obj->mode)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-    dfs_release(temp_obj);
     return;
   }
 
@@ -515,7 +572,6 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   rc = daos->dfsFindParent(file_src, &parent_src);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
-    dfs_release(parent_src);
     return;
   }
 
@@ -525,13 +581,11 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   rc = daos->dfsFindParent(file_dst, &parent_dst);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
-    dfs_release(parent_dst);
     return;
   }
 
   if (!S_ISDIR(parent_dst->mode)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-    dfs_release(parent_dst);
     return;
   }
 
@@ -543,8 +597,6 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   rc = dfs_move(daos->daos_fs, parent_src, name, parent_dst, new_name, NULL);
   free(name);
   free(new_name);
-  dfs_release(parent_src);
-  dfs_release(parent_dst);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "");
     return;
@@ -566,7 +618,9 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
   if (rc) return;
 
   dfs_obj_t* obj;
-  rc = daos->dfsPathExists(dir_path, &obj, 0);
+  //TODO use actual lookup
+
+  rc = daos->dfsPathExists(dir_path, &obj);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
     return;
@@ -578,7 +632,14 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
   } else {
     stats->is_directory = false;
     daos_size_t size;
-    dfs_get_size(daos->daos_fs, obj, &size);
+    if(DFS::size_map.count(path) == 0) {
+    	dfs_get_size(daos->daos_fs, obj, &size);
+	    DFS::size_map[path] = size;
+    }
+    else {
+	    size = DFS:: size_map[path];
+    }
+
     stats->length = size;
   }
 
@@ -589,7 +650,6 @@ void Stat(const TF_Filesystem* filesystem, const char* path,
   stats->mtime_nsec = static_cast<int64_t>(stbuf.st_mtime) * 1e9;
 
   dfs_release(obj);
-
   TF_SetStatus(status, TF_OK, "");
 }
 
@@ -606,16 +666,14 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   if (rc) return -1;
 
   dfs_obj_t* obj;
-  rc = daos->dfsPathExists(dir_path, &obj, 0);
+  rc = daos->dfsPathExists(dir_path, &obj,true);
   if (rc) {
     TF_SetStatus(status, TF_NOT_FOUND, "");
-    dfs_release(obj);
     return -1;
   }
 
   if (!S_ISDIR(obj->mode)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-    dfs_release(obj);
     return -1;
   }
 
@@ -623,11 +681,8 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
   rc = daos->dfsReadDir(obj, children);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "");
-    dfs_release(obj);
     return -1;
   }
-
-  dfs_release(obj);
 
   uint32_t nr = children.size();
 
@@ -647,6 +702,7 @@ void FlushCaches(const TF_Filesystem* filesystem) {
     return;
   }
   daos->ClearConnections();
+  daos->path_map.clear();
 }
 
 }  // namespace tf_dfs_filesystem
