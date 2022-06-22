@@ -19,8 +19,6 @@
 #include <fnmatch.h>
 #include <sys/stat.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -28,6 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 #include "tensorflow/c/logging.h"
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/filesystems/filesystem_plugins.h"
@@ -123,89 +123,97 @@ size_t GetStorageSize(std::string size);
 
 int ParseUUID(const std::string& str, uuid_t uuid);
 
-
 class libDFS {
-  public:
-    explicit libDFS(TF_Status* status) { LoadAndBindDaosLibs(status); }
+ public:
+  explicit libDFS(TF_Status* status) { LoadAndBindDaosLibs(status); }
 
-    ~libDFS();
+  ~libDFS();
 
-    std::function<int(daos_handle_t, daos_event_t*)>daos_cont_close;
+  std::function<int(daos_handle_t, daos_event_t*)> daos_cont_close;
 
-    std::function<int(daos_handle_t, const char*, unsigned int, daos_handle_t*,
-                      daos_cont_info_t*, daos_event_t*)>daos_cont_open2;
+  std::function<int(daos_handle_t, const char*, unsigned int, daos_handle_t*,
+                    daos_cont_info_t*, daos_event_t*)>
+      daos_cont_open2;
 
-    std::function<int(daos_handle_t, daos_cont_info_t*, daos_prop_t*,
-                      daos_event_t*)>daos_cont_query;
+  std::function<int(daos_handle_t, daos_cont_info_t*, daos_prop_t*,
+                    daos_event_t*)>
+      daos_cont_query;
 
-    std::function<int(daos_event_t*, daos_handle_t,
-                      daos_event_t*)>daos_event_init;
+  std::function<int(daos_event_t*, daos_handle_t, daos_event_t*)>
+      daos_event_init;
 
-    std::function<int(daos_event_t*)>daos_event_fini;
+  std::function<int(daos_event_t*)> daos_event_fini;
 
-    std::function<int(struct daos_event*, int64_t, bool*)>daos_event_test;
+  std::function<int(struct daos_event*, int64_t, bool*)> daos_event_test;
 
-    std::function<int(daos_handle_t*)>daos_eq_create;
+  std::function<int(daos_handle_t*)> daos_eq_create;
 
-    std::function<int(daos_handle_t, int)>daos_eq_destroy;
+  std::function<int(daos_handle_t, int)> daos_eq_destroy;
 
-    std::function<int(void)>daos_fini;
+  std::function<int(void)> daos_fini;
 
-    std::function<int(void)>daos_init;
+  std::function<int(void)> daos_init;
 
-    std::function<int(const char*, const char*, unsigned int, daos_handle_t*,
-                      daos_pool_info_t*, daos_event_t*)>daos_pool_connect2;
+  std::function<int(const char*, const char*, unsigned int, daos_handle_t*,
+                    daos_pool_info_t*, daos_event_t*)>
+      daos_pool_connect2;
 
-    std::function<int(daos_handle_t, daos_event_t*)>daos_pool_disconnect;
+  std::function<int(daos_handle_t, daos_event_t*)> daos_pool_disconnect;
 
-    std::function<int(daos_handle_t, d_rank_list_t*, daos_pool_info_t*,
-                      daos_prop_t*, daos_event_t*)>daos_pool_query;
+  std::function<int(daos_handle_t, d_rank_list_t*, daos_pool_info_t*,
+                    daos_prop_t*, daos_event_t*)>
+      daos_pool_query;
 
-    std::function<int(daos_handle_t, const char*, dfs_attr_t*, uuid_t*,
-                      daos_handle_t*, dfs_t **)> dfs_cont_create_with_label;
+  std::function<int(daos_handle_t, const char*, dfs_attr_t*, uuid_t*,
+                    daos_handle_t*, dfs_t**)>
+      dfs_cont_create_with_label;
 
-    std::function<int(dfs_t*, dfs_obj_t*, daos_size_t*)>dfs_get_size;
+  std::function<int(dfs_t*, dfs_obj_t*, daos_size_t*)> dfs_get_size;
 
-    std::function<int(dfs_t*, dfs_obj_t*, const char*, mode_t,
-                      daos_oclass_id_t)>dfs_mkdir;
+  std::function<int(dfs_t*, dfs_obj_t*, const char*, mode_t, daos_oclass_id_t)>
+      dfs_mkdir;
 
-    std::function<int(daos_handle_t, daos_handle_t, int, dfs_t**)>dfs_mount;
+  std::function<int(daos_handle_t, daos_handle_t, int, dfs_t**)> dfs_mount;
 
-    std::function<int(dfs_t*, dfs_obj_t*, const char*, dfs_obj_t*, const char*,
-                      daos_obj_id_t*)>dfs_move;
+  std::function<int(dfs_t*, dfs_obj_t*, const char*, dfs_obj_t*, const char*,
+                    daos_obj_id_t*)>
+      dfs_move;
 
-    std::function<int(dfs_t*, dfs_obj_t*, const char*, mode_t, int,
-                      daos_oclass_id_t, daos_size_t, const char*,
-                      dfs_obj_t**)>dfs_open;
+  std::function<int(dfs_t*, dfs_obj_t*, const char*, mode_t, int,
+                    daos_oclass_id_t, daos_size_t, const char*, dfs_obj_t**)>
+      dfs_open;
 
-    std::function<int(dfs_t*, dfs_obj_t*, struct stat*)>dfs_ostat;
+  std::function<int(dfs_t*, dfs_obj_t*, struct stat*)> dfs_ostat;
 
-    std::function<int(dfs_t*, dfs_obj_t*, d_sg_list_t*, daos_off_t,
-                      daos_size_t*, daos_event_t*)>dfs_read;
+  std::function<int(dfs_t*, dfs_obj_t*, d_sg_list_t*, daos_off_t, daos_size_t*,
+                    daos_event_t*)>
+      dfs_read;
 
-    std::function<int(dfs_t*, dfs_obj_t*, daos_anchor_t*, uint32_t*,
-                      struct dirent*)>dfs_readdir;
+  std::function<int(dfs_t*, dfs_obj_t*, daos_anchor_t*, uint32_t*,
+                    struct dirent*)>
+      dfs_readdir;
 
-    std::function<int(dfs_obj_t*)>dfs_release;
+  std::function<int(dfs_obj_t*)> dfs_release;
 
-    std::function<int(dfs_t*, dfs_obj_t*, const char*, bool,
-                      daos_obj_id_t*)>dfs_remove;
+  std::function<int(dfs_t*, dfs_obj_t*, const char*, bool, daos_obj_id_t*)>
+      dfs_remove;
 
-    std::function<int(dfs_t*)>dfs_umount;
+  std::function<int(dfs_t*)> dfs_umount;
 
-    std::function<int(dfs_t*, dfs_obj_t*, d_sg_list_t*, daos_off_t,
-                      daos_event_t*)>dfs_write;
+  std::function<int(dfs_t*, dfs_obj_t*, d_sg_list_t*, daos_off_t,
+                    daos_event_t*)>
+      dfs_write;
 
-    std::function<void(struct duns_attr_t*)>duns_destroy_attr;
+  std::function<void(struct duns_attr_t*)> duns_destroy_attr;
 
-    std::function<int(const char*, struct duns_attr_t*)>duns_resolve_path;
+  std::function<int(const char*, struct duns_attr_t*)> duns_resolve_path;
 
-  private:
-    void LoadAndBindDaosLibs(TF_Status* status);
+ private:
+  void LoadAndBindDaosLibs(TF_Status* status);
 
-    void* libdaos_handle_;
-    void* libdfs_handle_;
-    void* libduns_handle_;
+  void* libdaos_handle_;
+  void* libdfs_handle_;
+  void* libduns_handle_;
 };
 
 class DFS {
@@ -282,7 +290,7 @@ void CopyEntries(char*** entries, std::vector<std::string>& results);
 
 class ReadBuffer {
  public:
-  ReadBuffer(size_t id, DFS *daos, daos_handle_t eqh, size_t size);
+  ReadBuffer(size_t id, DFS* daos, daos_handle_t eqh, size_t size);
 
   ReadBuffer(ReadBuffer&&);
 
@@ -304,7 +312,7 @@ class ReadBuffer {
 
  private:
   size_t id;
-  DFS *daos;
+  DFS* daos;
   char* buffer;
   size_t buffer_offset;
   size_t buffer_size;

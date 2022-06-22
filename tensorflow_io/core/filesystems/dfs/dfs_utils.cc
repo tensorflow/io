@@ -3,10 +3,11 @@
 
 std::unordered_map<std::string, daos_size_t> DFS::size_map;
 
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include <dlfcn.h>
 #include <stdio.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 #undef NDEBUG
 #include <cassert>
 
@@ -592,7 +593,7 @@ int DFS::DisconnectContainer(std::string pool_string, std::string cont_string) {
   return rc;
 }
 
-ReadBuffer::ReadBuffer(size_t aId, DFS *daos, daos_handle_t aEqh, size_t size)
+ReadBuffer::ReadBuffer(size_t aId, DFS* daos, daos_handle_t aEqh, size_t size)
     : id(aId), daos(daos), buffer_size(size), eqh(aEqh) {
   buffer = new char[size];
   buffer_offset = ULONG_MAX;
@@ -651,9 +652,8 @@ int ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off,
   assert(rc == 0);
   rc = daos->libdfs->daos_event_init(event, eqh, nullptr);
   assert(rc == 0);
-  event->ev_error =
-      daos->libdfs->dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size,
-                             event);
+  event->ev_error = daos->libdfs->dfs_read(daos_fs, file, &rsgl, buffer_offset,
+                                           &read_size, event);
   return 0;
 }
 
@@ -691,51 +691,49 @@ int64_t ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
   return static_cast<int64_t>(aRead_size);
 }
 
-static void*
-LoadSharedLibrary(const char* library_filename, TF_Status* status)
-{
-    std::string full_path;
-    char* libdir;
-    void* handle;
+static void* LoadSharedLibrary(const char* library_filename,
+                               TF_Status* status) {
+  std::string full_path;
+  char* libdir;
+  void* handle;
 
-    if ((libdir = std::getenv("TF_IO_DAOS_LIBRARY_DIR")) != nullptr) {
-        full_path = libdir;
-        if (full_path.back() != '/') full_path.push_back('/');
-        full_path.append(library_filename);
-        handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
-        if (handle != nullptr) {
-            TF_SetStatus(status, TF_OK, "");
-            return handle;
-        }
-    }
-
-    // Check for the library in the installation location used by rpms.
-    full_path = "/usr/lib64/";
-    full_path += library_filename;
+  if ((libdir = std::getenv("TF_IO_DAOS_LIBRARY_DIR")) != nullptr) {
+    full_path = libdir;
+    if (full_path.back() != '/') full_path.push_back('/');
+    full_path.append(library_filename);
     handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (handle != nullptr) {
-        TF_SetStatus(status, TF_OK, "");
-        return handle;
+      TF_SetStatus(status, TF_OK, "");
+      return handle;
     }
+  }
 
-    // Check for the library in the location used when building DAOS fom source.
-    full_path = "/opt/daos/lib64/";
-    full_path += library_filename;
-    handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
-    if (handle != nullptr) {
-        TF_SetStatus(status, TF_OK, "");
-        return handle;
-    }
+  // Check for the library in the installation location used by rpms.
+  full_path = "/usr/lib64/";
+  full_path += library_filename;
+  handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (handle != nullptr) {
+    TF_SetStatus(status, TF_OK, "");
+    return handle;
+  }
 
-    std::string error_message =
-        absl::StrCat("Library (", library_filename, ") not found: ", dlerror());
-    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
-    return nullptr;
+  // Check for the library in the location used when building DAOS fom source.
+  full_path = "/opt/daos/lib64/";
+  full_path += library_filename;
+  handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (handle != nullptr) {
+    TF_SetStatus(status, TF_OK, "");
+    return handle;
+  }
+
+  std::string error_message =
+      absl::StrCat("Library (", library_filename, ") not found: ", dlerror());
+  TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+  return nullptr;
 }
 
-static void*
-GetSymbolFromLibrary(void* handle, const char* symbol_name, TF_Status* status)
-{
+static void* GetSymbolFromLibrary(void* handle, const char* symbol_name,
+                                  TF_Status* status) {
   if (handle == nullptr) {
     TF_SetStatus(status, TF_INVALID_ARGUMENT, "library handle cannot be null");
     return nullptr;
@@ -759,70 +757,67 @@ void BindFunc(void* handle, const char* name, std::function<R(Args...)>* func,
       GetSymbolFromLibrary(handle, name, status));
 }
 
-libDFS::
-~libDFS()
-{
-    if (libdaos_handle_ != nullptr) {
-        dlclose(libdaos_handle_);
-    }
-    if (libdfs_handle_ != nullptr) {
-        dlclose(libdfs_handle_);
-    }
-    if (libduns_handle_ != nullptr) {
-        dlclose(libduns_handle_);
-    }
+libDFS::~libDFS() {
+  if (libdaos_handle_ != nullptr) {
+    dlclose(libdaos_handle_);
+  }
+  if (libdfs_handle_ != nullptr) {
+    dlclose(libdfs_handle_);
+  }
+  if (libduns_handle_ != nullptr) {
+    dlclose(libduns_handle_);
+  }
 }
 
-void libDFS::LoadAndBindDaosLibs(TF_Status* status)
-{
-#define LOAD_DFS_LIBRARY(handle, library_filename, status)  \
-  do {                                                  \
-    handle = LoadSharedLibrary(library_filename, status);   \
-    if (TF_GetCode(status) != TF_OK) return;            \
+void libDFS::LoadAndBindDaosLibs(TF_Status* status) {
+#define LOAD_DFS_LIBRARY(handle, library_filename, status) \
+  do {                                                     \
+    handle = LoadSharedLibrary(library_filename, status);  \
+    if (TF_GetCode(status) != TF_OK) return;               \
   } while (0);
 
-    LOAD_DFS_LIBRARY(libdaos_handle_, "libdaos.so", status);
-    LOAD_DFS_LIBRARY(libdfs_handle_, "libdfs.so", status);
-    LOAD_DFS_LIBRARY(libduns_handle_, "libduns.so", status);
+  LOAD_DFS_LIBRARY(libdaos_handle_, "libdaos.so", status);
+  LOAD_DFS_LIBRARY(libdfs_handle_, "libdfs.so", status);
+  LOAD_DFS_LIBRARY(libduns_handle_, "libduns.so", status);
 
 #undef LOAD_DFS_LIBRARY
 
-#define BIND_DFS_FUNC(handle, function)              \
-  do {                                               \
-    BindFunc(handle, #function, &function, status);  \
-    if (TF_GetCode(status) != TF_OK) return;         \
+#define BIND_DFS_FUNC(handle, function)             \
+  do {                                              \
+    BindFunc(handle, #function, &function, status); \
+    if (TF_GetCode(status) != TF_OK) return;        \
   } while (0);
 
-    BIND_DFS_FUNC(libdaos_handle_, daos_cont_close);
-    BIND_DFS_FUNC(libdaos_handle_, daos_cont_open2);
-    BIND_DFS_FUNC(libdaos_handle_, daos_cont_query);
-    BIND_DFS_FUNC(libdaos_handle_, daos_event_init);
-    BIND_DFS_FUNC(libdaos_handle_, daos_event_fini);
-    BIND_DFS_FUNC(libdaos_handle_, daos_event_test);
-    BIND_DFS_FUNC(libdaos_handle_, daos_eq_create);
-    BIND_DFS_FUNC(libdaos_handle_, daos_eq_destroy);
-    BIND_DFS_FUNC(libdaos_handle_, daos_fini);
-    BIND_DFS_FUNC(libdaos_handle_, daos_init);
-    BIND_DFS_FUNC(libdaos_handle_, daos_pool_connect2);
-    BIND_DFS_FUNC(libdaos_handle_, daos_pool_disconnect);
-    BIND_DFS_FUNC(libdaos_handle_, daos_pool_query);
+  BIND_DFS_FUNC(libdaos_handle_, daos_cont_close);
+  BIND_DFS_FUNC(libdaos_handle_, daos_cont_open2);
+  BIND_DFS_FUNC(libdaos_handle_, daos_cont_query);
+  BIND_DFS_FUNC(libdaos_handle_, daos_event_init);
+  BIND_DFS_FUNC(libdaos_handle_, daos_event_fini);
+  BIND_DFS_FUNC(libdaos_handle_, daos_event_test);
+  BIND_DFS_FUNC(libdaos_handle_, daos_eq_create);
+  BIND_DFS_FUNC(libdaos_handle_, daos_eq_destroy);
+  BIND_DFS_FUNC(libdaos_handle_, daos_fini);
+  BIND_DFS_FUNC(libdaos_handle_, daos_init);
+  BIND_DFS_FUNC(libdaos_handle_, daos_pool_connect2);
+  BIND_DFS_FUNC(libdaos_handle_, daos_pool_disconnect);
+  BIND_DFS_FUNC(libdaos_handle_, daos_pool_query);
 
-    BIND_DFS_FUNC(libdfs_handle_, dfs_cont_create_with_label);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_get_size);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_mkdir);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_mount);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_move);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_open);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_ostat);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_read);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_readdir);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_release);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_remove);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_umount);
-    BIND_DFS_FUNC(libdfs_handle_, dfs_write);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_cont_create_with_label);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_get_size);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_mkdir);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_mount);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_move);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_open);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_ostat);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_read);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_readdir);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_release);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_remove);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_umount);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_write);
 
-    BIND_DFS_FUNC(libduns_handle_, duns_destroy_attr);
-    BIND_DFS_FUNC(libduns_handle_, duns_resolve_path);
+  BIND_DFS_FUNC(libduns_handle_, duns_destroy_attr);
+  BIND_DFS_FUNC(libduns_handle_, duns_resolve_path);
 
 #undef BIND_DFS_FUNC
 }

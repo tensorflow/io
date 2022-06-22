@@ -13,7 +13,7 @@ namespace dfs {
 namespace tf_random_access_file {
 typedef struct DFSRandomAccessFile {
   std::string dfs_path;
-  DFS *daos;
+  DFS* daos;
   dfs_t* daos_fs;
   dfs_obj_t* daos_file;
   std::vector<ReadBuffer> buffers;
@@ -21,7 +21,7 @@ typedef struct DFSRandomAccessFile {
   bool caching;
   size_t buff_size;
   size_t num_of_buffers;
-  DFSRandomAccessFile(std::string aDfs_path, DFS *daos, dfs_t* file_system,
+  DFSRandomAccessFile(std::string aDfs_path, DFS* daos, dfs_t* file_system,
                       dfs_obj_t* obj, daos_handle_t eq_handle)
       : dfs_path(std::move(aDfs_path)), daos(daos) {
     daos_fs = file_system;
@@ -152,13 +152,13 @@ int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
 namespace tf_writable_file {
 typedef struct DFSWritableFile {
   std::string dfs_path;
-  DFS *daos;
+  DFS* daos;
   dfs_t* daos_fs;
   dfs_obj_t* daos_file;
   daos_size_t file_size;
   bool size_known;
 
-  DFSWritableFile(std::string dfs_path, DFS *daos, dfs_t* file_system,
+  DFSWritableFile(std::string dfs_path, DFS* daos, dfs_t* file_system,
                   dfs_obj_t* obj)
       : dfs_path(std::move(dfs_path)), daos(daos) {
     daos_fs = file_system;
@@ -211,9 +211,8 @@ void Append(const TF_WritableFile* file, const char* buffer, size_t n,
     return;
   }
 
-  rc = dfs_file->daos->libdfs->dfs_write(dfs_file->daos_fs,
-                                         dfs_file->daos_file, &wsgl,
-                                         cur_file_size, NULL);
+  rc = dfs_file->daos->libdfs->dfs_write(dfs_file->daos_fs, dfs_file->daos_file,
+                                         &wsgl, cur_file_size, NULL);
   if (rc) {
     TF_SetStatus(status, TF_RESOURCE_EXHAUSTED, "");
     dfs_file->unset_file_size();
