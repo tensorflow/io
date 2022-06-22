@@ -15,15 +15,11 @@ cc_library(
         "dfs_utils.h",
     ],
     copts = tf_io_copts(),
-    linkopts = [
-        "-ldaos",
-        "-luuid",
-        "-ldfs",
-        "-lduns",
-    ],
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "@daos",
     ],
     alwayslink = 1,

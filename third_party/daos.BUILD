@@ -27,6 +27,6 @@ genrule(
     cmd = ("sed " +
            "-e 's/@TMPL_MAJOR@/2/g' " +
            "-e 's/@TMPL_MINOR@/0/g' " +
-           "-e 's/@TMPL_FIX@/0/g' " +
+           "-e 's/@TMPL_FIX@/2/g' " +
            "$< >$@"),
 )

@@ -1,7 +1,11 @@
+
 #include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 
 std::unordered_map<std::string, daos_size_t> DFS::size_map;
 
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
+#include <dlfcn.h>
 #include <stdio.h>
 #undef NDEBUG
 #include <cassert>
@@ -80,39 +84,49 @@ bool Match(const std::string& filename, const std::string& pattern) {
   return fnmatch(pattern.c_str(), filename.c_str(), FNM_PATHNAME) == 0;
 }
 
-DFS::DFS() {
+DFS::DFS(TF_Status* status) {
   daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
   daos_fs->mounted = false;
-  is_initialized = false;
-}
 
-DFS::~DFS() { free(daos_fs); }
-
-DFS* DFS::Load() {
-  if (!is_initialized) {
-    int rc = dfsInit();
-    if (rc) {
-      return nullptr;
-    }
-    is_initialized = true;
-  }
-  return this;
-}
-
-int DFS::dfsInit() {
-  int rc = daos_init();
-  if (rc) return rc;
   path_map = {};
-  rc = daos_eq_create(&mEventQueueHandle);
-  return rc;
+  TF_SetStatus(status, TF_OK, "");
+
+  // Try to load the necessary daos libraries.
+  libdfs.reset(new libDFS(status));
+  if (TF_GetCode(status) != TF_OK) {
+    libdfs.reset(nullptr);
+    return;
+  }
+
+  int rc = libdfs->daos_init();
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL, "Error initializing DAOS library");
+    return;
+  }
+
+  rc = libdfs->daos_eq_create(&mEventQueueHandle);
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL,
+                 "Error initializing DAOS event queue handle");
+    return;
+  }
 }
 
-void DFS::dfsCleanup() {
-  Teardown();
-  if (is_initialized) {
-    daos_fini();
-    is_initialized = false;
+DFS::~DFS() {
+  free(daos_fs);
+
+  int rc;
+  for (auto& kv : path_map) {
+    auto* obj = kv.second;
+    libdfs->dfs_release(obj);
   }
+  rc = libdfs->daos_eq_destroy(mEventQueueHandle, 0);
+  assert(rc == 0);
+  Unmount();
+  ClearConnections();
+
+  libdfs->daos_fini();
+  libdfs.reset(nullptr);
 }
 
 int DFS::ParseDFSPath(const std::string& path, std::string& pool_string,
@@ -145,19 +159,19 @@ int DFS::ParseDFSPath(const std::string& path, std::string& pool_string,
       return 0;
     }
   }
-  int rc = duns_resolve_path(direct_path.c_str(), attr);
+  int rc = libdfs->duns_resolve_path(direct_path.c_str(), attr);
   if (rc == 2) {
     attr->da_rel_path = NULL;
     attr->da_flags = 0;
     attr->da_no_prefix = false;
     direct_path = "daos://" + path.substr(pool_start);
-    rc = duns_resolve_path(direct_path.c_str(), attr);
+    rc = libdfs->duns_resolve_path(direct_path.c_str(), attr);
     if (rc) return rc;
   }
   pool_string = attr->da_pool;
   cont_string = attr->da_cont;
   filename = attr->da_rel_path == NULL ? "" : attr->da_rel_path;
-  duns_destroy_attr(attr);
+  libdfs->duns_destroy_attr(attr);
   return 0;
 }
 
@@ -176,18 +190,6 @@ int DFS::Setup(const std::string& path, std::string& pool_string,
     return -1;
   }
   return Mount();
-}
-
-void DFS::Teardown() {
-  int rc;
-  for (auto& kv : path_map) {
-    auto* obj = kv.second;
-    dfs_release(obj);
-  }
-  rc = daos_eq_destroy(mEventQueueHandle, 0);
-  assert(rc == 0);
-  Unmount();
-  ClearConnections();
 }
 
 void DFS::Connect(std::string& pool_string, std::string& cont_string,
@@ -240,13 +242,13 @@ int DFS::Mount() {
     rc = Unmount();
     if (rc) return rc;
   }
-  return dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
+  return libdfs->dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
 }
 
 int DFS::Unmount() {
   int rc;
   if (!daos_fs->mounted) return 0;
-  rc = dfs_umount(daos_fs);
+  rc = libdfs->dfs_umount(daos_fs);
   daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
   daos_fs->mounted = false;
   return rc;
@@ -259,9 +261,9 @@ int DFS::Query() {
   if (connected) {
     memset(&pool_info, 'D', sizeof(daos_pool_info_t));
     pool_info.pi_bits = DPI_ALL;
-    rc = daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
+    rc = libdfs->daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
     if (rc) return rc;
-    rc = daos_cont_query(container.second, &cont_info, NULL, NULL);
+    rc = libdfs->daos_cont_query(container.second, &cont_info, NULL, NULL);
     if (rc) return rc;
     std::cout << "Pool " << pool.first << " ntarget=" << pool_info.pi_ntargets
               << std::endl;
@@ -330,7 +332,7 @@ int DFS::dfsDeleteObject(std::string dir_path, bool is_dir, bool recursive,
     return -1;
   }
 
-  rc = dfs_remove(daos_fs, parent, dir.c_str(), recursive, NULL);
+  rc = libdfs->dfs_remove(daos_fs, parent, dir.c_str(), recursive, NULL);
   if (recursive) {
     path_map.clear();
   } else {
@@ -391,9 +393,8 @@ void DFS::dfsNewFile(std::string file_path, File_Mode file_mode, int flags,
   size_t file_start = file_path.rfind("/") + 1;
   std::string file_name = file_path.substr(file_start);
   std::string parent_path = file_path.substr(0, file_start);
-  rc = dfs_open(daos_fs, parent, file_name.c_str(), flags, open_flags, 0, 0,
-                NULL, obj);
-
+  rc = libdfs->dfs_open(daos_fs, parent, file_name.c_str(), flags, open_flags,
+                        0, 0, NULL, obj);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Creating Writable File");
     return;
@@ -419,7 +420,6 @@ int DFS::dfsLookUp(std::string dir_path, dfs_obj_t** obj, bool isDirectory) {
   *obj = NULL;
   dfs_obj_t* parent = NULL;
   int rc;
-  mode_t mode;
   if (dir_path.back() == '/' && dir_path.size() > 1) dir_path.pop_back();
   size_t file_start = dir_path.rfind("/") + 1;
   std::string file_path = dir_path.substr(file_start);
@@ -442,8 +442,8 @@ int DFS::dfsLookUp(std::string dir_path, dfs_obj_t** obj, bool isDirectory) {
   if (isDirectory) {
     open_mode = S_IRUSR | S_IFDIR;
   }
-  rc = dfs_open(daos_fs, parent, file_path.c_str(), open_mode, O_RDWR, 0, 0, 0,
-                obj);
+  rc = libdfs->dfs_open(daos_fs, parent, file_path.c_str(), open_mode, O_RDWR,
+                        0, 0, 0, obj);
   if (*obj != NULL && path_map.count(dir_path) == 0 && isDirectory) {
     dfs_obj_t* new_entry = new dfs_obj_t;
     memcpy(new_entry, *obj, sizeof(dfs_obj_t));
@@ -486,7 +486,7 @@ int DFS::dfsCreateDir(std::string& dir_path, TF_Status* status) {
     return rc;
   }
 
-  rc = dfs_mkdir(daos_fs, parent, dir.c_str(), S_IWUSR | S_IRUSR, 0);
+  rc = libdfs->dfs_mkdir(daos_fs, parent, dir.c_str(), S_IWUSR | S_IRUSR, 0);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Creating Directory");
   } else {
@@ -506,7 +506,7 @@ int DFS::dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children) {
   uint32_t nr = STACK;
   struct dirent* dirs = (struct dirent*)malloc(nr * sizeof(struct dirent));
   while (!daos_anchor_is_eof(&anchor)) {
-    rc = dfs_readdir(daos_fs, obj, &anchor, &nr, dirs);
+    rc = libdfs->dfs_readdir(daos_fs, obj, &anchor, &nr, dirs);
     if (rc) {
       return rc;
     }
@@ -530,8 +530,8 @@ int DFS::ConnectPool(std::string pool_string, TF_Status* status) {
   }
 
   pool_info_t* po_inf = (pool_info_t*)malloc(sizeof(po_inf));
-  rc = daos_pool_connect(pool_string.c_str(), NULL, DAOS_PC_RW, &(po_inf->poh),
-                         NULL, NULL);
+  rc = libdfs->daos_pool_connect2(pool_string.c_str(), NULL, DAOS_PC_RW,
+                                  &(po_inf->poh), NULL, NULL);
   if (rc == 0) {
     pool.first = pool_string;
     pool.second = po_inf->poh;
@@ -554,12 +554,12 @@ int DFS::ConnectContainer(std::string cont_string, int allow_creation,
 
   daos_handle_t coh;
 
-  rc = daos_cont_open(pool.second, cont_string.c_str(), DAOS_COO_RW, &coh, NULL,
-                      NULL);
+  rc = libdfs->daos_cont_open2(pool.second, cont_string.c_str(), DAOS_COO_RW,
+                               &coh, NULL, NULL);
   if (rc == -DER_NONEXIST) {
     if (allow_creation) {
-      rc = dfs_cont_create_with_label(pool.second, cont_string.c_str(), NULL,
-                                      NULL, &coh, NULL);
+      rc = libdfs->dfs_cont_create_with_label(pool.second, cont_string.c_str(),
+                                              NULL, NULL, &coh, NULL);
     }
   }
   if (rc == 0) {
@@ -573,7 +573,7 @@ int DFS::ConnectContainer(std::string cont_string, int allow_creation,
 int DFS::DisconnectPool(std::string pool_string) {
   int rc = 0;
   daos_handle_t poh = pools[pool_string]->poh;
-  rc = daos_pool_disconnect(poh, NULL);
+  rc = libdfs->daos_pool_disconnect(poh, NULL);
   if (rc == 0) {
     delete pools[pool_string]->containers;
     free(pools[pool_string]);
@@ -585,26 +585,26 @@ int DFS::DisconnectPool(std::string pool_string) {
 int DFS::DisconnectContainer(std::string pool_string, std::string cont_string) {
   int rc = 0;
   daos_handle_t coh = (*pools[pool_string]->containers)[cont_string];
-  rc = daos_cont_close(coh, 0);
+  rc = libdfs->daos_cont_close(coh, nullptr);
   if (rc == 0) {
     pools[pool_string]->containers->erase(cont_string);
   }
   return rc;
 }
 
-ReadBuffer::ReadBuffer(size_t aId, daos_handle_t aEqh, size_t size)
-    : id(aId), buffer_size(size), eqh(aEqh) {
+ReadBuffer::ReadBuffer(size_t aId, DFS *daos, daos_handle_t aEqh, size_t size)
+    : id(aId), daos(daos), buffer_size(size), eqh(aEqh) {
   buffer = new char[size];
   buffer_offset = ULONG_MAX;
   event = new daos_event_t;
-  int rc = daos_event_init(event, eqh, nullptr);
+  int rc = daos->libdfs->daos_event_init(event, eqh, nullptr);
   assert(rc == 0);
 }
 
 ReadBuffer::~ReadBuffer() {
   if (event != nullptr) {
     WaitEvent();
-    int rc = daos_event_fini(event);
+    int rc = daos->libdfs->daos_event_fini(event);
     assert(rc == 0);
     delete event;
   }
@@ -620,6 +620,7 @@ ReadBuffer::ReadBuffer(ReadBuffer&& read_buffer) {
   event = std::move(read_buffer.event);
   buffer_offset = ULONG_MAX;
   id = read_buffer.id;
+  daos = read_buffer.daos;
   read_buffer.buffer = nullptr;
   read_buffer.event = nullptr;
 }
@@ -630,7 +631,7 @@ bool ReadBuffer::CacheHit(const size_t pos) {
 
 void ReadBuffer::WaitEvent() {
   bool event_status;
-  int rc = daos_event_test(event, DAOS_EQ_WAIT, &event_status);
+  int rc = daos->libdfs->daos_event_test(event, DAOS_EQ_WAIT, &event_status);
   assert(rc == 0 && event_status == true);
 }
 
@@ -646,12 +647,13 @@ int ReadBuffer::ReadAsync(dfs_t* daos_fs, dfs_obj_t* file, const size_t off,
   rsgl.sg_nr = 1;
   rsgl.sg_iovs = &iov;
   buffer_offset = off;
-  int rc = daos_event_fini(event);
+  int rc = daos->libdfs->daos_event_fini(event);
   assert(rc == 0);
-  rc = daos_event_init(event, eqh, nullptr);
+  rc = daos->libdfs->daos_event_init(event, eqh, nullptr);
   assert(rc == 0);
   event->ev_error =
-      dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size, event);
+      daos->libdfs->dfs_read(daos_fs, file, &rsgl, buffer_offset, &read_size,
+                             event);
   return 0;
 }
 
@@ -687,4 +689,140 @@ int64_t ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
   }
 
   return static_cast<int64_t>(aRead_size);
+}
+
+static void*
+LoadSharedLibrary(const char* library_filename, TF_Status* status)
+{
+    std::string full_path;
+    char* libdir;
+    void* handle;
+
+    if ((libdir = std::getenv("TF_IO_DAOS_LIBRARY_DIR")) != nullptr) {
+        full_path = libdir;
+        if (full_path.back() != '/') full_path.push_back('/');
+        full_path.append(library_filename);
+        handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (handle != nullptr) {
+            TF_SetStatus(status, TF_OK, "");
+            return handle;
+        }
+    }
+
+    // Check for the library in the installation location used by rpms.
+    full_path = "/usr/lib64/";
+    full_path += library_filename;
+    handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (handle != nullptr) {
+        TF_SetStatus(status, TF_OK, "");
+        return handle;
+    }
+
+    // Check for the library in the location used when building DAOS fom source.
+    full_path = "/opt/daos/lib64/";
+    full_path += library_filename;
+    handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (handle != nullptr) {
+        TF_SetStatus(status, TF_OK, "");
+        return handle;
+    }
+
+    std::string error_message =
+        absl::StrCat("Library (", library_filename, ") not found: ", dlerror());
+    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+    return nullptr;
+}
+
+static void*
+GetSymbolFromLibrary(void* handle, const char* symbol_name, TF_Status* status)
+{
+  if (handle == nullptr) {
+    TF_SetStatus(status, TF_INVALID_ARGUMENT, "library handle cannot be null");
+    return nullptr;
+  }
+  void* symbol = dlsym(handle, symbol_name);
+  if (symbol == nullptr) {
+    std::string error_message =
+        absl::StrCat("Symbol (", symbol_name, ") not found: ", dlerror());
+    TF_SetStatus(status, TF_NOT_FOUND, error_message.c_str());
+    return nullptr;
+  }
+
+  TF_SetStatus(status, TF_OK, "");
+  return symbol;
+}
+
+template <typename R, typename... Args>
+void BindFunc(void* handle, const char* name, std::function<R(Args...)>* func,
+              TF_Status* status) {
+  *func = reinterpret_cast<R (*)(Args...)>(
+      GetSymbolFromLibrary(handle, name, status));
+}
+
+libDFS::
+~libDFS()
+{
+    if (libdaos_handle_ != nullptr) {
+        dlclose(libdaos_handle_);
+    }
+    if (libdfs_handle_ != nullptr) {
+        dlclose(libdfs_handle_);
+    }
+    if (libduns_handle_ != nullptr) {
+        dlclose(libduns_handle_);
+    }
+}
+
+void libDFS::LoadAndBindDaosLibs(TF_Status* status)
+{
+#define LOAD_DFS_LIBRARY(handle, library_filename, status)  \
+  do {                                                  \
+    handle = LoadSharedLibrary(library_filename, status);   \
+    if (TF_GetCode(status) != TF_OK) return;            \
+  } while (0);
+
+    LOAD_DFS_LIBRARY(libdaos_handle_, "libdaos.so", status);
+    LOAD_DFS_LIBRARY(libdfs_handle_, "libdfs.so", status);
+    LOAD_DFS_LIBRARY(libduns_handle_, "libduns.so", status);
+
+#undef LOAD_DFS_LIBRARY
+
+#define BIND_DFS_FUNC(handle, function)              \
+  do {                                               \
+    BindFunc(handle, #function, &function, status);  \
+    if (TF_GetCode(status) != TF_OK) return;         \
+  } while (0);
+
+    BIND_DFS_FUNC(libdaos_handle_, daos_cont_close);
+    BIND_DFS_FUNC(libdaos_handle_, daos_cont_open2);
+    BIND_DFS_FUNC(libdaos_handle_, daos_cont_query);
+    BIND_DFS_FUNC(libdaos_handle_, daos_event_init);
+    BIND_DFS_FUNC(libdaos_handle_, daos_event_fini);
+    BIND_DFS_FUNC(libdaos_handle_, daos_event_test);
+    BIND_DFS_FUNC(libdaos_handle_, daos_eq_create);
+    BIND_DFS_FUNC(libdaos_handle_, daos_eq_destroy);
+    BIND_DFS_FUNC(libdaos_handle_, daos_fini);
+    BIND_DFS_FUNC(libdaos_handle_, daos_init);
+    BIND_DFS_FUNC(libdaos_handle_, daos_pool_connect2);
+    BIND_DFS_FUNC(libdaos_handle_, daos_pool_disconnect);
+    BIND_DFS_FUNC(libdaos_handle_, daos_pool_query);
+
+    BIND_DFS_FUNC(libdfs_handle_, dfs_cont_create_with_label);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_get_size);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_mkdir);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_mount);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_move);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_open);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_ostat);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_read);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_readdir);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_release);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_remove);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_umount);
+    BIND_DFS_FUNC(libdfs_handle_, dfs_write);
+
+    BIND_DFS_FUNC(libduns_handle_, duns_destroy_attr);
+    BIND_DFS_FUNC(libduns_handle_, duns_resolve_path);
+
+#undef BIND_DFS_FUNC
 }
