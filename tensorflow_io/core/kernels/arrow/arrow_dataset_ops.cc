@@ -13,12 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <numeric>
+
 #include "arrow/api.h"
 #include "arrow/io/stdio.h"
 #include "arrow/ipc/api.h"
 #include "arrow/result.h"
+#include "parquet/arrow/reader.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
+#include "tensorflow/core/platform/threadpool.h"
 #include "tensorflow/core/public/version.h"
 #include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
 #include "tensorflow_io/core/kernels/arrow/arrow_stream_client.h"
@@ -101,7 +105,6 @@ class ArrowDatasetBase : public DatasetBase {
                            std::vector<Tensor>* out_tensors,
                            bool* end_of_sequence) override {
       mutex_lock l(mu_);
-
       // If in initial state, setup and read first batch
       if (current_batch_ == nullptr && current_row_idx_ == 0) {
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
@@ -163,6 +166,7 @@ class ArrowDatasetBase : public DatasetBase {
           }
 
           // Assign Tensors for each column in the current row
+          result_tensors->reserve(this->dataset()->columns_.size());
           for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
             int32 col = this->dataset()->columns_[i];
             DataType output_type = this->dataset()->output_types_[i];
@@ -177,7 +181,6 @@ class ArrowDatasetBase : public DatasetBase {
             Tensor tensor(ctx->allocator({}), output_type, output_shape);
             TF_RETURN_IF_ERROR(
                 ArrowUtil::AssignTensor(arr, current_row_idx_, &tensor));
-
             result_tensors->emplace_back(std::move(tensor));
           }
 
@@ -757,8 +760,6 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         std::shared_ptr<::arrow::Table> table;
         CHECK_ARROW(reader->Read(&table));
 
-        int64_t num_columns = table->num_columns();
-
         // Convert the table to a sequence of batches
         arrow::TableBatchReader tr(*table.get());
         std::shared_ptr<arrow::RecordBatch> batch;
@@ -983,21 +984,13 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       column_names.push_back(column_names_tensor->flat<tstring>()(i));
     }
 
-    std::vector<int32> column_cols;
-    auto s3Dataset = ArrowUtil::GetS3Dataset(
-        aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files);
-    auto status = ArrowUtil::GetColumns(s3Dataset, column_names, column_cols);
-
-    int64 offset;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<int64>(ctx, "offset", &offset));
-
-    int64 max_rows;
-    OP_REQUIRES_OK(ctx, ParseScalarArgument<int64>(ctx, "max_rows", &max_rows));
+    std::vector<int32> column_cols(column_names.size());
+    std::iota(column_cols.begin(), column_cols.end(), 0);
 
     *output =
         new Dataset(ctx, aws_access_key, aws_secret_key, aws_endpoint_override,
-                    parquet_files, column_names, offset, max_rows, column_cols,
-                    batch_size, batch_mode, output_types_, output_shapes_);
+                    parquet_files, column_names, column_cols, batch_size,
+                    batch_mode, output_types_, output_shapes_);
   }
 
  private:
@@ -1007,10 +1000,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
             const std::string& aws_secret_key,
             const std::string& aws_endpoint_override,
             const std::vector<std::string>& parquet_files,
-            const std::vector<std::string>& column_names, int64 offset,
-            int64 max_rows, const std::vector<int32> columns,
-            const int64 batch_size, const ArrowBatchMode batch_mode,
-            const DataTypeVector& output_types,
+            const std::vector<std::string>& column_names,
+            const std::vector<int32> columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
                            output_shapes),
@@ -1018,9 +1010,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           aws_secret_key_(aws_secret_key),
           aws_endpoint_override_(aws_endpoint_override),
           parquet_files_(parquet_files),
-          column_names_(column_names),
-          offset_(offset),
-          max_rows_(max_rows) {}
+          column_names_(column_names) {}
 
     string DebugString() const override { return "ArrowS3DatasetOp::Dataset"; }
     Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
@@ -1046,10 +1036,6 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddVector(parquet_files_, &parquet_files));
       Node* column_names = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(column_names_, &column_names));
-      Node* offset = nullptr;
-      TF_RETURN_IF_ERROR(b->AddScalar(offset_, &offset));
-      Node* max_rows = nullptr;
-      TF_RETURN_IF_ERROR(b->AddScalar(max_rows_, &max_rows));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* batch_size = nullptr;
@@ -1061,7 +1047,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddDataset(
           this,
           {aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files,
-           column_names, offset, max_rows, columns, batch_size, batch_mode},
+           column_names, columns, batch_size, batch_mode},
           output));
       return Status::OK();
     }
@@ -1081,45 +1067,134 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env* env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        auto parquet_dataset = ArrowUtil::GetS3Dataset(
-            dataset()->aws_access_key_, dataset()->aws_secret_key_,
-            dataset()->aws_endpoint_override_, dataset()->parquet_files_);
-        auto scanner_builder = parquet_dataset->NewScan().ValueOrDie();
-        using arrow::compute::and_;
-        using arrow::compute::field_ref;
-        using arrow::compute::greater_equal;
-        using arrow::compute::literal;
-        arrow::compute::Expression filter_rowstokeep = and_(
-            {greater_equal(field_ref(arrow::FieldRef(K_ROW_INDEX_COLUMN_NAME)),
-                           literal(dataset()->offset_)),
-             less(field_ref(arrow::FieldRef(K_ROW_INDEX_COLUMN_NAME)),
-                  literal(dataset()->offset_ + dataset()->max_rows_))});
-
-        scanner_builder->Project(dataset()->column_names_);
-        if (dataset()->max_rows_ > 0) {
-          scanner_builder->Filter(filter_rowstokeep);
+        if (!s3fs_) {
+          arrow::fs::EnsureS3Initialized();
+          auto s3Options = arrow::fs::S3Options::FromAccessKey(
+              dataset()->aws_access_key_, dataset()->aws_secret_key_);
+          s3Options.endpoint_override = dataset()->aws_endpoint_override_;
+          s3fs_ = arrow::fs::S3FileSystem::Make(s3Options).ValueOrDie();
         }
-        scanner_builder->BatchSize(K_DEFAULT_BATCH_SIZE);
-        auto scanner = scanner_builder->Finish().ValueOrDie();
-        reader_ = scanner->ToRecordBatchReader().ValueOrDie();
-        CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        ReadFile(current_file_idx_);
+        if (!background_worker_) {
+          background_worker_ =
+              std::make_shared<BackgroundWorker>(env, "download_next_workder");
+        }
+
+        if (current_batch_idx_ < record_batches_.size()) {
+          current_batch_ = record_batches_[current_batch_idx_];
+        }
+
+        if (current_file_idx_ + 1 < dataset()->parquet_files_.size()) {
+          background_worker_->Schedule(std::bind(&Iterator::ReadFile, this,
+                                                 current_file_idx_ + 1, true));
+        }
         return Status::OK();
       }
 
       Status NextStreamLocked(Env* env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::NextStreamLocked(env);
-        CHECK_ARROW(reader_->ReadNext(&current_batch_));
+        if (++current_batch_idx_ < record_batches_.size()) {
+          current_batch_ = record_batches_[current_batch_idx_];
+        } else if (++current_file_idx_ < dataset()->parquet_files_.size()) {
+          current_batch_idx_ = 0;
+          {
+            mutex_lock lk(cv_mu_);
+            while (!background_thread_finished_) {
+              cv_.wait(lk);
+            }
+          }
+
+          record_batches_.swap(next_record_batches_);
+          if (!record_batches_.empty()) {
+            current_batch_ = record_batches_[current_batch_idx_];
+          } else {
+            current_batch_ = nullptr;
+          }
+          background_thread_finished_ = false;
+          if (current_file_idx_ + 1 < dataset()->parquet_files_.size()) {
+            background_worker_->Schedule(std::bind(
+                &Iterator::ReadFile, this, current_file_idx_ + 1, true));
+          }
+        }
         return Status::OK();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
-        reader_.reset();
+        current_file_idx_ = 0;
+        current_batch_idx_ = 0;
+        record_batches_.clear();
+        next_record_batches_.clear();
       }
 
-      size_t current_endpoint_idx_ TF_GUARDED_BY(mu_) = 0;
-      std::shared_ptr<arrow::ipc::RecordBatchReader> reader_ TF_GUARDED_BY(mu_);
+      Status ReadFile(int file_index, bool background = false)
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        auto access_file =
+            s3fs_->OpenInputFile(dataset()->parquet_files_[file_index])
+                .ValueOrDie();
+
+        parquet::ArrowReaderProperties properties;
+        properties.set_use_threads(true);
+        properties.set_pre_buffer(true);
+        parquet::ReaderProperties parquet_properties =
+            parquet::default_reader_properties();
+
+        std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
+            std::make_shared<parquet::arrow::FileReaderBuilder>();
+        builder->Open(access_file, parquet_properties);
+
+        std::unique_ptr<parquet::arrow::FileReader> reader;
+        builder->properties(properties)->Build(&reader);
+
+        if (column_indices_.empty()) {
+          std::shared_ptr<arrow::Schema> schema;
+          reader->GetSchema(&schema);
+          for (const auto& name : dataset()->column_names_) {
+            column_indices_.push_back(schema->GetFieldIndex(name));
+          }
+        }
+        // Read file columns and build a table
+        std::shared_ptr<::arrow::Table> table;
+        CHECK_ARROW(reader->ReadTable(column_indices_, &table));
+
+        // Convert the table to a sequence of batches
+        arrow::TableBatchReader tr(*table.get());
+        std::shared_ptr<arrow::RecordBatch> batch;
+        CHECK_ARROW(tr.ReadNext(&batch));
+        TF_RETURN_IF_ERROR(CheckBatchColumnTypes(batch));
+        next_record_batches_.clear();
+        while (batch != nullptr) {
+          if (!background) {
+            record_batches_.emplace_back(batch);
+          } else {
+            next_record_batches_.emplace_back(batch);
+          }
+          CHECK_ARROW(tr.ReadNext(&batch));
+        }
+
+        if (background) {
+          mutex_lock lk(cv_mu_);
+          background_thread_finished_ = true;
+          cv_.notify_all();
+        }
+
+        return Status::OK();
+      }
+
+      size_t current_file_idx_ TF_GUARDED_BY(mu_) = 0;
+      size_t current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
+      std::vector<std::shared_ptr<arrow::RecordBatch>> record_batches_
+          TF_GUARDED_BY(mu_);
+      std::vector<std::shared_ptr<arrow::RecordBatch>> next_record_batches_
+          TF_GUARDED_BY(mu_);
+      std::shared_ptr<arrow::fs::S3FileSystem> s3fs_ TF_GUARDED_BY(mu_) =
+          nullptr;
+      std::vector<int> column_indices_ TF_GUARDED_BY(mu_);
+      std::shared_ptr<BackgroundWorker> background_worker_ = nullptr;
+      mutex cv_mu_;
+      condition_variable cv_;
+      bool background_thread_finished_ = false;
     };
 
     const std::string aws_access_key_;
@@ -1127,8 +1202,6 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     const std::string aws_endpoint_override_;
     const std::vector<std::string> parquet_files_;
     const std::vector<std::string> column_names_;
-    const int64 offset_;
-    const int64 max_rows_;
   };
 };  // class ArrowS3DatasetOp
 

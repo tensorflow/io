@@ -194,8 +194,6 @@ REGISTER_OP("IO>ArrowS3Dataset")
     .Input("aws_endpoint_override: string")
     .Input("parquet_files: string")
     .Input("column_names: string")
-    .Input("offset: int64")
-    .Input("max_rows: int64")
     .Input("columns: int32")
     .Input("batch_size: int64")
     .Input("batch_mode: string")
@@ -212,8 +210,6 @@ aws_secret_key: S3 secret_key.
 aws_endpoint_override: S3 endpoint override
 parquet_files: One or more parqeut file path on s3
 column_names: Select columns to read by names
-offset: Set the offset start to read
-max_rows: Max rows count to read
 )doc");
 
 }  // namespace tensorflow

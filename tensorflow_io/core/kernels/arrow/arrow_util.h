@@ -45,9 +45,6 @@ namespace data {
     }                                         \
   } while (false)
 
-const std::string K_ROW_INDEX_COLUMN_NAME = "row_index";
-#define K_DEFAULT_BATCH_SIZE 100 * 1024
-
 namespace ArrowUtil {
 
 // Convert Arrow Data Type to TensorFlow
@@ -88,15 +85,6 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
 // Parse the given IPv4 host string to get address and port
 Status ParseHost(std::string host, std::string* host_address,
                  std::string* host_port);
-
-std::shared_ptr<ads::Dataset> GetS3Dataset(
-    const std::string& access_key, const std::string& secret_key,
-    const std::string& endpoint_override,
-    const std::vector<std::string>& parquet_files);
-
-Status GetColumns(const std::shared_ptr<ads::Dataset>& dataset,
-                  const std::vector<std::string>& column_names,
-                  std::vector<int32>& column_cols);
 
 }  // namespace ArrowUtil
 }  // namespace data

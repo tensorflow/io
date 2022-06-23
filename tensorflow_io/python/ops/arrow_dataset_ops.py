@@ -665,8 +665,6 @@ class ArrowS3Dataset(ArrowBaseDataset):
         column_names,
         columns,
         output_types,
-        offset=0,
-        max_rows=0,
         output_shapes=None,
         batch_size=None,
         batch_mode="keep_remainder",
@@ -679,8 +677,6 @@ class ArrowS3Dataset(ArrowBaseDataset):
             aws_endpoint_override: S3 endpoint override
             parquet_files: A list of parquet files path on s3
             column_names: A list of column names to be used in the dataset
-            offset: Set the offset start to read
-            max_rows: Max rows count to read
             columns: A list of column indices to be used in the Dataset
             output_types: Tensor dtypes of the output tensors
             output_shapes: TensorShapes of the output tensors or None to
@@ -709,8 +705,6 @@ class ArrowS3Dataset(ArrowBaseDataset):
         column_names = tf.convert_to_tensor(
             column_names, dtype=dtypes.string, name="column_names"
         )
-        offset = tf.convert_to_tensor(offset, dtype=dtypes.int64, name="offset")
-        max_rows = tf.convert_to_tensor(max_rows, dtype=dtypes.int64, name="max_rows")
 
         super().__init__(
             partial(
@@ -720,8 +714,6 @@ class ArrowS3Dataset(ArrowBaseDataset):
                 aws_endpoint_override,
                 parquet_files,
                 column_names,
-                offset,
-                max_rows,
             ),
             columns,
             output_types,
