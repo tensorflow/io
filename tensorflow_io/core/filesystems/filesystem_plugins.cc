@@ -40,5 +40,5 @@ TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "hdfs");
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "viewfs");
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[6], "har");
-  tensorflow::io::dfs::ProvideFilesystemSupportFor(&info->ops[7], "dfs");
+  tensorflow::io::dfs::ProvideFilesystemSupportFor(&info->ops[7], "daos");
 }

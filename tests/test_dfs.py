@@ -21,8 +21,8 @@ class DFSTest(tf.test.TestCase):
         self.pool_uuid = os.environ["POOL_UUID"]
         self.container = os.environ["CONT_LABEL"]
         self.container_uuid = os.environ["CONT_UUID"]
-        self.path_root = "dfs://" + os.path.join(self.pool, self.container)
-        self.path_root_with_uuid = "dfs://" + os.path.join(
+        self.path_root = "daos://" + os.path.join(self.pool, self.container)
+        self.path_root_with_uuid = "daos://" + os.path.join(
             self.pool_uuid, self.container_uuid
         )
         super().__init__(methodName)
