@@ -1077,7 +1077,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
         ReadFile(current_file_idx_);
         if (!background_worker_) {
           background_worker_ =
-              std::make_shared<BackgroundWorker>(env, "download_next_workder");
+              std::make_shared<BackgroundWorker>(env, "download_next_worker");
         }
 
         if (current_batch_idx_ < record_batches_.size()) {
@@ -1150,8 +1150,18 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
         if (column_indices_.empty()) {
           std::shared_ptr<arrow::Schema> schema;
           reader->GetSchema(&schema);
+          // check column name exist
+          std::string err_column_names;
           for (const auto& name : dataset()->column_names_) {
-            column_indices_.push_back(schema->GetFieldIndex(name));
+            int fieldIndex = schema->GetFieldIndex(name);
+            column_indices_.push_back(fieldIndex);
+            if (-1 == fieldIndex) {
+              err_column_names = err_column_names + " " + name;
+            }
+          }
+
+          if (err_column_names.length() != 0) {
+            return errors::InvalidArgument("these column names don't exist: ", err_column_names);
           }
         }
         // Read file columns and build a table
