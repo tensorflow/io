@@ -177,6 +177,13 @@ class ArrowDatasetBase : public DatasetBase {
             TF_RETURN_IF_ERROR(ArrowUtil::AssignShape(
                 arr, current_row_idx_, batch_size, &output_shape));
 
+            if (output_shape.dims() == 1) {
+              auto&& output_shape_in = this->dataset()->output_shapes_[i];
+              if (output_shape_in.dim_size(output_shape_in.dims() - 1) == 1) {
+                output_shape.AddDim(1);
+              }
+            }
+
             // Allocate a new tensor and assign Arrow data to it
             Tensor tensor(ctx->allocator({}), output_type, output_shape);
             TF_RETURN_IF_ERROR(
@@ -1161,7 +1168,8 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           }
 
           if (err_column_names.length() != 0) {
-            return errors::InvalidArgument("these column names don't exist: ", err_column_names);
+            return errors::InvalidArgument("these column names don't exist: ",
+                                           err_column_names);
           }
         }
         // Read file columns and build a table
