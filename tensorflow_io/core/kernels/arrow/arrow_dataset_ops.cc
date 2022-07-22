@@ -1081,7 +1081,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           s3Options.endpoint_override = dataset()->aws_endpoint_override_;
           s3fs_ = arrow::fs::S3FileSystem::Make(s3Options).ValueOrDie();
         }
-        ReadFile(current_file_idx_);
+        TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
         if (!background_worker_) {
           background_worker_ =
               std::make_shared<BackgroundWorker>(env, "download_next_worker");
