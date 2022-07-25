@@ -1,8 +1,6 @@
 
 #include "tensorflow_io/core/filesystems/dfs/dfs_utils.h"
 
-std::unordered_map<std::string, daos_size_t> DFS::size_map;
-
 #include <dlfcn.h>
 #include <stdio.h>
 
@@ -86,10 +84,6 @@ bool Match(const std::string& filename, const std::string& pattern) {
 }
 
 DFS::DFS(TF_Status* status) {
-  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
-  daos_fs->mounted = false;
-
-  path_map = {};
   TF_SetStatus(status, TF_OK, "");
 
   // Try to load the necessary daos libraries.
@@ -114,16 +108,12 @@ DFS::DFS(TF_Status* status) {
 }
 
 DFS::~DFS() {
-  free(daos_fs);
-
   int rc;
-  for (auto& kv : path_map) {
-    auto* obj = kv.second;
-    libdfs->dfs_release(obj);
-  }
+  clearAllDirCaches();
+  clearAllSizeCaches();
+
   rc = libdfs->daos_eq_destroy(mEventQueueHandle, 0);
   assert(rc == 0);
-  Unmount();
   ClearConnections();
 
   libdfs->daos_fini();
@@ -132,68 +122,44 @@ DFS::~DFS() {
 
 int DFS::ParseDFSPath(const std::string& path, std::string& pool_string,
                       std::string& cont_string, std::string& filename) {
-  size_t pool_start = path.find("://") + 3;
-  struct duns_attr_t* attr =
-      (struct duns_attr_t*)malloc(sizeof(struct duns_attr_t));
-  attr->da_rel_path = NULL;
-  attr->da_flags = 1;
-  attr->da_no_prefix = true;
-  std::string direct_path = "/" + path.substr(pool_start);
-  bool has_file_name = true;
-  size_t cont_start = path.find("/", pool_start) + 1;
-  size_t file_start = path.find("/", cont_start) + 1;
-  if (file_start == 0) {
-    has_file_name = false;
-  }
-  std::string pool = path.substr(pool_start, cont_start - pool_start - 1);
-  std::string cont = path.substr(cont_start, file_start - cont_start - 1);
+  struct duns_attr_t attr = {0};
+  attr.da_flags = DUNS_NO_CHECK_PATH;
 
-  if (pools.find(pool) != pools.end()) {
-    pool_string = pool;
-    auto* poolInfo = pools[pool];
-    if (poolInfo->containers->find(cont) != poolInfo->containers->end()) {
-      cont_string = cont;
-      if (has_file_name)
-        filename = path.substr(file_start);
-      else
-        filename = "/";
-      return 0;
-    }
+  int rc = libdfs->duns_resolve_path(path.c_str(), &attr);
+  if (rc == 0) {
+    pool_string = attr.da_pool;
+    cont_string = attr.da_cont;
+    filename = attr.da_rel_path == NULL ? "/" : attr.da_rel_path;
+    if (filename.back() == '/' && filename.size() > 1) filename.pop_back();
+    libdfs->duns_destroy_attr(&attr);
   }
-  int rc = libdfs->duns_resolve_path(direct_path.c_str(), attr);
-  if (rc == 2) {
-    attr->da_rel_path = NULL;
-    attr->da_flags = 0;
-    attr->da_no_prefix = false;
-    direct_path = "daos://" + path.substr(pool_start);
-    rc = libdfs->duns_resolve_path(direct_path.c_str(), attr);
-    if (rc) return rc;
-  }
-  pool_string = attr->da_pool;
-  cont_string = attr->da_cont;
-  filename = attr->da_rel_path == NULL ? "" : attr->da_rel_path;
-  libdfs->duns_destroy_attr(attr);
-  return 0;
+  return rc;
 }
 
-int DFS::Setup(const std::string& path, std::string& pool_string,
-               std::string& cont_string, std::string& file_path,
+int DFS::Setup(DFS* daos, const std::string path, dfs_path_t& dpath,
                TF_Status* status) {
   int allow_cont_creation = 1;
   int rc;
-  rc = ParseDFSPath(path, pool_string, cont_string, file_path);
+
+  std::string pool, cont, rel_path;
+  rc = ParseDFSPath(path, pool, cont, rel_path);
   if (rc) {
-    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    TF_SetStatus(status, TF_INVALID_ARGUMENT, "");
     return rc;
   }
-  Connect(pool_string, cont_string, allow_cont_creation, status);
+  Connect(daos, pool, cont, allow_cont_creation, status);
   if (TF_GetCode(status) != TF_OK) {
     return -1;
   }
-  return Mount();
+
+  pool_info_t* po_inf = pools[pool];
+  cont_info_t* cont_info = po_inf->containers[cont];
+  dfs_path_t res(cont_info, rel_path);
+  dpath = res;
+  return 0;
 }
 
-void DFS::Connect(std::string& pool_string, std::string& cont_string,
+void DFS::Connect(DFS* daos, std::string& pool_string, std::string& cont_string,
                   int allow_cont_creation, TF_Status* status) {
   int rc;
 
@@ -203,63 +169,21 @@ void DFS::Connect(std::string& pool_string, std::string& cont_string,
     return;
   }
 
-  rc = ConnectContainer(cont_string, allow_cont_creation, status);
+  rc = ConnectContainer(daos, pool_string, cont_string, allow_cont_creation,
+                        status);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Connecting to Container");
     return;
   }
 
-  connected = true;
-
   TF_SetStatus(status, TF_OK, "");
 }
 
-void DFS::Disconnect(TF_Status* status) {
-  int rc;
-  rc = DisconnectContainer(pool.first, container.first);
-  if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "Error Disconnecting from Container");
-    return;
-  }
-
-  rc = DisconnectPool(pool.first);
-  if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "Error Disconnecting from Pool");
-    return;
-  }
-
-  connected = false;
-
-  TF_SetStatus(status, TF_OK, "");
-}
-
-int DFS::Mount() {
-  int rc = 0;
-  if (daos_fs->mounted) {
-    if (daos_fs->poh.cookie == pool.second.cookie &&
-        daos_fs->coh.cookie == container.second.cookie) {
-      return rc;
-    }
-    rc = Unmount();
-    if (rc) return rc;
-  }
-  return libdfs->dfs_mount(pool.second, container.second, O_RDWR, &daos_fs);
-}
-
-int DFS::Unmount() {
-  int rc;
-  if (!daos_fs->mounted) return 0;
-  rc = libdfs->dfs_umount(daos_fs);
-  daos_fs = (dfs_t*)malloc(sizeof(dfs_t));
-  daos_fs->mounted = false;
-  return rc;
-}
-
-int DFS::Query() {
+int DFS::Query(id_handle_t pool, id_handle_t container, dfs_t* daos_fs) {
   int rc;
   daos_pool_info_t pool_info;
   daos_cont_info_t cont_info;
-  if (connected) {
+  if (daos_fs) {
     memset(&pool_info, 'D', sizeof(daos_pool_info_t));
     pool_info.pi_bits = DPI_ALL;
     rc = libdfs->daos_pool_query(pool.second, NULL, &pool_info, NULL, NULL);
@@ -294,77 +218,125 @@ int DFS::Query() {
 
 int DFS::ClearConnections() {
   int rc;
-  rc = Unmount();
-  if (rc) return rc;
-  for (auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
-    for (auto cont_it = (*(*pool_it).second->containers).cbegin();
-         cont_it != (*(*pool_it).second->containers).cend();) {
-      rc = DisconnectContainer((*pool_it).first, (*cont_it++).first);
-      if (rc) return rc;
+
+  for (;;) {
+    auto pool_it = pools.cbegin();
+    if (pool_it == pools.cend()) {
+      break;
     }
     rc = DisconnectPool((*pool_it++).first);
     if (rc) return rc;
   }
-
-  return rc;
+  return 0;
 }
 
-int DFS::dfsDeleteObject(std::string dir_path, bool is_dir, bool recursive,
+void DFS::clearDirCache(dir_cache_t& dir_cache) {
+  for (auto kv = dir_cache.begin(); kv != dir_cache.end();) {
+    dfs_obj_t* dir = kv->second;
+    libdfs->dfs_release(dir);
+    kv = dir_cache.erase(kv);
+  }
+}
+
+void DFS::clearAllDirCaches(void) {
+  for (auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
+    for (auto cont_it = ((*pool_it).second->containers).cbegin();
+         cont_it != ((*pool_it).second->containers).cend();) {
+      cont_info_t* cont = (*cont_it).second;
+      clearDirCache(cont->dir_map);
+      cont_it++;
+    }
+    pool_it++;
+  }
+}
+
+void DFS::clearSizeCache(size_cache_t& size_cache) { size_cache.clear(); }
+
+void DFS::clearAllSizeCaches(void) {
+  for (auto pool_it = pools.cbegin(); pool_it != pools.cend();) {
+    for (auto cont_it = ((*pool_it).second->containers).cbegin();
+         cont_it != ((*pool_it).second->containers).cend();) {
+      cont_info_t* cont = (*cont_it).second;
+      clearSizeCache(cont->size_map);
+      cont_it++;
+    }
+    pool_it++;
+  }
+}
+
+int DFS::dfsDeleteObject(dfs_path_t* dpath, bool is_dir, bool recursive,
                          TF_Status* status) {
+  TF_SetStatus(status, TF_OK, "");
   dfs_obj_t* temp_obj;
-  if (dir_path.back() == '/' && dir_path.size() > 1) dir_path.pop_back();
-  if (dir_path.front() != '/') dir_path = "/" + dir_path;
-  int rc = dfsPathExists(dir_path, &temp_obj, is_dir);
-  if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
-    return -1;
-  }
-  if (!is_dir && S_ISDIR(temp_obj->mode)) {
-    TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
-    return -1;
+
+  int rc = dfsLookUp(dpath, &temp_obj, status);
+  if (rc) return -1;
+
+  if (dfsIsDirectory(temp_obj)) {
+    if (!is_dir) {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "Object is a directory");
+      libdfs->dfs_release(temp_obj);
+      return -1;
+    }
+  } else {
+    if (is_dir && !recursive) {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "Object is not a directory");
+      libdfs->dfs_release(temp_obj);
+      return -1;
+    }
   }
 
-  size_t dir_start = dir_path.rfind("/") + 1;
-  std::string dir = dir_path.substr(dir_start);
   dfs_obj_t* parent;
-  rc = dfsFindParent(dir_path, &parent);
+  rc = dfsFindParent(dpath, &parent, status);
   if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
+    libdfs->dfs_release(temp_obj);
     return -1;
   }
 
-  rc = libdfs->dfs_remove(daos_fs, parent, dir.c_str(), recursive, NULL);
-  if (recursive) {
-    path_map.clear();
-  } else {
-    path_map.erase(dir_path);
-  }
-
+  rc = libdfs->dfs_remove(dpath->getFsys(), parent,
+                          dpath->getBaseName().c_str(), recursive, NULL);
+  libdfs->dfs_release(temp_obj);
   if (rc) {
-    TF_SetStatus(status, TF_INTERNAL, "Error Deleting Existing Object");
-  } else {
-    TF_SetStatus(status, TF_OK, "");
+    TF_SetStatus(status, TF_FAILED_PRECONDITION,
+                 "Error Deleting Existing Object");
+    return -1;
   }
 
-  return rc;
+  if (is_dir) {
+    if (recursive) {
+      dpath->clearFsysCachedDirs();
+      dpath->clearFsysCachedSizes();
+    } else {
+      dpath->clearCachedDir();
+    }
+  } else {
+    dpath->clearCachedSize();
+  }
+
+  TF_SetStatus(status, TF_OK, "");
+  return 0;
 }
 
-void DFS::dfsNewFile(std::string file_path, File_Mode file_mode, int flags,
+void DFS::dfsNewFile(dfs_path_t* dpath, File_Mode file_mode, int flags,
                      dfs_obj_t** obj, TF_Status* status) {
   int rc;
   dfs_obj_t* temp_obj;
   mode_t open_flags;
-  if (file_path.back() == '/' && file_path.size() > 1) file_path.pop_back();
 
-  rc = dfsPathExists(file_path, &temp_obj, false);
-
-  if (rc && file_mode == READ) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
-    return;
+  rc = dfsLookUp(dpath, &temp_obj, status);
+  if (rc) {
+    if (TF_GetCode(status) != TF_NOT_FOUND) {
+      return;
+    }
+    if (file_mode == READ) {
+      return;
+    }
+    TF_SetStatus(status, TF_OK, "");
   }
 
-  if (temp_obj != NULL && S_ISDIR(temp_obj->mode)) {
+  if (temp_obj != NULL && dfsIsDirectory(temp_obj)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    libdfs->dfs_release(temp_obj);
     return;
   }
 
@@ -374,134 +346,197 @@ void DFS::dfsNewFile(std::string file_path, File_Mode file_mode, int flags,
   }
 
   if (!rc && file_mode == WRITE) {
-    rc = dfsDeleteObject(file_path, false, false, status);
-    if (rc) return;
+    rc = dfsDeleteObject(dpath, false, false, status);
+    if (rc) {
+      libdfs->dfs_release(temp_obj);
+      return;
+    }
   }
 
   open_flags = GetFlags(file_mode);
 
   dfs_obj_t* parent;
-  rc = dfsFindParent(file_path, &parent);
+  mode_t parent_mode;
+  rc = dfsFindParent(dpath, &parent, status);
   if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
+    libdfs->dfs_release(temp_obj);
     return;
   }
-  if (parent != NULL && !S_ISDIR(parent->mode)) {
+  rc = libdfs->dfs_get_mode(parent, &parent_mode);
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL, "Cannot retrieve object mode");
+    libdfs->dfs_release(temp_obj);
+    return;
+  }
+  if (parent != NULL && !S_ISDIR(parent_mode)) {
     TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    libdfs->dfs_release(temp_obj);
     return;
   }
 
-  size_t file_start = file_path.rfind("/") + 1;
-  std::string file_name = file_path.substr(file_start);
-  std::string parent_path = file_path.substr(0, file_start);
-  rc = libdfs->dfs_open(daos_fs, parent, file_name.c_str(), flags, open_flags,
-                        0, 0, NULL, obj);
+  std::string base_name = dpath->getBaseName();
+  rc = libdfs->dfs_open(dpath->getFsys(), parent, base_name.c_str(), flags,
+                        open_flags, 0, 0, NULL, obj);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Creating Writable File");
+    libdfs->dfs_release(temp_obj);
     return;
   }
 }
 
-int DFS::dfsPathExists(std::string file, dfs_obj_t** obj, bool isDirectory) {
-  (*obj) = NULL;
-  int rc = 0;
-  if (isRoot(file)) {
-    return rc;
-  }
-  if (file.front() != '/') file = "/" + file;
-  rc = dfsLookUp(file, obj, isDirectory);
-  if (*(obj) == NULL) {
-    return ENOENT;
-  }
+// Look up an object path and return its dfs_obj_t* in *obj.  If this routine
+// returns zero then *obj is guaranteed to contain a valid dfs_obj_t* which
+// must be released by the caller.  If non-zero, then *obj will be nullptr.  If
+// the object happens to be a directory, a dup of the dfs_obj_t* will also be
+// separately cached in the filesystem's directory cache.
 
-  return rc;
-}
-
-int DFS::dfsLookUp(std::string dir_path, dfs_obj_t** obj, bool isDirectory) {
+int DFS::dfsLookUp(dfs_path_t* dpath, dfs_obj_t** obj, TF_Status* status) {
   *obj = NULL;
-  dfs_obj_t* parent = NULL;
   int rc;
-  if (dir_path.back() == '/' && dir_path.size() > 1) dir_path.pop_back();
-  size_t file_start = dir_path.rfind("/") + 1;
-  std::string file_path = dir_path.substr(file_start);
-  std::string parent_path =
-      (file_start > 1) ? dir_path.substr(0, file_start - 1) : "/";
-  if (path_map.find(dir_path) != path_map.end()) {
-    *obj = path_map[dir_path];
+
+  // Check if the object path is for a directory we have seen before.
+
+  dfs_obj_t* _obj = dpath->getCachedDir();
+  if (_obj) {
+    rc = libdfs->dfs_dup(dpath->getFsys(), _obj, O_RDWR, obj);
+    if (rc) {
+      TF_SetStatus(status, TF_INTERNAL, "dfs_dup() of open directory failed");
+      return -1;
+    }
     return 0;
   }
-  rc = dfsFindParent(dir_path, &parent);
-  if (rc) return rc;
-  if (parent != NULL && path_map.count(parent_path) == 0) {
-    dfs_obj_t* new_entry = new dfs_obj_t;
-    memcpy(new_entry, parent, sizeof(dfs_obj_t));
-    path_map[parent_path] = new_entry;
-  }
 
-  if (file_path == "/") return rc;
-  mode_t open_mode = S_IRUSR | S_IFREG;
-  if (isDirectory) {
-    open_mode = S_IRUSR | S_IFDIR;
-  }
-  rc = libdfs->dfs_open(daos_fs, parent, file_path.c_str(), open_mode, O_RDWR,
-                        0, 0, 0, obj);
-  if (*obj != NULL && path_map.count(dir_path) == 0 && isDirectory) {
-    dfs_obj_t* new_entry = new dfs_obj_t;
-    memcpy(new_entry, *obj, sizeof(dfs_obj_t));
-    path_map[dir_path] = new_entry;
-  }
-  return rc;
-}
-
-int DFS::dfsFindParent(std::string file, dfs_obj_t** parent) {
-  (*parent) = NULL;
-  if (file.back() == '/' && file.size() > 1) file.pop_back();
-  size_t file_start = file.rfind("/") + 1;
-  std::string parent_path =
-      (file_start > 1) ? file.substr(0, file_start - 1) : "/";
-  if (parent_path != "/") {
-    int rc = dfsLookUp(parent_path, parent, true);
-    if (*(parent) == NULL) return ENOENT;
-    return rc;
+  if (dpath->isRoot()) {
+    rc = libdfs->dfs_lookup(dpath->getFsys(), dpath->getRelPath().c_str(),
+                            O_RDWR, &_obj, NULL, NULL);
   } else {
-    (*parent) = NULL;
+    dfs_obj_t* parent = NULL;
+    rc = dfsFindParent(dpath, &parent, status);
+    if (rc) return -1;
+
+    dfs_t* fsys = dpath->getFsys();
+    std::string basename = dpath->getBaseName();
+    rc = libdfs->dfs_lookup_rel(fsys, parent, basename.c_str(), O_RDWR, &_obj,
+                                NULL, NULL);
+  }
+  if (rc != 0) {
+    if (rc == ENOENT) {
+      TF_SetStatus(status, TF_NOT_FOUND, "");
+    } else {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    }
+    return -1;
+  }
+
+  if (!dfsIsDirectory(_obj)) {
+    *obj = _obj;
     return 0;
   }
+
+  // The object is a directory, so return the original dfs_obj_t* and store a
+  // dup of the original in the filesystem's directory cache.
+
+  rc = libdfs->dfs_dup(dpath->getFsys(), _obj, O_RDWR, obj);
+  if (rc) {
+    TF_SetStatus(status, TF_INTERNAL, "dfs_dup() of open directory failed");
+    return -1;
+  }
+  dpath->setCachedDir(_obj);
+  return 0;
 }
 
-int DFS::dfsCreateDir(std::string& dir_path, TF_Status* status) {
+// Given an object pathname, return the dfs_obj_t* for its parent directory.
+// Cache the parent directory if not already cached.  The caller should not
+// release the parent dfs_obj_t*.
+
+int DFS::dfsFindParent(dfs_path_t* dpath, dfs_obj_t** obj, TF_Status* status) {
+  *obj = NULL;
+  int rc;
+
+  dfs_path_t parent_dpath = *dpath;
+  parent_dpath.setRelPath(dpath->getParentPath());
+
+  dfs_obj_t* _obj = parent_dpath.getCachedDir();
+  if (_obj) {
+    *obj = _obj;
+    return 0;
+  }
+
+  rc = libdfs->dfs_lookup(parent_dpath.getFsys(),
+                          parent_dpath.getRelPath().c_str(), O_RDWR, &_obj,
+                          NULL, NULL);
+  if (rc) {
+    if (rc == ENOENT) {
+      TF_SetStatus(status, TF_NOT_FOUND, "");
+    } else {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+    }
+    return -1;
+  }
+
+  if (!dfsIsDirectory(_obj)) {
+    TF_SetStatus(status, TF_FAILED_PRECONDITION,
+                 "parent object is not a directory");
+    libdfs->dfs_release(_obj);
+    return -1;
+  }
+
+  parent_dpath.setCachedDir(_obj);
+  *obj = _obj;
+
+  return 0;
+}
+
+int DFS::dfsCreateDir(dfs_path_t* dpath, TF_Status* status) {
+  TF_SetStatus(status, TF_OK, "");
   dfs_obj_t* temp_obj;
   int rc;
-  rc = dfsPathExists(dir_path, &temp_obj, true);
+
+  rc = dfsLookUp(dpath, &temp_obj, status);
   if (!rc) {
-    TF_SetStatus(status, TF_ALREADY_EXISTS, "");
-    return rc;
+    if (dfsIsDirectory(temp_obj)) {
+      libdfs->dfs_release(temp_obj);
+      TF_SetStatus(status, TF_ALREADY_EXISTS, "");
+      return 0;
+    } else {
+      TF_SetStatus(status, TF_FAILED_PRECONDITION, "");
+      libdfs->dfs_release(temp_obj);
+      return -1;
+    }
+  } else if (TF_GetCode(status) != TF_NOT_FOUND) {
+    return -1;
   }
 
-  size_t dir_start = dir_path.rfind("/") + 1;
-  std::string dir = dir_path.substr(dir_start);
+  TF_SetStatus(status, TF_OK, "");
   dfs_obj_t* parent;
-  rc = dfsFindParent(dir_path, &parent);
+  rc = dfsFindParent(dpath, &parent, status);
   if (rc) {
-    TF_SetStatus(status, TF_NOT_FOUND, "");
     return rc;
   }
 
-  rc = libdfs->dfs_mkdir(daos_fs, parent, dir.c_str(), S_IWUSR | S_IRUSR, 0);
+  rc = libdfs->dfs_mkdir(dpath->getFsys(), parent, dpath->getBaseName().c_str(),
+                         S_IWUSR | S_IRUSR | S_IXUSR, 0);
   if (rc) {
     TF_SetStatus(status, TF_INTERNAL, "Error Creating Directory");
-  } else {
-    TF_SetStatus(status, TF_OK, "");
   }
 
   return rc;
 }
 
-bool DFS::isRoot(std::string& file_path) {
-  return (file_path.empty() || file_path == "/");
+bool DFS::dfsIsDirectory(dfs_obj_t* obj) {
+  if (obj == NULL) {
+    return true;
+  }
+  mode_t mode;
+  libdfs->dfs_get_mode(obj, &mode);
+  if (S_ISDIR(mode)) {
+    return true;
+  }
+  return false;
 }
 
-int DFS::dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children) {
+int DFS::dfsReadDir(dfs_t* daos_fs, dfs_obj_t* obj,
+                    std::vector<std::string>& children) {
   int rc = 0;
   daos_anchor_t anchor = {0};
   uint32_t nr = STACK;
@@ -525,59 +560,75 @@ int DFS::ConnectPool(std::string pool_string, TF_Status* status) {
   int rc = 0;
 
   if (pools.find(pool_string) != pools.end()) {
-    pool.first = pool_string;
-    pool.second = pools[pool_string]->poh;
-    return rc;
+    return 0;
   }
 
-  pool_info_t* po_inf = (pool_info_t*)malloc(sizeof(po_inf));
-  rc = libdfs->daos_pool_connect2(pool_string.c_str(), NULL, DAOS_PC_RW,
-                                  &(po_inf->poh), NULL, NULL);
+  daos_handle_t poh;
+  daos_pool_info_t info;
+  rc = libdfs->daos_pool_connect2(pool_string.c_str(), NULL, DAOS_PC_RW, &poh,
+                                  &info, NULL);
   if (rc == 0) {
-    pool.first = pool_string;
-    pool.second = po_inf->poh;
-    po_inf->containers = new std::unordered_map<std::string, daos_handle_t>();
+    pool_info_t* po_inf = new pool_info_t();
+    po_inf->poh = poh;
     pools[pool_string] = po_inf;
   }
   return rc;
 }
 
-int DFS::ConnectContainer(std::string cont_string, int allow_creation,
+int DFS::ConnectContainer(DFS* daos, std::string pool_string,
+                          std::string cont_string, int allow_creation,
                           TF_Status* status) {
   int rc = 0;
 
-  pool_info_t* po_inf = pools[pool.first];
-  if (po_inf->containers->find(cont_string) != po_inf->containers->end()) {
-    container.first = cont_string;
-    container.second = (*po_inf->containers)[cont_string];
-    return rc;
+  pool_info_t* po_inf = pools[pool_string];
+  auto search = po_inf->containers.find(cont_string);
+  if (search != po_inf->containers.end()) {
+    return 0;
   }
 
   daos_handle_t coh;
-
-  rc = libdfs->daos_cont_open2(pool.second, cont_string.c_str(), DAOS_COO_RW,
-                               &coh, NULL, NULL);
+  daos_cont_info_t info;
+  rc = libdfs->daos_cont_open2(po_inf->poh, cont_string.c_str(), DAOS_COO_RW,
+                               &coh, &info, NULL);
   if (rc == -DER_NONEXIST) {
     if (allow_creation) {
-      rc = libdfs->dfs_cont_create_with_label(pool.second, cont_string.c_str(),
+      rc = libdfs->dfs_cont_create_with_label(po_inf->poh, cont_string.c_str(),
                                               NULL, NULL, &coh, NULL);
     }
   }
-  if (rc == 0) {
-    container.first = cont_string;
-    container.second = coh;
-    (*po_inf->containers)[cont_string] = coh;
-  }
-  return rc;
+  if (rc != 0) return rc;
+
+  dfs_t* daos_fs;
+  rc = libdfs->dfs_mount(po_inf->poh, coh, O_RDWR, &daos_fs);
+  if (rc != 0) return rc;
+
+  cont_info_t* co_inf = new cont_info_t();
+  co_inf->coh = coh;
+  co_inf->daos = daos;
+  co_inf->daos_fs = daos_fs;
+  co_inf->pool = pool_string;
+  co_inf->cont = cont_string;
+
+  po_inf->containers[cont_string] = co_inf;
+  return 0;
 }
 
 int DFS::DisconnectPool(std::string pool_string) {
   int rc = 0;
-  daos_handle_t poh = pools[pool_string]->poh;
-  rc = libdfs->daos_pool_disconnect(poh, NULL);
+  pool_info_t* po_inf = pools[pool_string];
+
+  for (;;) {
+    auto cont_it = po_inf->containers.cbegin();
+    if (cont_it == po_inf->containers.cend()) {
+      break;
+    }
+    rc = DisconnectContainer(pool_string, (*cont_it++).first);
+    if (rc) return rc;
+  }
+
+  rc = libdfs->daos_pool_disconnect(po_inf->poh, NULL);
   if (rc == 0) {
-    delete pools[pool_string]->containers;
-    free(pools[pool_string]);
+    delete po_inf;
     pools.erase(pool_string);
   }
   return rc;
@@ -585,10 +636,18 @@ int DFS::DisconnectPool(std::string pool_string) {
 
 int DFS::DisconnectContainer(std::string pool_string, std::string cont_string) {
   int rc = 0;
-  daos_handle_t coh = (*pools[pool_string]->containers)[cont_string];
-  rc = libdfs->daos_cont_close(coh, nullptr);
+  cont_info_t* co_inf = pools[pool_string]->containers[cont_string];
+
+  if (co_inf->daos_fs) {
+    rc = libdfs->dfs_umount(co_inf->daos_fs);
+    if (rc) return rc;
+    co_inf->daos_fs = nullptr;
+  }
+
+  rc = libdfs->daos_cont_close(co_inf->coh, nullptr);
   if (rc == 0) {
-    pools[pool_string]->containers->erase(cont_string);
+    delete co_inf;
+    pools[pool_string]->containers.erase(cont_string);
   }
   return rc;
 }
@@ -689,6 +748,91 @@ int64_t ReadBuffer::CopyFromCache(char* ret, const size_t ret_offset,
   }
 
   return static_cast<int64_t>(aRead_size);
+}
+
+dfs_path_t::dfs_path_t(cont_info_t* cont_info, std::string rel_path)
+    : cont_info(cont_info), rel_path(rel_path) {}
+
+dfs_path_t& dfs_path_t::operator=(dfs_path_t other) {
+  cont_info = other.cont_info;
+  rel_path = other.rel_path;
+  return *this;
+}
+
+std::string dfs_path_t::getFullPath(void) {
+  std::string full_path =
+      "/" + cont_info->pool + "/" + cont_info->cont + rel_path;
+  return full_path;
+}
+
+std::string dfs_path_t::getRelPath(void) { return rel_path; }
+
+std::string dfs_path_t::getParentPath(void) {
+  if (rel_path == "/") {
+    return rel_path;  // root is its own parent
+  }
+
+  std::string parent_path;
+  size_t slash_pos = rel_path.rfind("/");
+  if (slash_pos == 0) {
+    parent_path = "/";
+  } else {
+    parent_path = rel_path.substr(0, slash_pos);
+  }
+  return parent_path;
+}
+
+std::string dfs_path_t::getBaseName(void) {
+  size_t base_start = rel_path.rfind("/") + 1;
+  std::string base_name = rel_path.substr(base_start);
+  return base_name;
+}
+
+DFS* dfs_path_t::getDAOS(void) { return cont_info->daos; }
+
+dfs_t* dfs_path_t::getFsys(void) { return cont_info->daos_fs; }
+
+void dfs_path_t::setRelPath(std::string new_path) { rel_path = new_path; }
+
+bool dfs_path_t::isRoot(void) { return (rel_path == "/"); }
+
+dfs_obj_t* dfs_path_t::getCachedDir(void) {
+  auto search = cont_info->dir_map.find(rel_path);
+  if (search != cont_info->dir_map.end()) {
+    return search->second;
+  } else {
+    return nullptr;
+  }
+}
+
+void dfs_path_t::setCachedDir(dfs_obj_t* dir_obj) {
+  cont_info->dir_map[rel_path] = dir_obj;
+}
+
+void dfs_path_t::clearCachedDir(void) { cont_info->dir_map.erase(rel_path); }
+
+void dfs_path_t::clearFsysCachedDirs(void) {
+  cont_info->daos->clearDirCache(cont_info->dir_map);
+}
+
+int dfs_path_t::getCachedSize(daos_size_t& size) {
+  auto search = cont_info->size_map.find(rel_path);
+  if (search != cont_info->size_map.end()) {
+    size = search->second;
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+void dfs_path_t::setCachedSize(daos_size_t size) {
+  cont_info->size_map[rel_path] = size;
+}
+
+void dfs_path_t::clearCachedSize(void) { cont_info->size_map.erase(rel_path); }
+
+void dfs_path_t::clearFsysCachedSizes(void) {
+  cont_info->daos->clearSizeCache(cont_info->size_map);
 }
 
 static void* LoadSharedLibrary(const char* library_filename,
@@ -803,7 +947,11 @@ void libDFS::LoadAndBindDaosLibs(TF_Status* status) {
   BIND_DFS_FUNC(libdaos_handle_, daos_pool_query);
 
   BIND_DFS_FUNC(libdfs_handle_, dfs_cont_create_with_label);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_dup);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_get_mode);
   BIND_DFS_FUNC(libdfs_handle_, dfs_get_size);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_lookup);
+  BIND_DFS_FUNC(libdfs_handle_, dfs_lookup_rel);
   BIND_DFS_FUNC(libdfs_handle_, dfs_mkdir);
   BIND_DFS_FUNC(libdfs_handle_, dfs_mount);
   BIND_DFS_FUNC(libdfs_handle_, dfs_move);

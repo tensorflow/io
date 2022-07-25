@@ -1,6 +1,6 @@
 # DAOS-TensorFlow IO GUIDE
 
-## Table Of Content
+## Table Of Contents
 
 - [Features](#features)
 - [Prerequisites](#prerequisites)
@@ -15,7 +15,7 @@
 
 ## Prerequisites
 
-* A valid DAOS installation, currently based on [version v1.3.106](https://github.com/daos-stack/daos/releases/tag/v1.3.106-tb)
+* A valid DAOS installation, currently based on [version v2.0.2](https://github.com/daos-stack/daos/releases/tag/v2.0.2)
   * An installation guide and steps can be accessed from [here](https://docs.daos.io/admin/installation/)
 
 ## Environment Setup

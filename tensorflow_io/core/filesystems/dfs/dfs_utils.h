@@ -32,86 +32,59 @@
 #include "tensorflow/c/tf_status.h"
 #include "tensorflow_io/core/filesystems/filesystem_plugins.h"
 
-/** object struct that is instantiated for a DFS open object */
-struct dfs_obj {
-  /** DAOS object ID */
-  daos_obj_id_t oid;
-  /** DAOS object open handle */
-  daos_handle_t oh;
-  /** mode_t containing permissions & type */
-  mode_t mode;
-  /** open access flags */
-  int flags;
-  /** DAOS object ID of the parent of the object */
-  daos_obj_id_t parent_oid;
-  /** entry name of the object in the parent */
-  char name[DFS_MAX_NAME + 1];
-  union {
-    /** Symlink value if object is a symbolic link */
-    char* value;
-    struct {
-      /** Default object class for all entries in dir */
-      daos_oclass_id_t oclass;
-      /** Default chunk size for all entries in dir */
-      daos_size_t chunk_size;
-    } d;
-  };
-};
+typedef std::unordered_map<std::string, dfs_obj_t*> dir_cache_t;
+typedef std::unordered_map<std::string, daos_size_t> size_cache_t;
 
-/** dfs struct that is instantiated for a mounted DFS namespace */
-struct dfs {
-  /** flag to indicate whether the dfs is mounted */
-  bool mounted;
-  /** flag to indicate whether dfs is mounted with balanced mode (DTX) */
-  bool use_dtx;
-  /** lock for threadsafety */
-  pthread_mutex_t lock;
-  /** uid - inherited from container. */
-  uid_t uid;
-  /** gid - inherited from container. */
-  gid_t gid;
-  /** Access mode (RDONLY, RDWR) */
-  int amode;
-  /** Open pool handle of the DFS */
-  daos_handle_t poh;
-  /** Open container handle of the DFS */
+class DFS;
+
+// Class for per-DFS-filesystem state variables, one per container in the
+// 'containers' map.
+class cont_info_t {
+ public:
   daos_handle_t coh;
-  /** Object ID reserved for this DFS (see oid_gen below) */
-  daos_obj_id_t oid;
-  /** superblock object OID */
-  daos_obj_id_t super_oid;
-  /** Open object handle of SB */
-  daos_handle_t super_oh;
-  /** Root object info */
-  dfs_obj_t root;
-  /** DFS container attributes (Default chunk size, oclass, etc.) */
-  dfs_attr_t attr;
-  /** Optional prefix to account for when resolving an absolute path */
-  char* prefix;
-  daos_size_t prefix_len;
-};
-
-struct dfs_entry {
-  /** mode (permissions + entry type) */
-  mode_t mode;
-  /** Object ID if not a symbolic link */
-  daos_obj_id_t oid;
-  /* Time of last access */
-  time_t atime;
-  /* Time of last modification */
-  time_t mtime;
-  /* Time of last status change */
-  time_t ctime;
-  /** chunk size of file */
-  daos_size_t chunk_size;
-  /** Sym Link value */
-  char* value;
+  DFS* daos;
+  std::string pool;
+  std::string cont;
+  dfs_t* daos_fs;
+  dir_cache_t dir_map;
+  size_cache_t size_map;
 };
 
 typedef struct pool_info {
   daos_handle_t poh;
-  std::unordered_map<std::string, daos_handle_t>* containers;
+  std::unordered_map<std::string, cont_info_t*> containers;
 } pool_info_t;
+
+// Class for per-DFS-file state variables and common path operations.  State
+// includes the filesystem in which the file resides.
+class dfs_path_t {
+ public:
+  dfs_path_t() { cont_info = nullptr; };
+  dfs_path_t(cont_info_t* cont_info, std::string rel_path);
+  dfs_path_t& operator=(dfs_path_t other);
+  DFS* getDAOS(void);
+  dfs_t* getFsys(void);
+  std::string getFullPath(void);
+  std::string getRelPath(void);
+  std::string getParentPath(void);
+  std::string getBaseName(void);
+  void setRelPath(std::string);
+  bool isRoot(void);
+
+  dfs_obj_t* getCachedDir(void);
+  void setCachedDir(dfs_obj_t* dir_obj);
+  void clearCachedDir(void);
+  void clearFsysCachedDirs(void);
+
+  int getCachedSize(daos_size_t& size);
+  void setCachedSize(daos_size_t size);
+  void clearCachedSize(void);
+  void clearFsysCachedSizes(void);
+
+ private:
+  cont_info_t* cont_info;
+  std::string rel_path;
+};
 
 typedef std::pair<std::string, daos_handle_t> id_handle_t;
 
@@ -168,7 +141,19 @@ class libDFS {
                     daos_handle_t*, dfs_t**)>
       dfs_cont_create_with_label;
 
+  std::function<int(dfs_t*, dfs_obj_t*, int, dfs_obj_t**)> dfs_dup;
+
+  std::function<int(dfs_obj_t*, mode_t*)> dfs_get_mode;
+
   std::function<int(dfs_t*, dfs_obj_t*, daos_size_t*)> dfs_get_size;
+
+  std::function<int(dfs_t*, const char*, int, dfs_obj_t**, mode_t*,
+                    struct stat*)>
+      dfs_lookup;
+
+  std::function<int(dfs_t*, dfs_obj_t*, const char*, int, dfs_obj_t**, mode_t*,
+                    struct stat*)>
+      dfs_lookup_rel;
 
   std::function<int(dfs_t*, dfs_obj_t*, const char*, mode_t, daos_oclass_id_t)>
       dfs_mkdir;
@@ -216,60 +201,52 @@ class libDFS {
   void* libduns_handle_;
 };
 
+// Singlton class for the DFS plugin, containing all its global state.
 class DFS {
  public:
-  bool connected;
-  dfs_t* daos_fs;
-  id_handle_t pool;
-  id_handle_t container;
-
   daos_handle_t mEventQueueHandle;
   std::unique_ptr<libDFS> libdfs;
   std::unordered_map<std::string, pool_info_t*> pools;
-  std::unordered_map<std::string, dfs_obj_t*> path_map;
-  static std::unordered_map<std::string, daos_size_t> size_map;
 
   explicit DFS(TF_Status* status);
 
   int ParseDFSPath(const std::string& path, std::string& pool_string,
                    std::string& cont_string, std::string& filename);
 
-  int Setup(const std::string& path, std::string& pool_string,
-            std::string& cont_string, std::string& file_path,
+  int Setup(DFS* daos, const std::string path, dfs_path_t& dpath,
             TF_Status* status);
 
-  void Connect(std::string& pool_string, std::string& cont_string,
+  void Connect(DFS* daos, std::string& pool_string, std::string& cont_string,
                int allow_cont_creation, TF_Status* status);
 
-  void Disconnect(TF_Status* status);
-
-  int Mount();
-
-  int Unmount();
-
-  int Query();
+  int Query(id_handle_t pool, id_handle_t container, dfs_t* daos_fs);
 
   int ClearConnections();
 
-  void dfsNewFile(std::string file_path, File_Mode mode, int flags,
-                  dfs_obj_t** obj, TF_Status* status);
+  void clearDirCache(dir_cache_t& dir_cache);
 
-  int dfsPathExists(std::string file, dfs_obj_t** obj,
-                    bool isDirectory = false);
+  void clearAllDirCaches(void);
 
-  int dfsFindParent(std::string file, dfs_obj_t** parent);
+  void clearSizeCache(size_cache_t& size_cache);
 
-  int dfsCreateDir(std::string& dir_path, TF_Status* status);
+  void clearAllSizeCaches(void);
 
-  int dfsDeleteObject(std::string dir_path, bool is_dir, bool recursive,
+  void dfsNewFile(dfs_path_t* dpath, File_Mode mode, int flags, dfs_obj_t** obj,
+                  TF_Status* status);
+
+  int dfsFindParent(dfs_path_t* dpath, dfs_obj_t** obj, TF_Status* status);
+
+  int dfsCreateDir(dfs_path_t* dpath, TF_Status* status);
+
+  int dfsDeleteObject(dfs_path_t* dpath, bool is_dir, bool recursive,
                       TF_Status* status);
 
-  bool isRoot(std::string& file_path);
+  bool dfsIsDirectory(dfs_obj_t* obj);
 
-  int dfsReadDir(dfs_obj_t* obj, std::vector<std::string>& children);
+  int dfsReadDir(dfs_t* daos_fs, dfs_obj_t* obj,
+                 std::vector<std::string>& children);
 
-  int dfsLookUp(std::string dir_path, dfs_obj_t** obj,
-                bool isDirectory = false);
+  int dfsLookUp(dfs_path_t* dpath, dfs_obj_t** obj, TF_Status* status);
 
   dfs_obj_t* lookup_insert_dir(const char* name, mode_t* mode);
 
@@ -278,7 +255,8 @@ class DFS {
  private:
   int ConnectPool(std::string pool_string, TF_Status* status);
 
-  int ConnectContainer(std::string cont_string, int allow_creation,
+  int ConnectContainer(DFS* daos, std::string pool_string,
+                       std::string cont_string, int allow_creation,
                        TF_Status* status);
 
   int DisconnectPool(std::string pool_string);
