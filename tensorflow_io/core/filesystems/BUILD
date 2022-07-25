@@ -36,10 +36,15 @@ cc_library(
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/filesystems/az",
-        "//tensorflow_io/core/filesystems/dfs",
         "//tensorflow_io/core/filesystems/hdfs",
         "//tensorflow_io/core/filesystems/http",
         "//tensorflow_io/core/filesystems/s3",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "//tensorflow_io/core/filesystems/dfs",
+        ],
+    }),
     alwayslink = 1,
 )

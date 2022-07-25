@@ -9,18 +9,27 @@ load(
 
 cc_library(
     name = "dfs",
-    srcs = [
-        "dfs_filesystem.cc",
-        "dfs_utils.cc",
-        "dfs_utils.h",
-    ],
+    srcs = [] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "dfs_filesystem.cc",
+            "dfs_utils.cc",
+            "dfs_utils.h",
+        ],
+    }),
     copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@daos",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "@daos",
+        ],
+    }),
     alwayslink = 1,
 )
