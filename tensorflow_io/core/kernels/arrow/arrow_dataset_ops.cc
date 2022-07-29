@@ -994,10 +994,13 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     std::vector<int32> column_cols(column_names.size());
     std::iota(column_cols.begin(), column_cols.end(), 0);
 
+    tstring filter;
+    OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "filter", &filter));
+
     *output =
         new Dataset(ctx, aws_access_key, aws_secret_key, aws_endpoint_override,
-                    parquet_files, column_names, column_cols, batch_size,
-                    batch_mode, output_types_, output_shapes_);
+                    parquet_files, column_names, filter, column_cols,
+                    batch_size, batch_mode, output_types_, output_shapes_);
   }
 
  private:
@@ -1008,8 +1011,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
             const std::string& aws_endpoint_override,
             const std::vector<std::string>& parquet_files,
             const std::vector<std::string>& column_names,
-            const std::vector<int32> columns, const int64 batch_size,
-            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
+            const std::string& filter, const std::vector<int32> columns,
+            const int64 batch_size, const ArrowBatchMode batch_mode,
+            const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
                            output_shapes),
@@ -1017,7 +1021,8 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           aws_secret_key_(aws_secret_key),
           aws_endpoint_override_(aws_endpoint_override),
           parquet_files_(parquet_files),
-          column_names_(column_names) {}
+          column_names_(column_names),
+          filter_(filter) {}
 
     string DebugString() const override { return "ArrowS3DatasetOp::Dataset"; }
     Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
@@ -1045,6 +1050,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddVector(column_names_, &column_names));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      Node* filter = nullptr;
+      tstring filter_str = filter_;
+      TF_RETURN_IF_ERROR(b->AddScalar(filter_str, &filter));
       Node* batch_size = nullptr;
       TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
       Node* batch_mode = nullptr;
@@ -1054,7 +1062,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddDataset(
           this,
           {aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files,
-           column_names, columns, batch_size, batch_mode},
+           column_names, filter, columns, batch_size, batch_mode},
           output));
       return Status::OK();
     }
@@ -1105,6 +1113,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           current_batch_ = record_batches_[current_batch_idx_];
         } else if (++current_file_idx_ < dataset()->parquet_files_.size()) {
           current_batch_idx_ = 0;
+
           {
             mutex_lock lk(cv_mu_);
             while (!background_thread_finished_) {
@@ -1175,11 +1184,25 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
         // Read file columns and build a table
         std::shared_ptr<::arrow::Table> table;
         CHECK_ARROW(reader->ReadTable(column_indices_, &table));
-
         // Convert the table to a sequence of batches
-        arrow::TableBatchReader tr(*table.get());
-        std::shared_ptr<arrow::RecordBatch> batch;
-        CHECK_ARROW(tr.ReadNext(&batch));
+        std::shared_ptr<arrow::RecordBatchReader> batch_reader =
+            std::make_shared<arrow::TableBatchReader>(table);
+        std::shared_ptr<arrow::RecordBatch> batch = nullptr;
+
+        // filter
+        if (!dataset()->filter_.empty()) {
+          auto scanner_builder =
+              arrow::dataset::ScannerBuilder::FromRecordBatchReader(
+                  batch_reader);
+          arrow::compute::Expression filter_expr;
+          TF_RETURN_IF_ERROR(
+              ArrowUtil::ParseExpression(dataset()->filter_, filter_expr));
+          scanner_builder->Filter(filter_expr);
+          auto scanner = scanner_builder->Finish().ValueOrDie();
+          batch_reader = scanner->ToRecordBatchReader().ValueOrDie();
+        }
+
+        CHECK_ARROW(batch_reader->ReadNext(&batch));
         TF_RETURN_IF_ERROR(CheckBatchColumnTypes(batch));
         next_record_batches_.clear();
         while (batch != nullptr) {
@@ -1188,7 +1211,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           } else {
             next_record_batches_.emplace_back(batch);
           }
-          CHECK_ARROW(tr.ReadNext(&batch));
+          CHECK_ARROW(batch_reader->ReadNext(&batch));
         }
 
         if (background) {
@@ -1220,6 +1243,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     const std::string aws_endpoint_override_;
     const std::vector<std::string> parquet_files_;
     const std::vector<std::string> column_names_;
+    const std::string filter_;
   };
 };  // class ArrowS3DatasetOp
 

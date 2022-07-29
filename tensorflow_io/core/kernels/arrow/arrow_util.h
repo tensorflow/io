@@ -86,6 +86,10 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
 Status ParseHost(std::string host, std::string* host_address,
                  std::string* host_port);
 
+// Parse expr from string for scan filter
+Status ParseExpression(const std::string& text,
+                       arrow::compute::Expression& expr);
+
 }  // namespace ArrowUtil
 }  // namespace data
 }  // namespace tensorflow
