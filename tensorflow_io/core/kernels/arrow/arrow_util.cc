@@ -14,8 +14,6 @@ limitations under the License.
 ==============================================================================*/
 #include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 
-#include <list>
-
 #include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/api.h"
 #include "arrow/ipc/api.h"

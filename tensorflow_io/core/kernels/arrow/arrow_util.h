@@ -26,9 +26,6 @@ limitations under the License.
 #include "tensorflow/core/lib/core/errors.h"
 #include "tensorflow/core/lib/core/status.h"
 
-namespace afs = arrow::fs;
-namespace ads = arrow::dataset;
-
 namespace tensorflow {
 
 // Forward declaration
