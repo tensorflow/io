@@ -56,7 +56,11 @@ cc_library(
         [
             "cpp/src/arrow/*.cc",
             "cpp/src/arrow/array/*.cc",
+            "cpp/src/arrow/compute/*.cc",
+            "cpp/src/arrow/compute/exec/*.cc",
+            "cpp/src/arrow/compute/kernels/*.cc",
             "cpp/src/arrow/csv/*.cc",
+            "cpp/src/arrow/dataset/*.cc",
             "cpp/src/arrow/io/*.cc",
             "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/json/*.cc",
@@ -64,7 +68,9 @@ cc_library(
             "cpp/src/arrow/util/*.cc",
             "cpp/src/arrow/dataset/dataset.cc",
             "cpp/src/arrow/dataset/file_parquet.cc",
+            "cpp/src/arrow/filesystem/filesystem.cc",
             "cpp/src/arrow/filesystem/s3fs.cc",
+            "cpp/src/arrow/filesystem/util_internal.cc",
             "cpp/src/arrow/compute/exec/expression.cc",
             "cpp/src/arrow/vendored/musl/strptime.c",
             "cpp/src/arrow/vendored/optional.hpp",
@@ -119,6 +125,7 @@ cc_library(
     includes = [
         "cpp/src",
         "cpp/src/arrow/vendored/xxhash",
+        "cpp/src/generated",
     ],
     textual_hdrs = [
         "cpp/src/arrow/vendored/xxhash/xxhash.c",
