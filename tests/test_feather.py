@@ -17,11 +17,24 @@
 
 import os
 import tempfile
+import pytest
 
+import tensorflow as tf
 import tensorflow_io as tfio
 
 
-def test_feather_format():
+@pytest.mark.parametrize(
+    ("version"),
+    [
+        1,
+        2,
+    ],
+    ids=[
+        "v1",
+        "v2",
+    ],
+)
+def test_feather_format(version):
     """test_feather_format"""
     import numpy as np
     import pandas as pd
@@ -39,13 +52,40 @@ def test_feather_format():
     }
     df = pd.DataFrame(data).sort_index(axis=1)
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        pa_feather.write_feather(df, f, version=1)
+        pa_feather.write_feather(df, f, version=version)
 
     feather = tfio.IOTensor.from_feather(f.name)
     for column in df.columns:
         assert feather(column).shape == [100]
         assert feather(column).dtype == column
         assert np.all(feather(column).to_tensor().numpy() == data[column])
+
+    os.unlink(f.name)
+
+
+def test_binary_feather_format():
+    """test_binary_feather_format"""
+    import numpy as np
+    import pandas as pd
+
+    from pyarrow import feather as pa_feather
+    import pyarrow as pa
+
+    local_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png"
+    )
+    with open(local_path, "rb") as f:
+        data = [f.read()]
+        table = pa.Table.from_arrays([data], ["data"])
+
+    chunk_size = 1000
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        pa_feather.write_feather(table, f, chunksize=chunk_size)
+
+    feather = tfio.IOTensor.from_feather(f.name)
+    assert feather("data").shape == [1]
+    assert feather("data").dtype == tf.string
+    assert np.all(feather("data").to_tensor().numpy() == data[0])
 
     os.unlink(f.name)
 
