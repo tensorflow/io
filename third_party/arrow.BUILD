@@ -104,6 +104,12 @@ cc_library(
         "cpp/src/parquet/parquet_version.h",
     ],
     copts = [],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:Ole32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     defines = [
         "ARROW_WITH_BROTLI",
         "ARROW_WITH_SNAPPY",
