@@ -116,6 +116,7 @@ cc_library(
         "PARQUET_STATIC",
         "PARQUET_EXPORT=",
         "WIN32_LEAN_AND_MEAN",
+        "URI_STATIC_BUILD",
     ],
     includes = [
         "cpp/src",
