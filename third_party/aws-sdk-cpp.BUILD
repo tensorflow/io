@@ -205,6 +205,7 @@ cc_library(
         "aws-cpp-sdk-identity-management/source/auth/*.cpp",
     ]),
     hdrs = glob([
+        "aws-cpp-sdk-identity-management/include/aws/identity-management/*.h",
         "aws-cpp-sdk-identity-management/include/aws/identity-management/auth/*.h",
     ]),
     includes = [
