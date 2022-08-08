@@ -1089,7 +1089,24 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           s3Options.endpoint_override = dataset()->aws_endpoint_override_;
           s3fs_ = arrow::fs::S3FileSystem::Make(s3Options).ValueOrDie();
         }
+
+        auto filter_expr_ptr =
+            const_cast<arrow::compute::Expression*>(&(dataset()->filter_expr_));
+
+        // filter
+        if (!dataset()->filter_.empty()) {
+          TF_RETURN_IF_ERROR(
+              ArrowUtil::ParseExpression(dataset()->filter_, *filter_expr_ptr));
+        }
+
         TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+
+        // If Filter is enabled, the entire file may not meet the filter
+        while (record_batches_.empty() &&
+               ++current_file_idx_ < dataset()->parquet_files_.size()) {
+          TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+        }
+
         if (!background_worker_) {
           background_worker_ =
               std::make_shared<BackgroundWorker>(env, "download_next_worker");
@@ -1122,11 +1139,19 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           }
 
           record_batches_.swap(next_record_batches_);
+
+          // If Filter is enabled, the entire file may not meet the filter
+          while (record_batches_.empty() &&
+                 ++current_file_idx_ < dataset()->parquet_files_.size()) {
+            TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+          }
+
           if (!record_batches_.empty()) {
             current_batch_ = record_batches_[current_batch_idx_];
           } else {
             current_batch_ = nullptr;
           }
+
           background_thread_finished_ = false;
           if (current_file_idx_ + 1 < dataset()->parquet_files_.size()) {
             background_worker_->Schedule(std::bind(
@@ -1146,9 +1171,13 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
 
       Status ReadFile(int file_index, bool background = false)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        auto access_file =
-            s3fs_->OpenInputFile(dataset()->parquet_files_[file_index])
-                .ValueOrDie();
+        auto access_file_result =
+            s3fs_->OpenInputFile(dataset()->parquet_files_[file_index]);
+        if (!access_file_result.ok()) {
+          return errors::InvalidArgument(access_file_result.status().message());
+        }
+
+        auto access_file = access_file_result.ValueOrDie();
 
         parquet::ArrowReaderProperties properties;
         properties.set_use_threads(true);
@@ -1194,10 +1223,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           auto scanner_builder =
               arrow::dataset::ScannerBuilder::FromRecordBatchReader(
                   batch_reader);
-          arrow::compute::Expression filter_expr;
-          TF_RETURN_IF_ERROR(
-              ArrowUtil::ParseExpression(dataset()->filter_, filter_expr));
-          scanner_builder->Filter(filter_expr);
+          scanner_builder->Filter(dataset()->filter_expr_);
           auto scanner = scanner_builder->Finish().ValueOrDie();
           batch_reader = scanner->ToRecordBatchReader().ValueOrDie();
         }
@@ -1206,10 +1232,12 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
         TF_RETURN_IF_ERROR(CheckBatchColumnTypes(batch));
         next_record_batches_.clear();
         while (batch != nullptr) {
-          if (!background) {
-            record_batches_.emplace_back(batch);
-          } else {
-            next_record_batches_.emplace_back(batch);
+          if (batch->num_rows() != 0) {
+            if (!background) {
+              record_batches_.emplace_back(batch);
+            } else {
+              next_record_batches_.emplace_back(batch);
+            }
           }
           CHECK_ARROW(batch_reader->ReadNext(&batch));
         }
@@ -1244,6 +1272,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     const std::vector<std::string> parquet_files_;
     const std::vector<std::string> column_names_;
     const std::string filter_;
+    arrow::compute::Expression filter_expr_;
   };
 };  // class ArrowS3DatasetOp
 
