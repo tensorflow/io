@@ -33,6 +33,10 @@ Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
     *out = ::tensorflow::DT_STRING;
     return Status::OK();
   }
+  if (dtype->id() == ::arrow::Type::BINARY) {
+    *out = ::tensorflow::DT_STRING;
+    return Status::OK();
+  }
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
   if (!status.ok()) {
@@ -118,6 +122,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
   VISIT_PRIMITIVE(arrow::FloatArray)
   VISIT_PRIMITIVE(arrow::DoubleArray)
   VISIT_PRIMITIVE(arrow::StringArray)
+  VISIT_PRIMITIVE(arrow::BinaryArray)
 #undef VISIT_PRIMITIVE
 
   virtual arrow::Status Visit(const arrow::ListArray& array) override {
@@ -276,6 +281,17 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
   }
 
   virtual arrow::Status Visit(const arrow::StringArray& array) override {
+    auto shape = out_tensor_->shape();
+    auto output_flat = out_tensor_->flat<tstring>();
+
+    for (int64 j = 0; j < shape.num_elements(); ++j) {
+      output_flat(j) = array.GetString(i_ + j);
+    }
+
+    return arrow::Status::OK();
+  }
+
+  virtual arrow::Status Visit(const arrow::BinaryArray& array) override {
     auto shape = out_tensor_->shape();
     auto output_flat = out_tensor_->flat<tstring>();
 
