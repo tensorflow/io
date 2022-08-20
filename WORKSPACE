@@ -115,10 +115,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "8087cb0c529f04a4bfe480e49925cd64a904ad16d8ec66b98e2aacdfd53c80ff",
-    strip_prefix = "tensorflow-2.9.0",
+    sha256 = "7edd8b544cc65254735210e03364fe9828f36430e09e9322fba9b0a4b2912580",
+    strip_prefix = "tensorflow-2.10.0-rc2",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.9.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.10.0-rc2.tar.gz",
     ],
 )
 
