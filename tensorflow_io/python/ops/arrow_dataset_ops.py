@@ -651,7 +651,84 @@ class ArrowStreamDataset(ArrowBaseDataset):
         )
 
 
+class ArrowS3Dataset(ArrowBaseDataset):
+    """An Arrow Dataset for reading record batches from an input stream.
+    Currently supported input streams are a socket client or stdin.
+    """
+
+    def __init__(
+        self,
+        aws_access_key,
+        aws_secret_key,
+        aws_endpoint_override,
+        parquet_files,
+        column_names,
+        columns,
+        output_types,
+        output_shapes=None,
+        batch_size=None,
+        batch_mode="keep_remainder",
+        filter="",
+    ):
+        """Create an ArrowDataset from an input stream.
+
+        Args:
+            aws_access_key: S3 access key
+            aws_secret_key: S3 secret key
+            aws_endpoint_override: S3 endpoint override
+            parquet_files: A list of parquet files path on s3
+            column_names: A list of column names to be used in the dataset
+            columns: A list of column indices to be used in the Dataset
+            output_types: Tensor dtypes of the output tensors
+            output_shapes: TensorShapes of the output tensors or None to
+                            infer partial
+            batch_size: Batch size of output tensors, setting a batch size here
+                        will create batched tensors from Arrow memory and can be more
+                        efficient than using tf.data.Dataset.batch().
+                        NOTE: batch_size does not need to be set if batch_mode='auto'
+            batch_mode: Mode of batching, supported strings:
+                        "keep_remainder" (default, keeps partial batch data),
+                        "drop_remainder" (discard partial batch data),
+                        "auto" (size to number of records in Arrow record batch)
+            filter : filter for reade row
+        """
+        aws_access_key = tf.convert_to_tensor(
+            aws_access_key, dtype=dtypes.string, name="aws_access_key"
+        )
+        aws_secret_key = tf.convert_to_tensor(
+            aws_secret_key, dtype=dtypes.string, name="aws_secret_key"
+        )
+        aws_endpoint_override = tf.convert_to_tensor(
+            aws_endpoint_override, dtype=dtypes.string, name="aws_endpoint_override"
+        )
+        parquet_files = tf.convert_to_tensor(
+            parquet_files, dtype=dtypes.string, name="parquet_files"
+        )
+        column_names = tf.convert_to_tensor(
+            column_names, dtype=dtypes.string, name="column_names"
+        )
+        filter = tf.convert_to_tensor(filter, dtype=dtypes.string, name="filter")
+
+        super().__init__(
+            partial(
+                core_ops.io_arrow_s3_dataset,
+                aws_access_key,
+                aws_secret_key,
+                aws_endpoint_override,
+                parquet_files,
+                column_names,
+                filter,
+            ),
+            columns,
+            output_types,
+            output_shapes,
+            batch_size,
+            batch_mode,
+        )
+
+
 def list_feather_columns(filename, **kwargs):
+
     """list_feather_columns"""
     if not tf.executing_eagerly():
         raise NotImplementedError("list_feather_columns only support eager mode")

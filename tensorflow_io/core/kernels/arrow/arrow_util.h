@@ -17,6 +17,9 @@ limitations under the License.
 #define TENSORFLOW_IO_CORE_KERNELS_ARROW_UTIL_H_
 
 #include "arrow/api.h"
+#include "arrow/dataset/dataset.h"
+#include "arrow/dataset/file_parquet.h"
+#include "arrow/filesystem/s3fs.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -79,6 +82,10 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
 // Parse the given IPv4 host string to get address and port
 Status ParseHost(std::string host, std::string* host_address,
                  std::string* host_port);
+
+// Parse expr from string for scan filter
+Status ParseExpression(const std::string& text,
+                       arrow::compute::Expression& expr);
 
 }  // namespace ArrowUtil
 }  // namespace data

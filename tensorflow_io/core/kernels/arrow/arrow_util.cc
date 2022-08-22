@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-
 #include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 
 #include "arrow/adapters/tensorflow/convert.h"
@@ -483,6 +482,342 @@ Status ParseHost(std::string host, std::string* host_address,
   *host_address = host.substr(0, sep_pos);
   *host_port = host.substr(sep_pos + 1);
 
+  return Status::OK();
+}
+
+enum calType {
+  CONSTANT,
+  VARIABLE,
+  ADD,
+  SUBTRACT,
+  MULTIPLY,
+  DIVIDE,
+  EQUAL,
+  NOT_EQUAL,
+  LESS,
+  LESS_EQUAL,
+  GREATER,
+  GREATER_EQUAL,
+  AND,
+  OR,
+  LPAREN,
+  RPAREN,
+};
+
+enum OpType {
+  OPERATOR,
+  OPERAND,
+};
+
+typedef struct Token {
+  Token(calType type, int value) : type_(type) {
+    if (type_ == calType::CONSTANT) {
+      expression_ = arrow::compute::literal(value);
+    }
+  }
+  Token(calType type, float value) : type_(type) {
+    if (type_ == calType::CONSTANT) {
+      expression_ = arrow::compute::literal(value);
+    }
+  }
+  Token(calType type, std::string func) : type_(type), func_(func) {
+    if (type_ == calType::VARIABLE) {
+      expression_ = arrow::compute::field_ref(func_);
+    }
+  }
+  calType type_;
+  std::string func_;
+  arrow::compute::Expression expression_;
+} Token;
+
+typedef struct ASTNode {
+  ASTNode(std::shared_ptr<Token> token, std::shared_ptr<ASTNode> left,
+          std::shared_ptr<ASTNode> right)
+      : token_(token), left_(left), right_(right) {}
+  std::shared_ptr<Token> token_;
+  std::shared_ptr<ASTNode> left_;
+  std::shared_ptr<ASTNode> right_;
+} ASTNode;
+
+class Lexer {
+ public:
+  Lexer(const std::string& text)
+      : text_(text), position_(0), cur_op_(OPERATOR){};
+  void skip_space() {
+    while (position_ < text_.length() && text_[position_] == ' ') {
+      position_++;
+    }
+  }
+
+  std::string get_constant() {
+    int start = position_ - 1;
+    while (position_ < text_.length() && std::isdigit(text_[position_]) ||
+           '.' == text_[position_]) {
+      position_++;
+    }
+    return text_.substr(start, position_ - start).c_str();
+  }
+
+  calType get_comparison_type() {
+    // == != >= <=
+    char begin_char = text_[position_ - 1];
+    if (position_ < text_.length() && text_[position_] == '=') {
+      position_++;
+      if (begin_char == '=') {
+        return calType::EQUAL;
+      } else if (begin_char == '!') {
+        return calType::NOT_EQUAL;
+      } else if (begin_char == '>') {
+        return calType::GREATER_EQUAL;
+      } else if (begin_char == '<') {
+        return calType::LESS_EQUAL;
+      }
+    } else {
+      if (begin_char == '>') {
+        return calType::GREATER;
+      } else if (begin_char == '<') {
+        return calType::LESS;
+      }
+    }
+  }
+
+  std::string get_variable() {
+    int start = position_ - 1;
+    while (position_ < text_.length() &&
+           (std::isalnum(text_[position_]) || '_' == text_[position_])) {
+      position_++;
+    }
+    return text_.substr(start, position_ - start);
+  }
+
+  std::shared_ptr<Token> get_next_token() {
+    while (position_ < text_.length()) {
+      char current_char = text_[position_++];
+      if (' ' == current_char) {
+        skip_space();
+      } else if (std::isdigit(current_char)) {
+        cur_op_ = OPERAND;
+        std::string constant = get_constant();
+        if (std::string::npos == constant.find('.')) {
+          return std::make_shared<Token>(calType::CONSTANT,
+                                         std::stoi(constant));
+        } else {
+          return std::make_shared<Token>(calType::CONSTANT,
+                                         std::stof(constant));
+        }
+      } else if (std::isalpha(current_char) || '_' == current_char) {
+        cur_op_ = OPERAND;
+        return std::make_shared<Token>(calType::VARIABLE, get_variable());
+      } else if ('+' == current_char) {
+        cur_op_ = OPERATOR;
+        return std::make_shared<Token>(calType::ADD, "add");
+      } else if ('-' == current_char) {
+        if (cur_op_ == OPERAND) {
+          cur_op_ = OPERATOR;
+          return std::make_shared<Token>(calType::SUBTRACT, "subtract");
+        } else {
+          cur_op_ = OPERAND;
+          std::string constant = get_constant();
+          if (constant.length() <= 1) {
+            return nullptr;
+          }
+          if (std::string::npos == constant.find('.')) {
+            return std::make_shared<Token>(calType::CONSTANT,
+                                           std::stoi(constant));
+          } else {
+            return std::make_shared<Token>(calType::CONSTANT,
+                                           std::stof(constant));
+          }
+        }
+      } else if ('*' == current_char) {
+        cur_op_ = OPERATOR;
+        return std::make_shared<Token>(calType::MULTIPLY, "multiply");
+      } else if ('/' == current_char) {
+        cur_op_ = OPERATOR;
+        return std::make_shared<Token>(calType::DIVIDE, "divide");
+      } else if ('(' == current_char) {
+        cur_op_ = OPERATOR;
+        return std::make_shared<Token>(calType::LPAREN, "(");
+      } else if (')' == current_char) {
+        cur_op_ = OPERAND;
+        return std::make_shared<Token>(calType::RPAREN, ")");
+      } else if ('=' == current_char || '!' == current_char ||
+                 '>' == current_char || '<' == current_char) {
+        cur_op_ = OPERATOR;
+        auto type = get_comparison_type();
+        if (calType::EQUAL == type) {
+          return std::make_shared<Token>(calType::EQUAL, "equal");
+        } else if (calType::NOT_EQUAL == type) {
+          return std::make_shared<Token>(calType::NOT_EQUAL, "not_equal");
+        } else if (calType::LESS == type) {
+          return std::make_shared<Token>(calType::LESS, "less");
+        } else if (calType::LESS_EQUAL == type) {
+          return std::make_shared<Token>(calType::LESS_EQUAL, "less_equal");
+        } else if (calType::GREATER == type) {
+          return std::make_shared<Token>(calType::GREATER, "greater");
+        } else if (calType::GREATER_EQUAL == type) {
+          return std::make_shared<Token>(calType::GREATER_EQUAL,
+                                         "greater_equal");
+        }
+      } else if ('&' == current_char) {
+        cur_op_ = OPERATOR;
+        if (position_ < text_.length() && '&' == text_[position_]) {
+          position_++;
+          return std::make_shared<Token>(calType::AND, "and");
+        }
+      } else if ('|' == current_char) {
+        cur_op_ = OPERATOR;
+        if (position_ < text_.length() && '|' == text_[position_]) {
+          position_++;
+          return std::make_shared<Token>(calType::OR, "or");
+        }
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  OpType cur_op_;
+  int position_;
+  std::string text_;
+};
+
+class Parser {
+ public:
+  Parser(std::shared_ptr<Lexer> ptr) : lexer_ptr_(ptr) {
+    current_token_ = lexer_ptr_->get_next_token();
+  }
+
+  inline void update_current_token() {
+    current_token_ = lexer_ptr_->get_next_token();
+  }
+
+  // constant, variable, lparen
+  std::shared_ptr<ASTNode> factor() {
+    if (!current_token_) {
+      return nullptr;
+    }
+    auto token = current_token_;
+    if (token->type_ == calType::CONSTANT) {
+      update_current_token();
+      return std::make_shared<ASTNode>(token, nullptr, nullptr);
+    } else if (token->type_ == calType::VARIABLE) {
+      update_current_token();
+      return std::make_shared<ASTNode>(token, nullptr, nullptr);
+    } else if (token->type_ == calType::LPAREN) {
+      update_current_token();
+      auto node = logical();
+      update_current_token();
+      return node;
+    }
+    return nullptr;
+  }
+
+  // multiply, divide
+  std::shared_ptr<ASTNode> term() {
+    auto node = factor();
+    while (current_token_ && (current_token_->type_ == calType::MULTIPLY ||
+                              current_token_->type_ == calType::DIVIDE)) {
+      auto token = current_token_;
+      update_current_token();
+      node = std::make_shared<ASTNode>(token, node, factor());
+    }
+    return node;
+  }
+
+  // add, subtract
+  std::shared_ptr<ASTNode> expr() {
+    auto node = term();
+    while (current_token_ && (current_token_->type_ == calType::ADD ||
+                              current_token_->type_ == calType::SUBTRACT)) {
+      auto token = current_token_;
+      update_current_token();
+      node = std::make_shared<ASTNode>(token, node, term());
+    }
+    return node;
+  }
+
+  // Comparison
+  std::shared_ptr<ASTNode> comparison() {
+    auto node = expr();
+    while (current_token_ &&
+           (current_token_->type_ >= calType::EQUAL &&
+            current_token_->type_ <= calType::GREATER_EQUAL)) {
+      auto token = current_token_;
+      update_current_token();
+      node = std::make_shared<ASTNode>(token, node, expr());
+    }
+    return node;
+  }
+
+  // Logical
+  std::shared_ptr<ASTNode> logical() {
+    auto node = comparison();
+    while (current_token_ && (current_token_->type_ == calType::AND ||
+                              current_token_->type_ == calType::OR)) {
+      auto token = current_token_;
+      update_current_token();
+      node = std::make_shared<ASTNode>(token, node, comparison());
+    }
+    return node;
+  }
+
+ private:
+  std::shared_ptr<Lexer> lexer_ptr_;
+  std::shared_ptr<Token> current_token_;
+};
+
+class Interpreter {
+ public:
+  Interpreter(std::shared_ptr<Parser> parser) : parser_(parser) {}
+  arrow::compute::Expression visit(std::shared_ptr<ASTNode> root) {
+    auto rt = root->token_;
+    auto rlt = root->left_->token_;
+    auto rrt = root->right_->token_;
+    if (rlt->type_ != calType::CONSTANT && rlt->type_ != calType::VARIABLE) {
+      visit(root->left_);
+    }
+    if (rrt->type_ != calType::CONSTANT && rrt->type_ != calType::VARIABLE) {
+      visit(root->right_);
+    }
+
+    if (rt->type_ >= calType::ADD && rt->type_ <= calType::OR) {
+      rt->expression_ =
+          arrow::compute::call(rt->func_, {rlt->expression_, rrt->expression_});
+    }
+    rt->type_ = calType::VARIABLE;
+    return rt->expression_;
+  }
+
+  Status interpreter(std::shared_ptr<ASTNode>& ASTree) {
+    auto root = parser_->logical();
+    if (!root || !root->left_ || !root->right_ ||
+        root->token_->type_ < calType::EQUAL ||
+        root->token_->type_ > calType::OR) {
+      return errors::InvalidArgument(
+          "Your filter expression is not supported!");
+    }
+    ASTree = root;
+    return Status::OK();
+  }
+
+ private:
+  std::shared_ptr<Parser> parser_;
+};
+
+Status ParseExpression(const std::string& text,
+                       arrow::compute::Expression& expr) {
+  auto lexer_ptr = std::make_shared<Lexer>(text);
+  auto parser_ptr = std::make_shared<Parser>(lexer_ptr);
+  auto interpreter_ptr = std::make_shared<Interpreter>(parser_ptr);
+
+  std::shared_ptr<ASTNode> ASTree;
+  auto status = interpreter_ptr->interpreter(ASTree);
+  if (!status.ok()) {
+    return status;
+  }
+
+  expr = interpreter_ptr->visit(ASTree);
   return Status::OK();
 }
 

@@ -188,4 +188,29 @@ REGISTER_OP("IO>ArrowReadableRead")
       return Status::OK();
     });
 
+REGISTER_OP("IO>ArrowS3Dataset")
+    .Input("aws_access_key: string")
+    .Input("aws_secret_key: string")
+    .Input("aws_endpoint_override: string")
+    .Input("parquet_files: string")
+    .Input("column_names: string")
+    .Input("filter: string")
+    .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a dataset from s3 parqeut files
+
+aws_access_key: S3 access key.
+aws_secret_key: S3 secret_key.
+aws_endpoint_override: S3 endpoint override
+parquet_files: One or more parqeut file path on s3
+column_names: Select columns to read by names
+)doc");
+
 }  // namespace tensorflow
