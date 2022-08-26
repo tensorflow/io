@@ -127,7 +127,6 @@ def write_config():
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
             bazel_rc.write('build:windows --copt="/std:c++17"\n')
-            bazel_rc.write('build:windows --copt="/std:c++17"\n')
             # Config for CI and release build
             bazel_rc.write("build:optimization --copt=-msse4.2\n")
             bazel_rc.write("build:optimization --copt=-mavx\n")
