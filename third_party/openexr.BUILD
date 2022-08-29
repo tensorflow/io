@@ -29,7 +29,12 @@ cc_library(
         "config/OpenEXRConfigInternal.h",
     ],
     hdrs = [],
-    copts = [],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/std:c++14",
+        ],
+        "//conditions:default": [],
+    }),
     defines = select({
         "@bazel_tools//src/conditions:darwin": [],
         "@bazel_tools//src/conditions:windows": [],

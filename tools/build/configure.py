@@ -101,7 +101,7 @@ def write_config():
             bazel_rc.write(
                 f'build --action_env TF_SHARED_LIBRARY_NAME="{library_name}"\n'
             )
-            bazel_rc.write('build --cxxopt="-std=c++14"\n')
+            bazel_rc.write('build --cxxopt="-std=c++17"\n')
             for argv in sys.argv[1:]:
                 if argv == "--cuda":
                     bazel_rc.write('build --action_env TF_NEED_CUDA="1"\n')
@@ -126,6 +126,7 @@ def write_config():
             bazel_rc.write("build:macos --copt=-Wunguarded-availability\n")
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
+            bazel_rc.write('build:windows --copt="/std:c++17"\n')
             # Config for CI and release build
             bazel_rc.write("build:optimization --copt=-msse4.2\n")
             bazel_rc.write("build:optimization --copt=-mavx\n")
