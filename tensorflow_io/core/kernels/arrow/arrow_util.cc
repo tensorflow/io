@@ -535,11 +535,15 @@ class Lexer {
 
   std::string get_constant() {
     int start = position_ - 1;
-    while (position_ < text_.length() && std::isdigit(text_[position_]) ||
-           '.' == text_[position_]) {
+    int decimal_points = 0;
+    while (position_ < text_.length() &&
+           (std::isdigit(text_[position_]) || '.' == text_[position_])) {
+      if ('.' == text_[position_] && ++decimal_points > 1) {
+        return std::string{};
+      }
       position_++;
     }
-    return text_.substr(start, position_ - start).c_str();
+    return text_.substr(start, position_ - start);
   }
 
   calType get_comparison_type() {
@@ -582,6 +586,9 @@ class Lexer {
       } else if (std::isdigit(current_char)) {
         cur_op_ = OPERAND;
         std::string constant = get_constant();
+        if (constant.empty()) {
+          return nullptr;
+        }
         if (std::string::npos == constant.find('.')) {
           return std::make_shared<Token>(calType::CONSTANT,
                                          std::stoi(constant));
