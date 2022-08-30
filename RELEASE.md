@@ -1,3 +1,18 @@
+# Release 0.27.0
+
+## Major Features and Bug Fixes
+* Add arrow binary data type support
+* Add string support for feather file
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.26.0
 
 ## Major Features and Bug Fixes
