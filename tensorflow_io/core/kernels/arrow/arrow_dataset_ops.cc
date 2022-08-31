@@ -1136,6 +1136,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
             while (!background_thread_finished_) {
               cv_.wait(lk);
             }
+            if (!background_res_.ok()) {
+              return background_res_;
+            }
           }
 
           record_batches_.swap(next_record_batches_);
@@ -1171,84 +1174,117 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
 
       Status ReadFile(int file_index, bool background = false)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        auto access_file_result =
-            s3fs_->OpenInputFile(dataset()->parquet_files_[file_index]);
-        if (!access_file_result.ok()) {
-          return errors::InvalidArgument(access_file_result.status().message());
-        }
+        Status res = Status::OK();
+        do {
+          auto access_file_result =
+              s3fs_->OpenInputFile(dataset()->parquet_files_[file_index]);
+          if (!access_file_result.ok()) {
+            res =
+                errors::InvalidArgument(access_file_result.status().ToString());
+            break;
+          }
 
-        auto access_file = access_file_result.ValueOrDie();
+          auto access_file = access_file_result.ValueOrDie();
 
-        parquet::ArrowReaderProperties properties;
-        properties.set_use_threads(true);
-        properties.set_pre_buffer(true);
-        parquet::ReaderProperties parquet_properties =
-            parquet::default_reader_properties();
+          parquet::ArrowReaderProperties properties;
+          properties.set_use_threads(true);
+          properties.set_pre_buffer(true);
+          parquet::ReaderProperties parquet_properties =
+              parquet::default_reader_properties();
 
-        std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
-            std::make_shared<parquet::arrow::FileReaderBuilder>();
-        builder->Open(access_file, parquet_properties);
+          std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
+              std::make_shared<parquet::arrow::FileReaderBuilder>();
+          builder->Open(access_file, parquet_properties);
 
-        std::unique_ptr<parquet::arrow::FileReader> reader;
-        builder->properties(properties)->Build(&reader);
+          std::unique_ptr<parquet::arrow::FileReader> reader;
+          builder->properties(properties)->Build(&reader);
 
-        if (column_indices_.empty()) {
-          std::shared_ptr<arrow::Schema> schema;
-          reader->GetSchema(&schema);
-          // check column name exist
-          std::string err_column_names;
-          for (const auto& name : dataset()->column_names_) {
-            int fieldIndex = schema->GetFieldIndex(name);
-            column_indices_.push_back(fieldIndex);
-            if (-1 == fieldIndex) {
-              err_column_names = err_column_names + " " + name;
+          if (column_indices_.empty()) {
+            std::shared_ptr<arrow::Schema> schema;
+            reader->GetSchema(&schema);
+            // check column name exist
+            std::string err_column_names;
+            for (const auto& name : dataset()->column_names_) {
+              int fieldIndex = schema->GetFieldIndex(name);
+              column_indices_.push_back(fieldIndex);
+              if (-1 == fieldIndex) {
+                err_column_names = err_column_names + " " + name;
+              }
+            }
+
+            if (err_column_names.length() != 0) {
+              res = errors::InvalidArgument("these column names don't exist: ",
+                                            err_column_names);
+              break;
             }
           }
-
-          if (err_column_names.length() != 0) {
-            return errors::InvalidArgument("these column names don't exist: ",
-                                           err_column_names);
+          // Read file columns and build a table
+          std::shared_ptr<::arrow::Table> table;
+          arrow::Status arrow_status =
+              reader->ReadTable(column_indices_, &table);
+          if (!arrow_status.ok()) {
+            res = errors::Internal(arrow_status.ToString());
+            break;
           }
-        }
-        // Read file columns and build a table
-        std::shared_ptr<::arrow::Table> table;
-        CHECK_ARROW(reader->ReadTable(column_indices_, &table));
-        // Convert the table to a sequence of batches
-        std::shared_ptr<arrow::RecordBatchReader> batch_reader =
-            std::make_shared<arrow::TableBatchReader>(table);
-        std::shared_ptr<arrow::RecordBatch> batch = nullptr;
+          // Convert the table to a sequence of batches
+          std::shared_ptr<arrow::RecordBatchReader> batch_reader =
+              std::make_shared<arrow::TableBatchReader>(table);
+          std::shared_ptr<arrow::RecordBatch> batch = nullptr;
 
-        // filter
-        if (!dataset()->filter_.empty()) {
-          auto scanner_builder =
-              arrow::dataset::ScannerBuilder::FromRecordBatchReader(
-                  batch_reader);
-          scanner_builder->Filter(dataset()->filter_expr_);
-          auto scanner = scanner_builder->Finish().ValueOrDie();
-          batch_reader = scanner->ToRecordBatchReader().ValueOrDie();
-        }
+          // filter
+          if (!dataset()->filter_.empty()) {
+            auto scanner_builder =
+                arrow::dataset::ScannerBuilder::FromRecordBatchReader(
+                    batch_reader);
+            scanner_builder->Filter(dataset()->filter_expr_);
+            auto scanner_result = scanner_builder->Finish();
+            if (!scanner_result.ok()) {
+              res = errors::Internal(scanner_result.status().ToString());
+              break;
+            }
+            auto scanner = scanner_result.ValueOrDie();
+            auto batch_reader_result = scanner->ToRecordBatchReader();
+            if (!batch_reader_result.ok()) {
+              res = errors::Internal(batch_reader_result.status().ToString());
+              break;
+            }
+            batch_reader = batch_reader_result.ValueOrDie();
+          }
 
-        CHECK_ARROW(batch_reader->ReadNext(&batch));
-        TF_RETURN_IF_ERROR(CheckBatchColumnTypes(batch));
-        next_record_batches_.clear();
-        while (batch != nullptr) {
-          if (batch->num_rows() != 0) {
-            if (!background) {
-              record_batches_.emplace_back(batch);
-            } else {
-              next_record_batches_.emplace_back(batch);
+          arrow_status = batch_reader->ReadNext(&batch);
+          if (!arrow_status.ok()) {
+            res = errors::Internal(arrow_status.ToString());
+            break;
+          }
+          res = CheckBatchColumnTypes(batch);
+          if (!res.ok()) {
+            break;
+          }
+          next_record_batches_.clear();
+          while (batch != nullptr) {
+            if (batch->num_rows() != 0) {
+              if (!background) {
+                record_batches_.emplace_back(batch);
+              } else {
+                next_record_batches_.emplace_back(batch);
+              }
+            }
+            arrow_status = batch_reader->ReadNext(&batch);
+            if (!arrow_status.ok()) {
+              res = errors::Internal(arrow_status.ToString());
+              break;
             }
           }
-          CHECK_ARROW(batch_reader->ReadNext(&batch));
-        }
+        } while (0);
 
         if (background) {
           mutex_lock lk(cv_mu_);
           background_thread_finished_ = true;
+          background_res_ = res;
           cv_.notify_all();
         }
 
-        return Status::OK();
+        return res;
       }
 
       size_t current_file_idx_ TF_GUARDED_BY(mu_) = 0;
@@ -1264,6 +1300,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       mutex cv_mu_;
       condition_variable cv_;
       bool background_thread_finished_ = false;
+      Status background_res_ = Status::OK();
     };
 
     const std::string aws_access_key_;
