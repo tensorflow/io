@@ -291,6 +291,17 @@ http_archive(
 )
 
 http_archive(
+    name = "daos",
+    build_file = "//third_party:daos.BUILD",
+    sha256 = "9789a5a0065cfa4249105f1676b9eba89f68b54bc03083140549b7a8a8f615d3",
+    strip_prefix = "daos-2.0.2",
+    urls = [
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/daos-stack/daos/archive/refs/tags/v2.0.2.tar.gz",
+        "https://github.com/daos-stack/daos/archive/refs/tags/v2.0.2.tar.gz",
+    ],
+)
+
+http_archive(
     name = "dav1d",
     build_file = "//third_party:dav1d.BUILD",
     patch_cmds = [
