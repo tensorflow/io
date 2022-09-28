@@ -53,7 +53,6 @@ cc_library(
             "cpp/src/arrow/vendored/variant.hpp",
             "cpp/src/arrow/vendored/base64.cpp",
             "cpp/src/arrow/vendored/datetime/tz.cpp",
-            "cpp/src/arrow/vendored/uriparser/*.c",
             "cpp/src/arrow/vendored/pcg/*.hpp",
             "cpp/src/arrow/**/*.h",
             "cpp/src/parquet/**/*.h",
