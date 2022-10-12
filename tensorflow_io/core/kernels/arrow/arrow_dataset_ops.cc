@@ -997,10 +997,13 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     tstring filter;
     OP_REQUIRES_OK(ctx, ParseScalarArgument<tstring>(ctx, "filter", &filter));
 
-    *output =
-        new Dataset(ctx, aws_access_key, aws_secret_key, aws_endpoint_override,
-                    parquet_files, column_names, filter, column_cols,
-                    batch_size, batch_mode, output_types_, output_shapes_);
+    bool same_schema = true;
+    OP_REQUIRES_OK(
+        ctx, data::ParseScalarArgument<bool>(ctx, "same_schema", &same_schema));
+    *output = new Dataset(ctx, aws_access_key, aws_secret_key,
+                          aws_endpoint_override, parquet_files, column_names,
+                          filter, same_schema, column_cols, batch_size,
+                          batch_mode, output_types_, output_shapes_);
   }
 
  private:
@@ -1011,9 +1014,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
             const std::string& aws_endpoint_override,
             const std::vector<std::string>& parquet_files,
             const std::vector<std::string>& column_names,
-            const std::string& filter, const std::vector<int32> columns,
-            const int64 batch_size, const ArrowBatchMode batch_mode,
-            const DataTypeVector& output_types,
+            const std::string& filter, const bool same_schema,
+            const std::vector<int32> columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector& output_types,
             const std::vector<PartialTensorShape>& output_shapes)
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
                            output_shapes),
@@ -1022,7 +1025,8 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           aws_endpoint_override_(aws_endpoint_override),
           parquet_files_(parquet_files),
           column_names_(column_names),
-          filter_(filter) {}
+          filter_(filter),
+          same_schema_(same_schema) {}
 
     string DebugString() const override { return "ArrowS3DatasetOp::Dataset"; }
     Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
@@ -1048,6 +1052,8 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddVector(parquet_files_, &parquet_files));
       Node* column_names = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(column_names_, &column_names));
+      Node* same_schema = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(same_schema_, &same_schema));
       Node* columns = nullptr;
       TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
       Node* filter = nullptr;
@@ -1062,7 +1068,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddDataset(
           this,
           {aws_access_key, aws_secret_key, aws_endpoint_override, parquet_files,
-           column_names, filter, columns, batch_size, batch_mode},
+           column_names, filter, same_schema, columns, batch_size, batch_mode},
           output));
       return Status::OK();
     }
@@ -1199,7 +1205,8 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
           std::unique_ptr<parquet::arrow::FileReader> reader;
           builder->properties(properties)->Build(&reader);
 
-          if (column_indices_.empty()) {
+          if (column_indices_.empty() || !dataset()->same_schema_) {
+            column_indices_.clear();
             std::shared_ptr<arrow::Schema> schema;
             reader->GetSchema(&schema);
             // check column name exist
@@ -1213,8 +1220,9 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
             }
 
             if (err_column_names.length() != 0) {
-              res = errors::InvalidArgument("these column names don't exist: ",
-                                            err_column_names);
+              res = errors::InvalidArgument(
+                  "these column names don't exist: ", err_column_names,
+                  " when read file: ", dataset()->parquet_files_[file_index]);
               break;
             }
           }
@@ -1309,6 +1317,7 @@ class ArrowS3DatasetOp : public ArrowOpKernelBase {
     const std::vector<std::string> parquet_files_;
     const std::vector<std::string> column_names_;
     const std::string filter_;
+    const bool same_schema_;
     arrow::compute::Expression filter_expr_;
   };
 };  // class ArrowS3DatasetOp

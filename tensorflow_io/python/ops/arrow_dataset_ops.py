@@ -669,6 +669,7 @@ class ArrowS3Dataset(ArrowBaseDataset):
         batch_size=None,
         batch_mode="keep_remainder",
         filter="",
+        same_schema=True,
     ):
         """Create an ArrowDataset from an input stream.
 
@@ -691,6 +692,7 @@ class ArrowS3Dataset(ArrowBaseDataset):
                         "drop_remainder" (discard partial batch data),
                         "auto" (size to number of records in Arrow record batch)
             filter : filter for reade row
+            same_schema : Whether the input files have the same view（default true）
         """
         aws_access_key = tf.convert_to_tensor(
             aws_access_key, dtype=dtypes.string, name="aws_access_key"
@@ -708,7 +710,9 @@ class ArrowS3Dataset(ArrowBaseDataset):
             column_names, dtype=dtypes.string, name="column_names"
         )
         filter = tf.convert_to_tensor(filter, dtype=dtypes.string, name="filter")
-
+        same_schema = tf.convert_to_tensor(
+            same_schema, dtype=dtypes.bool, name="same_schema"
+        )
         super().__init__(
             partial(
                 core_ops.io_arrow_s3_dataset,
@@ -718,6 +722,7 @@ class ArrowS3Dataset(ArrowBaseDataset):
                 parquet_files,
                 column_names,
                 filter,
+                same_schema,
             ),
             columns,
             output_types,
