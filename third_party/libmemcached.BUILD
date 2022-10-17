@@ -22,7 +22,10 @@ cc_library(
         "config/libhashkit/hashkitcon.h",
         "config/mem_config.h",
     ],
-    copts = [],
+    copts = [
+        "-Wno-register",
+        "-Wno-error",
+    ],
     includes = [
         ".",
         "config",

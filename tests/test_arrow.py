@@ -1230,6 +1230,74 @@ class ArrowDatasetTest(ArrowTestBase):
 
         os.unlink(f.name)
 
+    def test_arrow_feather_dataset_binary(self):
+        """test_arrow_feather_dataset_binary"""
+        import tensorflow_io.arrow as arrow_io
+
+        from pyarrow import feather as pa_feather
+        import pyarrow as pa
+        import numpy as np
+
+        local_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "test_image", "sample.png"
+        )
+        with open(local_path, "rb") as f:
+            data = [f.read()]
+            table = pa.Table.from_arrays([data], ["data"])
+
+        chunk_size = 1000
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            pa_feather.write_feather(table, f, chunksize=chunk_size)
+
+        dataset = arrow_io.ArrowFeatherDataset(
+            f.name,
+            columns=(0,),
+            output_types=(tf.string),
+            output_shapes=([]),
+            batch_size=32,
+        )
+        print(dataset.element_spec)
+        sample = next(iter(dataset))
+        assert sample.shape == [1]
+        assert sample.dtype == tf.string
+        assert np.all(sample == data[0])
+        print(sample.dtype, sample.shape)
+
+        os.unlink(f.name)
+
+    def test_arrow_feather_dataset_string(self):
+        """test_arrow_feather_dataset_string"""
+        import tensorflow_io.arrow as arrow_io
+
+        from pyarrow import feather as pa_feather
+        import pyarrow as pa
+        import numpy as np
+        import random
+        import string
+
+        data = ["".join(random.choice(string.printable) for _ in range(10000))]
+        table = pa.Table.from_arrays([data], schema=pa.schema([("data", pa.string())]))
+
+        chunk_size = 1000
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            pa_feather.write_feather(table, f, chunksize=chunk_size)
+
+        dataset = arrow_io.ArrowFeatherDataset(
+            f.name,
+            columns=(0,),
+            output_types=(tf.string),
+            output_shapes=([]),
+            batch_size=32,
+        )
+        print(dataset.element_spec)
+        sample = next(iter(dataset))
+        assert sample.shape == [1]
+        assert sample.dtype == tf.string
+        assert np.all(sample == data[0])
+        print(sample.dtype, sample.shape)
+
+        os.unlink(f.name)
+
 
 if __name__ == "__main__":
     test.main()
