@@ -7,6 +7,14 @@ licenses(["notice"])  # Apache 2.0
 
 exports_files(["LICENSE.txt"])
 
+cc_library(
+    name = "uriparser",
+    srcs = glob([
+        "cpp/src/arrow/vendored/uriparser/*.h",
+        "cpp/src/arrow/vendored/uriparser/*.c",
+    ]),
+)
+
 genrule(
     name = "arrow_util_config",
     srcs = ["cpp/src/arrow/util/config.h.cmake"],
@@ -53,7 +61,6 @@ cc_library(
             "cpp/src/arrow/vendored/variant.hpp",
             "cpp/src/arrow/vendored/base64.cpp",
             "cpp/src/arrow/vendored/datetime/tz.cpp",
-            "cpp/src/arrow/vendored/uriparser/*.c",
             "cpp/src/arrow/vendored/pcg/*.hpp",
             "cpp/src/arrow/**/*.h",
             "cpp/src/parquet/**/*.h",
@@ -77,6 +84,7 @@ cc_library(
             "cpp/src/arrow/util/bpacking_avx512.cc",
             "cpp/src/arrow/util/bpacking_neon.cc",
             "cpp/src/arrow/util/tracing_internal.cc",
+            "cpp/src/arrow/vendored/uriparser/*.h",
         ],
     ) + select({
         "@bazel_tools//src/conditions:windows": [
@@ -121,6 +129,7 @@ cc_library(
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
             "-DEFAULTLIB:Ole32.lib",
+            "-DEFAULTLIB:uriparser.lib",
         ],
         "//conditions:default": [],
     }),
@@ -128,6 +137,7 @@ cc_library(
         "cpp/src/arrow/vendored/xxhash/xxhash.c",
     ],
     deps = [
+        "uriparser",
         "@aws-sdk-cpp//:identity-management",
         "@aws-sdk-cpp//:s3",
         "@boringssl//:crypto",
