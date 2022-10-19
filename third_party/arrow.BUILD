@@ -10,9 +10,17 @@ exports_files(["LICENSE.txt"])
 cc_library(
     name = "uriparser",
     srcs = glob([
-        "cpp/src/arrow/vendored/uriparser/*.h",
         "cpp/src/arrow/vendored/uriparser/*.c",
+        "cpp/src/arrow/vendored/uriparser/*.h",
     ]),
+    defines = [] + select({
+        "@bazel_tools//src/conditions:windows": [
+            "URI_NO_ANSI",
+        ],
+        "//conditions:default": [
+            "URI_NO_UNICODE",
+        ],
+    }),
 )
 
 genrule(
@@ -129,7 +137,6 @@ cc_library(
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
             "-DEFAULTLIB:Ole32.lib",
-            "-DEFAULTLIB:uriparser.lib",
         ],
         "//conditions:default": [],
     }),
