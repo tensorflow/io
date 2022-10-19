@@ -17,9 +17,7 @@ cc_library(
         "@bazel_tools//src/conditions:windows": [
             "URI_NO_UNICODE=0",
         ],
-        "//conditions:default": [
-            "URI_NO_ANSI=0",
-        ],
+        "//conditions:default": [],
     }),
 )
 
