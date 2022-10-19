@@ -39,9 +39,8 @@ class OSSFileSystem {
  public:
   OSSFileSystem();
 
-  Status NewRandomAccessFile(
-      const string& filename,
-      std::unique_ptr<RandomAccessFile>* result);
+  Status NewRandomAccessFile(const string& filename,
+                             std::unique_ptr<RandomAccessFile>* result);
 
   Status NewWritableFile(const string& fname,
                          std::unique_ptr<WritableFile>* result);
@@ -50,8 +49,7 @@ class OSSFileSystem {
                            std::unique_ptr<WritableFile>* result);
 
   Status NewReadOnlyMemoryRegionFromFile(
-      const string& filename,
-      std::unique_ptr<ReadOnlyMemoryRegion>* result);
+      const string& filename, std::unique_ptr<ReadOnlyMemoryRegion>* result);
 
   Status FileExists(const string& fname);
 

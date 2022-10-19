@@ -9,7 +9,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "oss_filesystem.h"
+#include "tensorflow_io/core/filesystems/oss/oss_filesystem.h"
 
 #include <pwd.h>
 #include <unistd.h>
@@ -1056,9 +1056,8 @@ Status OSSFileSystem::RenameFile(const std::string& src,
       aos_str_set(&source_object, tmp_sobject.c_str());
       aos_str_set(&dest_object, tmp_dobject.c_str());
 
-      resp_status =
-          _CopyFileInternal(oss_options, pool, source_bucket, source_object,
-                            dest_bucket, dest_object);
+      resp_status = _CopyFileInternal(oss_options, pool, source_bucket,
+                                      source_object, dest_bucket, dest_object);
       if (!aos_status_is_ok(resp_status)) {
         string msg;
         oss_error_message(resp_status, &msg);
@@ -1310,13 +1309,12 @@ Status OSSFileSystem::CopyFile(const string& src, const string& target) {
   aos_str_set(&dest_bucket, dbucket.c_str());
   aos_str_set(&dest_object, dobject.c_str());
 
-  resp_status = _CopyFileInternal(oss_options, pool, source_bucket, source_object,
-                                  dest_bucket, dest_object);
+  resp_status = _CopyFileInternal(oss_options, pool, source_bucket,
+                                  source_object, dest_bucket, dest_object);
   if (!aos_status_is_ok(resp_status)) {
     string msg;
     oss_error_message(resp_status, &msg);
-    VLOG(0) << "copy " << src << " to " << target
-            << " failed, errMsg: " << msg;
+    VLOG(0) << "copy " << src << " to " << target << " failed, errMsg: " << msg;
     return errors::Internal("copy ", src, " to ", target,
                             " failed, errMsg: ", msg);
   }
@@ -1465,8 +1463,8 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
   ToTF_Status(oss_fs->CreateDir(path), status);
 }
 
-void RecursivelyCreateDir(const TF_Filesystem* filesystem,
-                          const char* path, TF_Status* status) {
+void RecursivelyCreateDir(const TF_Filesystem* filesystem, const char* path,
+                          TF_Status* status) {
   auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
   ToTF_Status(oss_fs->RecursivelyCreateDir(path), status);
 }
@@ -1484,11 +1482,11 @@ void DeleteDir(const TF_Filesystem* filesystem, const char* path,
 }
 
 void DeleteRecursively(const TF_Filesystem* filesystem, const char* path,
-                       uint64_t* undeleted_files,
-                       uint64_t* undeleted_dirs, TF_Status* status) {
+                       uint64_t* undeleted_files, uint64_t* undeleted_dirs,
+                       TF_Status* status) {
   auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
-  ToTF_Status(oss_fs->DeleteRecursively(path, undeleted_files,
-                                        undeleted_dirs), status);
+  ToTF_Status(oss_fs->DeleteRecursively(path, undeleted_files, undeleted_dirs),
+              status);
 }
 
 void RenameFile(const TF_Filesystem* filesystem, const char* src,
@@ -1497,8 +1495,8 @@ void RenameFile(const TF_Filesystem* filesystem, const char* src,
   ToTF_Status(oss_fs->RenameFile(src, dst), status);
 }
 
-void CopyFile(const TF_Filesystem* filesystem, const char* src,
-              const char* dst, TF_Status* status) {
+void CopyFile(const TF_Filesystem* filesystem, const char* src, const char* dst,
+              TF_Status* status) {
   auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
   ToTF_Status(oss_fs->CopyFile(src, dst), status);
 }
@@ -1546,7 +1544,7 @@ char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
   return strdup(uri);
 }
 
-} // namespace tf_oss_filesystem
+}  // namespace tf_oss_filesystem
 
 void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   TF_SetFilesystemVersionMetadata(ops);
@@ -1588,7 +1586,8 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
   ops->filesystem_ops->recursively_create_dir =
       tf_oss_filesystem::RecursivelyCreateDir;
   ops->filesystem_ops->delete_file = tf_oss_filesystem::DeleteFile;
-  ops->filesystem_ops->delete_recursively = tf_oss_filesystem::DeleteRecursively;
+  ops->filesystem_ops->delete_recursively =
+      tf_oss_filesystem::DeleteRecursively;
   ops->filesystem_ops->delete_dir = tf_oss_filesystem::DeleteDir;
   ops->filesystem_ops->copy_file = tf_oss_filesystem::CopyFile;
   ops->filesystem_ops->rename_file = tf_oss_filesystem::RenameFile;
