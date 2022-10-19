@@ -15,11 +15,9 @@ cc_library(
     ]),
     defines = [] + select({
         "@bazel_tools//src/conditions:windows": [
-            "URI_NO_ANSI",
+            "URI_NO_UNICODE=0",
         ],
-        "//conditions:default": [
-            "URI_NO_UNICODE",
-        ],
+        "//conditions:default": [],
     }),
 )
 
