@@ -10,8 +10,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILESYSTEM_H_
-#define TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILESYSTEM_H_
+#ifndef TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_
+#define TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_
 
 #include <atomic>
 #include <mutex>
@@ -105,6 +105,7 @@ class OSSFileSystem {
                       std::vector<string>* result, bool return_all = true,
                       bool return_full_path = false,
                       bool should_remove_suffix = true,
+                      bool recursive = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
@@ -133,4 +134,4 @@ class OSSFileSystem {
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILESYSTEM_H_
+#endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_

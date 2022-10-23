@@ -634,7 +634,7 @@ Status OSSFileSystem::_ListObjects(
     aos_pool_t* pool, const oss_request_options_t* options,
     const std::string& bucket, const std::string& key,
     std::vector<std::string>* result, bool return_all, bool return_full_path,
-    bool should_remove_suffix, int max_ret_per_iterator) {
+    bool should_remove_suffix, bool recursive, int max_ret_per_iterator) {
   aos_string_t bucket_;
   aos_status_t* s = NULL;
   oss_list_object_params_t* params = NULL;
@@ -646,6 +646,9 @@ Status OSSFileSystem::_ListObjects(
   params->max_ret = max_ret_per_iterator;
   aos_str_set(&params->prefix, key.c_str());
   aos_str_set(&params->marker, next_marker);
+  if (!recursive) {
+    aos_str_set(&params->delimiter, "/");
+  }
 
   do {
     s = oss_list_object(options, &bucket_, params, NULL);
@@ -658,6 +661,29 @@ Status OSSFileSystem::_ListObjects(
 
     aos_list_for_each_entry(oss_list_object_content_t, content,
                             &params->object_list, node) {
+      int path_length = content->key.len;
+      if (should_remove_suffix && path_length > 0 &&
+          content->key.data[content->key.len - 1] == '/') {
+        path_length = content->key.len - 1;
+      }
+      if (return_full_path) {
+        string child(content->key.data, 0, path_length);
+        result->push_back(child);
+      } else {
+        int prefix_len = (key.length() > 0 && key.at(key.length() - 1) != '/')
+                             ? key.length() + 1
+                             : key.length();
+        // remove prefix for GetChildren
+        if (content->key.len > prefix_len) {
+          string child(content->key.data + prefix_len, 0,
+                       path_length - prefix_len);
+          result->push_back(child);
+        }
+      }
+    }
+
+    aos_list_for_each_entry(oss_list_object_content_t, content,
+                            &params->common_prefix_list, node) {
       int path_length = content->key.len;
       if (should_remove_suffix && path_length > 0 &&
           content->key.data[content->key.len - 1] == '/') {
@@ -715,7 +741,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   // check list if it has children
   std::vector<std::string> listing;
   s = _ListObjects(pool, options, bucket, object, &listing, true, false, false,
-                   10);
+                   true, 10);
 
   if (s == Status::OK() && !listing.empty()) {
     if (str_util::EndsWith(object, "/")) {
@@ -819,8 +845,9 @@ Status OSSFileSystem::GetChildren(const std::string& dir,
   OSSConnection oss(host, access_id, access_key);
   oss_request_options_t* oss_options = oss.getRequestOptions();
   aos_pool_t* pool = oss.getPool();
+  if (!object.empty() && object.back() != '/') object.push_back('/');
   return _ListObjects(pool, oss_options, bucket, object, result, true, false,
-                      true, 1000);
+                      true, false, 1000);
 }
 
 Status OSSFileSystem::_DeleteObjectInternal(
@@ -1048,7 +1075,7 @@ Status OSSFileSystem::RenameFile(const std::string& src,
     }
     std::vector<std::string> childPaths;
     _ListObjects(pool, oss_options, sbucket, sobject, &childPaths, true, false,
-                 false, 1000);
+                 false, true, 1000);
     for (const auto& child : childPaths) {
       std::string tmp_sobject = sobject + child;
       std::string tmp_dobject = dobject + child;
@@ -1243,7 +1270,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   }
 
   s = _ListObjects(pool, oss_options, bucket, object, &children, true, true,
-                   false, 1000);
+                   false, true, 1000);
   if (!s.ok()) {
     // empty dir, just delete it
     return _DeleteObjectInternal(oss_options, bucket, object);
