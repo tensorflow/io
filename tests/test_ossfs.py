@@ -64,8 +64,11 @@ class OSSFSTest(test.TestCase):
         gfile.DeleteRecursively(get_oss_path(""))
 
     def setUp(self):
-        self._base_dir = file_io.join("oss://%s\x01id=%s\x02key=%s\x02host=%s"
-            % (bucket, access_id, access_key, host), "base_dir")
+        self._base_dir = file_io.join(
+            "oss://%s\x01id=%s\x02key=%s\x02host=%s"
+            % (bucket, access_id, access_key, host),
+            "base_dir",
+        )
         file_io.create_dir(self._base_dir)
 
     def tearDown(self):
@@ -360,20 +363,23 @@ class OSSFSTest(test.TestCase):
             all_dirs.append(w_dir)
             all_subdirs.append(w_subdirs)
             all_files.append(w_files)
-        self.assertItemsEqual(all_dirs, [dir_path_str] + [
-            file_io.join(dir_path_str, item) for item in
-                ["subdir1_1", "subdir1_2", "subdir1_2/subdir2", "subdir1_3"]
-        ])
+        self.assertItemsEqual(
+            all_dirs,
+            [dir_path_str]
+            + [
+                file_io.join(dir_path_str, item)
+                for item in ["subdir1_1", "subdir1_2", "subdir1_2/subdir2", "subdir1_3"]
+            ],
+        )
         self.assertEqual(dir_path_str, all_dirs[0])
         self.assertLess(
             all_dirs.index(file_io.join(dir_path_str, "subdir1_2")),
-            all_dirs.index(file_io.join(dir_path_str, "subdir1_2/subdir2")))
+            all_dirs.index(file_io.join(dir_path_str, "subdir1_2/subdir2")),
+        )
         self.assertItemsEqual(all_subdirs[1:5], [[], ["subdir2"], [], []])
-        self.assertItemsEqual(all_subdirs[0],
-                              ["subdir1_1", "subdir1_2", "subdir1_3"])
+        self.assertItemsEqual(all_subdirs[0], ["subdir1_1", "subdir1_2", "subdir1_3"])
         self.assertItemsEqual(all_files, [["file1.txt"], ["file2.txt"], [], [], []])
-        self.assertLess(
-            all_files.index(["file1.txt"]), all_files.index(["file2.txt"]))
+        self.assertLess(all_files.index(["file1.txt"]), all_files.index(["file2.txt"]))
 
     def test_walk_post_order(self):
         dir_path = file_io.join(self._base_dir, "test_dir")
@@ -386,20 +392,23 @@ class OSSFSTest(test.TestCase):
             all_dirs.append(w_dir)
             all_subdirs.append(w_subdirs)
             all_files.append(w_files)
-        self.assertItemsEqual(all_dirs, [
-            file_io.join(dir_path, item) for item in
-            ["subdir1_1", "subdir1_2/subdir2", "subdir1_2", "subdir1_3"]
-        ] + [dir_path])
+        self.assertItemsEqual(
+            all_dirs,
+            [
+                file_io.join(dir_path, item)
+                for item in ["subdir1_1", "subdir1_2/subdir2", "subdir1_2", "subdir1_3"]
+            ]
+            + [dir_path],
+        )
         self.assertEqual(dir_path, all_dirs[4])
         self.assertLess(
-        all_dirs.index(file_io.join(dir_path, "subdir1_2/subdir2")),
-        all_dirs.index(file_io.join(dir_path, "subdir1_2")))
+            all_dirs.index(file_io.join(dir_path, "subdir1_2/subdir2")),
+            all_dirs.index(file_io.join(dir_path, "subdir1_2")),
+        )
         self.assertItemsEqual(all_subdirs[0:4], [[], [], ["subdir2"], []])
-        self.assertItemsEqual(all_subdirs[4],
-                          ["subdir1_1", "subdir1_2", "subdir1_3"])
+        self.assertItemsEqual(all_subdirs[4], ["subdir1_1", "subdir1_2", "subdir1_3"])
         self.assertItemsEqual(all_files, [["file2.txt"], [], [], [], ["file1.txt"]])
-        self.assertLess(
-            all_files.index(["file2.txt"]), all_files.index(["file1.txt"]))
+        self.assertLess(all_files.index(["file2.txt"]), all_files.index(["file1.txt"]))
 
     def test_walk_failure(self):
         dir_path = file_io.join(self._base_dir, "test_dir")
@@ -567,6 +576,7 @@ class OSSFSTest(test.TestCase):
         f.flush()
         f.close()
         self.assertEqual(content, f.read(len(content) + 1))
+
 
 if __name__ == "__main__":
     test.main()

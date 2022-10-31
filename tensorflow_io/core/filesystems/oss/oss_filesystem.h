@@ -104,8 +104,7 @@ class OSSFileSystem {
                       const string& bucket, const string& key,
                       std::vector<string>* result, bool return_all = true,
                       bool return_full_path = false,
-                      bool should_remove_suffix = true,
-                      bool recursive = true,
+                      bool should_remove_suffix = true, bool recursive = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
