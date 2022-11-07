@@ -57,6 +57,9 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
       - name: macOS
         run: |
           set -x -e
@@ -65,6 +68,7 @@ jobs:
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
           echo $PATH
+          which python3
           python3 --version
           python3 -c 'import site; print(site.getsitepackages())'
           python3 .github/workflows/build.instruction.py --sudo=true docs/development.md "#### macOS" > source.sh
@@ -110,6 +114,9 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
       - name: Bazel on macOS
         run: |
           set -x -e
@@ -117,7 +124,7 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          sudo -E -H bash -e .github/workflows/build.bazel.sh
+          sudo -E -H bash -e .github/workflows/build.bazel.sh python3
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
@@ -152,7 +159,7 @@ jobs:
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          python -m pip install twine delocate==0.9.1
+          python -m pip install twine delocate==0.10.3
           delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
@@ -624,7 +631,7 @@ jobs:
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          python -m pip install twine delocate==0.9.1
+          python -m pip install twine delocate==0.10.3
           delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
