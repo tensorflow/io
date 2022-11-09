@@ -38,6 +38,7 @@ cc_library(
         "//tensorflow_io/core/filesystems/az",
         "//tensorflow_io/core/filesystems/hdfs",
         "//tensorflow_io/core/filesystems/http",
+        "//tensorflow_io/core/filesystems/oss",
         "//tensorflow_io/core/filesystems/s3",
     ],
     alwayslink = 1,

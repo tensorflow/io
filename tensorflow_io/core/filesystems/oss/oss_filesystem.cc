@@ -9,7 +9,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "oss_file_system.h"
+#include "tensorflow_io/core/filesystems/oss/oss_filesystem.h"
 
 #include <pwd.h>
 #include <unistd.h>
@@ -31,10 +31,11 @@ limitations under the License.
 #include "tensorflow/core/platform/file_system_helper.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/thread_annotations.h"
+#include "tensorflow_io/core/filesystems/filesystem_plugins.h"
 
 namespace tensorflow {
 namespace io {
-namespace {
+namespace oss {
 
 constexpr char kOSSCredentialsDefaultFile[] = ".osscredentials";
 constexpr char kOSSCredentialsFileEnvKey[] = "OSS_CREDENTIALS";
@@ -46,10 +47,17 @@ constexpr char kOSSAccessIdKey[] = "id";
 constexpr char kOSSAccessKeyKey[] = "key";
 constexpr char kOSSHostKey[] = "host";
 constexpr char kDelim[] = "/";
+static char oss_user_agent[256] = "";
 
 void oss_initialize_with_throwable() {
   if (aos_http_io_initialize(NULL, 0) != AOSE_OK) {
     throw std::exception();
+  }
+  std::string user_agent = aos_default_http_transport_options->user_agent;
+  user_agent += std::string(", TensorFlow I/O");
+  if (user_agent.size() < 256) {
+    strncpy(oss_user_agent, user_agent.c_str(), user_agent.size());
+    aos_default_http_transport_options->user_agent = oss_user_agent;
   }
 }
 
@@ -487,7 +495,6 @@ class OSSWritableFile : public WritableFile {
   mutex mu_;
   int64_t part_number_;
 };
-}  // namespace
 
 OSSFileSystem::OSSFileSystem() {}
 
@@ -567,7 +574,7 @@ Status OSSFileSystem::NewRandomAccessFile(
   std::string host, access_id, access_key;
   TF_RETURN_IF_ERROR(
       _ParseOSSURIPath(filename, bucket, object, host, access_id, access_key));
-  FileStatistics stat;
+  TF_FileStatistics stat;
   OSSConnection conn(host, access_id, access_key);
   TF_RETURN_IF_ERROR(_RetrieveObjectMetadata(
       conn.getPool(), conn.getRequestOptions(), bucket, object, &stat));
@@ -614,7 +621,7 @@ Status OSSFileSystem::NewReadOnlyMemoryRegionFromFile(
 }
 
 Status OSSFileSystem::FileExists(const std::string& fname) {
-  FileStatistics stat;
+  TF_FileStatistics stat;
   if (Stat(fname, &stat).ok()) {
     return Status::OK();
   } else {
@@ -627,7 +634,7 @@ Status OSSFileSystem::_ListObjects(
     aos_pool_t* pool, const oss_request_options_t* options,
     const std::string& bucket, const std::string& key,
     std::vector<std::string>* result, bool return_all, bool return_full_path,
-    bool should_remove_suffix, int max_ret_per_iterator) {
+    bool should_remove_suffix, bool recursive, int max_ret_per_iterator) {
   aos_string_t bucket_;
   aos_status_t* s = NULL;
   oss_list_object_params_t* params = NULL;
@@ -639,6 +646,9 @@ Status OSSFileSystem::_ListObjects(
   params->max_ret = max_ret_per_iterator;
   aos_str_set(&params->prefix, key.c_str());
   aos_str_set(&params->marker, next_marker);
+  if (!recursive) {
+    aos_str_set(&params->delimiter, "/");
+  }
 
   do {
     s = oss_list_object(options, &bucket_, params, NULL);
@@ -651,6 +661,29 @@ Status OSSFileSystem::_ListObjects(
 
     aos_list_for_each_entry(oss_list_object_content_t, content,
                             &params->object_list, node) {
+      int path_length = content->key.len;
+      if (should_remove_suffix && path_length > 0 &&
+          content->key.data[content->key.len - 1] == '/') {
+        path_length = content->key.len - 1;
+      }
+      if (return_full_path) {
+        string child(content->key.data, 0, path_length);
+        result->push_back(child);
+      } else {
+        int prefix_len = (key.length() > 0 && key.at(key.length() - 1) != '/')
+                             ? key.length() + 1
+                             : key.length();
+        // remove prefix for GetChildren
+        if (content->key.len > prefix_len) {
+          string child(content->key.data + prefix_len, 0,
+                       path_length - prefix_len);
+          result->push_back(child);
+        }
+      }
+    }
+
+    aos_list_for_each_entry(oss_list_object_content_t, content,
+                            &params->common_prefix_list, node) {
       int path_length = content->key.len;
       if (should_remove_suffix && path_length > 0 &&
           content->key.data[content->key.len - 1] == '/') {
@@ -687,7 +720,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
                                     const oss_request_options_t* options,
                                     const std::string& bucket,
                                     const std::string& object,
-                                    FileStatistics* stat) {
+                                    TF_FileStatistics* stat) {
   Status s = _RetrieveObjectMetadata(pool, options, bucket, object, stat);
   if (s.ok()) {
     VLOG(1) << "RetrieveObjectMetadata for object: " << object
@@ -708,7 +741,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   // check list if it has children
   std::vector<std::string> listing;
   s = _ListObjects(pool, options, bucket, object, &listing, true, false, false,
-                   10);
+                   true, 10);
 
   if (s == Status::OK() && !listing.empty()) {
     if (str_util::EndsWith(object, "/")) {
@@ -728,7 +761,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
 Status OSSFileSystem::_RetrieveObjectMetadata(
     aos_pool_t* pool, const oss_request_options_t* options,
     const std::string& bucket, const std::string& object,
-    FileStatistics* stat) {
+    TF_FileStatistics* stat) {
   aos_string_t oss_bucket;
   aos_string_t oss_object;
   aos_table_t* headers = NULL;
@@ -788,7 +821,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(
   }
 }
 
-Status OSSFileSystem::Stat(const std::string& fname, FileStatistics* stat) {
+Status OSSFileSystem::Stat(const std::string& fname, TF_FileStatistics* stat) {
   TF_RETURN_IF_ERROR(oss_initialize());
   std::string object, bucket;
   std::string host, access_id, access_key;
@@ -812,14 +845,9 @@ Status OSSFileSystem::GetChildren(const std::string& dir,
   OSSConnection oss(host, access_id, access_key);
   oss_request_options_t* oss_options = oss.getRequestOptions();
   aos_pool_t* pool = oss.getPool();
+  if (!object.empty() && object.back() != '/') object.push_back('/');
   return _ListObjects(pool, oss_options, bucket, object, result, true, false,
-                      true, 1000);
-}
-
-Status OSSFileSystem::GetMatchingPaths(const std::string& pattern,
-                                       std::vector<std::string>* results) {
-  return tensorflow::internal::GetMatchingPaths(this, Env::Default(), pattern,
-                                                results);
+                      true, false, 1000);
 }
 
 Status OSSFileSystem::_DeleteObjectInternal(
@@ -873,7 +901,7 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
     return _CreateDirInternal(pool, ossOptions, bucket, object);
   }
 
-  FileStatistics stat;
+  TF_FileStatistics stat;
   StringPiece parent = io::Dirname(dirs);
 
   if (!_StatInternal(pool, ossOptions, bucket, string(parent), &stat).ok()) {
@@ -925,7 +953,7 @@ Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
                                          const oss_request_options_t* options,
                                          const std::string& bucket,
                                          const std::string& dirname) {
-  FileStatistics stat;
+  TF_FileStatistics stat;
   if (_RetrieveObjectMetadata(pool, options, bucket, dirname, &stat).ok()) {
     if (!stat.is_directory) {
       VLOG(0) << "object already exists as a file: " << dirname;
@@ -998,7 +1026,7 @@ Status OSSFileSystem::DeleteDir(const std::string& dirname) {
 }
 
 Status OSSFileSystem::GetFileSize(const std::string& fname, uint64* file_size) {
-  FileStatistics stat;
+  TF_FileStatistics stat;
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
   *file_size = stat.length;
   return Status::OK();
@@ -1047,7 +1075,7 @@ Status OSSFileSystem::RenameFile(const std::string& src,
     }
     std::vector<std::string> childPaths;
     _ListObjects(pool, oss_options, sbucket, sobject, &childPaths, true, false,
-                 false, 1000);
+                 false, true, 1000);
     for (const auto& child : childPaths) {
       std::string tmp_sobject = sobject + child;
       std::string tmp_dobject = dobject + child;
@@ -1055,9 +1083,8 @@ Status OSSFileSystem::RenameFile(const std::string& src,
       aos_str_set(&source_object, tmp_sobject.c_str());
       aos_str_set(&dest_object, tmp_dobject.c_str());
 
-      resp_status =
-          _RenameFileInternal(oss_options, pool, source_bucket, source_object,
-                              dest_bucket, dest_object);
+      resp_status = _CopyFileInternal(oss_options, pool, source_bucket,
+                                      source_object, dest_bucket, dest_object);
       if (!aos_status_is_ok(resp_status)) {
         string msg;
         oss_error_message(resp_status, &msg);
@@ -1073,8 +1100,8 @@ Status OSSFileSystem::RenameFile(const std::string& src,
 
   aos_str_set(&source_object, sobject.c_str());
   aos_str_set(&dest_object, dobject.c_str());
-  resp_status = _RenameFileInternal(oss_options, pool, source_bucket,
-                                    source_object, dest_bucket, dest_object);
+  resp_status = _CopyFileInternal(oss_options, pool, source_bucket,
+                                  source_object, dest_bucket, dest_object);
   if (!aos_status_is_ok(resp_status)) {
     string msg;
     oss_error_message(resp_status, &msg);
@@ -1087,7 +1114,7 @@ Status OSSFileSystem::RenameFile(const std::string& src,
   return _DeleteObjectInternal(oss_options, sbucket, sobject);
 }
 
-aos_status_t* OSSFileSystem::_RenameFileInternal(
+aos_status_t* OSSFileSystem::_CopyFileInternal(
     const oss_request_options_t* oss_options, aos_pool_t* pool,
     const aos_string_t& source_bucket, const aos_string_t& source_object,
     const aos_string_t& dest_bucket, const aos_string_t& dest_object) {
@@ -1107,7 +1134,7 @@ aos_status_t* OSSFileSystem::_RenameFileInternal(
   int max_ret = 1000;
 
   // get file size
-  FileStatistics stat;
+  TF_FileStatistics stat;
   _StatInternal(pool, oss_options, std::string(source_bucket.data),
                 std::string(source_object.data), &stat);
   uint64 file_size = stat.length;
@@ -1206,7 +1233,7 @@ aos_status_t* OSSFileSystem::_RenameFileInternal(
 }
 
 Status OSSFileSystem::IsDirectory(const std::string& fname) {
-  FileStatistics stat;
+  TF_FileStatistics stat;
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
 
   return stat.is_directory
@@ -1215,8 +1242,8 @@ Status OSSFileSystem::IsDirectory(const std::string& fname) {
 }
 
 Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
-                                        int64* undeleted_files,
-                                        int64* undeleted_dirs) {
+                                        uint64* undeleted_files,
+                                        uint64* undeleted_dirs) {
   if (!undeleted_files || !undeleted_dirs) {
     return errors::Internal(
         "'undeleted_files' and 'undeleted_dirs' cannot be nullptr.");
@@ -1234,7 +1261,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   aos_pool_t* pool = oss.getPool();
   std::vector<std::string> children;
 
-  FileStatistics stat;
+  TF_FileStatistics stat;
   Status s;
   s = _StatInternal(pool, oss_options, bucket, object, &stat);
   if (!s.ok() || !stat.is_directory) {
@@ -1243,7 +1270,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   }
 
   s = _ListObjects(pool, oss_options, bucket, object, &children, true, true,
-                   false, 1000);
+                   false, true, 1000);
   if (!s.ok()) {
     // empty dir, just delete it
     return _DeleteObjectInternal(oss_options, bucket, object);
@@ -1274,10 +1301,331 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
   return Status::OK();
 }
 
-namespace {
+Status OSSFileSystem::CopyFile(const string& src, const string& target) {
+  TF_RETURN_IF_ERROR(oss_initialize());
 
-REGISTER_FILE_SYSTEM("oss", OSSFileSystem);
+  std::string sobject, sbucket;
+  std::string host, access_id, access_key;
+  TF_RETURN_IF_ERROR(
+      _ParseOSSURIPath(src, sbucket, sobject, host, access_id, access_key));
+  std::string dobject, dbucket;
+  std::string dhost, daccess_id, daccess_key;
+  TF_RETURN_IF_ERROR(_ParseOSSURIPath(target, dbucket, dobject, dhost,
+                                      daccess_id, daccess_key));
 
-}  // namespace
+  if (host != dhost || access_id != daccess_id || access_key != daccess_key) {
+    VLOG(0) << "rename " << src << " to " << target << " failed, with errMsg: "
+            << " source oss cluster does not match dest oss cluster";
+    return errors::Internal(
+        "rename ", src, " to ", target, " failed, errMsg: ",
+        "source oss cluster does not match dest oss cluster");
+  }
+
+  OSSConnection oss(host, access_id, access_key);
+  oss_request_options_t* oss_options = oss.getRequestOptions();
+  aos_pool_t* pool = oss.getPool();
+
+  aos_status_t* resp_status;
+  aos_string_t source_bucket;
+  aos_string_t source_object;
+  aos_string_t dest_bucket;
+  aos_string_t dest_object;
+
+  aos_str_set(&source_bucket, sbucket.c_str());
+  aos_str_set(&source_object, sobject.c_str());
+  aos_str_set(&dest_bucket, dbucket.c_str());
+  aos_str_set(&dest_object, dobject.c_str());
+
+  resp_status = _CopyFileInternal(oss_options, pool, source_bucket,
+                                  source_object, dest_bucket, dest_object);
+  if (!aos_status_is_ok(resp_status)) {
+    string msg;
+    oss_error_message(resp_status, &msg);
+    VLOG(0) << "copy " << src << " to " << target << " failed, errMsg: " << msg;
+    return errors::Internal("copy ", src, " to ", target,
+                            " failed, errMsg: ", msg);
+  }
+  return Status::OK();
+}
+
+void ToTF_Status(const ::tensorflow::Status& s, TF_Status* status) {
+  TF_SetStatus(status, TF_Code(int(s.code())), s.error_message().c_str());
+}
+
+// SECTION 1. Implementation for `TF_RandomAccessFile`
+// ----------------------------------------------------------------------------
+namespace tf_random_access_file {
+
+static void Cleanup(TF_RandomAccessFile* file) {
+  auto oss_file = static_cast<OSSRandomAccessFile*>(file->plugin_file);
+  delete oss_file;
+}
+
+static int64_t Read(const TF_RandomAccessFile* file, uint64_t offset, size_t n,
+                    char* buffer, TF_Status* status) {
+  auto oss_file = static_cast<OSSRandomAccessFile*>(file->plugin_file);
+  StringPiece result;
+  ToTF_Status(oss_file->Read(offset, n, &result, buffer), status);
+  return result.size();
+}
+
+}  // namespace tf_random_access_file
+
+// SECTION 2. Implementation for `TF_WritableFile`
+// ----------------------------------------------------------------------------
+namespace tf_writable_file {
+
+static void Cleanup(TF_WritableFile* file) {
+  auto oss_file = static_cast<OSSWritableFile*>(file->plugin_file);
+  delete oss_file;
+}
+
+static void Append(const TF_WritableFile* file, const char* buffer, size_t n,
+                   TF_Status* status) {
+  auto oss_file = static_cast<OSSWritableFile*>(file->plugin_file);
+  ToTF_Status(oss_file->Append(StringPiece(buffer, n)), status);
+}
+
+static int64_t Tell(const TF_WritableFile* file, TF_Status* status) {
+  TF_SetStatus(status, TF_UNIMPLEMENTED, "Stat not implemented");
+  return -1;
+}
+
+static void Flush(const TF_WritableFile* file, TF_Status* status) {
+  auto oss_file = static_cast<OSSWritableFile*>(file->plugin_file);
+  ToTF_Status(oss_file->Flush(), status);
+}
+
+static void Sync(const TF_WritableFile* file, TF_Status* status) {
+  auto oss_file = static_cast<OSSWritableFile*>(file->plugin_file);
+  ToTF_Status(oss_file->Sync(), status);
+}
+
+static void Close(const TF_WritableFile* file, TF_Status* status) {
+  auto oss_file = static_cast<OSSWritableFile*>(file->plugin_file);
+  ToTF_Status(oss_file->Close(), status);
+}
+
+}  // namespace tf_writable_file
+
+// SECTION 3. Implementation for `TF_ReadOnlyMemoryRegion`
+// ----------------------------------------------------------------------------
+namespace tf_read_only_memory_region {
+void Cleanup(TF_ReadOnlyMemoryRegion* region) {
+  auto r = static_cast<OSSReadOnlyMemoryRegion*>(region->plugin_memory_region);
+  delete r;
+}
+
+const void* Data(const TF_ReadOnlyMemoryRegion* region) {
+  auto r = static_cast<OSSReadOnlyMemoryRegion*>(region->plugin_memory_region);
+  return r->data();
+}
+
+uint64_t Length(const TF_ReadOnlyMemoryRegion* region) {
+  auto r = static_cast<OSSReadOnlyMemoryRegion*>(region->plugin_memory_region);
+  return r->length();
+}
+
+}  // namespace tf_read_only_memory_region
+
+// SECTION 4. Implementation for `TF_Filesystem`, the actual filesystem
+// ----------------------------------------------------------------------------
+namespace tf_oss_filesystem {
+
+static void Init(TF_Filesystem* filesystem, TF_Status* status) {
+  filesystem->plugin_filesystem = new OSSFileSystem();
+  TF_SetStatus(status, TF_OK, "");
+}
+
+static void Cleanup(TF_Filesystem* filesystem) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  delete oss_fs;
+}
+
+void NewRandomAccessFile(const TF_Filesystem* filesystem, const char* path,
+                         TF_RandomAccessFile* file, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  std::unique_ptr<RandomAccessFile> result;
+  ToTF_Status(oss_fs->NewRandomAccessFile(path, &result), status);
+  if (TF_GetCode(status) == TF_OK) {
+    file->plugin_file = result.release();
+  }
+}
+
+void NewWritableFile(const TF_Filesystem* filesystem, const char* path,
+                     TF_WritableFile* file, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  std::unique_ptr<WritableFile> result;
+  ToTF_Status(oss_fs->NewWritableFile(path, &result), status);
+  if (TF_GetCode(status) == TF_OK) {
+    file->plugin_file = result.release();
+  }
+}
+
+void NewAppendableFile(const TF_Filesystem* filesystem, const char* path,
+                       TF_WritableFile* file, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  std::unique_ptr<WritableFile> result;
+  ToTF_Status(oss_fs->NewAppendableFile(path, &result), status);
+  if (TF_GetCode(status) == TF_OK) {
+    file->plugin_file = result.release();
+  }
+}
+
+void NewReadOnlyMemoryRegionFromFile(const TF_Filesystem* filesystem,
+                                     const char* path,
+                                     TF_ReadOnlyMemoryRegion* region,
+                                     TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  std::unique_ptr<ReadOnlyMemoryRegion> result;
+  ToTF_Status(oss_fs->NewReadOnlyMemoryRegionFromFile(path, &result), status);
+  if (TF_GetCode(status) == TF_OK) {
+    region->plugin_memory_region = result.release();
+  }
+}
+
+void CreateDir(const TF_Filesystem* filesystem, const char* path,
+               TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->CreateDir(path), status);
+}
+
+void RecursivelyCreateDir(const TF_Filesystem* filesystem, const char* path,
+                          TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->RecursivelyCreateDir(path), status);
+}
+
+void DeleteFile(const TF_Filesystem* filesystem, const char* path,
+                TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->DeleteFile(path), status);
+}
+
+void DeleteDir(const TF_Filesystem* filesystem, const char* path,
+               TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->DeleteDir(path), status);
+}
+
+void DeleteRecursively(const TF_Filesystem* filesystem, const char* path,
+                       uint64_t* undeleted_files, uint64_t* undeleted_dirs,
+                       TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->DeleteRecursively(path, undeleted_files, undeleted_dirs),
+              status);
+}
+
+void RenameFile(const TF_Filesystem* filesystem, const char* src,
+                const char* dst, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->RenameFile(src, dst), status);
+}
+
+void CopyFile(const TF_Filesystem* filesystem, const char* src, const char* dst,
+              TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->CopyFile(src, dst), status);
+}
+
+bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
+                 TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->IsDirectory(path), status);
+  return TF_GetCode(status) == TF_OK;
+}
+
+void Stat(const TF_Filesystem* filesystem, const char* path,
+          TF_FileStatistics* stats, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  ToTF_Status(oss_fs->Stat(path, stats), status);
+}
+
+void PathExists(const TF_Filesystem* filesystem, const char* path,
+                TF_Status* status) {
+  TF_FileStatistics stats;
+  Stat(filesystem, path, &stats, status);
+}
+
+int GetChildren(const TF_Filesystem* filesystem, const char* path,
+                char*** entries, TF_Status* status) {
+  auto oss_fs = static_cast<OSSFileSystem*>(filesystem->plugin_filesystem);
+  std::vector<std::string> result;
+  ToTF_Status(oss_fs->GetChildren(path, &result), status);
+  int num_entries = result.size();
+  *entries = static_cast<char**>(
+      plugin_memory_allocate(num_entries * sizeof((*entries)[0])));
+  for (int i = 0; i < num_entries; i++)
+    (*entries)[i] = strdup(result[i].c_str());
+  return TF_GetCode(status) == TF_OK ? num_entries : -1;
+}
+
+int64_t GetFileSize(const TF_Filesystem* filesystem, const char* path,
+                    TF_Status* status) {
+  TF_FileStatistics stats;
+  Stat(filesystem, path, &stats, status);
+  return stats.length;
+}
+
+char* TranslateName(const TF_Filesystem* filesystem, const char* uri) {
+  return strdup(uri);
+}
+
+}  // namespace tf_oss_filesystem
+
+void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri) {
+  TF_SetFilesystemVersionMetadata(ops);
+  ops->scheme = strdup(uri);
+
+  ops->random_access_file_ops = static_cast<TF_RandomAccessFileOps*>(
+      plugin_memory_allocate(TF_RANDOM_ACCESS_FILE_OPS_SIZE));
+  ops->random_access_file_ops->cleanup = tf_random_access_file::Cleanup;
+  ops->random_access_file_ops->read = tf_random_access_file::Read;
+
+  ops->writable_file_ops = static_cast<TF_WritableFileOps*>(
+      plugin_memory_allocate(TF_WRITABLE_FILE_OPS_SIZE));
+  ops->writable_file_ops->cleanup = tf_writable_file::Cleanup;
+  ops->writable_file_ops->append = tf_writable_file::Append;
+  ops->writable_file_ops->tell = tf_writable_file::Tell;
+  ops->writable_file_ops->flush = tf_writable_file::Flush;
+  ops->writable_file_ops->sync = tf_writable_file::Sync;
+  ops->writable_file_ops->close = tf_writable_file::Close;
+
+  ops->read_only_memory_region_ops = static_cast<TF_ReadOnlyMemoryRegionOps*>(
+      plugin_memory_allocate(TF_READ_ONLY_MEMORY_REGION_OPS_SIZE));
+  ops->read_only_memory_region_ops->cleanup =
+      tf_read_only_memory_region::Cleanup;
+  ops->read_only_memory_region_ops->data = tf_read_only_memory_region::Data;
+  ops->read_only_memory_region_ops->length = tf_read_only_memory_region::Length;
+
+  ops->filesystem_ops = static_cast<TF_FilesystemOps*>(
+      plugin_memory_allocate(TF_FILESYSTEM_OPS_SIZE));
+  ops->filesystem_ops->init = tf_oss_filesystem::Init;
+  ops->filesystem_ops->cleanup = tf_oss_filesystem::Cleanup;
+  ops->filesystem_ops->new_random_access_file =
+      tf_oss_filesystem::NewRandomAccessFile;
+  ops->filesystem_ops->new_writable_file = tf_oss_filesystem::NewWritableFile;
+  ops->filesystem_ops->new_appendable_file =
+      tf_oss_filesystem::NewAppendableFile;
+  ops->filesystem_ops->new_read_only_memory_region_from_file =
+      tf_oss_filesystem::NewReadOnlyMemoryRegionFromFile;
+  ops->filesystem_ops->create_dir = tf_oss_filesystem::CreateDir;
+  ops->filesystem_ops->recursively_create_dir =
+      tf_oss_filesystem::RecursivelyCreateDir;
+  ops->filesystem_ops->delete_file = tf_oss_filesystem::DeleteFile;
+  ops->filesystem_ops->delete_recursively =
+      tf_oss_filesystem::DeleteRecursively;
+  ops->filesystem_ops->delete_dir = tf_oss_filesystem::DeleteDir;
+  ops->filesystem_ops->copy_file = tf_oss_filesystem::CopyFile;
+  ops->filesystem_ops->rename_file = tf_oss_filesystem::RenameFile;
+  ops->filesystem_ops->path_exists = tf_oss_filesystem::PathExists;
+  ops->filesystem_ops->stat = tf_oss_filesystem::Stat;
+  ops->filesystem_ops->is_directory = tf_oss_filesystem::IsDirectory;
+  ops->filesystem_ops->get_file_size = tf_oss_filesystem::GetFileSize;
+  ops->filesystem_ops->get_children = tf_oss_filesystem::GetChildren;
+  ops->filesystem_ops->translate_name = tf_oss_filesystem::TranslateName;
+}
+
+}  // end namespace oss
 }  // end namespace io
 }  // end namespace tensorflow
