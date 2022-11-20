@@ -38,8 +38,12 @@ cc_library(
         "//tensorflow_io/core/filesystems/az",
         "//tensorflow_io/core/filesystems/hdfs",
         "//tensorflow_io/core/filesystems/http",
-        "//tensorflow_io/core/filesystems/oss",
         "//tensorflow_io/core/filesystems/s3",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "//tensorflow_io/core/filesystems/oss",
+        ],
+    }),
     alwayslink = 1,
 )

@@ -7,11 +7,11 @@ http_archive(
     name = "zlib",
     build_file = "//third_party:zlib.BUILD",
     patch_cmds = ["""sed -i.bak '29i\\'$'\\n#include<zconf.h>\\n' contrib/minizip/crypt.h"""],
-    sha256 = "91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9",
-    strip_prefix = "zlib-1.2.12",
+    sha256 = "b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30",
+    strip_prefix = "zlib-1.2.13",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.12.tar.gz",
-        "https://zlib.net/zlib-1.2.12.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.13.tar.gz",
+        "https://zlib.net/zlib-1.2.13.tar.gz",
     ],
 )
 
@@ -115,10 +115,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "b5a1bb04c84b6fe1538377e5a1f649bb5d5f0b2e3625a3c526ff3a8af88633e8",
-    strip_prefix = "tensorflow-2.10.0",
+    sha256 = "99c732b92b1b37fc243a559e02f9aef5671771e272758aa4aec7f34dc92dac48",
+    strip_prefix = "tensorflow-2.11.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.10.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.11.0.tar.gz",
     ],
 )
 
