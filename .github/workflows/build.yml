@@ -138,7 +138,7 @@ jobs:
     runs-on: macOS-11
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -252,7 +252,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -365,7 +365,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -470,6 +470,10 @@ jobs:
           path: macOS-3.10-wheel
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-3.11-wheel
+          path: macOS-3.11-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: Linux-3.7-wheel
           path: Linux-3.7-wheel
       - uses: actions/download-artifact@v1
@@ -486,6 +490,10 @@ jobs:
           path: Linux-3.10-wheel
       - uses: actions/download-artifact@v1
         with:
+          name: Linux-3.11-wheel
+          path: Linux-3.11-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: Windows-3.7-wheel
           path: Windows-3.7-wheel
       - uses: actions/download-artifact@v1
@@ -500,6 +508,10 @@ jobs:
         with:
           name: Windows-3.10-wheel
           path: Windows-3.10-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.11-wheel
+          path: Windows-3.11-wheel
       - run: |
           set -e -x
           mkdir -p wheelhouse
@@ -507,14 +519,17 @@ jobs:
           cp macOS-3.8-wheel/*.whl wheelhouse/
           cp macOS-3.9-wheel/*.whl wheelhouse/
           cp macOS-3.10-wheel/*.whl wheelhouse/
+          cp macOS-3.11-wheel/*.whl wheelhouse/
           cp Linux-3.7-wheel/*.whl wheelhouse/
           cp Linux-3.8-wheel/*.whl wheelhouse/
           cp Linux-3.9-wheel/*.whl wheelhouse/
           cp Linux-3.10-wheel/*.whl wheelhouse/
+          cp Linux-3.11-wheel/*.whl wheelhouse/
           cp Windows-3.7-wheel/*.whl wheelhouse/
           cp Windows-3.8-wheel/*.whl wheelhouse/
           cp Windows-3.9-wheel/*.whl wheelhouse/
           cp Windows-3.10-wheel/*.whl wheelhouse/
+          cp Windows-3.11-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
       - uses: actions/upload-artifact@v2
@@ -605,7 +620,7 @@ jobs:
     runs-on: macOS-11
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -652,7 +667,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -692,7 +707,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.7', '3.8', '3.9', '3.10']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/download-artifact@v1
         with:
@@ -746,6 +761,10 @@ jobs:
           path: macOS-3.10-nightly
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-3.11-nightly
+          path: macOS-3.11-nightly
+      - uses: actions/download-artifact@v1
+        with:
           name: Linux-3.7-nightly
           path: Linux-3.7-nightly
       - uses: actions/download-artifact@v1
@@ -762,6 +781,10 @@ jobs:
           path: Linux-3.10-nightly
       - uses: actions/download-artifact@v1
         with:
+          name: Linux-3.11-nightly
+          path: Linux-3.11-nightly
+      - uses: actions/download-artifact@v1
+        with:
           name: Windows-3.7-nightly
           path: Windows-3.7-nightly
       - uses: actions/download-artifact@v1
@@ -776,6 +799,10 @@ jobs:
         with:
           name: Windows-3.10-nightly
           path: Windows-3.10-nightly
+      - uses: actions/download-artifact@v1
+        with:
+          name: Windows-3.11-nightly
+          path: Windows-3.11-nightly
       - run: |
           set -e -x
           mkdir -p dist
@@ -783,14 +810,17 @@ jobs:
           cp macOS-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.10-nightly/tensorflow_io_nightly*.whl dist/
+          cp macOS-3.11-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.7-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.10-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.11-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.7-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.8-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.10-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.11-nightly/tensorflow_io_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
@@ -805,14 +835,17 @@ jobs:
           cp macOS-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp macOS-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.7-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.8-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@master
