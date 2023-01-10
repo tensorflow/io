@@ -40,7 +40,7 @@ Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
   if (!status.ok()) {
-    return errors::InvalidArgument("arrow data type ", dtype,
+    return errors::InvalidArgument("arrow data type ", dtype->name(),
                                    " is not supported: ", status);
   }
   return Status::OK();
