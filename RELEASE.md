@@ -1,3 +1,17 @@
+# Release 0.30.0
+
+## Major Features and Bug Fixes
+* Fix issue in python 3.11 support for aarch64
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Colin, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.29.0
 
 ## Major Features and Bug Fixes
