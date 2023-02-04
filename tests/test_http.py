@@ -106,5 +106,18 @@ def test_gfile_tell(local_content, remote_filename):
     assert remote_gfile.tell() == 100
 
 
+@pytest.mark.skipif(
+    sys.platform in ("darwin", "win32"), reason="macOS/Windows fails now"
+)
+def test_gfile_isdir(remote_filename):
+    """Test case for isdir()"""
+
+    # A valid http link is not a dir.
+    assert not tf.io.gfile.isdir(remote_filename)
+    # An invalid http link is not a dir either.
+    assert not tf.io.gfile.isdir("https://not-a-valid-domain/tfio-test")
+
+
+
 if __name__ == "__main__":
     tf.test.main()
