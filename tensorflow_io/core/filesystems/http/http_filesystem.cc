@@ -782,8 +782,13 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
     return false;
   }
 
-  TF_SetStatus(status, TF_OK, "");
-  return stats.is_directory;
+  if (stats.is_directory) {
+    TF_SetStatus(status, TF_OK, "");
+    return true;
+  }
+
+  TF_SetStatus(status, TF_FAILED_PRECONDITION, "not a directory");
+  return false;
 }
 
 static int GetChildren(const TF_Filesystem* filesystem, const char* path,
