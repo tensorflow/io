@@ -118,6 +118,5 @@ def test_gfile_isdir(remote_filename):
     assert not tf.io.gfile.isdir("https://not-a-valid-domain/tfio-test")
 
 
-
 if __name__ == "__main__":
     tf.test.main()
