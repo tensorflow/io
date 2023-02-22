@@ -7,7 +7,7 @@
 
 This release contains contributions from many people:
 
-Zhuo Peng, Yong Tang
+Yong Tang, Zhuo Peng
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
