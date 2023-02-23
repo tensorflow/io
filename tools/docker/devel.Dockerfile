@@ -40,6 +40,8 @@ ARG PIP_ADD_PACKAGES=""
 
 RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     avro-python3 \
+    python-snappy \
+    parameterized \
     pytest \
     pytest-benchmark \
     pylint \
@@ -48,6 +50,7 @@ RUN /bin/bash -c "source activate tfio-dev && python -m pip install \
     google-cloud-bigquery-storage==1.1.0 \
     pyarrow==${ARROW_VERSION} \
     pandas \
+    scipy \
     fastavro \
     gast==0.2.2 \
     ${PIP_ADD_PACKAGES} \
