@@ -115,7 +115,7 @@ arrow::Status ArrowStreamClient::Connect() {
     return arrow::Status::IOError("Unable to connect to server");
   }
 
-  return arrow::OkStatus();
+  return arrow::Status::OK();
 }
 
 arrow::Status ArrowStreamClient::Close() {
@@ -128,7 +128,7 @@ arrow::Status ArrowStreamClient::Close() {
                                   std::to_string(WSAGetLastError()));
   }
 
-  return arrow::OkStatus();
+  return arrow::Status::OK();
 }
 
 bool ArrowStreamClient::closed() const { return sock_ == -1; }

@@ -101,7 +101,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
       return ::arrow::adapters::tensorflow::GetTensorFlowType(array.type(),
                                                               out_dtype_);
     }
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
 #define VISIT_PRIMITIVE(TYPE)                               \
@@ -202,7 +202,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       memcpy(dst, &value, sizeof(value));
     }
 
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
   template <typename ArrayType>
@@ -227,7 +227,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
     void* dst = const_cast<char*>(out_tensor_->tensor_data().data());
     std::memcpy(dst, src, out_tensor_->NumElements() * type_width);
 
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
 #define VISIT_FIXED_WIDTH(TYPE)                             \
@@ -288,7 +288,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       output_flat(j) = array.GetString(i_ + j);
     }
 
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
   virtual arrow::Status Visit(const arrow::BinaryArray& array) override {
@@ -299,7 +299,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       output_flat(j) = array.GetString(i_ + j);
     }
 
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
  private:
@@ -351,7 +351,7 @@ class ArrowArrayTypeCheckerImpl : public arrow::TypeVisitor {
           std::to_string(expected_type_) +
           ", but got dtype=" + std::to_string(converted_type));
     }
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
  private:
@@ -384,7 +384,7 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
     // TODO null count == 0
     *out_data_ =
         arrow::ArrayData::Make(type_, lengths_[0], std::move(buffers_), 0);
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
 #define VISIT_PRIMITIVE(TYPE)                              \
@@ -428,7 +428,7 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
     *out_data_ = arrow::ArrayData::Make(list_type, list_length,
                                         std::move(list_bufs), {child_data}, 0);
 
-    return arrow::OkStatus();
+    return arrow::Status::OK();
   }
 
  private:

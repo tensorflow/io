@@ -95,7 +95,7 @@ arrow::Status ArrowStreamClient::Connect() {
                                   socket_family);
   }
 
-  return arrow::OkStatus();
+  return arrow::Status::OK();
 }
 
 arrow::Status ArrowStreamClient::Close() {
@@ -106,7 +106,7 @@ arrow::Status ArrowStreamClient::Close() {
     return arrow::Status::IOError("Failed to correctly close connection");
   }
 
-  return arrow::OkStatus();
+  return arrow::Status::OK();
 }
 
 bool ArrowStreamClient::closed() const { return sock_ == -1; }

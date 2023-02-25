@@ -35,7 +35,7 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
       : file_(file), size_(size), position_(0) {}
 
   ~ArrowRandomAccessFile() {}
-  arrow::Status Close() override { return arrow::OkStatus(); }
+  arrow::Status Close() override { return arrow::Status::OK(); }
   bool closed() const override { return false; }
   arrow::Result<int64_t> Tell() const override { return position_; }
   arrow::Status Seek(int64_t position) override {
