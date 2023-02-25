@@ -44,20 +44,20 @@ class FastqOp : public OpKernel {
     std::unique_ptr<FastqReader> reader =
         std::move(FastqReader::FromFile(
                       filename, nucleus::genomics::v1::FastqReaderOptions())
-                      .ValueOrDie());
+                      .value());
 
     std::vector<std::string> sequences;
     std::vector<std::string> quality;
 
     std::shared_ptr<nucleus::FastqIterable> fastq_iterable =
-        reader->Iterate().ValueOrDie();
+        reader->Iterate().value();
     for (const nucleus::StatusOr<FastqRecord*> maybe_sequence :
          fastq_iterable) {
       OP_REQUIRES(
           context, maybe_sequence.ok(),
           errors::Internal("internal error: ", maybe_sequence.error_message()));
-      sequences.push_back(maybe_sequence.ValueOrDie()->sequence());
-      quality.push_back(maybe_sequence.ValueOrDie()->quality());
+      sequences.push_back(maybe_sequence.value()->sequence());
+      quality.push_back(maybe_sequence.value()->quality());
     }
 
     TensorShape output_shape({static_cast<int64>(sequences.size())});

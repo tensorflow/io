@@ -114,13 +114,13 @@ class JSONReadable : public IOReadableInterface {
     if (!reader_result.ok()) {
       return errors::InvalidArgument("unable to make a TableReader: ", status);
     } else {
-      reader_ = reader_result.ValueOrDie();
+      reader_ = reader_result.value();
     }
     auto table_result = reader_->Read();
     if (!table_result.ok()) {
       return errors::InvalidArgument("unable to read table: ", status);
     } else {
-      table_ = table_result.ValueOrDie();
+      table_ = table_result.value();
     }
 
     shapes_.clear();

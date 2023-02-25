@@ -551,7 +551,7 @@ class FeatherReadable : public IOReadableInterface {
       return errors::Internal(maybe_reader.status().ToString());
     }
     std::shared_ptr<arrow::ipc::feather::Reader> reader =
-        maybe_reader.ValueOrDie();
+        maybe_reader.value();
     std::shared_ptr<arrow::Schema> schema = reader->schema();
 
     std::shared_ptr<arrow::Table> table;
