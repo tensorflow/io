@@ -96,7 +96,7 @@ REGISTER_OP("IO>ListFeatherColumns")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FeatherReadableInit")
@@ -108,7 +108,7 @@ REGISTER_OP("IO>FeatherReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FeatherReadableSpec")
@@ -119,7 +119,7 @@ REGISTER_OP("IO>FeatherReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FeatherReadableRead")
@@ -136,7 +136,7 @@ REGISTER_OP("IO>FeatherReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ArrowReadableFromMemoryInit")
@@ -150,7 +150,7 @@ REGISTER_OP("IO>ArrowReadableFromMemoryInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ArrowReadableSpec")
@@ -162,7 +162,7 @@ REGISTER_OP("IO>ArrowReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ArrowReadableRead")
@@ -179,13 +179,13 @@ REGISTER_OP("IO>ArrowReadableRead")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(3, &full));
       if (!(c->RankKnown(full) && c->Rank(full) > 0)) {
         c->set_output(0, full);
-        return Status::OK();
+        return OkStatus();
       }
       // TODO: replace dims up until rank(start|stop)
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->ReplaceDim(full, 0, c->UnknownDim(), &shape));
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

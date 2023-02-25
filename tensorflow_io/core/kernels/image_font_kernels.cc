@@ -83,7 +83,7 @@ Status InitializeFreeTypeLibrary() {
     }
     init = true;
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace

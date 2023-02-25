@@ -137,22 +137,22 @@ class FileResource : public ResourceBase {
 
   Status Init(const string& filename) {
     TF_RETURN_IF_ERROR(env_->NewWritableFile(filename, &file_));
-    return Status::OK();
+    return OkStatus();
   }
   Status Write(const Tensor& content) {
     mutex_lock l(mu_);
     for (int64 i = 0; i < content.NumElements(); i++) {
       TF_RETURN_IF_ERROR(file_->Append(content.flat<tstring>()(i)));
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Sync() {
     file_->Flush();
-    return Status::OK();
+    return OkStatus();
   }
   Status Close() {
     file_.reset(nullptr);
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "FileResource"; }
 
@@ -181,7 +181,7 @@ class FileInitOp : public ResourceOpKernel<FileResource> {
   Status CreateResource(FileResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FileResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

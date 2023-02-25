@@ -38,7 +38,7 @@ class IOGraphOptimizationPass : public GraphOptimizationPass {
       LOG(INFO) << "TFIO_GRAPH_DEBUG: [run]:"
                 << graph->ToGraphDefDebug().DebugString();
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

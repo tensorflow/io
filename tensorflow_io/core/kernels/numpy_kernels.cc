@@ -226,7 +226,7 @@ Status ParseNumpyHeader(io::InputStreamInterface* stream,
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 class ZipObjectInputStream : public io::InputStreamInterface {
@@ -265,7 +265,7 @@ class ZipObjectInputStream : public io::InputStreamInterface {
     if (bytes_read < bytes_to_read) {
       return errors::OutOfRange("EOF reached");
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   virtual int64 Tell() const override { return offset_; }
@@ -369,7 +369,7 @@ Status NumpyInfo(const string& filename, const int64 size,
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 class NumpyInfoOp : public OpKernel {
@@ -681,7 +681,7 @@ class NumpyReadOp : public OpKernel {
         return errors::InvalidArgument("unsupported type: ", dtype);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

@@ -235,7 +235,7 @@ class DecodeAvroOp : public OpKernel {
                                        datum.type());
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status ProcessRecord(const int64 index,
@@ -247,7 +247,7 @@ class DecodeAvroOp : public OpKernel {
       const avro::GenericDatum& field = record.fieldAt(i);
       TF_RETURN_IF_ERROR(ProcessEntry(index, values, entry, field));
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status ProcessPrimitive(const int64 index,
                           std::unordered_map<string, Tensor*>& values,
@@ -310,7 +310,7 @@ class DecodeAvroOp : public OpKernel {
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status ProcessNull(const int64 index,
                      std::unordered_map<string, Tensor*>& values,
@@ -344,7 +344,7 @@ class DecodeAvroOp : public OpKernel {
         return errors::InvalidArgument("data type not supported: ",
                                        value_tensor->dtype());
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -436,7 +436,7 @@ class EncodeAvroOp : public OpKernel {
                                        datum.type());
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status ProcessRecord(const int64 index,
@@ -448,7 +448,7 @@ class EncodeAvroOp : public OpKernel {
       avro::GenericDatum& field = record.fieldAt(i);
       TF_RETURN_IF_ERROR(ProcessEntry(index, values, entry, field));
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status ProcessPrimitive(
       const int64 index,
@@ -511,7 +511,7 @@ class EncodeAvroOp : public OpKernel {
         return errors::InvalidArgument("data type not supported: ",
                                        datum.type());
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

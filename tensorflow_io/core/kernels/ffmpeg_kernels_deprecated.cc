@@ -102,7 +102,7 @@ class FFmpegReadStream {
             stream_index_ = stream_index;
             io_context_.reset(io_context);
             format_context_.reset(format_context);
-            return Status::OK();
+            return OkStatus();
           }
           avformat_close_input(&format_context);
         }
@@ -245,7 +245,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
 
     nb_frames_ = format_context_->streams[stream_index]->nb_frames;
 
-    return Status::OK();
+    return OkStatus();
   }
   Status InitializeDecoder() {
     // Initialize the decoders
@@ -258,7 +258,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     // TODO: reference after first?
     packet_scope_.reset(&packet_);
 
-    return Status::OK();
+    return OkStatus();
   }
   int64 Type() { return media_type_; }
   int64 RecordIndex() { return record_index_; }
@@ -288,7 +288,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
       av_packet_unref(&packet_);
-      return Status::OK();
+      return OkStatus();
     }
     // final cache clean up
     do {
@@ -296,7 +296,7 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
     } while (got_frame);
     packet_scope_.reset(nullptr);
 
-    return Status::OK();
+    return OkStatus();
   }
   virtual Status DecodeFrame(int* got_frame) = 0;
   virtual Status ReadDecoded(int64 record_to_read, int64* record_read,
@@ -313,13 +313,13 @@ class FFmpegReadStreamMeta : public FFmpegReadStream {
       TF_RETURN_IF_ERROR(ReadDecoded(record_to_read, record_read, value));
       if ((*record_read) >= record_to_read) {
         record_index_ += (*record_read);
-        return Status::OK();
+        return OkStatus();
       }
       status = DecodePacket();
     } while (status.ok());
     TF_RETURN_IF_ERROR(ReadDecoded(record_to_read, record_read, value));
     record_index_ += (*record_read);
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -373,13 +373,13 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
 
     shape_ = PartialTensorShape({-1, height_, width_, 3});
     dtype_ = DT_UINT8;
-    return Status::OK();
+    return OkStatus();
   }
   Status ReadDecoded(int64 record_to_read, int64* record_read,
                      Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (frames_.empty()) {
-        return Status::OK();
+        return OkStatus();
       }
       int64 offset = (*record_read) * height_ * width_ * 3;
       memcpy(reinterpret_cast<char*>(&value->flat<uint8>().data()[offset]),
@@ -389,7 +389,7 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
       frames_buffer_.pop_front();
       (*record_read)++;
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status DecodeFrame(int* got_frame) override {
     std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
@@ -429,7 +429,7 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
       frames_.push_back(std::move(frame_rgb));
       frames_buffer_.push_back(std::move(buffer_rgb));
     }
-    return Status::OK();
+    return OkStatus();
   }
   virtual Status Peek(int64* record_to_read) {
     if (!initialized_) {
@@ -442,7 +442,7 @@ class FFmpegVideoReadStreamMeta : public FFmpegReadStreamMeta {
       status = DecodePacket();
     } while (status.ok());
     *record_to_read = frames_.size();
-    return Status::OK();
+    return OkStatus();
   }
 
   int64 Height() { return height_; }
@@ -516,7 +516,7 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
                                        ") format: ", format);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status ReadDecodedRecord(int64 record_to_read, int64* record_read,
                            Tensor* value) {
@@ -545,16 +545,16 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
       (*record_read)++;
       samples_index_++;
       if ((*record_read) >= record_to_read) {
-        return Status::OK();
+        return OkStatus();
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status ReadDecoded(int64 record_to_read, int64* record_read,
                      Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (frames_.empty()) {
-        return Status::OK();
+        return OkStatus();
       }
       if (samples_index_ < frames_.front()->nb_samples) {
         TF_RETURN_IF_ERROR(
@@ -565,7 +565,7 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
         samples_index_ = 0;
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status DecodeFrame(int* got_frame) override {
     std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
@@ -586,7 +586,7 @@ class FFmpegAudioReadStreamMeta : public FFmpegReadStreamMeta {
     if (*got_frame) {
       frames_.push_back(std::move(frame));
     }
-    return Status::OK();
+    return OkStatus();
   }
   int64 Channels() { return channels_; }
   int64 Rate() { return rate_; }
@@ -607,7 +607,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
     TF_RETURN_IF_ERROR(FFmpegReadStreamMeta::Open(stream_index));
     shape_ = PartialTensorShape({-1});
     dtype_ = DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -615,13 +615,13 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
                      Tensor* value) override {
     while ((*record_read) < record_to_read) {
       if (subtitles_.empty()) {
-        return Status::OK();
+        return OkStatus();
       }
       value->flat<tstring>()((*record_read)) = subtitles_.front();
       subtitles_.pop_front();
       (*record_read)++;
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status DecodeFrame(int* got_frame) override {
     AVSubtitle subtitle;
@@ -667,7 +667,7 @@ class FFmpegSubtitleReadStreamMeta : public FFmpegReadStreamMeta {
                                          subtitle.rects[0]->type);
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   std::deque<string> subtitles_;
 };
@@ -733,14 +733,14 @@ class FFmpegReadable : public IOReadableInterface {
               "invalid steam (", i, ") type: ", ffmpeg_file_->StreamType(i));
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Components(std::vector<string>* components) override {
     components->clear();
     for (size_t i = 0; i < columns_.size(); i++) {
       components->push_back(columns_[i]);
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
@@ -750,7 +750,7 @@ class FFmpegReadable : public IOReadableInterface {
     int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Extra(const string& component, std::vector<Tensor>* extra) override {
@@ -764,7 +764,7 @@ class FFmpegReadable : public IOReadableInterface {
     Tensor rate(DT_INT64, TensorShape({}));
     rate.scalar<int64>()() = (meta != nullptr) ? meta->Rate() : 0;
     extra->push_back(rate);
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop, const string& component,
@@ -777,7 +777,7 @@ class FFmpegReadable : public IOReadableInterface {
     if (start != columns_meta_[column_index]->RecordIndex()) {
       // If we reach to the end, then just 0
       if (start > columns_meta_[column_index]->RecordIndex()) {
-        return Status::OK();
+        return OkStatus();
       }
       if (start != 0) {
         return errors::InvalidArgument(

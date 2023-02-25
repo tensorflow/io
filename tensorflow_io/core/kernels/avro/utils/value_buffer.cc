@@ -155,7 +155,7 @@ Status ShapeBuilder::GetCopyInfo(
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status ShapeBuilder::GetFillInfo(
@@ -215,7 +215,7 @@ Status ShapeBuilder::GetFillInfo(
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status ShapeBuilder::GetIndices(Tensor* indices) const {
@@ -249,7 +249,7 @@ Status ShapeBuilder::GetIndices(Tensor* indices) const {
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 string ShapeBuilder::ToString() const {
@@ -334,7 +334,7 @@ Status MergeAs(ValueStoreUniquePtr& merged,
                                      DataTypeString(dtype));
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace data

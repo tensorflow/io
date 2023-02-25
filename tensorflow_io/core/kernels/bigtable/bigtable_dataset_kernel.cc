@@ -74,7 +74,7 @@ tensorflow::error::Code GoogleCloudErrorCodeToTfErrorCode(
 
 Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
   if (status.ok()) {
-    return Status::OK();
+    return OkStatus();
   }
   return Status(
       GoogleCloudErrorCodeToTfErrorCode(status.code()),
@@ -164,7 +164,7 @@ class Iterator : public DatasetIterator<Dataset> {
     if (it_ == reader_.end()) {
       VLOG(1) << "End of sequence";
       *end_of_sequence = true;
-      return Status::OK();
+      return OkStatus();
     }
     *end_of_sequence = false;
 
@@ -199,7 +199,7 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "incrementing iterator";
     it_ = std::next(it_);
 
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -339,7 +339,7 @@ class Dataset : public DatasetBase {
                                  DebugString());
   }
 
-  Status CheckExternalState() const override { return Status::OK(); }
+  Status CheckExternalState() const override { return OkStatus(); }
 
  private:
   std::shared_ptr<cbt::DataClient> const& data_client_;

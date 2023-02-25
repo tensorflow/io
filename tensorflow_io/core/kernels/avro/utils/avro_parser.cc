@@ -94,7 +94,7 @@ Status CheckValidDefault(const string& key,
                                    expected, "' but got data type '",
                                    default_value.dtype(), "'.");
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 // This implementation assumes there is at least one expected type
@@ -126,7 +126,7 @@ Status BoolValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   }
 
   (*reinterpret_cast<BoolValueBuffer*>((*values).at(key_).get())).Add(value);
-  return Status::OK();
+  return OkStatus();
 }
 string BoolValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---BoolValue(" + key_ + ")\n";
@@ -150,7 +150,7 @@ Status LongValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Assume the key exists and cast is possible
   (*reinterpret_cast<LongValueBuffer*>((*values).at(key_).get())).Add(value);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 string LongValueParser::ToString(size_t level) const {
@@ -174,7 +174,7 @@ Status IntValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Assume the key exists and cast is possible
   (*reinterpret_cast<IntValueBuffer*>((*values).at(key_).get())).Add(value);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 string IntValueParser::ToString(size_t level) const {
@@ -199,7 +199,7 @@ Status DoubleValueParser::Parse(
   // Assume the key exists and cast is possible
   (*reinterpret_cast<DoubleValueBuffer*>((*values)[key_].get())).Add(value);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 string DoubleValueParser::ToString(size_t level) const {
@@ -223,7 +223,7 @@ Status FloatValueParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   // Assume the key exists and cast is possible
   (*reinterpret_cast<FloatValueBuffer*>((*values)[key_].get())).Add(value);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 string FloatValueParser::ToString(size_t level) const {
@@ -271,7 +271,7 @@ Status StringBytesEnumFixedValueParser::Parse(
   (*reinterpret_cast<StringValueBuffer*>((*values)[key_].get()))
       .AddByRef(value);
 
-  return Status::OK();
+  return OkStatus();
 }
 string StringBytesEnumFixedValueParser::ToString(size_t level) const {
   return LevelToString(level) + "|---StringBytesEnumFixedValue(" + key_ + ")\n";
@@ -316,7 +316,7 @@ Status ArrayAllParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     (*(*values)[(*value_parser).GetKey()]).FinishMark();
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 string ArrayAllParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -356,7 +356,7 @@ Status ArrayIndexParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 string ArrayIndexParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -440,7 +440,7 @@ Status ArrayFilterParser::Parse(
     (*(*values)[(*value_parser).GetKey()]).FinishMark();
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 string ArrayFilterParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -481,7 +481,7 @@ Status MapKeyParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     return errors::InvalidArgument("Unable to find key '", key_, "'.");
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 string MapKeyParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -516,7 +516,7 @@ Status RecordParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
     TF_RETURN_IF_ERROR((*child).Parse(values, d, defaults));
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 string RecordParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -554,7 +554,7 @@ Status UnionParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   }
   // We could not find the right child, log a warning since this datum is lost
   // LOG(WARN) << "Branch value in data is not consumed";
-  return Status::OK();
+  return OkStatus();
 }
 string UnionParser::ToString(size_t level) const {
   std::stringstream ss;
@@ -572,7 +572,7 @@ Status RootParser::Parse(std::map<string, ValueStoreUniquePtr>* values,
   for (const AvroParserSharedPtr& child : children) {
     TF_RETURN_IF_ERROR((*child).Parse(values, datum, defaults));
   }
-  return Status::OK();
+  return OkStatus();
 }
 string RootParser::ToString(size_t level) const {
   std::stringstream ss;

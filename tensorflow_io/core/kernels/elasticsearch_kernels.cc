@@ -117,7 +117,7 @@ class ElasticsearchReadableResource : public ResourceBase {
       return errors::FailedPrecondition("Corrupted response from the server");
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Next(
@@ -170,7 +170,7 @@ class ElasticsearchReadableResource : public ResourceBase {
                                         error_response);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override { return "ElasticsearchBaseResource"; }
@@ -189,7 +189,7 @@ class ElasticsearchReadableResource : public ResourceBase {
     } else
       return errors::FailedPrecondition("healthcheck failed");
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status MakeAPICall(const std::string& url, rapidjson::Document* response_json,
@@ -248,7 +248,7 @@ class ElasticsearchReadableResource : public ResourceBase {
     // Store the default headers if the response is valid
     headers_ = headers;
 
-    return Status::OK();
+    return OkStatus();
   }
 
   mutable mutex mu_;
@@ -305,14 +305,14 @@ class ElasticsearchReadableInitOp
                            context->allocate_output(1, columns_shape, columns));
                        TF_RETURN_IF_ERROR(
                            context->allocate_output(2, columns_shape, dtypes));
-                       return Status::OK();
+                       return OkStatus();
                      }));
   }
 
   Status CreateResource(ElasticsearchReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new ElasticsearchReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -349,7 +349,7 @@ class ElasticsearchReadableNextOp : public OpKernel {
                                       Tensor** items) -> Status {
                                     TF_RETURN_IF_ERROR(context->allocate_output(
                                         0, tensor_shape, items));
-                                    return Status::OK();
+                                    return OkStatus();
                                   }));
   }
 

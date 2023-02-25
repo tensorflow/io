@@ -28,7 +28,7 @@ REGISTER_OP("IO>AudioReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioReadableSpec")
@@ -40,7 +40,7 @@ REGISTER_OP("IO>AudioReadableSpec")
       c->set_output(0, c->MakeShape({2}));
       c->set_output(1, c->MakeShape({}));
       c->set_output(2, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioReadableRead")
@@ -51,7 +51,7 @@ REGISTER_OP("IO>AudioReadableRead")
     .Attr("dtype: type")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioResample")
@@ -62,7 +62,7 @@ REGISTER_OP("IO>AudioResample")
     .Attr("T: type")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioDecodeWAV")
@@ -75,14 +75,14 @@ REGISTER_OP("IO>AudioDecodeWAV")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
       if (!c->RankKnown(shape)) {
         c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-        return Status::OK();
+        return OkStatus();
       }
       if (c->Rank(shape) != 2) {
         return errors::InvalidArgument("rank must be two, received ",
                                        c->DebugString(shape));
       }
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioEncodeWAV")
@@ -92,7 +92,7 @@ REGISTER_OP("IO>AudioEncodeWAV")
     .Attr("dtype: {uint8, int16, int32, float32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioDecodeFlac")
@@ -105,14 +105,14 @@ REGISTER_OP("IO>AudioDecodeFlac")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
       if (!c->RankKnown(shape)) {
         c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-        return Status::OK();
+        return OkStatus();
       }
       if (c->Rank(shape) != 2) {
         return errors::InvalidArgument("rank must be two, received ",
                                        c->DebugString(shape));
       }
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioEncodeFlac")
@@ -122,7 +122,7 @@ REGISTER_OP("IO>AudioEncodeFlac")
     .Attr("dtype: {uint8, int16, int32}")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioDecodeVorbis")
@@ -134,14 +134,14 @@ REGISTER_OP("IO>AudioDecodeVorbis")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
       if (!c->RankKnown(shape)) {
         c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-        return Status::OK();
+        return OkStatus();
       }
       if (c->Rank(shape) != 2) {
         return errors::InvalidArgument("rank must be two, received ",
                                        c->DebugString(shape));
       }
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioEncodeVorbis")
@@ -150,7 +150,7 @@ REGISTER_OP("IO>AudioEncodeVorbis")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioDecodeMP3")
@@ -162,14 +162,14 @@ REGISTER_OP("IO>AudioDecodeMP3")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
       if (!c->RankKnown(shape)) {
         c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-        return Status::OK();
+        return OkStatus();
       }
       if (c->Rank(shape) != 2) {
         return errors::InvalidArgument("rank must be two, received ",
                                        c->DebugString(shape));
       }
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioEncodeMP3")
@@ -178,7 +178,7 @@ REGISTER_OP("IO>AudioEncodeMP3")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioDecodeAAC")
@@ -190,14 +190,14 @@ REGISTER_OP("IO>AudioDecodeAAC")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(1, &shape));
       if (!c->RankKnown(shape)) {
         c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-        return Status::OK();
+        return OkStatus();
       }
       if (c->Rank(shape) != 2) {
         return errors::InvalidArgument("rank must be two, received ",
                                        c->DebugString(shape));
       }
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AudioEncodeAAC")
@@ -206,7 +206,7 @@ REGISTER_OP("IO>AudioEncodeAAC")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

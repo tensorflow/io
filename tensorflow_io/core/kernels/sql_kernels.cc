@@ -58,7 +58,7 @@ Status SqlDataCopy(int oid, char* data, Tensor* value) {
   if (!result) {
     return errors::InvalidArgument("unable to convert data");
   }
-  return Status::OK();
+  return OkStatus();
 };
 
 class SqlIterableResource : public ResourceBase {
@@ -123,7 +123,7 @@ class SqlIterableResource : public ResourceBase {
       dtypes->push_back(dtypes_[i]);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(const int64 index, const Tensor* field_tensor,
               std::function<Status(const int64 field_index, Tensor** value)>
@@ -138,7 +138,7 @@ class SqlIterableResource : public ResourceBase {
       char* data = PQgetvalue(result_.get(), index, field_number);
       TF_RETURN_IF_ERROR(SqlDataCopy(field_type, data, value));
     }
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "SqlIterableResource"; }
 
@@ -202,7 +202,7 @@ class SqlIterableInitOp : public ResourceOpKernel<SqlIterableResource> {
   Status CreateResource(SqlIterableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new SqlIterableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -236,7 +236,7 @@ class SqlIterableReadOp : public OpKernel {
                        [&](const int64 field_index, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(context->allocate_output(
                              field_index, TensorShape({1}), value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

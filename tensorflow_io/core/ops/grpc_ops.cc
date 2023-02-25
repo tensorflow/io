@@ -29,7 +29,7 @@ REGISTER_OP("IO>GRPCReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>GRPCReadableRead")
@@ -43,7 +43,7 @@ REGISTER_OP("IO>GRPCReadableRead")
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(2, &shape));
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

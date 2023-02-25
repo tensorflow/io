@@ -65,7 +65,7 @@ class MongoDBReadableResource : public ResourceBase {
 
     // Perform healthcheck before proceeding
     Healthcheck();
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Next(std::function<Status(const TensorShape& shape, Tensor** record)>
@@ -107,7 +107,7 @@ class MongoDBReadableResource : public ResourceBase {
       records_tensor->flat<tstring>()(i) = records[i];
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override { return "MongoDBReadableResource"; }
@@ -127,7 +127,7 @@ class MongoDBReadableResource : public ResourceBase {
     }
     LOG(INFO) << "MongoDB connection ping successful";
 
-    return Status::OK();
+    return OkStatus();
   }
 
   mutable mutex mu_;
@@ -173,7 +173,7 @@ class MongoDBReadableInitOp : public ResourceOpKernel<MongoDBReadableResource> {
   Status CreateResource(MongoDBReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new MongoDBReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -195,7 +195,7 @@ class MongoDBReadableNextOp : public OpKernel {
     OP_REQUIRES_OK(context, resource->Next([&](const TensorShape& shape,
                                                Tensor** record) -> Status {
       TF_RETURN_IF_ERROR(context->allocate_output(0, shape, record));
-      return Status::OK();
+      return OkStatus();
     }));
   }
 
@@ -242,7 +242,7 @@ class MongoDBWritableResource : public ResourceBase {
 
     // Perform healthcheck before proceeding
     Healthcheck();
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Write(const std::string& record) {
@@ -263,7 +263,7 @@ class MongoDBWritableResource : public ResourceBase {
 
     bson_destroy(bson_record);
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status DeleteMany(const std::string& record) {
@@ -284,7 +284,7 @@ class MongoDBWritableResource : public ResourceBase {
 
     bson_destroy(bson_record);
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override { return "MongoDBWritableResource"; }
@@ -304,7 +304,7 @@ class MongoDBWritableResource : public ResourceBase {
     }
     LOG(INFO) << "MongoDB connection ping successful";
 
-    return Status::OK();
+    return OkStatus();
   }
 
   mutable mutex mu_;
@@ -348,7 +348,7 @@ class MongoDBWritableInitOp : public ResourceOpKernel<MongoDBWritableResource> {
   Status CreateResource(MongoDBWritableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new MongoDBWritableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

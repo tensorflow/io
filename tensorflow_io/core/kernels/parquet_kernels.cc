@@ -95,7 +95,7 @@ class ParquetReadableResource : public ResourceBase {
                          .get()
                          ->ToDotString()] = i;
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Components(std::vector<string>* components) {
@@ -105,7 +105,7 @@ class ParquetReadableResource : public ResourceBase {
     for (size_t i = 0; i < columns_.size(); i++) {
       components->push_back(columns_[i]);
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
@@ -117,7 +117,7 @@ class ParquetReadableResource : public ResourceBase {
     int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const string& component,
@@ -279,7 +279,7 @@ class ParquetReadableResource : public ResourceBase {
       }
       row_group_offset += row_group_reader->metadata()->num_rows();
     }
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "ParquetReadableResource"; }
 
@@ -349,7 +349,7 @@ class ParquetReadableInfoOp
       }
       dtype_tensor->flat<int64>()(i) = dtypes[i];
     }
-    return Status::OK();
+    return OkStatus();
   }
 };
 
@@ -406,9 +406,9 @@ class ParquetReadableReadOp
         component, start, shape,
         [&](const TensorShape& shape, Tensor** value) -> Status {
           TF_RETURN_IF_ERROR(context->allocate_output(0, shape, value));
-          return Status::OK();
+          return OkStatus();
         }));
-    return Status::OK();
+    return OkStatus();
   }
 };
 

@@ -31,11 +31,11 @@ Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
                          ::tensorflow::DataType* out) {
   if (dtype->id() == ::arrow::Type::STRING) {
     *out = ::tensorflow::DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
   if (dtype->id() == ::arrow::Type::BINARY) {
     *out = ::tensorflow::DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetTensorFlowType(dtype, out);
@@ -43,14 +43,14 @@ Status GetTensorFlowType(std::shared_ptr<::arrow::DataType> dtype,
     return errors::InvalidArgument("arrow data type ", dtype->name(),
                                    " is not supported: ", status);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 Status GetArrowType(::tensorflow::DataType dtype,
                     std::shared_ptr<::arrow::DataType>* out) {
   if (dtype == ::tensorflow::DT_STRING) {
     *out = ::arrow::utf8();
-    return Status::OK();
+    return OkStatus();
   }
   ::arrow::Status status =
       ::arrow::adapters::tensorflow::GetArrowType(dtype, out);
@@ -58,7 +58,7 @@ Status GetArrowType(::tensorflow::DataType dtype,
     return errors::InvalidArgument("tensorflow data type ", dtype,
                                    " is not supported: ", status);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
@@ -91,7 +91,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
     }
 
     CHECK_ARROW(array->Accept(this));
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -101,7 +101,7 @@ class ArrowAssignSpecImpl : public arrow::ArrayVisitor {
       return ::arrow::adapters::tensorflow::GetTensorFlowType(array.type(),
                                                               out_dtype_);
     }
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
 #define VISIT_PRIMITIVE(TYPE)                               \
@@ -187,7 +187,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
           "Arrow arrays with null values not currently supported");
     }
     CHECK_ARROW(array->Accept(this));
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -202,7 +202,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       memcpy(dst, &value, sizeof(value));
     }
 
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
   template <typename ArrayType>
@@ -227,7 +227,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
     void* dst = const_cast<char*>(out_tensor_->tensor_data().data());
     std::memcpy(dst, src, out_tensor_->NumElements() * type_width);
 
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
 #define VISIT_FIXED_WIDTH(TYPE)                             \
@@ -288,7 +288,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       output_flat(j) = array.GetString(i_ + j);
     }
 
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
   virtual arrow::Status Visit(const arrow::BinaryArray& array) override {
@@ -299,7 +299,7 @@ class ArrowAssignTensorImpl : public arrow::ArrayVisitor {
       output_flat(j) = array.GetString(i_ + j);
     }
 
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
  private:
@@ -324,12 +324,12 @@ class ArrowArrayTypeCheckerImpl : public arrow::TypeVisitor {
     // First see if complex type handled by visitor
     arrow::Status visit_status = type->Accept(this);
     if (visit_status.ok()) {
-      return Status::OK();
+      return OkStatus();
     }
 
     // Check type as a scalar type
     CHECK_ARROW(CheckScalarType(type));
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -351,7 +351,7 @@ class ArrowArrayTypeCheckerImpl : public arrow::TypeVisitor {
           std::to_string(expected_type_) +
           ", but got dtype=" + std::to_string(converted_type));
     }
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
  private:
@@ -375,7 +375,7 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
     buffers_ = buffers;
     out_data_ = out_data;
     CHECK_ARROW(type->Accept(this));
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -384,7 +384,7 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
     // TODO null count == 0
     *out_data_ =
         arrow::ArrayData::Make(type_, lengths_[0], std::move(buffers_), 0);
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
 #define VISIT_PRIMITIVE(TYPE)                              \
@@ -428,7 +428,7 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
     *out_data_ = arrow::ArrayData::Make(list_type, list_length,
                                         std::move(list_bufs), {child_data}, 0);
 
-    return arrow::Status::OK();
+    return arrow::OkStatus();
   }
 
  private:
@@ -462,14 +462,14 @@ Status ParseEndpoint(std::string endpoint, std::string* endpoint_type,
   if (endpoint.substr(sep_pos + 1, 2) != "//") {
     *endpoint_type = "";
     *endpoint_value = endpoint;
-    return Status::OK();
+    return OkStatus();
   }
 
   // Parse string as <endpoint_type>://<endpoint_value>
   *endpoint_type = endpoint.substr(0, sep_pos);
   *endpoint_value = endpoint.substr(sep_pos + 3);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status ParseHost(std::string host, std::string* host_address,
@@ -483,7 +483,7 @@ Status ParseHost(std::string host, std::string* host_address,
   *host_address = host.substr(0, sep_pos);
   *host_port = host.substr(sep_pos + 1);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace ArrowUtil

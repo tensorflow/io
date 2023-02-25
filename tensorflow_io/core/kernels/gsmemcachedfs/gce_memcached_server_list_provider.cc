@@ -15,7 +15,7 @@ Status GceMemcachedServerListProvider::GetServerList(
     std::vector<string>* server_list) {
   if (!cached_list_.empty()) {
     *server_list = cached_list_;
-    return Status::OK();
+    return OkStatus();
   }
 
   std::vector<char> response_buffer;
@@ -41,7 +41,7 @@ Status GceMemcachedServerListProvider::GetServerList(
   }
 
   if (success) {
-    return Status::OK();
+    return OkStatus();
   } else {
     return Status(tensorflow::error::FAILED_PRECONDITION,
                   "Unexpected server list format");

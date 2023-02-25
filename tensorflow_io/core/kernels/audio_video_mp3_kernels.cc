@@ -134,7 +134,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
     dtype_ = DT_FLOAT;
     rate_ = rate;
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
@@ -142,7 +142,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
     *shape = shape_;
     *dtype = dtype_;
     *rate = rate_;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop,
@@ -170,7 +170,7 @@ class MP3ReadableResource : public AudioReadableResourceBase {
                                      sample_start,
                                      " failed: ", mp3dec_ex_.last_error);
     }
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "MP3ReadableResource"; }
 
@@ -234,7 +234,7 @@ class AudioDecodeMP3Op : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

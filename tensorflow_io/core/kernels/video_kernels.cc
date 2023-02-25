@@ -88,7 +88,7 @@ class VideoCaptureReadableResource : public ResourceBase {
     bytes_ = static_cast<int64>(bytes);
     width_ = static_cast<int64>(width);
     height_ = static_cast<int64>(height);
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(
       std::function<Status(const TensorShape& shape, Tensor** value_tensor)>
@@ -104,7 +104,7 @@ class VideoCaptureReadableResource : public ResourceBase {
                              static_cast<int64_t>(bytes_));
     value_tensor->flat<tstring>()(0) = buffer;
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -142,7 +142,7 @@ class VideoCaptureReadableInitOp
   Status CreateResource(VideoCaptureReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new VideoCaptureReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -167,7 +167,7 @@ class VideoCaptureReadableReadOp : public OpKernel {
         context, resource->Read([&](const TensorShape& shape,
                                     Tensor** value_tensor) -> Status {
           TF_RETURN_IF_ERROR(context->allocate_output(0, shape, value_tensor));
-          return Status::OK();
+          return OkStatus();
         }));
   }
 

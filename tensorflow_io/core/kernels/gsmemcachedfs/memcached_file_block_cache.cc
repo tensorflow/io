@@ -214,7 +214,7 @@ Status block_get(MemcachedDaoInterface* memcached_dao, const string& key,
       StreamzRecordCacheHitBlockSize(value_length, cache_stats);
       // Any object returned by memcached must be released by the caller.
       free(retrieved_value);
-      return Status::OK();
+      return OkStatus();
     }
 
     if (rc == MEMCACHED_TIMEOUT) {
@@ -243,7 +243,7 @@ Status block_multi_get(MemcachedDaoInterface* memcached_dao,
   rc = memcached_dao->MemcachedMget(key_ptrs.get(), key_lengths.get(),
                                     keys.size());
   if (rc == MEMCACHED_SUCCESS) {
-    return Status::OK();
+    return OkStatus();
   }
 
   return errors::Internal("memcached multi_get failed ",
@@ -257,7 +257,7 @@ Status block_set(MemcachedDaoInterface* memcached_dao, const string& key,
                                    value.size(), static_cast<time_t>(0),
                                    static_cast<uint32_t>(0));
   if (rc == MEMCACHED_SUCCESS) {
-    return Status::OK();
+    return OkStatus();
   }
 
   return errors::Internal("memcached failed to store key ", key,
@@ -329,7 +329,7 @@ Status read_with_multi_get(
   const auto after = absl::Now();
   VLOG(2) << (to_claim - claim_checks->size())
           << " multi-get fetches claimed in " << (after - before);
-  return Status::OK();
+  return OkStatus();
 }
 
 void cache_cleanup(void* tsd) {
@@ -525,7 +525,7 @@ Status MemcachedFileBlockCache::ConfigureMemcachedServers(
                             memcached_dao->MemcachedStrError(rc));
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
@@ -533,7 +533,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
                                      size_t* bytes_transferred) {
   *bytes_transferred = 0;
   if (n == 0) {
-    return Status::OK();
+    return OkStatus();
   }
   VLOG(2) << "original read: offset=" << offset << ", n=" << n
           << ", filename=" << filename;
@@ -570,7 +570,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
     }
     if (local_cache_->Get(mini_read_key, offset_in_block, n, buffer,
                           bytes_transferred)) {
-      return Status::OK();
+      return OkStatus();
     }
   }
 
@@ -672,7 +672,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
           << (total_bytes_transferred / absl::ToDoubleSeconds(elapsed))
           << " bytes / second";
   *bytes_transferred = total_bytes_transferred;
-  return Status::OK();
+  return OkStatus();
 }
 
 string MemcachedFileBlockCache::MakeMemcachedKey(const Key& key) {

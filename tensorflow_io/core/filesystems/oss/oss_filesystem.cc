@@ -70,7 +70,7 @@ Status oss_initialize() {
     return errors::Internal("can not init OSS connection");
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 void oss_error_message(aos_status_s* status, std::string* msg) {
@@ -195,7 +195,7 @@ class OSSRandomAccessFile : public RandomAccessFile {
                                 " bytes were read out of ", n,
                                 " bytes requested.");
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -251,7 +251,7 @@ class OSSRandomAccessFile : public RandomAccessFile {
         pos += size;
       }
       buffer_size_ = pos;
-      return Status::OK();
+      return OkStatus();
     } else {
       string msg;
       oss_error_message(s, &msg);
@@ -316,7 +316,7 @@ class OSSWritableFile : public WritableFile {
     aos_buf_t* tmp_buf = aos_create_buf(pool_, data.size() + 1);
     aos_buf_append_string(pool_, tmp_buf, data.data(), data.size());
     aos_list_add_tail(&tmp_buf->node, &buffer_);
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Close() override {
@@ -369,7 +369,7 @@ class OSSWritableFile : public WritableFile {
     }
 
     is_closed_ = true;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Flush() override {
@@ -380,7 +380,7 @@ class OSSWritableFile : public WritableFile {
       TF_RETURN_IF_ERROR(_FlushInternal());
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Sync() override { return Flush(); }
@@ -434,7 +434,7 @@ class OSSWritableFile : public WritableFile {
       upload_id_ = uploadId.data;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status _FlushInternal() {
@@ -463,7 +463,7 @@ class OSSWritableFile : public WritableFile {
       ReleaseAprPool();
       InitAprPool();
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   const size_t CurrentBufferLength() { return aos_buf_list_len(&buffer_); }
@@ -473,7 +473,7 @@ class OSSWritableFile : public WritableFile {
       return errors::Internal("Already closed.");
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   std::string shost;
@@ -564,7 +564,7 @@ Status OSSFileSystem::_ParseOSSURIPath(const StringPiece fname,
   VLOG(1) << "bucket: " << bucket << ",access_id: " << access_id
           << ",access_key: " << access_key << ",host: " << host;
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::NewRandomAccessFile(
@@ -581,7 +581,7 @@ Status OSSFileSystem::NewRandomAccessFile(
   result->reset(new OSSRandomAccessFile(host, access_id, access_key, bucket,
                                         object, read_ahead_bytes_,
                                         stat.length));
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::NewWritableFile(const std::string& fname,
@@ -594,7 +594,7 @@ Status OSSFileSystem::NewWritableFile(const std::string& fname,
 
   result->reset(new OSSWritableFile(host, access_id, access_key, bucket, object,
                                     upload_part_bytes_));
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::NewAppendableFile(const std::string& fname,
@@ -617,13 +617,13 @@ Status OSSFileSystem::NewReadOnlyMemoryRegionFromFile(
   TF_RETURN_IF_ERROR(file->Read(0, size, &piece, data.get()));
 
   result->reset(new OSSReadOnlyMemoryRegion(std::move(data), size));
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::FileExists(const std::string& fname) {
   TF_FileStatistics stat;
   if (Stat(fname, &stat).ok()) {
-    return Status::OK();
+    return OkStatus();
   } else {
     return errors::NotFound(fname, " does not exists");
   }
@@ -713,7 +713,7 @@ Status OSSFileSystem::_ListObjects(
     aos_list_init(&params->common_prefix_list);
   } while (params->truncated == AOS_TRUE && return_all);
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
@@ -743,7 +743,7 @@ Status OSSFileSystem::_StatInternal(aos_pool_t* pool,
   s = _ListObjects(pool, options, bucket, object, &listing, true, false, false,
                    true, 10);
 
-  if (s == Status::OK() && !listing.empty()) {
+  if (s == OkStatus() && !listing.empty()) {
     if (str_util::EndsWith(object, "/")) {
       stat->is_directory = true;
     }
@@ -773,7 +773,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(
   if (object.empty()) {  // root always exists
     stat->is_directory = true;
     stat->length = 0;
-    return Status::OK();
+    return OkStatus();
   }
 
   aos_str_set(&oss_bucket, bucket.c_str());
@@ -811,7 +811,7 @@ Status OSSFileSystem::_RetrieveObjectMetadata(
       stat->is_directory = false;
     }
 
-    return Status::OK();
+    return OkStatus();
   } else {
     string msg;
     oss_error_message(status, &msg);
@@ -869,7 +869,7 @@ Status OSSFileSystem::_DeleteObjectInternal(
     return errors::Internal("delete failed: ", object, " errMsg: ", msg);
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::DeleteFile(const std::string& fname) {
@@ -915,7 +915,7 @@ Status OSSFileSystem::CreateDir(const std::string& dirname) {
   }
 
   TF_RETURN_IF_ERROR(_CreateDirInternal(pool, ossOptions, bucket, object));
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
@@ -946,7 +946,7 @@ Status OSSFileSystem::RecursivelyCreateDir(const string& dirname) {
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
@@ -960,7 +960,7 @@ Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
       return errors::AlreadyExists("object already exists as a file: ",
                                    dirname);
     } else {
-      return Status::OK();
+      return OkStatus();
     }
   }
   std::string object = dirname;
@@ -988,7 +988,7 @@ Status OSSFileSystem::_CreateDirInternal(aos_pool_t* pool,
                                  &resp_headers);
 
   if (aos_status_is_ok(s)) {
-    return Status::OK();
+    return OkStatus();
   } else {
     string msg;
     oss_error_message(s, &msg);
@@ -1029,7 +1029,7 @@ Status OSSFileSystem::GetFileSize(const std::string& fname, uint64* file_size) {
   TF_FileStatistics stat;
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
   *file_size = stat.length;
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::RenameFile(const std::string& src,
@@ -1237,7 +1237,7 @@ Status OSSFileSystem::IsDirectory(const std::string& fname) {
   TF_RETURN_IF_ERROR(Stat(fname, &stat));
 
   return stat.is_directory
-             ? Status::OK()
+             ? OkStatus()
              : errors::FailedPrecondition(fname + " is not a directory");
 }
 
@@ -1298,7 +1298,7 @@ Status OSSFileSystem::DeleteRecursively(const std::string& dirname,
       return _DeleteObjectInternal(oss_options, bucket, object.append(kDelim));
     }
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 Status OSSFileSystem::CopyFile(const string& src, const string& target) {
@@ -1345,7 +1345,7 @@ Status OSSFileSystem::CopyFile(const string& src, const string& target) {
     return errors::Internal("copy ", src, " to ", target,
                             " failed, errMsg: ", msg);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 void ToTF_Status(const ::tensorflow::Status& s, TF_Status* status) {

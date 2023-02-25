@@ -549,7 +549,7 @@ class HTTPRandomAccessFile {
   ~HTTPRandomAccessFile() {}
   int64_t Read(uint64_t offset, size_t n, char* buffer,
                TF_Status* status) const {
-    // If n == 0, then return Status::OK()
+    // If n == 0, then return OkStatus()
     // otherwise, if bytes_read < n then return OutofRange
     if (n == 0) {
       TF_SetStatus(status, TF_OK, "");

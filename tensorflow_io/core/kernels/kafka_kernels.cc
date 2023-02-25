@@ -162,7 +162,7 @@ class KafkaReadableResource : public ResourceBase {
                               RdKafka::err2str(err));
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Next(const int64 index,
               std::function<Status(const TensorShape& shape, Tensor** message,
@@ -211,7 +211,7 @@ class KafkaReadableResource : public ResourceBase {
       message_tensor->flat<tstring>()(i) = message_value[i];
       key_tensor->flat<tstring>()(i) = key_value[i];
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(const int64 start, const int64 stop,
               std::function<Status(const TensorShape& shape, Tensor** message,
@@ -281,7 +281,7 @@ class KafkaReadableResource : public ResourceBase {
       message_tensor->flat<tstring>()(i) = message_value[i];
       key_tensor->flat<tstring>()(i) = key_value[i];
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const int64 start, const int64 stop, int64* start_offset,
               int64* stop_offset) {
@@ -322,7 +322,7 @@ class KafkaReadableResource : public ResourceBase {
       }
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "KafkaBaseResource"; }
 
@@ -355,7 +355,7 @@ class KafkaReadableResource : public ResourceBase {
                               RdKafka::err2str(err));
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
@@ -401,7 +401,7 @@ class KafkaReadableInitOp : public ResourceOpKernel<KafkaReadableResource> {
   Status CreateResource(KafkaReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KafkaReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -434,7 +434,7 @@ class KafkaReadableNextOp : public OpKernel {
                 Tensor** key) -> Status {
               TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
-              return Status::OK();
+              return OkStatus();
             }));
   }
 
@@ -472,7 +472,7 @@ class KafkaReadableReadOp : public OpKernel {
                 Tensor** key) -> Status {
               TF_RETURN_IF_ERROR(context->allocate_output(0, shape, message));
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
-              return Status::OK();
+              return OkStatus();
             }));
   }
 
@@ -558,7 +558,7 @@ class KafkaIterableInitOp : public ResourceOpKernel<KafkaIterableResource> {
   Status CreateResource(KafkaIterableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KafkaIterableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -637,7 +637,7 @@ class LayerKafkaResource : public ResourceBase {
     }
 
     partition_ = partition;
-    return Status::OK();
+    return OkStatus();
   }
   Status Write(const Tensor& content) {
     mutex_lock l(mu_);
@@ -651,7 +651,7 @@ class LayerKafkaResource : public ResourceBase {
                                 RdKafka::err2str(err));
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Sync() {
     if (producer_.get() != nullptr) {
@@ -661,7 +661,7 @@ class LayerKafkaResource : public ResourceBase {
                                 RdKafka::err2str(err));
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "LayerKafkaResource"; }
 
@@ -705,7 +705,7 @@ class LayerKafkaInitOp : public ResourceOpKernel<LayerKafkaResource> {
   Status CreateResource(LayerKafkaResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new LayerKafkaResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -950,7 +950,7 @@ class KafkaGroupReadableResource : public ResourceBase {
                               RdKafka::err2str(err));
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Next(const int64 index, const int64 message_poll_timeout,
               const int64 stream_timeout,
@@ -1022,7 +1022,7 @@ class KafkaGroupReadableResource : public ResourceBase {
       key_tensor->flat<tstring>()(i) = key_value[i];
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override { return "KafkaBaseResource"; }
@@ -1069,7 +1069,7 @@ class KafkaGroupReadableInitOp
   Status CreateResource(KafkaGroupReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KafkaGroupReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -1115,7 +1115,7 @@ class KafkaGroupReadableNextOp : public OpKernel {
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
               TF_RETURN_IF_ERROR(
                   context->allocate_output(2, TensorShape({}), continue_fetch));
-              return Status::OK();
+              return OkStatus();
             }));
   }
 

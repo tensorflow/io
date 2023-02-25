@@ -72,7 +72,7 @@ Status ValidateWAVHeader(struct WAVHeader* header) {
     return errors::InvalidArgument("WAV file have invalide channels: ",
                                    header->nChannels);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 class WAVReadableResource : public AudioReadableResourceBase {
@@ -171,7 +171,7 @@ class WAVReadableResource : public AudioReadableResourceBase {
 
     rate_ = header_.nSamplesPerSec;
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
@@ -179,7 +179,7 @@ class WAVReadableResource : public AudioReadableResourceBase {
     *shape = shape_;
     *dtype = dtype_;
     *rate = rate_;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop,
@@ -195,7 +195,7 @@ class WAVReadableResource : public AudioReadableResourceBase {
     TF_RETURN_IF_ERROR(allocate_func(
         TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
     if (sample_stop == start) {
-      return Status::OK();
+      return OkStatus();
     }
 
     const int64 channels = shape_.dim_size(1);
@@ -274,7 +274,7 @@ class WAVReadableResource : public AudioReadableResourceBase {
       base_offset += chunk_length;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "WAVReadableResource"; }
 
@@ -339,7 +339,7 @@ class AudioDecodeWAVOp : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

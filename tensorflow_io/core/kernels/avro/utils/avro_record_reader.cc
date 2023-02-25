@@ -117,7 +117,7 @@ Status AvroRecordReader::ReadRecord(uint64* offset, tstring* record) {
   while (reader_stream->next(&data, &n_data)) {
     record->append((const char*)data, n_data);
   }
-  return record->empty() ? errors::OutOfRange("eof") : Status::OK();
+  return record->empty() ? errors::OutOfRange("eof") : OkStatus();
 }
 
 SequentialAvroRecordReader::SequentialAvroRecordReader(

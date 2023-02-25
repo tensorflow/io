@@ -187,7 +187,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
     default:
       return errors::Unimplemented("Data type not supported.");
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace io
