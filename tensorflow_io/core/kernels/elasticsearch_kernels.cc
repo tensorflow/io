@@ -19,7 +19,7 @@ limitations under the License.
 #include "rapidjson/writer.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/resource_op_kernel.h"
-#include "tensorflow/core/platform/cloud/curl_http_request.h"
+#include "tensorflow/tsl/platform/cloud/curl_http_request.h"
 
 namespace tensorflow {
 namespace io {
