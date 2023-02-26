@@ -254,7 +254,7 @@ class ElasticsearchReadableResource : public ResourceBase {
   mutable mutex mu_;
   Env* env_ TF_GUARDED_BY(mu_);
   string url_;
-  CurlHttpRequest::Factory http_request_factory_ = CurlHttpRequest::Factory();
+  tsl::CurlHttpRequest::Factory http_request_factory_ = tsl::CurlHttpRequest::Factory();
 
   std::vector<DataType> base_dtypes_;
   std::vector<string> base_columns_;
