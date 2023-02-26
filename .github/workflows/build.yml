@@ -318,7 +318,7 @@ jobs:
 
   windows-bazel:
     name: Bazel Windows
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v2
       - uses: egor-tensin/vs-shell@v2
@@ -330,9 +330,6 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.8"
       - name: Bazel on Windows
         env:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
