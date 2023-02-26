@@ -21,9 +21,9 @@ limitations under the License.
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "tensorflow/tsl/platform/retrying_file_system.h"
 #include "tensorflow_io/core/kernels/gsmemcachedfs/gce_memcached_server_list_provider.h"
 #include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_file_system.h"
-#include "tensorflow/tsl/platform/retrying_file_system.h"
 
 namespace tensorflow {
 
@@ -50,8 +50,9 @@ class RetryingGsMemcachedFileSystem
     : public tsl::RetryingFileSystem<GsMemcachedFileSystem> {
  public:
   RetryingGsMemcachedFileSystem()
-      : tsl::RetryingFileSystem<GsMemcachedFileSystem>(absl::make_unique<GsMemcachedFileSystem>(),
-                           tsl::RetryConfig(100000 /* init_delay_time_us */)) {}
+      : tsl::RetryingFileSystem<GsMemcachedFileSystem>(
+            absl::make_unique<GsMemcachedFileSystem>(),
+            tsl::RetryConfig(100000 /* init_delay_time_us */)) {}
 };
 
 }  // namespace tensorflow
