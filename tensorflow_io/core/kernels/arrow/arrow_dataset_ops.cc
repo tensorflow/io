@@ -17,6 +17,7 @@ limitations under the License.
 #include "arrow/io/stdio.h"
 #include "arrow/ipc/api.h"
 #include "arrow/result.h"
+#include "tensorflow/core/framework/dataset_options.pb.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/public/version.h"
