@@ -36,6 +36,7 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/types:variant",
         "@local_config_tf//:tf_c_header_lib",
+        "@local_config_tf//:tf_tsl_header_lib",
     ],
     alwayslink = 1,
 )

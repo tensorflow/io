@@ -330,6 +330,9 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
       - name: Bazel on Windows
         env:
           BAZEL_VC: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/"
