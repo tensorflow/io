@@ -1,5 +1,7 @@
 #include "tensorflow_io/core/kernels/gsmemcachedfs/gce_memcached_server_list_provider.h"
 
+using namespace tsl;
+
 namespace tensorflow {
 
 namespace {

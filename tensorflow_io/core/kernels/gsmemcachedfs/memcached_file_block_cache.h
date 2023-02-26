@@ -26,6 +26,8 @@ limitations under the License.
 
 #include "absl/container/flat_hash_map.h"
 #include "tensorflow/tsl/platform/cloud/ram_file_block_cache.h"
+#include "tensorflow/core/framework/types.h"
+#include "tensorflow/core/platform/env.h"
 #include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_dao_interface.h"
 
 namespace tensorflow {
@@ -232,7 +234,7 @@ class MemcachedDao : public MemcachedDaoInterface {
 //
 // This class should be shared by read-only random access files on a remote
 // filesystem (e.g. GCS).
-class MemcachedFileBlockCache : public FileBlockCache {
+class MemcachedFileBlockCache : public tsl::FileBlockCache {
  public:
   MemcachedFileBlockCache(
       const std::vector<MemcachedDaoInterface*>& memcached_daos,

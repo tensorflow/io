@@ -21,6 +21,8 @@ limitations under the License.
 #include "tensorflow/core/framework/resource_op_kernel.h"
 #include "tensorflow/tsl/platform/cloud/curl_http_request.h"
 
+using namespace tsl;
+
 namespace tensorflow {
 namespace io {
 namespace {

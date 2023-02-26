@@ -86,14 +86,14 @@ int64 ComputeBackoffMicroseconds(int current_retry_attempt, int64 min_delay,
 namespace {
 
 inline void StreamzRecordCacheHitBlockSize(
-    size_t value, FileBlockCacheStatsInterface* cache_stats) {
+    size_t value, tsl::FileBlockCacheStatsInterface* cache_stats) {
   if (cache_stats != nullptr) {
     cache_stats->RecordCacheHitBlockSize(value);
   }
 }
 
 inline void StreamzRecordCacheMissBlockSize(
-    size_t value, FileBlockCacheStatsInterface* cache_stats) {
+    size_t value, tsl::FileBlockCacheStatsInterface* cache_stats) {
   if (cache_stats != nullptr) {
     cache_stats->RecordCacheMissBlockSize(value);
   }
@@ -197,7 +197,7 @@ bool BufferCollator::splice_buffer(T begin, T end, size_t pos,
 
 Status block_get(MemcachedDaoInterface* memcached_dao, const string& key,
                  std::vector<char>* value,
-                 FileBlockCacheStatsInterface* cache_stats) {
+                 tsl::FileBlockCacheStatsInterface* cache_stats) {
   memcached_return rc;
   size_t value_length;
   char* retrieved_value;
@@ -269,7 +269,7 @@ Status read_with_multi_get(
     const std::vector<string>& keys,
     std::map<string, MemcachedFileBlockCache::Key>* claim_checks,
     size_t* total_bytes_transferred,
-    FileBlockCacheStatsInterface* cache_stats) {
+    tsl::FileBlockCacheStatsInterface* cache_stats) {
   VLOG(2) << "Key multi-get of " << claim_checks->size() << " claims";
   const auto before = absl::Now();
   auto to_claim = claim_checks->size();
