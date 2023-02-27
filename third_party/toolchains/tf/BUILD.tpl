@@ -55,6 +55,7 @@ genrule(
         "    TF_SetStatusFromIOError",
         "    TF_StartThread",
         "    TF_VLog",
+        "    ??_7Metadata@data@tensorflow@@6B@",
         "EOF",
     ]),
 )
