@@ -56,6 +56,8 @@ genrule(
         "    TF_StartThread",
         "    TF_VLog",
         "    ??_7Metadata@data@tensorflow@@6B@",
+        "    ??_7Options@data@tensorflow@@6B@",
+        "    ??_7TensorProto@tensorflow@@6B@",
         "EOF",
     ]),
 )
