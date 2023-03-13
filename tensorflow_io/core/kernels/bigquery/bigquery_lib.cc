@@ -17,43 +17,43 @@ limitations under the License.
 
 namespace tensorflow {
 namespace {
-::tensorflow::error::Code GcpErrorCodeToTfErrorCode(::grpc::StatusCode code) {
+absl::StatusCode GcpErrorCodeToTfErrorCode(::grpc::StatusCode code) {
   switch (code) {
     case ::grpc::StatusCode::OK:
-      return ::tensorflow::error::OK;
+      return absl::StatusCode::kOk;
     case ::grpc::StatusCode::CANCELLED:
-      return ::tensorflow::error::CANCELLED;
+      return absl::StatusCode::kCancelled;
     case ::grpc::StatusCode::INVALID_ARGUMENT:
-      return ::tensorflow::error::INVALID_ARGUMENT;
+      return absl::StatusCode::kInvalidArgument;
     case ::grpc::StatusCode::DEADLINE_EXCEEDED:
-      return ::tensorflow::error::DEADLINE_EXCEEDED;
+      return absl::StatusCode::kDeadlineExceeded;
     case ::grpc::StatusCode::NOT_FOUND:
-      return ::tensorflow::error::NOT_FOUND;
+      return absl::StatusCode::kNotFound;
     case ::grpc::StatusCode::ALREADY_EXISTS:
-      return ::tensorflow::error::ALREADY_EXISTS;
+      return absl::StatusCode::kAlreadyExists;
     case ::grpc::StatusCode::PERMISSION_DENIED:
-      return ::tensorflow::error::PERMISSION_DENIED;
+      return absl::StatusCode::kPermissionDenied;
     case ::grpc::StatusCode::UNAUTHENTICATED:
-      return ::tensorflow::error::UNAUTHENTICATED;
+      return absl::StatusCode::kUnauthenticated;
     case ::grpc::StatusCode::RESOURCE_EXHAUSTED:
-      return ::tensorflow::error::RESOURCE_EXHAUSTED;
+      return absl::StatusCode::kResourceExhausted;
     case ::grpc::StatusCode::FAILED_PRECONDITION:
-      return ::tensorflow::error::FAILED_PRECONDITION;
+      return absl::StatusCode::kFailedPrecondition;
     case ::grpc::StatusCode::ABORTED:
-      return ::tensorflow::error::ABORTED;
+      return absl::StatusCode::kAborted;
     case ::grpc::StatusCode::OUT_OF_RANGE:
-      return ::tensorflow::error::OUT_OF_RANGE;
+      return absl::StatusCode::kOutOfRange;
     case ::grpc::StatusCode::UNIMPLEMENTED:
-      return ::tensorflow::error::UNIMPLEMENTED;
+      return absl::StatusCode::kUnimplemented;
     case ::grpc::StatusCode::INTERNAL:
-      return ::tensorflow::error::INTERNAL;
+      return absl::StatusCode::kInternal;
     case ::grpc::StatusCode::UNAVAILABLE:
-      return ::tensorflow::error::UNAVAILABLE;
+      return absl::StatusCode::kUnavailable;
     case ::grpc::StatusCode::DATA_LOSS:
-      return ::tensorflow::error::DATA_LOSS;
+      return absl::StatusCode::kDataLoss;
     case ::grpc::StatusCode::UNKNOWN:  // Fallthrough
     default:
-      return ::tensorflow::error::UNKNOWN;
+      return absl::StatusCode::kUnknown;
   }
 }
 }  // namespace
@@ -62,7 +62,8 @@ Status GrpcStatusToTfStatus(const ::grpc::Status& status) {
   if (status.ok()) {
     return OkStatus();
   }
-  return Status(GcpErrorCodeToTfErrorCode(status.error_code()),
+  return Status(static_cast<tensorflow::errors::Code>(
+                GcpErrorCodeToTfErrorCode(status.error_code())),
                 strings::StrCat("Error reading from Cloud BigQuery: ",
                                 status.error_message()));
 }
@@ -73,7 +74,8 @@ string GrpcStatusToString(const ::grpc::Status& status) {
   }
   return strings::StrCat("Status code: ",
                          ::tensorflow::error::Code_Name(
-                             GcpErrorCodeToTfErrorCode(status.error_code())),
+                             static_cast<tensorflow::error::Code>(
+                             GcpErrorCodeToTfErrorCode(status.error_code()))),
                          " error message:", status.error_message(),
                          " error details: ", status.error_details());
 }

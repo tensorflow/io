@@ -45,8 +45,9 @@ Status GceMemcachedServerListProvider::GetServerList(
   if (success) {
     return OkStatus();
   } else {
-    return Status(tensorflow::error::FAILED_PRECONDITION,
-                  "Unexpected server list format");
+    return Status(
+        static_cast<tensorflow::errors::Code>(absl::StatusCode::kFailedPrecondition),
+        "Unexpected server list format");
   }
 }
 
