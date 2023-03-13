@@ -40,7 +40,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   using DatasetOpKernel::DatasetOpKernel;
 
   Status InputDatasets(std::vector<const DatasetBase *> *inputs) const {
-    return Status::OK();
+    return OkStatus();
   }
 
   void MakeDataset(OpKernelContext *ctx, DatasetBase **output) override {
@@ -204,7 +204,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
     string DebugString() const override { return "BigQueryDatasetOp::Dataset"; }
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
     tensorflow::BigQueryClientResource *client_resource() const {
       return client_resource_;

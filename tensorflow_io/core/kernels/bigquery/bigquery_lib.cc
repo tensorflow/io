@@ -60,7 +60,7 @@ namespace {
 
 Status GrpcStatusToTfStatus(const ::grpc::Status& status) {
   if (status.ok()) {
-    return Status::OK();
+    return OkStatus();
   }
   return Status(GcpErrorCodeToTfErrorCode(status.error_code()),
                 strings::StrCat("Error reading from Cloud BigQuery: ",
@@ -87,7 +87,7 @@ Status GetDataFormat(string data_format_str,
   } else {
     return errors::Internal("Unsupported data format: " + data_format_str);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace tensorflow

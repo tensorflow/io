@@ -47,7 +47,7 @@ class BigQueryClientOp : public OpKernel {
                               [this, ctx](BigQueryClientResource** ret)
                                   TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
                                     *ret = new BigQueryClientResource();
-                                    return Status::OK();
+                                    return OkStatus();
                                   }));
       core::ScopedUnref resource_cleanup(resource);
       initialized_ = true;

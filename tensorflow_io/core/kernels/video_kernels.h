@@ -124,7 +124,7 @@ class VideoCaptureContext {
     *width = fmt.fmt.pix.width;
     *height = fmt.fmt.pix.height;
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(void* data, size_t size) {
     do {
@@ -166,7 +166,7 @@ class VideoCaptureContext {
       // Data Obtained, break
       break;
     } while (true);
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:

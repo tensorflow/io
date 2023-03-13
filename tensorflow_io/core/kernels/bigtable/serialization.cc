@@ -150,7 +150,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
-      tensor_data(index) = maybe_parsed_data.ValueOrDie();
+      tensor_data(index) = maybe_parsed_data.value();
     } break;
     case DT_INT32: {
       auto tensor_data = tensor.tensor<int32_t, 1>();
@@ -158,7 +158,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
-      tensor_data(index) = maybe_parsed_data.ValueOrDie();
+      tensor_data(index) = maybe_parsed_data.value();
     } break;
     case DT_INT64: {
       auto tensor_data = tensor.tensor<int64_t, 1>();
@@ -166,7 +166,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
-      tensor_data(index) = maybe_parsed_data.ValueOrDie();
+      tensor_data(index) = maybe_parsed_data.value();
     } break;
     case DT_FLOAT: {
       auto tensor_data = tensor.tensor<float, 1>();
@@ -174,7 +174,7 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
-      tensor_data(index) = maybe_parsed_data.ValueOrDie();
+      tensor_data(index) = maybe_parsed_data.value();
     } break;
     case DT_DOUBLE: {
       auto tensor_data = tensor.tensor<double, 1>();
@@ -182,12 +182,12 @@ Status PutCellValueInTensor(Tensor& tensor, size_t index, DataType cell_type,
       if (!maybe_parsed_data.ok()) {
         return maybe_parsed_data.status();
       }
-      tensor_data(index) = maybe_parsed_data.ValueOrDie();
+      tensor_data(index) = maybe_parsed_data.value();
     } break;
     default:
       return errors::Unimplemented("Data type not supported.");
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 }  // namespace io

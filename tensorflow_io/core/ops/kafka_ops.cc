@@ -31,7 +31,7 @@ REGISTER_OP("IO>KafkaReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaReadableNext")
@@ -42,7 +42,7 @@ REGISTER_OP("IO>KafkaReadableNext")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaReadableRead")
@@ -54,7 +54,7 @@ REGISTER_OP("IO>KafkaReadableRead")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaReadableSpec")
@@ -66,7 +66,7 @@ REGISTER_OP("IO>KafkaReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaIterableInit")
@@ -79,7 +79,7 @@ REGISTER_OP("IO>KafkaIterableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LayerKafkaCall")
@@ -111,7 +111,7 @@ REGISTER_OP("IO>KafkaGroupReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaGroupReadableNext")
@@ -126,7 +126,7 @@ REGISTER_OP("IO>KafkaGroupReadableNext")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
       c->set_output(2, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

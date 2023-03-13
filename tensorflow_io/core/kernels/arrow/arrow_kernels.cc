@@ -49,7 +49,7 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
   Status Init(const std::shared_ptr<arrow::Table>& table) override {
     mutex_lock l(mu_);
     table_ = table;
-    return Status::OK();
+    return OkStatus();
   }
 
   int32 GetColumnIndex(const string& column_name) override {
@@ -76,7 +76,7 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
     dims[0] = table_->num_rows();
     *shape = TensorShape(dims);
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(int64 start, int64 stop, int32 column_index,
@@ -96,7 +96,7 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
 
     // Column is empty
     if (chunked_arr->num_chunks() == 0) {
-      return Status::OK();
+      return OkStatus();
     }
     // Convert the array
     else if (chunked_arr->num_chunks() == 1) {
@@ -118,7 +118,7 @@ class ArrowReadableResource : public ArrowReadableResourceBase {
       }
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {
@@ -252,7 +252,7 @@ class ArrowReadableFromMemoryInitOp
   Status CreateResource(ArrowReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new ArrowReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -608,14 +608,14 @@ class FeatherReadable : public IOReadableInterface {
       columns_index_[schema->field(i)->name()] = i;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Components(std::vector<string>* components) override {
     components->clear();
     for (size_t i = 0; i < columns_.size(); i++) {
       components->push_back(columns_[i]);
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
@@ -625,7 +625,7 @@ class FeatherReadable : public IOReadableInterface {
     int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop, const string& component,
@@ -637,7 +637,7 @@ class FeatherReadable : public IOReadableInterface {
 
     (*record_read) = 0;
     if (start >= shapes_[column_index].dim_size(0)) {
-      return Status::OK();
+      return OkStatus();
     }
     int64 element_start = start < shapes_[column_index].dim_size(0)
                               ? start
@@ -650,7 +650,7 @@ class FeatherReadable : public IOReadableInterface {
       return errors::InvalidArgument("dataset selection is out of boundary");
     }
     if (element_start == element_stop) {
-      return Status::OK();
+      return OkStatus();
     }
 
     if (feather_file_.get() == nullptr) {
@@ -738,7 +738,7 @@ class FeatherReadable : public IOReadableInterface {
                                        DataTypeString(value->dtype()));
     }
     (*record_read) = element_stop - element_start;
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {

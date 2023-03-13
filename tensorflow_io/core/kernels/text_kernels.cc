@@ -63,7 +63,7 @@ class FilenoInputStream : public io::InputStreamInterface {
     if (bytes_read < bytes_to_read) {
       return errors::OutOfRange("EOF reached");
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   virtual int64 Tell() const override { return offset_; }
@@ -110,7 +110,7 @@ class ReadTextOp : public OpKernel {
       std::unique_ptr<tensorflow::io::BufferedInputStream> stream(
           new tensorflow::io::BufferedInputStream(input_stream.get(), 4096));
 
-      Status status = Status::OK();
+      Status status = OkStatus();
       while (status.ok()) {
         string line;
         status = stream->ReadLine(&line);

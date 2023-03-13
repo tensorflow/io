@@ -112,7 +112,7 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
     dtype_ = DT_FLOAT;
     rate_ = rate;
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(TensorShape* shape, DataType* dtype, int32* rate) override {
@@ -120,7 +120,7 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
     *shape = shape_;
     *dtype = dtype_;
     *rate = rate_;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop,
@@ -164,7 +164,7 @@ class OggVorbisReadableResource : public AudioReadableResourceBase {
       samples_read += chunk;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "OggVorbisReadableResource"; }
 
@@ -227,7 +227,7 @@ class AudioDecodeVorbisOp : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 
@@ -258,7 +258,7 @@ Status OggVorbisEncodeStreamProcess(vorbis_dsp_state& vd, vorbis_block& vb,
       }
     }
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 class AudioEncodeVorbisOp : public OpKernel {

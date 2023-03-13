@@ -62,7 +62,7 @@ class PulsarReadableResource final : public PulsarResourceBase {
 
     LOG(INFO) << "Subscribing to the pulsar topic: " << topic
               << " with subscription: " << subscription;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Next(const int32 timeout, const int32 poll_timeout,
@@ -116,7 +116,7 @@ class PulsarReadableResource final : public PulsarResourceBase {
       key_tensor->flat<tstring>()(i) = keys[i];
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   std::string DebugString() const override { return "PulsarReadableResource"; }
@@ -160,7 +160,7 @@ class PulsarReadableInitOp : public ResourceOpKernel<PulsarReadableResource> {
   Status CreateResource(PulsarReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PulsarReadableResource();
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -197,7 +197,7 @@ class PulsarReadableNextOp : public OpKernel {
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, key));
               TF_RETURN_IF_ERROR(
                   context->allocate_output(2, TensorShape({}), continue_fetch));
-              return Status::OK();
+              return OkStatus();
             }));
   }
 
@@ -223,7 +223,7 @@ class PulsarWritableResource final : public PulsarResourceBase {
     }
 
     LOG(INFO) << "Created producer on pulsar topic: " << topic;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status WriteAsync(const std::string& value, const std::string& key) {
@@ -248,7 +248,7 @@ class PulsarWritableResource final : public PulsarResourceBase {
                               " error: ", pulsar::strResult(send_async_result));
     }
     index_++;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Flush() {
@@ -257,7 +257,7 @@ class PulsarWritableResource final : public PulsarResourceBase {
     if (result != pulsar::ResultOk) {
       return errors::Internal("failed to flush: ", pulsar::strResult(result));
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   std::string DebugString() const override { return "PulsarWritableResource"; }
@@ -290,7 +290,7 @@ class PulsarWritableInitOp : public ResourceOpKernel<PulsarWritableResource> {
   Status CreateResource(PulsarWritableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PulsarWritableResource();
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

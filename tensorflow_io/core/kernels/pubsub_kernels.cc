@@ -74,7 +74,7 @@ class PubSubReadableResource : public ResourceBase {
     }
     stub_ = Subscriber::NewStub(grpc::CreateChannel(endpoint, creds));
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(std::function<Status(const TensorShape& shape, Tensor** id_tensor,
                                    Tensor** data_tensor, Tensor** time_tensor)>
@@ -108,7 +108,7 @@ class PubSubReadableResource : public ResourceBase {
         TF_RETURN_IF_ERROR(allocate_func(TensorShape({0}), &id_tensor,
                                          &data_tensor, &time_tensor));
         stub_.reset(nullptr);
-        return Status::OK();
+        return OkStatus();
       }
       if (response.received_messages().size() != 0) {
         TF_RETURN_IF_ERROR(allocate_func(TensorShape({1}), &id_tensor,
@@ -131,10 +131,10 @@ class PubSubReadableResource : public ResourceBase {
         ClientContext ack_context;
         status = stub_->Acknowledge(&ack_context, acknowledge, &empty);
 
-        return Status::OK();
+        return OkStatus();
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -180,7 +180,7 @@ class PubSubReadableInitOp : public ResourceOpKernel<PubSubReadableResource> {
   Status CreateResource(PubSubReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PubSubReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -208,7 +208,7 @@ class PubSubReadableReadOp : public OpKernel {
           TF_RETURN_IF_ERROR(context->allocate_output(0, shape, id_tensor));
           TF_RETURN_IF_ERROR(context->allocate_output(1, shape, data_tensor));
           TF_RETURN_IF_ERROR(context->allocate_output(2, shape, time_tensor));
-          return Status::OK();
+          return OkStatus();
         }));
   }
 

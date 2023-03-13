@@ -37,7 +37,7 @@ Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
     TF_RETURN_IF_ERROR(c->Concatenate(prefix, s, &s));
     c->set_output((*output_idx)++, s);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 shape_inference::DimensionOrConstant ComputeSparseRank(
@@ -164,7 +164,7 @@ REGISTER_OP("IO>ParseAvro")
       AddSparseOutputShapes(num_sparse, input, sparse_ranks, c, &output_idx);
       TF_RETURN_IF_ERROR(
           AddDenseOutputShapes(dense_shapes, input, c, &output_idx));
-      return Status::OK();
+      return OkStatus();
     });
 
 // Adjusted from TFRecordDataset here
@@ -255,7 +255,7 @@ REGISTER_OP("IO>ListAvroColumns")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ReadAvro")
@@ -269,7 +269,7 @@ REGISTER_OP("IO>ReadAvro")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableInit")
@@ -282,7 +282,7 @@ REGISTER_OP("IO>AvroReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableSpec")
@@ -293,7 +293,7 @@ REGISTER_OP("IO>AvroReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableRead")
@@ -311,7 +311,7 @@ REGISTER_OP("IO>AvroReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadablePartitions")
@@ -319,7 +319,7 @@ REGISTER_OP("IO>AvroReadablePartitions")
     .Output("partitions: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

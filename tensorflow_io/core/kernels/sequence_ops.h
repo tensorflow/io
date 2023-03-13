@@ -50,7 +50,7 @@ class OutputSequence : public ResourceBase {
     if (fifo_.front().get() != nullptr) {
       TF_RETURN_IF_ERROR(Output());
     }
-    return Status::OK();
+    return OkStatus();
   }
   virtual string DebugString() const {
     return strings::StrCat("OutputSequence[]");
@@ -76,7 +76,7 @@ class OutputSequenceOp : public ResourceOpKernel<T> {
   Status CreateResource(T** sequence)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *sequence = new T(env_);
-    return Status::OK();
+    return OkStatus();
   }
   Env* env_;
   mutex mu_;

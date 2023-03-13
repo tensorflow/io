@@ -63,7 +63,7 @@ class PcapInputStream : public io::BufferedInputStream {
     record_read =
         1;  // this method reads one packet at a time from the input buffer
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status ReadHeader() {
@@ -83,7 +83,7 @@ class PcapInputStream : public io::BufferedInputStream {
       // multiple pcap packets
       EndianSwap(header->snaplen);
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -197,20 +197,20 @@ class PcapReadable : public IOReadableInterface {
 
     record_index_ = 0;
     record_final_ = false;
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = label ? DT_DOUBLE : DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop, const string& component,
               int64* record_read, Tensor* value, Tensor* label) override {
     (*record_read) = 0;
     if (record_final_) {
-      return Status::OK();
+      return OkStatus();
     }
     if (start != record_index_) {
       return errors::InvalidArgument(
@@ -240,7 +240,7 @@ class PcapReadable : public IOReadableInterface {
     }
     record_index_ += (*record_read);
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {

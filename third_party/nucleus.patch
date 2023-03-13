@@ -1,6 +1,89 @@
+diff -Naur a/nucleus/io/fastq_reader.cc b/nucleus/io/fastq_reader.cc
+--- a/nucleus/io/fastq_reader.cc	2023-02-26 04:04:19.097785713 +0000
++++ b/nucleus/io/fastq_reader.cc	2023-02-26 04:15:52.293582517 +0000
+@@ -76,7 +76,7 @@
+   }
+   record->set_sequence(string(sequence));
+   record->set_quality(string(quality));
+-  return tf::Status::OK();
++  return tsl::OkStatus();
+ }
+ }  // namespace
+ 
+@@ -145,7 +145,7 @@
+   *sequence = sequence_or.ValueOrDie();
+   *pad = pad_or.ValueOrDie();
+   *quality = quality_or.ValueOrDie();
+-  return tf::Status::OK();
++  return tsl::OkStatus();
+ 
+ data_loss:
+   return tf::errors::DataLoss("Failed to parse FASTQ record");
+diff -Naur a/nucleus/io/fastq_reader.h b/nucleus/io/fastq_reader.h
+--- a/nucleus/io/fastq_reader.h	2023-02-26 04:04:19.097785713 +0000
++++ b/nucleus/io/fastq_reader.h	2023-02-26 04:16:46.494817526 +0000
+@@ -76,7 +76,7 @@
+ 
+   // This no-op function is needed only for Python context manager support.  Do
+   // not use it! Returns a Status indicating whether the enter was successful.
+-  tensorflow::Status PythonEnter() const { return tensorflow::Status::OK(); }
++  tensorflow::Status PythonEnter() const { return tsl::OkStatus(); }
+ 
+   // Get the options controlling the behavior of this FastqReader.
+   const nucleus::genomics::v1::FastqReaderOptions& Options() const {
+diff -Naur a/nucleus/io/reader_base.cc b/nucleus/io/reader_base.cc
+--- a/nucleus/io/reader_base.cc	2023-02-26 04:04:19.097785713 +0000
++++ b/nucleus/io/reader_base.cc	2023-02-26 04:17:30.943830589 +0000
+@@ -56,7 +56,7 @@
+     reader_->live_iterable_ = nullptr;
+     reader_ = nullptr;
+   }
+-  return tensorflow::Status::OK();
++  return tsl::OkStatus();
+ }
+ 
+ bool IterableBase::IsAlive() const {
+@@ -66,11 +66,11 @@
+ tensorflow::Status IterableBase::CheckIsAlive() const {
+   if (!IsAlive())
+     return tensorflow::errors::FailedPrecondition("Reader is not alive");
+-  return tensorflow::Status::OK();
++  return tsl::OkStatus();
+ }
+ 
+ tensorflow::Status IterableBase::PythonEnter() {
+-  return tensorflow::Status::OK();
++  return tsl::OkStatus();
+ }
+ 
+ tensorflow::Status IterableBase::PythonExit() {
+diff -Naur a/nucleus/io/reader_base.h b/nucleus/io/reader_base.h
+--- a/nucleus/io/reader_base.h	2023-02-26 04:04:19.097785713 +0000
++++ b/nucleus/io/reader_base.h	2023-02-26 04:14:44.948047970 +0000
+@@ -129,7 +129,7 @@
+ 
+  private:
+   Record current_record_;
+-  tensorflow::Status current_status_ = tensorflow::Status::OK();
++  tensorflow::Status current_status_ = tsl::OkStatus();
+   bool IsOK() { return current_status_.ok(); }
+ 
+  public:
+diff -Naur a/nucleus/io/text_reader.cc b/nucleus/io/text_reader.cc
+--- a/nucleus/io/text_reader.cc	2023-02-26 04:04:19.101785802 +0000
++++ b/nucleus/io/text_reader.cc	2023-02-26 04:18:23.589030554 +0000
+@@ -78,7 +78,7 @@
+   if (hts_ok < 0) {
+     return tf::errors::Internal("hts_close() failed with return code ", hts_ok);
+   }
+-  return tf::Status::OK();
++  return tsl::OkStatus();
+ }
+ 
+ TextReader::TextReader(htsFile* hts_file)
 diff -Naur a/nucleus/protos/BUILD b/nucleus/protos/BUILD
---- a/nucleus/protos/BUILD	2019-09-07 15:31:09.625067415 +0000
-+++ b/nucleus/protos/BUILD	2019-09-07 15:32:35.368864263 +0000
+--- a/nucleus/protos/BUILD	2023-02-26 04:04:19.101785802 +0000
++++ b/nucleus/protos/BUILD	2023-02-26 04:08:24.867390853 +0000
 @@ -1,62 +1,6 @@
 -load("//:third_party/clif.bzl", "py_clif_cc", "pyclif_proto_library")
 -load("@protobuf_archive//:protobuf.bzl", "py_proto_library")
@@ -467,8 +550,8 @@ diff -Naur a/nucleus/protos/BUILD b/nucleus/protos/BUILD
 +    deps = [":fastq_proto"],
  )
 diff -Naur a/nucleus/vendor/BUILD b/nucleus/vendor/BUILD
---- a/nucleus/vendor/BUILD	2019-09-07 15:31:09.629067403 +0000
-+++ b/nucleus/vendor/BUILD	2019-09-07 15:38:30.184079565 +0000
+--- a/nucleus/vendor/BUILD	2023-02-26 04:04:19.105785893 +0000
++++ b/nucleus/vendor/BUILD	2023-02-26 04:08:24.867390853 +0000
 @@ -1,4 +1,4 @@
 -load("//:third_party/clif.bzl", "py_clif_cc")
 +#load("//:third_party/clif.bzl", "py_clif_cc")

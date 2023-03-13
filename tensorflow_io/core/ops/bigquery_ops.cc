@@ -43,7 +43,7 @@ REGISTER_OP("IO>BigQueryReadSession")
     .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Vector(c->UnknownDim()));
       c->set_output(1, c->Scalar());
-      return tensorflow::Status::OK();
+      return tensorflow::OkStatus();
     });
 
 REGISTER_OP("IO>BigQueryDataset")

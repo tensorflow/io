@@ -318,7 +318,7 @@ jobs:
 
   windows-bazel:
     name: Bazel Windows
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v2
       - uses: egor-tensin/vs-shell@v2
@@ -449,7 +449,7 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [linux-wheel, macos-wheel, windows-wheel]
+    needs: [linux-wheel, macos-wheel] #, windows-wheel]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/download-artifact@v1
@@ -492,26 +492,26 @@ jobs:
         with:
           name: Linux-3.11-wheel
           path: Linux-3.11-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.7-wheel
-          path: Windows-3.7-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.8-wheel
-          path: Windows-3.8-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.9-wheel
-          path: Windows-3.9-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.10-wheel
-          path: Windows-3.10-wheel
-      - uses: actions/download-artifact@v1
-        with:
-          name: Windows-3.11-wheel
-          path: Windows-3.11-wheel
+      #- uses: actions/download-artifact@v1
+      #  with:
+      #    name: Windows-3.7-wheel
+      #    path: Windows-3.7-wheel
+      #- uses: actions/download-artifact@v1
+      #  with:
+      #    name: Windows-3.8-wheel
+      #    path: Windows-3.8-wheel
+      #- uses: actions/download-artifact@v1
+      #  with:
+      #    name: Windows-3.9-wheel
+      #    path: Windows-3.9-wheel
+      #- uses: actions/download-artifact@v1
+      #  with:
+      #    name: Windows-3.10-wheel
+      #    path: Windows-3.10-wheel
+      #- uses: actions/download-artifact@v1
+      #  with:
+      #    name: Windows-3.11-wheel
+      #    path: Windows-3.11-wheel
       - run: |
           set -e -x
           mkdir -p wheelhouse
@@ -525,11 +525,11 @@ jobs:
           cp Linux-3.9-wheel/*.whl wheelhouse/
           cp Linux-3.10-wheel/*.whl wheelhouse/
           cp Linux-3.11-wheel/*.whl wheelhouse/
-          cp Windows-3.7-wheel/*.whl wheelhouse/
-          cp Windows-3.8-wheel/*.whl wheelhouse/
-          cp Windows-3.9-wheel/*.whl wheelhouse/
-          cp Windows-3.10-wheel/*.whl wheelhouse/
-          cp Windows-3.11-wheel/*.whl wheelhouse/
+          # cp Windows-3.7-wheel/*.whl wheelhouse/
+          # cp Windows-3.8-wheel/*.whl wheelhouse/
+          # cp Windows-3.9-wheel/*.whl wheelhouse/
+          # cp Windows-3.10-wheel/*.whl wheelhouse/
+          # cp Windows-3.11-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
       - uses: actions/upload-artifact@v2

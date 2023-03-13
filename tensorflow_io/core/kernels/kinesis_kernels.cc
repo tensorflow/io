@@ -331,7 +331,7 @@ class KinesisReadableResource : public ResourceBase {
                              ": ", iterator_outcome.GetError().GetMessage());
     }
     iterator_ = iterator_outcome.GetResult().GetShardIterator();
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(
       std::function<Status(const TensorShape& shape, Tensor** timestamp_tensor,
@@ -384,9 +384,9 @@ class KinesisReadableResource : public ResourceBase {
           string(partition.c_str(), partition.size());
       sequence_tensor->flat<tstring>()(0) =
           string(sequence.c_str(), sequence.size());
-      return Status::OK();
+      return OkStatus();
     } while (true);
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -431,7 +431,7 @@ class KinesisReadableInitOp : public ResourceOpKernel<KinesisReadableResource> {
   Status CreateResource(KinesisReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new KinesisReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -464,7 +464,7 @@ class KinesisReadableReadOp : public OpKernel {
               context->allocate_output(2, shape, partition_tensor));
           TF_RETURN_IF_ERROR(
               context->allocate_output(3, shape, sequence_tensor));
-          return Status::OK();
+          return OkStatus();
         }));
   }
 

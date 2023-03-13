@@ -32,7 +32,7 @@ Status CheckValidType(const DataType& dtype) {
     case DT_FLOAT:
     case DT_DOUBLE:
     case DT_STRING:
-      return Status::OK();
+      return OkStatus();
     default:
       return errors::InvalidArgument("Received input dtype: ",
                                      DataTypeString(dtype));

@@ -18,6 +18,7 @@ limitations under the License.
 #include "arrow/ipc/api.h"
 #include "arrow/result.h"
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/framework/dataset_options.pb.h"
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/public/version.h"
 #include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
@@ -49,7 +50,7 @@ Status GetBatchModeStr(ArrowBatchMode batch_mode, tstring* batch_mode_str) {
       return errors::Internal("Unsupported batch mode: " +
                               std::to_string(batch_mode));
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode) {
@@ -62,7 +63,7 @@ Status GetBatchMode(string batch_mode_str, ArrowBatchMode* batch_mode) {
   } else {
     return errors::Internal("Unsupported batch mode: " + batch_mode_str);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 // Base class for defining a Dataset over Arrow record batches with an
@@ -200,7 +201,7 @@ class ArrowDatasetBase : public DatasetBase {
 
       } while (!(have_result || *end_of_sequence));
 
-      return Status::OK();
+      return OkStatus();
     }
 
    private:
@@ -213,7 +214,7 @@ class ArrowDatasetBase : public DatasetBase {
       // If only one partial batch, can just move to output
       if (partials.size() == 1) {
         *out_tensors = std::move(*partials.at(0).get());
-        return Status::OK();
+        return OkStatus();
       }
 
       // Copy all partial tensors to a single output tensor
@@ -238,7 +239,7 @@ class ArrowDatasetBase : public DatasetBase {
         }
         batch_index += partial_batch_size;
       }
-      return Status::OK();
+      return OkStatus();
     }
 
     template <typename T>
@@ -249,7 +250,7 @@ class ArrowDatasetBase : public DatasetBase {
         parent->flat_outer_dims<T>().chip(index + i, 0) =
             element.flat_outer_dims<T>().chip(i, 0);
       }
-      return Status::OK();
+      return OkStatus();
     }
 
     Status CopyElementsToParent(const Tensor& element, Tensor* parent,
@@ -294,7 +295,7 @@ class ArrowDatasetBase : public DatasetBase {
     virtual Status NextStreamLocked(Env* env) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       current_batch_ = nullptr;
       current_row_idx_ = 0;
-      return Status::OK();
+      return OkStatus();
     }
 
     // Reset the Arrow record batch consumer when done with batches.
@@ -312,7 +313,7 @@ class ArrowDatasetBase : public DatasetBase {
         std::shared_ptr<arrow::Array> arr = batch->column(col);
         TF_RETURN_IF_ERROR(ArrowUtil::CheckArrayType(arr->type(), dt));
       }
-      return Status::OK();
+      return OkStatus();
     }
 
     mutex mu_;
@@ -430,7 +431,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
           buffer_ptr_(buffer_ptr),
           buffer_size_(buffer_size) {}
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
     string DebugString() const override {
       return "ArrowZeroCopyDatasetOp::Dataset";
@@ -456,7 +457,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(b->AddDataset(
           this, {buffer, size, columns, batch_size, batch_mode}, output));
-      return Status::OK();
+      return OkStatus();
     }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -490,7 +491,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
           current_batch_ = std::move(result).ValueUnsafe();
           TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       Status NextStreamLocked(Env* env)
@@ -502,7 +503,7 @@ class ArrowZeroCopyDatasetOp : public ArrowOpKernelBase {
           CHECK_ARROW(result.status());
           current_batch_ = std::move(result).ValueUnsafe();
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -564,7 +565,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       return "ArrowSerializedDatasetOp::Dataset";
     }
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
@@ -591,7 +592,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(b->AddDataset(
           this, {batches, columns, batch_size, batch_mode}, output));
-      return Status::OK();
+      return OkStatus();
     }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -622,7 +623,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
           current_batch_ = std::move(result).ValueUnsafe();
           TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       Status NextStreamLocked(Env* env)
@@ -633,7 +634,7 @@ class ArrowSerializedDatasetOp : public ArrowOpKernelBase {
           CHECK_ARROW(result.status());
           current_batch_ = std::move(result).ValueUnsafe();
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -697,7 +698,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       return "ArrowFeatherDatasetOp::Dataset";
     }
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
@@ -715,7 +716,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(b->AddDataset(
           this, {filenames, columns, batch_size, batch_mode}, output));
-      return Status::OK();
+      return OkStatus();
     }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -769,7 +770,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
           record_batches_.push_back(batch);
           CHECK_ARROW(tr.ReadNext(&batch));
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       Status NextStreamLocked(Env* env)
@@ -782,7 +783,7 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
           record_batches_.clear();
           return SetupStreamsLocked(env);
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
@@ -847,7 +848,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       return "ArrowStreamDatasetOp::Dataset";
     }
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
@@ -865,7 +866,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(b->AddDataset(
           this, {endpoints, columns, batch_size, batch_mode}, output));
-      return Status::OK();
+      return OkStatus();
     }
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -906,7 +907,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
         reader_ = std::move(result).ValueUnsafe();
         CHECK_ARROW(reader_->ReadNext(&current_batch_));
         TF_RETURN_IF_ERROR(CheckBatchColumnTypes(current_batch_));
-        return Status::OK();
+        return OkStatus();
       }
 
       Status NextStreamLocked(Env* env)
@@ -918,7 +919,7 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
           reader_.reset();
           SetupStreamsLocked(env);
         }
-        return Status::OK();
+        return OkStatus();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
