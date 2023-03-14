@@ -13,6 +13,8 @@ limitations under the License.
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
 
 #include "tensorflow/core/framework/dataset.h"
+#include "tensorflow/core/framework/dataset_metadata.pb.h"
+#include "tensorflow/core/framework/dataset_options.pb.h"
 
 namespace tensorflow {
 namespace data {

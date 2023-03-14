@@ -32,7 +32,7 @@ REGISTER_OP("IO>HDF5ReadableInfo")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       c->set_output(2, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>HDF5ReadableRead")
@@ -50,13 +50,13 @@ REGISTER_OP("IO>HDF5ReadableRead")
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(3, &full));
       if (!(c->RankKnown(full) && c->Rank(full) > 0)) {
         c->set_output(0, full);
-        return Status::OK();
+        return OkStatus();
       }
       // TODO: replace dims up until rank(start|stop)
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->ReplaceDim(full, 0, c->UnknownDim(), &shape));
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

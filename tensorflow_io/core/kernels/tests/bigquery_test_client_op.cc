@@ -67,7 +67,7 @@ class BigQueryTestClientOp : public OpKernel {
                   return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
                       channel);
                 });
-                return Status::OK();
+                return OkStatus();
               }));
 
       core::ScopedUnref unref_resource(resource);

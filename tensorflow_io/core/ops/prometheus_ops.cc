@@ -31,7 +31,7 @@ REGISTER_OP("IO>PrometheusReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PrometheusReadableSpec")
@@ -41,7 +41,7 @@ REGISTER_OP("IO>PrometheusReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PrometheusReadableRead")
@@ -54,7 +54,7 @@ REGISTER_OP("IO>PrometheusReadableRead")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PrometheusScrape")
@@ -66,7 +66,7 @@ REGISTER_OP("IO>PrometheusScrape")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

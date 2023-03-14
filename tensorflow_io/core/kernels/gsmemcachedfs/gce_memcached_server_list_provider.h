@@ -7,23 +7,23 @@
 
 #include "absl/memory/memory.h"
 #include "tensorflow/core/lib/core/status.h"
-#include "tensorflow/core/platform/cloud/compute_engine_metadata_client.h"
+#include "tensorflow/tsl/platform/cloud/compute_engine_metadata_client.h"
 
 namespace tensorflow {
 
 class GceMemcachedServerListProvider {
  public:
   explicit GceMemcachedServerListProvider(
-      std::shared_ptr<ComputeEngineMetadataClient> metadata_client);
+      std::shared_ptr<tsl::ComputeEngineMetadataClient> metadata_client);
   virtual ~GceMemcachedServerListProvider();
 
   Status GetServerList(std::vector<string>* server_list);
 
   void SetMetadataClient(
-      std::shared_ptr<ComputeEngineMetadataClient> metadata_client);
+      std::shared_ptr<tsl::ComputeEngineMetadataClient> metadata_client);
 
  private:
-  std::shared_ptr<ComputeEngineMetadataClient> google_metadata_client_;
+  std::shared_ptr<tsl::ComputeEngineMetadataClient> google_metadata_client_;
   std::vector<string> cached_list_;
   TF_DISALLOW_COPY_AND_ASSIGN(GceMemcachedServerListProvider);
 };

@@ -131,13 +131,13 @@ class PrometheusReadableResource : public ResourceBase {
       metrics->tensor<tstring, 2>()(index, 1) = instance;
       metrics->tensor<tstring, 2>()(index, 2) = name;
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(int64* start, int64* stop) {
     mutex_lock l(mu_);
     *start = start_;
     *stop = stop_;
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(const int64 start, const int64 stop, std::vector<string>& jobs,
               std::vector<string>& instances, std::vector<string>& names,
@@ -186,7 +186,7 @@ class PrometheusReadableResource : public ResourceBase {
       }
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -234,13 +234,13 @@ class PrometheusReadableInitOp
             input, metadata,
             [&](const TensorShape& shape, Tensor** metrics) -> Status {
               TF_RETURN_IF_ERROR(context->allocate_output(1, shape, metrics));
-              return Status::OK();
+              return OkStatus();
             }));
   }
   Status CreateResource(PrometheusReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new PrometheusReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -320,7 +320,7 @@ class PrometheusReadableReadOp : public OpKernel {
                              0, timestamp_shape, timestamp));
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(1, value_shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

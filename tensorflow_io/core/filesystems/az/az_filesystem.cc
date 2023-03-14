@@ -59,7 +59,7 @@ bool GetTmpFilename(std::string* filename) {
   }
 #endif
   *filename = buffer;
-  // return Status::OK();
+  // return OkStatus();
   return true;
 }
 
@@ -271,7 +271,7 @@ class AzBlobRandomAccessFile {
                TF_Status* status) const {
     TF_VLog(1, "ReadFileFromAz az://%s/%s/%s from %u for n: %u\n",
             account_.c_str(), container_.c_str(), object_.c_str(), offset, n);
-    // If n == 0, then return Status::OK()
+    // If n == 0, then return OkStatus()
     // otherwise, if bytes_read < n then return OutofRange
     if (n == 0) {
       TF_SetStatus(status, TF_OK, "");
@@ -457,7 +457,7 @@ Status GetMatchingPaths(const std::string& pattern, std::vector<std::string>* re
                  return Env::Default()->MatchPath(full_path, pattern);
                });
 
-  return Status::OK();
+  return OkStatus();
 }
 #endif
 
@@ -876,7 +876,7 @@ static bool IsDirectory(const TF_Filesystem* filesystem, const char* path,
     // bool is_account;
 
     // TF_RETURN_IF_ERROR(AccountExists(account, &is_account, blob_client));
-    // return is_account ? Status::OK()
+    // return is_account ? OkStatus()
     //                   : errors::NotFound("The specified account az://",
     //                                      account, " was not found.");
   }

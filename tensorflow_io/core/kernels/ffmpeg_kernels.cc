@@ -178,7 +178,7 @@ class FFmpegStream {
       return errors::InvalidArgument(
           "unable to find specified stream: media=", media, ", index=", index);
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status OpenCodec(int64 thread_count, int64 thread_type) {
     int64 stream_index = stream_index_;
@@ -224,7 +224,7 @@ class FFmpegStream {
 
     nb_frames_ = format_context_->streams[stream_index]->nb_frames;
 
-    return Status::OK();
+    return OkStatus();
   }
 
   static int ReadPacket(void* opaque, uint8_t* buf, int buf_size) {
@@ -371,7 +371,7 @@ class FFmpegAudioStream : public FFmpegStream {
     }
     av_packet_unref(&packet_);
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Peek(int64* samples) {
     *samples = 0;
@@ -379,7 +379,7 @@ class FFmpegAudioStream : public FFmpegStream {
     for (size_t i = 0; i < frames_.size(); i++) {
       (*samples) += frames_[i]->nb_samples;
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(Tensor* value) {
     int64 datasize = DataTypeSize(dtype_);
@@ -400,7 +400,7 @@ class FFmpegAudioStream : public FFmpegStream {
       base += datasize * frames_[i]->nb_samples;
     }
     frames_.clear();
-    return Status::OK();
+    return OkStatus();
   }
 
   Status DecodePacket() {
@@ -422,7 +422,7 @@ class FFmpegAudioStream : public FFmpegStream {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
       av_packet_unref(&packet_);
-      return Status::OK();
+      return OkStatus();
     }
     // final cache clean up
     do {
@@ -430,7 +430,7 @@ class FFmpegAudioStream : public FFmpegStream {
     } while (got_frame);
     packet_scope_.reset(nullptr);
 
-    return Status::OK();
+    return OkStatus();
   }
   Status DecodeFrame(int* got_frame) {
     std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
@@ -451,7 +451,7 @@ class FFmpegAudioStream : public FFmpegStream {
     if (*got_frame) {
       frames_.push_back(std::move(frame));
     }
-    return Status::OK();
+    return OkStatus();
   }
   DataType dtype() { return dtype_; }
   int64 channels() { return channels_; }
@@ -482,7 +482,7 @@ class FFmpegAudioReadableResource : public ResourceBase {
 
     sample_index_ = 0;
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Seek(const int64 index) {
     if (index != 0) {
@@ -493,13 +493,13 @@ class FFmpegAudioReadableResource : public ResourceBase {
 
     TF_RETURN_IF_ERROR(ffmpeg_audio_stream_->OpenAudio(audio_index_));
     sample_index_ = 0;
-    return Status::OK();
+    return OkStatus();
   }
   Status Peek(TensorShape* shape) {
     int64 samples = 0;
     Status status = ffmpeg_audio_stream_->Peek(&samples);
     *shape = TensorShape({samples, ffmpeg_audio_stream_->channels()});
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(Tensor* value) { return ffmpeg_audio_stream_->Read(value); }
   string DebugString() const override { return "FFmpegAudioReadableResource"; }
@@ -539,7 +539,7 @@ class FFmpegAudioReadableInitOp
   Status CreateResource(FFmpegAudioReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FFmpegAudioReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -647,7 +647,7 @@ class FFmpegVideoStream : public FFmpegStream {
     }
     av_packet_unref(&packet_);
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Peek(int64* frames) {
     *frames = 0;
@@ -655,7 +655,7 @@ class FFmpegVideoStream : public FFmpegStream {
       TF_RETURN_IF_ERROR(DecodePacket());
       (*frames) = frames_.size();
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status PeekAll(int64* frames) {
     Status status;
@@ -663,7 +663,7 @@ class FFmpegVideoStream : public FFmpegStream {
       status = DecodePacket();
     } while (status.ok());
     (*frames) = frames_.size();
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(Tensor* value) {
     char* base = ((char*)(value->flat<uint8>().data()));
@@ -674,7 +674,7 @@ class FFmpegVideoStream : public FFmpegStream {
     }
     frames_.clear();
     frames_buffer_.clear();
-    return Status::OK();
+    return OkStatus();
   }
 
   Status DecodePacket() {
@@ -696,7 +696,7 @@ class FFmpegVideoStream : public FFmpegStream {
         TF_RETURN_IF_ERROR(DecodeFrame(&got_frame));
       }
       av_packet_unref(&packet_);
-      return Status::OK();
+      return OkStatus();
     }
     // final cache clean up
     do {
@@ -704,7 +704,7 @@ class FFmpegVideoStream : public FFmpegStream {
     } while (got_frame);
     packet_scope_.reset(nullptr);
 
-    return Status::OK();
+    return OkStatus();
   }
   Status DecodeFrame(int* got_frame) {
     std::unique_ptr<AVFrame, void (*)(AVFrame*)> frame(av_frame_alloc(),
@@ -746,7 +746,7 @@ class FFmpegVideoStream : public FFmpegStream {
       frames_.push_back(std::move(frame_rgb));
       frames_buffer_.push_back(std::move(buffer_rgb));
     }
-    return Status::OK();
+    return OkStatus();
   }
   DataType dtype() { return dtype_; }
   int64 channels() { return channels_; }
@@ -782,7 +782,7 @@ class FFmpegVideoReadableResource : public ResourceBase {
 
     frame_index_ = 0;
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Seek(const int64 index) {
     if (index != 0) {
@@ -793,7 +793,7 @@ class FFmpegVideoReadableResource : public ResourceBase {
 
     TF_RETURN_IF_ERROR(ffmpeg_video_stream_->OpenVideo(video_index_));
     frame_index_ = 0;
-    return Status::OK();
+    return OkStatus();
   }
   Status Peek(TensorShape* shape) {
     int64 frames = 0;
@@ -801,7 +801,7 @@ class FFmpegVideoReadableResource : public ResourceBase {
     *shape = TensorShape({frames, ffmpeg_video_stream_->height(),
                           ffmpeg_video_stream_->width(),
                           ffmpeg_video_stream_->channels()});
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(Tensor* value) { return ffmpeg_video_stream_->Read(value); }
   string DebugString() const override { return "FFmpegVideoReadableResource"; }
@@ -841,7 +841,7 @@ class FFmpegVideoReadableInitOp
   Status CreateResource(FFmpegVideoReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new FFmpegVideoReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

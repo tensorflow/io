@@ -148,7 +148,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
 
     string DebugString() const override { return "KafkaDatasetOp::Dataset"; }
 
-    Status CheckExternalState() const override { return Status::OK(); }
+    Status CheckExternalState() const override { return OkStatus(); }
 
    protected:
     Status AsGraphDefInternal(SerializationContext* ctx,
@@ -177,7 +177,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                         {topics, servers, group, eof, timeout, config_global,
                          config_topic, message_key, message_offset},
                         output));
-      return Status::OK();
+      return OkStatus();
     }
 
    private:
@@ -270,7 +270,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                 *end_of_sequence = false;
                 // Sync offset
                 offset_ = message->offset();
-                return Status::OK();
+                return OkStatus();
               }
 
               if (message->err() == RdKafka::ERR__PARTITION_EOF) {
@@ -305,7 +305,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
           // Iteration ends when there are no more topic to process.
           if (current_topic_index_ == dataset()->topics_.size()) {
             *end_of_sequence = true;
-            return Status::OK();
+            return OkStatus();
           }
 
           TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
@@ -332,7 +332,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                             << dataset()->topics_[current_topic_index_]
                             << ", current offset: " << offset_;
                 }
-                return Status::OK();
+                return OkStatus();
         */
       }
 
@@ -374,7 +374,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
                     << topic_partition_->partition() << ":"
                     << topic_partition_->offset() << "]";
         }
-        return Status::OK();
+        return OkStatus();
       }
 
      private:
@@ -502,7 +502,7 @@ class KafkaDatasetOp : public DatasetOpKernel {
         LOG(INFO) << "Kafka stream starts with current offset: "
                   << topic_partition_->offset();
 
-        return Status::OK();
+        return OkStatus();
       }
 
       // Resets all Kafka streams.
@@ -635,7 +635,7 @@ class KafkaOutputSequence : public OutputSequence {
                                 RdKafka::err2str(err));
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   virtual Status Output() override {
     if (fifo_.front().get() != nullptr) {
@@ -653,7 +653,7 @@ class KafkaOutputSequence : public OutputSequence {
         base_++;
       }
     }
-    return Status::OK();
+    return OkStatus();
   }
   virtual string DebugString() const {
     return strings::StrCat("KafkaOutputSequence[]");
@@ -728,7 +728,7 @@ class KafkaOutputSequence : public OutputSequence {
                               errstr);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -832,7 +832,7 @@ class DecodeAvroResource : public ResourceBase {
       return errors::Unimplemented("Avro schema error: ", error);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   const avro::ValidSchema& avro_schema() { return avro_schema_; }
   string DebugString() const override { return "DecodeAvroResource"; }
@@ -1108,7 +1108,7 @@ class DecodeAvroInitOp : public ResourceOpKernel<DecodeAvroResource> {
   Status CreateResource(DecodeAvroResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new DecodeAvroResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

@@ -123,7 +123,7 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
     TF_RETURN_IF_ERROR(EnsureHasRow(end_of_sequence));
     if (*end_of_sequence) {
       VLOG(3) << "end of sequence";
-      return Status::OK();
+      return OkStatus();
     }
 
     auto status =
@@ -153,7 +153,7 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
   }
   virtual Status EnsureReaderInitialized() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (reader_) {
-      return Status::OK();
+      return OkStatus();
     }
 
     apiv1beta1::ReadRowsRequest readRowsRequest;
@@ -179,7 +179,7 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
                   ->GetStub(readRowsRequest.read_position().stream().name())
                   ->ReadRows(read_rows_context_.get(), readRowsRequest);
 
-    return Status::OK();
+    return OkStatus();
   }
 
   virtual Status EnsureHasRow(bool *end_of_sequence) = 0;
@@ -214,7 +214,7 @@ class BigQueryReaderArrowDatasetIterator
     if (this->response_ && this->response_->has_arrow_record_batch() &&
         this->current_row_index_ <
             this->response_->arrow_record_batch().row_count()) {
-      return Status::OK();
+      return OkStatus();
     }
 
     this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
@@ -243,7 +243,7 @@ class BigQueryReaderArrowDatasetIterator
 
     VLOG(3) << "got record batch, rows:" << record_batch_->num_rows();
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
@@ -292,7 +292,7 @@ class BigQueryReaderArrowDatasetIterator
       out_tensors->emplace_back(std::move(tensor));
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -316,7 +316,7 @@ class BigQueryReaderAvroDatasetIterator
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     if (this->response_ &&
         this->current_row_index_ < this->response_->avro_rows().row_count()) {
-      return Status::OK();
+      return OkStatus();
     }
 
     this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
@@ -335,7 +335,7 @@ class BigQueryReaderAvroDatasetIterator
     this->decoder_->init(*memory_input_stream_);
     this->datum_ =
         absl::make_unique<avro::GenericDatum>(*this->dataset()->avro_schema());
-    return Status::OK();
+    return OkStatus();
   }
 
   Status ReadRecord(IteratorContext *ctx, std::vector<Tensor> *out_tensors,
@@ -559,7 +559,7 @@ class BigQueryReaderAvroDatasetIterator
       }
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

@@ -27,7 +27,7 @@ REGISTER_OP("IO>LMDBInput")
     .Attr("schema: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LMDBDatasetV2")
@@ -40,7 +40,7 @@ REGISTER_OP("IO>LMDBDatasetV2")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LMDBReadableInit")
@@ -50,7 +50,7 @@ REGISTER_OP("IO>LMDBReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LMDBReadableRead")
@@ -66,7 +66,7 @@ REGISTER_OP("IO>LMDBReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LMDBMappingInit")
@@ -77,7 +77,7 @@ REGISTER_OP("IO>LMDBMappingInit")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>LMDBMappingRead")
@@ -86,7 +86,7 @@ REGISTER_OP("IO>LMDBMappingRead")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->input(1));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

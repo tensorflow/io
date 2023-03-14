@@ -44,7 +44,7 @@ class AbstractBigtableResourceOp : public OpKernel {
     OP_REQUIRES_OK(context, maybe_resource.status());
 
     OP_REQUIRES_OK(context, mgr->Create<T>(cinfo.container(), cinfo.name(),
-                                           maybe_resource.ValueOrDie()));
+                                           maybe_resource.value()));
 
     OP_REQUIRES_OK(context, MakeResourceHandleToOutput(
                                 context, 0, cinfo.container(), cinfo.name(),

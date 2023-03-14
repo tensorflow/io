@@ -162,7 +162,7 @@ REGISTER_OP("BigtableSplitRowSetEvenly")
     .SetIsStateful()
     .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
       c->set_output(0, c->Vector(c->UnknownDim()));
-      return tensorflow::Status::OK();
+      return tensorflow::OkStatus();
     })
     .Doc(R"doc(
 Retrieves SampleRowKeys from bigtable, checks which tablets contain row keys 

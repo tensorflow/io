@@ -33,7 +33,7 @@ class GRPCReadableResource : public ResourceBase {
     endpoint_ = input;
     stub_ = GRPCEndpoint::NewStub(
         grpc::CreateChannel(endpoint_, grpc::InsecureChannelCredentials()));
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(const int64 start, const TensorShape& shape,
               std::function<Status(const TensorShape& shape, Tensor** value)>
@@ -43,7 +43,7 @@ class GRPCReadableResource : public ResourceBase {
     Tensor* value;
     TF_RETURN_IF_ERROR(allocate_func(shape, &value));
     if (shape.dim_size(0) == 0) {
-      return Status::OK();
+      return OkStatus();
     }
 
     Request request;
@@ -64,7 +64,7 @@ class GRPCReadableResource : public ResourceBase {
       return errors::InvalidArgument("unable to fill tensor");
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -98,7 +98,7 @@ class GRPCReadableInitOp : public ResourceOpKernel<GRPCReadableResource> {
   Status CreateResource(GRPCReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new GRPCReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -133,7 +133,7 @@ class GRPCReadableReadOp : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

@@ -100,7 +100,7 @@ class JSONReadable : public IOReadableInterface {
         }
       }
 
-      return Status::OK();
+      return OkStatus();
     }
 
     json_file_.reset(new ArrowRandomAccessFile(file_.get(), file_size_));
@@ -136,14 +136,14 @@ class JSONReadable : public IOReadableInterface {
       columns_index_[table_->ColumnNames()[i]] = i;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   Status Components(std::vector<string>* components) override {
     components->clear();
     for (size_t i = 0; i < columns_.size(); i++) {
       components->push_back(columns_[i]);
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
@@ -153,7 +153,7 @@ class JSONReadable : public IOReadableInterface {
     int64 column_index = columns_index_[component];
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop, const string& component,
@@ -165,7 +165,7 @@ class JSONReadable : public IOReadableInterface {
 
     (*record_read) = 0;
     if (start >= shapes_[column_index].dim_size(0)) {
-      return Status::OK();
+      return OkStatus();
     }
     const string& column = component;
     int64 element_start = start < shapes_[column_index].dim_size(0)
@@ -180,7 +180,7 @@ class JSONReadable : public IOReadableInterface {
                                      " selection is out of boundary");
     }
     if (element_start == element_stop) {
-      return Status::OK();
+      return OkStatus();
     }
 
     if (mode_ == "records") {
@@ -198,7 +198,7 @@ class JSONReadable : public IOReadableInterface {
       }
       (*record_read) = element_stop - element_start;
 
-      return Status::OK();
+      return OkStatus();
     }
 
     std::shared_ptr<::arrow::ChunkedArray> slice =
@@ -254,7 +254,7 @@ class JSONReadable : public IOReadableInterface {
                                        DataTypeString(value->dtype()));
     }
     (*record_read) = element_stop - element_start;
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {

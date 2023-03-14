@@ -356,7 +356,7 @@ Status ValueBuffer<T>::ResolveDenseShapeWithBatch(
     }
     *shape = data_shape;
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 // TODO(fraudies): Move validation of user defined shape and defaults into the
@@ -381,7 +381,7 @@ Status ValueBuffer<T>::ResolveDenseShape(
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from
     // default
-    if (user_shape.MergeWith(default_shape, &tmp_shape) == Status::OK()) {
+    if (user_shape.MergeWith(default_shape, &tmp_shape) == OkStatus()) {
       // Merged convert partial shape into shape
       if (!tmp_shape.AsTensorShape(shape)) {
         return errors::InvalidArgument("Expected ", tmp_shape,
@@ -404,7 +404,7 @@ Status ValueBuffer<T>::ResolveDenseShape(
     PartialTensorShape tmp_shape;
     // Honor any partially defined shape from user and supplement with that from
     // data
-    if (user_shape.MergeWith(dense_shape, &tmp_shape) == Status::OK()) {
+    if (user_shape.MergeWith(dense_shape, &tmp_shape) == OkStatus()) {
       if (!tmp_shape.AsTensorShape(shape)) {
         return errors::InvalidArgument("Expected ", tmp_shape,
                                        " to be fully defined"
@@ -416,13 +416,13 @@ Status ValueBuffer<T>::ResolveDenseShape(
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>
 Status ValueBuffer<T>::GetSparseValueShape(TensorShape* shape) const {
   (*shape).AddDim(GetNumberOfElements());
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>
@@ -433,7 +433,7 @@ Status ValueBuffer<T>::GetSparseIndexShape(TensorShape* shape) const {
   if (n_dim > 1) {
     (*shape).AddDim(shape_builder_.GetNumberOfDimensions());
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 // Assumes dense_shape has been allocated appropriate space -- not checked
@@ -448,7 +448,7 @@ Status ValueBuffer<T>::GetDenseShapeForSparse(Tensor* dense_shape) const {
   for (size_t i_dim = 0; i_dim < n_dim; ++i_dim) {
     tensor_flat(i_dim) = shape.dim_size(i_dim);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>
@@ -467,7 +467,7 @@ Status ValueBuffer<T>::MakeDense(Tensor* tensor,
   // Fill in the values into the tensor from the buffer
   TF_RETURN_IF_ERROR(FillInFromBuffer(tensor));
 
-  return Status::OK();
+  return OkStatus();
 }
 
 // Builds the tensor for the values and the indices from the value buffer
@@ -484,7 +484,7 @@ Status ValueBuffer<T>::MakeSparse(Tensor* values, Tensor* indices) const {
   // Create indices
   TF_RETURN_IF_ERROR(shape_builder_.GetIndices(indices));
 
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>
@@ -511,7 +511,7 @@ Status ValueBuffer<T>::FillInFromBuffer(Tensor* tensor) const {
     source_offset += length;
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>
@@ -544,7 +544,7 @@ Status ValueBuffer<T>::FillInFromDefault(Tensor* tensor,
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 template <typename T>

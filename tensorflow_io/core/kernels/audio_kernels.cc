@@ -48,7 +48,7 @@ Status PartitionsLookup(const std::vector<int64>& partitions, const int64 start,
   } else {
     *extra = start - partitions[(*lower) - 1];
   }
-  return Status::OK();
+  return OkStatus();
 }
 namespace {
 
@@ -133,7 +133,7 @@ class AudioReadableInitOp : public ResourceOpKernel<AudioReadableResource> {
   Status CreateResource(AudioReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new AudioReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -208,7 +208,7 @@ class AudioReadableReadOp : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 

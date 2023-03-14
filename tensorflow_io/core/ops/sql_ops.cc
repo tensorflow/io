@@ -36,7 +36,7 @@ REGISTER_OP("IO>SqlIterableInit")
       c->set_output(1, c->Scalar());
       c->set_output(2, c->MakeShape({}));
       c->set_output(3, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>SqlIterableRead")
@@ -50,7 +50,7 @@ REGISTER_OP("IO>SqlIterableRead")
       for (int64 i = 0; i < c->num_outputs(); ++i) {
         c->set_output(i, c->MakeShape({c->UnknownDim()}));
       }
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

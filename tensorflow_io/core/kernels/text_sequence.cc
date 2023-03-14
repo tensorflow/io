@@ -39,7 +39,7 @@ class TextOutputSequence : public OutputSequence {
       }
       TF_RETURN_IF_ERROR(file->Close());
     }
-    return Status::OK();
+    return OkStatus();
   }
 #if TF_MAJOR_VERSION == 1 && TF_MINOR_VERSION == 13
   virtual string DebugString() {
@@ -54,7 +54,7 @@ class TextOutputSequence : public OutputSequence {
       return errors::Unimplemented("only one file is supported: ",
                                    destination_.size());
     }
-    return Status::OK();
+    return OkStatus();
   }
 
  private:

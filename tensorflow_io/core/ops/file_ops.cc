@@ -28,7 +28,7 @@ REGISTER_OP("IO>FileInfo")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FileRead")
@@ -39,7 +39,7 @@ REGISTER_OP("IO>FileRead")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FileInit")
