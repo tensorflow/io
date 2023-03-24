@@ -1,3 +1,18 @@
+# Release 0.32.0
+
+## Major Features and Bug Fixes
+* Add ref and amin argument in dbscale
+* Updated aarch64 build
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Andrew Goodbody, Awsaf, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.31.0
 
 ## Major Features and Bug Fixes
