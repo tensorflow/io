@@ -114,7 +114,7 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "d553551a4716b250322cb5d327a1e0aa077740b83943d6e40336b876a331dd69",
+    sha256 = "c030cb1905bff1d2446615992aad8d8d85cbe90c4fb625cee458c63bf466bc8e",
     strip_prefix = "tensorflow-2.12.0",
     urls = [
         "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.12.0.tar.gz",
