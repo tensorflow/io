@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-
 #include "tensorflow_io/core/kernels/arrow/arrow_util.h"
 
 #include "arrow/adapters/tensorflow/convert.h"
 #include "arrow/api.h"
+#include "arrow/filesystem/localfs.h"
 #include "arrow/ipc/api.h"
 #include "arrow/util/io_util.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -483,6 +483,47 @@ Status ParseHost(std::string host, std::string* host_address,
   *host_address = host.substr(0, sep_pos);
   *host_port = host.substr(sep_pos + 1);
 
+  return OkStatus();
+}
+
+arrow::Status OpenParquetFile_Impl(
+    std::shared_ptr<arrow::fs::FileSystem>* fs,
+    std::shared_ptr<arrow::io::RandomAccessFile>* file,
+    const std::string& file_name) {
+  std::string out_path;
+  arrow::internal::Uri uri;
+  ARROW_RETURN_NOT_OK(uri.Parse(file_name));
+
+  // s3 file s3://ak:sk@bucket//?scheme=http&endpoint_override=
+  if (file_name.rfind("s3://", 0) == 0 || file_name.rfind("s3a://", 0) == 0) {
+    ARROW_RETURN_NOT_OK(arrow::fs::EnsureS3Initialized());
+    ARROW_ASSIGN_OR_RAISE(auto s3options,
+                          arrow::fs::S3Options::FromUri(uri, &out_path));
+    ARROW_ASSIGN_OR_RAISE(*fs, arrow::fs::S3FileSystem::Make(s3options));
+    ARROW_ASSIGN_OR_RAISE(*file, (*fs)->OpenInputFile(out_path));
+    return arrow::Status::OK();
+  }
+
+  // local file file:///path/to/file
+  if (uri.scheme() == "file") {
+    ARROW_ASSIGN_OR_RAISE(
+        auto loptions,
+        arrow::fs::LocalFileSystemOptions::FromUri(uri, &out_path));
+    *fs = std::make_shared<arrow::fs::LocalFileSystem>(loptions);
+    ARROW_ASSIGN_OR_RAISE(*file, (*fs)->OpenInputFile(out_path));
+    return arrow::Status::OK();
+  }
+
+  return arrow::Status::Invalid("Unsupported file: ", file_name);
+}
+
+Status OpenParquetFile(std::shared_ptr<arrow::fs::FileSystem>* fs,
+                       std::shared_ptr<arrow::io::RandomAccessFile>* file,
+                       const std::string& file_name) {
+  arrow::Status status = OpenParquetFile_Impl(fs, file, file_name);
+  if (!status.ok()) {
+    return errors::Internal(status.ToString());
+  }
   return OkStatus();
 }
 

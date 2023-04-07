@@ -32,12 +32,25 @@ genrule(
 )
 
 cc_library(
+    name = "arrow_uriparser",
+    srcs = glob(["cpp/src/arrow/vendored/uriparser/*.c"]),
+    hdrs = glob(["cpp/src/arrow/vendored/uriparser/*.h"]),
+    includes = ["cpp/src/arrow/vendored/uriparser"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "arrow",
     srcs = glob(
         [
             "cpp/src/arrow/*.cc",
             "cpp/src/arrow/array/*.cc",
+            "cpp/src/arrow/compute/*.cc",
+            "cpp/src/arrow/compute/exec/*.cc",
+            "cpp/src/arrow/compute/kernels/*.cc",
             "cpp/src/arrow/csv/*.cc",
+            "cpp/src/arrow/dataset/*.cc",
+            "cpp/src/arrow/filesystem/*.cc",
             "cpp/src/arrow/io/*.cc",
             "cpp/src/arrow/ipc/*.cc",
             "cpp/src/arrow/json/*.cc",
@@ -46,6 +59,9 @@ cc_library(
             "cpp/src/arrow/vendored/optional.hpp",
             "cpp/src/arrow/vendored/string_view.hpp",
             "cpp/src/arrow/vendored/variant.hpp",
+            "cpp/src/arrow/vendored/base64.cpp",
+            "cpp/src/arrow/vendored/datetime/tz.cpp",
+            "cpp/src/arrow/vendored/pcg/*.hpp",
             "cpp/src/arrow/**/*.h",
             "cpp/src/parquet/**/*.h",
             "cpp/src/parquet/**/*.cc",
@@ -57,10 +73,11 @@ cc_library(
             "cpp/src/**/*_benchmark.cc",
             "cpp/src/**/*_main.cc",
             "cpp/src/**/*_nossl.cc",
-            "cpp/src/**/*_test.cc",
-            "cpp/src/**/test_*.cc",
+            "cpp/src/**/*test*.h",
+            "cpp/src/**/*test*.cc",
             "cpp/src/**/*hdfs*.cc",
             "cpp/src/**/*fuzz*.cc",
+            "cpp/src/**/*gcsfs*.cc",
             "cpp/src/**/file_to_stream.cc",
             "cpp/src/**/stream_to_file.cc",
             "cpp/src/arrow/util/bpacking_avx2.cc",
@@ -99,16 +116,28 @@ cc_library(
         "PARQUET_STATIC",
         "PARQUET_EXPORT=",
         "WIN32_LEAN_AND_MEAN",
+        "ARROW_DS_STATIC",
+        "URI_STATIC_BUILD",
     ],
     includes = [
         "cpp/src",
         "cpp/src/arrow/vendored/xxhash",
+        "cpp/src/generated",
         "cpp/thirdparty/flatbuffers/include",
     ],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:Ole32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     textual_hdrs = [
         "cpp/src/arrow/vendored/xxhash/xxhash.c",
     ],
     deps = [
+        "arrow_uriparser",
+        "@aws-sdk-cpp//:identity-management",
+        "@aws-sdk-cpp//:s3",
         "@boringssl//:crypto",
         "@brotli",
         "@bzip2",

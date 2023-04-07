@@ -163,6 +163,61 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "cognito-identity",
+    srcs = glob([
+        "aws-cpp-sdk-cognito-identity/source/*.cpp",
+        "aws-cpp-sdk-cognito-identity/source/model/*.cpp",
+    ]),
+    hdrs = glob([
+        "aws-cpp-sdk-cognito-identity/include/aws/cognito-identity/*.h",
+        "aws-cpp-sdk-cognito-identity/include/aws/cognito-identity/model/*.h",
+    ]),
+    includes = [
+        "aws-cpp-sdk-cognito-identity/include",
+    ],
+    deps = [
+        ":core",
+    ],
+)
+
+cc_library(
+    name = "sts",
+    srcs = glob([
+        "aws-cpp-sdk-sts/source/*.cpp",
+        "aws-cpp-sdk-sts/source/model/*.cpp",
+    ]),
+    hdrs = glob([
+        "aws-cpp-sdk-sts/include/aws/sts/*.h",
+        "aws-cpp-sdk-sts/include/aws/sts/model/*.h",
+    ]),
+    includes = [
+        "aws-cpp-sdk-sts/include",
+    ],
+    deps = [
+        ":core",
+    ],
+)
+
+cc_library(
+    name = "identity-management",
+    srcs = glob([
+        "aws-cpp-sdk-identity-management/source/auth/*.cpp",
+    ]),
+    hdrs = glob([
+        "aws-cpp-sdk-identity-management/include/aws/identity-management/*.h",
+        "aws-cpp-sdk-identity-management/include/aws/identity-management/auth/*.h",
+    ]),
+    includes = [
+        "aws-cpp-sdk-identity-management/include",
+    ],
+    deps = [
+        ":cognito-identity",
+        ":core",
+        ":sts",
+    ],
+)
+
 genrule(
     name = "SDKConfig_h",
     outs = [

@@ -188,4 +188,24 @@ REGISTER_OP("IO>ArrowReadableRead")
       return OkStatus();
     });
 
+REGISTER_OP("IO>ArrowParquetDataset")
+    .Input("parquet_files: string")
+    .Input("column_names: string")
+    .Input("same_header: bool")
+    .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a dataset from parqeut files
+
+parquet_files: One or more parqeut file path on s3
+column_names: Select columns to read by names
+same_header: Whether the input files have same header
+)doc");
+
 }  // namespace tensorflow

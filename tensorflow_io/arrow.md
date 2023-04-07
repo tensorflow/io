@@ -102,6 +102,30 @@ for row in dataset:
 An alternate constructor can also be used to infer output types and shapes from
 a given `pyarrow.Schema`, e.g. `dataset = arrow_io.ArrowStreamDataset.from_schema(host, schema)`
 
+## ArrowParquetDataset
+
+The `ArrowParquetDataset` provides a Dataset hat can read data from s3 or local parquet files. S3 file path would like to be `s3://ak:sk@bucket//?scheme=http&endpoint_override=` and local file path would like to be `file:///path/to/file`
+
+```python
+import tensorflow as tf
+import tensorflow_io.arrow as arrow_io
+
+# DataFrame which has 2 columns with dtypes=(int32, float32)
+dataset = arrow_io.ArrowParquetDataset(
+    parquet_files = ['/path/to/a.parquet', '/path/to/b.parquet'],
+    column_names=('col1', 'col2'),
+    columns=(0, 1), # This need not be set correctly because it is recalculated from the column_names
+    output_types=(tf.int32, tf.float32),
+    output_shapes=([], []),
+    same_header=True,
+    batch_size=4,
+    batch_mode='keep_remainder')
+
+# This will iterate over each row of each file provided
+for row in dataset:
+  print(row)
+```
+
 ## Creating Batches with Arrow Datasets
 
 Arrow Datasets have optional parameters to specify a `batch_size` and

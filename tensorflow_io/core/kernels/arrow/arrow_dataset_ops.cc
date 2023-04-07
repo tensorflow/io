@@ -13,13 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <numeric>
+
 #include "arrow/api.h"
 #include "arrow/io/stdio.h"
 #include "arrow/ipc/api.h"
 #include "arrow/result.h"
+#include "parquet/arrow/reader.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/dataset_options.pb.h"
 #include "tensorflow/core/graph/graph.h"
+#include "tensorflow/core/platform/threadpool.h"
 #include "tensorflow/core/public/version.h"
 #include "tensorflow_io/core/kernels/arrow/arrow_kernels.h"
 #include "tensorflow_io/core/kernels/arrow/arrow_stream_client.h"
@@ -102,7 +106,6 @@ class ArrowDatasetBase : public DatasetBase {
                            std::vector<Tensor>* out_tensors,
                            bool* end_of_sequence) override {
       mutex_lock l(mu_);
-
       // If in initial state, setup and read first batch
       if (current_batch_ == nullptr && current_row_idx_ == 0) {
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
@@ -164,6 +167,7 @@ class ArrowDatasetBase : public DatasetBase {
           }
 
           // Assign Tensors for each column in the current row
+          result_tensors->reserve(this->dataset()->columns_.size());
           for (size_t i = 0; i < this->dataset()->columns_.size(); ++i) {
             int32 col = this->dataset()->columns_[i];
             DataType output_type = this->dataset()->output_types_[i];
@@ -174,11 +178,17 @@ class ArrowDatasetBase : public DatasetBase {
             TF_RETURN_IF_ERROR(ArrowUtil::AssignShape(
                 arr, current_row_idx_, batch_size, &output_shape));
 
+            if (output_shape.dims() == 1) {
+              auto&& output_shape_in = this->dataset()->output_shapes_[i];
+              if (output_shape_in.dim_size(output_shape_in.dims() - 1) == 1) {
+                output_shape.AddDim(1);
+              }
+            }
+
             // Allocate a new tensor and assign Arrow data to it
             Tensor tensor(ctx->allocator({}), output_type, output_shape);
             TF_RETURN_IF_ERROR(
                 ArrowUtil::AssignTensor(arr, current_row_idx_, &tensor));
-
             result_tensors->emplace_back(std::move(tensor));
           }
 
@@ -758,8 +768,6 @@ class ArrowFeatherDatasetOp : public ArrowOpKernelBase {
         std::shared_ptr<::arrow::Table> table;
         CHECK_ARROW(reader->Read(&table));
 
-        int64_t num_columns = table->num_columns();
-
         // Convert the table to a sequence of batches
         arrow::TableBatchReader tr(*table.get());
         std::shared_ptr<arrow::RecordBatch> batch;
@@ -938,6 +946,251 @@ class ArrowStreamDatasetOp : public ArrowOpKernelBase {
   };
 };
 
+class ArrowParquetDatasetOp : public ArrowOpKernelBase {
+ public:
+  explicit ArrowParquetDatasetOp(OpKernelConstruction* ctx)
+      : ArrowOpKernelBase(ctx) {}
+
+  virtual void MakeArrowDataset(
+      OpKernelContext* ctx, const std::vector<int32>& columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
+      const DataTypeVector& output_types,
+      const std::vector<PartialTensorShape>& output_shapes,
+      ArrowDatasetBase** output) override {
+    const Tensor* parquet_files_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("parquet_files", &parquet_files_tensor));
+    OP_REQUIRES(
+        ctx, parquet_files_tensor->dims() <= 1,
+        errors::InvalidArgument("`parquet_files` must be a scalar or vector."));
+    std::vector<string> parquet_files;
+    parquet_files.reserve(parquet_files_tensor->NumElements());
+    for (int i = 0; i < parquet_files_tensor->NumElements(); ++i) {
+      parquet_files.push_back(parquet_files_tensor->flat<tstring>()(i));
+    }
+
+    const Tensor* column_names_tensor;
+    OP_REQUIRES_OK(ctx, ctx->input("column_names", &column_names_tensor));
+    OP_REQUIRES(
+        ctx, column_names_tensor->dims() <= 1,
+        errors::InvalidArgument("`column_names` must be a scalar or vector."));
+    std::vector<string> column_names;
+    column_names.reserve(column_names_tensor->NumElements());
+    for (int i = 0; i < column_names_tensor->NumElements(); ++i) {
+      column_names.push_back(column_names_tensor->flat<tstring>()(i));
+    }
+
+    std::vector<int32> column_cols(column_names.size());
+    std::iota(column_cols.begin(), column_cols.end(), 0);
+
+    bool same_header = true;
+    OP_REQUIRES_OK(
+        ctx, data::ParseScalarArgument<bool>(ctx, "same_header", &same_header));
+    *output =
+        new Dataset(ctx, parquet_files, column_names, same_header, column_cols,
+                    batch_size, batch_mode, output_types_, output_shapes_);
+  }
+
+ private:
+  class Dataset : public ArrowDatasetBase {
+   public:
+    Dataset(OpKernelContext* ctx, const std::vector<std::string>& parquet_files,
+            const std::vector<std::string>& column_names,
+            const bool same_header, const std::vector<int32> columns,
+            const int64 batch_size, const ArrowBatchMode batch_mode,
+            const DataTypeVector& output_types,
+            const std::vector<PartialTensorShape>& output_shapes)
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
+          parquet_files_(parquet_files),
+          column_names_(column_names),
+          same_header_(same_header) {}
+
+    string DebugString() const override {
+      return "ArrowParquetDatasetOp::Dataset";
+    }
+    Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
+      return OkStatus();
+    }
+    Status CheckExternalState() const override { return OkStatus(); }
+
+   protected:
+    Status AsGraphDefInternal(SerializationContext* ctx,
+                              DatasetGraphDefBuilder* b,
+                              Node** output) const override {
+      Node* parquet_files = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(parquet_files_, &parquet_files));
+      Node* column_names = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(column_names_, &column_names));
+      Node* same_header = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(same_header_, &same_header));
+      Node* columns = nullptr;
+      TF_RETURN_IF_ERROR(b->AddVector(columns_, &columns));
+      Node* batch_size = nullptr;
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_size_, &batch_size));
+      Node* batch_mode = nullptr;
+      tstring batch_mode_str;
+      TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
+      TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
+      TF_RETURN_IF_ERROR(
+          b->AddDataset(this,
+                        {parquet_files, column_names, same_header, columns,
+                         batch_size, batch_mode},
+                        output));
+      return OkStatus();
+    }
+
+    std::unique_ptr<IteratorBase> MakeIteratorInternal(
+        const string& prefix) const override {
+      return std::unique_ptr<IteratorBase>(
+          new Iterator({this, strings::StrCat(prefix, "::ArrowS3")}));
+    }
+
+   private:
+    class Iterator : public ArrowBaseIterator<Dataset> {
+     public:
+      explicit Iterator(const Params& params)
+          : ArrowBaseIterator<Dataset>(params) {}
+
+     private:
+      Status SetupStreamsLocked(Env* env)
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+
+        while (record_batches_.empty() &&
+               ++current_file_idx_ < dataset()->parquet_files_.size()) {
+          TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+        }
+
+        if (current_batch_idx_ < record_batches_.size()) {
+          current_batch_ = record_batches_[current_batch_idx_];
+        }
+
+        return OkStatus();
+      }
+
+      Status NextStreamLocked(Env* env)
+          TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
+        if (++current_batch_idx_ < record_batches_.size()) {
+          current_batch_ = record_batches_[current_batch_idx_];
+        } else if (++current_file_idx_ < dataset()->parquet_files_.size()) {
+          current_batch_idx_ = 0;
+          while (record_batches_.empty() &&
+                 ++current_file_idx_ < dataset()->parquet_files_.size()) {
+            TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
+          }
+
+          if (!record_batches_.empty()) {
+            current_batch_ = record_batches_[current_batch_idx_];
+          } else {
+            current_batch_ = nullptr;
+          }
+        }
+        return OkStatus();
+      }
+
+      void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::ResetStreamsLocked();
+        current_file_idx_ = 0;
+        current_batch_idx_ = 0;
+        record_batches_.clear();
+      }
+
+      Status ReadFile(int file_index) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        Status res = OkStatus();
+        do {
+          std::shared_ptr<arrow::io::RandomAccessFile> file;
+          res = ArrowUtil::OpenParquetFile(
+              &fs_, &file, dataset()->parquet_files_[file_index]);
+          if (!res.ok()) {
+            break;
+          }
+
+          parquet::ArrowReaderProperties properties;
+          properties.set_use_threads(true);
+          properties.set_pre_buffer(true);
+          parquet::ReaderProperties parquet_properties =
+              parquet::default_reader_properties();
+
+          std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
+              std::make_shared<parquet::arrow::FileReaderBuilder>();
+          builder->Open(file, parquet_properties);
+
+          std::unique_ptr<parquet::arrow::FileReader> reader;
+          builder->properties(properties)->Build(&reader);
+
+          if (column_indices_.empty() || !dataset()->same_header_) {
+            column_indices_.clear();
+            std::shared_ptr<arrow::Schema> schema;
+            reader->GetSchema(&schema);
+            // check column name exist
+            std::string err_column_names;
+            for (const auto& name : dataset()->column_names_) {
+              int fieldIndex = schema->GetFieldIndex(name);
+              column_indices_.push_back(fieldIndex);
+              if (-1 == fieldIndex) {
+                err_column_names = err_column_names + " " + name;
+              }
+            }
+
+            if (err_column_names.length() != 0) {
+              res = errors::InvalidArgument(
+                  "these column names don't exist: ", err_column_names,
+                  " when read file: ", dataset()->parquet_files_[file_index]);
+              break;
+            }
+          }
+          // Read file columns and build a table
+          std::shared_ptr<::arrow::Table> table;
+          arrow::Status arrow_status =
+              reader->ReadTable(column_indices_, &table);
+          if (!arrow_status.ok()) {
+            res = errors::Internal(arrow_status.ToString());
+            break;
+          }
+          // Convert the table to a sequence of batches
+          std::shared_ptr<arrow::RecordBatchReader> batch_reader =
+              std::make_shared<arrow::TableBatchReader>(table);
+          std::shared_ptr<arrow::RecordBatch> batch = nullptr;
+
+          arrow_status = batch_reader->ReadNext(&batch);
+          if (!arrow_status.ok()) {
+            res = errors::Internal(arrow_status.ToString());
+            break;
+          }
+          res = CheckBatchColumnTypes(batch);
+          if (!res.ok()) {
+            break;
+          }
+          record_batches_.clear();
+          while (batch != nullptr) {
+            if (batch->num_rows() != 0) {
+              record_batches_.emplace_back(batch);
+            }
+            arrow_status = batch_reader->ReadNext(&batch);
+            if (!arrow_status.ok()) {
+              res = errors::Internal(arrow_status.ToString());
+              break;
+            }
+          }
+        } while (0);
+        return res;
+      }
+
+      size_t current_file_idx_ TF_GUARDED_BY(mu_) = 0;
+      size_t current_batch_idx_ TF_GUARDED_BY(mu_) = 0;
+      std::vector<std::shared_ptr<arrow::RecordBatch>> record_batches_
+          TF_GUARDED_BY(mu_);
+      std::shared_ptr<arrow::fs::FileSystem> fs_ TF_GUARDED_BY(mu_) = nullptr;
+      std::vector<int> column_indices_ TF_GUARDED_BY(mu_);
+    };
+
+    const std::vector<std::string> parquet_files_;
+    const std::vector<std::string> column_names_;
+    const bool same_header_;
+  };
+};  // class ArrowParquetDatasetOp
+
 REGISTER_KERNEL_BUILDER(Name("IO>ArrowZeroCopyDataset").Device(DEVICE_CPU),
                         ArrowZeroCopyDatasetOp);
 
@@ -949,6 +1202,9 @@ REGISTER_KERNEL_BUILDER(Name("IO>ArrowFeatherDataset").Device(DEVICE_CPU),
 
 REGISTER_KERNEL_BUILDER(Name("IO>ArrowStreamDataset").Device(DEVICE_CPU),
                         ArrowStreamDatasetOp);
+
+REGISTER_KERNEL_BUILDER(Name("IO>ArrowParquetDataset").Device(DEVICE_CPU),
+                        ArrowParquetDatasetOp);
 
 }  // namespace data
 }  // namespace tensorflow
