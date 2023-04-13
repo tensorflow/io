@@ -15,19 +15,19 @@
 """TFRecordWriter"""
 
 import os
-from tensorflow_io.python.experimental.benchmark.generator.tensor_generator import (
+from tests.test_atds_avro.utils.generator.tensor_generator import (
     TensorGeneratorBase,
 )
-from tensorflow_io.python.experimental.benchmark.generator.sparse_tensor_generator import (
+from tests.test_atds_avro.utils.generator.sparse_tensor_generator import (
     SparseTensorGeneratorBase,
 )
-from tensorflow_io.python.experimental.benchmark.generator.varlen_tensor_generator import (
+from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     VarLenTensorGeneratorBase,
 )
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.file_writer import FileWriter
+from tests.test_atds_avro.utils.file_writer import FileWriter
 
 
 class TFRecordWriter(FileWriter):

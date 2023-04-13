@@ -8,8 +8,8 @@ from avro.schema import Parse as parse
 from avro.datafile import DataFileWriter
 from avro.io import DatumWriter
 
-from tensorflow_io.python.experimental.benchmark.file_writer import FileWriter
-from tensorflow_io.python.experimental.benchmark.generator.varlen_tensor_generator import (
+from tests.test_atds_avro.utils.file_writer import FileWriter
+from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     VarLenTensorGeneratorBase,
 )
 from tensorflow_io.python.experimental.atds.features import (

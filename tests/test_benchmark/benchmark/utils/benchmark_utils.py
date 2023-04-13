@@ -17,24 +17,24 @@
 import os
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.data_source_registry import (
+from tests.test_atds_avro.utils.data_source_registry import (
     get_canonical_name,
     get_data_source_from_registry,
 )
-from tensorflow_io.python.experimental.benchmark.generator.tensor_generator import (
+from tests.test_atds_avro.utils.generator.tensor_generator import (
     IntTensorGenerator,
     FloatTensorGenerator,
     BoolTensorGenerator,
 )
-from tensorflow_io.python.experimental.benchmark.generator.sparse_tensor_generator import (
+from tests.test_atds_avro.utils.generator.sparse_tensor_generator import (
     IntSparseTensorGenerator,
     ValueDistribution,
 )
-from tensorflow_io.python.experimental.benchmark.generator.varlen_tensor_generator import (
+from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     WordVarLenTensorGenerator,
     DimensionDistribution,
 )
-from tensorflow_io.python.experimental.benchmark.tf_record_writer import TFRecordWriter
+from tests.test_atds_avro.utils.tf_record_writer import TFRecordWriter
 
 MIXED_TYPES_SCENARIO = {
     # simulate scalar int as label.

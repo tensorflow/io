@@ -18,10 +18,10 @@ import hashlib
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.generator.generator_base import (
+from tests.test_atds_avro.utils.generator.generator_base import (
     Generator,
 )
-from tensorflow_io.python.experimental.benchmark.hash_util import int_to_bytes
+from tests.test_atds_avro.utils.hash_util import int_to_bytes
 
 
 class TensorGeneratorBase(Generator):

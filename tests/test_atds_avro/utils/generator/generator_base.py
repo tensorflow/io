@@ -18,7 +18,7 @@ import abc
 import hashlib
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.hash_util import int_to_bytes
+from tests.test_atds_avro.utils.hash_util import int_to_bytes
 
 
 class Generator(metaclass=abc.ABCMeta):

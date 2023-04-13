@@ -20,21 +20,21 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import registry
 
-from tensorflow_io.python.experimental.benchmark.data_source import DataSource
-from tensorflow_io.python.experimental.benchmark.generator.tensor_generator import (
+from tests.test_atds_avro.utils.data_source import DataSource
+from tests.test_atds_avro.utils.generator.tensor_generator import (
     IntTensorGenerator,
     FloatTensorGenerator,
     WordTensorGenerator,
     BoolTensorGenerator,
 )
-from tensorflow_io.python.experimental.benchmark.generator.sparse_tensor_generator import (
+from tests.test_atds_avro.utils.generator.sparse_tensor_generator import (
     IntSparseTensorGenerator,
     FloatSparseTensorGenerator,
     WordSparseTensorGenerator,
     BoolSparseTensorGenerator,
     ValueDistribution,
 )
-from tensorflow_io.python.experimental.benchmark.generator.varlen_tensor_generator import (
+from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     DimensionDistribution,
     IntVarLenTensorGenerator,
     FloatVarLenTensorGenerator,

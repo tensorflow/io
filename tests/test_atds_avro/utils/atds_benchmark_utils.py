@@ -20,26 +20,26 @@ import json
 import os
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.data_source import DataSource
-from tensorflow_io.python.experimental.benchmark.data_source_registry import (
+from tests.test_atds_avro.utils.data_source import DataSource
+from tests.test_atds_avro.utils.data_source_registry import (
     SMALL_NUM_RECORDS,
     get_canonical_name,
     get_data_source_from_registry,
 )
-from tensorflow_io.python.experimental.benchmark.generator.tensor_generator import (
+from tests.test_atds_avro.utils.generator.tensor_generator import (
     IntTensorGenerator,
     FloatTensorGenerator,
     WordTensorGenerator,
     BoolTensorGenerator,
 )
-from tensorflow_io.python.experimental.benchmark.generator.sparse_tensor_generator import (
+from tests.test_atds_avro.utils.generator.sparse_tensor_generator import (
     IntSparseTensorGenerator,
     FloatSparseTensorGenerator,
     WordSparseTensorGenerator,
     BoolSparseTensorGenerator,
     get_common_value_dist,
 )
-from tensorflow_io.python.experimental.benchmark.generator.varlen_tensor_generator import (
+from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     IntVarLenTensorGenerator,
     FloatVarLenTensorGenerator,
     WordVarLenTensorGenerator,

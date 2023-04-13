@@ -17,7 +17,7 @@
 import pytest
 import tensorflow as tf
 
-from tensorflow_io.python.experimental.benchmark.data_source_registry import (
+from tests.test_atds_avro.utils.data_source_registry import (
     TensorType,
     SMALL_NUM_RECORDS,
     SINGLE_PARTITION,

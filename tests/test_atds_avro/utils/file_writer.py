@@ -77,7 +77,7 @@ class FileWriter(metaclass=abc.ABCMeta):
             )
             if os.path.exists(writer_path):
                 return writer_path
-            from tensorflow_io.python.experimental.benchmark.tf_record_writer import (
+            from tests.test_atds_avro.utils.tf_record_writer import (
                 TFRecordWriter,
             )
 
