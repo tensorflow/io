@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_
 
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/types.pb.h"
@@ -102,4 +102,4 @@ class ShuffleHandler {
 }  // namespace data
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SHUFFLE_HANDLER_H_

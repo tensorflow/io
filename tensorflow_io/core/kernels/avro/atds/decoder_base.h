@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_
 
 #include "api/Decoder.hh"
 #include "api/GenericDatum.hh"
@@ -52,4 +52,4 @@ Status ValidateSchema(const avro::NodePtr&, const Metadata&);
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_BASE_H_

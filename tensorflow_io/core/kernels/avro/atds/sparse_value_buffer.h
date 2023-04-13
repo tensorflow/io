@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_
 
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow_io/core/kernels/avro/atds/errors.h"
@@ -177,4 +177,4 @@ inline Status FillValuesTensor(const sparse::ValueBuffer& buffer,
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_SPARSE_VALUE_BUFFER_H_

@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_
 
 #include "api/Encoder.hh"
 #include "api/GenericDatum.hh"
@@ -386,4 +386,4 @@ inline std::vector<std::vector<bool>>& GetValuesBuffer(ValueBuffer& buffer) {
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_TEST_UTIL_H_

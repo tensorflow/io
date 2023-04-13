@@ -9,8 +9,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
 
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/dataset_metadata.pb.h"
@@ -38,4 +38,4 @@ class AvroRecordDatasetOp : public DatasetOpKernel {
 }  // namespace data
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_RECORD_DATASET_OP_H_

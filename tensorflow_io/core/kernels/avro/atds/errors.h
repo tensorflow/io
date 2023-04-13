@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
 
 #include "api/Types.hh"
 #include "tensorflow/core/framework/tensor_shape.h"
@@ -62,4 +62,4 @@ Status VariedSchemaNotSupportedError(const string& expected_schema,
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_ERRORS_H_

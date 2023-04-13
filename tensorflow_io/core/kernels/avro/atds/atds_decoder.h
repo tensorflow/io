@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_H_
 
 #include "api/Decoder.hh"
 #include "api/GenericDatum.hh"
@@ -132,4 +132,4 @@ class ATDSDecoder {
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DECODER_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_DECODER_H_

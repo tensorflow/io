@@ -1,5 +1,5 @@
-#ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
-#define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
+#ifndef TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
+#define TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
 
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
@@ -207,4 +207,4 @@ class AvroBlockReader {
 }  // namespace data
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
+#endif  // TENSORFLOW_IO_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
