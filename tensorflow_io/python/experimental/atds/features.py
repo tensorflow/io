@@ -8,21 +8,29 @@ ATDS_SUPPORTED_DTYPES = [tf.int32, tf.int64, tf.float32, tf.float64, tf.string, 
 
 def _raise_error_if_dtype_not_supported(dtype: tf.dtypes.DType):
     if dtype not in ATDS_SUPPORTED_DTYPES:
-        raise ValueError(f"{dtype} is not supported in ATDS. "
-                         f"Available dtypes are {ATDS_SUPPORTED_DTYPES}.")
+        raise ValueError(
+            f"{dtype} is not supported in ATDS. "
+            f"Available dtypes are {ATDS_SUPPORTED_DTYPES}."
+        )
+
 
 def _raise_error_if_shape_is_none(shape: List[int]):
     if shape is None:
         raise ValueError(f"Shape cannot be None.")
 
+
 def _raise_error_if_shape_has_none_or_zero(shape: List[int]):
     for dim in shape:
         if dim is None or dim == 0:
-            raise ValueError(f"Dimension in shape cannot be None or 0 but found {shape}.")
+            raise ValueError(
+                f"Dimension in shape cannot be None or 0 but found {shape}."
+            )
+
 
 def _raise_error_if_dtype_is_none(dtype: tf.dtypes.DType):
     if dtype is None:
         raise ValueError(f"dtype cannot be None.")
+
 
 def _validate_shape_and_dtype(shape: List[int], dtype: tf.dtypes.DType):
     _raise_error_if_shape_is_none(shape)
@@ -44,9 +52,11 @@ class DenseFeature(collections.namedtuple("DenseFeature", ["shape", "dtype"])):
     def __new__(cls, shape: List[int], dtype: tf.dtypes.DType):
         _validate_shape_and_dtype(shape, dtype)
         for dim in shape:
-          if dim <= 0:
-              raise ValueError(f"Each dimension should be greater than 0"
-                               f" in DenseFeature but found {shape}.")
+            if dim <= 0:
+                raise ValueError(
+                    f"Each dimension should be greater than 0"
+                    f" in DenseFeature but found {shape}."
+                )
 
         return super(DenseFeature, cls).__new__(cls, shape, dtype)
 
@@ -83,7 +93,9 @@ class VarlenFeature(collections.namedtuple("VarlenFeature", ["shape", "dtype"]))
         _validate_shape_and_dtype(shape, dtype)
         for dim in shape:
             if dim <= 0 and dim != -1:
-                raise ValueError(f"Each dimension should be greater than 0 or "
-                                 f"-1 in VarlenFeature but found {shape}.")
+                raise ValueError(
+                    f"Each dimension should be greater than 0 or "
+                    f"-1 in VarlenFeature but found {shape}."
+                )
 
         return super(VarlenFeature, cls).__new__(cls, shape, dtype)

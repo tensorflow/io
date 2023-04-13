@@ -1,45 +1,40 @@
-#include "tensorflow/core/platform/test.h"
+#include "tensorflow_io/core/kernels/avro/atds/shuffle_handler.h"
 
+#include "tensorflow/core/data/name_utils.h"
 #include "tensorflow/core/framework/common_shape_fns.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
 #include "tensorflow/core/framework/tensor.h"
-#include "tensorflow/core/platform/blocking_counter.h"
 #include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/io/inputbuffer.h"
 #include "tensorflow/core/lib/random/philox_random.h"
 #include "tensorflow/core/lib/random/random.h"
 #include "tensorflow/core/lib/random/random_distributions.h"
-#include "tensorflow/core/data/name_utils.h"
-
+#include "tensorflow/core/platform/blocking_counter.h"
+#include "tensorflow/core/platform/test.h"
 #include "tensorflow_io/core/kernels/avro/atds/avro_block_reader.h"
-#include "tensorflow_io/core/kernels/avro/atds/shuffle_handler.h"
 
 namespace tensorflow {
 namespace data {
 
-class ShuffleTest: public ::testing::Test {
+class ShuffleTest : public ::testing::Test {
  protected:
-  ShuffleTest() {
-    shuffle_handler_ = std::make_unique<ShuffleHandler>(&mu_);
-  }
+  ShuffleTest() { shuffle_handler_ = std::make_unique<ShuffleHandler>(&mu_); }
 
   void SetUp() override {
     for (size_t i = 0; i < 10; i++) {
       int64 rand_mult = static_cast<int64>(rand() % 5 + 5);
-      blocks_.emplace_back(std::make_unique<AvroBlock>(
-          AvroBlock{
-          rand_mult * 64, // int64_t object_count;
-          0, // int64_t num_to_decode;
-          0, // int64_t num_decoded;
-          100000, // int64_t byte_count;
-          0, // int64_t counts;
-          tstring("haha"), // tstring content;
-          avro::NULL_CODEC, // avro::Codec codec;
-          4888// size_t read_offset;
-          }
-      ));
+      blocks_.emplace_back(std::make_unique<AvroBlock>(AvroBlock{
+          rand_mult * 64,    // int64_t object_count;
+          0,                 // int64_t num_to_decode;
+          0,                 // int64_t num_decoded;
+          100000,            // int64_t byte_count;
+          0,                 // int64_t counts;
+          tstring("haha"),   // tstring content;
+          avro::NULL_CODEC,  // avro::Codec codec;
+          4888               // size_t read_offset;
+      }));
     }
   }
   mutex mu_;
@@ -73,24 +68,26 @@ TEST_F(ShuffleTest, ShuffleBufferTest) {
 
 TEST_F(ShuffleTest, UniformDistributionTest) {
   int64 bin_size = 10;
-  int64 bins[bin_size] = {0};		// observed frequencies
-  int64 error = 50; // none of the 10 bins will differ from the avg (1000 datapoints) by more than this
+  int64 bins[bin_size] = {0};  // observed frequencies
+  int64 error = 50;  // none of the 10 bins will differ from the avg (1000
+                     // datapoints) by more than this
   int64 num = 0;
   int64 num_samples = 1000;
-  int64 avg = num_samples/bin_size;
+  int64 avg = num_samples / bin_size;
   int64 k = 0;
   int64 idx = 0;
   while (k < num_samples) {
     num = shuffle_handler_->Random() % num_samples;
-    idx = num / avg; // 0-99 goes to bucket 0, 100-199 goes to bucket 1 and so on.
+    idx = num /
+          avg;  // 0-99 goes to bucket 0, 100-199 goes to bucket 1 and so on.
     bins[idx]++;
     k++;
   }
-	// check uniformity by ensuring that every bin is near the avg num of points
+  // check uniformity by ensuring that every bin is near the avg num of points
   for (int i = 0; i < bin_size; i++) {
     EXPECT_NEAR(bins[i], avg, error);
   }
 }
 
-} // data
-} // tensorflow
+}  // namespace data
+}  // namespace tensorflow

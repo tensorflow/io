@@ -16,85 +16,91 @@
 
 import hashlib
 
-from tensorflow_io.python.experimental.benchmark.hash_util \
-  import int_to_bytes
+from tensorflow_io.python.experimental.benchmark.hash_util import int_to_bytes
+
 
 class DataSource:
-  """DataSource describes properties in a benchmark data.
+    """DataSource describes properties in a benchmark data.
 
-  DataSource contains the metadata of a benchmark data including the total
-  number of records, the number of partitioned files and a scenario. A scenario
-  defines the features used in benchmark with the feature name, tensor spec,
-  and Generator used to generate the value. DataSource can be consumed by
-  FileWriter to generate the benchmark data descrbied by itself.
-  """
-
-  def __init__(self, scenario, num_records, partitions=1):
-    """Create a new DataSource.
-
-    Args:
-      scenario: A dict with feature name as key and Generator as value.
-        Scenario defines the features used in benchmark. Generator contains
-        tensor spec and the distribution to generate the tensor value.
-      num_records: An int defines total number of records in this data.
-      partitions: An int defines the number of partitioned files in this data.
-        Each partition can have different number of records. However, the total
-        number of records must be num_records.
-
-    Raises:
-      ValueError: If num_records or partitions is negative or partitions is
-        zero but num_records is greater than zero.
+    DataSource contains the metadata of a benchmark data including the total
+    number of records, the number of partitioned files and a scenario. A scenario
+    defines the features used in benchmark with the feature name, tensor spec,
+    and Generator used to generate the value. DataSource can be consumed by
+    FileWriter to generate the benchmark data descrbied by itself.
     """
-    if num_records < 0:
-      raise ValueError("Number of records in DataSource must not be negative"
-                       f" but got {num_records}.")
-    if partitions < 0:
-      raise ValueError("Partition number in DataSource must not be negative"
-                       f" but got {partitions}.")
-    if partitions == 0 and num_records > 0:
-      raise ValueError("Cannot have zero partitions in DataSource with"
-                       f"non-zero num_records ({num_records}).")
 
-    self._scenario = scenario
-    self._num_records = num_records
-    self._partitions = partitions
+    def __init__(self, scenario, num_records, partitions=1):
+        """Create a new DataSource.
 
-  @property
-  def scenario(self):
-    """Return the scenario of the benchmark data.
+        Args:
+          scenario: A dict with feature name as key and Generator as value.
+            Scenario defines the features used in benchmark. Generator contains
+            tensor spec and the distribution to generate the tensor value.
+          num_records: An int defines total number of records in this data.
+          partitions: An int defines the number of partitioned files in this data.
+            Each partition can have different number of records. However, the total
+            number of records must be num_records.
 
-    The scenario is a dict with feature name as key and Generator as value.
-    """
-    return self._scenario
+        Raises:
+          ValueError: If num_records or partitions is negative or partitions is
+            zero but num_records is greater than zero.
+        """
+        if num_records < 0:
+            raise ValueError(
+                "Number of records in DataSource must not be negative"
+                f" but got {num_records}."
+            )
+        if partitions < 0:
+            raise ValueError(
+                "Partition number in DataSource must not be negative"
+                f" but got {partitions}."
+            )
+        if partitions == 0 and num_records > 0:
+            raise ValueError(
+                "Cannot have zero partitions in DataSource with"
+                f"non-zero num_records ({num_records})."
+            )
 
-  @property
-  def num_records(self):
-    """Return the total number of records in this data as int."""
-    return self._num_records
+        self._scenario = scenario
+        self._num_records = num_records
+        self._partitions = partitions
 
-  @property
-  def partitions(self):
-    """Return the number of partitioned files in this data as int."""
-    return self._partitions
+    @property
+    def scenario(self):
+        """Return the scenario of the benchmark data.
 
-  def hash_code(self):
-    """Return the consistent hashed code of the DataSource in hex str.
+        The scenario is a dict with feature name as key and Generator as value.
+        """
+        return self._scenario
 
-    The hashed code can be used as the path for data source cache.
+    @property
+    def num_records(self):
+        """Return the total number of records in this data as int."""
+        return self._num_records
 
-    Returns:
-      A hex str generated by hashing algorithm.
-    """
-    m = hashlib.sha256()
-    # Step 1: hash sorted scenario dict
-    for name in sorted(self.scenario):
-      generator = self.scenario[name]
-      m.update(name.encode())
-      m.update(generator.hash_code().encode())
+    @property
+    def partitions(self):
+        """Return the number of partitioned files in this data as int."""
+        return self._partitions
 
-    # Step 2: hash num_records and partitions
-    m.update(int_to_bytes(self.num_records))
-    m.update(int_to_bytes(self.partitions))
+    def hash_code(self):
+        """Return the consistent hashed code of the DataSource in hex str.
 
-    # Step 3: return hashed str in hex.
-    return m.hexdigest()
+        The hashed code can be used as the path for data source cache.
+
+        Returns:
+          A hex str generated by hashing algorithm.
+        """
+        m = hashlib.sha256()
+        # Step 1: hash sorted scenario dict
+        for name in sorted(self.scenario):
+            generator = self.scenario[name]
+            m.update(name.encode())
+            m.update(generator.hash_code().encode())
+
+        # Step 2: hash num_records and partitions
+        m.update(int_to_bytes(self.num_records))
+        m.update(int_to_bytes(self.partitions))
+
+        # Step 3: return hashed str in hex.
+        return m.hexdigest()

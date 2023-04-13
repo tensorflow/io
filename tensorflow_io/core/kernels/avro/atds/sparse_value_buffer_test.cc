@@ -1,15 +1,14 @@
 #include "tensorflow_io/core/kernels/avro/atds/sparse_value_buffer.h"
-#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
 
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/platform/test.h"
+#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
 
 namespace tensorflow {
 namespace atds {
 namespace sparse {
 
-class FillIndicesTensorTest : public ::testing::TestWithParam<size_t> {
-};
+class FillIndicesTensorTest : public ::testing::TestWithParam<size_t> {};
 
 TEST_P(FillIndicesTensorTest, Offset) {
   std::vector<long> buffer = {1, 3, 5, 7};
@@ -21,13 +20,12 @@ TEST_P(FillIndicesTensorTest, Offset) {
   AssertTensorRangeEqual(tensor, buffer, offset);
 }
 
-INSTANTIATE_TEST_SUITE_P(offset_0_1_2,
-                         FillIndicesTensorTest,
+INSTANTIATE_TEST_SUITE_P(offset_0_1_2, FillIndicesTensorTest,
                          ::testing::Values(0, 1, 2));
 
-template<typename T>
-void FillValuesTensorTest(const std::vector<T>& values,
-                          size_t values_index, size_t offset) {
+template <typename T>
+void FillValuesTensorTest(const std::vector<T>& values, size_t values_index,
+                          size_t offset) {
   DataType dtype = GetDataType<T>();
 
   sparse::ValueBuffer buffer;

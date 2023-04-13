@@ -1,8 +1,8 @@
 #include "tensorflow_io/core/kernels/avro/atds/errors.h"
 
 #include "tensorflow/core/framework/types.h"
-#include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/errors.h"
+#include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/strcat.h"
 
 namespace tensorflow {
@@ -10,7 +10,8 @@ namespace atds {
 
 namespace {
 constexpr char kSupportedDTypeMessage[] =
-  "Only DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE, DT_STRING, and DT_BOOL are supported.";
+    "Only DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE, DT_STRING, and DT_BOOL are "
+    "supported.";
 }  // namespace
 
 void TypeNotSupportedAbort(DataType dtype) {
@@ -26,9 +27,9 @@ void SparseIndicesTypeNotSupportedAbort(avro::Type indices_type) {
 }
 
 Status TypeNotSupportedError(DataType dtype) {
-  return errors::InvalidArgument(strings::StrCat(
-    "Data type ", DataTypeString(dtype), " is not supported.",
-    kSupportedDTypeMessage));
+  return errors::InvalidArgument(
+      strings::StrCat("Data type ", DataTypeString(dtype), " is not supported.",
+                      kSupportedDTypeMessage));
 }
 
 Status SparseArraysNotEqualError(const std::vector<size_t>& decoded_numbers,
@@ -54,15 +55,17 @@ Status SparseArraysNotEqualError(const std::vector<size_t>& decoded_numbers,
   strings::StrAppend(&decoded_values, "]");
 
   return errors::InvalidArgument(strings::StrCat(
-    "Numbers of decoded value in indice and values array are different. ",
-    "Numbers of decoded value in ", array_names, " arrays are ", decoded_values));
+      "Numbers of decoded value in indice and values array are different. ",
+      "Numbers of decoded value in ", array_names, " arrays are ",
+      decoded_values));
 }
 
 Status ShapeError(size_t number, int dim, const PartialTensorShape& shape) {
   return errors::InvalidArgument(strings::StrCat(
-    "Number of decoded value ", number,
-    " does not match the expected dimension size ", shape.dim_size(dim),
-    " at the ", dim + 1, "th dimension in user defined shape ", shape.DebugString()));
+      "Number of decoded value ", number,
+      " does not match the expected dimension size ", shape.dim_size(dim),
+      " at the ", dim + 1, "th dimension in user defined shape ",
+      shape.DebugString()));
 }
 
 Status NullValueError() {
@@ -71,82 +74,98 @@ Status NullValueError() {
 
 Status FeatureDecodeError(const string& feature_name, const string& reason) {
   return errors::InvalidArgument(strings::StrCat(
-    "Failed to decode feature ", feature_name, ". Reason: ", reason));
+      "Failed to decode feature ", feature_name, ". Reason: ", reason));
 }
 
 Status ATDSNotRecordError(const string& type, const string& schema) {
-  return errors::InvalidArgument(strings::StrCat(
-    "ATDS schema is expected to be an Avro Record but found ", type,
-    ". Invalid schema found: ", schema));
+  return errors::InvalidArgument(
+      strings::StrCat("ATDS schema is expected to be an Avro Record but found ",
+                      type, ". Invalid schema found: ", schema));
 }
 
 Status FeatureNotFoundError(const string& feature_name, const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
-    "User defined feature '", feature_name, "' cannot be found in the input data.",
-    " Input data schema: ", schema));
+      "User defined feature '", feature_name,
+      "' cannot be found in the input data.", " Input data schema: ", schema));
 }
 
 Status InvalidUnionTypeError(const string& feature_name, const string& schema) {
-  return errors::InvalidArgument(strings::StrCat(
-    "Feature '", feature_name, "' has invalid union schema. ",
-    "A feature can only be an union of itself or an union of 'null' type and itself.",
-    "Invalid union schema found: ", schema));
+  return errors::InvalidArgument(
+      strings::StrCat("Feature '", feature_name, "' has invalid union schema. ",
+                      "A feature can only be an union of itself or an union of "
+                      "'null' type and itself.",
+                      "Invalid union schema found: ", schema));
 }
 
 Status MissingValuesColumnError(const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
-    "Sparse schema is missing values column. Input data schema: ", schema));
+      "Sparse schema is missing values column. Input data schema: ", schema));
 }
 
 Status NonContiguousIndicesError(const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
-    "Sparse schema indices should be contiguous (indices0, indices1, ...). ",
-    "Input data schema: ", schema));
+      "Sparse schema indices should be contiguous (indices0, indices1, ...). ",
+      "Input data schema: ", schema));
 }
 
 Status ExtraFieldError(const string& schema) {
-  return errors::InvalidArgument(strings::StrCat(
-    "Sparse schema can only contain 'indices' columns and a 'values' column. ",
-    "Input data schema: ", schema));
+  return errors::InvalidArgument(
+      strings::StrCat("Sparse schema can only contain 'indices' columns and a "
+                      "'values' column. ",
+                      "Input data schema: ", schema));
 }
 
-Status UnsupportedSparseIndicesTypeError(const string& feature_name, const string& schema) {
+Status UnsupportedSparseIndicesTypeError(const string& feature_name,
+                                         const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
       "Unsupported indices type found in feature '", feature_name, "'. ",
-      "Sparse tensor indices must be a non-nullable array of non-nullable int or long. "
-      "Invalid schema found: ", schema));
+      "Sparse tensor indices must be a non-nullable array of non-nullable int "
+      "or long. "
+      "Invalid schema found: ",
+      schema));
 }
 
-Status UnsupportedValueTypeError(const string& feature_name, const string& schema) {
+Status UnsupportedValueTypeError(const string& feature_name,
+                                 const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
       "Unsupported value type found in feature '", feature_name, "'. ",
-      "Tensor value must be a non-nullable array of non-nullable int, long, float, double, boolean, bytes, or string. "
-      "Invalid schema found: ", schema));
+      "Tensor value must be a non-nullable array of non-nullable int, long, "
+      "float, double, boolean, bytes, or string. "
+      "Invalid schema found: ",
+      schema));
 }
 
-Status SchemaValueTypeMismatch(const string& feature_name, avro::Type avro_type, DataType metadata_type, const string& schema) {
+Status SchemaValueTypeMismatch(const string& feature_name, avro::Type avro_type,
+                               DataType metadata_type, const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
-      "Schema value type and metadata type mismatch in feature '", feature_name, "'. ",
-      "Avro schema data type: ", avro::toString(avro_type), ", metadata type: ", DataTypeString(metadata_type),
+      "Schema value type and metadata type mismatch in feature '", feature_name,
+      "'. ", "Avro schema data type: ", avro::toString(avro_type),
+      ", metadata type: ", DataTypeString(metadata_type),
       ". Invalid schema found: ", schema));
 }
 
-Status InvalidDenseFeatureSchema(const string& feature_name, const string& schema) {
-  return errors::InvalidArgument(strings::StrCat(
-      "Dense feature '", feature_name, "' must be non-nullable nested arrays only. ",
-      "Invalid schema found: ", schema));
+Status InvalidDenseFeatureSchema(const string& feature_name,
+                                 const string& schema) {
+  return errors::InvalidArgument(
+      strings::StrCat("Dense feature '", feature_name,
+                      "' must be non-nullable nested arrays only. ",
+                      "Invalid schema found: ", schema));
 }
 
-Status InvalidVarlenFeatureSchema(const string& feature_name, const string& schema) {
-  return errors::InvalidArgument(strings::StrCat(
-      "Varlen feature '", feature_name, "' must be non-nullable nested arrays only. ",
-      "Invalid schema found: ", schema));
+Status InvalidVarlenFeatureSchema(const string& feature_name,
+                                  const string& schema) {
+  return errors::InvalidArgument(
+      strings::StrCat("Varlen feature '", feature_name,
+                      "' must be non-nullable nested arrays only. ",
+                      "Invalid schema found: ", schema));
 }
 
-Status FeatureRankMismatch(const string& feature_name, size_t avro_rank, size_t metadata_rank, const string& schema) {
+Status FeatureRankMismatch(const string& feature_name, size_t avro_rank,
+                           size_t metadata_rank, const string& schema) {
   return errors::InvalidArgument(strings::StrCat(
-      "Mismatch between avro schema rank and metadata rank in feature '", feature_name, "'. ",
-      "Avro schema rank: ", std::to_string(avro_rank), ", metadata rank: ", std::to_string(metadata_rank), ". ",
+      "Mismatch between avro schema rank and metadata rank in feature '",
+      feature_name, "'. ", "Avro schema rank: ", std::to_string(avro_rank),
+      ", metadata rank: ", std::to_string(metadata_rank), ". ",
       "Invalid schema found: ", schema));
 }
 
@@ -155,9 +174,9 @@ Status VariedSchemaNotSupportedError(const string& expected_schema,
                                      const string& varied_schema,
                                      const string& next_filename) {
   return errors::InvalidArgument(strings::StrCat(
-    "Avro schema should be consistent for all input files.",
-    " Schema in file ", filename, " varies from the schema in file ",
-    next_filename, "\n", expected_schema, "\n != \n", varied_schema));
+      "Avro schema should be consistent for all input files.",
+      " Schema in file ", filename, " varies from the schema in file ",
+      next_filename, "\n", expected_schema, "\n != \n", varied_schema));
 }
 
 }  // namespace atds

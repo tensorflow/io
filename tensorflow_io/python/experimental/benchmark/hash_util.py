@@ -16,7 +16,7 @@
 
 
 def int_to_bytes(x):
-  # Add one bit because a signed N-bit int can only represent up to 2^(N-1) - 1
-  # (instead of an unsigned N-bit int which can represent up to 2^N - 1).
-  # For example, 128 requires 9 bits (therefore two bytes) in twos complement.
-  return x.to_bytes(x.bit_length() // 8 + 1, byteorder='little', signed=True)
+    # Add one bit because a signed N-bit int can only represent up to 2^(N-1) - 1
+    # (instead of an unsigned N-bit int which can represent up to 2^N - 1).
+    # For example, 128 requires 9 bits (therefore two bytes) in twos complement.
+    return x.to_bytes(x.bit_length() // 8 + 1, byteorder="little", signed=True)

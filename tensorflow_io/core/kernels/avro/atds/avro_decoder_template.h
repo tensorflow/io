@@ -6,33 +6,36 @@
 namespace avro {
 namespace decoder_t {
 
-template<typename T, typename = typename std::enable_if<
-  std::is_same<int, T>::value || std::is_same<long, T>::value ||
-  std::is_same<float, T>::value || std::is_same<double, T>::value ||
-  std::is_same<bool, T>::value, T>::type >
+template <
+    typename T,
+    typename = typename std::enable_if<
+        std::is_same<int, T>::value || std::is_same<long, T>::value ||
+            std::is_same<float, T>::value || std::is_same<double, T>::value ||
+            std::is_same<bool, T>::value,
+        T>::type>
 inline T Decode(avro::DecoderPtr& decoder);
 
-template<>
+template <>
 inline int Decode(avro::DecoderPtr& decoder) {
   return decoder->decodeInt();
 }
 
-template<>
+template <>
 inline long Decode(avro::DecoderPtr& decoder) {
   return decoder->decodeLong();
 }
 
-template<>
+template <>
 inline float Decode(avro::DecoderPtr& decoder) {
   return decoder->decodeFloat();
 }
 
-template<>
+template <>
 inline double Decode(avro::DecoderPtr& decoder) {
   return decoder->decodeDouble();
 }
 
-template<>
+template <>
 inline bool Decode(avro::DecoderPtr& decoder) {
   return decoder->decodeBool();
 }
@@ -40,4 +43,4 @@ inline bool Decode(avro::DecoderPtr& decoder) {
 }  // namespace decoder_t
 }  // namespace avro
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_DECODER_TEMPLATE_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_DECODER_TEMPLATE_H_

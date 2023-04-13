@@ -1,18 +1,16 @@
 #ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_FEATURE_DECODER_H_
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_FEATURE_DECODER_H_
 
+#include "api/Decoder.hh"
+#include "api/Node.hh"
+#include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/framework/tensor_shape.h"
+#include "tensorflow/core/framework/types.pb.h"
+#include "tensorflow/core/platform/status.h"
+#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
 #include "tensorflow_io/core/kernels/avro/atds/decoder_base.h"
 #include "tensorflow_io/core/kernels/avro/atds/errors.h"
 #include "tensorflow_io/core/kernels/avro/atds/sparse_feature_internal_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
-
-#include "tensorflow/core/framework/tensor_shape.h"
-#include "tensorflow/core/framework/types.pb.h"
-#include "tensorflow/core/framework/tensor.h"
-#include "tensorflow/core/platform/status.h"
-
-#include "api/Decoder.hh"
-#include "api/Node.hh"
 
 namespace tensorflow {
 namespace atds {
@@ -20,14 +18,15 @@ namespace atds {
 namespace sparse {
 
 struct Metadata {
-  Metadata(FeatureType type,
-           const string& name,
-           DataType dtype,
-           const PartialTensorShape& shape,
-           size_t indices_index,
+  Metadata(FeatureType type, const string& name, DataType dtype,
+           const PartialTensorShape& shape, size_t indices_index,
            size_t values_index)
-    : type(type), name(name), dtype(dtype), shape(shape),
-      indices_index(indices_index), values_index(values_index) {}
+      : type(type),
+        name(name),
+        dtype(dtype),
+        shape(shape),
+        indices_index(indices_index),
+        values_index(values_index) {}
 
   FeatureType type;
   string name;
@@ -38,87 +37,90 @@ struct Metadata {
   size_t values_index;
 };
 
-template<typename T>
+template <typename T>
 class FeatureDecoder : public DecoderBase {
-  public:
-    explicit FeatureDecoder(const Metadata& metadata,
-                            const std::vector<size_t>& decoding_order,
-                            const std::vector<avro::Type>& indices_type)
-               : metadata_(metadata), rank_(metadata.shape.dims()), decoding_order_(decoding_order),
-                 long_indices_decoder_(metadata.indices_index, rank_),
-                 int_indices_decoder_(metadata.indices_index, rank_),
-                 values_decoder_(metadata.values_index) {
-      auto num_decoders = decoding_order.size();
-      decoders_.reserve(num_decoders);
-      for (size_t i = 0; i < num_decoders; i++) {
-        auto index = decoding_order[i];
-        if (index == rank_) {
-          decoders_.emplace_back(&values_decoder_);
-        } else if (indices_type[index] == avro::AVRO_LONG) {
-          decoders_.emplace_back(&long_indices_decoder_);
-        } else if (indices_type[index] == avro::AVRO_INT) {
-          decoders_.emplace_back(&int_indices_decoder_);
-        } else {
-          SparseIndicesTypeNotSupportedAbort(indices_type[index]);
-        }
+ public:
+  explicit FeatureDecoder(const Metadata& metadata,
+                          const std::vector<size_t>& decoding_order,
+                          const std::vector<avro::Type>& indices_type)
+      : metadata_(metadata),
+        rank_(metadata.shape.dims()),
+        decoding_order_(decoding_order),
+        long_indices_decoder_(metadata.indices_index, rank_),
+        int_indices_decoder_(metadata.indices_index, rank_),
+        values_decoder_(metadata.values_index) {
+    auto num_decoders = decoding_order.size();
+    decoders_.reserve(num_decoders);
+    for (size_t i = 0; i < num_decoders; i++) {
+      auto index = decoding_order[i];
+      if (index == rank_) {
+        decoders_.emplace_back(&values_decoder_);
+      } else if (indices_type[index] == avro::AVRO_LONG) {
+        decoders_.emplace_back(&long_indices_decoder_);
+      } else if (indices_type[index] == avro::AVRO_INT) {
+        decoders_.emplace_back(&int_indices_decoder_);
+      } else {
+        SparseIndicesTypeNotSupportedAbort(indices_type[index]);
       }
     }
+  }
 
-    Status operator()(avro::DecoderPtr& decoder,
-                      std::vector<Tensor>& dense_tensors,
-                      sparse::ValueBuffer& buffer,
-                      std::vector<avro::GenericDatum>& skipped_data,
-                      size_t offset) {
-      size_t num_decoders = decoders_.size();
-      std::vector<size_t> decoded_numbers(num_decoders, 0);
-      size_t indices_index = metadata_.indices_index;
-      size_t indices_start = buffer.indices[indices_index].size();
-      for (size_t i = 0; i < num_decoders; i++) {
-        decoded_numbers[i] = decoders_[i]->Decode(decoder, buffer,
-                                                  decoding_order_[i], indices_start);
-      }
-
-      if (TF_PREDICT_FALSE(!std::all_of(decoded_numbers.cbegin(), decoded_numbers.cend(),
-          [d=decoded_numbers[0]](size_t n){ return n == d;}))) {
-        return SparseArraysNotEqualError(decoded_numbers, decoding_order_);
-      }
-
-      // Rank after batching equals to the number of decoders.
-      FillBatchIndices(buffer.indices[indices_index], indices_start,
-                       static_cast<long>(offset), num_decoders);
-
-      auto& num_of_elements = buffer.num_of_elements[indices_index];
-      size_t total_num_elements = decoded_numbers[0];
-      if (!num_of_elements.empty()) {
-        total_num_elements += num_of_elements.back();
-      }
-      num_of_elements.push_back(total_num_elements);
-      return OkStatus();
+  Status operator()(avro::DecoderPtr& decoder,
+                    std::vector<Tensor>& dense_tensors,
+                    sparse::ValueBuffer& buffer,
+                    std::vector<avro::GenericDatum>& skipped_data,
+                    size_t offset) {
+    size_t num_decoders = decoders_.size();
+    std::vector<size_t> decoded_numbers(num_decoders, 0);
+    size_t indices_index = metadata_.indices_index;
+    size_t indices_start = buffer.indices[indices_index].size();
+    for (size_t i = 0; i < num_decoders; i++) {
+      decoded_numbers[i] = decoders_[i]->Decode(
+          decoder, buffer, decoding_order_[i], indices_start);
     }
 
-  private:
-    void FillBatchIndices(std::vector<long>& v, size_t indices_start,
-                          long batch_offset, size_t rank_after_batch) {
-      size_t end = v.size();
-      for (size_t i = indices_start; i < end; i += rank_after_batch) {
-        v[i] = batch_offset;
-      }
+    if (TF_PREDICT_FALSE(!std::all_of(
+            decoded_numbers.cbegin(), decoded_numbers.cend(),
+            [d = decoded_numbers[0]](size_t n) { return n == d; }))) {
+      return SparseArraysNotEqualError(decoded_numbers, decoding_order_);
     }
 
-    const Metadata& metadata_;
-    const size_t rank_;
-    const std::vector<size_t> decoding_order_;
-    IndicesDecoder<long> long_indices_decoder_;
-    IndicesDecoder<int> int_indices_decoder_;
-    ValuesDecoder<T> values_decoder_;
-    std::vector<InternalDecoder*> decoders_;  // not owned.
+    // Rank after batching equals to the number of decoders.
+    FillBatchIndices(buffer.indices[indices_index], indices_start,
+                     static_cast<long>(offset), num_decoders);
+
+    auto& num_of_elements = buffer.num_of_elements[indices_index];
+    size_t total_num_elements = decoded_numbers[0];
+    if (!num_of_elements.empty()) {
+      total_num_elements += num_of_elements.back();
+    }
+    num_of_elements.push_back(total_num_elements);
+    return OkStatus();
+  }
+
+ private:
+  void FillBatchIndices(std::vector<long>& v, size_t indices_start,
+                        long batch_offset, size_t rank_after_batch) {
+    size_t end = v.size();
+    for (size_t i = indices_start; i < end; i += rank_after_batch) {
+      v[i] = batch_offset;
+    }
+  }
+
+  const Metadata& metadata_;
+  const size_t rank_;
+  const std::vector<size_t> decoding_order_;
+  IndicesDecoder<long> long_indices_decoder_;
+  IndicesDecoder<int> int_indices_decoder_;
+  ValuesDecoder<T> values_decoder_;
+  std::vector<InternalDecoder*> decoders_;  // not owned.
 };
 
 }  // namespace sparse
 
-template<>
-inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& node,
-                                                         const sparse::Metadata& metadata) {
+template <>
+inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(
+    const avro::NodePtr& node, const sparse::Metadata& metadata) {
   size_t rank = static_cast<size_t>(metadata.shape.dims());
   std::vector<size_t> decoding_order(rank + 1);
   std::vector<avro::Type> indices_types(rank);
@@ -138,27 +140,27 @@ inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& no
   switch (metadata.dtype) {
     case DT_INT32: {
       return std::move(std::make_unique<sparse::FeatureDecoder<int>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     case DT_INT64: {
       return std::move(std::make_unique<sparse::FeatureDecoder<long>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     case DT_FLOAT: {
       return std::move(std::make_unique<sparse::FeatureDecoder<float>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     case DT_DOUBLE: {
       return std::move(std::make_unique<sparse::FeatureDecoder<double>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     case DT_STRING: {
       return std::move(std::make_unique<sparse::FeatureDecoder<string>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     case DT_BOOL: {
       return std::move(std::make_unique<sparse::FeatureDecoder<bool>>(
-        metadata, decoding_order, indices_types));
+          metadata, decoding_order, indices_types));
     }
     default: {
       TypeNotSupportedAbort(metadata.dtype);
@@ -167,8 +169,9 @@ inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& no
   return nullptr;
 }
 
-template<>
-inline Status ValidateSchema(const avro::NodePtr& node, const sparse::Metadata& metadata) {
+template <>
+inline Status ValidateSchema(const avro::NodePtr& node,
+                             const sparse::Metadata& metadata) {
   size_t values_pos;
   // Check values column exists.
   if (!node->nameIndex("values", values_pos)) {
@@ -185,7 +188,8 @@ inline Status ValidateSchema(const avro::NodePtr& node, const sparse::Metadata& 
     return UnsupportedValueTypeError(metadata.name, oss.str());
   }
   avro::Type value_item_type = value_leaf->leafAt(0)->type();
-  std::map<avro::Type, DataType>::const_iterator tf_type = avro_to_tf_datatype.find(value_item_type);
+  std::map<avro::Type, DataType>::const_iterator tf_type =
+      avro_to_tf_datatype.find(value_item_type);
   if (tf_type == avro_to_tf_datatype.end()) {
     // Check schema data type is supported.
     std::ostringstream oss;
@@ -195,7 +199,8 @@ inline Status ValidateSchema(const avro::NodePtr& node, const sparse::Metadata& 
     // Check schema data type and metadata type match.
     std::ostringstream oss;
     node->printJson(oss, 0);
-    return SchemaValueTypeMismatch(metadata.name, value_item_type, metadata.dtype, oss.str());
+    return SchemaValueTypeMismatch(metadata.name, value_item_type,
+                                   metadata.dtype, oss.str());
   }
   size_t rank = static_cast<size_t>(metadata.shape.dims());
   for (size_t i = 0; i < rank; i++) {
@@ -235,4 +240,4 @@ inline Status ValidateSchema(const avro::NodePtr& node, const sparse::Metadata& 
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_FEATURE_DECODER_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_SPARSE_FEATURE_DECODER_H_

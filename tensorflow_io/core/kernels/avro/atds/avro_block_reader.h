@@ -1,17 +1,16 @@
 #ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
 
-#include "tensorflow/core/lib/io/random_inputstream.h"
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 #include "api/Compiler.hh"
-#include "api/Decoder.hh"
 #include "api/DataFile.hh"
+#include "api/Decoder.hh"
 #include "api/Specific.hh"
 #include "api/Stream.hh"
 #include "api/ValidSchema.hh"
-
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
+#include "tensorflow/core/lib/io/random_inputstream.h"
 
 namespace tensorflow {
 namespace data {
@@ -30,8 +29,12 @@ struct AvroBlock {
 class FileBufferInputStream : public avro::InputStream {
  public:
   FileBufferInputStream(tensorflow::RandomAccessFile* file, int64 buffer_size)
-    : reader_(nullptr), limit_(0), pos_(0), count_(0),
-      skip_(0), buffer_size_(buffer_size) {
+      : reader_(nullptr),
+        limit_(0),
+        pos_(0),
+        count_(0),
+        skip_(0),
+        buffer_size_(buffer_size) {
     reader_ = absl::make_unique<io::RandomAccessInputStream>(file);
   }
 
@@ -78,9 +81,7 @@ class FileBufferInputStream : public avro::InputStream {
     count_ += len;
   }
 
-  size_t byteCount() const override {
-    return count_;
-  }
+  size_t byteCount() const override { return count_; }
 
  private:
   std::unique_ptr<io::RandomAccessInputStream> reader_;
@@ -96,114 +97,114 @@ constexpr const char* const AVRO_DEFLATE_CODEC = "deflate";
 constexpr const char* const AVRO_SNAPPY_CODEC = "snappy";
 
 using Magic = std::array<uint8_t, 4>;
-static const Magic magic = { { 'O', 'b', 'j', '\x01' } };
+static const Magic magic = {{'O', 'b', 'j', '\x01'}};
 
 using AvroMetadata = std::map<std::string, std::vector<uint8_t>>;
 
 class AvroBlockReader {
-  public:
-   AvroBlockReader(tensorflow::RandomAccessFile* file, int64 buffer_size)
+ public:
+  AvroBlockReader(tensorflow::RandomAccessFile* file, int64 buffer_size)
       : stream_(nullptr), decoder_(nullptr) {
-     stream_ = std::make_unique<FileBufferInputStream>(file, buffer_size);
-     decoder_ = avro::binaryDecoder();
-     ReadHeader();
-   }
+    stream_ = std::make_unique<FileBufferInputStream>(file, buffer_size);
+    decoder_ = avro::binaryDecoder();
+    ReadHeader();
+  }
 
-   const avro::ValidSchema& GetSchema() {
-     return data_schema_;
-   }
+  const avro::ValidSchema& GetSchema() { return data_schema_; }
 
-   Status ReadBlock(AvroBlock& block) {
-     decoder_->init(*stream_);
-     const uint8_t* p = 0;
-     size_t n = 0;
-     if (! stream_->next(&p, &n)) {
-       return errors::OutOfRange("eof");
-     }
-     stream_->backup(n);
+  Status ReadBlock(AvroBlock& block) {
+    decoder_->init(*stream_);
+    const uint8_t* p = 0;
+    size_t n = 0;
+    if (!stream_->next(&p, &n)) {
+      return errors::OutOfRange("eof");
+    }
+    stream_->backup(n);
 
-     avro::decode(*decoder_, block.object_count);
-     // LOG(INFO) << "block object counts = " << block.object_count;
-     avro::decode(*decoder_, block.byte_count);
-     // LOG(INFO) << "block bytes counts = " << block.byte_count;
-     block.content.reserve(block.byte_count);
+    avro::decode(*decoder_, block.object_count);
+    // LOG(INFO) << "block object counts = " << block.object_count;
+    avro::decode(*decoder_, block.byte_count);
+    // LOG(INFO) << "block bytes counts = " << block.byte_count;
+    block.content.reserve(block.byte_count);
 
-     decoder_->init(*stream_);
-     int64_t remaining_bytes = block.byte_count;
-     while (remaining_bytes > 0) {
-       const uint8_t* data;
-       size_t len = remaining_bytes;
-       if (!stream_->next(&data, &len)) {
-         return errors::OutOfRange("eof");
-       }
-       block.content.append(reinterpret_cast<const char*>(data), len);
-       remaining_bytes -= len;
-     }
-     // LOG(INFO) << "block content = " << block.content;
-     block.codec = codec_;
-     block.read_offset = 0;
-     block.num_decoded = 0;
-     block.num_to_decode = 0;
-     decoder_->init(*stream_);
-     avro::DataFileSync sync_marker;
-     avro::decode(*decoder_, sync_marker);
-     if (sync_marker != sync_marker_) {
-       return errors::DataLoss("Avro sync marker mismatch.");
-     }
+    decoder_->init(*stream_);
+    int64_t remaining_bytes = block.byte_count;
+    while (remaining_bytes > 0) {
+      const uint8_t* data;
+      size_t len = remaining_bytes;
+      if (!stream_->next(&data, &len)) {
+        return errors::OutOfRange("eof");
+      }
+      block.content.append(reinterpret_cast<const char*>(data), len);
+      remaining_bytes -= len;
+    }
+    // LOG(INFO) << "block content = " << block.content;
+    block.codec = codec_;
+    block.read_offset = 0;
+    block.num_decoded = 0;
+    block.num_to_decode = 0;
+    decoder_->init(*stream_);
+    avro::DataFileSync sync_marker;
+    avro::decode(*decoder_, sync_marker);
+    if (sync_marker != sync_marker_) {
+      return errors::DataLoss("Avro sync marker mismatch.");
+    }
 
-     return OkStatus();
-   }
+    return OkStatus();
+  }
 
-  private:
-   void ReadHeader() {
-     decoder_->init(*stream_);
-     Magic m;
-     avro::decode(*decoder_, m);
-     if (magic != m) {
-       throw avro::Exception("Invalid data file. Magic does not match.");
-     }
-     avro::decode(*decoder_, metadata_);
-     AvroMetadata::const_iterator it = metadata_.find(AVRO_SCHEMA_KEY);
-     if (it == metadata_.end()) {
-       throw avro::Exception("No schema in metadata");
-     }
+ private:
+  void ReadHeader() {
+    decoder_->init(*stream_);
+    Magic m;
+    avro::decode(*decoder_, m);
+    if (magic != m) {
+      throw avro::Exception("Invalid data file. Magic does not match.");
+    }
+    avro::decode(*decoder_, metadata_);
+    AvroMetadata::const_iterator it = metadata_.find(AVRO_SCHEMA_KEY);
+    if (it == metadata_.end()) {
+      throw avro::Exception("No schema in metadata");
+    }
 
-     string schema = std::string(reinterpret_cast<const char*>(it->second.data()), it->second.size());
-     // LOG(INFO) << schema;
-     std::istringstream iss(schema);
-     avro::compileJsonSchema(iss, data_schema_);
+    string schema = std::string(
+        reinterpret_cast<const char*>(it->second.data()), it->second.size());
+    // LOG(INFO) << schema;
+    std::istringstream iss(schema);
+    avro::compileJsonSchema(iss, data_schema_);
 
-     it = metadata_.find(AVRO_CODEC_KEY);
-     if (it != metadata_.end()) {
-       size_t length = it->second.size();
-       const char* codec = reinterpret_cast<const char*>(it->second.data());
-       // LOG(INFO) << "Codec = " << std::string(codec, length);
-       if (strncmp(codec, AVRO_DEFLATE_CODEC, length) == 0) {
-         codec_ = avro::DEFLATE_CODEC;
-       } else if (strncmp(codec, AVRO_SNAPPY_CODEC, length) == 0) {
-         codec_ = avro::SNAPPY_CODEC;
-       } else if (strncmp(codec, AVRO_NULL_CODEC, length) == 0) {
-         codec_ = avro::NULL_CODEC;
-       } else {
-         throw avro::Exception("Unknown codec in data file: " + std::string(codec, it->second.size()));
-       }
-     } else {
-       codec_ = avro::NULL_CODEC;
-     }
+    it = metadata_.find(AVRO_CODEC_KEY);
+    if (it != metadata_.end()) {
+      size_t length = it->second.size();
+      const char* codec = reinterpret_cast<const char*>(it->second.data());
+      // LOG(INFO) << "Codec = " << std::string(codec, length);
+      if (strncmp(codec, AVRO_DEFLATE_CODEC, length) == 0) {
+        codec_ = avro::DEFLATE_CODEC;
+      } else if (strncmp(codec, AVRO_SNAPPY_CODEC, length) == 0) {
+        codec_ = avro::SNAPPY_CODEC;
+      } else if (strncmp(codec, AVRO_NULL_CODEC, length) == 0) {
+        codec_ = avro::NULL_CODEC;
+      } else {
+        throw avro::Exception("Unknown codec in data file: " +
+                              std::string(codec, it->second.size()));
+      }
+    } else {
+      codec_ = avro::NULL_CODEC;
+    }
 
-     avro::decode(*decoder_, sync_marker_);
-   }
+    avro::decode(*decoder_, sync_marker_);
+  }
 
-   AvroMetadata metadata_;
-   avro::DataFileSync sync_marker_;
-   avro::Codec codec_;
+  AvroMetadata metadata_;
+  avro::DataFileSync sync_marker_;
+  avro::Codec codec_;
 
-   std::unique_ptr<FileBufferInputStream> stream_;
-   avro::DecoderPtr decoder_;
-   avro::ValidSchema data_schema_;
+  std::unique_ptr<FileBufferInputStream> stream_;
+  avro::DecoderPtr decoder_;
+  avro::ValidSchema data_schema_;
 };
 
 }  // namespace data
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_AVRO_BLOCK_READER_H_

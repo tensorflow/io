@@ -1,11 +1,10 @@
 #include "tensorflow_io/core/kernels/avro/atds/sparse_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
-
-#include "tensorflow/core/platform/test.h"
 
 #include "api/Decoder.hh"
 #include "api/Stream.hh"
 #include "api/ValidSchema.hh"
+#include "tensorflow/core/platform/test.h"
+#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
 
 namespace tensorflow {
 namespace atds {
@@ -13,10 +12,11 @@ namespace sparse {
 
 using Indices = std::vector<std::vector<long>>;
 
-template<typename T>
+template <typename T>
 void SparseDecoderTest(const Indices& indices, const std::vector<T>& values,
                        const std::vector<size_t>& order,
-                       std::initializer_list<int64> shape, long offset, const avro::Type avro_type = avro::AVRO_NULL) {
+                       std::initializer_list<int64> shape, long offset,
+                       const avro::Type avro_type = avro::AVRO_NULL) {
   DataType dtype = GetDataType<T>();
   string feature_name = "feature";
   ATDSSchemaBuilder schema_builder = ATDSSchemaBuilder();
@@ -40,7 +40,8 @@ void SparseDecoderTest(const Indices& indices, const std::vector<T>& values,
   sparse_features.emplace_back(FeatureType::sparse, feature_name, dtype,
                                tensor_shape, indices_index, values_index);
 
-  ATDSDecoder atds_decoder = ATDSDecoder(dense_features, sparse_features, varlen_features);
+  ATDSDecoder atds_decoder =
+      ATDSDecoder(dense_features, sparse_features, varlen_features);
   Status init_status = atds_decoder.Initialize(writer_schema);
   ASSERT_TRUE(init_status.ok());
 
@@ -50,8 +51,8 @@ void SparseDecoderTest(const Indices& indices, const std::vector<T>& values,
   GetValuesBuffer<T>(buffer).resize(1);
   buffer.indices.resize(1);
   buffer.num_of_elements.resize(1);
-  Status decode_status = atds_decoder.DecodeATDSDatum(decoder, dense_tensors, buffer,
-                                                    skipped_data, offset);
+  Status decode_status = atds_decoder.DecodeATDSDatum(
+      decoder, dense_tensors, buffer, skipped_data, offset);
   ASSERT_TRUE(decode_status.ok());
 
   auto rank = indices.size();
@@ -65,14 +66,16 @@ void SparseDecoderTest(const Indices& indices, const std::vector<T>& values,
   }
   std::vector<size_t> expected_num_elements = {num_elem};
 
-  ValidateBuffer(buffer, sparse_features[0], expected_indices,
-                 values, expected_num_elements);
+  ValidateBuffer(buffer, sparse_features[0], expected_indices, values,
+                 expected_num_elements);
 }
 
-template<>
-inline void SparseDecoderTest(const Indices& indices, const std::vector<byte_array>& values,
-                       const std::vector<size_t>& order,
-                       std::initializer_list<int64> shape, long offset, const avro::Type avro_type) {
+template <>
+inline void SparseDecoderTest(const Indices& indices,
+                              const std::vector<byte_array>& values,
+                              const std::vector<size_t>& order,
+                              std::initializer_list<int64> shape, long offset,
+                              const avro::Type avro_type) {
   DataType dtype = DT_STRING;
   string feature_name = "feature";
   ATDSSchemaBuilder schema_builder = ATDSSchemaBuilder();
@@ -96,7 +99,8 @@ inline void SparseDecoderTest(const Indices& indices, const std::vector<byte_arr
   sparse_features.emplace_back(FeatureType::sparse, feature_name, dtype,
                                tensor_shape, indices_index, values_index);
 
-  ATDSDecoder atds_decoder = ATDSDecoder(dense_features, sparse_features, varlen_features);
+  ATDSDecoder atds_decoder =
+      ATDSDecoder(dense_features, sparse_features, varlen_features);
   Status init_status = atds_decoder.Initialize(writer_schema);
   ASSERT_TRUE(init_status.ok());
 
@@ -106,8 +110,8 @@ inline void SparseDecoderTest(const Indices& indices, const std::vector<byte_arr
   GetValuesBuffer<string>(buffer).resize(1);
   buffer.indices.resize(1);
   buffer.num_of_elements.resize(1);
-  Status decode_status = atds_decoder.DecodeATDSDatum(decoder, dense_tensors, buffer,
-                                                    skipped_data, offset);
+  Status decode_status = atds_decoder.DecodeATDSDatum(
+      decoder, dense_tensors, buffer, skipped_data, offset);
   ASSERT_TRUE(decode_status.ok());
 
   auto rank = indices.size();
@@ -121,8 +125,8 @@ inline void SparseDecoderTest(const Indices& indices, const std::vector<byte_arr
   }
   std::vector<size_t> expected_num_elements = {num_elem};
 
-  ValidateBuffer(buffer, sparse_features[0], expected_indices,
-                 values, expected_num_elements);
+  ValidateBuffer(buffer, sparse_features[0], expected_indices, values,
+                 expected_num_elements);
 }
 
 TEST(SparseDecoderTest, DT_INT32_1D) {
@@ -142,7 +146,8 @@ TEST(SparseDecoderTest, DT_INT64_1D) {
 
 TEST(SparseDecoderTest, DT_INT64_2D) {
   std::vector<long> values = {77, 99, 131, 121};
-  SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9}, 0);
+  SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9},
+                    0);
 }
 
 TEST(SparseDecoderTest, DT_FLOAT_1D) {
@@ -177,16 +182,16 @@ TEST(SparseDecoderTest, DT_STRING_2D) {
 }
 
 TEST(SparseDecoderTest, DT_BYTES_1D) {
-  byte_array value = {0xb4,0xaf,0x98,0x1a};
+  byte_array value = {0xb4, 0xaf, 0x98, 0x1a};
   std::vector<byte_array> values = {value};
   SparseDecoderTest({{1}}, values, {0, 1}, {100}, 0, avro::AVRO_BYTES);
 }
 
 TEST(SparseDecoderTest, DT_BYTES_2D) {
-  byte_array v1{0xb4,0xaf,0x98,0x1a};
-  byte_array v2{0xb4,0xaf,0x98};
-  byte_array v3{0xb4,0x98,0x1a};
-  byte_array v4{0xb4,0x98};
+  byte_array v1{0xb4, 0xaf, 0x98, 0x1a};
+  byte_array v2{0xb4, 0xaf, 0x98};
+  byte_array v3{0xb4, 0x98, 0x1a};
+  byte_array v4{0xb4, 0x98};
   std::vector<byte_array> values = {v1, v2, v3, v4};
   SparseDecoderTest({{1000, 1200, 98742, 919101}, {10101, 9291, 0, 191}},
                     values, {0, 1, 2}, {1000000, 12000}, 0, avro::AVRO_BYTES);
@@ -229,7 +234,8 @@ TEST(SparseDecoderTest, 2D_Order_1_0_2) {
 
 TEST(SparseDecoderTest, NonZeroOffset) {
   std::vector<long> values = {77, 99, 131, 121};
-  SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9}, 99);
+  SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9},
+                    99);
 }
 
 }  // namespace sparse

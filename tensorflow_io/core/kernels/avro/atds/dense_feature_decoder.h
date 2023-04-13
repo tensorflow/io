@@ -1,16 +1,14 @@
 #ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DENSE_FEATURE_DECODER_H_
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DENSE_FEATURE_DECODER_H_
 
-#include "tensorflow_io/core/kernels/avro/atds/decoder_base.h"
-#include "tensorflow_io/core/kernels/avro/atds/errors.h"
-#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
-
+#include "api/Decoder.hh"
+#include "api/Node.hh"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/framework/types.pb.h"
 #include "tensorflow/core/platform/macros.h"
-
-#include "api/Decoder.hh"
-#include "api/Node.hh"
+#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
+#include "tensorflow_io/core/kernels/avro/atds/decoder_base.h"
+#include "tensorflow_io/core/kernels/avro/atds/errors.h"
 
 namespace tensorflow {
 namespace atds {
@@ -18,13 +16,13 @@ namespace atds {
 namespace dense {
 
 struct Metadata {
-  Metadata(FeatureType type,
-           const string& name,
-           DataType dtype,
-           const PartialTensorShape& shape,
-           size_t tensor_position)
-    : type(type), name(name), dtype(dtype),
-      shape(shape), tensor_position(tensor_position) {}
+  Metadata(FeatureType type, const string& name, DataType dtype,
+           const PartialTensorShape& shape, size_t tensor_position)
+      : type(type),
+        name(name),
+        dtype(dtype),
+        shape(shape),
+        tensor_position(tensor_position) {}
 
   FeatureType type;
   string name;
@@ -34,7 +32,7 @@ struct Metadata {
   size_t tensor_position;
 };
 
-template<typename T>
+template <typename T>
 inline Status DecodeFixedLenArray(avro::DecoderPtr& decoder, T** buf, int rank,
                                   const PartialTensorShape& shape) {
   if (rank == 0) {
@@ -77,10 +75,12 @@ inline Status DecodeFixedLenArray(avro::DecoderPtr& decoder, T** buf, int rank,
 }
 
 // This template specification handles both byte and string.
-// It assumes that avro decodeBytes and decodeString are both reading bytes into uint8 arrays
-// see: https://github.com/apache/avro/blob/branch-1.9/lang/c%2B%2B/impl/BinaryDecoder.cc#L133
-// As long as that as that assumption holds a separate bytes implementation is not required.
-template<>
+// It assumes that avro decodeBytes and decodeString are both reading bytes into
+// uint8 arrays see:
+// https://github.com/apache/avro/blob/branch-1.9/lang/c%2B%2B/impl/BinaryDecoder.cc#L133
+// As long as that as that assumption holds a separate bytes implementation is
+// not required.
+template <>
 inline Status DecodeFixedLenArray(avro::DecoderPtr& decoder, tstring** buf,
                                   int rank, const PartialTensorShape& shape) {
   std::string s;
@@ -116,7 +116,8 @@ inline Status DecodeFixedLenArray(avro::DecoderPtr& decoder, tstring** buf,
       return ShapeError(number, dim, shape);
     }
     for (size_t i = 0; i < m; i++) {
-      TF_RETURN_IF_ERROR(DecodeFixedLenArray<tstring>(decoder, buf, rank - 1, shape));
+      TF_RETURN_IF_ERROR(
+          DecodeFixedLenArray<tstring>(decoder, buf, rank - 1, shape));
     }
   }
   if (TF_PREDICT_FALSE(number != size)) {
@@ -125,33 +126,33 @@ inline Status DecodeFixedLenArray(avro::DecoderPtr& decoder, tstring** buf,
   return OkStatus();
 }
 
-template<typename T>
+template <typename T>
 class FeatureDecoder : public DecoderBase {
-  public:
-    explicit FeatureDecoder(const Metadata& metadata)
+ public:
+  explicit FeatureDecoder(const Metadata& metadata)
       : metadata_(metadata), rank_(metadata.shape.dims()) {}
 
-    Status operator()(avro::DecoderPtr& decoder,
-                      std::vector<Tensor>& dense_tensors,
-                      sparse::ValueBuffer& buffer,
-                      std::vector<avro::GenericDatum>& skipped_data,
-                      size_t offset) {
-      auto size = metadata_.shape.num_elements();
-      auto& tensor = dense_tensors[metadata_.tensor_position];
-      T* buf = reinterpret_cast<T*>(tensor.data()) + offset * size;
-      return DecodeFixedLenArray<T>(decoder, &buf, rank_, metadata_.shape);
-    }
+  Status operator()(avro::DecoderPtr& decoder,
+                    std::vector<Tensor>& dense_tensors,
+                    sparse::ValueBuffer& buffer,
+                    std::vector<avro::GenericDatum>& skipped_data,
+                    size_t offset) {
+    auto size = metadata_.shape.num_elements();
+    auto& tensor = dense_tensors[metadata_.tensor_position];
+    T* buf = reinterpret_cast<T*>(tensor.data()) + offset * size;
+    return DecodeFixedLenArray<T>(decoder, &buf, rank_, metadata_.shape);
+  }
 
-  private:
-    const Metadata& metadata_;
-    const int rank_;
+ private:
+  const Metadata& metadata_;
+  const int rank_;
 };
 
 }  // namespace dense
 
-template<>
-inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& node,
-                                                         const dense::Metadata& metadata) {
+template <>
+inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(
+    const avro::NodePtr& node, const dense::Metadata& metadata) {
   switch (metadata.dtype) {
     case DT_INT32: {
       return std::move(std::make_unique<dense::FeatureDecoder<int>>(metadata));
@@ -160,13 +161,16 @@ inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& no
       return std::move(std::make_unique<dense::FeatureDecoder<long>>(metadata));
     }
     case DT_FLOAT: {
-      return std::move(std::make_unique<dense::FeatureDecoder<float>>(metadata));
+      return std::move(
+          std::make_unique<dense::FeatureDecoder<float>>(metadata));
     }
     case DT_DOUBLE: {
-      return std::move(std::make_unique<dense::FeatureDecoder<double>>(metadata));
+      return std::move(
+          std::make_unique<dense::FeatureDecoder<double>>(metadata));
     }
     case DT_STRING: {
-      return std::move(std::make_unique<dense::FeatureDecoder<tstring>>(metadata));
+      return std::move(
+          std::make_unique<dense::FeatureDecoder<tstring>>(metadata));
     }
     case DT_BOOL: {
       return std::move(std::make_unique<dense::FeatureDecoder<bool>>(metadata));
@@ -178,8 +182,9 @@ inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& no
   return nullptr;
 }
 
-template<>
-inline Status ValidateSchema(const avro::NodePtr& node, const dense::Metadata& metadata) {
+template <>
+inline Status ValidateSchema(const avro::NodePtr& node,
+                             const dense::Metadata& metadata) {
   avro::NodePtr n = node;
   size_t avro_rank = 0;
   // Check schema consists of non-nullable nested arrays.
@@ -193,7 +198,8 @@ inline Status ValidateSchema(const avro::NodePtr& node, const dense::Metadata& m
     avro_rank++;
   }
   avro::Type avro_type = n->type();
-  std::map<avro::Type, DataType>::const_iterator tf_type = avro_to_tf_datatype.find(avro_type);
+  std::map<avro::Type, DataType>::const_iterator tf_type =
+      avro_to_tf_datatype.find(avro_type);
   if (tf_type == avro_to_tf_datatype.end()) {
     // Check schema data type is supported.
     std::ostringstream oss;
@@ -203,14 +209,16 @@ inline Status ValidateSchema(const avro::NodePtr& node, const dense::Metadata& m
     // Check schema data type and metadata type match.
     std::ostringstream oss;
     node->printJson(oss, 0);
-    return SchemaValueTypeMismatch(metadata.name, avro_type, metadata.dtype, oss.str());
+    return SchemaValueTypeMismatch(metadata.name, avro_type, metadata.dtype,
+                                   oss.str());
   }
   // Check schema rank and metadata rank match.
   size_t metadata_rank = static_cast<size_t>(metadata.shape.dims());
   if (avro_rank != metadata_rank) {
     std::ostringstream oss;
     node->printJson(oss, 0);
-    return FeatureRankMismatch(metadata.name, avro_rank, metadata_rank, oss.str());
+    return FeatureRankMismatch(metadata.name, avro_rank, metadata_rank,
+                               oss.str());
   }
   return OkStatus();
 }
@@ -218,4 +226,4 @@ inline Status ValidateSchema(const avro::NodePtr& node, const dense::Metadata& m
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DENSE_FEATURE_DECODER_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_DENSE_FEATURE_DECODER_H_

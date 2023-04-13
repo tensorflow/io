@@ -13,15 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 
+
 def coord_to_int(coord, shape):
-  """Convert a location in a tensor to its unique index, in row-major order.
-  For example, in the 2d tensor
-  [[0, 1, 2]
-   [3, 4, 5]]
-  The location [1, 0]  (i.e. the entry in the second row, first column) will return 3.
-  """
-  ret = 0
-  rank = len(shape)
-  for dim in range(rank):
-    ret = ret * shape[dim] + coord[dim]
-  return ret
+    """Convert a location in a tensor to its unique index, in row-major order.
+    For example, in the 2d tensor
+    [[0, 1, 2]
+     [3, 4, 5]]
+    The location [1, 0]  (i.e. the entry in the second row, first column) will return 3.
+    """
+    ret = 0
+    rank = len(shape)
+    for dim in range(rank):
+        ret = ret * shape[dim] + coord[dim]
+    return ret

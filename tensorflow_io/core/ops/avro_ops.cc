@@ -334,7 +334,9 @@ REGISTER_OP("IO>ATDSDataset")
     .Attr("feature_types: list(string) >= 0")
     .Attr("sparse_dtypes: list({float,double,int64,int32,string,bool}) >= 0")
     .Attr("sparse_shapes: list(shape) >= 0")
-    .Attr("output_dtypes: list({float,double,int64,int32,string,bool,variant}) >= 0")
+    .Attr(
+        "output_dtypes: list({float,double,int64,int32,string,bool,variant}) "
+        ">= 0")
     .Attr("output_shapes: list(shape) >= 0")
     .SetIsStateful()
     .SetShapeFn([](shape_inference::InferenceContext* c) {

@@ -1,25 +1,24 @@
 #include "tensorflow_io/core/kernels/avro/atds/atds_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/dense_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
-
-#include "tensorflow/core/platform/test.h"
 
 #include "api/Decoder.hh"
 #include "api/GenericDatum.hh"
 #include "api/Stream.hh"
 #include "api/ValidSchema.hh"
+#include "tensorflow/core/platform/test.h"
+#include "tensorflow_io/core/kernels/avro/atds/decoder_test_util.h"
+#include "tensorflow_io/core/kernels/avro/atds/dense_feature_decoder.h"
 
 namespace tensorflow {
 namespace atds {
 
 TEST(ATDSDecoder, TestMixedFeatures) {
   std::vector<string> feature_names = {
-    "dense_float_1d", "dense_long_2d", "unused_dense",
-    "sparse_int_1d", "unsed_sparse", "sparse_string_2d",
-    "unused_varlen", "varlen_bool_1d", "varlen_string_2d"};
+      "dense_float_1d", "dense_long_2d",  "unused_dense",
+      "sparse_int_1d",  "unsed_sparse",   "sparse_string_2d",
+      "unused_varlen",  "varlen_bool_1d", "varlen_string_2d"};
   std::vector<size_t> feature_pos = {0, 1, 0, 1, 2, 3};
   std::vector<std::initializer_list<int64>> feature_shapes = {
-    {3}, {2, 2}, {101}, {6, 10}, {-1}, {-1, -1}};
+      {3}, {2, 2}, {101}, {6, 10}, {-1}, {-1, -1}};
   std::vector<PartialTensorShape> tensor_shapes;
   for (auto shape : feature_shapes) {
     tensor_shapes.emplace_back(shape);
@@ -27,14 +26,14 @@ TEST(ATDSDecoder, TestMixedFeatures) {
 
   ATDSSchemaBuilder schema_builder = ATDSSchemaBuilder();
   schema_builder.AddDenseFeature(feature_names[0], DT_FLOAT, 1)
-                .AddDenseFeature(feature_names[1], DT_INT64, 2)
-                .AddDenseFeature(feature_names[2], DT_FLOAT, 2)  // unused
-                .AddSparseFeature(feature_names[3], DT_INT32, 1)
-                .AddSparseFeature(feature_names[4], DT_DOUBLE, 1)  // unused
-                .AddSparseFeature(feature_names[5], DT_STRING, 2)
-                .AddDenseFeature(feature_names[6], DT_BOOL, 0)  // unused
-                .AddDenseFeature(feature_names[7], DT_BOOL, 1)
-                .AddDenseFeature(feature_names[8], DT_STRING, 2);
+      .AddDenseFeature(feature_names[1], DT_INT64, 2)
+      .AddDenseFeature(feature_names[2], DT_FLOAT, 2)  // unused
+      .AddSparseFeature(feature_names[3], DT_INT32, 1)
+      .AddSparseFeature(feature_names[4], DT_DOUBLE, 1)  // unused
+      .AddSparseFeature(feature_names[5], DT_STRING, 2)
+      .AddDenseFeature(feature_names[6], DT_BOOL, 0)  // unused
+      .AddDenseFeature(feature_names[7], DT_BOOL, 1)
+      .AddDenseFeature(feature_names[8], DT_STRING, 2);
 
   string schema = schema_builder.Build();
   avro::ValidSchema writer_schema = schema_builder.BuildVaildSchema();
@@ -59,9 +58,12 @@ TEST(ATDSDecoder, TestMixedFeatures) {
   AddDenseValue(atds_datum, feature_names[0], dense_float_1d);
   AddDenseValue(atds_datum, feature_names[1], dense_long_2d);
   AddDenseValue(atds_datum, feature_names[2], unused_dense);
-  AddSparseValue(atds_datum, feature_names[3], sparse_int_1d_indices, sparse_int_1d_values);
-  AddSparseValue(atds_datum, feature_names[4], unsed_sparse_indices, unsed_sparse_values);
-  AddSparseValue(atds_datum, feature_names[5], sparse_string_2d_indices, sparse_string_2d_values);
+  AddSparseValue(atds_datum, feature_names[3], sparse_int_1d_indices,
+                 sparse_int_1d_values);
+  AddSparseValue(atds_datum, feature_names[4], unsed_sparse_indices,
+                 unsed_sparse_values);
+  AddSparseValue(atds_datum, feature_names[5], sparse_string_2d_indices,
+                 sparse_string_2d_values);
   AddDenseValue(atds_datum, feature_names[6], unused_varlen);
   AddDenseValue(atds_datum, feature_names[7], varlen_bool_1d);
   AddDenseValue(atds_datum, feature_names[8], varlen_string_2d);
@@ -89,9 +91,11 @@ TEST(ATDSDecoder, TestMixedFeatures) {
   varlen_features.emplace_back(FeatureType::varlen, feature_names[7], DT_BOOL,
                                tensor_shapes[4], feature_pos[4], values_index);
   varlen_features.emplace_back(FeatureType::varlen, feature_names[8], DT_STRING,
-                               tensor_shapes[5], feature_pos[5], string_value_index);
+                               tensor_shapes[5], feature_pos[5],
+                               string_value_index);
 
-  ATDSDecoder atds_decoder = ATDSDecoder(dense_features, sparse_features, varlen_features);
+  ATDSDecoder atds_decoder =
+      ATDSDecoder(dense_features, sparse_features, varlen_features);
   Status init_status = atds_decoder.Initialize(writer_schema);
   ASSERT_TRUE(init_status.ok());
 
@@ -108,15 +112,20 @@ TEST(ATDSDecoder, TestMixedFeatures) {
 
   std::vector<avro::GenericDatum> skipped_data = atds_decoder.GetSkippedData();
   long offset = 0;
-  Status decode_status = atds_decoder.DecodeATDSDatum(decoder, dense_tensors, buffer,
-                                                    skipped_data, static_cast<size_t>(offset));
+  Status decode_status =
+      atds_decoder.DecodeATDSDatum(decoder, dense_tensors, buffer, skipped_data,
+                                   static_cast<size_t>(offset));
   ASSERT_TRUE(decode_status.ok());
   AssertTensorValues(dense_tensors[0], dense_float_1d);
   AssertTensorValues(dense_tensors[1], dense_long_2d);
-  ValidateBuffer(buffer, sparse_features[0], {offset, 100}, sparse_int_1d_values, {1});
-  ValidateBuffer(buffer, sparse_features[1], {offset, 5, 4, offset, 5, 8}, sparse_string_2d_values, {2});
-  ValidateBuffer(buffer, varlen_features[0], {offset, 0, offset, 1, offset, 2}, varlen_bool_1d, {3});
-  ValidateBuffer(buffer, varlen_features[1], {offset, 0, 0, offset, 2, 0}, expected_varlen_string_2d_values, {2});
+  ValidateBuffer(buffer, sparse_features[0], {offset, 100},
+                 sparse_int_1d_values, {1});
+  ValidateBuffer(buffer, sparse_features[1], {offset, 5, 4, offset, 5, 8},
+                 sparse_string_2d_values, {2});
+  ValidateBuffer(buffer, varlen_features[0], {offset, 0, offset, 1, offset, 2},
+                 varlen_bool_1d, {3});
+  ValidateBuffer(buffer, varlen_features[1], {offset, 0, 0, offset, 2, 0},
+                 expected_varlen_string_2d_values, {2});
 }
 
 }  // namespace atds

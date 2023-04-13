@@ -11,8 +11,11 @@ from tensorflow.python.framework import errors
 from tensorflow.python.framework import tensor_util
 
 from tensorflow_io.python.ops import core_ops
-from tensorflow_io.python.experimental.atds.features import \
-    DenseFeature, SparseFeature, VarlenFeature
+from tensorflow_io.python.experimental.atds.features import (
+    DenseFeature,
+    SparseFeature,
+    VarlenFeature,
+)
 
 # Argument default values used in ATDS Dataset.
 _DEFAULT_DROP_REMAINDER = False  # Do not drop last batch.
@@ -139,14 +142,17 @@ class ATDSDataset(dataset_ops.DatasetSource):
     x = [0.5488135  0.60276335],  y = [0.71518934 0.5448832 ]
     x = [0.4236548],  y = [0.6458941]
     """
-    def __init__(self,
-                 filenames,
-                 batch_size,
-                 features,
-                 drop_remainder=False,
-                 reader_buffer_size=None,
-                 shuffle_buffer_size=None,
-                 num_parallel_calls=None):
+
+    def __init__(
+        self,
+        filenames,
+        batch_size,
+        features,
+        drop_remainder=False,
+        reader_buffer_size=None,
+        shuffle_buffer_size=None,
+        num_parallel_calls=None,
+    ):
         """Creates a `ATDSDataset` to read one or more Avro files encoded with
            ATDS Schema.
 
@@ -189,7 +195,7 @@ class ATDSDataset(dataset_ops.DatasetSource):
             "drop_remainder",
             drop_remainder,
             argument_default=_DEFAULT_DROP_REMAINDER,
-            argument_dtype=tf.bool
+            argument_dtype=tf.bool,
         )
         self._reader_buffer_size = convert.optional_param_to_tensor(
             "reader_buffer_size",
@@ -199,22 +205,24 @@ class ATDSDataset(dataset_ops.DatasetSource):
         self._shuffle_buffer_size = convert.optional_param_to_tensor(
             "shuffle_buffer_size",
             shuffle_buffer_size,
-            argument_default=_DEFAULT_SHUFFLE_BUFFER_SIZE_EXAMPLES
+            argument_default=_DEFAULT_SHUFFLE_BUFFER_SIZE_EXAMPLES,
         )
         self._num_parallel_calls = convert.optional_param_to_tensor(
             "num_parallel_calls",
             num_parallel_calls,
-            argument_default=_DEFAULT_NUM_PARALLEL_CALLS
+            argument_default=_DEFAULT_NUM_PARALLEL_CALLS,
         )
 
         if features is None or not isinstance(features, dict):
             raise ValueError(
                 f"Features can only be a dict with feature name as key"
                 f" and ATDS feature configuration as value but found {features}."
-                f" Available feature configuration are {_SUPPORTED_FEATURE_CONFIG}.")
+                f" Available feature configuration are {_SUPPORTED_FEATURE_CONFIG}."
+            )
         if not features:
-            raise ValueError("Features dict cannot be empty and should have at "
-                             "least one feature.")
+            raise ValueError(
+                "Features dict cannot be empty and should have at " "least one feature."
+            )
 
         feature_keys = []
         feature_types = []
@@ -225,8 +233,10 @@ class ATDSDataset(dataset_ops.DatasetSource):
         for key in sorted(features):
             feature = features[key]
             if not isinstance(feature, _SUPPORTED_FEATURE_CONFIG):
-                raise ValueError(f"Unknown ATDS feature configuration {feature}. "
-                                 f"Only {_SUPPORTED_FEATURE_CONFIG} are supported.")
+                raise ValueError(
+                    f"Unknown ATDS feature configuration {feature}. "
+                    f"Only {_SUPPORTED_FEATURE_CONFIG} are supported."
+                )
 
             feature_keys.append(key)
             shape = [dim if dim != -1 else None for dim in feature.shape]
@@ -248,10 +258,12 @@ class ATDSDataset(dataset_ops.DatasetSource):
         if constant_drop_remainder:
             constant_batch_size = tensor_util.constant_value(self._batch_size)
             self._element_spec = nest.map_structure(
-                lambda spec: spec._batch(constant_batch_size), element_spec)
+                lambda spec: spec._batch(constant_batch_size), element_spec
+            )
         else:
             self._element_spec = nest.map_structure(
-                lambda spec: spec._batch(None), element_spec)
+                lambda spec: spec._batch(None), element_spec
+            )
 
         variant_tensor = core_ops.io_atds_dataset(
             filenames=self._filenames,
@@ -265,7 +277,7 @@ class ATDSDataset(dataset_ops.DatasetSource):
             sparse_dtypes=sparse_dtypes,
             sparse_shapes=sparse_shapes,
             output_dtypes=structure.get_flat_tensor_types(self._element_spec),
-            output_shapes=structure.get_flat_tensor_shapes(self._element_spec)
+            output_shapes=structure.get_flat_tensor_shapes(self._element_spec),
         )
         super().__init__(variant_tensor)
 

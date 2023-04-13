@@ -1,13 +1,12 @@
 #include "tensorflow_io/core/kernels/avro/atds/atds_decoder.h"
 
-#include "tensorflow_io/core/kernels/avro/atds/dense_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/sparse_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/varlen_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/opaque_contextual_feature_decoder.h"
-#include "tensorflow_io/core/kernels/avro/atds/errors.h"
-
 #include "api/Generic.hh"
 #include "api/Specific.hh"
+#include "tensorflow_io/core/kernels/avro/atds/dense_feature_decoder.h"
+#include "tensorflow_io/core/kernels/avro/atds/errors.h"
+#include "tensorflow_io/core/kernels/avro/atds/opaque_contextual_feature_decoder.h"
+#include "tensorflow_io/core/kernels/avro/atds/sparse_feature_decoder.h"
+#include "tensorflow_io/core/kernels/avro/atds/varlen_feature_decoder.h"
 
 namespace tensorflow {
 namespace atds {
@@ -15,7 +14,8 @@ namespace atds {
 Status ATDSDecoder::Initialize(const avro::ValidSchema& schema) {
   auto& root_node = schema.root();
   if (root_node->type() != avro::AVRO_RECORD) {
-    return ATDSNotRecordError(avro::toString(root_node->type()), schema.toJson());
+    return ATDSNotRecordError(avro::toString(root_node->type()),
+                              schema.toJson());
   }
 
   size_t num_of_columns = root_node->leaves();
@@ -24,30 +24,34 @@ Status ATDSDecoder::Initialize(const avro::ValidSchema& schema) {
   decoders_.resize(num_of_columns);
 
   for (size_t i = 0; i < dense_features_.size(); i++) {
-    TF_RETURN_IF_ERROR(InitializeFeatureDecoder(schema, root_node, dense_features_[i]));
+    TF_RETURN_IF_ERROR(
+        InitializeFeatureDecoder(schema, root_node, dense_features_[i]));
   }
 
   for (size_t i = 0; i < sparse_features_.size(); i++) {
-    TF_RETURN_IF_ERROR(InitializeFeatureDecoder(schema, root_node, sparse_features_[i]));
+    TF_RETURN_IF_ERROR(
+        InitializeFeatureDecoder(schema, root_node, sparse_features_[i]));
   }
 
   for (size_t i = 0; i < varlen_features_.size(); i++) {
-    TF_RETURN_IF_ERROR(InitializeFeatureDecoder(schema, root_node, varlen_features_[i]));
+    TF_RETURN_IF_ERROR(
+        InitializeFeatureDecoder(schema, root_node, varlen_features_[i]));
   }
 
   size_t opaque_contextual_index = 0;
   for (size_t i = 0; i < num_of_columns; i++) {
     if (decoder_types_[i] == FeatureType::opaque_contextual) {
       decoders_[i] = std::unique_ptr<DecoderBase>(
-        new opaque_contextual::FeatureDecoder(opaque_contextual_index++));
+          new opaque_contextual::FeatureDecoder(opaque_contextual_index++));
 
       auto& opaque_contextual_node = root_node->leafAt(i);
       skipped_data_.emplace_back(opaque_contextual_node);
       if (opaque_contextual_node->hasName()) {
         feature_names_[i] = root_node->leafAt(i)->name();
         LOG(WARNING) << "Column '" << feature_names_[i] << "' from input data"
-          << " is not used. Cost of parsing an unused column is prohibitive!! "
-          << "Consider dropping it to improve I/O performance.";
+                     << " is not used. Cost of parsing an unused column is "
+                        "prohibitive!! "
+                     << "Consider dropping it to improve I/O performance.";
       }
     }
   }

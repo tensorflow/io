@@ -1,17 +1,15 @@
 #ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_RAGGED_FEATURE_DECODER_H_
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_RAGGED_FEATURE_DECODER_H_
 
-#include "tensorflow_io/core/kernels/avro/atds/decoder_base.h"
-#include "tensorflow_io/core/kernels/avro/atds/sparse_value_buffer.h"
-#include "tensorflow_io/core/kernels/avro/atds/errors.h"
-#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
-
+#include "api/Decoder.hh"
+#include "api/Node.hh"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/framework/types.pb.h"
 #include "tensorflow/core/platform/macros.h"
-
-#include "api/Decoder.hh"
-#include "api/Node.hh"
+#include "tensorflow_io/core/kernels/avro/atds/avro_decoder_template.h"
+#include "tensorflow_io/core/kernels/avro/atds/decoder_base.h"
+#include "tensorflow_io/core/kernels/avro/atds/errors.h"
+#include "tensorflow_io/core/kernels/avro/atds/sparse_value_buffer.h"
 
 namespace tensorflow {
 namespace atds {
@@ -19,14 +17,15 @@ namespace atds {
 namespace varlen {
 
 struct Metadata {
-  Metadata(FeatureType type,
-           const string& name,
-           DataType dtype,
-           const PartialTensorShape& shape,
-           size_t indices_index,
+  Metadata(FeatureType type, const string& name, DataType dtype,
+           const PartialTensorShape& shape, size_t indices_index,
            size_t values_index)
-    : type(type), name(name), dtype(dtype), shape(shape),
-      indices_index(indices_index), values_index(values_index) {}
+      : type(type),
+        name(name),
+        dtype(dtype),
+        shape(shape),
+        indices_index(indices_index),
+        values_index(values_index) {}
 
   FeatureType type;
   string name;
@@ -44,10 +43,12 @@ inline void FillIndicesBuffer(std::vector<long>& indices_buf,
   }
 }
 
-template<typename T>
-inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& indices_buf,
-                                std::vector<T>& values_buf, std::vector<long>& current_indice,
-                                int rank, const PartialTensorShape& shape) {
+template <typename T>
+inline Status DecodeVarlenArray(avro::DecoderPtr& decoder,
+                                std::vector<long>& indices_buf,
+                                std::vector<T>& values_buf,
+                                std::vector<long>& current_indice, int rank,
+                                const PartialTensorShape& shape) {
   if (rank == 0) {
     FillIndicesBuffer(indices_buf, current_indice);
     values_buf.emplace_back(avro::decoder_t::Decode<T>(decoder));
@@ -79,9 +80,9 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
           return ShapeError(number, dim, shape);
         }
         for (size_t i = 0; i < m; i++) {
-          TF_RETURN_IF_ERROR(
-            DecodeVarlenArray<T>(decoder, indices_buf, values_buf,
-                                 current_indice, rank - 1, shape));
+          TF_RETURN_IF_ERROR(DecodeVarlenArray<T>(decoder, indices_buf,
+                                                  values_buf, current_indice,
+                                                  rank - 1, shape));
           current_indice.back()++;
         }
       }
@@ -90,7 +91,8 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
       return ShapeError(number, dim, shape);
     }
   } else {
-    // fast path without dimension check as the dimension can have unlimited values.
+    // fast path without dimension check as the dimension can have unlimited
+    // values.
     if (rank == 1) {
       for (size_t m = decoder->arrayStart(); m != 0; m = decoder->arrayNext()) {
         for (size_t i = 0; i < m; i++) {
@@ -102,9 +104,9 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
     } else {
       for (size_t m = decoder->arrayStart(); m != 0; m = decoder->arrayNext()) {
         for (size_t i = 0; i < m; i++) {
-          TF_RETURN_IF_ERROR(
-            DecodeVarlenArray<T>(decoder, indices_buf, values_buf,
-                                 current_indice, rank - 1, shape));
+          TF_RETURN_IF_ERROR(DecodeVarlenArray<T>(decoder, indices_buf,
+                                                  values_buf, current_indice,
+                                                  rank - 1, shape));
           current_indice.back()++;
         }
       }
@@ -116,13 +118,17 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
 }
 
 // This template specification handles both byte and string.
-// It assumes that avro decodeBytes and decodeString are both reading bytes into uint8 arrays
-// see: https://github.com/apache/avro/blob/branch-1.9/lang/c%2B%2B/impl/BinaryDecoder.cc#L133
-// As long as that as that assumption holds a separate bytes implementation is not required.
-template<>
-inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& indices_buf,
-                                std::vector<string>& values_buf, std::vector<long>& current_indice,
-                                int rank, const PartialTensorShape& shape) {
+// It assumes that avro decodeBytes and decodeString are both reading bytes into
+// uint8 arrays see:
+// https://github.com/apache/avro/blob/branch-1.9/lang/c%2B%2B/impl/BinaryDecoder.cc#L133
+// As long as that as that assumption holds a separate bytes implementation is
+// not required.
+template <>
+inline Status DecodeVarlenArray(avro::DecoderPtr& decoder,
+                                std::vector<long>& indices_buf,
+                                std::vector<string>& values_buf,
+                                std::vector<long>& current_indice, int rank,
+                                const PartialTensorShape& shape) {
   if (rank == 0) {
     FillIndicesBuffer(indices_buf, current_indice);
     values_buf.push_back("");
@@ -156,9 +162,9 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
           return ShapeError(number, dim, shape);
         }
         for (size_t i = 0; i < m; i++) {
-          TF_RETURN_IF_ERROR(
-            DecodeVarlenArray(decoder, indices_buf, values_buf,
-                              current_indice, rank - 1, shape));
+          TF_RETURN_IF_ERROR(DecodeVarlenArray(decoder, indices_buf, values_buf,
+                                               current_indice, rank - 1,
+                                               shape));
           current_indice.back()++;
         }
       }
@@ -167,7 +173,8 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
       return ShapeError(number, dim, shape);
     }
   } else {
-    // fast path without dimension check as the dimension can have unlimited values.
+    // fast path without dimension check as the dimension can have unlimited
+    // values.
     if (rank == 1) {
       for (size_t m = decoder->arrayStart(); m != 0; m = decoder->arrayNext()) {
         for (size_t i = 0; i < m; i++) {
@@ -180,9 +187,9 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
     } else {
       for (size_t m = decoder->arrayStart(); m != 0; m = decoder->arrayNext()) {
         for (size_t i = 0; i < m; i++) {
-          TF_RETURN_IF_ERROR(
-            DecodeVarlenArray(decoder, indices_buf, values_buf,
-                              current_indice, rank - 1, shape));
+          TF_RETURN_IF_ERROR(DecodeVarlenArray(decoder, indices_buf, values_buf,
+                                               current_indice, rank - 1,
+                                               shape));
           current_indice.back()++;
         }
       }
@@ -193,69 +200,73 @@ inline Status DecodeVarlenArray(avro::DecoderPtr& decoder, std::vector<long>& in
   return OkStatus();
 }
 
-template<typename T>
+template <typename T>
 class FeatureDecoder : public DecoderBase {
-  public:
-    explicit FeatureDecoder(const Metadata& metadata)
-      : metadata_(metadata), rank_(metadata.shape.dims()) {
+ public:
+  explicit FeatureDecoder(const Metadata& metadata)
+      : metadata_(metadata), rank_(metadata.shape.dims()) {}
 
+  Status operator()(avro::DecoderPtr& decoder,
+                    std::vector<Tensor>& dense_tensors,
+                    sparse::ValueBuffer& buffer,
+                    std::vector<avro::GenericDatum>& skipped_data,
+                    size_t offset) {
+    // declaring std::vector locally to make it thread safe
+    std::vector<long> current_indices;
+    current_indices.reserve(rank_ + 1);  // additional batch dim.
+    current_indices.resize(1);
+    current_indices[0] = offset;
+    size_t indices_index = metadata_.indices_index;
+
+    auto& indices_buf = buffer.indices[indices_index];
+    auto& values_buf =
+        sparse::GetValueVector<T>(buffer, metadata_.values_index);
+    size_t values_buf_size = values_buf.size();
+    TF_RETURN_IF_ERROR(DecodeVarlenArray<T>(decoder, indices_buf, values_buf,
+                                            current_indices, rank_,
+                                            metadata_.shape));
+    size_t total_num_elements = values_buf.size() - values_buf_size;
+    auto& num_of_elements = buffer.num_of_elements[indices_index];
+    if (!num_of_elements.empty()) {
+      total_num_elements += num_of_elements.back();
     }
+    num_of_elements.push_back(total_num_elements);
+    return OkStatus();
+  }
 
-    Status operator()(avro::DecoderPtr& decoder,
-                      std::vector<Tensor>& dense_tensors,
-                      sparse::ValueBuffer& buffer,
-                      std::vector<avro::GenericDatum>& skipped_data,
-                      size_t offset) {
-      // declaring std::vector locally to make it thread safe
-      std::vector<long> current_indices;
-      current_indices.reserve(rank_ + 1);  // additional batch dim.
-      current_indices.resize(1);
-      current_indices[0] = offset;
-      size_t indices_index = metadata_.indices_index;
-
-      auto& indices_buf = buffer.indices[indices_index];
-      auto& values_buf = sparse::GetValueVector<T>(buffer, metadata_.values_index);
-      size_t values_buf_size = values_buf.size();
-      TF_RETURN_IF_ERROR(
-        DecodeVarlenArray<T>(decoder, indices_buf, values_buf, current_indices,
-                             rank_, metadata_.shape));
-      size_t total_num_elements = values_buf.size() - values_buf_size;
-      auto& num_of_elements = buffer.num_of_elements[indices_index];
-      if (!num_of_elements.empty()) {
-        total_num_elements += num_of_elements.back();
-      }
-      num_of_elements.push_back(total_num_elements);
-      return OkStatus();
-    }
-
-  private:
-    const Metadata& metadata_;
-    const int rank_;
+ private:
+  const Metadata& metadata_;
+  const int rank_;
 };
 
 }  // namespace varlen
 
-template<>
-inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& node,
-                                                         const varlen::Metadata& metadata) {
+template <>
+inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(
+    const avro::NodePtr& node, const varlen::Metadata& metadata) {
   switch (metadata.dtype) {
     case DT_INT32: {
       return std::move(std::make_unique<varlen::FeatureDecoder<int>>(metadata));
     }
     case DT_INT64: {
-      return std::move(std::make_unique<varlen::FeatureDecoder<long>>(metadata));
+      return std::move(
+          std::make_unique<varlen::FeatureDecoder<long>>(metadata));
     }
     case DT_FLOAT: {
-      return std::move(std::make_unique<varlen::FeatureDecoder<float>>(metadata));
+      return std::move(
+          std::make_unique<varlen::FeatureDecoder<float>>(metadata));
     }
     case DT_DOUBLE: {
-      return std::move(std::make_unique<varlen::FeatureDecoder<double>>(metadata));
+      return std::move(
+          std::make_unique<varlen::FeatureDecoder<double>>(metadata));
     }
     case DT_STRING: {
-      return std::move(std::make_unique<varlen::FeatureDecoder<string>>(metadata));
+      return std::move(
+          std::make_unique<varlen::FeatureDecoder<string>>(metadata));
     }
     case DT_BOOL: {
-      return std::move(std::make_unique<varlen::FeatureDecoder<bool>>(metadata));
+      return std::move(
+          std::make_unique<varlen::FeatureDecoder<bool>>(metadata));
     }
     default: {
       TypeNotSupportedAbort(metadata.dtype);
@@ -264,8 +275,9 @@ inline std::unique_ptr<DecoderBase> CreateFeatureDecoder(const avro::NodePtr& no
   return nullptr;
 }
 
-template<>
-inline Status ValidateSchema(const avro::NodePtr& node, const varlen::Metadata& metadata) {
+template <>
+inline Status ValidateSchema(const avro::NodePtr& node,
+                             const varlen::Metadata& metadata) {
   avro::NodePtr n = node;
   size_t avro_rank = 0;
   // Check schema consists of non-nullable nested arrays.
@@ -279,7 +291,8 @@ inline Status ValidateSchema(const avro::NodePtr& node, const varlen::Metadata& 
     avro_rank++;
   }
   avro::Type avro_type = n->type();
-  std::map<avro::Type, DataType>::const_iterator tf_type = avro_to_tf_datatype.find(avro_type);
+  std::map<avro::Type, DataType>::const_iterator tf_type =
+      avro_to_tf_datatype.find(avro_type);
   if (tf_type == avro_to_tf_datatype.end()) {
     // Check schema data type is supported.
     std::ostringstream oss;
@@ -289,14 +302,16 @@ inline Status ValidateSchema(const avro::NodePtr& node, const varlen::Metadata& 
     // Check schema data type and metadata type match.
     std::ostringstream oss;
     node->printJson(oss, 0);
-    return SchemaValueTypeMismatch(metadata.name, avro_type, metadata.dtype, oss.str());
+    return SchemaValueTypeMismatch(metadata.name, avro_type, metadata.dtype,
+                                   oss.str());
   }
   // Check schema rank and metadata rank match.
   size_t metadata_rank = static_cast<size_t>(metadata.shape.dims());
   if (avro_rank != metadata_rank) {
     std::ostringstream oss;
     node->printJson(oss, 0);
-    return FeatureRankMismatch(metadata.name, avro_rank, metadata_rank, oss.str());
+    return FeatureRankMismatch(metadata.name, avro_rank, metadata_rank,
+                               oss.str());
   }
   return OkStatus();
 }
@@ -304,4 +319,4 @@ inline Status ValidateSchema(const avro::NodePtr& node, const varlen::Metadata& 
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_RAGGED_FEATURE_DECODER_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_RAGGED_FEATURE_DECODER_H_

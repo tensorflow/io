@@ -1,11 +1,10 @@
 #ifndef TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
 #define TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
 
+#include "api/Types.hh"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/framework/types.pb.h"
 #include "tensorflow/core/platform/status.h"
-
-#include "api/Types.hh"
 
 namespace tensorflow {
 namespace atds {
@@ -37,17 +36,23 @@ Status NonContiguousIndicesError(const string& schema);
 
 Status ExtraFieldError(const string& schema);
 
-Status UnsupportedSparseIndicesTypeError(const string& feature_name, const string& schema);
+Status UnsupportedSparseIndicesTypeError(const string& feature_name,
+                                         const string& schema);
 
-Status UnsupportedValueTypeError(const string& feature_name, const string& schema);
+Status UnsupportedValueTypeError(const string& feature_name,
+                                 const string& schema);
 
-Status SchemaValueTypeMismatch(const string& feature_name, avro::Type avro_type, DataType metadata_type, const string& schema);
+Status SchemaValueTypeMismatch(const string& feature_name, avro::Type avro_type,
+                               DataType metadata_type, const string& schema);
 
-Status InvalidDenseFeatureSchema(const string& feature_name, const string& schema);
+Status InvalidDenseFeatureSchema(const string& feature_name,
+                                 const string& schema);
 
-Status InvalidVarlenFeatureSchema(const string& feature_name, const string& schema);
+Status InvalidVarlenFeatureSchema(const string& feature_name,
+                                  const string& schema);
 
-Status FeatureRankMismatch(const string& feature_name, size_t avro_rank, size_t metadata_rank, const string& schema);
+Status FeatureRankMismatch(const string& feature_name, size_t avro_rank,
+                           size_t metadata_rank, const string& schema);
 
 Status VariedSchemaNotSupportedError(const string& expected_schema,
                                      const string& filename,
@@ -57,4 +62,4 @@ Status VariedSchemaNotSupportedError(const string& expected_schema,
 }  // namespace atds
 }  // namespace tensorflow
 
-#endif // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_
+#endif  // TENSORFLOW_DATA_CORE_KERNELS_AVRO_ATDS_ERRORS_H_

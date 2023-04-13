@@ -9,7 +9,7 @@ namespace tensorflow {
 namespace atds {
 
 constexpr const char kATDSSchemaPrefix[] =
-  "{"
+    "{"
     "\"type\" : \"record\", "
     "\"name\" : \"AvroTensorDataset\", "
     "\"namespace\" : \"com.organization.avrotensordataset\", "
@@ -17,21 +17,23 @@ constexpr const char kATDSSchemaPrefix[] =
 
 constexpr const char kATDSSchemaSuffix[] =
     " ] "
-  "}";
+    "}";
 
 ATDSSchemaBuilder::ATDSSchemaBuilder()
-  : schema_(kATDSSchemaPrefix), num_of_features_(0) {}
+    : schema_(kATDSSchemaPrefix), num_of_features_(0) {}
 
-ATDSSchemaBuilder& ATDSSchemaBuilder::AddDenseFeature(const string& name, DataType dtype,
-                                       size_t rank, const avro::Type avro_type) {
+ATDSSchemaBuilder& ATDSSchemaBuilder::AddDenseFeature(
+    const string& name, DataType dtype, size_t rank,
+    const avro::Type avro_type) {
   string type = GenerateArrayType(dtype, rank, avro_type);
   string feature_schema = BuildFeatureSchema(name, type);
   AddFeature(feature_schema);
   return *this;
 }
 
-ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(const string& name, DataType dtype,
-                                                     size_t rank, const avro::Type avro_type) {
+ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(
+    const string& name, DataType dtype, size_t rank,
+    const avro::Type avro_type) {
   std::vector<size_t> order(rank + 1, 0);
   for (size_t i = 0; i < order.size(); i++) {
     order[i] = i;
@@ -40,8 +42,9 @@ ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(const string& name, DataT
   return *this;
 }
 
-ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(const string& name, DataType dtype,
-                                                     const std::vector<size_t>& order, const avro::Type avro_type) {
+ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(
+    const string& name, DataType dtype, const std::vector<size_t>& order,
+    const avro::Type avro_type) {
   string indices_type = GenerateArrayType(DT_INT64, 1);
   string values_type = GenerateArrayType(dtype, 1, avro_type);
   string fields = "";
@@ -59,26 +62,29 @@ ATDSSchemaBuilder& ATDSSchemaBuilder::AddSparseFeature(const string& name, DataT
     }
   }
 
-  string type = "{"
-    "\"type\" : \"record\", "
-    "\"name\" : \"" + name + "\", "
-    "\"fields\" : [ " + fields + " ] "
-  "}";
+  string type =
+      "{"
+      "\"type\" : \"record\", "
+      "\"name\" : \"" +
+      name +
+      "\", "
+      "\"fields\" : [ " +
+      fields +
+      " ] "
+      "}";
   string feature_schema = BuildFeatureSchema(name, type);
   AddFeature(feature_schema);
   return *this;
 }
 
-ATDSSchemaBuilder& ATDSSchemaBuilder::AddOpaqueContextualFeature(const string& name,
-                                                  const string& type) {
+ATDSSchemaBuilder& ATDSSchemaBuilder::AddOpaqueContextualFeature(
+    const string& name, const string& type) {
   string feature_schema = BuildFeatureSchema(name, type);
   AddFeature(feature_schema);
   return *this;
 }
 
-string ATDSSchemaBuilder::Build() {
-  return schema_ + kATDSSchemaSuffix;
-}
+string ATDSSchemaBuilder::Build() { return schema_ + kATDSSchemaSuffix; }
 
 avro::ValidSchema ATDSSchemaBuilder::BuildVaildSchema() {
   string schema = Build();
@@ -98,22 +104,29 @@ void ATDSSchemaBuilder::AddFeature(const string& feature_schema) {
 }
 
 string ATDSSchemaBuilder::BuildFeatureSchema(const string& name,
-                                            const string& type) {
+                                             const string& type) {
   return "{"
-    "\"name\" : \"" + name + "\", "
-    "\"type\" : " + type +
-  " }";
+         "\"name\" : \"" +
+         name +
+         "\", "
+         "\"type\" : " +
+         type + " }";
 }
 
 string ATDSSchemaBuilder::BuildNullableFeatureSchema(const string& name,
-                                                    const string& type) {
+                                                     const string& type) {
   return "{"
-    "\"name\" : \"" + name + "\", "
-    "\"type\" : [ \"null\", " + type + " ] "
-  "}";
+         "\"name\" : \"" +
+         name +
+         "\", "
+         "\"type\" : [ \"null\", " +
+         type +
+         " ] "
+         "}";
 }
 
-string ATDSSchemaBuilder::GenerateDataType(DataType dtype, const avro::Type avro_type) {
+string ATDSSchemaBuilder::GenerateDataType(DataType dtype,
+                                           const avro::Type avro_type) {
   switch (dtype) {
     case DT_INT32: {
       return "\"int\"";
@@ -142,16 +155,17 @@ string ATDSSchemaBuilder::GenerateDataType(DataType dtype, const avro::Type avro
   }
 }
 
-string ATDSSchemaBuilder::GenerateArrayType(DataType dtype, size_t rank, const avro::Type avro_type) {
+string ATDSSchemaBuilder::GenerateArrayType(DataType dtype, size_t rank,
+                                            const avro::Type avro_type) {
   if (rank == 0) {
     return GenerateDataType(dtype, avro_type);
   }
 
   string type = GenerateArrayType(dtype, rank - 1, avro_type);
-  return  "{"
-    "\"type\" : \"array\", "
-    "\"items\" : " + type +
-  " }";
+  return "{"
+         "\"type\" : \"array\", "
+         "\"items\" : " +
+         type + " }";
 }
 
 avro::OutputStreamPtr EncodeAvroGenericDatum(avro::GenericDatum& datum) {
@@ -163,7 +177,8 @@ avro::OutputStreamPtr EncodeAvroGenericDatum(avro::GenericDatum& datum) {
   return std::move(out_stream);
 }
 
-avro::OutputStreamPtr EncodeAvroGenericData(std::vector<avro::GenericDatum>& data) {
+avro::OutputStreamPtr EncodeAvroGenericData(
+    std::vector<avro::GenericDatum>& data) {
   avro::EncoderPtr encoder = avro::binaryEncoder();
   avro::OutputStreamPtr out_stream = avro::memoryOutputStream();
   encoder->init(*out_stream);

@@ -1778,7 +1778,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
 
     @pytest.mark.skipif(sys.platform == "darwin", reason="macOS fails now")
     def test_filter_with_variable_length(self):
-        """ test_filter_with_variable_length"""
+        """test_filter_with_variable_length"""
         reader_schema = """
           {
              "type": "record",
