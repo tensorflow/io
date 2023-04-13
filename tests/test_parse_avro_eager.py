@@ -200,7 +200,7 @@ class AvroDatasetTestBase(tf.test.TestCase):
         if isinstance(expected, tuple):
             assert isinstance(
                 expected, tuple
-            ), "Found type {} but expected type {}".format(type(actual), tuple)
+            ), f"Found type {type(actual)} but expected type {tuple}"
             assert (
                 len(expected) == 2
             ), "Found {} components in expected dataset but must have {}".format(

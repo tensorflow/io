@@ -24,7 +24,7 @@ import tensorflow as tf
 TF_IO_BENCHMARK_DATA_CACHE = "TF_IO_BENCHMARK_DATA_CACHE"
 
 
-class FileWriter(object, metaclass=abc.ABCMeta):
+class FileWriter(metaclass=abc.ABCMeta):
     """Base class for file writer.
 
     FileWriter consumes a DataSource and generates benchmark data as described

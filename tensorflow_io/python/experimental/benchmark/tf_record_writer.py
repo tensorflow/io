@@ -60,7 +60,7 @@ class TFRecordWriter(FileWriter):
 
     def __init__(self):
         """Create a new TFRecordWriter"""
-        super(TFRecordWriter, self).__init__()
+        super().__init__()
 
     @property
     def extension(self):

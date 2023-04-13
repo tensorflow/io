@@ -50,7 +50,7 @@ class VarLenTensorGeneratorBase(Generator):
         Raises:
           TypeError: If spec is not tf.SparseTensorSpec.
         """
-        super(VarLenTensorGeneratorBase, self).__init__(spec)
+        super().__init__(spec)
         if not isinstance(spec, tf.SparseTensorSpec):
             raise TypeError(
                 "Input spec must be a tf.SparseTensorSpec in VarLenTensorGenerator "
@@ -97,7 +97,7 @@ class VarLenTensorGeneratorBase(Generator):
                 self._get_idx(depth + 1, shape, current_idx, ret)
 
     def hash_code(self):
-        hash_code = super(VarLenTensorGeneratorBase, self).hash_code()
+        hash_code = super().hash_code()
 
         m = hashlib.sha256()
         m.update(hash_code.encode())
@@ -122,7 +122,7 @@ class IntVarLenTensorGenerator(VarLenTensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.int32 or tf.int64.
         """
-        super(IntVarLenTensorGenerator, self).__init__(spec, dim_dist)
+        super().__init__(spec, dim_dist)
 
         if spec.dtype not in [tf.int32, tf.int64]:
             raise TypeError(
@@ -158,7 +158,7 @@ class FloatVarLenTensorGenerator(VarLenTensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.float32 or tf.float64.
         """
-        super(FloatVarLenTensorGenerator, self).__init__(spec, dim_dist)
+        super().__init__(spec, dim_dist)
 
         if spec.dtype not in [tf.float32, tf.float64]:
             raise TypeError(
@@ -195,7 +195,7 @@ class WordVarLenTensorGenerator(VarLenTensorGeneratorBase):
           TypeError: If dtype in spec is not tf.string.
           ValueError: If avg_length is not positive.
         """
-        super(WordVarLenTensorGenerator, self).__init__(spec, dim_dist)
+        super().__init__(spec, dim_dist)
 
         if spec.dtype is not tf.string:
             raise TypeError(
@@ -224,7 +224,7 @@ class WordVarLenTensorGenerator(VarLenTensorGeneratorBase):
         return tf.SparseTensor(indices=idxs, values=vals, dense_shape=shape)
 
     def hash_code(self):
-        hash_code = super(WordVarLenTensorGenerator, self).hash_code()
+        hash_code = super().hash_code()
         m = hashlib.sha256()
         m.update(hash_code.encode())
         m.update(int_to_bytes(self._avg_length))
@@ -246,7 +246,7 @@ class BoolVarLenTensorGenerator(VarLenTensorGeneratorBase):
     Raises:
       TypeError: If dtype in spec is not tf.bool.
     """
-        super(BoolVarLenTensorGenerator, self).__init__(spec, dim_dist)
+        super().__init__(spec, dim_dist)
 
         if spec.dtype is not tf.bool:
             raise TypeError(

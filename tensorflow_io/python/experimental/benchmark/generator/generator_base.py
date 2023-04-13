@@ -21,7 +21,7 @@ import tensorflow as tf
 from tensorflow_io.python.experimental.benchmark.hash_util import int_to_bytes
 
 
-class Generator(object, metaclass=abc.ABCMeta):
+class Generator(metaclass=abc.ABCMeta):
     """Base class for tensor generator.
 
     Generator generates tf.Tensor, tf.sparse.SparseTensor, or
@@ -108,11 +108,11 @@ class Generator(object, metaclass=abc.ABCMeta):
             m.update(tf.SparseTensorSpec.__name__.encode())
         elif isinstance(self.spec, tf.RaggedTensorSpec):
             m.update(tf.RaggedTensorSpec.__name__.encode())
-            m.update("ragged_rank".encode())
+            m.update(b"ragged_rank")
             m.update(int_to_bytes(self.spec.ragged_rank))
-            m.update("row_splits_dtype".encode())
+            m.update(b"row_splits_dtype")
             m.update(int_to_bytes(hash(self.spec.row_splits_dtype)))
-            m.update("flat_values_spec".encode())
+            m.update(b"flat_values_spec")
             if self.spec.flat_values_spec:
                 m.update(int_to_bytes(hash(self.spec.flat_values_spec)))
         else:

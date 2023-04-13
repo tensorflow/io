@@ -53,7 +53,7 @@ class ATDSWriter(FileWriter):
 
         This must be called by the constructors of subclasses.
         """
-        super(ATDSWriter, self).__init__()
+        super().__init__()
         self._codec = codec
 
     @property
@@ -63,7 +63,7 @@ class ATDSWriter(FileWriter):
 
     def hash_code(self):
         """Return the hashed code of this file writer"""
-        hash_code = super(ATDSWriter, self).hash_code()
+        hash_code = super().hash_code()
 
         m = hashlib.sha256()
         m.update(hash_code.encode())

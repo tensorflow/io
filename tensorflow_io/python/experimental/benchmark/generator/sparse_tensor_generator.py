@@ -60,7 +60,7 @@ class SparseTensorGeneratorBase(Generator):
         Raises:
           TypeError: If spec is not tf.SparseTensorSpec.
         """
-        super(SparseTensorGeneratorBase, self).__init__(spec)
+        super().__init__(spec)
 
         if not isinstance(spec, tf.SparseTensorSpec):
             raise TypeError(
@@ -121,7 +121,7 @@ class SparseTensorGeneratorBase(Generator):
         return ret
 
     def hash_code(self):
-        hash_code = super(SparseTensorGeneratorBase, self).hash_code()
+        hash_code = super().hash_code()
 
         m = hashlib.sha256()
         m.update(hash_code.encode())
@@ -151,7 +151,7 @@ class IntSparseTensorGenerator(SparseTensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.int32 or tf.int64.
         """
-        super(IntSparseTensorGenerator, self).__init__(spec, num_values)
+        super().__init__(spec, num_values)
 
         if spec.dtype not in [tf.int32, tf.int64]:
             raise TypeError(
@@ -187,7 +187,7 @@ class FloatSparseTensorGenerator(SparseTensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.float32 or tf.float64.
         """
-        super(FloatSparseTensorGenerator, self).__init__(spec, num_values)
+        super().__init__(spec, num_values)
 
         if spec.dtype not in [tf.float32, tf.float64]:
             raise TypeError(
@@ -224,7 +224,7 @@ class WordSparseTensorGenerator(SparseTensorGeneratorBase):
           TypeError: If dtype in spec is not tf.string.
           ValueError: If avg_length is not positive.
         """
-        super(WordSparseTensorGenerator, self).__init__(spec, num_values)
+        super().__init__(spec, num_values)
 
         if spec.dtype is not tf.string:
             raise TypeError(
@@ -253,7 +253,7 @@ class WordSparseTensorGenerator(SparseTensorGeneratorBase):
         return tf.SparseTensor(indices=coords, values=vals, dense_shape=shape)
 
     def hash_code(self):
-        hash_code = super(WordSparseTensorGenerator, self).hash_code()
+        hash_code = super().hash_code()
         m = hashlib.sha256()
         m.update(hash_code.encode())
         m.update(int_to_bytes(self._avg_length))
@@ -275,7 +275,7 @@ class BoolSparseTensorGenerator(SparseTensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.bool.
         """
-        super(BoolSparseTensorGenerator, self).__init__(spec, num_values)
+        super().__init__(spec, num_values)
 
         if spec.dtype is not tf.bool:
             raise TypeError(

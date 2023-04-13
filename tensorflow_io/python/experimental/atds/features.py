@@ -58,7 +58,7 @@ class DenseFeature(collections.namedtuple("DenseFeature", ["shape", "dtype"])):
                     f" in DenseFeature but found {shape}."
                 )
 
-        return super(DenseFeature, cls).__new__(cls, shape, dtype)
+        return super().__new__(cls, shape, dtype)
 
 
 class SparseFeature(collections.namedtuple("SparseFeature", ["shape", "dtype"])):
@@ -76,7 +76,7 @@ class SparseFeature(collections.namedtuple("SparseFeature", ["shape", "dtype"]))
         if len(shape) == 0:
             raise ValueError("SparseFeature cannot be scalar.")
 
-        return super(SparseFeature, cls).__new__(cls, shape, dtype)
+        return super().__new__(cls, shape, dtype)
 
 
 class VarlenFeature(collections.namedtuple("VarlenFeature", ["shape", "dtype"])):
@@ -98,4 +98,4 @@ class VarlenFeature(collections.namedtuple("VarlenFeature", ["shape", "dtype"]))
                     f"-1 in VarlenFeature but found {shape}."
                 )
 
-        return super(VarlenFeature, cls).__new__(cls, shape, dtype)
+        return super().__new__(cls, shape, dtype)

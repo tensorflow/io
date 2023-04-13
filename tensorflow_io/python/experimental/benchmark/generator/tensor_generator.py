@@ -40,7 +40,7 @@ class TensorGeneratorBase(Generator):
           TypeError: If spec is not tf.TensorSpec.
           ValueError: If shape in spec is not fully defined.
         """
-        super(TensorGeneratorBase, self).__init__(spec)
+        super().__init__(spec)
 
         if not isinstance(spec, tf.TensorSpec):
             raise TypeError(
@@ -66,7 +66,7 @@ class IntTensorGenerator(TensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.int32 or tf.int64.
         """
-        super(IntTensorGenerator, self).__init__(spec)
+        super().__init__(spec)
 
         if spec.dtype not in [tf.int32, tf.int64]:
             raise TypeError(
@@ -99,7 +99,7 @@ class FloatTensorGenerator(TensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.float32 or tf.float64.
         """
-        super(FloatTensorGenerator, self).__init__(spec)
+        super().__init__(spec)
 
         if spec.dtype not in [tf.float32, tf.float64]:
             raise TypeError(
@@ -131,7 +131,7 @@ class WordTensorGenerator(TensorGeneratorBase):
           TypeError: If dtype in spec is not tf.string.
           ValueError: If avg_length is not positive.
         """
-        super(WordTensorGenerator, self).__init__(spec)
+        super().__init__(spec)
 
         if spec.dtype is not tf.string:
             raise TypeError(
@@ -160,7 +160,7 @@ class WordTensorGenerator(TensorGeneratorBase):
 
     def hash_code(self):
         """Return the hashed code of this Generator in hex str."""
-        hash_code = super(WordTensorGenerator, self).hash_code()
+        hash_code = super().hash_code()
 
         m = hashlib.sha256()
         m.update(hash_code.encode())
@@ -182,7 +182,7 @@ class BoolTensorGenerator(TensorGeneratorBase):
         Raises:
           TypeError: If dtype in spec is not tf.bool.
         """
-        super(BoolTensorGenerator, self).__init__(spec)
+        super().__init__(spec)
 
         if spec.dtype is not tf.bool:
             raise TypeError(

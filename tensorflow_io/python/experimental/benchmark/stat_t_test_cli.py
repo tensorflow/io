@@ -91,7 +91,7 @@ def load_benchmark_result(path):
     filename = os.path.basename(path)
     label = os.path.splitext(filename)[0]  # Remove file extension
 
-    with open(path, "r") as f:
+    with open(path) as f:
         report = json.load(f)
 
     result = {}
