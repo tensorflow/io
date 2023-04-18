@@ -388,7 +388,7 @@ class MakeAvroRecordDatasetTest(AvroDatasetTestBase):
         features,
         reader_schema,
         batch_size,
-        **kwargs
+        **kwargs,
     ):
         """_test_pass_dataset"""
         filenames = AvroDatasetTestBase._setup_files(
