@@ -36,6 +36,12 @@ cc_library(
     srcs = glob(["cpp/src/arrow/vendored/uriparser/*.c"]),
     hdrs = glob(["cpp/src/arrow/vendored/uriparser/*.h"]),
     includes = ["cpp/src/arrow/vendored/uriparser"],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:ws2_32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
 
