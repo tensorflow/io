@@ -38,7 +38,7 @@ cc_library(
     includes = ["cpp/src/arrow/vendored/uriparser"],
     linkopts = select({
         "@bazel_tools//src/conditions:windows": [
-            "-DEFAULTLIB:ws2_32.lib",
+            "-DEFAULTLIB:Ole32.lib",
         ],
         "//conditions:default": [],
     }),
