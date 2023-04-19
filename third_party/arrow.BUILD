@@ -32,20 +32,6 @@ genrule(
 )
 
 cc_library(
-    name = "arrow_uriparser",
-    srcs = glob(["cpp/src/arrow/vendored/uriparser/*.c"]),
-    hdrs = glob(["cpp/src/arrow/vendored/uriparser/*.h"]),
-    includes = ["cpp/src/arrow/vendored/uriparser"],
-    linkopts = select({
-        "@bazel_tools//src/conditions:windows": [
-            "-DEFAULTLIB:Ole32.lib",
-        ],
-        "//conditions:default": [],
-    }),
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "arrow",
     srcs = glob(
         [
@@ -67,6 +53,7 @@ cc_library(
             "cpp/src/arrow/vendored/variant.hpp",
             "cpp/src/arrow/vendored/base64.cpp",
             "cpp/src/arrow/vendored/datetime/tz.cpp",
+            "cpp/src/arrow/vendored/uriparser/*.c",
             "cpp/src/arrow/vendored/pcg/*.hpp",
             "cpp/src/arrow/**/*.h",
             "cpp/src/parquet/**/*.h",
@@ -137,11 +124,16 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "-DEFAULTLIB:Ole32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     textual_hdrs = [
         "cpp/src/arrow/vendored/xxhash/xxhash.c",
     ],
     deps = [
-        "arrow_uriparser",
         "@aws-sdk-cpp//:identity-management",
         "@aws-sdk-cpp//:s3",
         "@boringssl//:crypto",
