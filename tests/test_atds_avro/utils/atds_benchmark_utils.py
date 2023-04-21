@@ -1,4 +1,4 @@
-# Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2023 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License.  You may obtain a copy of
@@ -45,9 +45,11 @@ from tests.test_atds_avro.utils.generator.varlen_tensor_generator import (
     WordVarLenTensorGenerator,
     BoolVarLenTensorGenerator,
 )
+
+
 from tensorflow_io.python.experimental.atds.dataset import ATDSDataset
-from tensorflow_io.python.experimental.atds.atds_writer import ATDSWriter
-from tests.test_benchmark.benchmark.utils.benchmark_utils import benchmark_func
+from tests.test_atds_avro.utils.atds_writer import ATDSWriter
+from tests.test_atds_avro.utils.benchmark_utils import benchmark_func
 
 
 _AVRO_TO_DTYPE = {
