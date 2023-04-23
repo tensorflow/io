@@ -82,7 +82,7 @@ TEST_F(ShuffleTest, ShuffleBufferTest) {
 }
 
 TEST_F(ShuffleTest, UniformDistributionTest) {
-  int64 bin_size = 10;
+  const int64 bin_size = 10;
   int64 bins[bin_size] = {0};  // observed frequencies
   int64 error = 50;  // none of the 10 bins will differ from the avg (1000
                      // datapoints) by more than this

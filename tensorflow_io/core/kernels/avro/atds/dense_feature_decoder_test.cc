@@ -82,17 +82,17 @@ TEST(DenseDecoderTest, DT_INT32_2D) {
 }
 
 TEST(DenseDecoderTest, DT_INT64_scalar) {
-  long value = 1;
+  int64_t value = 1;
   DenseDecoderTest(value, DT_INT64, {});
 }
 
 TEST(DenseDecoderTest, DT_INT64_1D) {
-  std::vector<long> values = {1};
+  std::vector<int64_t> values = {1};
   DenseDecoderTest(values, DT_INT64, {1});
 }
 
 TEST(DenseDecoderTest, DT_INT64_2D) {
-  std::vector<std::vector<long>> values = {{1}};
+  std::vector<std::vector<int64_t>> values = {{1}};
   DenseDecoderTest(values, DT_INT64, {1, 1});
 }
 

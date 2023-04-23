@@ -155,12 +155,12 @@ TEST(SparseDecoderTest, DT_INT32_2D) {
 }
 
 TEST(SparseDecoderTest, DT_INT64_1D) {
-  std::vector<long> values = {4};
+  std::vector<int64_t> values = {4};
   SparseDecoderTest({{1}}, values, {0, 1}, {100}, 0);
 }
 
 TEST(SparseDecoderTest, DT_INT64_2D) {
-  std::vector<long> values = {77, 99, 131, 121};
+  std::vector<int64_t> values = {77, 99, 131, 121};
   SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9},
                     0);
 }
@@ -248,7 +248,7 @@ TEST(SparseDecoderTest, 2D_Order_1_0_2) {
 }
 
 TEST(SparseDecoderTest, NonZeroOffset) {
-  std::vector<long> values = {77, 99, 131, 121};
+  std::vector<int64_t> values = {77, 99, 131, 121};
   SparseDecoderTest({{3, 3, 3, 3}, {2, 4, 6, 8}}, values, {0, 1, 2}, {10, 9},
                     99);
 }

@@ -58,11 +58,11 @@ TEST(ATDSDecoder, TestMixedFeatures) {
   std::vector<std::vector<int64_t>> dense_long_2d = {{1, 3}, {2, 4}};
   std::vector<std::vector<float>> unused_dense = {{1.0, 2.0}};
 
-  std::vector<std::vector<int64_t>> sparse_int_1d_indices = {{100}};
+  std::vector<std::vector<long>> sparse_int_1d_indices = {{100}};
   std::vector<int> sparse_int_1d_values = {100};
-  std::vector<std::vector<int64_t>> sparse_string_2d_indices = {{5, 5}, {4, 8}};
+  std::vector<std::vector<long>> sparse_string_2d_indices = {{5, 5}, {4, 8}};
   std::vector<string> sparse_string_2d_values = {"TensorFlow", "Linkedin"};
-  std::vector<std::vector<int64_t>> unsed_sparse_indices = {{0, 1}};
+  std::vector<std::vector<long>> unsed_sparse_indices = {{0, 1}};
   std::vector<double> unsed_sparse_values = {1.0, -1.0};
 
   std::vector<bool> varlen_bool_1d = {true, false, true};

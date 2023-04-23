@@ -606,9 +606,9 @@ TEST(AvroBlockReaderTest, SPARSE_2D) {
   avro::ValidSchema schema = schema_builder.BuildVaildSchema();
   avro::GenericDatum datum1(schema);
   avro::GenericDatum datum2(schema);
-  tensorflow::atds::AddSparseValue<long>(datum1, feature_name, {{1, 2}, {3, 4}},
+  tensorflow::atds::AddSparseValue<int64_t>(datum1, feature_name, {{1, 2}, {3, 4}},
                                          {5, 6});
-  tensorflow::atds::AddSparseValue<long>(datum2, feature_name,
+  tensorflow::atds::AddSparseValue<int64_t>(datum2, feature_name,
                                          {{7, 8}, {9, 10}}, {11, 12});
   std::vector<avro::GenericDatum> records = {datum1, datum2};
   avro::OutputStreamPtr out_stream =

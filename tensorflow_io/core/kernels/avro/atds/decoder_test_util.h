@@ -155,7 +155,7 @@ void AddSparseValue(avro::GenericDatum& datum, const string& name,
     auto& indices_array =
         feature.field(indices_key).value<avro::GenericArray>().value();
     for (long index : indices[i]) {
-      indices_array.emplace_back(index);
+      indices_array.emplace_back(static_cast<int64_t>(index));
     }
   }
 

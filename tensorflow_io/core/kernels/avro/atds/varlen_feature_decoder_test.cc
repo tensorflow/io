@@ -167,19 +167,19 @@ TEST(VarlenDecoderTest, DT_INT64_scalar) {
 }
 
 TEST(VarlenDecoderTest, DT_INT64_1D) {
-  std::vector<long> values = {1};
+  std::vector<int64_t> values = {1};
   long offset = 3;
   std::vector<long> expected_indices = {offset, 0};
-  std::vector<long> expected_values = values;
+  std::vector<int64_t> expected_values = values;
   VarlenDecoderTest(values, DT_INT64, {-1}, expected_indices, expected_values,
                     offset);
 }
 
 TEST(VarlenDecoderTest, DT_INT64_2D) {
-  std::vector<std::vector<long>> values = {{1}};
+  std::vector<std::vector<int64_t>> values = {{1}};
   long offset = 3;
   std::vector<long> expected_indices = {offset, 0, 0};
-  std::vector<long> expected_values = {1};
+  std::vector<int64_t> expected_values = {1};
   VarlenDecoderTest(values, DT_INT64, {-1, -1}, expected_indices,
                     expected_values, offset);
 }
