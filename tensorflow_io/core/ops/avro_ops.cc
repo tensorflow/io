@@ -322,4 +322,38 @@ REGISTER_OP("IO>AvroReadablePartitions")
       return OkStatus();
     });
 
+REGISTER_OP("IO>ATDSDataset")
+    .Input("filenames: string")
+    .Input("batch_size: int64")
+    .Input("drop_remainder: bool")
+    .Input("reader_buffer_size: int64")
+    .Input("shuffle_buffer_size: int64")
+    .Input("num_parallel_calls: int64")
+    .Output("handle: variant")
+    .Attr("feature_keys: list(string) >= 0")
+    .Attr("feature_types: list(string) >= 0")
+    .Attr("sparse_dtypes: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("sparse_shapes: list(shape) >= 0")
+    .Attr(
+        "output_dtypes: list({float,double,int64,int32,string,bool,variant}) "
+        ">= 0")
+    .Attr("output_shapes: list(shape) >= 0")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      // `filenames` must be a scalar or a vector
+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(0), 1, &unused));
+      // `batch_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      // `drop_remainder` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
+      // `reader_buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 0, &unused));
+      // `shuffle_buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(4), 0, &unused));
+      // `num_parallel_calls` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(5), 0, &unused));
+      return shape_inference::ScalarShape(c);
+    });
+
 }  // namespace tensorflow

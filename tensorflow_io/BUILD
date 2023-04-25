@@ -15,6 +15,7 @@ cc_binary(
         "//tensorflow_io/core:bigtable_ops",
         "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:avro_atds",
         "//tensorflow_io/core:orc_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
