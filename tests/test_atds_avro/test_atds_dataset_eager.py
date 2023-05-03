@@ -28,7 +28,7 @@ from avro.datafile import DataFileWriter
 from avro.io import DatumWriter
 from parameterized import parameterized
 from tensorflow.python.framework import errors
-from tests.test_parse_avro_eager import AvroDatasetTestBase, AvroRecordsToFile
+from tests.test_parse_avro import AvroDatasetTestBase, AvroRecordsToFile
 from tensorflow_io.python.ops import core_ops
 from tensorflow_io.python.experimental.atds.dataset import ATDSDataset
 from tensorflow_io.python.experimental.atds.features import (
