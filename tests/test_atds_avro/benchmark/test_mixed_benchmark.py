@@ -41,7 +41,7 @@ from tests.test_atds_avro.utils.atds_benchmark_utils import (
 @pytest.mark.benchmark(
     group="mixed",
 )
-def test_jrps_benchmark_data():
+def test_mixed_benchmark_data():
     scenario = {
         "sparse_1d_float_small_1": FloatSparseTensorGenerator(
             tf.SparseTensorSpec([3], tf.dtypes.float32), ValueDistribution.SINGLE_VALUE
