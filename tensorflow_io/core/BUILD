@@ -580,21 +580,6 @@ cc_library(
 )
 
 cc_library(
-    name = "genome_ops",
-    srcs = [
-        "kernels/genome_fastq_kernels.cc",
-        "ops/genome_ops.cc",
-    ],
-    copts = tf_io_copts(),
-    linkstatic = True,
-    deps = [
-        "//tensorflow_io/core:dataset_ops",
-        "@nucleus//:fastq_reader",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
     name = "hdf5_ops",
     srcs = [
         "kernels/hdf5_kernels.cc",

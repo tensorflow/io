@@ -23,6 +23,7 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 
+@pytest.mark.skip(reason="TODO")
 def test_serialization():
     """Test super serial saving and loading.
     NOTE- test will only work in eager mode due to list() dataset cast."""

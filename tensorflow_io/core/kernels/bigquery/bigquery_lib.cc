@@ -72,10 +72,7 @@ string GrpcStatusToString(const ::grpc::Status& status) {
   if (status.ok()) {
     return "OK";
   }
-  return strings::StrCat("Status code: ",
-                         ::tensorflow::error::Code_Name(
-                             static_cast<tensorflow::error::Code>(
-                             GcpErrorCodeToTfErrorCode(status.error_code()))),
+  return strings::StrCat("Status code: ", status.error_code(),
                          " error message:", status.error_message(),
                          " error details: ", status.error_details());
 }

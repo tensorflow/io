@@ -42,7 +42,7 @@ def test_feather_format(version):
     from pyarrow import feather as pa_feather
 
     data = {
-        "bool": np.asarray([e % 2 for e in range(100)], np.bool),
+        "bool": np.asarray([e % 2 for e in range(100)], bool),
         "int8": np.asarray(range(100), np.int8),
         "int16": np.asarray(range(100), np.int16),
         "int32": np.asarray(range(100), np.int32),

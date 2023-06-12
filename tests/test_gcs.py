@@ -26,10 +26,7 @@ import pytest
 # GCS emulator setup is in tests/test_gcloud/test_gcs.sh
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32", "darwin"),
-    reason="TODO GCS emulator not setup properly on macOS/Windows yet",
-)
+@pytest.mark.skip("TODO GCS emulator not setup properly")
 def test_read_file():
     """Test case for reading GCS"""
 

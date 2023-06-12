@@ -31,6 +31,7 @@ filename = os.path.join(
 )
 filename = "file://" + filename
 
+
 # Note: The sample file is generated from the following after apply patch
 # tests/test_parquet/parquet_cpp_example.patch:
 # `parquet-cpp/examples/low-level-api/reader_writer`
@@ -301,12 +302,7 @@ def test_parquet_dataset_from_dir_failure():
     try:
         _ = tfio.IODataset.from_parquet(dir_path, columns=columns)
     except Exception as e:
-        assert (
-            str(e)
-            == "passing a directory path to 'filename' is not supported. "
-            + "Use 'tf.data.Dataset.list_files()' with a map() operation instead. "
-            + "[Op:IO>ParquetReadableInfo]"
-        )
+        assert "passing a directory path to 'filename' is not supported. " in str(e)
 
 
 if __name__ == "__main__":

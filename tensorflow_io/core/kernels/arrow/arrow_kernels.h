@@ -45,7 +45,7 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
     StringPiece result;
     Status status = file_->Read(position_, nbytes, &result, (char*)out);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
-      return arrow::Status::IOError(status.error_message());
+      return arrow::Status::IOError(status.message());
     }
     position_ += result.size();
     return result.size();
@@ -69,7 +69,7 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
     StringPiece result;
     Status status = file_->Read(position, nbytes, &result, (char*)out);
     if (!(status.ok() || errors::IsOutOfRange(status))) {
-      return arrow::Status::IOError(status.error_message());
+      return arrow::Status::IOError(status.message());
     }
     return result.size();
   }
@@ -80,7 +80,7 @@ class ArrowRandomAccessFile : public ::arrow::io::RandomAccessFile {
     StringPiece result;
     Status status = file_->Read(position, nbytes, &result, (char*)(&buffer[0]));
     if (!(status.ok() || errors::IsOutOfRange(status))) {
-      return arrow::Status::IOError(status.error_message());
+      return arrow::Status::IOError(status.message());
     }
     buffer.resize(result.size());
     return arrow::Buffer::FromString(std::move(buffer));

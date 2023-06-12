@@ -129,7 +129,7 @@ def write_config():
             bazel_rc.write('build:windows --copt="/std:c++17"\n')
             # Config for CI and release build
             bazel_rc.write("build:optimization --copt=-msse4.2\n")
-            bazel_rc.write("build:optimization --copt=-mavx\n")
+            # bazel_rc.write("build:optimization --copt=-mavx\n")
             bazel_rc.write("build:optimization --compilation_mode=opt\n")
             bazel_rc.write(
                 "build:linux_ci --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain\n"

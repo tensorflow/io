@@ -1349,7 +1349,7 @@ Status OSSFileSystem::CopyFile(const string& src, const string& target) {
 }
 
 void ToTF_Status(const ::tensorflow::Status& s, TF_Status* status) {
-  TF_SetStatus(status, TF_Code(int(s.code())), s.error_message().c_str());
+  TF_SetStatus(status, TF_Code(int(s.code())), string(s.message()).c_str());
 }
 
 // SECTION 1. Implementation for `TF_RandomAccessFile`
