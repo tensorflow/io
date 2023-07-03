@@ -876,6 +876,23 @@ def test_spectrogram():
     assert dbscale_mel_spectrogram.shape == [29, mels]
     assert dbscale_mel_spectrogram.dtype == tf.float32
 
+    # Inf check for zero input
+    dbscale_mel_spectrogram = tfio.audio.dbscale(
+        tf.zeros_like(mel_spectrogram), top_db=80, amin=1e-10
+    )
+
+    # Check if any inf in output
+    assert not tf.math.reduce_any(tf.math.is_inf(dbscale_mel_spectrogram))
+
+    # Custom ref check
+    dbscale_mel_spectrogram = tfio.audio.dbscale(
+        mel_spectrogram, top_db=80, ref=tf.math.reduce_max
+    )
+
+    # Check content after ref is different
+    assert dbscale_mel_spectrogram.shape == [29, mels]
+    assert dbscale_mel_spectrogram.dtype == tf.float32
+
     spec = dbscale_mel_spectrogram
 
     # Freq masking

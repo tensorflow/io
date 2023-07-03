@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2023 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""version_ops"""
+"""Utility functions for hashing"""
 
-version = "0.32.0"
-require = "tensorflow>=2.12.0,<2.13.0"
+
+def int_to_bytes(x):
+    # Add one bit because a signed N-bit int can only represent up to 2^(N-1) - 1
+    # (instead of an unsigned N-bit int which can represent up to 2^N - 1).
+    # For example, 128 requires 9 bits (therefore two bytes) in twos complement.
+    return x.to_bytes(x.bit_length() // 8 + 1, byteorder="little", signed=True)

@@ -75,11 +75,10 @@ http_archive(
         """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1beta2/pubsub.proto""",
         """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1/pubsub.proto""",
     ],
-    sha256 = "a53e15405f81d5a32594d7f6486e649131fadda5431cf28377dff4ae54d45d16",
-    strip_prefix = "googleapis-d4d09eb3aec152015f35717102f9b423988b94f7",
+    sha256 = "249d83abc5d50bf372c35c49d77f900bff022b2c21eb73aa8da1458b6ac401fc",
+    strip_prefix = "googleapis-6b3fdcea8bc5398be4e7e9930c693f0ea09316a0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
-        "https://github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
+        "https://github.com/googleapis/googleapis/archive/6b3fdcea8bc5398be4e7e9930c693f0ea09316a0.tar.gz",
     ],
 )
 
@@ -115,10 +114,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "1aee7a62742aae80bb94fcd83de49bf7317084ce64b24965967382ab082e5f52",
-    strip_prefix = "tensorflow-2.12.0-rc1",
+    sha256 = "c030cb1905bff1d2446615992aad8d8d85cbe90c4fb625cee458c63bf466bc8e",
+    strip_prefix = "tensorflow-2.12.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.12.0-rc1.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.12.0.tar.gz",
     ],
 )
 

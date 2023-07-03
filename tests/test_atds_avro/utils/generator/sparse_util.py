@@ -1,4 +1,4 @@
-# Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2023 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""version_ops"""
 
-version = "0.32.0"
-require = "tensorflow>=2.12.0,<2.13.0"
+
+def coord_to_int(coord, shape):
+    """Convert a location in a tensor to its unique index, in row-major order.
+    For example, in the 2d tensor
+    [[0, 1, 2]
+     [3, 4, 5]]
+    The location [1, 0]  (i.e. the entry in the second row, first column) will return 3.
+    """
+    ret = 0
+    rank = len(shape)
+    for dim in range(rank):
+        ret = ret * shape[dim] + coord[dim]
+    return ret

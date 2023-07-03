@@ -485,6 +485,61 @@ cc_library(
 )
 
 cc_library(
+    name = "avro_atds",
+    srcs = [
+        "kernels/avro/atds/atds_decoder.cc",
+        "kernels/avro/atds/errors.cc",
+        "kernels/avro/atds_dataset_kernels.cc",
+    ],
+    hdrs = [
+        "kernels/avro/atds/atds_decoder.h",
+        "kernels/avro/atds/avro_block_reader.h",
+        "kernels/avro/atds/avro_decoder_template.h",
+        "kernels/avro/atds/decoder_base.h",
+        "kernels/avro/atds/decompression_handler.h",
+        "kernels/avro/atds/dense_feature_decoder.h",
+        "kernels/avro/atds/errors.h",
+        "kernels/avro/atds/opaque_contextual_feature_decoder.h",
+        "kernels/avro/atds/shuffle_handler.h",
+        "kernels/avro/atds/sparse_feature_decoder.h",
+        "kernels/avro/atds/sparse_feature_internal_decoder.h",
+        "kernels/avro/atds/sparse_value_buffer.h",
+        "kernels/avro/atds/varlen_feature_decoder.h",
+        "kernels/avro/atds_dataset_kernels.h",
+    ],
+    copts = tf_io_copts(),
+    linkstatic = True,
+    deps = [
+        ":avro_ops",
+        "@avro",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "avro_atds_tests",
+    srcs = [
+        "kernels/avro/atds/atds_decoder_test.cc",
+        "kernels/avro/atds/avro_block_reader_test.cc",
+        "kernels/avro/atds/decoder_test_util.cc",
+        "kernels/avro/atds/decoder_test_util.h",
+        "kernels/avro/atds/dense_feature_decoder_test.cc",
+        "kernels/avro/atds/shuffle_handler_test.cc",
+        "kernels/avro/atds/sparse_feature_decoder_test.cc",
+        "kernels/avro/atds/sparse_value_buffer_test.cc",
+        "kernels/avro/atds/varlen_feature_decoder_test.cc",
+    ],
+    copts = tf_io_copts(),
+    deps = [
+        ":avro_atds",
+        "//tensorflow_io/core:avro_ops",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "orc_ops",
     srcs = [
         "kernels/orc/orc_kernels.cc",
