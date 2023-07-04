@@ -85,44 +85,62 @@ def rgba_to_rgb(input, name=None):
 def rgb_to_ycbcr(input, name=None):
     """
     Convert a RGB image to YCbCr.
-
+    
     Args:
       input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
       name: A name for the operation (optional).
-
+      
     Returns:
       A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
     """
+    kernel = tf.constant(
+        [
+            [65.783, 129.057, 25.064],
+            [-37.945, -74.494, 112.439],
+            [112.439, -94.154, -18.285],
+        ],
+        tf.float32,
+    )
+      
     input = tf.convert_to_tensor(input)
-
     assert input.dtype == tf.uint8
+    
     value = tf.cast(input, tf.float32)
-    value = value / 255.0
-    value = rgb_to_ypbpr(value)
-    value = value * tf.constant([219, 224, 224], value.dtype)
-    value = value + tf.constant([16, 128, 128], value.dtype)
+    value = value / 256.0
+    value = tf.tensordot(value, tf.transpose(kernel), axes=((-1,), (0,)))
+    value = value + tf.constant([16, 128, 128], tf.float32)
+    value = tf.clip_by_value(value, 0, 255)
     return tf.cast(value, input.dtype)
 
 
 def ycbcr_to_rgb(input, name=None):
     """
     Convert a YCbCr image to RGB.
-
+    
     Args:
       input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
       name: A name for the operation (optional).
-
+      
     Returns:
       A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
     """
+    kernel = tf.constant(
+        [
+            [298.082, 0, 408.583],
+            [298.082, -100.291, -208.120],
+            [298.082, 516.412, 0],
+        ],
+        tf.float32,
+    )
+    
     input = tf.convert_to_tensor(input)
-
     assert input.dtype == tf.uint8
+    
     value = tf.cast(input, tf.float32)
-    value = value - tf.constant([16, 128, 128], value.dtype)
-    value = value / tf.constant([219, 224, 224], value.dtype)
-    value = ypbpr_to_rgb(value)
-    value = value * 255.0
+    value = value / 256.0    
+    value = tf.tensordot(value, tf.transpose(kernel), axes=((-1,), (0,)))
+    value = value + tf.constant([-222.921, 135.576, -276.836], tf.float32)
+    value = tf.clip_by_value(value, 0, 255)
     return tf.cast(value, input.dtype)
 
 
