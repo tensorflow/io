@@ -63,7 +63,7 @@ Status GrpcStatusToTfStatus(const ::grpc::Status& status) {
     return OkStatus();
   }
   return Status(static_cast<tensorflow::errors::Code>(
-                GcpErrorCodeToTfErrorCode(status.error_code())),
+                    GcpErrorCodeToTfErrorCode(status.error_code())),
                 strings::StrCat("Error reading from Cloud BigQuery: ",
                                 status.error_message()));
 }

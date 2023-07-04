@@ -78,7 +78,7 @@ Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
   }
   return Status(
       static_cast<::tensorflow::errors::Code>(
-      GoogleCloudErrorCodeToTfErrorCode(status.code())),
+          GoogleCloudErrorCodeToTfErrorCode(status.code())),
       strings::StrCat("Error reading from Cloud Bigtable: ", status.message()));
 }
 
