@@ -68,7 +68,7 @@ absl::StatusCode GoogleCloudErrorCodeToTfErrorCode(
     case ::google::cloud::StatusCode::kDataLoss:
       return absl::StatusCode::kDataLoss;
     default:
-      return absl::StatusCode::kUnnown;
+      return absl::StatusCode::kUnknown;
   }
 }
 
