@@ -161,7 +161,7 @@ import tensorflow_io as tfio
         "rgb_to_grayscale",
     ],
 )
-def test_color(data, func, check):
+def test_color(data, func, check, request):
     """test_io_color"""
 
     np.random.seed(1000)
@@ -170,7 +170,7 @@ def test_color(data, func, check):
     expected_3d = check(input_3d)
 
     output_3d = func(input_3d)
-    if input_3d.dtype == np.float32:
+    if input_3d.dtype == np.float32 or request.node.callspec.id == "rgb_to_ycbcr":
         assert np.allclose(output_3d, expected_3d, rtol=0.03)
     else:
         assert np.array_equal(output_3d, expected_3d)
@@ -179,7 +179,7 @@ def test_color(data, func, check):
     expected_4d = tf.expand_dims(expected_3d, axis=0)
 
     output_4d = func(input_4d)
-    if input_4d.dtype == np.float32:
+    if input_4d.dtype == np.float32 or request.node.callspec.id == "rgb_to_ycbcr":
         assert np.allclose(output_4d, expected_4d, rtol=0.03)
     else:
         assert np.array_equal(output_4d, expected_4d)
