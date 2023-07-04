@@ -45,7 +45,7 @@ class MockRandomAccessFile : public RandomAccessFile {
     if (bytes_to_copy == n) {
       return OkStatus();
     }
-    return Status(tensorflow::error::Code::OUT_OF_RANGE, "eof");
+    return Status(absl::StatusCode::kOutOfRange, "eof");
   }
 
  private:
@@ -568,7 +568,7 @@ TEST(AvroBlockReaderTest, SYNC_MARKER_MISMATCH) {
       0xe2;  // Change second byte of sync marker from 0xe1 to 0xe2
   Status status = AvroBlockReaderTest(sync_marker_mismatch, BYTEARRAY_SIZE);
   ASSERT_EQ(error::Code::DATA_LOSS, status.code());
-  ASSERT_STREQ("Avro sync marker mismatch.", status.error_message().c_str());
+  ASSERT_STREQ("Avro sync marker mismatch.", string(status.message()).c_str());
 }
 
 TEST(AvroBlockReaderTest, BYTE_COUNT_EOF) {
@@ -576,8 +576,8 @@ TEST(AvroBlockReaderTest, BYTE_COUNT_EOF) {
   memcpy(byte_count_eof, WELLFORMED_CONTENT, BYTEARRAY_SIZE);
   byte_count_eof[235] = 0x6e;  // Change byte count from 0x1e (15) to 0x6e (55)
   Status status = AvroBlockReaderTest(byte_count_eof, BYTEARRAY_SIZE);
-  ASSERT_EQ(error::Code::OUT_OF_RANGE, status.code());
-  ASSERT_STREQ("eof", status.error_message().c_str());
+  ASSERT_EQ(absl::StatusCode::kOutOfRange, status.code());
+  ASSERT_STREQ("eof", string(status.message()).c_str());
 }
 
 TEST(AvroBlockReaderTest, DENSE_2D) {

@@ -1962,7 +1962,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             {
                 "guests[gender='wrong_value'].name": tf.compat.v1.SparseTensorValue(
                     indices=np.empty(shape=[0, 2], dtype=np.int64),
-                    values=np.empty(shape=[0], dtype=np.str),
+                    values=np.empty(shape=[0], dtype=str),
                     dense_shape=np.asarray([2, 0]),
                 )
             }

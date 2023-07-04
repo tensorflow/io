@@ -68,7 +68,7 @@ absl::StatusCode GoogleCloudErrorCodeToTfErrorCode(
     case ::google::cloud::StatusCode::kDataLoss:
       return absl::StatusCode::kDataLoss;
     default:
-      return absl::StatusCode::kUnnown;
+      return absl::StatusCode::kUnknown;
   }
 }
 
@@ -78,7 +78,7 @@ Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
   }
   return Status(
       static_cast<::tensorflow::errors::Code>(
-      GoogleCloudErrorCodeToTfErrorCode(status.code())),
+          GoogleCloudErrorCodeToTfErrorCode(status.code())),
       strings::StrCat("Error reading from Cloud Bigtable: ", status.message()));
 }
 
@@ -271,8 +271,8 @@ class Iterator : public DatasetIterator<Dataset> {
 
   mutex mu_;
   const std::vector<std::pair<std::string, std::string>> columns_;
-  cbt::RowReader reader_ GUARDED_BY(mu_);
-  cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
+  cbt::RowReader reader_ TF_GUARDED_BY(mu_);
+  cbt::v1::internal::RowReaderIterator it_ TF_GUARDED_BY(mu_);
   // we're using a map with const refs to avoid copying strings when searching
   // for a value.
   const absl::flat_hash_map<std::pair<const std::string&, const std::string&>,
@@ -517,8 +517,8 @@ class BigtableSplitRowSetEvenlyOp : public OpKernel {
 
  private:
   mutex mu_;
-  std::string table_id_ GUARDED_BY(mu_);
-  int num_splits_ GUARDED_BY(mu_);
+  std::string table_id_ TF_GUARDED_BY(mu_);
+  int num_splits_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableSplitRowSetEvenly").Device(DEVICE_CPU),

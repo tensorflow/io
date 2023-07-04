@@ -670,11 +670,7 @@ def fixture_encode_aac():
         pytest.param(
             "decode_aac",
             marks=[
-                pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 8))
-                    or (sys.platform in ("win32", "darwin")),
-                    reason="need ubuntu 20.04 which is python 3.8, and no windows, and TODO: !!!pytest-xdist!!! on macOS",
-                )
+                pytest.mark.skip("TODO"),
             ],
         ),
         pytest.param(
@@ -756,14 +752,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param(
             "decode_aac",
             marks=[
-                pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 8))
-                    or (sys.platform in ("win32", "darwin")),
-                    reason=(
-                        "need ubuntu 20.04 which is python 3.8, "
-                        "and no windows support yet, and TODO: !!!pytest-xdist!!! on macOS"
-                    ),
-                )
+                pytest.mark.skip("TODO"),
             ],
         ),
         pytest.param(

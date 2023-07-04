@@ -77,7 +77,7 @@ class ATDSDecoder {
       Status status = decoders_[i]->operator()(decoder, dense_tensors, buffer,
                                                skipped_data, offset);
       if (TF_PREDICT_FALSE(!status.ok())) {
-        return FeatureDecodeError(feature_names_[i], status.error_message());
+        return FeatureDecodeError(feature_names_[i], string(status.message()));
       }
     }
     // LOG(INFO) << "Decode atds from offset Done: " << offset;

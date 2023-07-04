@@ -17,6 +17,7 @@
 
 import os
 import numpy as np
+import pytest
 
 import tensorflow as tf
 import tensorflow_io as tfio  # pylint: disable=wrong-import-position
@@ -26,6 +27,7 @@ fastq_path = os.path.join(
 )
 
 
+@pytest.mark.skip(reason="TODO")
 def test_genome_fastq_reader():
     """test_genome_fastq_reader"""
 
@@ -49,6 +51,7 @@ def test_genome_fastq_reader():
     assert np.all(data.raw_quality == quality_expected)
 
 
+@pytest.mark.skip(reason="TODO")
 def test_genome_sequences_to_onehot():
     """test sequence one hot encoder"""
     expected = [

@@ -114,10 +114,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "c030cb1905bff1d2446615992aad8d8d85cbe90c4fb625cee458c63bf466bc8e",
-    strip_prefix = "tensorflow-2.12.0",
+    sha256 = "a782ce36ed009597dccc92c04b88745c9da4600f7adccc133d3c3616e90daa60",
+    strip_prefix = "tensorflow-2.13.0-rc2",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.12.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.13.0-rc2.tar.gz",
     ],
 )
 
@@ -142,6 +142,16 @@ load("//third_party/toolchains/tf:tf_configure.bzl", "tf_configure")
 tf_configure(name = "local_config_tf")
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+
+http_archive(
+    name = "lmdb",
+    build_file = "//third_party:lmdb.BUILD",
+    sha256 = "22054926b426c66d8f2bc22071365df6e35f3aacf19ad943bc6167d4cae3bebb",
+    strip_prefix = "lmdb-LMDB_0.9.29/libraries/liblmdb",
+    urls = [
+        "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_0.9.29.tar.gz",
+    ],
+)
 
 http_archive(
     name = "aliyun_oss_c_sdk",

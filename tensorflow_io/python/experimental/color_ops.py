@@ -85,11 +85,11 @@ def rgba_to_rgb(input, name=None):
 def rgb_to_ycbcr(input, name=None):
     """
     Convert a RGB image to YCbCr.
-    
+
     Args:
       input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
       name: A name for the operation (optional).
-      
+
     Returns:
       A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
     """
@@ -101,10 +101,10 @@ def rgb_to_ycbcr(input, name=None):
         ],
         tf.float32,
     )
-      
+
     input = tf.convert_to_tensor(input)
     assert input.dtype == tf.uint8
-    
+
     value = tf.cast(input, tf.float32)
     value = value / 256.0
     value = tf.tensordot(value, tf.transpose(kernel), axes=((-1,), (0,)))
@@ -116,11 +116,11 @@ def rgb_to_ycbcr(input, name=None):
 def ycbcr_to_rgb(input, name=None):
     """
     Convert a YCbCr image to RGB.
-    
+
     Args:
       input: A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
       name: A name for the operation (optional).
-      
+
     Returns:
       A 3-D (`[H, W, 3]`) or 4-D (`[N, H, W, 3]`) Tensor.
     """
@@ -132,12 +132,12 @@ def ycbcr_to_rgb(input, name=None):
         ],
         tf.float32,
     )
-    
+
     input = tf.convert_to_tensor(input)
     assert input.dtype == tf.uint8
-    
+
     value = tf.cast(input, tf.float32)
-    value = value / 256.0    
+    value = value / 256.0
     value = tf.tensordot(value, tf.transpose(kernel), axes=((-1,), (0,)))
     value = value + tf.constant([-222.921, 135.576, -276.836], tf.float32)
     value = tf.clip_by_value(value, 0, 255)
