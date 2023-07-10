@@ -114,10 +114,10 @@ pip_install()
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "a782ce36ed009597dccc92c04b88745c9da4600f7adccc133d3c3616e90daa60",
-    strip_prefix = "tensorflow-2.13.0-rc2",
+    sha256 = "e58c939079588623e6fa1d054aec2f90f95018266e0a970fd353a5244f5173dc",
+    strip_prefix = "tensorflow-2.13.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.13.0-rc2.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.13.0.tar.gz",
     ],
 )
 
