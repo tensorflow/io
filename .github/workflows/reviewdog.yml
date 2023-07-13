@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          sudo python3 -m pip install -U numpy pip
+          sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- bazel
       - uses: reviewdog/action-suggester@v1
   black:
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          sudo python3 -m pip install -U numpy pip
+          sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- black
       - uses: reviewdog/action-suggester@v1
   clang:
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          sudo python3 -m pip install -U numpy pip
+          sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- clang
       - uses: reviewdog/action-suggester@v1
   pyupgrade:
@@ -39,6 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          sudo python3 -m pip install -U numpy pip
+          sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- pyupgrade
       - uses: reviewdog/action-suggester@v1
