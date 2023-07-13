@@ -69,7 +69,7 @@ class ORCIODataset(tf.data.Dataset):
                 )
                 columns_function.append(function)
 
-            for (column, function) in zip(columns, columns_function):
+            for column, function in zip(columns, columns_function):
                 column_dataset = tf.compat.v2.data.Dataset.range(
                     0, sys.maxsize, capacity
                 )

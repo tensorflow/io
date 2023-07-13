@@ -22,7 +22,7 @@ jobs:
         run: |
           set -x -e
           git log --pretty -1
-          sudo python3 -m pip install -U numpy
+          sudo python3 -m pip install -U numpy black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade black clang
 
   lint-docs:

@@ -61,7 +61,7 @@ def test_io_tensor_json_recods_mode():
     dataset = tf.data.Dataset.zip((feature_dataset, label_dataset))
 
     i = 0
-    for (j_x, j_y) in dataset:
+    for j_x, j_y in dataset:
         v_x = x_test[i]
         v_y = y_test[i]
         for index, x in enumerate(j_x):
@@ -123,7 +123,7 @@ def test_io_tensor_json():
     dataset = tf.data.Dataset.zip((feature_dataset, label_dataset))
 
     i = 0
-    for (j_x, j_y) in dataset:
+    for j_x, j_y in dataset:
         v_x = x_test[i]
         v_y = y_test[i]
         for index, x in enumerate(j_x):
@@ -158,7 +158,7 @@ def test_json_dataset():
     dataset = tf.data.Dataset.zip((feature_dataset, label_dataset))
 
     i = 0
-    for (j_x, j_y) in dataset:
+    for j_x, j_y in dataset:
         v_x = x_test[i]
         v_y = y_test[i]
         for index, x in enumerate(j_x):

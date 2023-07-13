@@ -139,13 +139,13 @@ def run_welchs_ttest(stat1, stat2, alpha, faster):
     df1 = n1 - 1  # degree of freedom of stat1
     df2 = n2 - 1  # degree of freedom of stat2
 
-    sample_v1 = s1 ** 2 / n1  # biased estimated sample variance of stat1
-    sample_v2 = s2 ** 2 / n2  # biased estimated sample variance of stat2
+    sample_v1 = s1**2 / n1  # biased estimated sample variance of stat1
+    sample_v2 = s2**2 / n2  # biased estimated sample variance of stat2
 
     biased_variance = np.sqrt(sample_v1 + sample_v2)
     # degree of freedom
     df = (sample_v1 + sample_v2) ** 2 / (
-        sample_v1 ** 2 / (df1) + sample_v2 ** 2 / (df2)
+        sample_v1**2 / (df1) + sample_v2**2 / (df2)
     )
 
     mean_delta = m1 - m2

@@ -378,10 +378,8 @@ class ArrowDatasetTest(ArrowTestBase):
 
         # Iterate over the dataset
         for results in dataset:
-
             # For batches, iterate over each row in batch or remainder at end
             for result_idx in range(batch_size or 1):
-
                 # Get a single row value
                 if batch_size is None:
                     value = [r.numpy() for r in results]

@@ -188,8 +188,8 @@ def gabor(
                 1.0
                 / np.pi
                 * np.sqrt(np.log(2) / 2.0)
-                * (2.0 ** b + 1)
-                / (2.0 ** b - 1),
+                * (2.0**b + 1)
+                / (2.0**b - 1),
                 dtype.real_dtype,
             )
             / freq
@@ -220,7 +220,7 @@ def gabor(
     rotx = y * tf.math.sin(theta) + x * tf.math.cos(theta)
     roty = y * tf.math.cos(theta) - x * tf.math.sin(theta)
 
-    g = tf.math.exp(-0.5 * (rotx ** 2 / sigma_x ** 2 + roty ** 2 / sigma_y ** 2))
+    g = tf.math.exp(-0.5 * (rotx**2 / sigma_x**2 + roty**2 / sigma_y**2))
     g = g / (2 * np.pi * sigma_x * sigma_y)
     g = tf.cast(g, dtype) * tf.exp(
         tf.cast(1j, dtype) * tf.cast(2 * np.pi * freq * rotx + offset, dtype)

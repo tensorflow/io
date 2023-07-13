@@ -19,6 +19,7 @@ import json
 import tensorflow as tf
 from tensorflow_io.python.ops import core_ops
 
+
 # _NamedTensorSpec allows adding a `named` key while traversing,
 # so that it is possible to build up the `/R/Foo` JSON Pointers.
 class _NamedTensorSpec(tf.TensorSpec):
