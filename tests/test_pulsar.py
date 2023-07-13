@@ -66,7 +66,7 @@ def test_pulsar_keyed_messages():
         timeout=default_pulsar_timeout,
     )
     kv = dict()
-    for (msg, key) in dataset:
+    for msg, key in dataset:
         kv.setdefault(key.numpy().decode(), []).append(msg.numpy())
     assert kv["K0"] == [("D" + str(i)).encode() for i in range(0, 6, 2)]
     assert kv["K1"] == [("D" + str(i)).encode() for i in range(1, 6, 2)]
@@ -232,7 +232,7 @@ def test_pulsar_write_keyed_messages():
         timeout=default_pulsar_timeout,
     )
     kv = dict()
-    for (msg, key) in dataset:
+    for msg, key in dataset:
         kv.setdefault(key.numpy().decode(), []).append(msg.numpy())
     assert kv["0"] == [("msg-" + str(i)).encode() for i in range(0, 10, 3)]
     assert kv["1"] == [("msg-" + str(i)).encode() for i in range(1, 10, 3)]

@@ -91,27 +91,6 @@ switched_rules_by_language(
     grpc = True,
 )
 
-# Note rules_python is placed earlier as tensorflow's version is older
-http_archive(
-    name = "rules_python",
-    sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
-        "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
-    ],
-)
-
-load("@rules_python//python:pip.bzl", "pip_import")
-
-pip_import(
-    name = "lint_dependencies",
-    requirements = "//tools/lint:requirements.txt",
-)
-
-load("@lint_dependencies//:requirements.bzl", "pip_install")
-
-pip_install()
-
 http_archive(
     name = "org_tensorflow",
     sha256 = "e58c939079588623e6fa1d054aec2f90f95018266e0a970fd353a5244f5173dc",

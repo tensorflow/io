@@ -77,7 +77,7 @@ def test_gfile_read(local_content, remote_filename):
     assert remote_gfile.size() == len(local_content)
     offset_start = list(range(0, len(local_content), 100))
     offset_stop = offset_start[1:] + [len(local_content)]
-    for (start, stop) in zip(offset_start, offset_stop):
+    for start, stop in zip(offset_start, offset_stop):
         assert remote_gfile.read(100) == local_content[start:stop]
 
 

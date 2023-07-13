@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 
+
 # Note: BaseDataset could be used by Dataset implementations
 # that does not utilize DataInput implementation.
 class BaseDataset(tf.compat.v2.data.Dataset):

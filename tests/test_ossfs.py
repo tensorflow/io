@@ -359,7 +359,7 @@ class OSSFSTest(test.TestCase):
         all_dirs = []
         all_subdirs = []
         all_files = []
-        for (w_dir, w_subdirs, w_files) in file_io.walk(dir_path, in_order=True):
+        for w_dir, w_subdirs, w_files in file_io.walk(dir_path, in_order=True):
             all_dirs.append(w_dir)
             all_subdirs.append(w_subdirs)
             all_files.append(w_files)
@@ -388,7 +388,7 @@ class OSSFSTest(test.TestCase):
         all_dirs = []
         all_subdirs = []
         all_files = []
-        for (w_dir, w_subdirs, w_files) in file_io.walk(dir_path, in_order=False):
+        for w_dir, w_subdirs, w_files in file_io.walk(dir_path, in_order=False):
             all_dirs.append(w_dir)
             all_subdirs.append(w_subdirs)
             all_files.append(w_files)
@@ -416,7 +416,7 @@ class OSSFSTest(test.TestCase):
         all_dirs = []
         all_subdirs = []
         all_files = []
-        for (w_dir, w_subdirs, w_files) in file_io.walk(dir_path, in_order=False):
+        for w_dir, w_subdirs, w_files in file_io.walk(dir_path, in_order=False):
             all_dirs.append(w_dir)
             all_subdirs.append(w_subdirs)
             all_files.append(w_files)

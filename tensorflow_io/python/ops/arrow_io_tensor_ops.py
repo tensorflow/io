@@ -83,7 +83,6 @@ def _extract_table_arrays(table):
     # Pad buffer addrs, sizes and array lengths so inputs are rectangular
     num_columns = len(array_buffer_sizes)
     for i in range(num_columns):
-
         # pad chunk list with empty lists that will be padded with null bufs
         if len(array_buffer_sizes[i]) < max_num_chunks:
             array_buffer_sizes[i].extend(
@@ -94,7 +93,6 @@ def _extract_table_arrays(table):
 
         num_chunks = len(array_buffer_sizes[i])
         for j in range(num_chunks):
-
             # pad buffer addr, size, and array length lists
             if len(array_buffer_sizes[i][j]) < max_num_bufs:
                 array_buffer_sizes[i][j].extend(
@@ -140,7 +138,6 @@ class ArrowIOResource:
     def init_resource_op(self, table):
         """Initialize the resource op with a pyarrow.Table"""
         with tf.name_scope("ArrowIOTensor") as scope:
-
             # Serialize the schema to send to the kernel
             schema_buffer = table.schema.serialize()
 
@@ -241,7 +238,6 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-
     # Constructor (private)
     # =============================================================================
     def __init__(self, table, spec=None, internal=False):
-
         # Get or build a new ArrowIOResource
         if isinstance(table, ArrowIOResource):
             arrow_resource = table
@@ -292,7 +288,7 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-
             ]
 
             shapes = []
-            for (column_index, column) in columns:
+            for column_index, column in columns:
                 shape, _ = core_ops.io_arrow_readable_spec(
                     resource, column_index, column
                 )
@@ -306,7 +302,7 @@ class ArrowIOTensor(io_tensor_ops._TableIOTensor):  # pylint: disable=protected-
             ]
 
             elements = []
-            for ((column_index, column), entry, shape) in zip(columns, entries, shapes):
+            for (column_index, column), entry, shape in zip(columns, entries, shapes):
                 function = _ArrowIOTensorComponentFunction(
                     core_ops.io_arrow_readable_read,
                     resource,

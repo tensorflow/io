@@ -77,7 +77,7 @@ def test_audio_io_tensor_24(audio_data_24, io_tensor_func):
     for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
         indices = list(range(0, 14336, step))
         # TODO: -1 vs. 14336 might need fix
-        for (start, stop) in zip(indices, indices[1:] + [14336]):
+        for start, stop in zip(indices, indices[1:] + [14336]):
             audio_tensor_value = audio_tensor[start:stop]
             audio_value_value = audio_value[start:stop]
             assert audio_tensor_value.shape == audio_value_value.shape
@@ -139,7 +139,7 @@ def test_audio_io_tensor(audio_data, io_tensor_func):
     for step in [1, 100, 101, 200, 501, 600, 1001, 2000, 5001]:
         indices = list(range(0, 5760, step))
         # TODO: -1 vs. 5760 might need fix
-        for (start, stop) in zip(indices, indices[1:] + [5760]):
+        for start, stop in zip(indices, indices[1:] + [5760]):
             audio_tensor_value = audio_tensor[start:stop]
             audio_value_value = audio_value[start:stop]
             assert audio_tensor_value.shape == audio_value_value.shape
@@ -218,7 +218,7 @@ def test_audio_io_tensor_with_dataset(audio_data, io_tensor_func, num_parallel_c
     dataset = dataset.map(func, num_parallel_calls=num_parallel_calls)
 
     item = 0
-    for (data, rate) in dataset:
+    for data, rate in dataset:
         assert audio_rate == rate
         assert data.shape == (100, 1)
         position = 1000 if item == 0 else 2000

@@ -44,7 +44,7 @@ class EXRIOTensor(
             shapes, dtypes, channels = core_ops.io_decode_exr_info(data)
             parts = []
             index = 0
-            for (shape, dtypes, channels) in zip(
+            for shape, dtypes, channels in zip(
                 shapes.numpy(), dtypes.numpy(), channels.numpy()
             ):
                 # Remove trailing 0 from dtypes
