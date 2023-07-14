@@ -133,7 +133,6 @@ genrule(
         "#define HAVE_GETOPT_H 1",
         "#define HAVE_GETOPT_LONG 1",
         "#define HAVE_GETTEXT 1",
-        "#define HAVE_IMMINTRIN_H 1",
         "#define HAVE_MBRTOWC 1",
         "#define HAVE_MEMORY_H 1",
         "#define HAVE_POSIX_FADVISE 1",
