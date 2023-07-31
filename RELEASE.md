@@ -1,3 +1,21 @@
+# Release 0.33.0
+
+## Major Features and Bug Fixes
+* Add AvroTensorDataset to allow data conversion from avro to Tensorflow tensors
+* Bring back `S3_VERIFY_SSL` environment variable
+* Add ATDSDataset user guide
+* Fixed `rgb_to_ycbcr()` and `ycbcr_to_rgb()` not clipping to `[0, 255]`
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Felix Sonntag, Jean-Baptiste Lespiau, Jonathan Hiles, Kamil Górzyński,
+Lijuan Zhang,  Mattia Lamberti,  Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.32.0
 
 ## Major Features and Bug Fixes

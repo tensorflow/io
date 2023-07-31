@@ -126,6 +126,7 @@ of releases [here](https://github.com/tensorflow/io/releases).
 
 | TensorFlow I/O Version | TensorFlow Compatibility | Release Date |
 | --- | --- | --- |
+| 0.33.0 | 2.13.x | Aug 01, 2023 |
 | 0.32.0 | 2.12.x | Mar 28, 2023 |
 | 0.31.0 | 2.11.x | Feb 25, 2023 |
 | 0.30.0 | 2.11.x | Jan 20, 2023 |
