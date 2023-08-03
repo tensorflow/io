@@ -27,20 +27,6 @@ http_archive(
     ],
 )
 
-# Note: boringssl is placed earlier as boringssl needs to be patched for mongodb
-http_archive(
-    name = "boringssl",
-    patch_cmds = [
-        """sed -i.bak 's/bio.c",/bio.c","src\\/decrepit\\/bio\\/base64_bio.c",/g' BUILD.generated.bzl""",
-    ],
-    sha256 = "a9c3b03657d507975a32732f04563132b4553c20747cec6dc04de475c8bdf29f",
-    strip_prefix = "boringssl-80ca9f9f6ece29ab132cce4cf807a9465a18cfac",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/boringssl/archive/80ca9f9f6ece29ab132cce4cf807a9465a18cfac.tar.gz",
-        "https://github.com/google/boringssl/archive/80ca9f9f6ece29ab132cce4cf807a9465a18cfac.tar.gz",
-    ],
-)
-
 # Note google_cloud_cpp is placed earlier as tensorflow's version is older
 http_archive(
     name = "com_github_googleapis_google_cloud_cpp",
