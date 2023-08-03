@@ -35,7 +35,6 @@ cc_library(
         ],
     ) + [
         "config/config.h",
-        "config/src/set1_host.c",
         "config/src/win32_config.h",
     ] + select({
         "@bazel_tools//src/conditions:windows": [
@@ -45,7 +44,6 @@ cc_library(
     }),
     hdrs = [
         "config/config.h",
-        "config/src/set1_host.c",
         "config/src/win32_config.h",
         "src/rdxxhash.c",
         "src/rdxxhash.h",
@@ -74,19 +72,6 @@ cc_library(
         "@zlib",
         "@zstd",
     ],
-)
-
-genrule(
-    name = "set1_host_c",
-    outs = ["config/src/set1_host.c"],
-    cmd = "\n".join([
-        "cat <<'EOF' >$@",
-        "#include <openssl/ssl.h>",
-        "int SSL_set1_host(SSL *s, const char *hostname) {",
-        "  return X509_VERIFY_PARAM_set1_host(SSL_get0_param(s), hostname, 0);",
-        "}",
-        "EOF",
-    ]),
 )
 
 genrule(
