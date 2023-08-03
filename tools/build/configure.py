@@ -132,7 +132,7 @@ def write_config():
             # bazel_rc.write("build:optimization --copt=-mavx\n")
             bazel_rc.write("build:optimization --compilation_mode=opt\n")
             bazel_rc.write(
-                "build:linux_ci --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain\n"
+                'build:linux_ci --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain --copt="-Dstatic_assert=_Static_assert"\n'
             )
             bazel_rc.write(
                 "build:linux_ci_gpu --crosstool_top=//third_party/toolchains/gcc7_manylinux2010-nvcc-cuda10.1:toolchain\n"
