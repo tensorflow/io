@@ -742,15 +742,10 @@ http_archive(
 http_archive(
     name = "pulsar",
     build_file = "//third_party:pulsar.BUILD",
-    patch_cmds = [
-        "cp pulsar-common/src/main/proto/PulsarApi.proto pulsar-client-cpp/lib",
-        "sed -i.bak 's/define PULSAR_DEFINES_H_/define PULSAR_DEFINES_H_\\'$'\\n''#if defined(_MSC_VER)\\'$'\\n''#include <Windows.h>\\'$'\\n''#undef ERROR\\'$'\\n''#endif/g' pulsar-client-cpp/include/pulsar/defines.h",
-        "sed -i.bak 's/define LIB_ACKGROUPINGTRACKER_H_/define LIB_ACKGROUPINGTRACKER_H_\\'$'\\n''#include <pulsar\\/defines.h>/g' pulsar-client-cpp/lib/AckGroupingTracker.h",
-    ],
-    sha256 = "08f19ca6d6353751ff0661403b16b71425bf7ada3d8835a38e426ae303b0e385",
-    strip_prefix = "pulsar-2.6.1",
+    sha256 = "be97723dbba43045506f877cbc7600d2efe74264eace980933ae42b387069bc3",
+    strip_prefix = "pulsar-client-cpp-3.3.0",
     urls = [
-        "https://github.com/apache/pulsar/archive/v2.6.1.tar.gz",
+        "https://github.com/apache/pulsar-client-cpp/archive/refs/tags/v3.3.0.tar.gz",
     ],
 )
 
