@@ -24,8 +24,8 @@ cc_library(
             "lib/*.cc",
             "lib/auth/**/*.h",
             "lib/auth/**/*.cc",
-            # lz4 is imported in another package, so we just add the header here
             "lib/lz4/*.h",
+            "lib/lz4/*.cc",
             "lib/checksum/*.h",
             "lib/checksum/*.hpp",
             "lib/checksum/*.cc",
