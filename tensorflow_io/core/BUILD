@@ -248,6 +248,9 @@ go_binary(
     cgo = True,
     linkmode = "c-archive",
     visibility = ["//visibility:public"],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+    ],
     deps = [
         "@com_github_prometheus_client_golang//api:go_default_library",
         "@com_github_prometheus_client_golang//api/prometheus/v1:go_default_library",
