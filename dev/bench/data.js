@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1691122378597,
+  "lastUpdate": 1691130729065,
   "repoUrl": "https://github.com/tensorflow/io",
   "entries": {
     "Tensorflow-IO Benchmarks": [
@@ -58964,6 +58964,422 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.000027188199359130974",
             "extra": "mean: 2.6630091773024676 msec\nrounds: 141"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2f72c820870ba1d3aed27b70821d407ee58d36c4",
+          "message": "Bump flask from 1.1.2 to 2.3.2 in /tests/test_gcloud/testbench (#1796)\n\nBumps [flask](https://github.com/pallets/flask) from 1.1.2 to 2.3.2.\r\n- [Release notes](https://github.com/pallets/flask/releases)\r\n- [Changelog](https://github.com/pallets/flask/blob/main/CHANGES.rst)\r\n- [Commits](https://github.com/pallets/flask/compare/1.1.2...2.3.2)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: flask\r\n  dependency-type: direct:production\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2023-08-03T23:22:09-07:00",
+          "tree_id": "c5ff5d9d6046e5398227921fd271b91543ddf1f9",
+          "url": "https://github.com/tensorflow/io/commit/2f72c820870ba1d3aed27b70821d407ee58d36c4"
+        },
+        "date": 1691130728603,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[mnist]",
+            "value": 3.681157749556519,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05537819935770171",
+            "extra": "mean: 271.6536665999911 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[lmdb]",
+            "value": 18.976265578141994,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000382133662394393",
+            "extra": "mean: 52.697407500022564 msec\nrounds: 10"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav]]",
+            "value": 0.8280065244794496,
+            "unit": "iter/sec",
+            "range": "stddev: 0.048663949057580515",
+            "extra": "mean: 1.2077199519999908 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[wav|s24]]",
+            "value": 0.8232380375861398,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04483621368659305",
+            "extra": "mean: 1.2147154946000227 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[flac]]",
+            "value": 0.8107812132207162,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06235548960715708",
+            "extra": "mean: 1.2333783561999894 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[vorbis]]",
+            "value": 0.4942122750552846,
+            "unit": "iter/sec",
+            "range": "stddev: 0.5450489420159798",
+            "extra": "mean: 2.023422020199996 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[audio[mp3]]",
+            "value": 0.4114172080006473,
+            "unit": "iter/sec",
+            "range": "stddev: 0.17552923958292238",
+            "extra": "mean: 2.430622688000028 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[hdf5]",
+            "value": 0.6214581680524367,
+            "unit": "iter/sec",
+            "range": "stddev: 0.11683950180440743",
+            "extra": "mean: 1.6091187652000145 sec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy]",
+            "value": 2.304231957482493,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0028547047415958308",
+            "extra": "mean: 433.98408599998675 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[structure]]",
+            "value": 1.4020843659871394,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06375691037261913",
+            "extra": "mean: 713.2238432000122 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/tuple]]",
+            "value": 1.391045188994926,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06948436131739916",
+            "extra": "mean: 718.8839067999879 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[numpy[file/dict]]",
+            "value": 1.4344266474907077,
+            "unit": "iter/sec",
+            "range": "stddev: 0.005890701261313383",
+            "extra": "mean: 697.1426540000039 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_io_dataset.py::test_io_dataset_benchmark[sql]",
+            "value": 17.13906250545071,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0019214384362931977",
+            "extra": "mean: 58.34624849999651 msec\nrounds: 6"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int32_0d[128]",
+            "value": 419.3556244392765,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0017551751674241662",
+            "extra": "mean: 2.384610916658403 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int32_1d[128]",
+            "value": 294.15784863162935,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004612278456491879",
+            "extra": "mean: 3.39953533333149 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int32_2d[128]",
+            "value": 15.33394076405461,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0023649187418508504",
+            "extra": "mean: 65.21480781666848 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int64_0d[128]",
+            "value": 480.1222122280485,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004444624159290964",
+            "extra": "mean: 2.0828030333348124 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int64_1d[128]",
+            "value": 210.39293036272755,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00043669461246245397",
+            "extra": "mean: 4.753011416666672 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_int64_2d[128]",
+            "value": 8.501837548980294,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0036606862442596843",
+            "extra": "mean: 117.62163111666837 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float32_0d[128]",
+            "value": 471.6845226113162,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004625293250616686",
+            "extra": "mean: 2.1200610833356373 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float32_1d[128]",
+            "value": 333.48602917523635,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00044812470625147185",
+            "extra": "mean: 2.9986263666671675 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float32_2d[128]",
+            "value": 27.746788520103724,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001926653013777387",
+            "extra": "mean: 36.0402069333342 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float64_0d[128]",
+            "value": 453.8011621951641,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0007934977233642798",
+            "extra": "mean: 2.2036082833343094 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float64_1d[128]",
+            "value": 323.3531828535691,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004618995791869318",
+            "extra": "mean: 3.092593649999268 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_float64_2d[128]",
+            "value": 21.544551172140295,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0024883685058700858",
+            "extra": "mean: 46.4154482500021 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_string_0d[128]",
+            "value": 466.67196806035,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00040997288336418793",
+            "extra": "mean: 2.1428327999994203 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_string_1d[128]",
+            "value": 121.50637405731327,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0017543684242766761",
+            "extra": "mean: 8.230020916666565 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_string_2d[128]",
+            "value": 4.540642130069597,
+            "unit": "iter/sec",
+            "range": "stddev: 0.013144250735859255",
+            "extra": "mean: 220.23316776666397 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_bool_0d[128]",
+            "value": 474.20550838586917,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0004927788648641033",
+            "extra": "mean: 2.108790349997965 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_bool_1d[128]",
+            "value": 313.5636847764549,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0013898688341314805",
+            "extra": "mean: 3.189144816667522 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_dense_tensor_atds_benchmark.py::test_dense_bool_2d[128]",
+            "value": 21.099772980474967,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001673208708376096",
+            "extra": "mean: 47.39387484999801 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_int32_1d[128]",
+            "value": 263.33164973705726,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0005062844959851422",
+            "extra": "mean: 3.797492633333377 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_int64_1d[128]",
+            "value": 239.4009393684915,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0015908456725456995",
+            "extra": "mean: 4.177093050001682 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_float32_1d[128]",
+            "value": 267.8720480228579,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00035668491989793253",
+            "extra": "mean: 3.733125600005375 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_float64_1d[128]",
+            "value": 245.6509052772918,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00161007417991724",
+            "extra": "mean: 4.0708174833355315 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_string_1d[128]",
+            "value": 251.9593894883834,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003383781349163561",
+            "extra": "mean: 3.9688935666598963 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_varlen_tensor_atds_benchmark.py::test_varlen_bool_1d[128]",
+            "value": 279.18756381708715,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00038435517269156994",
+            "extra": "mean: 3.5818214333327583 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_int32_1d[128]",
+            "value": 203.7784429070299,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0016857799572975749",
+            "extra": "mean: 4.907290416662136 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_int32_2d[128]",
+            "value": 173.80865450401689,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0020044683601382063",
+            "extra": "mean: 5.753453433338033 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_int64_1d[128]",
+            "value": 190.3049534749487,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0021116573576661604",
+            "extra": "mean: 5.254723966665627 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_int64_2d[128]",
+            "value": 207.48287328317508,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0003296277449888707",
+            "extra": "mean: 4.819674916662583 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_float32_1d[128]",
+            "value": 215.39316594124855,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002723136382735411",
+            "extra": "mean: 4.642672833328257 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_float32_2d[128]",
+            "value": 164.99214987979354,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003642939767048958",
+            "extra": "mean: 6.060894416665027 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_float64_1d[128]",
+            "value": 214.355999320956,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000280068283888739",
+            "extra": "mean: 4.665136516672419 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_float64_2d[128]",
+            "value": 208.9211205738943,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0002992895884245444",
+            "extra": "mean: 4.78649548333389 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_string_1d[128]",
+            "value": 206.96338876641437,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00028955868114168855",
+            "extra": "mean: 4.831772449999032 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_string_2d[128]",
+            "value": 172.2215883668344,
+            "unit": "iter/sec",
+            "range": "stddev: 0.003263404090791315",
+            "extra": "mean: 5.806472983340427 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_bool_1d[128]",
+            "value": 201.03614565618767,
+            "unit": "iter/sec",
+            "range": "stddev: 0.002115837885898185",
+            "extra": "mean: 4.974229866653938 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_atds_avro/benchmark/test_sparse_tensor_atds_benchmark.py::test_sparse_bool_2d[128]",
+            "value": 211.6498333087477,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00027975980920785885",
+            "extra": "mean: 4.724785200001709 msec\nrounds: 30"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav]]",
+            "value": 4226.952921894569,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001610907197833342",
+            "extra": "mean: 236.57703752039626 usec\nrounds: 613"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[wav|s24]]",
+            "value": 3459.5104153816487,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00001007498497870001",
+            "extra": "mean: 289.0582423321542 usec\nrounds: 652"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[flac]]",
+            "value": 1051.3151066159135,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000025365557841037176",
+            "extra": "mean: 951.1896040559218 usec\nrounds: 937"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[vorbis]]",
+            "value": 571.4486809796433,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000023563119461503184",
+            "extra": "mean: 1.7499384166670653 msec\nrounds: 288"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[audio[mp3]]",
+            "value": 1566.3640751155092,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010273744974064574",
+            "extra": "mean: 638.4211792691023 usec\nrounds: 1283"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[hdf5]",
+            "value": 428.9832824170849,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00005042055138972144",
+            "extra": "mean: 2.3310931707304534 msec\nrounds: 123"
+          },
+          {
+            "name": "tests/test_io_tensor.py::test_io_tensor_benchmark[arrow]",
+            "value": 473.13484775037404,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000324407394752205",
+            "extra": "mean: 2.11356234856664 msec\nrounds: 175"
           }
         ]
       }
