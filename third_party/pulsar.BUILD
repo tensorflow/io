@@ -32,9 +32,12 @@ cc_library(
             "lib/stats/*.h",
             "lib/stats/*.cc",
         ],
-        exclude = [
-            "lib/checksum/crc32c_sse42.cc",
-        ],
+        exclude = select({
+            "@platforms//cpu:x86_64": [],
+            "//conditions:default": [
+                "lib/checksum/crc32c_sse42.cc",
+            ],
+        }),
     ),
     hdrs = [
         # declare header from above genrule
