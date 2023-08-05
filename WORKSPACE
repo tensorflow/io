@@ -300,11 +300,10 @@ http_archive(
 http_archive(
     name = "dcmtk",
     build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "fa8e34b1a5de101df8916eb22eaffd8f7d1b2ff001a88f819fbfbde01fe5af7d",
-    strip_prefix = "dcmtk-DCMTK-3.6.5-_20210308",
+    sha256 = "117097da6d50ddbad0e48bb1e6cdc61468e82ba1d32001dd8e2366b445133a8c",
+    strip_prefix = "dcmtk-DCMTK-3.6.6",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
-        "https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
+        "https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.6.tar.gz",
     ],
 )
 
