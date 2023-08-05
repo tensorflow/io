@@ -126,7 +126,7 @@ def write_config():
             bazel_rc.write("build:macos --copt=-Wunguarded-availability\n")
             bazel_rc.write("build:macos --copt=-Wno-error=unused-but-set-variable\n")
             bazel_rc.write("build:macos --copt=-Wno-error=unknown-warning-option\n")
-            bazel_rc.write("build:macos --cpu=darwin\n")
+            bazel_rc.write("build:macos --define=grpc_no_ares=true\n")
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
             bazel_rc.write('build:windows --copt="/std:c++17"\n')
