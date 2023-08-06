@@ -300,11 +300,10 @@ http_archive(
 http_archive(
     name = "dcmtk",
     build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "fa8e34b1a5de101df8916eb22eaffd8f7d1b2ff001a88f819fbfbde01fe5af7d",
-    strip_prefix = "dcmtk-DCMTK-3.6.5-_20210308",
+    sha256 = "fb1434c421d4cc5d391fe37d05f4a4a4267aab16af9826474a6ef366952a11cc",
+    strip_prefix = "dcmtk-5fba853b6f7c13b02bed28bd9f7d3f450e4c72bb",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
-        "https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
+        "https://github.com/DCMTK/dcmtk/archive/5fba853b6f7c13b02bed28bd9f7d3f450e4c72bb.tar.gz",
     ],
 )
 
@@ -387,11 +386,10 @@ http_archive(
 http_archive(
     name = "fmjpeg2koj",
     build_file = "//third_party:fmjpeg2koj.BUILD",
-    sha256 = "a8563307cb09161633479aff0880368ed57396f6d532facba973cf303d699717",
-    strip_prefix = "fmjpeg2koj-6de80e15a43a4d1c411109aea388007afee24263",
+    sha256 = "c5b203ec580cab6fbd92c24712e987e960bda45638d4c2061d0b15d5d520ab42",
+    strip_prefix = "fmjpeg2koj-1.0.3",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DraconPern/fmjpeg2koj/archive/6de80e15a43a4d1c411109aea388007afee24263.tar.gz",
-        "https://github.com/DraconPern/fmjpeg2koj/archive/6de80e15a43a4d1c411109aea388007afee24263.tar.gz",
+        "https://github.com/DraconPern/fmjpeg2koj/archive/refs/tags/v1.0.3.tar.gz",
     ],
 )
 
