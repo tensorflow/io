@@ -191,7 +191,7 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
           }
         });
 
-    const char *disable_multi_part_download =
+    const char* disable_multi_part_download =
         getenv("S3_DISABLE_MULTI_PART_DOWNLOAD");
     int temp_value;
     if (disable_multi_part_download &&
@@ -225,12 +225,12 @@ static void GetTransferManager(
   if (s3_file->transfer_managers.count(direction) == 0) {
     uint64_t temp_value;
     if (direction == Aws::Transfer::TransferDirection::UPLOAD) {
-      const char *upload_chunk_size = getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE");
+      const char* upload_chunk_size = getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE");
       if (upload_chunk_size == nullptr ||
           !absl::SimpleAtoi(upload_chunk_size, &temp_value))
         temp_value = kS3MultiPartUploadChunkSize;
     } else if (direction == Aws::Transfer::TransferDirection::DOWNLOAD) {
-      const char *download_chunk_size =
+      const char* download_chunk_size =
           getenv("S3_MULTI_PART_DOWNLOAD_CHUNK_SIZE");
       if (download_chunk_size == nullptr ||
           !absl::SimpleAtoi(download_chunk_size, &temp_value))
@@ -1023,7 +1023,7 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
 
   PathExists(filesystem, dir_path.c_str(), status);
   if (TF_GetCode(status) == TF_OK) {
-    std::unique_ptr<TF_WritableFile, void (*)(TF_WritableFile * file)> file(
+    std::unique_ptr<TF_WritableFile, void (*)(TF_WritableFile* file)> file(
         new TF_WritableFile, [](TF_WritableFile* file) {
           if (file != nullptr) {
             if (file->plugin_file != nullptr) tf_writable_file::Cleanup(file);
