@@ -93,10 +93,10 @@ switched_rules_by_language(
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "b54cb7ac94a74bbab4ffc40e362d684e9b08b4a10a307022f24cb80706765367",
-    strip_prefix = "tensorflow-2.14.0-rc0",
+    sha256 = "f0500371f6a1e3dfad2135b5cab75b25e71812160a2bde1dcd2ed32e4b8f6361",
+    strip_prefix = "tensorflow-2.14.0-rc1",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.14.0-rc0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.14.0-rc1.tar.gz",
     ],
 )
 
