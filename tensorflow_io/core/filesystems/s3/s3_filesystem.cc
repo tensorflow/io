@@ -1023,7 +1023,7 @@ void CreateDir(const TF_Filesystem* filesystem, const char* path,
 
   PathExists(filesystem, dir_path.c_str(), status);
   if (TF_GetCode(status) == TF_OK) {
-    std::unique_ptr<TF_WritableFile, void (*)(TF_WritableFile* file)> file(
+    std::unique_ptr<TF_WritableFile, void (*)(TF_WritableFile * file)> file(
         new TF_WritableFile, [](TF_WritableFile* file) {
           if (file != nullptr) {
             if (file->plugin_file != nullptr) tf_writable_file::Cleanup(file);

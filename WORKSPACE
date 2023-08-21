@@ -205,11 +205,10 @@ http_archive(
         """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
         """sed -i.bak 's/__attribute__((visibility("default")))//g' aws-cpp-sdk-core/include/aws/core/external/tinyxml2/tinyxml2.h """,
     ],
-    sha256 = "749322a8be4594472512df8a21d9338d7181c643a00e08a0ff12f07e831e3346",
-    strip_prefix = "aws-sdk-cpp-1.8.186",
+    sha256 = "ae1cb22225b1f47eee351c0064be5e87676bf7090bb9ad19888bea0dab0e2749",
+    strip_prefix = "aws-sdk-cpp-1.8.187",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.8.186.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.8.186.tar.gz",
+        "https://github.com/aws/aws-sdk-cpp/archive/1.8.187.tar.gz",
     ],
 )
 
