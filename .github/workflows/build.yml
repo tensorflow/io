@@ -104,6 +104,34 @@ jobs:
           cat source.sh
           bash -x -e source.sh
 
+  macosarm64-bazel:
+    name: Bazel macOS arm64
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - uses: actions/checkout@v2
+      - name: GCP
+        run: |
+          cat > service_account_creds.json << EOF
+          ${{ secrets.GCP_CREDS }}
+          EOF
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.8"
+      - name: Bazel on macOS
+        run: |
+          set -x -e
+          export BAZEL_OPTIMIZATION="--config=optimization --config=cache"
+          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
+            export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
+          sudo -E -H bash -e .github/workflows/build.bazel.sh python3
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ runner.os }}-bazel-bin
+          path: |
+            build/tensorflow_io
+            build/tensorflow_io_gcs_filesystem
+
   macos-bazel:
     name: Bazel macOS
     runs-on: macOS-11
