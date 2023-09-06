@@ -121,7 +121,7 @@ jobs:
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          sudo -E -H bash -e .github/workflows/build.bazel.sh python3
+          bash -e .github/workflows/build.bazel.sh python3
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ runner.os }}-bazel-bin
