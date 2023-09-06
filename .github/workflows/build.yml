@@ -114,9 +114,6 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.8"
       - name: Bazel on macOS
         run: |
           set -x -e
