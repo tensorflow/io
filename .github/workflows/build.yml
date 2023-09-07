@@ -171,7 +171,6 @@ jobs:
           name: ${{ runner.os }}-arm64-${{ matrix.python }}-wheel
           path: wheelhouse
 
-
   macos-bazel:
     name: Bazel macOS
     runs-on: macOS-11
@@ -521,9 +520,13 @@ jobs:
   release:
     name: Release
     if: github.event_name == 'push'
-    needs: [linux-wheel, macos-wheel] #, windows-wheel]
+    needs: [linux-wheel, macos-wheel, macos-arm64-wheel] #, windows-wheel]
     runs-on: ubuntu-20.04
     steps:
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-arm64-3.11-wheel
+          path: macOS-arm64-3.11-wheel
       - uses: actions/download-artifact@v1
         with:
           name: macOS-3.7-wheel
@@ -587,6 +590,7 @@ jobs:
       - run: |
           set -e -x
           mkdir -p wheelhouse
+          cp macOS-arm64-3.11-wheel/*.whl wheelhouse/
           cp macOS-3.7-wheel/*.whl wheelhouse/
           cp macOS-3.8-wheel/*.whl wheelhouse/
           cp macOS-3.9-wheel/*.whl wheelhouse/
