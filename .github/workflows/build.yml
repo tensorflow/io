@@ -155,6 +155,7 @@ jobs:
         run: |
           set -x -e
           python -m pip install twine delocate==0.10.3
+          ls -la $(pyenv root)/shims
           delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
