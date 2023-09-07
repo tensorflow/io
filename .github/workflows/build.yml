@@ -154,9 +154,12 @@ jobs:
       - name: Auditwheel ${{ matrix.python }} macOS
         run: |
           set -x -e
+          pyenv versions
+          pyenv which python
           python -m pip install twine delocate==0.10.3
-          ls -la $(pyenv root)/shims
-          delocate-wheel --version
+          pyenv which delocate-wheel
+          ls -la $(pyenv root)/shims/
+          $(pyenv root)/shims/delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
           for f in dist/*.whl; do
