@@ -156,9 +156,9 @@ jobs:
           set -x -e
           pyenv versions
           pyenv which python
-          python -m pip install twine delocate==0.10.3
+          pyenv exec pip install twine delocate==0.10.3
           pyenv which delocate-wheel
-          pyenv delocate-wheel --version
+          pyenv exec delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
           for f in dist/*.whl; do
