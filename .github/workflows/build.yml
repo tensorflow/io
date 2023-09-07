@@ -158,8 +158,7 @@ jobs:
           pyenv which python
           python -m pip install twine delocate==0.10.3
           pyenv which delocate-wheel
-          ls -la $(pyenv root)/shims/
-          $(pyenv root)/shims/delocate-wheel --version
+          pyenv delocate-wheel --version
           ls dist/*
           mkdir -p wheelhouse
           for f in dist/*.whl; do
