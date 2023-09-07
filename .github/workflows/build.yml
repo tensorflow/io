@@ -104,7 +104,7 @@ jobs:
           cat source.sh
           bash -x -e source.sh
 
-  macosarm64-bazel:
+  macos-arm64-bazel:
     name: Bazel macOS arm64
     runs-on: [self-hosted, macOS, ARM64]
     steps:
@@ -124,7 +124,7 @@ jobs:
           bash -e .github/workflows/build.bazel.sh python3
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ runner.os }}-bazel-bin
+          name: ${{ runner.os }}-arm64-bazel-bin
           path: |
             build/tensorflow_io
             build/tensorflow_io_gcs_filesystem
@@ -156,6 +156,10 @@ jobs:
           path: |
             build/tensorflow_io
             build/tensorflow_io_gcs_filesystem
+      - name: Package pip on macOS
+        run: |
+          set -x -e
+          which python3
 
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
