@@ -147,6 +147,9 @@ jobs:
           set -x -e
           pyenv versions
           pyenv install --list
+          pyenv install 3.7
+          pyenv install 3.8
+          pyenv install 3.9
           # pyenv install ${{ matrix.python }}
           pyenv local ${{ matrix.python }}
           pyenv versions
