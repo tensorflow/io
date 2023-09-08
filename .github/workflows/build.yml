@@ -135,7 +135,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64]
     strategy:
       matrix:
-        python: ['3.11']
+        python: ['3.10', '3.11']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -145,20 +145,19 @@ jobs:
       - name: Wheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          which python
-          python -m pip install -U wheel setuptools
+          pyenv versions
+          pyenv install --list
+          pyenv install ${{ matrix.python }}
+          pyenv shell ${{ matrix.python }}
+          pyenv versions
+          pyenv version
+          pyenv which python
+          pyenv exec pip install -U wheel setuptools
+          pyenv which python
           python --version
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
-          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_arm64
-      - name: Auditwheel ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          pyenv versions
-          pyenv which python
-          pyenv exec pip install twine delocate==0.10.3
-          pyenv which delocate-wheel
-          pyenv exec delocate-wheel --version
+          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           ls dist/*
           mkdir -p wheelhouse
           for f in dist/*.whl; do
