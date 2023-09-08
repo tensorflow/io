@@ -147,7 +147,7 @@ jobs:
           set -x -e
           pyenv versions
           pyenv install --list
-          pyenv install ${{ matrix.python }}
+          # pyenv install ${{ matrix.python }}
           pyenv local ${{ matrix.python }}
           pyenv versions
           pyenv version
