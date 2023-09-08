@@ -135,7 +135,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64]
     strategy:
       matrix:
-        python: ['3.10', '3.11']
+        python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v1
@@ -524,6 +524,22 @@ jobs:
     steps:
       - uses: actions/download-artifact@v1
         with:
+          name: macOS-arm64-3.7-wheel
+          path: macOS-arm64-3.7-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-arm64-3.8-wheel
+          path: macOS-arm64-3.8-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-arm64-3.9-wheel
+          path: macOS-arm64-3.9-wheel
+      - uses: actions/download-artifact@v1
+        with:
+          name: macOS-arm64-3.10-wheel
+          path: macOS-arm64-3.10-wheel
+      - uses: actions/download-artifact@v1
+        with:
           name: macOS-arm64-3.11-wheel
           path: macOS-arm64-3.11-wheel
       - uses: actions/download-artifact@v1
@@ -589,6 +605,10 @@ jobs:
       - run: |
           set -e -x
           mkdir -p wheelhouse
+          cp macOS-arm64-3.7-wheel/*.whl wheelhouse/
+          cp macOS-arm64-3.8-wheel/*.whl wheelhouse/
+          cp macOS-arm64-3.9-wheel/*.whl wheelhouse/
+          cp macOS-arm64-3.10-wheel/*.whl wheelhouse/
           cp macOS-arm64-3.11-wheel/*.whl wheelhouse/
           cp macOS-3.7-wheel/*.whl wheelhouse/
           cp macOS-3.8-wheel/*.whl wheelhouse/
