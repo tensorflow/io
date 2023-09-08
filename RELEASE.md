@@ -1,3 +1,18 @@
+# Release 0.34.0
+
+## Major Features and Bug Fixes
+* Add macOS arm64 support
+* Fix segfault on s3 filesystem
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Ukjae Jeong (Jay), Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.33.0
 
 ## Major Features and Bug Fixes
