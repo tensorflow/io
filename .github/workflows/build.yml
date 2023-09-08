@@ -148,7 +148,7 @@ jobs:
           which python
           python -m pip install -U wheel setuptools
           python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_arm64
+          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_10_14_arm64
       - name: Auditwheel ${{ matrix.python }} macOS
