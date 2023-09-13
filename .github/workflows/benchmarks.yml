@@ -5,6 +5,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   macos:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
@@ -47,6 +50,8 @@ jobs:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
     runs-on: ubuntu-20.04
+    permissions:
+      contents: write # to allow sending a commit comment for the benchmark action
     strategy:
       fail-fast: false
       matrix:
