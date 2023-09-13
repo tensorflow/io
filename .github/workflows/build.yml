@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 env:
   REPO_NAME: ${{ github.repository }}
   EVENT_NAME: ${{ github.event_name }}
