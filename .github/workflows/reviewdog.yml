@@ -5,8 +5,14 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   bazel:
+    permissions:
+      checks: write  # for reviewdog/action-suggester to report issues using checks
+      contents: read  # for actions/checkout to fetch code
     name: Bazel Buildifier
     runs-on: ubuntu-20.04
     steps:
@@ -16,6 +22,9 @@ jobs:
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- bazel
       - uses: reviewdog/action-suggester@v1
   black:
+    permissions:
+      checks: write  # for reviewdog/action-suggester to report issues using checks
+      contents: read  # for actions/checkout to fetch code
     name: Python Black
     runs-on: ubuntu-20.04
     steps:
@@ -25,6 +34,9 @@ jobs:
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- black
       - uses: reviewdog/action-suggester@v1
   clang:
+    permissions:
+      checks: write  # for reviewdog/action-suggester to report issues using checks
+      contents: read  # for actions/checkout to fetch code
     name: Clang Format
     runs-on: ubuntu-20.04
     steps:
@@ -34,6 +46,9 @@ jobs:
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- clang
       - uses: reviewdog/action-suggester@v1
   pyupgrade:
+    permissions:
+      checks: write  # for reviewdog/action-suggester to report issues using checks
+      contents: read  # for actions/checkout to fetch code
     name: Python Pyupgrade
     runs-on: ubuntu-20.04
     steps:
