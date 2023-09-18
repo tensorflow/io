@@ -5,8 +5,14 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   release-note:
+    permissions:
+      contents: write  # for peter-evans/create-pull-request to create branch
+      pull-requests: write  # for peter-evans/create-pull-request to create a PR
     name: README.md
     runs-on: ubuntu-latest
     steps:

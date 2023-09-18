@@ -10,8 +10,13 @@ on:
         description: "Commit (e.g., 92b44e1)"
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   release:
+    permissions:
+      contents: write
     name: Release
     runs-on: ubuntu-latest
     steps:
