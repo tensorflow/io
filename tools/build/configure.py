@@ -120,8 +120,8 @@ def write_config():
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
             # With macOS
-            bazel_rc.write('build:macos --copt="-target x86_64-apple-macosx12.1"\n')
-            bazel_rc.write('build:macos --linkopt="-target x86_64-apple-macosx12.1"\n')
+            bazel_rc.write('build:macos --copt="--target=x86_64-apple-macosx12.1"\n')
+            bazel_rc.write('build:macos --linkopt="--target=x86_64-apple-macosx12.1"\n')
             # Warns for unguarded uses of Objective-C APIs
             bazel_rc.write("build:macos --copt=-Wunguarded-availability\n")
             bazel_rc.write("build:macos --copt=-Wno-error=unused-but-set-variable\n")
