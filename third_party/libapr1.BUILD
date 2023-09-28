@@ -158,6 +158,7 @@ cc_library(
         "HAVE_CONFIG_H",
         "LINUX",
         "REENTRANT",
+        "sys_siglist=strsignal",
     ],
     includes = [
         "include",
