@@ -99,7 +99,6 @@ cc_library(
         "tables/apr_tables.c",
         "threadproc/unix/proc.c",
         "threadproc/unix/procsup.c",
-        "threadproc/unix/signals.c",
         "threadproc/unix/thread.c",
         "threadproc/unix/threadpriv.c",
         "time/unix/time.c",
@@ -158,13 +157,7 @@ cc_library(
         "HAVE_CONFIG_H",
         "LINUX",
         "REENTRANT",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "@bazel_tools//src/conditions:darwin": [],
-        "//conditions:default": [
-            "sys_siglist=strsignal",
-        ],
-    }),
+    ],
     includes = [
         "include",
         "include/arch/unix",
