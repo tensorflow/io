@@ -158,8 +158,13 @@ cc_library(
         "HAVE_CONFIG_H",
         "LINUX",
         "REENTRANT",
-        "sys_siglist=strsignal",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin": [],
+        "//conditions:default": [
+            "sys_siglist=strsignal",
+        ],
+    }),
     includes = [
         "include",
         "include/arch/unix",
