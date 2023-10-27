@@ -306,8 +306,9 @@ jobs:
         shell: bash
         run: |
           set -x -e
-          rm -f /usr/bin/python3
-          ln -s /usr/local/bin/python3.9 /usr/bin/python3
+          export
+          sudo rm -f /usr/bin/python3
+          sudo ln -s /usr/local/bin/python3.9 /usr/bin/python3
           export BAZEL_OPTIMIZATION="--config=optimization" #  --config=linux_ci --config=cache
           if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
