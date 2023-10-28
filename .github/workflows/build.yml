@@ -305,13 +305,13 @@ jobs:
       - name: Bazel on Linux
         shell: bash
         run: |
-          set -x -e
+          set -x
           echo export BAZEL_OPTIMIZATION="--config=optimization" #  --config=linux_ci --config=cache
-          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
-            export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-          fi
-          docker run -i --rm -v $PWD:/v -w /v --net=host gcr.io/tensorflow-testing/nosla-cuda11.2-cudnn8.1-ubuntu20.04-manylinux2014-multipython@sha256:48612bd85709cd014711d0b0f87e0806f3567d06d2e81c6e860516b87498b821 bash -x -e .github/workflows/build.bazel.sh python3.9
-          echo sudo cp .bazelrc build/tensorflow_io/
+          #if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
+          #  export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          #fi
+          docker run -i -t -v $PWD:/v -w /v --net=host gcr.io/tensorflow-testing/nosla-cuda11.2-cudnn8.1-ubuntu20.04-manylinux2014-multipython@sha256:48612bd85709cd014711d0b0f87e0806f3567d06d2e81c6e860516b87498b821 bash -x .github/workflows/build.bazel.sh python3.9
+          sudo cp .bazelrc build/tensorflow_io/
       - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: ${{ runner.os }}-bazel-bin
