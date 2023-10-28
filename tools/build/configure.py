@@ -142,8 +142,8 @@ def write_config():
             )
             bazel_rc.write("build:linux --copt=-Wno-error=stringop-overflow=\n")
             # For a cleaner output
-            bazel_rc.write("build --noshow_progress\n")
-            bazel_rc.write("build --noshow_loading_progress\n")
+            # bazel_rc.write("build --noshow_progress\n")
+            # bazel_rc.write("build --noshow_loading_progress\n")
             bazel_rc.write("build --verbose_failures\n")
             bazel_rc.write("build --test_output=errors\n")
             bazel_rc.write("build --experimental_ui_max_stdouterr_bytes=-1\n")
