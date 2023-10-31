@@ -25,7 +25,7 @@ action=$1
 
 if [ "$action" == "start" ]; then
 cat <<EOF >.coredns
-.:1053 {
+.:8053 {
   whoami 
   prometheus
 }
@@ -54,14 +54,14 @@ EOF
 docker run -d --rm --name=tensorflow-io-prometheus --net=host -v $PWD/.prometheus:/etc/prometheus/prometheus.yml prom/prometheus
 
 # wait for coredns and prometheus up
-sleep 5
+sleep 25
 
-dig @localhost -p 1053 www.google.com
-dig @localhost -p 1053 www.google.com
-dig @localhost -p 1053 www.google.com
-dig @localhost -p 1053 www.google.com
-dig @localhost -p 1053 www.google.com
-dig @localhost -p 1053 www.google.com
+dig @localhost -p 8053 www.google.com
+dig @localhost -p 8053 www.google.com
+dig @localhost -p 8053 www.google.com
+dig @localhost -p 8053 www.google.com
+dig @localhost -p 8053 www.google.com
+dig @localhost -p 8053 www.google.com
 
 else
 docker rm -f tensorflow-io-coredns
