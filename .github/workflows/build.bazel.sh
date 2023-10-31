@@ -54,11 +54,11 @@ bazel build \
 
 rm -rf build && mkdir -p build
 
-cp -r bazel-bin/tensorflow_io  build/tensorflow_io
-cp -r bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+cp -r -L bazel-bin/tensorflow_io  build/tensorflow_io
+cp -r -L bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
 
-chown -R $(id -nu):$(id -ng) build/tensorflow_io/
-chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
+echo chown -R $(id -nu):$(id -ng) build/tensorflow_io/
+echo chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
 find build/tensorflow_io -name '*runfiles*' | xargs rm -rf
 find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | xargs rm -rf
 
