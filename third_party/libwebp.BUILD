@@ -29,7 +29,6 @@ cc_library(
         "examples/unicode.h",
     ],
     defines = [
-        "WEBP_EXTERN=",
     ],
     includes = [
         "src",
