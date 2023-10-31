@@ -30,6 +30,7 @@ if [[ $(uname) == "Linux" ]]; then
   curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
   mv bazelisk-linux-amd64 /usr/local/bin/bazel
   chmod +x /usr/local/bin/bazel
+  cp -f $(which $PYTHON) /usr/bin/python3
 fi
 
 bazel version
