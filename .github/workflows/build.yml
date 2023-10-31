@@ -185,7 +185,7 @@ jobs:
           EOF
       - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4.7.1
         with:
-          python-version: "3.9"
+          python-version: "3.10"
       - name: Bazel on macOS
         run: |
           set -x -e
@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.9']
+        python: ['3.10']
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
