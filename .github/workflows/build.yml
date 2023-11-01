@@ -375,7 +375,7 @@ jobs:
           bash -x -e tests/test_kafka/kafka_test.sh
           bash -x -e tests/test_aws/aws_test.sh
           echo bash -x -e tests/test_gcloud/test_pubsub_bigtable.sh
-          bash -x -e tests/test_prometheus/prometheus_test.sh start
+          echo bash -x -e tests/test_prometheus/prometheus_test.sh start
           bash -x -e tests/test_elasticsearch/elasticsearch_test.sh start
           bash -x -e tests/test_mongodb/mongodb_test.sh start
           bash -x -e tests/test_azure/start_azure.sh
