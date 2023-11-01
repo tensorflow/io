@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python: ['3.10']
+        python: ['3.9']
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
