@@ -292,9 +292,9 @@ jobs:
     runs-on: ubuntu-22.04
     #container:
     #  image: gcr.io/tensorflow-testing/nosla-cuda11.2-cudnn8.1-ubuntu20.04-manylinux2014-multipython@sha256:48612bd85709cd014711d0b0f87e0806f3567d06d2e81c6e860516b87498b821
-    #  env:
-    #    REPO_NAME: ${{ env.REPO_NAME }}
-    #    EVENT_NAME: ${{ env.EVENT_NAME }}
+    env:
+       REPO_NAME: ${{ env.REPO_NAME }}
+       EVENT_NAME: ${{ env.EVENT_NAME }}
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: GCP
@@ -306,10 +306,10 @@ jobs:
         shell: bash
         run: |
           set -x
-          echo export BAZEL_OPTIMIZATION="--config=optimization" #  --config=linux_ci --config=cache
-          #if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
-          #  export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-          #fi
+          export BAZEL_OPTIMIZATION="--config=optimization --config=linux_ci --config=cache"
+          if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
+            export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
+          fi
           docker run -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2014_x86_64 bash -x .github/workflows/build.bazel.sh python3.10
           sudo cp .bazelrc build/tensorflow_io/
           sudo chown -R $(id -nu):$(id -ng) .
