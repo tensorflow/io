@@ -22,7 +22,7 @@ fi
 
 if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq update
-  if [[ "${PYTHON_VERSION}" == "python3.7" ]]; then
+  if [[ "${PYTHON_VERSION}" == "python3.9" ]]; then
     apt-get install -y -qq software-properties-common
     add-apt-repository -y ppa:deadsnakes/ppa
     apt-get -y -qq update
