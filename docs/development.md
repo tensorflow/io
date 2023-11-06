@@ -128,7 +128,7 @@ the shared libraries on Ubuntu 22.04:
 
 # Install gcc/g++, git, unzip/curl (for bazel), and python3
 sudo apt-get -y -qq update
-sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip
+sudo apt-get -y -qq install gcc g++ git unzip curl python3-pip python-is-python3 libntirpc-dev
 
 # Install Bazelisk (manage bazel version implicitly)
 curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
@@ -140,9 +140,6 @@ sudo python3 -m pip install -U pip
 
 # Install tensorflow and configure bazel
 sudo ./configure.sh
-
-# Alias python3 to python, needed by bazel
-sudo ln -s /usr/bin/python3 /usr/bin/python
 
 # Add any optimization on bazel command, e.g., --compilation_mode=opt,
 #   --copt=-msse4.2, --remote_cache=, etc.
