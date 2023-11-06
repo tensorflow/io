@@ -26,6 +26,7 @@ if [[ $(uname) == "Linux" ]]; then
     apt-get install -y -qq software-properties-common
     add-apt-repository -y ppa:deadsnakes/ppa
     apt-get -y -qq update
+    apt-get -y -qq install python3.9-distutils
   fi
   apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils libmp3lame0
   curl -sSOL https://bootstrap.pypa.io/get-pip.py
