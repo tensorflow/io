@@ -93,7 +93,7 @@ jobs:
           cat > service_account_creds.json << EOF
           ${{ secrets.GCP_CREDS }}
           EOF
-      - name: Ubuntu 20.04
+      - name: Ubuntu 22.04
         shell: bash
         run: |
           set -x -e
