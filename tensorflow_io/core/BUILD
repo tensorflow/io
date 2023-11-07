@@ -161,9 +161,7 @@ cc_library(
         "ops/bigquery_ops.cc",
         "ops/bigquery_test_ops.cc",
     ],
-    copts = tf_io_copts() + [
-        "-I/usr/include/tirpc",
-    ],
+    copts = tf_io_copts(),
     linkstatic = True,
     deps = [
         ":bigquery_lib_cc",
