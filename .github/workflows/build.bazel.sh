@@ -55,8 +55,13 @@ bazel build \
 
 rm -rf build && mkdir -p build
 
+if [[ $(uname) == "Linux" ]]; then
 cp -r -L bazel-bin/tensorflow_io  build/tensorflow_io
 cp -r -L bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+else
+cp -r bazel-bin/tensorflow_io  build/tensorflow_io
+cp -r bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+fi
 
 echo chown -R $(id -nu):$(id -ng) build/tensorflow_io/
 echo chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
