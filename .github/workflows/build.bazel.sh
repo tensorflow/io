@@ -43,6 +43,7 @@ $PYTHON -m pip --version
 
 $PYTHON -m pip install -q ${TENSORFLOW_INSTALL}
 $PYTHON -m pip install -q "urllib3 <2"
+$PYTHON -m pip uninstall -y tensorflow-io-gcs-filesystem
 
 $PYTHON tools/build/configure.py
 

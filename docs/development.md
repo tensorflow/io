@@ -146,7 +146,7 @@ sudo ./configure.sh
 # export BAZEL_OPTIMIZATION=
 
 # Build shared libraries
-bazel build -s --verbose_failures $BAZEL_OPTIMIZATION //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
+bazel build -s --verbose_failures $BAZEL_OPTIMIZATION --copt="-Wno-error=array-parameter=" //tensorflow_io/... //tensorflow_io_gcs_filesystem/...
 
 # Once build is complete, shared libraries will be available in
 # `bazel-bin/tensorflow_io/core`, `bazel-bin/tensorflow_io/python/ops` and
