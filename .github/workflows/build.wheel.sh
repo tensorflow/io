@@ -11,6 +11,7 @@ run_test() {
   $entry -m pip uninstall -y tensorflow_io_gcs_filesystem
   (cd wheelhouse && $entry -m pip install tensorflow_io_gcs_filesystem-*-cp${CPYTHON_VERSION}-*.whl)
   (cd wheelhouse && $entry -m pip install tensorflow_io-*-cp${CPYTHON_VERSION}-*.whl)
+  $entry -m pip freeze
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append --forked --numprocesses=auto --dist loadfile $(find . -type f \( -iname "test_*.py" ! \( -iname "test_standalone_*.py" \) \)))
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append $(find . -type f \( -iname "test_standalone_*.py" \)))
 }
