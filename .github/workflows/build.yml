@@ -307,7 +307,9 @@ jobs:
           if [[ "${{ env.EVENT_NAME }}" == "push" && "${{ env.REPO_NAME }}" == "tensorflow/io" ]]; then
             export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           fi
-          docker run -e TF_PYTHON_VERSION=3.9 -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2014_x86_64 bash -x .github/workflows/build.bazel.sh python3.9
+          #docker run -e TF_PYTHON_VERSION=3.9 -v $PWD:/v -w /v --net=host quay.io/pypa/manylinux2014_x86_64 bash -x .github/workflows/build.bazel.sh python3.9
+          #docker run -e TF_PYTHON_VERSION=3.9 -v $PWD:/v -w /v --net=host --entrypoint=/bin/bash gcr.io/tensorflow-testing/nosla-cuda12.0.1-cudnn8.8-ubuntu20.04-manylinux2014-multipython -x -e .github/workflows/build.bazel.sh python3.9
+          python3 .github/workflows/build.py
           sudo cp .bazelrc build/tensorflow_io/
           sudo chown -R $(id -nu):$(id -ng) .
       - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
