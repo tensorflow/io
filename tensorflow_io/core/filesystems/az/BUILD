@@ -18,6 +18,7 @@ cc_library(
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_github_azure_azure_sdk_for_cpp//:azure",
         "@com_google_absl//absl/strings",
+	"@local_tsl//tsl/c:tsl_status",
     ],
     alwayslink = 1,
 )

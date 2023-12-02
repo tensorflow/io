@@ -23,6 +23,7 @@ cc_library(
         "@aws-sdk-cpp//:transfer",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
+	"@local_tsl//tsl/c:tsl_status",
     ],
     alwayslink = 1,
 )

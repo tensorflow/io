@@ -18,6 +18,7 @@ cc_library(
         "//tensorflow_io/core/filesystems:filesystem_plugins_header",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
+	"@local_tsl//tsl/c:tsl_status",
         "@hadoop",
     ],
     alwayslink = 1,
