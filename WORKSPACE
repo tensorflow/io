@@ -262,11 +262,10 @@ http_archive(
 http_archive(
     name = "bzip2",
     build_file = "//third_party:bzip2.BUILD",
-    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
-    strip_prefix = "bzip2-1.0.8",
+    sha256 = "329e4eb98f6af8d39da05cb51bccec88ae015eac99a42b1ee04dec0af7f4b957",
+    strip_prefix = "bzip2-bzip2-1.0.8",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
-        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+        "https://gitlab.com/bzip2/bzip2/-/archive/bzip2-1.0.8/bzip2-bzip2-1.0.8.tar.gz",
     ],
 )
 
