@@ -17,5 +17,5 @@ RUN python$PYTHON_VERSION tools/build/configure.py
 
 RUN cat .bazelrc
 
-RUN TF_PYTHON_VERSION=${PYTHON_VERSION} bazel build -s --verbose_failures ${BAZEL_OPTIMIZATION} -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
+RUN TF_PYTHON_VERSION=${PYTHON_VERSION} bazel build --noshow_progress --verbose_failures ${BAZEL_OPTIMIZATION} -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
 

@@ -308,7 +308,8 @@ jobs:
           #  export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           #fi
           docker build -t io -f tools/docker/build.Dockerfile --build-arg PYTHON_VERSION=3.10 --build-arg TENSORFLOW_VERSION=2.14 --build-arg BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" --progress=plain .
-          docker create -it io --name io bash
+          docker create -it --name io io bash
+          sleep 5
           docker cp -L io:/opt/io/bazel-bin build
           sudo cp .bazelrc build/tensorflow_io/
           sudo chown -R $(id -nu):$(id -ng) .
