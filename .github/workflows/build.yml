@@ -311,7 +311,7 @@ jobs:
           docker create -it --name io io bash
           sleep 5
           docker cp -L io:/opt/io/bazel-bin build
-          sudo cp .bazelrc build/tensorflow_io/
+          docker cp -L io:/opt/io/.bazelrc build/tensorflow_io/
           sudo chown -R $(id -nu):$(id -ng) .
           find build/tensorflow_io -name '*runfiles*' | xargs rm -rf
           find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | xargs rm -rf
