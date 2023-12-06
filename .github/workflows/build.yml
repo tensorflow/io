@@ -313,6 +313,12 @@ jobs:
           docker cp -L io:/opt/io/bazel-bin build
           docker cp -L io:/opt/io/.bazelrc build/tensorflow_io/
           sudo chown -R $(id -nu):$(id -ng) .
+          find build/tensorflow_io -type f
+          find build/tensorflow_io_gcs_filesystem -type f
+          find build/tensorflow_io -type l
+          find build/tensorflow_io_gcs_filesystem -type l
+          find build/tensorflow_io -name '*runfiles*'
+          find build/tensorflow_io_gcs_filesystem -name '*runfiles*'
           find build/tensorflow_io -name '*runfiles*' | xargs rm -rf
           find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | xargs rm -rf
       - uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
