@@ -17,5 +17,5 @@ RUN python$PYTHON_VERSION tools/build/configure.py
 
 RUN cat .bazelrc
 
-RUN TF_PYTHON_VERSION=${PYTHON_VERSION} bazel build --noshow_progress --verbose_failures ${BAZEL_OPTIMIZATION} -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
+RUN TF_PYTHON_VERSION=${PYTHON_VERSION} bazel build --crosstool_top=@ubuntu20.04-gcc9_manylinux2014-cuda11.8-cudnn8.6-tensorrt8.4_config_cuda//crosstool:toolchain --noshow_progress --verbose_failures ${BAZEL_OPTIMIZATION} -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
 
