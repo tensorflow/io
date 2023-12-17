@@ -99,6 +99,7 @@ cc_library(
         "tables/apr_tables.c",
         "threadproc/unix/proc.c",
         "threadproc/unix/procsup.c",
+        "threadproc/unix/signals.c",
         "threadproc/unix/thread.c",
         "threadproc/unix/threadpriv.c",
         "time/unix/time.c",
