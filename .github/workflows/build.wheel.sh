@@ -6,10 +6,12 @@ export TF_USE_MODULAR_FILESYSTEM=1
 run_test() {
   entry=$1
   CPYTHON_VERSION=$($entry -c 'import sys; print(str(sys.version_info[0])+str(sys.version_info[1]))')
+  TF_VERSION=$(/usr/bin/grep tensorflow tensorflow_io/python/ops/version_ops.py | /usr/bin/cut -d '"' -f 2)
+  $entry -m pip install $TF_VERSION pytest pytest-benchmark pytest-xdist==2.5.0 boto3 fastavro avro-python3 scikit-image pandas pyarrow==3.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigtable==1.6.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 PyYAML==5.3.1 azure-storage-blob==12.8.1 azure-cli==2.29.0
+  $entry -m pip uninstall -y tensorflow_io_gcs_filesystem
   (cd wheelhouse && $entry -m pip install tensorflow_io_gcs_filesystem-*-cp${CPYTHON_VERSION}-*.whl)
   (cd wheelhouse && $entry -m pip install tensorflow_io-*-cp${CPYTHON_VERSION}-*.whl)
-  TF_VERSION=$(/usr/bin/grep tensorflow tensorflow_io/python/ops/version_ops.py | /usr/bin/cut -d '"' -f 2)
-  $entry -m pip install -q $TF_VERSION pytest pytest-benchmark pytest-xdist==2.5.0 boto3 fastavro avro-python3 scikit-image pandas pyarrow==3.0.0 google-cloud-pubsub==2.1.0 google-cloud-bigtable==1.6.0 google-cloud-bigquery-storage==1.1.0 google-cloud-bigquery==2.3.1 google-cloud-storage==1.32.0 PyYAML==5.3.1 azure-storage-blob==12.8.1 azure-cli==2.29.0
+  $entry -m pip freeze
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append --forked --numprocesses=auto --dist loadfile $(find . -type f \( -iname "test_*.py" ! \( -iname "test_standalone_*.py" \) \)))
   (cd tests && $entry -m pytest --benchmark-disable -v --import-mode=append $(find . -type f \( -iname "test_standalone_*.py" \)))
 }
@@ -22,10 +24,11 @@ fi
 
 if [[ $(uname) == "Linux" ]]; then
   apt-get -y -qq update
-  if [[ "${PYTHON_VERSION}" == "python3.7" ]]; then
+  if [[ "${PYTHON_VERSION}" == "python3.9" ]]; then
     apt-get install -y -qq software-properties-common
     add-apt-repository -y ppa:deadsnakes/ppa
     apt-get -y -qq update
+    apt-get -y -qq install python3.9-distutils
   fi
   apt-get -y -qq install $PYTHON_VERSION ffmpeg  dnsutils libmp3lame0
   curl -sSOL https://bootstrap.pypa.io/get-pip.py

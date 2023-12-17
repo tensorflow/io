@@ -93,11 +93,34 @@ switched_rules_by_language(
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "e58c939079588623e6fa1d054aec2f90f95018266e0a970fd353a5244f5173dc",
-    strip_prefix = "tensorflow-2.13.0",
+    sha256 = "ce357fd0728f0d1b0831d1653f475591662ec5bca736a94ff789e6b1944df19f",
+    strip_prefix = "tensorflow-2.14.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.13.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.14.0.tar.gz",
     ],
+)
+
+http_archive(
+    name = "rules_python",
+    sha256 = "84aec9e21cc56fbc7f1335035a71c850d1b9b5cc6ff497306f84cced9a769841",
+    strip_prefix = "rules_python-0.23.1",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.23.1/rules_python-0.23.1.tar.gz",
+)
+
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+load(
+    "@org_tensorflow//tensorflow/tools/toolchains/python:python_repo.bzl",
+    "python_repository",
+)
+
+python_repository(name = "python_version_repo")
+
+load("@python_version_repo//:py_version.bzl", "HERMETIC_PYTHON_VERSION")
+
+python_register_toolchains(
+    name = "python",
+    ignore_root_user_error = True,
+    python_version = HERMETIC_PYTHON_VERSION,
 )
 
 load("@org_tensorflow//tensorflow:workspace3.bzl", "tf_workspace3")
@@ -239,11 +262,10 @@ http_archive(
 http_archive(
     name = "bzip2",
     build_file = "//third_party:bzip2.BUILD",
-    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
-    strip_prefix = "bzip2-1.0.8",
+    sha256 = "329e4eb98f6af8d39da05cb51bccec88ae015eac99a42b1ee04dec0af7f4b957",
+    strip_prefix = "bzip2-bzip2-1.0.8",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
-        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+        "https://gitlab.com/bzip2/bzip2/-/archive/bzip2-1.0.8/bzip2-bzip2-1.0.8.tar.gz",
     ],
 )
 

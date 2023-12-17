@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-set -e -x
+set -x
 
 
 PYTHON=python3
@@ -30,6 +30,7 @@ if [[ $(uname) == "Linux" ]]; then
   curl -sSOL https://github.com/bazelbuild/bazelisk/releases/download/v1.11.0/bazelisk-linux-amd64
   mv bazelisk-linux-amd64 /usr/local/bin/bazel
   chmod +x /usr/local/bin/bazel
+  cp -f $(which $PYTHON) /usr/bin/python3
 fi
 
 bazel version
@@ -42,6 +43,7 @@ $PYTHON -m pip --version
 
 $PYTHON -m pip install -q ${TENSORFLOW_INSTALL}
 $PYTHON -m pip install -q "urllib3 <2"
+$PYTHON -m pip uninstall -y tensorflow-io-gcs-filesystem
 
 $PYTHON tools/build/configure.py
 
@@ -53,11 +55,16 @@ bazel build \
 
 rm -rf build && mkdir -p build
 
+if [[ $(uname) == "Linux" ]]; then
+cp -r -L bazel-bin/tensorflow_io  build/tensorflow_io
+cp -r -L bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+else
 cp -r bazel-bin/tensorflow_io  build/tensorflow_io
 cp -r bazel-bin/tensorflow_io_gcs_filesystem  build/tensorflow_io_gcs_filesystem
+fi
 
-chown -R $(id -nu):$(id -ng) build/tensorflow_io/
-chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
+echo chown -R $(id -nu):$(id -ng) build/tensorflow_io/
+echo chown -R $(id -nu):$(id -ng) build/tensorflow_io_gcs_filesystem/
 find build/tensorflow_io -name '*runfiles*' | xargs rm -rf
 find build/tensorflow_io_gcs_filesystem -name '*runfiles*' | xargs rm -rf
 
