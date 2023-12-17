@@ -25,10 +25,9 @@ jobs:
         run: |
           set -x -e
           git log --pretty -1
-          sudo apt -y -qq update && sudo apt -y -qq install black
           sudo python -m pip install -U numpy black pyupgrade
           sudo python3 -m pip install -U numpy black pyupgrade
-          bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade black clang
+          bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:check -- bazel pyupgrade clang
 
   lint-docs:
     name: Lint for Docs
