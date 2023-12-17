@@ -54,7 +54,7 @@ EOF
 docker run -d --rm --name=tensorflow-io-prometheus --net=host -v $PWD/.prometheus:/etc/prometheus/prometheus.yml prom/prometheus
 
 # wait for coredns and prometheus up
-sleep 25
+sleep 5
 
 dig @localhost -p 1053 www.google.com
 dig @localhost -p 1053 www.google.com
