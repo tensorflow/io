@@ -110,7 +110,6 @@ jobs:
   macos-arm64-bazel:
     name: Bazel macOS arm64
     runs-on: [self-hosted, macOS, ARM64]
-    if: false
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: GCP
@@ -136,7 +135,6 @@ jobs:
   macos-arm64-wheel:
     name: Wheel ${{ matrix.python }} macOS arm64
     needs: macos-arm64-bazel
-    if: false
     runs-on: [self-hosted, macOS, ARM64]
     strategy:
       matrix:
