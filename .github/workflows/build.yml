@@ -538,18 +538,6 @@ jobs:
     steps:
       - uses: actions/download-artifact@7a1cd3216ca9260cd8022db641d960b1db4d1be4 # v4.0.0
         with:
-          name: macOS-arm64-3.9-wheel
-          path: macOS-arm64-3.9-wheel
-      - uses: actions/download-artifact@7a1cd3216ca9260cd8022db641d960b1db4d1be4 # v4.0.0
-        with:
-          name: macOS-arm64-3.10-wheel
-          path: macOS-arm64-3.10-wheel
-      - uses: actions/download-artifact@7a1cd3216ca9260cd8022db641d960b1db4d1be4 # v4.0.0
-        with:
-          name: macOS-arm64-3.11-wheel
-          path: macOS-arm64-3.11-wheel
-      - uses: actions/download-artifact@7a1cd3216ca9260cd8022db641d960b1db4d1be4 # v4.0.0
-        with:
           name: macOS-3.9-wheel
           path: macOS-3.9-wheel
       - uses: actions/download-artifact@7a1cd3216ca9260cd8022db641d960b1db4d1be4 # v4.0.0
@@ -587,9 +575,6 @@ jobs:
       - run: |
           set -e -x
           mkdir -p wheelhouse
-          cp macOS-arm64-3.9-wheel/*.whl wheelhouse/
-          cp macOS-arm64-3.10-wheel/*.whl wheelhouse/
-          cp macOS-arm64-3.11-wheel/*.whl wheelhouse/
           cp macOS-3.9-wheel/*.whl wheelhouse/
           cp macOS-3.10-wheel/*.whl wheelhouse/
           cp macOS-3.11-wheel/*.whl wheelhouse/
@@ -607,7 +592,7 @@ jobs:
           path: wheelhouse
 
   release-macos-arm64:
-    name: Release
+    name: Release (MacOS arm64)
     if: github.event_name == 'push'
     needs: [macos-arm64-wheel]
     runs-on: ubuntu-20.04
@@ -678,7 +663,7 @@ jobs:
           tags: tfsigio/candidate:${{ steps.info.outputs.version }}
 
   release-candidate-macos-arm64:
-    name: Release Candidate
+    name: Release Candidate (MacOS arm64)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [release-macos-arm64]
     runs-on: ubuntu-20.04
