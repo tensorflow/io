@@ -49,9 +49,19 @@ $PYTHON tools/build/configure.py
 
 cat .bazelrc
 
+if [[ $(uname -m) == "arm64" ]]; then
+
+bazel build \
+  ${BAZEL_OPTIMIZATION} \
+  -- //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so //tensorflow_io_gcs_filesystem/...
+
+else
+
 bazel build \
   ${BAZEL_OPTIMIZATION} \
   -- //tensorflow_io/...  //tensorflow_io_gcs_filesystem/...
+
+fi
 
 rm -rf build && mkdir -p build
 
