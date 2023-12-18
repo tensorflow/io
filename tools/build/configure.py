@@ -119,6 +119,7 @@ def write_config():
             bazel_rc.write("build --enable_platform_specific_config\n")
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
+            bazel_rc.write('build:macos --copt="-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"\n')
             # With macOS
             bazel_rc.write('build:macos --copt="--target=x86_64-apple-macosx12.1"\n')
             bazel_rc.write('build:macos --linkopt="--target=x86_64-apple-macosx12.1"\n')
