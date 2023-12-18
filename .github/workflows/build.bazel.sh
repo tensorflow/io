@@ -49,7 +49,7 @@ $PYTHON tools/build/configure.py
 
 cat .bazelrc
 
-if [[ $(uname -m) == "arm64" ]]; then
+if [[ $(uname -m) != "arm64" && $(uname) == "Darwin" ]]; then
 
 bazel build \
   ${BAZEL_OPTIMIZATION} \
