@@ -302,6 +302,8 @@ jobs:
         run: |
           set -x
           docker system prune --all --force
+          docker images
+          df -h
           #export BAZEL_OPTIMIZATION="--config=optimization --config=linux_ci --config=cache"
           #if [[ "${{ env.EVENT_NAME }}" == "push" && "${{ env.REPO_NAME }}" == "tensorflow/io" ]]; then
           #  export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_upload_local_results=true --google_credentials=service_account_creds.json"
