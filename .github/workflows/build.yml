@@ -303,6 +303,7 @@ jobs:
           set -x
           docker system prune --all --force
           docker images
+          docker ps -a
           df -h
           #export BAZEL_OPTIMIZATION="--config=optimization --config=linux_ci --config=cache"
           #if [[ "${{ env.EVENT_NAME }}" == "push" && "${{ env.REPO_NAME }}" == "tensorflow/io" ]]; then
