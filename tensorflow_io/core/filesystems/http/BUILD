@@ -20,6 +20,7 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@curl",
+        "@local_tsl//tsl/c:tsl_status",
     ],
     alwayslink = 1,
 )

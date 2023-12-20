@@ -301,11 +301,28 @@ jobs:
         shell: bash
         run: |
           set -x
+          docker system prune --all --force
+          docker images
+          docker ps -a
+          df -h
+          # See https://github.com/actions/runner-images/issues/2840
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+          # See https://github.com/actions/runner-images/issues/2606
+          sudo rm -rf /usr/local/lib/android
+          df -h
+          sudo apt-get autoremove -y
+          sudo apt-get autoclean -y
+          df -h
           #export BAZEL_OPTIMIZATION="--config=optimization --config=linux_ci --config=cache"
           #if [[ "${{ env.EVENT_NAME }}" == "push" && "${{ env.REPO_NAME }}" == "tensorflow/io" ]]; then
           #  export BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION} --remote_upload_local_results=true --google_credentials=service_account_creds.json"
           #fi
-          docker build -t io -f tools/docker/build.Dockerfile --build-arg PYTHON_VERSION=3.10 --build-arg TENSORFLOW_VERSION=2.14 --build-arg BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" --progress=plain .
+          TENSORFLOW_VERSION=$(grep tensorflow tensorflow_io/python/ops/version_ops.py | sed -e "s/require = //g" | awk -F, '{print $1}' | awk -F= '{print $2}' | awk -F. '{print $1"."$2}')
+          DOCKER_BUILDKIT=0 docker build -t io -f tools/docker/build.Dockerfile --build-arg PYTHON_VERSION=3.10 --build-arg TENSORFLOW_VERSION="${TENSORFLOW_VERSION}" --build-arg BAZEL_OPTIMIZATION="${BAZEL_OPTIMIZATION}" .
           docker create -it --name io io bash
           sleep 5
           docker cp -L io:/opt/io/bazel-bin build
