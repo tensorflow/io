@@ -6,9 +6,12 @@ cc_library(
     includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [
+        "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/container:inlined_vector",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/types:optional",
@@ -54,6 +57,9 @@ genrule(
         "    TF_SetStatusFromIOError",
         "    TF_StartThread",
         "    TF_VLog",
+        "    ??_7Metadata@data@tensorflow@@6B@",
+        "    ??_7Options@data@tensorflow@@6B@",
+        "    ??_7TensorProto@tensorflow@@6B@",
         "EOF",
     ]),
 )
@@ -74,6 +80,14 @@ cc_library(
 )
 
 cc_library(
+    name = "tf_tsl_header_lib",
+    hdrs = [":tf_tsl_header_include"],
+    include_prefix = "tensorflow/tsl/c",
+    strip_include_prefix = "include_tsl",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "libtensorflow_framework",
     srcs = select({
         "@bazel_tools//src/conditions:windows": [
@@ -89,4 +103,5 @@ cc_library(
 
 %{TF_HEADER_GENRULE}
 %{TF_C_HEADER_GENRULE}
+%{TF_TSL_HEADER_GENRULE}
 %{TF_SHARED_LIBRARY_GENRULE}

@@ -34,7 +34,7 @@ REGISTER_OP("IO>MongoDBReadableNext")
     .Output("record: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>MongoDBWritableInit")

@@ -30,7 +30,7 @@ REGISTER_OP("IO>NumpyInfo")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       c->set_output(2, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>NumpySpec")
@@ -41,7 +41,7 @@ REGISTER_OP("IO>NumpySpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>NumpyRead")
@@ -59,7 +59,7 @@ REGISTER_OP("IO>NumpyRead")
       shape_inference::ShapeHandle shape;
       TF_RETURN_IF_ERROR(c->ReplaceDim(full, 0, c->UnknownDim(), &shape));
       c->set_output(0, shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

@@ -206,7 +206,6 @@ class AZFSTest(tf.test.TestCase, AZFSTestBase):
     """Run tests for azfs backend using account key authentication."""
 
     def __init__(self, methodName="runTest"):  # pylint: disable=invalid-name
-
         self.account = "devstoreaccount1"
         self.container = "aztest"
         self.path_root = "az://" + os.path.join(self.account, self.container)

@@ -37,7 +37,7 @@ Status AddDenseOutputShapes(const std::vector<TensorShapeType>& dense_shapes,
     TF_RETURN_IF_ERROR(c->Concatenate(prefix, s, &s));
     c->set_output((*output_idx)++, s);
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 shape_inference::DimensionOrConstant ComputeSparseRank(
@@ -164,7 +164,7 @@ REGISTER_OP("IO>ParseAvro")
       AddSparseOutputShapes(num_sparse, input, sparse_ranks, c, &output_idx);
       TF_RETURN_IF_ERROR(
           AddDenseOutputShapes(dense_shapes, input, c, &output_idx));
-      return Status::OK();
+      return OkStatus();
     });
 
 // Adjusted from TFRecordDataset here
@@ -255,7 +255,7 @@ REGISTER_OP("IO>ListAvroColumns")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ReadAvro")
@@ -269,7 +269,7 @@ REGISTER_OP("IO>ReadAvro")
     .Output("output: dtype")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableInit")
@@ -282,7 +282,7 @@ REGISTER_OP("IO>AvroReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableSpec")
@@ -293,7 +293,7 @@ REGISTER_OP("IO>AvroReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadableRead")
@@ -311,7 +311,7 @@ REGISTER_OP("IO>AvroReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>AvroReadablePartitions")
@@ -319,7 +319,41 @@ REGISTER_OP("IO>AvroReadablePartitions")
     .Output("partitions: int64")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
+    });
+
+REGISTER_OP("IO>ATDSDataset")
+    .Input("filenames: string")
+    .Input("batch_size: int64")
+    .Input("drop_remainder: bool")
+    .Input("reader_buffer_size: int64")
+    .Input("shuffle_buffer_size: int64")
+    .Input("num_parallel_calls: int64")
+    .Output("handle: variant")
+    .Attr("feature_keys: list(string) >= 0")
+    .Attr("feature_types: list(string) >= 0")
+    .Attr("sparse_dtypes: list({float,double,int64,int32,string,bool}) >= 0")
+    .Attr("sparse_shapes: list(shape) >= 0")
+    .Attr(
+        "output_dtypes: list({float,double,int64,int32,string,bool,variant}) "
+        ">= 0")
+    .Attr("output_shapes: list(shape) >= 0")
+    .SetIsStateful()
+    .SetShapeFn([](shape_inference::InferenceContext* c) {
+      shape_inference::ShapeHandle unused;
+      // `filenames` must be a scalar or a vector
+      TF_RETURN_IF_ERROR(c->WithRankAtMost(c->input(0), 1, &unused));
+      // `batch_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
+      // `drop_remainder` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
+      // `reader_buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 0, &unused));
+      // `shuffle_buffer_size` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(4), 0, &unused));
+      // `num_parallel_calls` must be a scalar
+      TF_RETURN_IF_ERROR(c->WithRank(c->input(5), 0, &unused));
+      return shape_inference::ScalarShape(c);
     });
 
 }  // namespace tensorflow

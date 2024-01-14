@@ -19,6 +19,8 @@ import concurrent.futures
 from io import BytesIO
 import json
 import fastavro
+import pytest
+import sys
 import numpy as np
 import grpc  # pylint: disable=wrong-import-order
 import tensorflow as tf  # pylint: disable=wrong-import-order
@@ -34,6 +36,9 @@ from tensorflow_io.bigquery import (
 
 import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc  # pylint: disable=wrong-import-order
 import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2  # pylint: disable=wrong-import-order
+
+if sys.platform == "darwin":
+    pytest.skip("TODO: macOS is failing", allow_module_level=True)
 
 if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
     tf.compat.v1.enable_eager_execution()

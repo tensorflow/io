@@ -33,7 +33,7 @@ REGISTER_OP("IO>DecodeJSON")
       for (size_t i = 0; i < c->num_outputs(); ++i) {
         c->set_output(static_cast<int64>(i), c->MakeShape({c->UnknownDim()}));
       }
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeAvro")
@@ -60,7 +60,7 @@ REGISTER_OP("IO>DecodeAvro")
             c->MakeShapeFromPartialTensorShape(shapes[i], &shape));
         c->set_output(static_cast<int64>(i), shape);
       }
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>EncodeAvro")
@@ -71,7 +71,7 @@ REGISTER_OP("IO>EncodeAvro")
     .Attr("dtype: list({bool,int32,int64,float,double,string})")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->input(0));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

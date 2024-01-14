@@ -308,7 +308,7 @@ class HDF5ReadableResource : public ResourceBase {
       columns_index_[data.datasets_[i]] = i;
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Components(std::vector<string>* components) {
@@ -319,7 +319,7 @@ class HDF5ReadableResource : public ResourceBase {
     for (const std::pair<const string, int64>& e : columns_index_) {
       components->emplace_back(e.first);
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(const string& component, TensorShape* shape, DataType* dtype) {
@@ -333,7 +333,7 @@ class HDF5ReadableResource : public ResourceBase {
     const int64 column_index = lookup->second;
     *shape = shapes_[column_index];
     *dtype = dtypes_[column_index];
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const string& component,
@@ -573,7 +573,7 @@ class HDF5ReadableResource : public ResourceBase {
                                      filename_, ": ", e.getCDetailMsg());
     }
 
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "HDF5ReadableResource"; }
 
@@ -641,7 +641,7 @@ class HDF5ReadableInfoOp : public IOResourceOpKernel<HDF5ReadableResource> {
       }
       dtype_tensor->flat<int64>()(i) = dtypes[i];
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   // HDF5 is not multi-threaded so use global mutext for protection
@@ -704,9 +704,9 @@ class HDF5ReadableReadOp : public IOResourceOpKernel<HDF5ReadableResource> {
         component, start, shape,
         [&](const TensorShape& shape, Tensor** value) -> Status {
           TF_RETURN_IF_ERROR(context->allocate_output(0, shape, value));
-          return Status::OK();
+          return OkStatus();
         }));
-    return Status::OK();
+    return OkStatus();
   }
 
   // HDF5 is not multi-threaded so use global mutext for protection

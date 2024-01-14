@@ -80,7 +80,7 @@ class BigtableRowRangeOp
           cbt::RowRange::LeftOpen(left_row_key_, right_row_key_));
     }
     return Status(
-        error::INTERNAL,
+        absl::StatusCode::kInternal,
         "Reached impossible branch. Above clauses should cover all possible "
         "values of left_open_ and right_open_. Please report this issue here:"
         "https://github.com/tensorflow/io/issues/new/choose quoting these"

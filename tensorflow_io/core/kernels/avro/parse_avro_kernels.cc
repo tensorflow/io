@@ -18,9 +18,9 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_util.h"
-#include "tensorflow/core/lib/core/blocking_counter.h"
 #include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/gtl/array_slice.h"
+#include "tensorflow/core/platform/blocking_counter.h"
 #include "tensorflow_io/core/kernels/avro/utils/avro_parser_tree.h"
 
 namespace tensorflow {
@@ -318,7 +318,7 @@ Status ParseAvro(const AvroParserConfig& config,
     VLOG(5) << "Sparse dense shapes shape: "
             << result->sparse_shapes[i_sparse].shape();
 
-    return Status::OK();
+    return OkStatus();
   };
 
   auto MergeDenseMinibatches = [&](size_t i_dense) -> Status {
@@ -379,7 +379,7 @@ Status ParseAvro(const AvroParserConfig& config,
 
     VLOG(5) << "Dense tensor " << dense_tensor->SummarizeValue(9);
 
-    return Status::OK();
+    return OkStatus();
   };
   const auto before_sparse_merge = clock::now();
   for (size_t d = 0; d < config.sparse.size(); ++d) {
@@ -397,7 +397,7 @@ Status ParseAvro(const AvroParserConfig& config,
 
   VLOG(5) << "PARSER_TIMING: Dense merge duration" << d_merge_duration.count()
           << " ms ";
-  return Status::OK();
+  return OkStatus();
 }
 
 // Inspired from here

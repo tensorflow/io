@@ -29,7 +29,7 @@ REGISTER_OP("IO>RE2FullMatch")
       if (!c->RankKnown(c->input(0))) {
         c->set_output(0, c->UnknownShape());
         c->set_output(1, c->UnknownShape());
-        return Status::OK();
+        return OkStatus();
       }
       string pattern;
       TF_RETURN_IF_ERROR(c->GetAttr("pattern", &pattern));
@@ -45,7 +45,7 @@ REGISTER_OP("IO>RE2FullMatch")
           shape, c->Vector(re.NumberOfCapturingGroups()), &output_shape));
       c->set_output(0, c->input(0));
       c->set_output(1, output_shape);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ReadText")
@@ -56,7 +56,7 @@ REGISTER_OP("IO>ReadText")
     .Output("output: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>TextOutputSequence")
@@ -83,7 +83,7 @@ REGISTER_OP("IO>CSVReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>CSVReadableSpec")
@@ -94,7 +94,7 @@ REGISTER_OP("IO>CSVReadableSpec")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>CSVReadableRead")
@@ -112,7 +112,7 @@ REGISTER_OP("IO>CSVReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

@@ -101,7 +101,7 @@ def write_config():
             bazel_rc.write(
                 f'build --action_env TF_SHARED_LIBRARY_NAME="{library_name}"\n'
             )
-            bazel_rc.write('build --cxxopt="-std=c++14"\n')
+            bazel_rc.write('build --cxxopt="-std=c++17"\n')
             for argv in sys.argv[1:]:
                 if argv == "--cuda":
                     bazel_rc.write('build --action_env TF_NEED_CUDA="1"\n')
@@ -119,16 +119,21 @@ def write_config():
             bazel_rc.write("build --enable_platform_specific_config\n")
             # Needed for GRPC build
             bazel_rc.write('build:macos --copt="-DGRPC_BAZEL_BUILD"\n')
-            # Stay with 10.14 for macOS
-            bazel_rc.write('build:macos --copt="-mmacosx-version-min=10.14"\n')
-            bazel_rc.write('build:macos --linkopt="-mmacosx-version-min=10.14"\n')
+            bazel_rc.write('build:macos --copt="-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"\n')
+            # With macOS
+            bazel_rc.write('build:macos --copt="--target=x86_64-apple-macosx12.1"\n')
+            bazel_rc.write('build:macos --linkopt="--target=x86_64-apple-macosx12.1"\n')
             # Warns for unguarded uses of Objective-C APIs
             bazel_rc.write("build:macos --copt=-Wunguarded-availability\n")
+            bazel_rc.write("build:macos --copt=-Wno-error=unused-but-set-variable\n")
+            bazel_rc.write("build:macos --copt=-Wno-error=unknown-warning-option\n")
+            bazel_rc.write("build:macos --define=grpc_no_ares=true\n")
             # MSVC (Windows): Standards-conformant preprocessor mode
             bazel_rc.write('build:windows --copt="/Zc:preprocessor"\n')
+            bazel_rc.write('build:windows --copt="/std:c++17"\n')
             # Config for CI and release build
             bazel_rc.write("build:optimization --copt=-msse4.2\n")
-            bazel_rc.write("build:optimization --copt=-mavx\n")
+            # bazel_rc.write("build:optimization --copt=-mavx\n")
             bazel_rc.write("build:optimization --compilation_mode=opt\n")
             bazel_rc.write(
                 "build:linux_ci --crosstool_top=//third_party/toolchains/gcc7_manylinux2010:toolchain\n"
@@ -136,9 +141,9 @@ def write_config():
             bazel_rc.write(
                 "build:linux_ci_gpu --crosstool_top=//third_party/toolchains/gcc7_manylinux2010-nvcc-cuda10.1:toolchain\n"
             )
+            bazel_rc.write("build:linux --copt=-Wno-error=stringop-overflow=\n")
+            bazel_rc.write("build:linux --copt=-Wno-error\n")
             # For a cleaner output
-            bazel_rc.write("build --noshow_progress\n")
-            bazel_rc.write("build --noshow_loading_progress\n")
             bazel_rc.write("build --verbose_failures\n")
             bazel_rc.write("build --test_output=errors\n")
             bazel_rc.write("build --experimental_ui_max_stdouterr_bytes=-1\n")

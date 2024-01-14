@@ -32,7 +32,7 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
       : file_(nullptr),
         size_(optional_memory_size),
         buff_((const char*)(optional_memory_buff)),
-        size_status_(Status::OK()) {
+        size_status_(OkStatus()) {
     if (size_ == 0) {
       size_status_ = env->GetFileSize(filename, &size_);
       if (size_status_.ok()) {
@@ -58,7 +58,7 @@ class SizedRandomAccessFile : public tensorflow::RandomAccessFile {
     if (bytes_to_read < n) {
       return errors::OutOfRange("EOF reached");
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status GetFileSize(uint64* size) {
     if (size_status_.ok()) {

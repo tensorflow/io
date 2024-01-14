@@ -28,7 +28,7 @@ import tensorflow_io as tfio  # pylint: disable=wrong-import-position
 def test_csv_format():
     """test_csv_format"""
     data = {
-        "bool": np.asarray([e % 2 for e in range(100)], np.bool),
+        "bool": np.asarray([e % 2 for e in range(100)], bool),
         "int64": np.asarray(range(100), np.int64),
         "double": np.asarray(range(100), np.float64),
     }

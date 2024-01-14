@@ -57,7 +57,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
   }
 
   Status InputDatasets(std::vector<const DatasetBase*>* inputs) const {
-    return Status::OK();
+    return OkStatus();
   }
 
   std::unique_ptr<IteratorBase> MakeIteratorInternal(
@@ -81,7 +81,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     return name_utils::DatasetDebugString(kDatasetType);
   }
 
-  Status CheckExternalState() const override { return Status::OK(); }
+  Status CheckExternalState() const override { return OkStatus(); }
 
  protected:
   Status AsGraphDefInternal(SerializationContext* ctx,
@@ -91,7 +91,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
     TF_RETURN_IF_ERROR(b->AddVector(filenames_, &filenames));
     Node* buffer_size = nullptr;
     TF_RETURN_IF_ERROR(b->AddScalar(options_.buffer_size, &buffer_size));
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -113,7 +113,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
               reader_->ReadRecord(&out_tensors->back().scalar<tstring>()());
           if (s.ok()) {
             *end_of_sequence = false;
-            return Status::OK();
+            return OkStatus();
           }
           out_tensors->pop_back();
           if (!errors::IsOutOfRange(s)) {
@@ -134,7 +134,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
         // Iteration ends when there are no more files to process.
         if (current_file_index_ == dataset()->filenames_.size()) {
           *end_of_sequence = true;
-          return Status::OK();
+          return OkStatus();
         }
 
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
@@ -162,7 +162,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
         TF_RETURN_IF_ERROR(
             writer->WriteScalar(full_name(kOffset), reader_->TellOffset()));
       }
-      return Status::OK();
+      return OkStatus();
     }
     */
 
@@ -187,7 +187,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
         TF_RETURN_IF_ERROR(SetupStreamsLocked(ctx->env()));
         TF_RETURN_IF_ERROR(reader_->SeekOffset(offset));
       }
-      return Status::OK();
+      return OkStatus();
     }
     */
 
@@ -205,7 +205,7 @@ class AvroRecordDatasetOp::Dataset : public DatasetBase {
       TF_RETURN_IF_ERROR(env->NewRandomAccessFile(next_filename, &file_));
       reader_ = absl::make_unique<SequentialAvroRecordReader>(
           file_.get(), dataset()->options_);
-      return Status::OK();
+      return OkStatus();
     }
 
     // Resets all reader streams.

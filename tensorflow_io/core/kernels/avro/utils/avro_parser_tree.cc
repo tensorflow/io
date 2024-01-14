@@ -73,7 +73,7 @@ Status AvroParserTree::ParseValues(
   // add end marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddFinishMarks(key_to_value));
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status AvroParserTree::ParseValues(
@@ -114,7 +114,7 @@ Status AvroParserTree::ParseValues(
   // add end marks to all buffers for batch
   TF_RETURN_IF_ERROR(AddFinishMarks(key_to_value));
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status AvroParserTree::Build(AvroParserTree* parser_tree,
@@ -171,7 +171,7 @@ Status AvroParserTree::Build(AvroParserTree* parser_tree,
 
   VLOG(7) << "Parser tree \n" << (*parser_tree).ToString();
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status AvroParserTree::Build(
@@ -209,7 +209,7 @@ Status AvroParserTree::Build(
 
     (*parent).AddChild(std::move(avro_parser));
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 void AvroParserTree::Initialize() {
@@ -239,7 +239,7 @@ Status AvroParserTree::ValidateUniqueKeys(
     }
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 struct KeyWithTypeHash {
@@ -321,13 +321,13 @@ Status AvroParserTree::CreateValueParser(AvroParserUniquePtr& avro_parser,
                                          const string& user_name) const {
   if (IsArrayAll(infix)) {
     avro_parser.reset(new ArrayAllParser());
-    return Status::OK();
+    return OkStatus();
   }
 
   int index;
   if (IsArrayIndex(&index, infix)) {
     avro_parser.reset(new ArrayIndexParser(index));
-    return Status::OK();
+    return OkStatus();
   }
 
   string lhs_name;
@@ -361,24 +361,24 @@ Status AvroParserTree::CreateValueParser(AvroParserUniquePtr& avro_parser,
     avro_parser.reset(new ArrayFilterParser(
         lhs_resolved_name, rhs_resolved_name, array_filter_type));
 
-    return Status::OK();
+    return OkStatus();
   }
 
   string key;
   if (IsMapKey(&key, infix)) {
     avro_parser.reset(new MapKeyParser(key));
-    return Status::OK();
+    return OkStatus();
   }
 
   // TODO(fraudies): Check that the name appears in the prefix tree
   if (IsAttribute(infix)) {
     avro_parser.reset(new RecordParser(infix));
-    return Status::OK();
+    return OkStatus();
   }
 
   if (IsBranch(infix)) {
     avro_parser.reset(new UnionParser(infix));
-    return Status::OK();
+    return OkStatus();
   }
 
   return Status(errors::InvalidArgument("Unable to match ", infix,
@@ -414,7 +414,7 @@ Status AvroParserTree::CreateFinalValueParser(AvroParserUniquePtr& value_parser,
           "', because data type '", DataTypeString(data_type),
           "' is not supported!");
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 bool AvroParserTree::ContainsFilter(string* lhs_name, string* rhs_name,
@@ -463,7 +463,7 @@ Status AvroParserTree::AddBeginMarks(
   for (auto const& key_value : *key_to_value) {
     (*key_value.second).BeginMark();
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 Status AvroParserTree::AddFinishMarks(
@@ -471,7 +471,7 @@ Status AvroParserTree::AddFinishMarks(
   for (auto const& key_value : *key_to_value) {
     (*key_value.second).FinishMark();
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 Status AvroParserTree::InitializeValueBuffers(
@@ -521,7 +521,7 @@ Status AvroParserTree::InitializeValueBuffers(
             "' is not supported!"));
     }
   }
-  return Status::OK();
+  return OkStatus();
 }
 
 // TODO(fraudies): Replace by regex once tensorflow is compiled with GCC > 4.8

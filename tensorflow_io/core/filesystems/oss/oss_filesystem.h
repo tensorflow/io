@@ -10,8 +10,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILE_SYSTEM_H_
-#define TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILE_SYSTEM_H_
+#ifndef TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_
+#define TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_
 
 #include <atomic>
 #include <mutex>
@@ -25,58 +25,56 @@ limitations under the License.
 #include "oss_api.h"
 #include "oss_auth.h"
 #include "oss_util.h"
+#include "tensorflow/c/experimental/filesystem/filesystem_interface.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/env.h"
-#include "tensorflow/core/platform/file_system.h"
 #include "tensorflow/core/platform/mutex.h"
 
 namespace tensorflow {
 namespace io {
+namespace oss {
 
 /// Aliyun oss implementation of a file system.
-class OSSFileSystem : public FileSystem {
+class OSSFileSystem {
  public:
   OSSFileSystem();
 
-  Status NewRandomAccessFile(
-      const string& filename,
-      std::unique_ptr<RandomAccessFile>* result) override;
+  Status NewRandomAccessFile(const string& filename,
+                             std::unique_ptr<RandomAccessFile>* result);
 
   Status NewWritableFile(const string& fname,
-                         std::unique_ptr<WritableFile>* result) override;
+                         std::unique_ptr<WritableFile>* result);
 
   Status NewAppendableFile(const string& fname,
-                           std::unique_ptr<WritableFile>* result) override;
+                           std::unique_ptr<WritableFile>* result);
 
   Status NewReadOnlyMemoryRegionFromFile(
-      const string& filename,
-      std::unique_ptr<ReadOnlyMemoryRegion>* result) override;
+      const string& filename, std::unique_ptr<ReadOnlyMemoryRegion>* result);
 
-  Status FileExists(const string& fname) override;
+  Status FileExists(const string& fname);
 
-  Status Stat(const string& fname, FileStatistics* stat) override;
+  Status Stat(const string& fname, TF_FileStatistics* stat);
 
-  Status GetChildren(const string& dir, std::vector<string>* result) override;
+  Status GetChildren(const string& dir, std::vector<string>* result);
 
-  Status GetMatchingPaths(const string& pattern,
-                          std::vector<string>* results) override;
+  Status DeleteFile(const string& fname);
 
-  Status DeleteFile(const string& fname) override;
+  Status CreateDir(const string& dirname);
 
-  Status CreateDir(const string& dirname) override;
+  Status RecursivelyCreateDir(const string& dirname);
 
-  Status RecursivelyCreateDir(const string& dirname) override;
+  Status DeleteDir(const string& dirname);
 
-  Status DeleteDir(const string& dirname) override;
+  Status GetFileSize(const string& fname, uint64* file_size);
 
-  Status GetFileSize(const string& fname, uint64* file_size) override;
+  Status RenameFile(const string& src, const string& target);
 
-  Status RenameFile(const string& src, const string& target) override;
+  Status CopyFile(const string& src, const string& dst);
 
-  Status IsDirectory(const string& fname) override;
+  Status IsDirectory(const string& fname);
 
-  Status DeleteRecursively(const string& dirname, int64* undeleted_files,
-                           int64* undeleted_dirs) override;
+  Status DeleteRecursively(const string& dirname, uint64* undeleted_files,
+                           uint64* undeleted_dirs);
 
  private:
   Status _CreateDirInternal(aos_pool_t* pool,
@@ -85,7 +83,7 @@ class OSSFileSystem : public FileSystem {
 
   Status _StatInternal(aos_pool_t* pool, const oss_request_options_t* options,
                        const string& bucket, const string& object,
-                       FileStatistics* stat);
+                       TF_FileStatistics* stat);
 
   Status _DeleteObjectInternal(const oss_request_options_t* options,
                                const string& bucket, const string& object);
@@ -93,20 +91,20 @@ class OSSFileSystem : public FileSystem {
   Status _RetrieveObjectMetadata(aos_pool_t* pool,
                                  const oss_request_options_t* options,
                                  const string& bucket, const string& object,
-                                 FileStatistics* stat);
+                                 TF_FileStatistics* stat);
 
-  aos_status_t* _RenameFileInternal(const oss_request_options_t* oss_options,
-                                    aos_pool_t* pool,
-                                    const aos_string_t& source_bucket,
-                                    const aos_string_t& source_object,
-                                    const aos_string_t& dest_bucket,
-                                    const aos_string_t& dest_object);
+  aos_status_t* _CopyFileInternal(const oss_request_options_t* oss_options,
+                                  aos_pool_t* pool,
+                                  const aos_string_t& source_bucket,
+                                  const aos_string_t& source_object,
+                                  const aos_string_t& dest_bucket,
+                                  const aos_string_t& dest_object);
 
   Status _ListObjects(aos_pool_t* pool, const oss_request_options_t* options,
                       const string& bucket, const string& key,
                       std::vector<string>* result, bool return_all = true,
                       bool return_full_path = false,
-                      bool should_remove_suffix = true,
+                      bool should_remove_suffix = true, bool recursive = true,
                       int max_ret_per_iterator = 1000);
 
   Status _InitOSSCredentials();
@@ -131,7 +129,8 @@ class OSSFileSystem : public FileSystem {
   TF_DISALLOW_COPY_AND_ASSIGN(OSSFileSystem);
 };
 
+}  // namespace oss
 }  // namespace io
 }  // namespace tensorflow
 
-#endif  // TENSORFLOW_IO_OSS_KERNELS_OSSFS_OSS_FILE_SYSTEM_H_
+#endif  // TENSORFLOW_IO_CORE_FILESYSTEMS_OSS_OSS_FILESYSTEM_H_

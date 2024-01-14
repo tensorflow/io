@@ -56,6 +56,7 @@ class PrometheusIODataset(tf.data.Dataset):
                             )
                         spec_by_job[instance] = spec_by_instance
                     spec[job] = spec_by_job
+
             # Map spec to entries of 3 tuple (job, instance, name)
             class MetricEntry:
                 def __init__(self, job, instance, name):

@@ -31,7 +31,7 @@ REGISTER_OP("IO>PulsarReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PulsarReadableNext")
@@ -45,7 +45,7 @@ REGISTER_OP("IO>PulsarReadableNext")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
       c->set_output(2, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PulsarWritableInit")
@@ -56,7 +56,7 @@ REGISTER_OP("IO>PulsarWritableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>PulsarWritableWrite")

@@ -50,6 +50,12 @@ void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
 
 }  // namespace s3
 
+namespace oss {
+
+void ProvideFilesystemSupportFor(TF_FilesystemPluginOps* ops, const char* uri);
+
+}  // namespace oss
+
 }  // namespace io
 }  // namespace tensorflow
 

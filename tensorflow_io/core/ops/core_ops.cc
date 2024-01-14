@@ -28,7 +28,7 @@ REGISTER_OP("IO>ListArchiveEntries")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>ReadArchive")
@@ -39,7 +39,7 @@ REGISTER_OP("IO>ReadArchive")
     .Output("output: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

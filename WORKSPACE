@@ -7,11 +7,11 @@ http_archive(
     name = "zlib",
     build_file = "//third_party:zlib.BUILD",
     patch_cmds = ["""sed -i.bak '29i\\'$'\\n#include<zconf.h>\\n' contrib/minizip/crypt.h"""],
-    sha256 = "91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9",
-    strip_prefix = "zlib-1.2.12",
+    sha256 = "b3a24de97a8fdbc835b9833169501030b8977031bcb54b3b3ac13740f846ab30",
+    strip_prefix = "zlib-1.2.13",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.12.tar.gz",
-        "https://zlib.net/zlib-1.2.12.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.13.tar.gz",
+        "https://zlib.net/zlib-1.2.13.tar.gz",
     ],
 )
 
@@ -75,11 +75,10 @@ http_archive(
         """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1beta2/pubsub.proto""",
         """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1/pubsub.proto""",
     ],
-    sha256 = "a53e15405f81d5a32594d7f6486e649131fadda5431cf28377dff4ae54d45d16",
-    strip_prefix = "googleapis-d4d09eb3aec152015f35717102f9b423988b94f7",
+    sha256 = "249d83abc5d50bf372c35c49d77f900bff022b2c21eb73aa8da1458b6ac401fc",
+    strip_prefix = "googleapis-6b3fdcea8bc5398be4e7e9930c693f0ea09316a0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
-        "https://github.com/googleapis/googleapis/archive/d4d09eb3aec152015f35717102f9b423988b94f7.zip",
+        "https://github.com/googleapis/googleapis/archive/6b3fdcea8bc5398be4e7e9930c693f0ea09316a0.tar.gz",
     ],
 )
 
@@ -92,34 +91,36 @@ switched_rules_by_language(
     grpc = True,
 )
 
-# Note rules_python is placed earlier as tensorflow's version is older
-http_archive(
-    name = "rules_python",
-    sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
-        "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
-    ],
-)
-
-load("@rules_python//python:pip.bzl", "pip_import")
-
-pip_import(
-    name = "lint_dependencies",
-    requirements = "//tools/lint:requirements.txt",
-)
-
-load("@lint_dependencies//:requirements.bzl", "pip_install")
-
-pip_install()
-
 http_archive(
     name = "org_tensorflow",
-    sha256 = "a1b621ad986f270939d9182a866ac787f7a729d229a931488a7230056580a39e",
-    strip_prefix = "tensorflow-2.9.0-rc2",
+    sha256 = "9cec5acb0ecf2d47b16891f8bc5bc6fbfdffe1700bdadc0d9ebe27ea34f0c220",
+    strip_prefix = "tensorflow-2.15.0",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.9.0-rc2.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.15.0.tar.gz",
     ],
+)
+
+http_archive(
+    name = "rules_python",
+    sha256 = "84aec9e21cc56fbc7f1335035a71c850d1b9b5cc6ff497306f84cced9a769841",
+    strip_prefix = "rules_python-0.23.1",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.23.1/rules_python-0.23.1.tar.gz",
+)
+
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+load(
+    "@org_tensorflow//tensorflow/tools/toolchains/python:python_repo.bzl",
+    "python_repository",
+)
+
+python_repository(name = "python_version_repo")
+
+load("@python_version_repo//:py_version.bzl", "HERMETIC_PYTHON_VERSION")
+
+python_register_toolchains(
+    name = "python",
+    ignore_root_user_error = True,
+    python_version = HERMETIC_PYTHON_VERSION,
 )
 
 load("@org_tensorflow//tensorflow:workspace3.bzl", "tf_workspace3")
@@ -145,6 +146,16 @@ tf_configure(name = "local_config_tf")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 
 http_archive(
+    name = "lmdb",
+    build_file = "//third_party:lmdb.BUILD",
+    sha256 = "22054926b426c66d8f2bc22071365df6e35f3aacf19ad943bc6167d4cae3bebb",
+    strip_prefix = "lmdb-LMDB_0.9.29/libraries/liblmdb",
+    urls = [
+        "https://github.com/LMDB/lmdb/archive/refs/tags/LMDB_0.9.29.tar.gz",
+    ],
+)
+
+http_archive(
     name = "aliyun_oss_c_sdk",
     build_file = "//third_party:oss_c_sdk.BUILD",
     sha256 = "6450d3970578c794b23e9e1645440c6f42f63be3f82383097660db5cf2fba685",
@@ -158,16 +169,11 @@ http_archive(
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    patch_cmds = [
-        # TODO: Remove the fowllowing once arrow issue is resolved.
-        """sed -i.bak 's/type_traits/std::max<int16_t>(sizeof(int16_t), type_traits/g' cpp/src/parquet/column_reader.cc""",
-        """sed -i.bak 's/value_byte_size/value_byte_size)/g' cpp/src/parquet/column_reader.cc""",
-    ],
-    sha256 = "a27971e2a71c412ae43d998b7b6d06201c7a3da382c804dcdc4a8126ccbabe67",
-    strip_prefix = "arrow-apache-arrow-4.0.0",
+    sha256 = "57e13c62f27b710e1de54fd30faed612aefa22aa41fa2c0c3bacd204dd18a8f3",
+    strip_prefix = "arrow-apache-arrow-7.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-4.0.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
     ],
 )
 
@@ -222,11 +228,10 @@ http_archive(
         """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
         """sed -i.bak 's/__attribute__((visibility("default")))//g' aws-cpp-sdk-core/include/aws/core/external/tinyxml2/tinyxml2.h """,
     ],
-    sha256 = "749322a8be4594472512df8a21d9338d7181c643a00e08a0ff12f07e831e3346",
-    strip_prefix = "aws-sdk-cpp-1.8.186",
+    sha256 = "ae1cb22225b1f47eee351c0064be5e87676bf7090bb9ad19888bea0dab0e2749",
+    strip_prefix = "aws-sdk-cpp-1.8.187",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/aws/aws-sdk-cpp/archive/1.8.186.tar.gz",
-        "https://github.com/aws/aws-sdk-cpp/archive/1.8.186.tar.gz",
+        "https://github.com/aws/aws-sdk-cpp/archive/1.8.187.tar.gz",
     ],
 )
 
@@ -257,11 +262,10 @@ http_archive(
 http_archive(
     name = "bzip2",
     build_file = "//third_party:bzip2.BUILD",
-    sha256 = "ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269",
-    strip_prefix = "bzip2-1.0.8",
+    sha256 = "329e4eb98f6af8d39da05cb51bccec88ae015eac99a42b1ee04dec0af7f4b957",
+    strip_prefix = "bzip2-bzip2-1.0.8",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
-        "https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz",
+        "https://gitlab.com/bzip2/bzip2/-/archive/bzip2-1.0.8/bzip2-bzip2-1.0.8.tar.gz",
     ],
 )
 
@@ -317,11 +321,10 @@ http_archive(
 http_archive(
     name = "dcmtk",
     build_file = "//third_party:dcmtk.BUILD",
-    sha256 = "fa8e34b1a5de101df8916eb22eaffd8f7d1b2ff001a88f819fbfbde01fe5af7d",
-    strip_prefix = "dcmtk-DCMTK-3.6.5-_20210308",
+    sha256 = "fb1434c421d4cc5d391fe37d05f4a4a4267aab16af9826474a6ef366952a11cc",
+    strip_prefix = "dcmtk-5fba853b6f7c13b02bed28bd9f7d3f450e4c72bb",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
-        "https://github.com/DCMTK/dcmtk/archive/refs/tags/DCMTK-3.6.5+_20210308.tar.gz",
+        "https://github.com/DCMTK/dcmtk/archive/5fba853b6f7c13b02bed28bd9f7d3f450e4c72bb.tar.gz",
     ],
 )
 
@@ -404,11 +407,10 @@ http_archive(
 http_archive(
     name = "fmjpeg2koj",
     build_file = "//third_party:fmjpeg2koj.BUILD",
-    sha256 = "a8563307cb09161633479aff0880368ed57396f6d532facba973cf303d699717",
-    strip_prefix = "fmjpeg2koj-6de80e15a43a4d1c411109aea388007afee24263",
+    sha256 = "c5b203ec580cab6fbd92c24712e987e960bda45638d4c2061d0b15d5d520ab42",
+    strip_prefix = "fmjpeg2koj-1.0.3",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/DraconPern/fmjpeg2koj/archive/6de80e15a43a4d1c411109aea388007afee24263.tar.gz",
-        "https://github.com/DraconPern/fmjpeg2koj/archive/6de80e15a43a4d1c411109aea388007afee24263.tar.gz",
+        "https://github.com/DraconPern/fmjpeg2koj/archive/refs/tags/v1.0.3.tar.gz",
     ],
 )
 
@@ -760,15 +762,10 @@ http_archive(
 http_archive(
     name = "pulsar",
     build_file = "//third_party:pulsar.BUILD",
-    patch_cmds = [
-        "cp pulsar-common/src/main/proto/PulsarApi.proto pulsar-client-cpp/lib",
-        "sed -i.bak 's/define PULSAR_DEFINES_H_/define PULSAR_DEFINES_H_\\'$'\\n''#if defined(_MSC_VER)\\'$'\\n''#include <Windows.h>\\'$'\\n''#undef ERROR\\'$'\\n''#endif/g' pulsar-client-cpp/include/pulsar/defines.h",
-        "sed -i.bak 's/define LIB_ACKGROUPINGTRACKER_H_/define LIB_ACKGROUPINGTRACKER_H_\\'$'\\n''#include <pulsar\\/defines.h>/g' pulsar-client-cpp/lib/AckGroupingTracker.h",
-    ],
-    sha256 = "08f19ca6d6353751ff0661403b16b71425bf7ada3d8835a38e426ae303b0e385",
-    strip_prefix = "pulsar-2.6.1",
+    sha256 = "be97723dbba43045506f877cbc7600d2efe74264eace980933ae42b387069bc3",
+    strip_prefix = "pulsar-client-cpp-3.3.0",
     urls = [
-        "https://github.com/apache/pulsar/archive/v2.6.1.tar.gz",
+        "https://github.com/apache/pulsar-client-cpp/archive/refs/tags/v3.3.0.tar.gz",
     ],
 )
 
@@ -852,10 +849,10 @@ http_archive(
 http_archive(
     name = "xsimd",
     build_file = "//third_party:xsimd.BUILD",
-    sha256 = "45337317c7f238fe0d64bb5d5418d264a427efc53400ddf8e6a964b6bcb31ce9",
-    strip_prefix = "xsimd-7.5.0",
+    sha256 = "21b4700e9ef70f6c9a86952047efd8272317df4e6fee35963de9394fd9c5677f",
+    strip_prefix = "xsimd-8.0.1",
     urls = [
-        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/7.5.0.tar.gz",
+        "https://github.com/xtensor-stack/xsimd/archive/refs/tags/8.0.1.tar.gz",
     ],
 )
 

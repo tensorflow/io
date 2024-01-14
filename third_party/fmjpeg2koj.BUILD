@@ -12,6 +12,13 @@ cc_library(
         "*.cc",
         "*.cpp",
     ]),
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "-Wno-register",
+            "-Wno-error",
+        ],
+    }),
     includes = [
         "include",
     ],

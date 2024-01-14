@@ -78,7 +78,7 @@ class LMDBReadable : public IOReadableInterface {
     if (status != MDB_SUCCESS) {
       return errors::InvalidArgument("error on mdb_cursor_open: ", status);
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(const int64 start, const int64 stop, const string& component,
               int64* record_read, Tensor* value, Tensor* label) override {
@@ -94,13 +94,13 @@ class LMDBReadable : public IOReadableInterface {
           string(static_cast<const char*>(mdb_key.mv_data), mdb_key.mv_size));
       (*record_read)++;
     }
-    return Status::OK();
+    return OkStatus();
   }
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {
@@ -166,14 +166,14 @@ class LMDBMapping : public IOMappingInterface {
       return errors::InvalidArgument("error on mdb_dbi_open: ", status);
     }
 
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Spec(const string& component, PartialTensorShape* shape,
               DataType* dtype, bool label) override {
     *shape = PartialTensorShape({-1});
     *dtype = DT_STRING;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const Tensor& key, Tensor* value) override {
@@ -190,7 +190,7 @@ class LMDBMapping : public IOMappingInterface {
       value->flat<tstring>()(i) = std::move(
           string(static_cast<const char*>(mdb_data.mv_data), mdb_data.mv_size));
     }
-    return Status::OK();
+    return OkStatus();
   }
 
   string DebugString() const override {

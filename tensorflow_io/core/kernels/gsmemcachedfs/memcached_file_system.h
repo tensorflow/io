@@ -21,7 +21,7 @@ limitations under the License.
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "tensorflow/core/platform/cloud/gcs_file_system.h"
+#include "tensorflow/tsl/platform/cloud/gcs_file_system.h"
 #include "tensorflow_io/core/kernels/gsmemcachedfs/gce_memcached_server_list_provider.h"
 #include "tensorflow_io/core/kernels/gsmemcachedfs/memcached_file_block_cache.h"
 
@@ -38,13 +38,13 @@ constexpr size_t kDefaultMemcachedClientPoolSize = 64;
 //
 // The clients should use MemcachedGcsFileSystem defined below,
 // which adds retry logic to GCS operations.
-class MemcachedGcsFileSystem : public GcsFileSystem {
+class MemcachedGcsFileSystem : public tsl::GcsFileSystem {
  public:
   // Main constructor used (via RetryingFileSystem) throughout Tensorflow.
   MemcachedGcsFileSystem();
 
  protected:
-  std::unique_ptr<FileBlockCache> MakeFileBlockCache(
+  std::unique_ptr<tsl::FileBlockCache> MakeFileBlockCache(
       size_t block_size, size_t max_bytes, uint64 max_staleness) override;
 
   // If the distributed cache is not specified for use in the env variables

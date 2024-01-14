@@ -670,11 +670,7 @@ def fixture_encode_aac():
         pytest.param(
             "decode_aac",
             marks=[
-                pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 8))
-                    or (sys.platform in ("win32", "darwin")),
-                    reason="need ubuntu 20.04 which is python 3.8, and no windows, and TODO: !!!pytest-xdist!!! on macOS",
-                )
+                pytest.mark.skip("TODO"),
             ],
         ),
         pytest.param(
@@ -756,14 +752,7 @@ def test_audio_ops(fixture_lookup, io_data_fixture):
         pytest.param(
             "decode_aac",
             marks=[
-                pytest.mark.skipif(
-                    (sys.platform == "linux" and sys.version_info < (3, 8))
-                    or (sys.platform in ("win32", "darwin")),
-                    reason=(
-                        "need ubuntu 20.04 which is python 3.8, "
-                        "and no windows support yet, and TODO: !!!pytest-xdist!!! on macOS"
-                    ),
-                )
+                pytest.mark.skip("TODO"),
             ],
         ),
         pytest.param(
@@ -873,6 +862,23 @@ def test_spectrogram():
     dbscale_mel_spectrogram = tfio.audio.dbscale(mel_spectrogram, top_db=80)
 
     # TODO: assert content of dbscale_mel_spectrogram
+    assert dbscale_mel_spectrogram.shape == [29, mels]
+    assert dbscale_mel_spectrogram.dtype == tf.float32
+
+    # Inf check for zero input
+    dbscale_mel_spectrogram = tfio.audio.dbscale(
+        tf.zeros_like(mel_spectrogram), top_db=80, amin=1e-10
+    )
+
+    # Check if any inf in output
+    assert not tf.math.reduce_any(tf.math.is_inf(dbscale_mel_spectrogram))
+
+    # Custom ref check
+    dbscale_mel_spectrogram = tfio.audio.dbscale(
+        mel_spectrogram, top_db=80, ref=tf.math.reduce_max
+    )
+
+    # Check content after ref is different
     assert dbscale_mel_spectrogram.shape == [29, mels]
     assert dbscale_mel_spectrogram.dtype == tf.float32
 

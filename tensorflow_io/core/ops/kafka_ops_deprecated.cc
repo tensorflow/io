@@ -63,7 +63,7 @@ REGISTER_OP("IO>WriteKafka")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
       TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaEncodeAvro")
@@ -73,7 +73,7 @@ REGISTER_OP("IO>KafkaEncodeAvro")
     .Attr("dtype: list({float,double,int32,int64,string})")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->input(0));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaDecodeAvroInit")
@@ -83,7 +83,7 @@ REGISTER_OP("IO>KafkaDecodeAvroInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaDecodeAvro")
@@ -96,7 +96,7 @@ REGISTER_OP("IO>KafkaDecodeAvro")
       for (int64 i = 0; i < c->num_outputs(); i++) {
         c->set_output(i, c->input(0));
       }
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaOutputSequence")
@@ -111,7 +111,7 @@ REGISTER_OP("IO>KafkaOutputSequence")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>KafkaOutputSequenceSetItem")

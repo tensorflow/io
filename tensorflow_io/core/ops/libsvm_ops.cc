@@ -38,7 +38,7 @@ REGISTER_OP("IO>DecodeLibsvm")
       c->set_output(2, c->Vector(InferenceContext::kUnknownDim));
       c->set_output(3, c->Vector(InferenceContext::kUnknownDim));
 
-      return Status::OK();
+      return OkStatus();
     })
 
     .Doc(R"doc(

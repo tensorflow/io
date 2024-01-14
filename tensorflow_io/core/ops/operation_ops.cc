@@ -36,11 +36,11 @@ REGISTER_OP("IO>OrderIndices")
           dims.emplace_back(c->UnknownDim());
         }
         c->set_output(0, c->MakeShape(dims));
-        return Status::OK();
+        return OkStatus();
       }
 
       c->set_output(0, c->UnknownShape());
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

@@ -32,52 +32,53 @@ namespace tensorflow {
 namespace data {
 namespace {
 
-tensorflow::error::Code GoogleCloudErrorCodeToTfErrorCode(
+absl::StatusCode GoogleCloudErrorCodeToTfErrorCode(
     ::google::cloud::StatusCode code) {
   switch (code) {
     case ::google::cloud::StatusCode::kOk:
-      return ::tensorflow::error::OK;
+      return absl::StatusCode::kOk;
     case ::google::cloud::StatusCode::kCancelled:
-      return ::tensorflow::error::CANCELLED;
+      return absl::StatusCode::kCancelled;
     case ::google::cloud::StatusCode::kInvalidArgument:
-      return ::tensorflow::error::INVALID_ARGUMENT;
+      return absl::StatusCode::kInvalidArgument;
     case ::google::cloud::StatusCode::kDeadlineExceeded:
-      return ::tensorflow::error::DEADLINE_EXCEEDED;
+      return absl::StatusCode::kDeadlineExceeded;
     case ::google::cloud::StatusCode::kNotFound:
-      return ::tensorflow::error::NOT_FOUND;
+      return absl::StatusCode::kNotFound;
     case ::google::cloud::StatusCode::kAlreadyExists:
-      return ::tensorflow::error::ALREADY_EXISTS;
+      return absl::StatusCode::kAlreadyExists;
     case ::google::cloud::StatusCode::kPermissionDenied:
-      return ::tensorflow::error::PERMISSION_DENIED;
+      return absl::StatusCode::kPermissionDenied;
     case ::google::cloud::StatusCode::kUnauthenticated:
-      return ::tensorflow::error::UNAUTHENTICATED;
+      return absl::StatusCode::kUnauthenticated;
     case ::google::cloud::StatusCode::kResourceExhausted:
-      return ::tensorflow::error::RESOURCE_EXHAUSTED;
+      return absl::StatusCode::kResourceExhausted;
     case ::google::cloud::StatusCode::kFailedPrecondition:
-      return ::tensorflow::error::FAILED_PRECONDITION;
+      return absl::StatusCode::kFailedPrecondition;
     case ::google::cloud::StatusCode::kAborted:
-      return ::tensorflow::error::ABORTED;
+      return absl::StatusCode::kAborted;
     case ::google::cloud::StatusCode::kOutOfRange:
-      return ::tensorflow::error::OUT_OF_RANGE;
+      return absl::StatusCode::kOutOfRange;
     case ::google::cloud::StatusCode::kUnimplemented:
-      return ::tensorflow::error::UNIMPLEMENTED;
+      return absl::StatusCode::kUnimplemented;
     case ::google::cloud::StatusCode::kInternal:
-      return ::tensorflow::error::INTERNAL;
+      return absl::StatusCode::kInternal;
     case ::google::cloud::StatusCode::kUnavailable:
-      return ::tensorflow::error::UNAVAILABLE;
+      return absl::StatusCode::kUnavailable;
     case ::google::cloud::StatusCode::kDataLoss:
-      return ::tensorflow::error::DATA_LOSS;
+      return absl::StatusCode::kDataLoss;
     default:
-      return ::tensorflow::error::UNKNOWN;
+      return absl::StatusCode::kUnknown;
   }
 }
 
 Status GoogleCloudStatusToTfStatus(const ::google::cloud::Status& status) {
   if (status.ok()) {
-    return Status::OK();
+    return OkStatus();
   }
   return Status(
-      GoogleCloudErrorCodeToTfErrorCode(status.code()),
+      static_cast<::tensorflow::errors::Code>(
+          GoogleCloudErrorCodeToTfErrorCode(status.code())),
       strings::StrCat("Error reading from Cloud Bigtable: ", status.message()));
 }
 
@@ -164,7 +165,7 @@ class Iterator : public DatasetIterator<Dataset> {
     if (it_ == reader_.end()) {
       VLOG(1) << "End of sequence";
       *end_of_sequence = true;
-      return Status::OK();
+      return OkStatus();
     }
     *end_of_sequence = false;
 
@@ -199,7 +200,7 @@ class Iterator : public DatasetIterator<Dataset> {
     VLOG(1) << "incrementing iterator";
     it_ = std::next(it_);
 
-    return Status::OK();
+    return OkStatus();
   }
 
  protected:
@@ -270,8 +271,8 @@ class Iterator : public DatasetIterator<Dataset> {
 
   mutex mu_;
   const std::vector<std::pair<std::string, std::string>> columns_;
-  cbt::RowReader reader_ GUARDED_BY(mu_);
-  cbt::v1::internal::RowReaderIterator it_ GUARDED_BY(mu_);
+  cbt::RowReader reader_ TF_GUARDED_BY(mu_);
+  cbt::v1::internal::RowReaderIterator it_ TF_GUARDED_BY(mu_);
   // we're using a map with const refs to avoid copying strings when searching
   // for a value.
   const absl::flat_hash_map<std::pair<const std::string&, const std::string&>,
@@ -339,7 +340,7 @@ class Dataset : public DatasetBase {
                                  DebugString());
   }
 
-  Status CheckExternalState() const override { return Status::OK(); }
+  Status CheckExternalState() const override { return OkStatus(); }
 
  private:
   std::shared_ptr<cbt::DataClient> const& data_client_;
@@ -516,8 +517,8 @@ class BigtableSplitRowSetEvenlyOp : public OpKernel {
 
  private:
   mutex mu_;
-  std::string table_id_ GUARDED_BY(mu_);
-  int num_splits_ GUARDED_BY(mu_);
+  std::string table_id_ TF_GUARDED_BY(mu_);
+  int num_splits_ TF_GUARDED_BY(mu_);
 };
 
 REGISTER_KERNEL_BUILDER(Name("BigtableSplitRowSetEvenly").Device(DEVICE_CPU),

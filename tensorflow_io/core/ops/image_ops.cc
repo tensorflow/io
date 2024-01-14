@@ -30,7 +30,7 @@ REGISTER_OP("IO>DecodeTiffInfo")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeTiff")
@@ -43,7 +43,7 @@ REGISTER_OP("IO>DecodeTiff")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 0, &unused));
       c->set_output(
           0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>EncodeBmp")
@@ -53,7 +53,7 @@ REGISTER_OP("IO>EncodeBmp")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 3, &unused));
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeWebP")
@@ -65,7 +65,7 @@ REGISTER_OP("IO>DecodeWebP")
       c->set_output(
           0, c->MakeShape({shape_inference::InferenceContext::kUnknownDim,
                            shape_inference::InferenceContext::kUnknownDim, 4}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodePnm")
@@ -77,7 +77,7 @@ REGISTER_OP("IO>DecodePnm")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(
           0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DrawBoundingBoxesV3")
@@ -99,7 +99,7 @@ REGISTER_OP("IO>DecodeJpegExif")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeExrInfo")
@@ -113,7 +113,7 @@ REGISTER_OP("IO>DecodeExrInfo")
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeExr")
@@ -129,7 +129,7 @@ REGISTER_OP("IO>DecodeExr")
       TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &unused));
       c->set_output(
           0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeHdr")
@@ -139,7 +139,7 @@ REGISTER_OP("IO>DecodeHdr")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeDICOMImage")
@@ -154,7 +154,7 @@ REGISTER_OP("IO>DecodeDICOMImage")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
                                      c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     })
     .Doc(R"doc(
 loads a dicom image file and returns its pixel information in the specified output format
@@ -167,7 +167,7 @@ REGISTER_OP("IO>DecodeDICOMData")
     .Output("tag_values: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->input(1));
-      return Status::OK();
+      return OkStatus();
     })
     .Doc(R"doc(
 loads a dicom file and returns the specified tags values as string.
@@ -181,7 +181,7 @@ REGISTER_OP("IO>DecodeNV12")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeYUY2")
@@ -192,7 +192,7 @@ REGISTER_OP("IO>DecodeYUY2")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeAVIF")
@@ -204,7 +204,7 @@ REGISTER_OP("IO>DecodeAVIF")
       c->set_output(
           0, c->MakeShape({shape_inference::InferenceContext::kUnknownDim,
                            shape_inference::InferenceContext::kUnknownDim, 4}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>DecodeJPEG2K")
@@ -218,7 +218,7 @@ REGISTER_OP("IO>DecodeJPEG2K")
           0, c->MakeShape({shape_inference::InferenceContext::kUnknownDim,
                            shape_inference::InferenceContext::kUnknownDim,
                            shape_inference::InferenceContext::kUnknownDim}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>EncodeGif")
@@ -228,7 +228,7 @@ REGISTER_OP("IO>EncodeGif")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 4, &unused));
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

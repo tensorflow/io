@@ -27,13 +27,15 @@ limitations under the License.
 #ifdef _WIN32
 #include <io.h>  // for _mktemp
 #endif
-#include "tensorflow/core/platform/cloud/ram_file_block_cache.h"
+#include "tensorflow/tsl/platform/cloud/ram_file_block_cache.h"
 
 #ifdef _WIN32
 #ifdef DeleteFile
 #undef DeleteFile
 #endif
 #endif
+
+using namespace tsl;
 
 namespace tensorflow {
 namespace {

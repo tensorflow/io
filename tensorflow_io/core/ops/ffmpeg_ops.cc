@@ -28,7 +28,7 @@ REGISTER_OP("IO>FfmpegReadableInit")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegReadableSpec")
@@ -41,7 +41,7 @@ REGISTER_OP("IO>FfmpegReadableSpec")
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
       c->set_output(2, c->MakeShape({}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegReadableRead")
@@ -58,7 +58,7 @@ REGISTER_OP("IO>FfmpegReadableRead")
       shape_inference::ShapeHandle entry;
       TF_RETURN_IF_ERROR(c->MakeShapeFromPartialTensorShape(shape, &entry));
       c->set_output(0, entry);
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegDecodeVideo")
@@ -68,7 +68,7 @@ REGISTER_OP("IO>FfmpegDecodeVideo")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
                                      c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegAudioReadableInit")
@@ -79,7 +79,7 @@ REGISTER_OP("IO>FfmpegAudioReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegAudioReadableNext")
@@ -89,7 +89,7 @@ REGISTER_OP("IO>FfmpegAudioReadableNext")
     .Attr("dtype: type")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegVideoReadableInit")
@@ -100,7 +100,7 @@ REGISTER_OP("IO>FfmpegVideoReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>FfmpegVideoReadableNext")
@@ -111,7 +111,7 @@ REGISTER_OP("IO>FfmpegVideoReadableNext")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim(), c->UnknownDim(),
                                      c->UnknownDim(), c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace tensorflow

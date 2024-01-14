@@ -1,3 +1,152 @@
+# Release 0.35.0
+
+## Major Features and Bug Fixes
+* Make executor pool size configurable
+* Update to manylinux2014 wheel
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Joyce, Ukjae Jeong (Jay), Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.34.0
+
+## Major Features and Bug Fixes
+* Add macOS arm64 support
+* Fix segfault on s3 filesystem
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Ukjae Jeong (Jay), Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.33.0
+
+## Major Features and Bug Fixes
+* Add AvroTensorDataset to allow data conversion from avro to Tensorflow tensors
+* Bring back `S3_VERIFY_SSL` environment variable
+* Add ATDSDataset user guide
+* Fixed `rgb_to_ycbcr()` and `ycbcr_to_rgb()` not clipping to `[0, 255]`
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Felix Sonntag, Jean-Baptiste Lespiau, Jonathan Hiles, Kamil Górzyński,
+Lijuan Zhang, Mattia Lamberti, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.32.0
+
+## Major Features and Bug Fixes
+* Add ref and amin argument in dbscale
+* Updated aarch64 build
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Andrew Goodbody, Awsaf, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.31.0
+
+## Major Features and Bug Fixes
+* Fix isdir issue in HTTP file system
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Zhuo Peng, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.30.0
+
+## Major Features and Bug Fixes
+* Fix issue in python 3.11 support for aarch64
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Colin, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.29.0
+
+## Major Features and Bug Fixes
+* Fix issue in python 3.11 support
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Aaron Keesing, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.28.0
+
+## Major Features and Bug Fixes
+* Fixes OSS file system issue
+* Add python 3.11 support
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Jinhu Wu, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.27.0
+
+## Major Features and Bug Fixes
+* Add arrow binary data type support
+* Add string support for feather file
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
+# Release 0.26.0
+
+## Major Features and Bug Fixes
+* Updated arrow version to 7.0.0
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+372046933, Colin, Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.25.0
 
 ## Major Features and Bug Fixes

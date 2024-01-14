@@ -23,6 +23,7 @@ cc_library(
     linkstatic = True,
     deps = [
         "@local_config_tf//:tf_c_header_lib",
+        "@local_config_tf//:tf_tsl_header_lib",
     ],
     alwayslink = 1,
 )
@@ -39,6 +40,11 @@ cc_library(
         "//tensorflow_io/core/filesystems/hdfs",
         "//tensorflow_io/core/filesystems/http",
         "//tensorflow_io/core/filesystems/s3",
-    ],
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "//conditions:default": [
+            "//tensorflow_io/core/filesystems/oss",
+        ],
+    }),
     alwayslink = 1,
 )

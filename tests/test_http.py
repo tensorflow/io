@@ -77,7 +77,7 @@ def test_gfile_read(local_content, remote_filename):
     assert remote_gfile.size() == len(local_content)
     offset_start = list(range(0, len(local_content), 100))
     offset_stop = offset_start[1:] + [len(local_content)]
-    for (start, stop) in zip(offset_start, offset_stop):
+    for start, stop in zip(offset_start, offset_stop):
         assert remote_gfile.read(100) == local_content[start:stop]
 
 
@@ -104,6 +104,18 @@ def test_gfile_tell(local_content, remote_filename):
     assert remote_gfile.tell() == 0
     remote_gfile.read(100)
     assert remote_gfile.tell() == 100
+
+
+@pytest.mark.skipif(
+    sys.platform in ("darwin", "win32"), reason="macOS/Windows fails now"
+)
+def test_gfile_isdir(remote_filename):
+    """Test case for isdir()"""
+
+    # A valid http link is not a dir.
+    assert not tf.io.gfile.isdir(remote_filename)
+    # An invalid http link is not a dir either.
+    assert not tf.io.gfile.isdir("https://not-a-valid-domain/tfio-test")
 
 
 if __name__ == "__main__":

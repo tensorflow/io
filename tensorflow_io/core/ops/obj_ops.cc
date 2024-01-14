@@ -28,7 +28,7 @@ REGISTER_OP("IO>DecodeObj")
       shape_inference::ShapeHandle unused;
       TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 0, &unused));
       c->set_output(0, c->MakeShape({c->UnknownDim(), 3}));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

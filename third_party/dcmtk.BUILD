@@ -300,7 +300,6 @@ genrule(
         "#define HAVE_FENV_H 1",
         "#define HAVE_ITERATOR_HEADER 1",
         "#define HAVE_READDIR_R 1",
-        "#define HAVE_PROTOTYPE_FEENABLEEXCEPT 1",
         "#define HAVE_PROTOTYPE_ACCEPT 1",
         "#define HAVE_PROTOTYPE_BIND 1",
         "#define HAVE_PROTOTYPE_BZERO 1",

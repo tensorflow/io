@@ -134,15 +134,24 @@ static Aws::Client::ClientConfiguration& GetDefaultClientConfig() {
   absl::MutexLock l(&cfg_lock);
 
   if (!init) {
+    const char* verify_ssl = getenv("S3_VERIFY_SSL");
+    if (verify_ssl) {
+      if (verify_ssl[0] == '0')
+        cfg.verifySSL = false;
+      else
+        cfg.verifySSL = true;
+    }
     // if these timeouts are low, you may see an error when
     // uploading/downloading large files: Unable to connect to endpoint
+    const char *connect_timeout = getenv("S3_CONNECT_TIMEOUT_MSEC"),
+               *request_timeout = getenv("S3_REQUEST_TIMEOUT_MSEC");
     int64_t timeout;
     cfg.connectTimeoutMs =
-        absl::SimpleAtoi(getenv("S3_CONNECT_TIMEOUT_MSEC"), &timeout)
+        connect_timeout && absl::SimpleAtoi(connect_timeout, &timeout)
             ? timeout
             : kS3TimeoutMsec;
     cfg.requestTimeoutMs =
-        absl::SimpleAtoi(getenv("S3_REQUEST_TIMEOUT_MSEC"), &timeout)
+        request_timeout && absl::SimpleAtoi(request_timeout, &timeout)
             ? timeout
             : kS3TimeoutMsec;
     const char* ca_file = getenv("S3_CA_FILE");
@@ -182,8 +191,11 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
           }
         });
 
+    const char* disable_multi_part_download =
+        getenv("S3_DISABLE_MULTI_PART_DOWNLOAD");
     int temp_value;
-    if (absl::SimpleAtoi(getenv("S3_DISABLE_MULTI_PART_DOWNLOAD"), &temp_value))
+    if (disable_multi_part_download &&
+        absl::SimpleAtoi(disable_multi_part_download, &temp_value))
       s3_file->use_multi_part_download = (temp_value != 1);
 
     const char* endpoint = getenv("S3_ENDPOINT");
@@ -191,14 +203,26 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
   }
 }
 
-static void GetExecutor(tf_s3_filesystem::S3File* s3_file) {
+// GetExecutor initializes the executor in s3_file if it is not initialized.
+//
+// This function returns executor_pool_size that is used in initialization,
+// but the caller can ignore the return value.
+static int GetExecutor(tf_s3_filesystem::S3File* s3_file) {
   absl::MutexLock l(&s3_file->initialization_lock);
+
+  int temp_value;
+  const char* executor_pool_size = getenv("S3_EXECUTOR_POOL_SIZE");
+  if (executor_pool_size == nullptr ||
+      !absl::SimpleAtoi(executor_pool_size, &temp_value))
+    temp_value = kExecutorPoolSize;
 
   if (s3_file->executor.get() == nullptr) {
     s3_file->executor =
         Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(
-            kExecutorTag, kExecutorPoolSize);
+            kExecutorTag, temp_value);
   }
+
+  return temp_value;
 }
 
 static void GetTransferManager(
@@ -206,19 +230,22 @@ static void GetTransferManager(
     tf_s3_filesystem::S3File* s3_file) {
   // These functions should be called before holding `initialization_lock`.
   GetS3Client(s3_file);
-  GetExecutor(s3_file);
+  int executor_pool_size = GetExecutor(s3_file);
 
   absl::MutexLock l(&s3_file->initialization_lock);
 
   if (s3_file->transfer_managers.count(direction) == 0) {
     uint64_t temp_value;
     if (direction == Aws::Transfer::TransferDirection::UPLOAD) {
-      if (!absl::SimpleAtoi(getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE"),
-                            &temp_value))
+      const char* upload_chunk_size = getenv("S3_MULTI_PART_UPLOAD_CHUNK_SIZE");
+      if (upload_chunk_size == nullptr ||
+          !absl::SimpleAtoi(upload_chunk_size, &temp_value))
         temp_value = kS3MultiPartUploadChunkSize;
     } else if (direction == Aws::Transfer::TransferDirection::DOWNLOAD) {
-      if (!absl::SimpleAtoi(getenv("S3_MULTI_PART_DOWNLOAD_CHUNK_SIZE"),
-                            &temp_value))
+      const char* download_chunk_size =
+          getenv("S3_MULTI_PART_DOWNLOAD_CHUNK_SIZE");
+      if (download_chunk_size == nullptr ||
+          !absl::SimpleAtoi(download_chunk_size, &temp_value))
         temp_value = kS3MultiPartDownloadChunkSize;
     }
     s3_file->multi_part_chunk_sizes.emplace(direction, temp_value);
@@ -227,7 +254,7 @@ static void GetTransferManager(
     config.s3Client = s3_file->s3_client;
     config.bufferSize = temp_value;
     // must be larger than pool size * multi part chunk size
-    config.transferBufferMaxHeapSize = (kExecutorPoolSize + 1) * temp_value;
+    config.transferBufferMaxHeapSize = (executor_pool_size + 1) * temp_value;
     s3_file->transfer_managers.emplace(
         direction, Aws::Transfer::TransferManager::Create(config));
   }

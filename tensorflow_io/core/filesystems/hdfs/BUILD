@@ -19,6 +19,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@hadoop",
+        "@local_tsl//tsl/c:tsl_status",
     ],
     alwayslink = 1,
 )

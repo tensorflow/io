@@ -33,5 +33,5 @@ def f(v):
 
 text_dataset = text_io.TextDataset("file://-").map(f)
 
-for (frame_number_value, ip_dst_value, ip_proto_value) in text_dataset:
+for frame_number_value, ip_dst_value, ip_proto_value in text_dataset:
     print(ip_dst_value.numpy())

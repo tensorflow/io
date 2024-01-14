@@ -28,6 +28,7 @@ cc_library(
     ],
     defines = [
         "BOOST_ALL_NO_LIB=1",
+        "_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION=1",
     ],
     includes = [
         ".",

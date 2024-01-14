@@ -223,7 +223,6 @@ class AvroDatasetTestBase(tf.test.TestCase):
             _assert_equal(expected, actual)
 
     def _verify_output(self, expected_data, actual_dataset):
-
         next_data = iter(actual_dataset)
 
         for expected in expected_data:
@@ -286,7 +285,6 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
         )
 
         with pytest.raises(ValueError):
-
             dataset_a = tfio.experimental.columnar.AvroRecordDataset(
                 filenames=filenames,
                 num_parallel_reads=NUM_PARALLEL_READS,
@@ -295,7 +293,6 @@ class AvroRecordDatasetTest(AvroDatasetTestBase):
             )
 
         with pytest.raises(ValueError):
-
             dataset_b = tfio.experimental.columnar.AvroRecordDataset(
                 filenames=filenames,
                 num_parallel_reads=NUM_PARALLEL_READS,
@@ -1962,7 +1959,7 @@ class ParseAvroDatasetTest(AvroDatasetTestBase):
             {
                 "guests[gender='wrong_value'].name": tf.compat.v1.SparseTensorValue(
                     indices=np.empty(shape=[0, 2], dtype=np.int64),
-                    values=np.empty(shape=[0], dtype=np.str),
+                    values=np.empty(shape=[0], dtype=str),
                     dense_shape=np.asarray([2, 0]),
                 )
             }

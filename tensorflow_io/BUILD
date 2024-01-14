@@ -8,13 +8,19 @@ load(
 cc_binary(
     name = "python/ops/libtensorflow_io.so",
     copts = tf_io_copts(),
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": [
+            "-lresolv",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = 1,
     deps = [
         "//tensorflow_io/core:arrow_ops",
         "//tensorflow_io/core:bigquery_ops",
         "//tensorflow_io/core:bigtable_ops",
-        "//tensorflow_io/core:audio_video_ops",
         "//tensorflow_io/core:avro_ops",
+        "//tensorflow_io/core:avro_atds",
         "//tensorflow_io/core:orc_ops",
         "//tensorflow_io/core:cpuinfo",
         "//tensorflow_io/core:file_ops",
@@ -41,12 +47,12 @@ cc_binary(
         "@local_config_tf//:tf_header_lib",
     ] + select({
         "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:darwin_arm64": [],
         "//conditions:default": [
+            "//tensorflow_io/core:audio_video_ops",
             "//tensorflow_io/core:core_ops",
             "//tensorflow_io/core:elasticsearch_ops",
-            "//tensorflow_io/core:genome_ops",
             "//tensorflow_io/core:optimization",
-            "//tensorflow_io/core:oss_ops",
             "//tensorflow_io/core/kernels/gsmemcachedfs:gs_memcached_file_system",
         ],
     }) + select({

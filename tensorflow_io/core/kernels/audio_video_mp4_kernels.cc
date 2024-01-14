@@ -320,7 +320,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
         shape_ = TensorShape({samples, channels});
         dtype_ = DT_FLOAT;
         rate_ = rate;
-        return Status::OK();
+        return OkStatus();
       }
     }
 
@@ -332,7 +332,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
     *shape = shape_;
     *dtype = dtype_;
     *rate = rate_;
-    return Status::OK();
+    return OkStatus();
   }
 
   Status Read(const int64 start, const int64 stop,
@@ -350,7 +350,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
         TensorShape({sample_stop - sample_start, shape_.dim_size(1)}), &value));
 
     if (sample_stop == sample_start) {
-      return Status::OK();
+      return OkStatus();
     }
 
     void* state = state_.get();
@@ -428,7 +428,7 @@ class MP4AACReadableResource : public AudioReadableResourceBase {
     char* base = (char*)(value->flat<float>().data());
     char* data = (char*)&data_out[0] + extra * channels * sizeof(float);
     memcpy(base, data, value->NumElements() * sizeof(float));
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override { return "MP4AACReadableResource"; }
 
@@ -507,7 +507,7 @@ class AudioDecodeAACOp : public OpKernel {
                        [&](const TensorShape& shape, Tensor** value) -> Status {
                          TF_RETURN_IF_ERROR(
                              context->allocate_output(0, shape, value));
-                         return Status::OK();
+                         return OkStatus();
                        }));
   }
 
@@ -767,7 +767,7 @@ class VideoReadableResource : public ResourceBase {
     width_ = width;
     height_ = height;
     bytes_ = bytes;
-    return Status::OK();
+    return OkStatus();
   }
   Status Read(
       const int64 index,
@@ -781,7 +781,7 @@ class VideoReadableResource : public ResourceBase {
     Tensor* value_tensor;
     if (sample_index_ >= mp4d_demux_.track[track_index_].sample_count) {
       TF_RETURN_IF_ERROR(allocate_func(TensorShape({0}), &value_tensor));
-      return Status::OK();
+      return OkStatus();
     }
 
     unsigned frame_bytes, timestamp, duration;
@@ -808,7 +808,7 @@ class VideoReadableResource : public ResourceBase {
       return errors::InvalidArgument("error to decode: ", status);
     }
     sample_index_++;
-    return Status::OK();
+    return OkStatus();
   }
   string DebugString() const override {
     mutex_lock l(mu_);
@@ -854,7 +854,7 @@ class VideoReadableInitOp : public ResourceOpKernel<VideoReadableResource> {
   Status CreateResource(VideoReadableResource** resource)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     *resource = new VideoReadableResource(env_);
-    return Status::OK();
+    return OkStatus();
   }
 
  private:
@@ -885,7 +885,7 @@ class VideoReadableReadOp : public OpKernel {
                                       Tensor** value_tensor) -> Status {
                                     TF_RETURN_IF_ERROR(context->allocate_output(
                                         0, shape, value_tensor));
-                                    return Status::OK();
+                                    return OkStatus();
                                   }));
   }
 

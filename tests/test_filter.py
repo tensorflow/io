@@ -37,7 +37,7 @@ import tensorflow_io as tfio
                 np.reshape(e, [5, 5, 3]),
                 sigma=1,
                 preserve_range=False,
-                multichannel=True,
+                channel_axis=-1,
                 mode="constant",
             ),
         ),

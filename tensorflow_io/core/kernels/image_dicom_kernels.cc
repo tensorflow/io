@@ -423,7 +423,7 @@ class DecodeDICOMDataOp : public OpKernel {
     uint16 tag_group_number = (uint16)((tag_value & 0xFFFF0000) >> 16);
     uint16 tag_element_number = (uint16)((tag_value & 0x0000FFFF) >> 0);
     *tag = DcmTag(tag_group_number, tag_element_number);
-    return Status::OK();
+    return OkStatus();
   }
   Status GetDcmTag(const absl::string_view tag_value, DcmTag *tag) {
     std::vector<absl::string_view> number_views =
@@ -458,7 +458,7 @@ class DecodeDICOMDataOp : public OpKernel {
     uint16 tag_element_number = number;
 
     *tag = DcmTag(tag_group_number, tag_element_number);
-    return Status::OK();
+    return OkStatus();
   }
 };
 

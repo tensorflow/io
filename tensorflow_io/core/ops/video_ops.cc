@@ -28,7 +28,7 @@ REGISTER_OP("IO>VideoCaptureReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>VideoCaptureReadableRead")
@@ -37,7 +37,7 @@ REGISTER_OP("IO>VideoCaptureReadableRead")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>VideoReadableInit")
@@ -47,7 +47,7 @@ REGISTER_OP("IO>VideoReadableInit")
     .Attr("shared_name: string = ''")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->Scalar());
-      return Status::OK();
+      return OkStatus();
     });
 
 REGISTER_OP("IO>VideoReadableRead")
@@ -56,7 +56,7 @@ REGISTER_OP("IO>VideoReadableRead")
     .Output("value: string")
     .SetShapeFn([](shape_inference::InferenceContext* c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
-      return Status::OK();
+      return OkStatus();
     });
 
 }  // namespace

@@ -86,14 +86,14 @@ int64 ComputeBackoffMicroseconds(int current_retry_attempt, int64 min_delay,
 namespace {
 
 inline void StreamzRecordCacheHitBlockSize(
-    size_t value, FileBlockCacheStatsInterface* cache_stats) {
+    size_t value, tsl::FileBlockCacheStatsInterface* cache_stats) {
   if (cache_stats != nullptr) {
     cache_stats->RecordCacheHitBlockSize(value);
   }
 }
 
 inline void StreamzRecordCacheMissBlockSize(
-    size_t value, FileBlockCacheStatsInterface* cache_stats) {
+    size_t value, tsl::FileBlockCacheStatsInterface* cache_stats) {
   if (cache_stats != nullptr) {
     cache_stats->RecordCacheMissBlockSize(value);
   }
@@ -197,7 +197,7 @@ bool BufferCollator::splice_buffer(T begin, T end, size_t pos,
 
 Status block_get(MemcachedDaoInterface* memcached_dao, const string& key,
                  std::vector<char>* value,
-                 FileBlockCacheStatsInterface* cache_stats) {
+                 tsl::FileBlockCacheStatsInterface* cache_stats) {
   memcached_return rc;
   size_t value_length;
   char* retrieved_value;
@@ -214,7 +214,7 @@ Status block_get(MemcachedDaoInterface* memcached_dao, const string& key,
       StreamzRecordCacheHitBlockSize(value_length, cache_stats);
       // Any object returned by memcached must be released by the caller.
       free(retrieved_value);
-      return Status::OK();
+      return OkStatus();
     }
 
     if (rc == MEMCACHED_TIMEOUT) {
@@ -243,7 +243,7 @@ Status block_multi_get(MemcachedDaoInterface* memcached_dao,
   rc = memcached_dao->MemcachedMget(key_ptrs.get(), key_lengths.get(),
                                     keys.size());
   if (rc == MEMCACHED_SUCCESS) {
-    return Status::OK();
+    return OkStatus();
   }
 
   return errors::Internal("memcached multi_get failed ",
@@ -257,7 +257,7 @@ Status block_set(MemcachedDaoInterface* memcached_dao, const string& key,
                                    value.size(), static_cast<time_t>(0),
                                    static_cast<uint32_t>(0));
   if (rc == MEMCACHED_SUCCESS) {
-    return Status::OK();
+    return OkStatus();
   }
 
   return errors::Internal("memcached failed to store key ", key,
@@ -269,7 +269,7 @@ Status read_with_multi_get(
     const std::vector<string>& keys,
     std::map<string, MemcachedFileBlockCache::Key>* claim_checks,
     size_t* total_bytes_transferred,
-    FileBlockCacheStatsInterface* cache_stats) {
+    tsl::FileBlockCacheStatsInterface* cache_stats) {
   VLOG(2) << "Key multi-get of " << claim_checks->size() << " claims";
   const auto before = absl::Now();
   auto to_claim = claim_checks->size();
@@ -329,7 +329,7 @@ Status read_with_multi_get(
   const auto after = absl::Now();
   VLOG(2) << (to_claim - claim_checks->size())
           << " multi-get fetches claimed in " << (after - before);
-  return Status::OK();
+  return OkStatus();
 }
 
 void cache_cleanup(void* tsd) {
@@ -525,7 +525,7 @@ Status MemcachedFileBlockCache::ConfigureMemcachedServers(
                             memcached_dao->MemcachedStrError(rc));
   }
 
-  return Status::OK();
+  return OkStatus();
 }
 
 Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
@@ -533,7 +533,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
                                      size_t* bytes_transferred) {
   *bytes_transferred = 0;
   if (n == 0) {
-    return Status::OK();
+    return OkStatus();
   }
   VLOG(2) << "original read: offset=" << offset << ", n=" << n
           << ", filename=" << filename;
@@ -570,7 +570,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
     }
     if (local_cache_->Get(mini_read_key, offset_in_block, n, buffer,
                           bytes_transferred)) {
-      return Status::OK();
+      return OkStatus();
     }
   }
 
@@ -672,7 +672,7 @@ Status MemcachedFileBlockCache::Read(const string& filename, size_t offset,
           << (total_bytes_transferred / absl::ToDoubleSeconds(elapsed))
           << " bytes / second";
   *bytes_transferred = total_bytes_transferred;
-  return Status::OK();
+  return OkStatus();
 }
 
 string MemcachedFileBlockCache::MakeMemcachedKey(const Key& key) {
