@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release arm64 on macOS
+    runs-on: imacos-13-xlarge
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 0
+      - run: |
+          set -x -e
+          echo "Successfully completely macOS arm64 release"
+
+          
