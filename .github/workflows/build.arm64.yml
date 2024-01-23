@@ -1,4 +1,4 @@
-name: Release
+name: Release arm64 on macOS
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
 jobs:
   release:
     name: Release arm64 on macOS
-    runs-on: imacos-13-xlarge
+    runs-on: macos-13-xlarge
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
