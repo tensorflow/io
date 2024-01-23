@@ -14,6 +14,16 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
+      - name: Bazel on macOS
+        run: |
+          set -x -e
+          bash -e .github/workflows/build.bazel.sh python3
+      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        with:
+          name: ${{ runner.os }}-arm64-bazel-bin
+          path: |
+            build/tensorflow_io
+            build/tensorflow_io_gcs_filesystem
       - run: |
           set -x -e
           echo "Successfully completely macOS arm64 release"
