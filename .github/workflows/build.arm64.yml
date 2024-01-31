@@ -41,18 +41,12 @@ jobs:
         with:
           name: ${{ runner.os }}-arm64-bazel-bin
           path: bazel-bin
+      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+        with:
+          python-version: "${{ matrix.python }}"
       - name: Wheel ${{ matrix.python }} macOS
         run: |
           set -x -e
-          pyenv versions
-          pyenv install --list
-          # pyenv install ${{ matrix.python }}
-          pyenv local ${{ matrix.python }}
-          pyenv versions
-          pyenv version
-          pyenv which python
-          pyenv exec pip install -U wheel setuptools
-          pyenv which python
           python --version
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
