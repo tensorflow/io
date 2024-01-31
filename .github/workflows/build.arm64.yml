@@ -31,7 +31,7 @@ jobs:
   macos-arm64-wheel:
     name: Wheel ${{ matrix.python }} macOS arm64
     needs: macos-arm64-bazel
-    runs-on: macos-13-xlarge
+    runs-on: macos-14-xlarge
     strategy:
       matrix:
         python: ['3.10', 3.11'] #['3.9', '3.10', '3.11']
