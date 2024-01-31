@@ -31,7 +31,7 @@ jobs:
   macos-arm64-wheel:
     name: Wheel ${{ matrix.python }} macOS arm64
     needs: macos-arm64-bazel
-    runs-on: macos-14-xlarge
+    runs-on: macos-13-xlarge
     strategy:
       matrix:
         python: ['3.10', 3.11'] #['3.9', '3.10', '3.11']
@@ -41,12 +41,13 @@ jobs:
         with:
           name: ${{ runner.os }}-arm64-bazel-bin
           path: bazel-bin
-      - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
-        with:
-          python-version: "${{ matrix.python }}"
+      #- uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      #  with:
+      #    python-version: "${{ matrix.python }}"
       - name: Wheel ${{ matrix.python }} macOS
         run: |
           set -x -e
+          python3 --version
           python --version
           python -m pip install wheel
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
