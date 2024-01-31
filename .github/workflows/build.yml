@@ -107,72 +107,6 @@ jobs:
           cat source.sh
           bash -x -e source.sh
 
-  macos-arm64-bazel:
-    name: Bazel macOS arm64
-    runs-on: [self-hosted, macOS, ARM64]
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: GCP
-        run: |
-          cat > service_account_creds.json << EOF
-          ${{ secrets.GCP_CREDS }}
-          EOF
-      - name: Bazel on macOS
-        run: |
-          set -x -e
-          # export BAZEL_OPTIMIZATION="--config=optimization --config=cache"
-          # if [[ "${EVENT_NAME}" == "push" && "${REPO_NAME}" == "tensorflow/io" ]]; then
-          #   export BAZEL_OPTIMIZATION="$BAZEL_OPTIMIZATION --remote_upload_local_results=true --google_credentials=service_account_creds.json"
-          # fi
-          bash -e .github/workflows/build.bazel.sh python3
-      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
-        with:
-          name: ${{ runner.os }}-arm64-bazel-bin
-          path: |
-            build/tensorflow_io
-            build/tensorflow_io_gcs_filesystem
-
-  macos-arm64-wheel:
-    name: Wheel ${{ matrix.python }} macOS arm64
-    needs: macos-arm64-bazel
-    runs-on: [self-hosted, macOS, ARM64]
-    strategy:
-      matrix:
-        python: ['3.9', '3.10', '3.11']
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
-        with:
-          name: ${{ runner.os }}-arm64-bazel-bin
-          path: bazel-bin
-      - name: Wheel ${{ matrix.python }} macOS
-        run: |
-          set -x -e
-          pyenv versions
-          pyenv install --list
-          # pyenv install ${{ matrix.python }}
-          pyenv local ${{ matrix.python }}
-          pyenv versions
-          pyenv version
-          pyenv which python
-          pyenv exec pip install -U wheel setuptools
-          pyenv which python
-          python --version
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
-          rm -rf build
-          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
-          ls dist/*
-          mkdir -p wheelhouse
-          for f in dist/*.whl; do
-            echo "disable delocate due to build breaks: delocate-wheel -w wheelhouse  $f"
-            cp $f wheelhouse
-          done
-          ls wheelhouse/*
-      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
-        with:
-          name: ${{ runner.os }}-arm64-${{ matrix.python }}-wheel
-          path: wheelhouse
-
   macos-bazel:
     name: Bazel macOS
     runs-on: macOS-11
@@ -608,37 +542,6 @@ jobs:
           name: tensorflow-io-release
           path: wheelhouse
 
-  release-macos-arm64:
-    name: Release (MacOS arm64)
-    if: github.event_name == 'push'
-    needs: [macos-arm64-wheel]
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
-        with:
-          name: macOS-arm64-3.9-wheel
-          path: macOS-arm64-3.9-wheel
-      - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
-        with:
-          name: macOS-arm64-3.10-wheel
-          path: macOS-arm64-3.10-wheel
-      - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
-        with:
-          name: macOS-arm64-3.11-wheel
-          path: macOS-arm64-3.11-wheel
-      - run: |
-          set -e -x
-          mkdir -p wheelhouse
-          cp macOS-arm64-3.9-wheel/*.whl wheelhouse/
-          cp macOS-arm64-3.10-wheel/*.whl wheelhouse/
-          cp macOS-arm64-3.11-wheel/*.whl wheelhouse/
-          ls -la wheelhouse/
-          sha256sum wheelhouse/*.whl
-      - uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
-        with:
-          name: tensorflow-io-release-macos-arm64
-          path: wheelhouse
-
   release-candidate:
     name: Release Candidate
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -678,46 +581,6 @@ jobs:
           context: .
           push: true
           tags: tfsigio/candidate:${{ steps.info.outputs.version }}
-
-  release-candidate-macos-arm64:
-    name: Release Candidate (MacOS arm64)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: [release-macos-arm64]
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
-        with:
-          name: tensorflow-io-release-macos-arm64
-          path: wheelhouse
-      - run: |
-          set -x -e
-          sha256sum wheelhouse/*.whl | sort -u > wheelhouse.sha256
-          git rev-parse --verify HEAD > wheelhouse.commit
-          grep 'version = ' tensorflow_io/python/ops/version_ops.py  | sed -E 's@^.*version = "@@g' | sed -E 's@".*$@@g' > wheelhouse.version
-          cat wheelhouse.sha256
-          cat wheelhouse.commit
-          cat wheelhouse.version
-          echo "::set-output name=version::$(cat wheelhouse.version)"
-        id: info
-      - run: |-
-          cat <<EOF > Dockerfile
-          FROM gcr.io/distroless/base-debian11
-          COPY wheelhouse /wheelhouse
-          COPY wheelhouse.sha256 /wheelhouse.sha256
-          COPY wheelhouse.commit /wheelhouse.commit
-          COPY wheelhouse.version /wheelhouse.version
-          EOF
-      - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
-      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          username: tfsigio
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.1.0
-        with:
-          context: .
-          push: true
-          tags: tfsigio/candidate:macos-arm64-${{ steps.info.outputs.version }}
 
   docker-release:
     name: Docker Release
