@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-13-xlarge
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.10', 3.11'] #['3.9', '3.10', '3.11']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
@@ -48,6 +48,7 @@ jobs:
         run: |
           set -x -e
           python --version
+          python -m pip install wheel
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
