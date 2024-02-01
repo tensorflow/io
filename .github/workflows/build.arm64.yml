@@ -51,12 +51,11 @@ jobs:
           python --version
           brew search python
           brew install python@${{ matrix.python }}
-          python3 --version
-          python --version
-          python -m pip install -U wheel setuptools
-          python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
+          python${{ matrix.python }} --version
+          python${{ matrix.python }} -m pip install -U wheel setuptools
+          python${{ matrix.python }} setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
-          python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
+          python${{ matrix.python }} setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           ls dist/*
           mkdir -p wheelhouse
           for f in dist/*.whl; do
