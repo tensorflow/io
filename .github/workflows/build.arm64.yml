@@ -49,7 +49,7 @@ jobs:
           set -x -e
           python3 --version
           python --version
-          python -m pip install wheel
+          python -m pip install -U wheel setuptools
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
           python setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
@@ -67,7 +67,7 @@ jobs:
 
   release-macos-arm64:
     name: Release (MacOS arm64)
-    needs: macos-arm64-bazel
+    needs: macos-arm64-wheel
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/download-artifact@f44cd7b40bfd40b6aa1cc1b9b5b7bf03d3c67110 # v4.1.0
