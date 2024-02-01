@@ -49,6 +49,10 @@ jobs:
           set -x -e
           python3 --version
           python --version
+          brew search python
+          brew install python@${{ matrix.python }}
+          python3 --version
+          python --version
           python -m pip install -U wheel setuptools
           python setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
