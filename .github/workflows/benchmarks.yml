@@ -87,7 +87,7 @@ jobs:
           python -c 'from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
       - name: Store benchmark result
-        uses: rhysd/github-action-benchmark@70405016b032d44f409e4b1b451c40215cbe2393 # v1.18.0
+        uses: rhysd/github-action-benchmark@315072f079db10e96004ffb95b9b7263bf3a547e # v1.19.2
         with:
           name: Tensorflow-IO Benchmarks
           tool: 'pytest'
