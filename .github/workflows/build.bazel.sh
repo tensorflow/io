@@ -59,8 +59,8 @@ elif [[ $(uname -m) == "arm64" && $(uname) == "Darwin" ]]; then
 
 bazel build \
   ${BAZEL_OPTIMIZATION} \
-  -- //tensorflow_io_gcs_filesystem/... # //tensorflow_io/... # Try with filesystem only during testing
-  mkdir -p bazel-bin/tensorflow_io # Placeholder
+  -- //tensorflow_io_gcs_filesystem/... //tensorflow_io/...
+
 else
 
 bazel build \
