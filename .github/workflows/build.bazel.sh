@@ -59,7 +59,7 @@ elif [[ $(uname -m) == "arm64" && $(uname) == "Darwin" ]]; then
 
 bazel build \
   ${BAZEL_OPTIMIZATION} \
-  -- //tensorflow_io_gcs_filesystem/... //tensorflow_io/...
+  -- //tensorflow_io_gcs_filesystem/... //tensorflow_io:python/ops/libtensorflow_io.so //tensorflow_io:python/ops/libtensorflow_io_plugins.so
 
 else
 
