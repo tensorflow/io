@@ -70,12 +70,12 @@ jobs:
           tag_name: ${{ steps.info.outputs.tag }}
           target_commitish: ${{ steps.info.outputs.commit }}
           draft: true
-      - uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # master
+      - uses: pypa/gh-action-pypi-publish@e53eb8b103ffcb59469888563dc324e3c8ba6f06 # master
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
-      #- uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # master
+      #- uses: pypa/gh-action-pypi-publish@e53eb8b103ffcb59469888563dc324e3c8ba6f06 # master
       #  with:
       #    user: __token__
       #    password: ${{ secrets.PYPI_TOKEN }}
