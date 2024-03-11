@@ -170,11 +170,11 @@ setuptools.setup(
     python_requires=">=3.7, <3.12",
     install_requires=install_requires,
     extras_require={
-        "tensorflow": [require],
-        "tensorflow-gpu": [require.replace("tensorflow", "tensorflow-gpu")],
-        "tensorflow-cpu": [require.replace("tensorflow", "tensorflow-cpu")],
-        "tensorflow-rocm": [require.replace("tensorflow", "tensorflow-rocm")],
-        "tensorflow-aarch64": [require.replace("tensorflow", "tensorflow-aarch64")],
+        "tensorflow >= 2.15, <2.16": [require],
+        "tensorflow-gpu == 2.15, <2.16": [require.replace("tensorflow", "tensorflow-gpu")],
+        "tensorflow-cpu == 2.15, <2.16": [require.replace("tensorflow", "tensorflow-cpu")],
+        "tensorflow-rocm == 2.15, <2.16": [require.replace("tensorflow", "tensorflow-rocm")],
+        "tensorflow-aarch64 == 2.15, <2.16": [require.replace("tensorflow", "tensorflow-aarch64")],
     },
     package_data={
         ".": ["*.so"],
