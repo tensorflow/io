@@ -541,6 +541,8 @@ hdfsFS Connect(tf_hdfs_filesystem::HadoopFileSystemImplementation* hadoop_file,
     std::string path_har = path;
     SplitArchiveNameAndPath(&path_har, &namenode, status);
     if (TF_GetCode(status) != TF_OK) return nullptr;
+  } else if (scheme == "qbfs") {
+    namenode = path;
   } else {
     if (namenode.empty()) {
       namenode = "default";
