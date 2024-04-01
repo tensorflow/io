@@ -29,10 +29,11 @@ limitations under the License.
 TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   info->plugin_memory_allocate = tensorflow::io::plugin_memory_allocate;
   info->plugin_memory_free = tensorflow::io::plugin_memory_free;
-  info->num_schemes = 7;
+
 #if !defined(_MSC_VER)
   info->num_schemes = 8;
 #endif
+
   info->ops = static_cast<TF_FilesystemPluginOps*>(
       tensorflow::io::plugin_memory_allocate(info->num_schemes *
                                              sizeof(info->ops[0])));
@@ -43,7 +44,11 @@ TFIO_PLUGIN_EXPORT void TF_InitPlugin(TF_FilesystemPluginInfo* info) {
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[4], "hdfs");
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[5], "viewfs");
   tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[6], "har");
+<<<<<<< HEAD
 #if !defined(_MSC_VER)
   tensorflow::io::oss::ProvideFilesystemSupportFor(&info->ops[7], "oss");
 #endif
+=======
+  tensorflow::io::hdfs::ProvideFilesystemSupportFor(&info->ops[7], "gvfs");
+>>>>>>> feat(gvfs): support gvfs
 }
