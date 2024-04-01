@@ -878,22 +878,41 @@ http_archive(
 )
 
 # Needed for llvm_toolchain and Golang
+# http_archive(
+#     name = "com_grail_bazel_toolchain",
+#     sha256 = "9e6065ded4b7453143e1586d6819729a63cd233114b72bf85ff3435367b02c90",
+#     strip_prefix = "bazel-toolchain-edd07e96a2ecaa131af9234d6582875d980c0ac7",
+#     urls = [
+#         "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
+#         "https://github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
+#     ],
+# )
+
+# load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
+
+# llvm_toolchain(
+#     name = "llvm_toolchain",
+#     llvm_version = "9.0.0",
+# )
+
 http_archive(
     name = "com_grail_bazel_toolchain",
-    sha256 = "9e6065ded4b7453143e1586d6819729a63cd233114b72bf85ff3435367b02c90",
-    strip_prefix = "bazel-toolchain-edd07e96a2ecaa131af9234d6582875d980c0ac7",
-    urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
-        "https://github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
-    ],
+    urls = ["https://github.com/bazel-contrib/toolchains_llvm/archive/refs/tags/0.9.tar.gz"],
+    sha256 = "b2d168315dd0785f170b2b306b86e577c36e812b8f8b05568f9403141f2c24dd",
+    strip_prefix = "toolchains_llvm-0.9",
 )
 
-load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
+load("@com_grail_bazel_toolchain//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 
+bazel_toolchain_dependencies()
+
+load("@com_grail_bazel_toolchain//toolchain:rules.bzl", "llvm_toolchain")
 llvm_toolchain(
     name = "llvm_toolchain",
     llvm_version = "9.0.0",
 )
+
+
 
 # Golang related ruls, consider removal after switching to C++/C client for prometheus
 http_archive(
