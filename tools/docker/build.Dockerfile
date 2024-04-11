@@ -9,7 +9,7 @@ ARG BAZEL_OPTIMIZATION
 ADD . /opt/io
 WORKDIR /opt/io
 
-RUN python${PYTHON_VERSION} -m pip install tensorflow==${TENSORFLOW_VERSION}
+RUN python${PYTHON_VERSION} -m pip install tensorflow>=${TENSORFLOW_VERSION}
 
 RUN python$PYTHON_VERSION -m pip uninstall -y tensorflow-io-gcs-filesystem
 

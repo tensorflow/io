@@ -145,7 +145,7 @@ jobs:
     runs-on: macOS-11
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -284,7 +284,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -400,7 +400,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -501,6 +501,10 @@ jobs:
           path: macOS-3.11-wheel
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
+          name: macOS-3.12-wheel
+          path: macOS-3.12-wheel
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
           name: Linux-3.9-wheel
           path: Linux-3.9-wheel
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -511,6 +515,10 @@ jobs:
         with:
           name: Linux-3.11-wheel
           path: Linux-3.11-wheel
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          name: Linux-3.12-wheel
+          path: Linux-3.12-wheel
       #- uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       #  with:
       #    name: Windows-3.9-wheel
@@ -523,18 +531,25 @@ jobs:
       #  with:
       #    name: Windows-3.11-wheel
       #    path: Windows-3.11-wheel
+      #- uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+      #  with:
+      #    name: Windows-3.12-wheel
+      #    path: Windows-3.12-wheel
       - run: |
           set -e -x
           mkdir -p wheelhouse
           cp macOS-3.9-wheel/*.whl wheelhouse/
           cp macOS-3.10-wheel/*.whl wheelhouse/
           cp macOS-3.11-wheel/*.whl wheelhouse/
+          cp macOS-3.12-wheel/*.whl wheelhouse/
           cp Linux-3.9-wheel/*.whl wheelhouse/
           cp Linux-3.10-wheel/*.whl wheelhouse/
           cp Linux-3.11-wheel/*.whl wheelhouse/
+          cp Linux-3.12-wheel/*.whl wheelhouse/
           # cp Windows-3.9-wheel/*.whl wheelhouse/
           # cp Windows-3.10-wheel/*.whl wheelhouse/
           # cp Windows-3.11-wheel/*.whl wheelhouse/
+          # cp Windows-3.12-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
       - uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
@@ -625,7 +640,7 @@ jobs:
     runs-on: macOS-11
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
@@ -672,7 +687,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
@@ -712,7 +727,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
@@ -762,6 +777,10 @@ jobs:
           path: macOS-3.11-nightly
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
+          name: macOS-3.12-nightly
+          path: macOS-3.12-nightly
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
           name: Linux-3.9-nightly
           path: Linux-3.9-nightly
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -774,6 +793,10 @@ jobs:
           path: Linux-3.11-nightly
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
         with:
+          name: Linux-3.12-nightly
+          path: Linux-3.12-nightly
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
           name: Windows-3.9-nightly
           path: Windows-3.9-nightly
       - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
@@ -784,18 +807,25 @@ jobs:
         with:
           name: Windows-3.11-nightly
           path: Windows-3.11-nightly
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          name: Windows-3.12-nightly
+          path: Windows-3.12-nightly
       - run: |
           set -e -x
           mkdir -p dist
           cp macOS-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.10-nightly/tensorflow_io_nightly*.whl dist/
           cp macOS-3.11-nightly/tensorflow_io_nightly*.whl dist/
+          cp macOS-3.12-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.10-nightly/tensorflow_io_nightly*.whl dist/
           cp Linux-3.11-nightly/tensorflow_io_nightly*.whl dist/
+          cp Linux-3.12-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.10-nightly/tensorflow_io_nightly*.whl dist/
           cp Windows-3.11-nightly/tensorflow_io_nightly*.whl dist/
+          cp Windows-3.12-nightly/tensorflow_io_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # v1.8.11
@@ -809,12 +839,15 @@ jobs:
           cp macOS-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp macOS-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp macOS-3.12-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Linux-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Linux-3.12-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.9-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.10-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           cp Windows-3.11-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
+          cp Windows-3.12-nightly/tensorflow_io_gcs_filesystem_nightly*.whl dist/
           ls -la dist/
           sha256sum dist/*.whl
       - uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf # v1.8.11

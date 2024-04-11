@@ -93,10 +93,15 @@ switched_rules_by_language(
 
 http_archive(
     name = "org_tensorflow",
-    sha256 = "9cec5acb0ecf2d47b16891f8bc5bc6fbfdffe1700bdadc0d9ebe27ea34f0c220",
-    strip_prefix = "tensorflow-2.15.0",
+    patch_cmds = [
+        """sed -i.bak 's/cython-3.0.3/cython-3.0.0a11/g' tensorflow/workspace2.bzl""",
+        """sed -i.bak 's/3.0.3.tar.gz/3.0.0a11.tar.gz/g' tensorflow/workspace2.bzl""",
+        """sed -i.bak 's/0c2eae8a4ceab7955be1e11a4ddc5dcc3aa06ce22ad594262f1555b9d10667f0/08dbdb6aa003f03e65879de8f899f87c8c718cd874a31ae9c29f8726da2f5ab0/g' tensorflow/workspace2.bzl""",
+    ],
+    sha256 = "c729e56efc945c6df08efe5c9f5b8b89329c7c91b8f40ad2bb3e13900bd4876d",
+    strip_prefix = "tensorflow-2.16.1",
     urls = [
-        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.15.0.tar.gz",
+        "https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.16.1.tar.gz",
     ],
 )
 
@@ -880,10 +885,9 @@ http_archive(
 # Needed for llvm_toolchain and Golang
 http_archive(
     name = "com_grail_bazel_toolchain",
-    sha256 = "9e6065ded4b7453143e1586d6819729a63cd233114b72bf85ff3435367b02c90",
-    strip_prefix = "bazel-toolchain-edd07e96a2ecaa131af9234d6582875d980c0ac7",
+    sha256 = "4b7999c1fa2c3117bb21651e3c155b152e44ae67b2c311214883d4707dbe183f",
+    strip_prefix = "toolchains_llvm-edd07e96a2ecaa131af9234d6582875d980c0ac7",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
         "https://github.com/grailbio/bazel-toolchain/archive/edd07e96a2ecaa131af9234d6582875d980c0ac7.tar.gz",
     ],
 )
