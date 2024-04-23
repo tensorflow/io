@@ -1,3 +1,17 @@
+# Release 0.37.0
+
+## Major Features and Bug Fixes
+* Update to TensorFlow 2.16 support
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Yong Tang
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.36.0
 
 ## Major Features and Bug Fixes
