@@ -37,7 +37,11 @@ bazel version
 
 $PYTHON -m pip --version
 
+if [[ $(uname) == "Darwin" && $(uname -m) == "arm64" ]]; then
+$PYTHON -m pip install --upgrade --break-system-packages pip
+else
 $PYTHON -m pip install --upgrade pip
+fi
 $PYTHON -m pip install --upgrade setuptools
 $PYTHON -m pip --version
 
