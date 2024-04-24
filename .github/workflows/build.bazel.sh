@@ -22,7 +22,6 @@ if [[ $# == 1 ]]; then
 fi
 $PYTHON --version
 
-export TENSORFLOW_INSTALL="$($PYTHON setup.py --install-require)"
 
 export PYTHON_BIN_PATH=`which $PYTHON`
 
@@ -41,6 +40,9 @@ if [[ $(uname) == "Darwin" && $(uname -m) == "arm64" ]]; then
 $PYTHON -m pip install --upgrade --break-system-packages pip
 $PYTHON -m pip install --upgrade --break-system-packages setuptools
 $PYTHON -m pip --version
+
+export TENSORFLOW_INSTALL="$($PYTHON setup.py --install-require)"
+
 $PYTHON -m pip install --break-system-packages ${TENSORFLOW_INSTALL}
 $PYTHON -m pip install --break-system-packages  "urllib3 <2"
 $PYTHON -m pip uninstall --break-system-packages -y tensorflow-io-gcs-filesystem
@@ -48,6 +50,9 @@ else
 $PYTHON -m pip install --upgrade pip
 $PYTHON -m pip install --upgrade setuptools
 $PYTHON -m pip --version
+
+export TENSORFLOW_INSTALL="$($PYTHON setup.py --install-require)"
+
 $PYTHON -m pip install -q ${TENSORFLOW_INSTALL}
 $PYTHON -m pip install -q "urllib3 <2"
 $PYTHON -m pip uninstall -y tensorflow-io-gcs-filesystem
