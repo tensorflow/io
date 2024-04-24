@@ -52,7 +52,7 @@ jobs:
           brew search python
           brew install python@${{ matrix.python }}
           python${{ matrix.python }} --version
-          python${{ matrix.python }} -m pip install -U wheel setuptools
+          python${{ matrix.python }} -m pip install --break-system-packages -U wheel setuptools
           python${{ matrix.python }} setup.py --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64
           rm -rf build
           python${{ matrix.python }} setup.py --project tensorflow-io-gcs-filesystem --data bazel-bin -q bdist_wheel --plat-name macosx_12_0_arm64

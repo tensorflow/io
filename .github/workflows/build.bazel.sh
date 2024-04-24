@@ -39,15 +39,20 @@ $PYTHON -m pip --version
 
 if [[ $(uname) == "Darwin" && $(uname -m) == "arm64" ]]; then
 $PYTHON -m pip install --upgrade --break-system-packages pip
+$PYTHON -m pip install --upgrade --break-system-packages setuptools
+$PYTHON -m pip --version
+$PYTHON -m pip install --break-system-packages ${TENSORFLOW_INSTALL}
+$PYTHON -m pip install --break-system-packages  "urllib3 <2"
+$PYTHON -m pip uninstall --break-system-packages -y tensorflow-io-gcs-filesystem
 else
 $PYTHON -m pip install --upgrade pip
-fi
 $PYTHON -m pip install --upgrade setuptools
 $PYTHON -m pip --version
-
 $PYTHON -m pip install -q ${TENSORFLOW_INSTALL}
 $PYTHON -m pip install -q "urllib3 <2"
 $PYTHON -m pip uninstall -y tensorflow-io-gcs-filesystem
+fi
+
 
 $PYTHON tools/build/configure.py
 
