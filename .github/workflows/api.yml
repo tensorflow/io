@@ -22,7 +22,7 @@ jobs:
         python: ['3.8']
         version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: ${{ matrix.python }}
@@ -65,7 +65,7 @@ jobs:
         python: ['3.8']
         version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: ${{ matrix.python }}
@@ -120,7 +120,7 @@ jobs:
         python: ['3.8']
         version: ['tensorflow:tensorflow-io-nightly', 'tf-nightly:tensorflow-io', 'tf-nightly:tensorflow-io-nightly']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: ${{ matrix.python }}

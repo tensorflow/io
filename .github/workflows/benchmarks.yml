@@ -19,7 +19,7 @@ jobs:
         python: ['3.8']
         version: ['tensorflow:tensorflow-io-nightly', 'tensorflow:tensorflow-io']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: ${{ matrix.python }}
@@ -58,7 +58,7 @@ jobs:
         python: ['3.8']
         version: ['tensorflow:tensorflow-io-nightly', 'tensorflow:tensorflow-io']
     steps:
-      - uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # v4.1.3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           fetch-depth: 0
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
@@ -87,7 +87,7 @@ jobs:
           python -c 'from tensorflow_io_gcs_filesystem.core.python.ops import plugin_gs; print(plugin_gs)'
           python -m pytest --benchmark-only --benchmark-json benchmark.json -v --import-mode=append $(find . -type f \( -iname "test_*.py" ! \( -iname "test_*_v1.py" -o -iname "test_bigquery.py" \) \))
       - name: Store benchmark result
-        uses: rhysd/github-action-benchmark@1846227a307d8c0149b960b986d46f8f4c95db0c # v1.20.1
+        uses: rhysd/github-action-benchmark@4de1bed97a47495fc4c5404952da0499e31f5c29 # v1.20.3
         with:
           name: Tensorflow-IO Benchmarks
           tool: 'pytest'
