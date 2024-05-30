@@ -281,7 +281,7 @@ jobs:
   linux-wheel:
     name: Wheel ${{ matrix.python }} Linux
     needs: linux-bazel
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python: ['3.9', '3.10', '3.11', '3.12']
