@@ -20,7 +20,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
       - run: |
@@ -63,19 +63,19 @@ jobs:
           echo ${{ steps.info.outputs.name }}
           echo ${{ steps.info.outputs.commit }}
           cat CURRENT.md
-      - uses: softprops/action-gh-release@69320dbe05506a9a39fc8ae11030b214ec2d1f87 # v2.0.5
+      - uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0 # v2.0.6
         with:
           body_path: CURRENT.md
           name: ${{ steps.info.outputs.name }}
           tag_name: ${{ steps.info.outputs.tag }}
           target_commitish: ${{ steps.info.outputs.commit }}
           draft: true
-      - uses: pypa/gh-action-pypi-publish@81e9d935c883d0b210363ab89cf05f3894778450 # master
+      - uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # master
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
-      #- uses: pypa/gh-action-pypi-publish@81e9d935c883d0b210363ab89cf05f3894778450 # master
+      #- uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # master
       #  with:
       #    user: __token__
       #    password: ${{ secrets.PYPI_TOKEN }}
