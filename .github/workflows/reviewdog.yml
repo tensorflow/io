@@ -16,11 +16,11 @@ jobs:
     name: Bazel Buildifier
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - run: |
           sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- bazel
-      - uses: reviewdog/action-suggester@185c9c06d0a28fbe43b50aca4b32777b649e7cbd # v1.12.0
+      - uses: reviewdog/action-suggester@a1d57ff096639094e0ba35ef3039e79316364796 # v1.15.0
   black:
     permissions:
       checks: write  # for reviewdog/action-suggester to report issues using checks
@@ -28,11 +28,11 @@ jobs:
     name: Python Black
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - run: |
           sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- black
-      - uses: reviewdog/action-suggester@185c9c06d0a28fbe43b50aca4b32777b649e7cbd # v1.12.0
+      - uses: reviewdog/action-suggester@a1d57ff096639094e0ba35ef3039e79316364796 # v1.15.0
   clang:
     permissions:
       checks: write  # for reviewdog/action-suggester to report issues using checks
@@ -40,11 +40,11 @@ jobs:
     name: Clang Format
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - run: |
           sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- clang
-      - uses: reviewdog/action-suggester@185c9c06d0a28fbe43b50aca4b32777b649e7cbd # v1.12.0
+      - uses: reviewdog/action-suggester@a1d57ff096639094e0ba35ef3039e79316364796 # v1.15.0
   pyupgrade:
     permissions:
       checks: write  # for reviewdog/action-suggester to report issues using checks
@@ -52,8 +52,8 @@ jobs:
     name: Python Pyupgrade
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - run: |
           sudo python3 -m pip install -U numpy pip black pyupgrade
           bazel run -s --verbose_failures --experimental_repo_remote_exec //tools/lint:lint -- pyupgrade
-      - uses: reviewdog/action-suggester@185c9c06d0a28fbe43b50aca4b32777b649e7cbd # v1.12.0
+      - uses: reviewdog/action-suggester@a1d57ff096639094e0ba35ef3039e79316364796 # v1.15.0
