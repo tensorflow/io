@@ -8,7 +8,7 @@
 
 This release contains contributions from many people:
 
-Di-Is, Douglas Yarrington
+Di-Is, Douglas Yarrington, Yong Tang, dependabot[bot]
 
 We are also grateful to all who filed issues or helped resolve them, asked and
 answered questions, and were part of inspiring discussions.
