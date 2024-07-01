@@ -52,7 +52,7 @@ jobs:
 
   macos:
     name: macOS
-    runs-on: macOS-11
+    runs-on: macOS-12
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: GCP
@@ -109,7 +109,7 @@ jobs:
 
   macos-bazel:
     name: Bazel macOS
-    runs-on: macOS-11
+    runs-on: macOS-12
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: GCP
@@ -142,7 +142,7 @@ jobs:
   macos-wheel:
     name: Wheel ${{ matrix.python }} macOS
     needs: macos-bazel
-    runs-on: macOS-11
+    runs-on: macOS-12
     strategy:
       matrix:
         python: ['3.9', '3.10', '3.11', '3.12']
@@ -183,7 +183,7 @@ jobs:
   macos-test:
     name: Test ${{ matrix.python }} macOS
     needs: macos-wheel
-    runs-on: macOS-11
+    runs-on: macOS-12
     strategy:
       matrix:
         python: ['3.9']
@@ -637,7 +637,7 @@ jobs:
     name: Nightly ${{ matrix.python }} macOS
     if: github.event_name == 'push'
     needs: [build-number, macos-wheel]
-    runs-on: macOS-11
+    runs-on: macOS-12
     strategy:
       matrix:
         python: ['3.9', '3.10', '3.11', '3.12']
