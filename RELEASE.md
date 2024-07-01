@@ -1,3 +1,18 @@
+# Release 0.37.1
+
+## Major Features and Bug Fixes
+* Fix metadata to support Python 3.12
+* Address the S3 issue
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Di-Is, Douglas Yarrington
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.37.0
 
 ## Major Features and Bug Fixes
