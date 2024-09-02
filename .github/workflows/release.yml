@@ -63,19 +63,19 @@ jobs:
           echo ${{ steps.info.outputs.name }}
           echo ${{ steps.info.outputs.commit }}
           cat CURRENT.md
-      - uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0 # v2.0.6
+      - uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
           body_path: CURRENT.md
           name: ${{ steps.info.outputs.name }}
           tag_name: ${{ steps.info.outputs.tag }}
           target_commitish: ${{ steps.info.outputs.commit }}
           draft: true
-      - uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # master
+      - uses: pypa/gh-action-pypi-publish@8a08d616893759ef8e1aa1f2785787c0b97e20d6 # master
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
-      #- uses: pypa/gh-action-pypi-publish@ec4db0b4ddc65acdf4bff5fa45ac92d78b56bdf0 # master
+      #- uses: pypa/gh-action-pypi-publish@8a08d616893759ef8e1aa1f2785787c0b97e20d6 # master
       #  with:
       #    user: __token__
       #    password: ${{ secrets.PYPI_TOKEN }}
