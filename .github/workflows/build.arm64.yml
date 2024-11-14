@@ -11,14 +11,14 @@ jobs:
     name: Bazel arm64 on macOS
     runs-on: macos-13-xlarge
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Bazel on macOS
         run: |
           set -x -e
           bash -e .github/workflows/build.bazel.sh python3
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: ${{ runner.os }}-arm64-bazel-bin
           path: |
@@ -36,8 +36,8 @@ jobs:
       matrix:
         python: ['3.9', '3.10', '3.11', '3.12']
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: ${{ runner.os }}-arm64-bazel-bin
           path: bazel-bin
@@ -63,7 +63,7 @@ jobs:
             cp $f wheelhouse
           done
           ls wheelhouse/*
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: ${{ runner.os }}-arm64-${{ matrix.python }}-wheel
           path: wheelhouse
@@ -73,19 +73,19 @@ jobs:
     needs: macos-arm64-wheel
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: macOS-arm64-3.9-wheel
           path: macOS-arm64-3.9-wheel
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: macOS-arm64-3.10-wheel
           path: macOS-arm64-3.10-wheel
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with: 
           name: macOS-arm64-3.11-wheel 
           path: macOS-arm64-3.11-wheel
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with: 
           name: macOS-arm64-3.12-wheel 
           path: macOS-arm64-3.12-wheel
@@ -98,7 +98,7 @@ jobs:
           cp macOS-arm64-3.12-wheel/*.whl wheelhouse/
           ls -la wheelhouse/
           sha256sum wheelhouse/*.whl
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: tensorflow-io-release-macos-arm64
           path: wheelhouse
@@ -108,8 +108,8 @@ jobs:
     needs: release-macos-arm64
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: tensorflow-io-release-macos-arm64
           path: wheelhouse
@@ -131,12 +131,12 @@ jobs:
           COPY wheelhouse.commit /wheelhouse.commit
           COPY wheelhouse.version /wheelhouse.version
           EOF
-      - uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-      - uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
+      - uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
+      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           username: tfsigio
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/build-push-action@15560696de535e4014efeff63c48f16952e52dd1 # v6.2.0
+      - uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
         with:
           context: .
           push: true
