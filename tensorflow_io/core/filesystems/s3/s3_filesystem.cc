@@ -228,7 +228,7 @@ static void GetExecutor(tf_s3_filesystem::S3File* s3_file) {
 static void GetTransferManager(
     const Aws::Transfer::TransferDirection& direction,
     tf_s3_filesystem::S3File* s3_file) {
-  executor_pool_size = GetExecutorPoolSize();
+  int executor_pool_size = GetExecutorPoolSize();
   // These functions should be called before holding `initialization_lock`.
   GetS3Client(s3_file);
   GetExecutor(s3_file, executor_pool_size);
