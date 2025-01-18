@@ -203,34 +203,35 @@ static void GetS3Client(tf_s3_filesystem::S3File* s3_file) {
   }
 }
 
-// GetExecutor initializes the executor in s3_file if it is not initialized.
-//
-// This function returns executor_pool_size that is used in initialization,
-// but the caller can ignore the return value.
-static int GetExecutor(tf_s3_filesystem::S3File* s3_file) {
-  absl::MutexLock l(&s3_file->initialization_lock);
-
+// This function returns executor_pool_size that is
+// used in initialization of executor.
+// Ref: https://github.com/tensorflow/io/issues/1856
+static int GetExecutorPoolSize() {
   int temp_value;
   const char* executor_pool_size = getenv("S3_EXECUTOR_POOL_SIZE");
   if (executor_pool_size == nullptr ||
       !absl::SimpleAtoi(executor_pool_size, &temp_value))
     temp_value = kExecutorPoolSize;
+  return temp_value;
+}
+
+static void GetExecutor(tf_s3_filesystem::S3File* s3_file) {
+  absl::MutexLock l(&s3_file->initialization_lock);
 
   if (s3_file->executor.get() == nullptr) {
     s3_file->executor =
         Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(
-            kExecutorTag, temp_value);
+            kExecutorTag, kExecutorPoolSize);
   }
-
-  return temp_value;
 }
 
 static void GetTransferManager(
     const Aws::Transfer::TransferDirection& direction,
     tf_s3_filesystem::S3File* s3_file) {
+  executor_pool_size = GetExecutorPoolSize();
   // These functions should be called before holding `initialization_lock`.
   GetS3Client(s3_file);
-  int executor_pool_size = GetExecutor(s3_file);
+  GetExecutor(s3_file, executor_pool_size);
 
   absl::MutexLock l(&s3_file->initialization_lock);
 
