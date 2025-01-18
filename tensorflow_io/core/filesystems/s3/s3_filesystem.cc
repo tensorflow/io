@@ -215,13 +215,13 @@ static int GetExecutorPoolSize() {
   return temp_value;
 }
 
-static void GetExecutor(tf_s3_filesystem::S3File* s3_file) {
+static void GetExecutor(tf_s3_filesystem::S3File* s3_file, int executor_pool_size) {
   absl::MutexLock l(&s3_file->initialization_lock);
 
   if (s3_file->executor.get() == nullptr) {
     s3_file->executor =
         Aws::MakeShared<Aws::Utils::Threading::PooledThreadExecutor>(
-            kExecutorTag, kExecutorPoolSize);
+            kExecutorTag, executor_pool_size);
   }
 }
 
