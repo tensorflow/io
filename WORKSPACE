@@ -232,7 +232,6 @@ http_archive(
     patch_cmds = [
         """sed -i.bak 's/UUID::RandomUUID/Aws::Utils::UUID::RandomUUID/g' aws-cpp-sdk-core/source/client/AWSClient.cpp""",
         """sed -i.bak 's/__attribute__((visibility("default")))//g' aws-cpp-sdk-core/include/aws/core/external/tinyxml2/tinyxml2.h """,
-        """sed -i.bak '27d;30d' aws-cpp-sdk-core/source/http/curl/CurlHandleContainer.cpp""",
     ],
     sha256 = "ae1cb22225b1f47eee351c0064be5e87676bf7090bb9ad19888bea0dab0e2749",
     strip_prefix = "aws-sdk-cpp-1.8.187",
