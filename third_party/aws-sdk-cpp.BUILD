@@ -76,10 +76,10 @@ cc_library(
         "aws-cpp-sdk-core/include/aws/core/utils/crypto/openssl/*.h",  # UTILS_CRYPTO_OPENSSL_HEADERS
     ]),
     defines = [
-        'AWS_SDK_VERSION_STRING=\\"1.7.366\\"',
+        'AWS_SDK_VERSION_STRING=\\"1.8.187\\"',
         "AWS_SDK_VERSION_MAJOR=1",
-        "AWS_SDK_VERSION_MINOR=7",
-        "AWS_SDK_VERSION_PATCH=366",
+        "AWS_SDK_VERSION_MINOR=8",
+        "AWS_SDK_VERSION_PATCH=187",
         "ENABLE_OPENSSL_ENCRYPTION=1",
         "ENABLE_CURL_CLIENT=1",
         "OPENSSL_IS_BORINGSSL=1",
