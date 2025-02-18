@@ -24,10 +24,25 @@ cc_library(
     deps = [],
 )
 
+config_setting(
+    name = "ppc_cpu",
+    values = {"cpu": "ppc"},
+)
+
 genrule(
     name = "crc_hw_c",
     outs = ["crc_hw.c"],
-    cmd = "\n".join([
+    cmd = select({
+        "//:ppc_cpu": "\n".join([
+        "cat <<'EOF' >$@",
+        "#include <aws/checksums/private/cpuid.h>",
+        "#include <aws/checksums/private/crc_priv.h>",
+        "uint32_t aws_checksums_crc32c_hw(const uint8_t *input, int length, uint32_t previousCrc32) {",
+        "  return aws_checksums_crc32c_sw(input, length, previousCrc32);",
+        "}",
+        "EOF",
+    ]),
+        "//conditions:default": "\n".join([
         "cat <<'EOF' >$@",
         "#include <aws/checksums/private/cpuid.h>",
         "#include <aws/checksums/private/crc_priv.h>",
@@ -39,4 +54,6 @@ genrule(
         "}",
         "EOF",
     ]),
+   }),
 )
+

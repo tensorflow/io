@@ -39,6 +39,9 @@ cc_library(
         "@platforms//cpu:x86_64": [
             "lib/checksum/crc32c_sse42.cc",
         ],
+        "@platforms//cpu:ppc": [
+            "lib/checksum/crc32c_sse42.cc",
+        ],
         "//conditions:default": [],
     }),
     hdrs = [
