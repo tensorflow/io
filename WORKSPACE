@@ -54,7 +54,6 @@ http_archive(
     sha256 = "14bf9bf97431b890e0ae5dca8f8904841d4883b8596a7108a42f5700ae58d711",
     strip_prefix = "google-cloud-cpp-1.21.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
         "https://github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
     ],
 )
